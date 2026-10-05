@@ -41,5 +41,30 @@
     "move": "Di chuyển %{key}",
     "moveFailed": "Không thể di chuyển công việc.",
     "addFailed": "Không thể thêm công việc."
+  },
+  "section": {
+    "new": "Mục mới",
+    "editTitle": "Sửa mục",
+    "options": "Tùy chọn cho %{section}",
+    "edit": "Sửa",
+    "moveLeft": "Chuyển sang trái",
+    "moveRight": "Chuyển sang phải",
+    "delete": "Xóa",
+    "name": "Tên",
+    "status": "Trạng thái",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "deleteTitle": "Xóa %{section}?",
+    "tasksTo": "Chuyển công việc của mục này sang",
+    "moveFailed": "Không thể di chuyển mục.",
+    "saveFailed": "Không thể lưu mục.",
+    "deleteFailed": "Không thể xóa mục.",
+    "category": {
+      "backlog": "Tồn đọng",
+      "unstarted": "Cần làm",
+      "started": "Đang làm",
+      "completed": "Hoàn thành",
+      "canceled": "Đã hủy"
+    }
   }
 }

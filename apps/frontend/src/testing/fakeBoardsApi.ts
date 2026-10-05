@@ -57,6 +57,12 @@ function summaryOf(board: Board, favorite = false): BoardSummary {
   }
 }
 
+function sectionOf(board: Board, sectionId: string) {
+  const section = board.sections.find(candidate => candidate.id === sectionId)
+  if (!section) throw new ApiError(404, 'not_found')
+  return section
+}
+
 export function fakeBoardsApi(boards: Board[] = []) {
   const store = new Map(boards.map(board => [board.id, board]))
   const find = (boardId: string) => {
@@ -110,6 +116,54 @@ export function fakeBoardsApi(boards: Board[] = []) {
         else board.tasks.splice(index, 0, task)
         board.version += 1
       })
+    ),
+    createSection: vi.fn<BoardsApi['createSection']>(
+      (boardId, { name, category, afterId }) =>
+        Promise.resolve().then(() => {
+          const board = find(boardId)
+          const section = { id: nextId(), name, category }
+          const after = board.sections.findIndex(
+            candidate => candidate.id === afterId
+          )
+          board.sections.splice(
+            after < 0 ? board.sections.length : after + 1,
+            0,
+            section
+          )
+          return section
+        })
+    ),
+    editSection: vi.fn<BoardsApi['editSection']>(
+      (boardId, sectionId, changes) =>
+        Promise.resolve().then(() => {
+          const section = sectionOf(find(boardId), sectionId)
+          Object.assign(section, changes)
+        })
+    ),
+    moveSection: vi.fn<BoardsApi['moveSection']>((boardId, sectionId, move) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        const section = sectionOf(board, sectionId)
+        board.sections = board.sections.filter(other => other !== section)
+        const at = move.beforeId
+          ? board.sections.findIndex(other => other.id === move.beforeId)
+          : board.sections.findIndex(other => other.id === move.afterId) + 1
+        board.sections.splice(at, 0, section)
+      })
+    ),
+    deleteSection: vi.fn<BoardsApi['deleteSection']>(
+      (boardId, sectionId, tasksTo) =>
+        Promise.resolve().then(() => {
+          const board = find(boardId)
+          const tasks = board.tasks.filter(task => task.sectionId === sectionId)
+          if (tasksTo === undefined && tasks.length > 0) {
+            throw new ApiError(409, 'section_not_empty')
+          }
+          for (const task of tasks) task.sectionId = tasksTo ?? null
+          board.sections = board.sections.filter(
+            section => section.id !== sectionId
+          )
+        })
     )
   } satisfies BoardsApi
 

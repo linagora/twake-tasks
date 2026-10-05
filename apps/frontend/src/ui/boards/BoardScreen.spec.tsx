@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { ApiError } from '@/application/boards'
@@ -151,6 +151,110 @@ describe('BoardScreen', () => {
     expect(
       await screen.findByText('The task could not be moved.')
     ).toBeInTheDocument()
+  })
+
+  it('adds a section at the end', async () => {
+    const board = designBoard()
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'New section' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'New section' }))
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Name' }), {
+      target: { value: 'Review' }
+    })
+    fireEvent.change(dialog.getByRole('combobox', { name: 'Status' }), {
+      target: { value: 'started' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByRole('region', { name: 'Review' })).toBeVisible()
+    expect(boardsApi.createSection).toHaveBeenCalledWith(board.id, {
+      name: 'Review',
+      category: 'started'
+    })
+  })
+
+  it('renames a section', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for To do' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Edit section' }))
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Name' }), {
+      target: { value: 'Later' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+
+    expect(
+      within(await screen.findByRole('region', { name: 'Later' })).getByRole(
+        'article',
+        { name: 'DES-1 Logo' }
+      )
+    ).toBeInTheDocument()
+  })
+
+  it('moves a section to the right', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for To do' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Move right' }))
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)
+      ).toEqual(['In progress', 'To do', 'Done'])
+    })
+  })
+
+  it('asks where the tasks go when deleting a section that has some', async () => {
+    const board = designBoard()
+    const [todo, , done] = board.sections
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for To do' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Delete To do?' }))
+    fireEvent.change(
+      dialog.getByRole('combobox', { name: 'Move its tasks to' }),
+      { target: { value: done?.id } }
+    )
+    fireEvent.click(dialog.getByRole('button', { name: 'Delete' }))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+
+    expect(
+      await within(column('Done')).findByRole('article', {
+        name: 'DES-1 Logo'
+      })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'To do' })).toBeNull()
+    expect(boardsApi.deleteSection).toHaveBeenCalledWith(
+      board.id,
+      todo?.id,
+      done?.id
+    )
+  })
+
+  it('lets only admins manage sections', async () => {
+    const board = { ...designBoard(), role: 'editor' as const }
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    await screen.findByRole('heading', { level: 1, name: 'Design' })
+    expect(screen.queryByRole('button', { name: 'New section' })).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: 'Options for To do' })
+    ).toBeNull()
   })
 
   it('says when the board does not exist', async () => {

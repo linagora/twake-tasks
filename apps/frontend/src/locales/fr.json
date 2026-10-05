@@ -41,5 +41,30 @@
     "move": "Déplacer %{key}",
     "moveFailed": "La tâche n'a pas pu être déplacée.",
     "addFailed": "La tâche n'a pas pu être ajoutée."
+  },
+  "section": {
+    "new": "Nouvelle section",
+    "editTitle": "Modifier la section",
+    "options": "Options de %{section}",
+    "edit": "Modifier",
+    "moveLeft": "Déplacer à gauche",
+    "moveRight": "Déplacer à droite",
+    "delete": "Supprimer",
+    "name": "Nom",
+    "status": "Statut",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "deleteTitle": "Supprimer %{section} ?",
+    "tasksTo": "Déplacer ses tâches vers",
+    "moveFailed": "La section n'a pas pu être déplacée.",
+    "saveFailed": "La section n'a pas pu être enregistrée.",
+    "deleteFailed": "La section n'a pas pu être supprimée.",
+    "category": {
+      "backlog": "Backlog",
+      "unstarted": "À faire",
+      "started": "En cours",
+      "completed": "Terminé",
+      "canceled": "Annulé"
+    }
   }
 }

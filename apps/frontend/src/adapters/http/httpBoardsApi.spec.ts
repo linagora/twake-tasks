@@ -57,6 +57,20 @@ describe('httpBoardsApi', () => {
     expect(request?.url).toBe(`${BASE}/api/boards/b1/tasks/t1/move`)
   })
 
+  it('sends where the tasks go only when deleting a section with some', async () => {
+    const send = backend(204)
+    const api = httpBoardsApi(BASE, send)
+
+    await api.deleteSection('b1', 's1')
+    await api.deleteSection('b1', 's1', null)
+
+    const [[empty], [emptied]] = send.mock.calls as [[Request], [Request]]
+    expect(empty.method).toBe('DELETE')
+    expect(empty.url).toBe(`${BASE}/api/boards/b1/sections/s1`)
+    expect(empty.body).toBeNull()
+    expect(await emptied.json()).toEqual({ tasksTo: null })
+  })
+
   it('rejects with the status and code the backend refused with', async () => {
     const send = backend(409, { error: 'key_prefix_taken' })
 

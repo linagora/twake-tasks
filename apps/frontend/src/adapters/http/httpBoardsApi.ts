@@ -42,6 +42,18 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     createTask: (boardId, task) =>
       call('POST', `/boards/${boardId}/tasks`, task),
     moveTask: (boardId, taskId, move) =>
-      call('POST', `/boards/${boardId}/tasks/${taskId}/move`, move)
+      call('POST', `/boards/${boardId}/tasks/${taskId}/move`, move),
+    createSection: (boardId, section) =>
+      call('POST', `/boards/${boardId}/sections`, section),
+    editSection: (boardId, sectionId, changes) =>
+      call('PATCH', `/boards/${boardId}/sections/${sectionId}`, changes),
+    moveSection: (boardId, sectionId, move) =>
+      call('POST', `/boards/${boardId}/sections/${sectionId}/move`, move),
+    deleteSection: (boardId, sectionId, tasksTo) =>
+      call(
+        'DELETE',
+        `/boards/${boardId}/sections/${sectionId}`,
+        tasksTo === undefined ? undefined : { tasksTo }
+      )
   }
 }

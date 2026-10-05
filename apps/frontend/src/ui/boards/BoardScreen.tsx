@@ -4,8 +4,9 @@ import { Link as RouterLink, useParams } from 'react-router'
 
 import { ApiError } from '@/application/boards'
 import { Column, Columns } from '@/ds/Columns'
-import type { Board } from '@/domain/board'
+import type { Board, Section } from '@/domain/board'
 import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
+import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { TaskCard } from '@/ui/boards/TaskCard'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -37,12 +38,13 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   const { t } = useI18n()
   const move = useMoveTask(board.id)
   const editable = board.role !== 'viewer' && !board.archived
+  const manageable = board.role === 'admin' && !board.archived
   const loose =
     board.sections.length === 0 ||
     board.tasks.some(task => task.sectionId === null)
-  const columns = [
+  const columns: { id: string | null; name: string; section?: Section }[] = [
     ...(loose ? [{ id: null, name: t('board.noSection') }] : []),
-    ...board.sections
+    ...board.sections.map(section => ({ ...section, section }))
   ]
 
   return (
@@ -63,6 +65,12 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
               key={column.id ?? 'none'}
               title={column.name}
               count={tasks.length}
+              actions={
+                manageable &&
+                column.section && (
+                  <SectionMenu board={board} section={column.section} />
+                )
+              }
             >
               {tasks.map(task => (
                 <TaskCard
@@ -90,6 +98,7 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
             </Column>
           )
         })}
+        {manageable && <NewSectionButton board={board} />}
       </Columns>
     </>
   )

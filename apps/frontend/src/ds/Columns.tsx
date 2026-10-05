@@ -20,10 +20,12 @@ export function Columns({ children }: { children: ReactNode }): ReactElement {
 export function Column({
   title,
   count,
+  actions,
   children
 }: {
   title: string
   count: number
+  actions?: ReactNode
   children: ReactNode
 }): ReactElement {
   const titleId = useId()
@@ -48,6 +50,7 @@ export function Column({
         <Typography variant="caption" color="textSecondary">
           {count}
         </Typography>
+        {actions}
       </Box>
       {children}
     </Box>
