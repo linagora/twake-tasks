@@ -30,6 +30,11 @@ function recorder() {
   return { sent, publish }
 }
 
+// Other tests write task events too, so the outbox can hold several batches.
+async function drain(relay: ReturnType<typeof createRelay>) {
+  while ((await relay.relayOnce()) > 0);
+}
+
 describe('outbox', () => {
   it('publishes committed events in order, once', async () => {
     const [first, second] = [anEvent(), anEvent()]
@@ -40,8 +45,8 @@ describe('outbox', () => {
     const { sent, publish } = recorder()
     const relay = createRelay({ db, logger, publish })
 
-    await relay.relayOnce()
-    await relay.relayOnce()
+    await drain(relay)
+    await drain(relay)
 
     expect(sent.filter(id => [first.id, second.id].includes(id))).toEqual([
       first.id,
@@ -60,7 +65,7 @@ describe('outbox', () => {
       .catch(() => undefined)
     const { sent, publish } = recorder()
 
-    await createRelay({ db, logger, publish }).relayOnce()
+    await drain(createRelay({ db, logger, publish }))
 
     expect(sent).not.toContain(event.id)
   })
@@ -72,7 +77,7 @@ describe('outbox', () => {
 
     await createRelay({ db, logger, publish: failing }).relayOnce()
     const { sent, publish } = recorder()
-    await createRelay({ db, logger, publish }).relayOnce()
+    await drain(createRelay({ db, logger, publish }))
 
     expect(sent).toContain(event.id)
   })

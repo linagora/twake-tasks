@@ -12,6 +12,7 @@ const cloudEvent = z.looseObject({
   subject: z.string().optional(),
   twakeorg: z.string().min(1).optional(),
   twakeactor: z.email().optional(),
+  twakeactorid: z.string().min(1).optional(),
   data: z.looseObject({
     object: z.looseObject({ space_id: z.uuid().optional() })
   })
@@ -29,6 +30,7 @@ export type OutgoingEvent = Pick<
   | 'subject'
   | 'twakeorg'
   | 'twakeactor'
+  | 'twakeactorid'
 > & { data: Record<string, unknown> }
 
 export interface PlatformEvent {

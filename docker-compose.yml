@@ -72,6 +72,7 @@ services:
       KAFKA_BOOTSTRAP: kafka:29092
       KAFKA_SECURITY: plaintext
       DATABASE_URL: postgres://twake_tasks:twake_tasks@postgres:5432/twake_tasks
+      APP_URL: ${APP_URL:-http://localhost:3000}
       OIDC_ISSUER: ${OIDC_ISSUER:-https://sign-up.twake.app/}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-local-development-secret}
 
