@@ -16,6 +16,7 @@ docker run -d --name "$NAME" \
   -e SSO_CLIENT_ID='twake-tasks' \
   -e POSTHOG_HOST='https://posthog.example.com' \
   -e CSP_FRAME_ANCESTORS="'self' https://workplace.example.com" \
+  -e API_UPSTREAM='http://127.0.0.1:9' \
   "$IMAGE" >/dev/null
 BASE="http://$(docker port "$NAME" 8080/tcp | head -1)"
 
@@ -45,6 +46,7 @@ expect '/healthz answers ok' "$(body "$BASE/healthz")" 'ok'
 expect 'nginx runs as uid 101' "$(docker exec "$NAME" stat -c %u /proc/1)" '101'
 expect '/ serves index.html' "$(body "$BASE/")" '*<div id="root"*'
 expect 'unknown routes fall back to index.html' "$(body "$BASE/tasks/42")" '*<div id="root"*'
+expect '/api goes to the backend' "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/api/boards")" '502'
 expect 'index.html is revalidated' "$(header / Cache-Control)" 'no-cache'
 expect '/.env.js comes from the environment' "$(body "$BASE/.env.js")" '*var SSO_CLIENT_ID = "twake-tasks"*'
 expect '/.env.js is never cached' "$(header /.env.js Cache-Control)" 'no-store'
