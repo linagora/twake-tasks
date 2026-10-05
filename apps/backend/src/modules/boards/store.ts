@@ -1,4 +1,16 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  exists,
+  inArray,
+  isNull,
+  lt,
+  notExists,
+  or,
+  sql
+} from 'drizzle-orm'
 import { generateNKeysBetween } from 'fractional-indexing'
 import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
@@ -14,7 +26,7 @@ import {
   tasks
 } from './schema.ts'
 import { labelsOn } from './labels.ts'
-import { recurrenceOf } from './recurrence.ts'
+import { recurrenceOf, shift, todayIn } from './recurrence.ts'
 
 const DEFAULT_SECTIONS = [
   { name: 'To do', category: 'unstarted' },
@@ -35,6 +47,17 @@ function isUniqueViolation(error: unknown): boolean {
 
 export function createBoardStore(db: Db) {
   return {
+    /** Overdue tasks, then those due within `days` days of today in `zone`. */
+    agenda(identity: Identity, zone: string, days: number) {
+      return inTenant(db, identity, async tx => {
+        const today = todayIn(zone)
+        return {
+          today,
+          tasks: await agendaOf(tx, identity.userId, shift(today, days, 'days'))
+        }
+      })
+    },
+
     listBoards(identity: Identity) {
       return inTenant(db, identity, async tx => {
         await ensureInbox(tx, identity)
@@ -197,17 +220,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     .where(eq(tasks.boardId, boardId))
     .orderBy(asc(tasks.position))
   const members = await membersOf(tx, board)
-  const assignments = await tx
-    .select({ taskId: taskAssignees.taskId, userId: taskAssignees.userId })
-    .from(taskAssignees)
-    .innerJoin(tasks, eq(tasks.id, taskAssignees.taskId))
-    .where(eq(tasks.boardId, boardId))
   const boardLabels = await labelsOn(tx, board)
-  const labeled = await tx
-    .select({ taskId: taskLabels.taskId, labelId: taskLabels.labelId })
-    .from(taskLabels)
-    .innerJoin(tasks, eq(tasks.id, taskLabels.taskId))
-    .where(eq(tasks.boardId, boardId))
   return {
     id: board.id,
     name: board.name,
@@ -220,36 +233,124 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     members,
     labels: boardLabels,
     sections: sectionRows,
-    tasks: rows.map(task => ({
-      id: task.id,
-      key: `${board.keyPrefix}-${String(task.number)}`,
-      sectionId: task.sectionId,
-      parentId: task.parentId,
-      title: task.title,
-      priority: task.priority,
-      dueDate: task.dueDate,
-      dueTime: task.dueTime?.slice(0, 5) ?? null,
-      dueZone: task.dueZone,
-      deadline: task.deadline,
-      duration:
-        task.duration && task.durationUnit
-          ? { amount: task.duration, unit: task.durationUnit }
-          : null,
-      recurrence: recurrenceOf(task),
-      completedAt: task.completedAt,
-      canceledAt: task.canceledAt,
-      // Someone who left the board stays assigned, but is not shown.
-      assignees: members.filter(member =>
-        assignments.some(
-          assigned =>
-            assigned.taskId === task.id && assigned.userId === member.userId
-        )
-      ),
-      labels: boardLabels.filter(label =>
-        labeled.some(
-          entry => entry.taskId === task.id && entry.labelId === label.id
+    tasks: await describeTasks(tx, board, rows, members, boardLabels)
+  }
+}
+
+async function describeTasks(
+  tx: Tx,
+  board: typeof boards.$inferSelect,
+  rows: (typeof tasks.$inferSelect)[],
+  members: { userId: string; email: string }[],
+  boardLabels: { id: string; name: string }[]
+) {
+  const ids = rows.map(task => task.id)
+  if (ids.length === 0) return []
+  const assignments = await tx
+    .select({ taskId: taskAssignees.taskId, userId: taskAssignees.userId })
+    .from(taskAssignees)
+    .where(inArray(taskAssignees.taskId, ids))
+  const labeled = await tx
+    .select({ taskId: taskLabels.taskId, labelId: taskLabels.labelId })
+    .from(taskLabels)
+    .where(inArray(taskLabels.taskId, ids))
+  return rows.map(task => ({
+    id: task.id,
+    key: `${board.keyPrefix}-${String(task.number)}`,
+    sectionId: task.sectionId,
+    parentId: task.parentId,
+    title: task.title,
+    priority: task.priority,
+    dueDate: task.dueDate,
+    dueTime: task.dueTime?.slice(0, 5) ?? null,
+    dueZone: task.dueZone,
+    deadline: task.deadline,
+    duration:
+      task.duration && task.durationUnit
+        ? { amount: task.duration, unit: task.durationUnit }
+        : null,
+    recurrence: recurrenceOf(task),
+    completedAt: task.completedAt,
+    canceledAt: task.canceledAt,
+    // Someone who left the board stays assigned, but is not shown.
+    assignees: members.filter(member =>
+      assignments.some(
+        assigned =>
+          assigned.taskId === task.id && assigned.userId === member.userId
+      )
+    ),
+    labels: boardLabels.filter(label =>
+      labeled.some(
+        entry => entry.taskId === task.id && entry.labelId === label.id
+      )
+    )
+  }))
+}
+
+// A task is someone's when it is assigned to them, or when it sits unassigned
+// on one of their own boards. Unassigned space tasks belong to nobody yet.
+async function agendaOf(tx: Tx, userId: string, until: string) {
+  const accessible = accessibleBoards(tx, userId)
+  const rows = await tx
+    .select({ task: tasks, board: boards })
+    .from(tasks)
+    .innerJoin(boards, eq(boards.id, tasks.boardId))
+    .innerJoin(accessible, eq(accessible.boardId, boards.id))
+    .where(
+      and(
+        isNull(boards.archivedAt),
+        isNull(tasks.completedAt),
+        isNull(tasks.canceledAt),
+        lt(tasks.dueDate, until),
+        or(
+          exists(
+            tx
+              .select({ one: sql`1` })
+              .from(taskAssignees)
+              .where(
+                and(
+                  eq(taskAssignees.taskId, tasks.id),
+                  eq(taskAssignees.userId, userId)
+                )
+              )
+          ),
+          and(
+            isNull(boards.spaceId),
+            notExists(
+              tx
+                .select({ one: sql`1` })
+                .from(taskAssignees)
+                .where(eq(taskAssignees.taskId, tasks.id))
+            )
+          )
         )
       )
-    }))
+    )
+    .orderBy(
+      asc(tasks.dueDate),
+      sql`${tasks.dueTime} asc nulls last`,
+      sql`${tasks.priority} asc nulls last`,
+      asc(boards.name),
+      asc(tasks.number)
+    )
+  const described = new Map<string, Awaited<ReturnType<typeof describeTasks>>>()
+  for (const board of new Map(
+    rows.map(row => [row.board.id, row.board])
+  ).values()) {
+    described.set(
+      board.id,
+      await describeTasks(
+        tx,
+        board,
+        rows.filter(row => row.board.id === board.id).map(row => row.task),
+        await membersOf(tx, board),
+        await labelsOn(tx, board)
+      )
+    )
   }
+  return rows.map(({ task, board }) => ({
+    ...described.get(board.id)?.find(each => each.id === task.id),
+    boardId: board.id,
+    boardName: board.name
+  }))
 }

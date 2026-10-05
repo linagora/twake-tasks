@@ -47,6 +47,11 @@ function isTimeZone(zone: string): boolean {
   }
 }
 
+const agendaQuery = z.object({
+  zone: z.string().max(64).refine(isTimeZone),
+  days: z.coerce.number().int().min(1).max(60)
+})
+
 const taskChanges = z
   .object({
     title: taskTitle,
@@ -234,6 +239,20 @@ export function registerBoards(
       const identity = request.identity
       if (!identity) return reply.code(401).send()
       return { boards: await store.listBoards(identity) }
+    }
+  )
+
+  app.get(
+    '/agenda',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const query = agendaQuery.safeParse(request.query)
+      if (!query.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      return store.agenda(identity, query.data.zone, query.data.days)
     }
   )
 
