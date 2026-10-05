@@ -55,7 +55,12 @@ expect 'hashed assets are cached for a year' "$(header "$script" Cache-Control)"
 csp="$(header / Content-Security-Policy)"
 expect 'CSP sent' "$csp" "default-src 'self'; script-src 'self';*"
 expect 'CSP: SSO and PostHog origins in connect-src' "$csp" "*connect-src 'self' https://sso.example.com https://posthog.example.com;*"
-expect 'CSP: frame-ancestors from the environment' "$csp" "*frame-ancestors 'self' https://workplace.example.com;*"
+expect 'CSP: pages refuse to be framed' "$csp" "*frame-ancestors 'none'"
+expect 'CSP: the embedded view may be framed by the host' \
+  "$(header /embed/spaces/s1 Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"
+expect 'CSP: so may the sign-in callback' \
+  "$(header /auth/callback Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"
+expect 'the embedded view serves index.html' "$(body "$BASE/embed/spaces/s1")" '*<div id="root"*'
 expect 'CSP on the SPA fallback too' "$(header /tasks/42 Content-Security-Policy)" "$csp"
 expect 'CSP on assets too' "$(header "$script" Content-Security-Policy)" "$csp"
 expect 'X-Content-Type-Options' "$(header / X-Content-Type-Options)" 'nosniff'

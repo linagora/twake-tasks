@@ -5,7 +5,7 @@ set -eu
 
 ME=$(basename "$0")
 OUT=/tmp/nginx
-RUNTIME_KEYS="SSO_BASE_URL SSO_CLIENT_ID SSO_SCOPE SSO_REDIRECT_URI SSO_POST_LOGOUT_REDIRECT POSTHOG_KEY POSTHOG_HOST"
+RUNTIME_KEYS="SSO_BASE_URL SSO_CLIENT_ID SSO_SCOPE SSO_REDIRECT_URI SSO_POST_LOGOUT_REDIRECT POSTHOG_KEY POSTHOG_HOST TWAKE_SPACE_ORIGIN"
 
 fail() {
   echo "$ME: error: $*" >&2
@@ -48,7 +48,7 @@ for url in "${SSO_BASE_URL:-}" "${POSTHOG_HOST:-}"; do
 done
 [ -n "${CSP_CONNECT_SRC:-}" ] && connect_src="$connect_src $CSP_CONNECT_SRC"
 frame_src=${CSP_FRAME_SRC:-"'self'"}
-frame_ancestors=${CSP_FRAME_ANCESTORS:-"'self'"}
+frame_ancestors=${CSP_FRAME_ANCESTORS:-"'none'"}
 permissions_policy=${PERMISSIONS_POLICY:-"accelerometer=(), geolocation=(), gyroscope=(), magnetometer=(), payment=(), usb=()"}
 check_sources CSP_CONNECT_SRC "$connect_src"
 check_sources CSP_FRAME_SRC "$frame_src"
@@ -62,15 +62,20 @@ esac
 csp="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
 csp="$csp; img-src 'self' data: blob:; font-src 'self' data:"
 csp="$csp; connect-src $connect_src; frame-src $frame_src"
-csp="$csp; frame-ancestors $frame_ancestors"
 csp="$csp; object-src 'none'; base-uri 'self'; form-action 'self'"
 
-cat >"$OUT/security-headers.conf" <<EOF
-add_header Content-Security-Policy "$csp" always;
+# Only the embedded view, and the sign-in callback it comes back to, may be
+# framed by the hosts in CSP_FRAME_ANCESTORS.
+headers() {
+  cat <<EOF
+add_header Content-Security-Policy "$csp; frame-ancestors $1" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header Referrer-Policy "same-origin" always;
 add_header Permissions-Policy "$permissions_policy" always;
 EOF
+}
+headers "'none'" >"$OUT/security-headers.conf"
+headers "$frame_ancestors" >"$OUT/embed-headers.conf"
 
 # Without an upstream, /api answers 404 rather than the SPA fallback. The upstream is a
 # variable so nginx resolves it per request: the backend may start after the frontend.
