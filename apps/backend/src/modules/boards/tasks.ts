@@ -3,6 +3,7 @@ import { generateKeyBetween } from 'fractional-indexing'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { membersOf, roleOn } from './access.ts'
+import { plainText } from './markdown.ts'
 import { boards, sections, taskAssignees, tasks } from './schema.ts'
 
 export type Refusal =
@@ -13,6 +14,7 @@ export type Refusal =
   | 'stale_neighbours'
   | 'section_not_empty'
   | 'invalid_assignee'
+  | 'stale_version'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
 // Thrown, not returned, so the transaction rolls back whatever ran before it.
@@ -234,6 +236,42 @@ export function createTaskStore(db: Db) {
         await taskOf(tx, boardId, taskId)
         await tx.update(tasks).set(changes).where(eq(tasks.id, taskId))
         return null
+      })
+    },
+
+    getDescription(identity: Identity, boardId: string, taskId: string) {
+      return write(identity, async tx => {
+        if (!(await roleOn(tx, identity.userId, boardId))) {
+          throw new Refused('not_found')
+        }
+        const task = await taskOf(tx, boardId, taskId)
+        return { markdown: task.description, version: task.descriptionVersion }
+      })
+    },
+
+    setDescription(
+      identity: Identity,
+      boardId: string,
+      taskId: string,
+      edit: { markdown: string; version: number }
+    ) {
+      return write(identity, async tx => {
+        await checkRole(tx, identity, boardId, 'editor')
+        await bumpBoard(tx, boardId)
+        const task = await taskOf(tx, boardId, taskId)
+        if (task.descriptionVersion !== edit.version) {
+          throw new Refused('stale_version')
+        }
+        const version = edit.version + 1
+        await tx
+          .update(tasks)
+          .set({
+            description: edit.markdown,
+            descriptionText: plainText(edit.markdown),
+            descriptionVersion: version
+          })
+          .where(eq(tasks.id, taskId))
+        return { version }
       })
     },
 

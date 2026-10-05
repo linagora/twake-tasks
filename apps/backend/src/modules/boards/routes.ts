@@ -39,6 +39,11 @@ const taskChanges = z
 
 const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
 
+const descriptionEdit = z.object({
+  markdown: z.string().max(50_000),
+  version: z.int().min(0)
+})
+
 const sectionName = z.string().trim().min(1).max(100)
 const category = z.enum(sectionCategory.enumValues)
 
@@ -69,7 +74,8 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   invalid_section: 400,
   stale_neighbours: 409,
   section_not_empty: 409,
-  invalid_assignee: 400
+  invalid_assignee: 400,
+  stale_version: 409
 }
 
 function refuse(reply: FastifyReply, error: Refusal) {
@@ -235,6 +241,47 @@ export function registerBoards(
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()
+    }
+  )
+
+  app.get(
+    '/boards/:boardId/tasks/:taskId/description',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await taskStore.getDescription(
+        identity,
+        params.data.boardId,
+        params.data.taskId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return result.value
+    }
+  )
+
+  app.put(
+    '/boards/:boardId/tasks/:taskId/description',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = descriptionEdit.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await taskStore.setDescription(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        body.data
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return result.value
     }
   )
 
