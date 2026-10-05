@@ -181,7 +181,8 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   invalid_dates: 400,
   invalid_reminder: 400,
   label_taken: 409,
-  last_admin: 409
+  last_admin: 409,
+  key_prefix_taken: 409
 }
 
 function refuse(reply: FastifyReply, error: Refusal) {
@@ -251,6 +252,38 @@ export function registerBoards(
         identity,
         params.data.boardId,
         params.data.inviteId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.get(
+    '/spaces',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      return { spaces: await sharingStore.mySpaces(identity) }
+    }
+  )
+
+  app.post(
+    '/boards/:boardId/move',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = boardParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = z.object({ spaceId: z.uuid() }).safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await sharingStore.moveToSpace(
+        identity,
+        params.data.boardId,
+        body.data.spaceId
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()
