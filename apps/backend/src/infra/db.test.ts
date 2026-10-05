@@ -1,10 +1,11 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql as statement, type SQL } from 'drizzle-orm'
 import { afterAll, describe, expect, inject, it } from 'vitest'
 import {
   boardFavorites,
   boardMembers,
   boards,
-  sections
+  sections,
+  tasks
 } from '../modules/boards/schema.ts'
 import { aB2cUser, aUser, type TestUser } from '../testing/app.ts'
 import { assertRowLevelSecurity, createDb, inTenant } from './db.ts'
@@ -154,6 +155,59 @@ describe('inTenant', () => {
       inTenant(db, bob, tx => tx.insert(boardFavorites).values(favorite(alice)))
     ).rejects.toThrow()
   })
+})
+
+describe('tenant foreign keys', () => {
+  const FOREIGN_KEY_VIOLATION = '23503'
+  const stray: Record<string, (boardId: string, taskId: string) => SQL> = {
+    board_members: boardId =>
+      statement`insert into board_members (board_id, org_id, user_id, email, role)
+         values (${boardId}, null, uuidv7(), 'stray@example.com', 'viewer')`,
+    sections: boardId =>
+      statement`insert into sections (board_id, org_id, name, category, position)
+         values (${boardId}, null, 'Stray', 'unstarted', 'z0')`,
+    tasks: boardId =>
+      statement`insert into tasks (board_id, org_id, number, title, position, created_by)
+         values (${boardId}, null, 99, 'Stray', 'z0', uuidv7())`,
+    board_favorites: boardId =>
+      statement`insert into board_favorites (board_id, org_id, user_id)
+         values (${boardId}, null, uuidv7())`,
+    task_assignees: (_, taskId) =>
+      statement`insert into task_assignees (task_id, org_id, user_id)
+         values (${taskId}, null, uuidv7())`
+  }
+
+  // Row level security already refuses these, so it is lifted to reach the keys.
+  it.each(Object.entries(stray))(
+    'refuses a B2C row in %s on an organization board',
+    async (table, insert) => {
+      const owner = aUser()
+      const boardId = await aBoardOf(owner)
+      const [task] = await inTenant(db, owner, tx =>
+        tx
+          .insert(tasks)
+          .values({
+            boardId,
+            organizationId: owner.organizationId,
+            number: 1,
+            title: 'Logo',
+            position: 'a0',
+            createdBy: owner.userId
+          })
+          .returning({ id: tasks.id })
+      )
+
+      await expect(
+        db.transaction(async tx => {
+          await tx.execute(
+            statement`alter table ${statement.identifier(table)} no force row level security`
+          )
+          await tx.execute(insert(boardId, task?.id ?? ''))
+          tx.rollback()
+        })
+      ).rejects.toHaveProperty('cause.code', FOREIGN_KEY_VIOLATION)
+    }
+  )
 })
 
 describe('assertRowLevelSecurity', () => {

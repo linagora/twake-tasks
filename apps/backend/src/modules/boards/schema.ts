@@ -21,6 +21,7 @@ import {
   currentUser,
   organizationId,
   sortKey,
+  tenant,
   tenantPolicy,
   timestamptz
 } from '../../infra/db.ts'
@@ -53,10 +54,11 @@ export const boards = pgTable.withRLS(
     createdBy: uuid('created_by').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     archivedAt: timestamptz('archived_at'),
-    inbox: boolean().notNull().default(false)
+    inbox: boolean().notNull().default(false),
+    tenant: tenant()
   },
   table => [
-    unique().on(table.organizationId, table.id),
+    unique().on(table.tenant, table.id),
     unique().on(table.spaceId, table.keyPrefix),
     // Row level security splits a person's boards by organization, B2C included.
     unique()
@@ -101,13 +103,14 @@ export const boardMembers = pgTable.withRLS(
     organizationId: organizationId(),
     userId: uuid('user_id').notNull(),
     email: text().notNull(),
-    role: memberRole().notNull()
+    role: memberRole().notNull(),
+    tenant: tenant()
   },
   table => [
     primaryKey({ columns: [table.boardId, table.userId] }),
     foreignKey({
-      columns: [table.organizationId, table.boardId],
-      foreignColumns: [boards.organizationId, boards.id]
+      columns: [table.tenant, table.boardId],
+      foreignColumns: [boards.tenant, boards.id]
     }),
     // The flag is on while app_member_board_ids reads this table (see its migration).
     tenantPolicy(
@@ -127,14 +130,15 @@ export const sections = pgTable.withRLS(
     organizationId: organizationId(),
     name: text().notNull(),
     category: sectionCategory().notNull(),
-    position: sortKey().notNull()
+    position: sortKey().notNull(),
+    tenant: tenant()
   },
   table => [
     unique().on(table.boardId, table.id),
     unique().on(table.boardId, table.position),
     foreignKey({
-      columns: [table.organizationId, table.boardId],
-      foreignColumns: [boards.organizationId, boards.id]
+      columns: [table.tenant, table.boardId],
+      foreignColumns: [boards.tenant, boards.id]
     }),
     tenantPolicy(table.organizationId, visibleBoard(table.boardId))
   ]
@@ -157,10 +161,11 @@ export const tasks = pgTable.withRLS(
     createdBy: uuid('created_by').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     completedAt: timestamptz('completed_at'),
-    canceledAt: timestamptz('canceled_at')
+    canceledAt: timestamptz('canceled_at'),
+    tenant: tenant()
   },
   table => [
-    unique().on(table.organizationId, table.id),
+    unique().on(table.tenant, table.id),
     unique().on(table.boardId, table.number),
     // Tasks without a section share one order on the board.
     unique()
@@ -171,8 +176,8 @@ export const tasks = pgTable.withRLS(
       foreignColumns: [sections.boardId, sections.id]
     }),
     foreignKey({
-      columns: [table.organizationId, table.boardId],
-      foreignColumns: [boards.organizationId, boards.id]
+      columns: [table.tenant, table.boardId],
+      foreignColumns: [boards.tenant, boards.id]
     }),
     check('tasks_priority', sql`${table.priority} between 1 and 4`),
     tenantPolicy(table.organizationId, visibleBoard(table.boardId))
@@ -186,13 +191,14 @@ export const taskAssignees = pgTable.withRLS(
       .notNull()
       .references(() => tasks.id, { onDelete: 'cascade' }),
     organizationId: organizationId(),
-    userId: uuid('user_id').notNull()
+    userId: uuid('user_id').notNull(),
+    tenant: tenant()
   },
   table => [
     primaryKey({ columns: [table.taskId, table.userId] }),
     foreignKey({
-      columns: [table.organizationId, table.taskId],
-      foreignColumns: [tasks.organizationId, tasks.id]
+      columns: [table.tenant, table.taskId],
+      foreignColumns: [tasks.tenant, tasks.id]
     }),
     tenantPolicy(
       table.organizationId,
@@ -208,13 +214,14 @@ export const boardFavorites = pgTable.withRLS(
       .notNull()
       .references(() => boards.id, { onDelete: 'cascade' }),
     organizationId: organizationId(),
-    userId: uuid('user_id').notNull()
+    userId: uuid('user_id').notNull(),
+    tenant: tenant()
   },
   table => [
     primaryKey({ columns: [table.userId, table.boardId] }),
     foreignKey({
-      columns: [table.organizationId, table.boardId],
-      foreignColumns: [boards.organizationId, boards.id]
+      columns: [table.tenant, table.boardId],
+      foreignColumns: [boards.tenant, boards.id]
     }),
     tenantPolicy(table.organizationId, visibleBoard(table.boardId)),
     pgPolicy('own', {
