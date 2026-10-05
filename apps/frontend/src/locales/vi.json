@@ -182,6 +182,16 @@
     "unknown_section": "Không có mục tên %{name}.",
     "unknown_person": "Không có thành viên tên %{name}."
   },
+  "layout": {
+    "title": "Bố cục",
+    "board": "Bảng",
+    "list": "Danh sách",
+    "calendar": "Lịch",
+    "useAsDefault": "Đặt làm mặc định",
+    "previousMonth": "Tháng trước",
+    "nextMonth": "Tháng sau",
+    "noDate": "Không có ngày"
+  },
   "search": {
     "label": "Tìm kiếm",
     "results": "Kết quả cho “%{text}”",

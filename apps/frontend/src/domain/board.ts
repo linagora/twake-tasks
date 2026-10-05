@@ -66,6 +66,10 @@ export interface Label {
 
 export const MAX_TASK_DEPTH = 4
 
+export const LAYOUTS = ['board', 'list', 'calendar'] as const
+
+export type Layout = (typeof LAYOUTS)[number]
+
 export interface Board {
   id: string
   name: string
@@ -75,6 +79,8 @@ export interface Board {
   archived: boolean
   version: number
   role: Role
+  layout: Layout
+  defaultLayout: Layout
   members: Person[]
   labels: Label[]
   sections: Section[]

@@ -4,7 +4,8 @@ import { Link as RouterLink, useParams } from 'react-router'
 
 import { ApiError } from '@/application/boards'
 import { Column, Columns } from '@/ds/Columns'
-import type { Board, Section } from '@/domain/board'
+import type { Board, Section, Task } from '@/domain/board'
+import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { TaskCard } from '@/ui/boards/TaskCard'
@@ -48,24 +49,57 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
     ...board.sections.map(section => ({ ...section, section }))
   ]
 
+  const card = (task: Task) => (
+    <TaskCard
+      key={task.id}
+      task={task}
+      tasks={board.tasks}
+      boardId={board.id}
+      members={board.members}
+      labels={board.labels}
+      destinations={board.sections.filter(
+        section => section.id !== task.sectionId
+      )}
+      onMove={
+        editable
+          ? sectionId => {
+              move.mutate({ taskId: task.id, move: { sectionId } })
+            }
+          : undefined
+      }
+    />
+  )
+  const addTask = (column: (typeof columns)[number]) =>
+    editable && (
+      <AddTask
+        boardId={board.id}
+        sectionId={column.id}
+        sectionName={column.name}
+      />
+    )
+  const tasksIn = (column: (typeof columns)[number]) =>
+    topLevel.filter(task => task.sectionId === column.id)
+
   return (
     <>
-      <Typography variant="h3" component="h1" className="u-mt-1 u-mb-2">
-        {board.name}
-      </Typography>
+      <div className="u-flex u-flex-items-center u-mt-1 u-mb-2">
+        <Typography variant="h3" component="h1">
+          {board.name}
+        </Typography>
+        <LayoutSwitch board={board} />
+      </div>
       {move.isError && (
         <Typography role="alert" className="u-mb-1">
           {t('board.moveFailed')}
         </Typography>
       )}
-      <Columns>
-        {columns.map(column => {
-          const tasks = topLevel.filter(task => task.sectionId === column.id)
-          return (
+      {board.layout === 'board' && (
+        <Columns>
+          {columns.map(column => (
             <Column
               key={column.id ?? 'none'}
               title={column.name}
-              count={tasks.length}
+              count={tasksIn(column).length}
               actions={
                 manageable &&
                 column.section && (
@@ -73,38 +107,27 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
                 )
               }
             >
-              {tasks.map(task => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  tasks={board.tasks}
-                  boardId={board.id}
-                  members={board.members}
-                  labels={board.labels}
-                  destinations={board.sections.filter(
-                    section => section.id !== task.sectionId
-                  )}
-                  onMove={
-                    editable
-                      ? sectionId => {
-                          move.mutate({ taskId: task.id, move: { sectionId } })
-                        }
-                      : undefined
-                  }
-                />
-              ))}
-              {editable && (
-                <AddTask
-                  boardId={board.id}
-                  sectionId={column.id}
-                  sectionName={column.name}
-                />
-              )}
+              {tasksIn(column).map(card)}
+              {addTask(column)}
             </Column>
-          )
-        })}
-        {manageable && <NewSectionButton board={board} />}
-      </Columns>
+          ))}
+          {manageable && <NewSectionButton board={board} />}
+        </Columns>
+      )}
+      {board.layout === 'list' && (
+        <ListLayout
+          columns={columns.map(column => ({
+            key: column.id ?? 'none',
+            name: column.name,
+            tasks: tasksIn(column),
+            footer: addTask(column)
+          }))}
+          card={card}
+        />
+      )}
+      {board.layout === 'calendar' && (
+        <CalendarLayout tasks={topLevel} card={card} />
+      )}
     </>
   )
 }

@@ -72,6 +72,10 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
     getBoard: boardId => call('GET', `/boards/${boardId}`),
     createBoard: board => call('POST', '/boards', board),
+    setLayout: (boardId, layout) =>
+      call('PUT', `/boards/${boardId}/layout`, { layout }),
+    setDefaultLayout: (boardId, layout) =>
+      call('PUT', `/boards/${boardId}/default-layout`, { layout }),
     setFavorite: (boardId, favorite) =>
       call(favorite ? 'PUT' : 'DELETE', `/boards/${boardId}/favorite`),
     createTask: (boardId, task) =>

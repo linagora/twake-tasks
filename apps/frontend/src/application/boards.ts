@@ -2,6 +2,7 @@ import type {
   Board,
   BoardSummary,
   Label,
+  Layout,
   Person,
   Section,
   Task
@@ -114,6 +115,10 @@ export interface BoardsApi {
   getBoard: (boardId: string) => Promise<Board>
   createBoard: (board: NewBoard) => Promise<Board>
   setFavorite: (boardId: string, favorite: boolean) => Promise<void>
+  /** The signed-in person's own layout for the board. */
+  setLayout: (boardId: string, layout: Layout) => Promise<void>
+  /** The layout of everyone who has not picked their own. Admins only. */
+  setDefaultLayout: (boardId: string, layout: Layout) => Promise<void>
   createTask: (
     boardId: string,
     task: NewTask

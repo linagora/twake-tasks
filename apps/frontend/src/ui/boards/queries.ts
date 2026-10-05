@@ -20,7 +20,7 @@ import type {
   SavedFilter,
   TaskMove
 } from '@/application/boards'
-import type { Board, BoardSummary } from '@/domain/board'
+import type { Board, BoardSummary, Layout } from '@/domain/board'
 import { quickAdd } from '@/application/quickAdd'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
@@ -258,6 +258,32 @@ export function useQuickAdd(): UseMutationResult<
   return useMutation({
     mutationFn: (line: string) => quickAdd(api, line, localToday()),
     onSuccess: ({ boardId }) =>
+      queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+  })
+}
+
+export function useSetLayout(
+  boardId: string
+): UseMutationResult<void, Error, { layout: Layout; everyone: boolean }> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ layout, everyone }) =>
+      everyone
+        ? api.setDefaultLayout(boardId, layout)
+        : api.setLayout(boardId, layout),
+    onMutate: ({ layout, everyone }) => {
+      queryClient.setQueryData<Board>(
+        boardKey(boardId),
+        board =>
+          board && {
+            ...board,
+            layout,
+            defaultLayout: everyone ? layout : board.defaultLayout
+          }
+      )
+    },
+    onSettled: () =>
       queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
   })
 }

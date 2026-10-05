@@ -182,6 +182,16 @@
     "unknown_section": "Нет раздела %{name}.",
     "unknown_person": "Нет участника %{name}."
   },
+  "layout": {
+    "title": "Вид",
+    "board": "Доска",
+    "list": "Список",
+    "calendar": "Календарь",
+    "useAsDefault": "Сделать видом по умолчанию",
+    "previousMonth": "Предыдущий месяц",
+    "nextMonth": "Следующий месяц",
+    "noDate": "Без даты"
+  },
   "search": {
     "label": "Поиск",
     "results": "Результаты по запросу «%{text}»",
