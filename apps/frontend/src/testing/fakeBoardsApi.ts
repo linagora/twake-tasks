@@ -144,6 +144,23 @@ export function fakeBoardsApi(boards: Board[] = []) {
         )
       })
     ),
+    search: vi.fn<BoardsApi['search']>(text =>
+      Promise.resolve(
+        [...store.values()].flatMap(board =>
+          board.tasks
+            .filter(
+              task =>
+                task.key.toLowerCase().startsWith(text.toLowerCase()) ||
+                task.title.toLowerCase().includes(text.toLowerCase())
+            )
+            .map(task => ({
+              ...structuredClone(task),
+              boardId: board.id,
+              boardName: board.name
+            }))
+        )
+      )
+    ),
     agenda: vi.fn<BoardsApi['agenda']>((_zone, days) =>
       Promise.resolve().then(() => {
         const today = new Intl.DateTimeFormat('en-CA').format(new Date())

@@ -182,6 +182,12 @@
     "unknown_section": "Aucune section nommée %{name}.",
     "unknown_person": "Aucun membre nommé %{name}."
   },
+  "search": {
+    "label": "Rechercher",
+    "results": "Résultats pour « %{text} »",
+    "empty": "Aucune tâche ne correspond.",
+    "failed": "La recherche a échoué."
+  },
   "filters": {
     "title": "Filtres",
     "empty": "Aucun filtre enregistré.",

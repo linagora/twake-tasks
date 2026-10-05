@@ -59,6 +59,13 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
           `/filters/${filterId}/tasks?${new URLSearchParams({ zone }).toString()}`
         )
       ).tasks,
+    search: async text =>
+      (
+        await call<{ tasks: AgendaTask[] }>(
+          'GET',
+          `/search?${new URLSearchParams({ q: text }).toString()}`
+        )
+      ).tasks,
     myTasks: async () =>
       (await call<{ tasks: AgendaTask[] }>('GET', '/my-tasks')).tasks,
     listBoards: async () =>

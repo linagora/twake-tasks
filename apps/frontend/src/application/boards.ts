@@ -106,6 +106,8 @@ export interface BoardsApi {
   filteredTasks: (filterId: string, zone: string) => Promise<AgendaTask[]>
   /** Overdue tasks, then those due within `days` days of today in `zone`. */
   agenda: (zone: string, days: number) => Promise<Agenda>
+  /** Tasks whose key starts with, or whose title or description contains, `text`. */
+  search: (text: string) => Promise<AgendaTask[]>
   /** Open tasks assigned to the signed-in person, dated ones first. */
   myTasks: () => Promise<AgendaTask[]>
   listBoards: () => Promise<BoardSummary[]>

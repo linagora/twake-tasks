@@ -8,6 +8,7 @@ import {
 
 import type {
   Agenda,
+  AgendaTask,
   BoardsApi,
   Comment,
   Description,
@@ -46,6 +47,15 @@ export function useAgenda(view: AgendaView): UseQueryResult<Agenda> {
         ? { today: localToday(), tasks: await api.myTasks() }
         : api.agenda(localZone(), AGENDA_DAYS[view])
     }
+  })
+}
+
+export function useSearch(text: string): UseQueryResult<AgendaTask[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: ['search', text],
+    queryFn: () => api.search(text),
+    enabled: text.trim() !== ''
   })
 }
 
