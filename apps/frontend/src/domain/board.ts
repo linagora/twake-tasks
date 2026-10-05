@@ -40,6 +40,7 @@ export interface Task {
   dueZone: string | null
   deadline: string | null
   duration: Duration | null
+  recurrence: Recurrence | null
   completedAt: string | null
   canceledAt: string | null
   assignees: Person[]
@@ -49,6 +50,13 @@ export interface Task {
 export interface Duration {
   amount: number
   unit: 'minutes' | 'days'
+}
+
+/** Completing a recurring task moves its due date instead of closing it. */
+export interface Recurrence {
+  every: number
+  unit: 'days' | 'weeks' | 'months' | 'years'
+  fromCompletion: boolean
 }
 
 export interface Label {

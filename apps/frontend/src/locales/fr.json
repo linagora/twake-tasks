@@ -110,7 +110,25 @@
     "unitDays": "Jours",
     "minutes": "%{amount} min",
     "days": "%{amount} j",
-    "saveFailed": "Les dates n'ont pas pu être enregistrées."
+    "saveFailed": "Les dates n'ont pas pu être enregistrées.",
+    "repeatEvery": "Répéter tous les",
+    "fromCompletion": "À partir de la date d'achèvement",
+    "units": {
+      "days": "Jours",
+      "weeks": "Semaines",
+      "months": "Mois",
+      "years": "Ans"
+    },
+    "every": {
+      "days": "Chaque jour |||| Tous les %{smart_count} jours",
+      "weeks": "Chaque semaine |||| Toutes les %{smart_count} semaines",
+      "months": "Chaque mois |||| Tous les %{smart_count} mois",
+      "years": "Chaque année |||| Tous les %{smart_count} ans",
+      "daysAfterCompletion": "Chaque jour après l'achèvement |||| Tous les %{smart_count} jours après l'achèvement",
+      "weeksAfterCompletion": "Chaque semaine après l'achèvement |||| Toutes les %{smart_count} semaines après l'achèvement",
+      "monthsAfterCompletion": "Chaque mois après l'achèvement |||| Tous les %{smart_count} mois après l'achèvement",
+      "yearsAfterCompletion": "Chaque année après l'achèvement |||| Tous les %{smart_count} ans après l'achèvement"
+    }
   },
   "section": {
     "new": "Nouvelle section",
