@@ -14,6 +14,7 @@ import {
   tasks
 } from './schema.ts'
 import { labelsOn } from './labels.ts'
+import { recurrenceOf } from './recurrence.ts'
 
 const DEFAULT_SECTIONS = [
   { name: 'To do', category: 'unstarted' },
@@ -234,6 +235,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
         task.duration && task.durationUnit
           ? { amount: task.duration, unit: task.durationUnit }
           : null,
+      recurrence: recurrenceOf(task),
       completedAt: task.completedAt,
       canceledAt: task.canceledAt,
       // Someone who left the board stays assigned, but is not shown.

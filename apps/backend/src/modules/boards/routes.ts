@@ -6,7 +6,7 @@ import type { RequireIdentity } from '../auth/index.ts'
 import { createCommentStore } from './comments.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
-import { durationUnit, sectionCategory } from './schema.ts'
+import { durationUnit, recurrenceUnit, sectionCategory } from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
 import { createTaskStore, type Refusal } from './tasks.ts'
@@ -58,6 +58,13 @@ const taskChanges = z
       .object({
         amount: z.int().min(1).max(100_000),
         unit: z.enum(durationUnit.enumValues)
+      })
+      .nullable(),
+    recurrence: z
+      .object({
+        every: z.int().min(1).max(1000),
+        unit: z.enum(recurrenceUnit.enumValues),
+        fromCompletion: z.boolean()
       })
       .nullable()
   })

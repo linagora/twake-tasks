@@ -4,6 +4,12 @@ import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { membersOf, roleOn } from './access.ts'
 import { plainText } from './markdown.ts'
+import {
+  nextOccurrence,
+  recurrenceOf,
+  todayIn,
+  type Recurrence
+} from './recurrence.ts'
 import { boards, sections, taskAssignees, tasks } from './schema.ts'
 
 export type Refusal =
@@ -174,11 +180,13 @@ export interface TaskChanges {
   dueZone?: Maybe<string | null>
   deadline?: Maybe<string | null>
   duration?: Maybe<{ amount: number; unit: 'minutes' | 'days' } | null>
+  recurrence?: Maybe<Recurrence | null>
 }
 
-// Clearing the due date clears its time, and clearing the time its zone.
+// Clearing the due date clears its time and its recurrence, and clearing the
+// time its zone.
 function withDates(task: typeof tasks.$inferSelect, changes: TaskChanges) {
-  const { duration, ...fields } = changes
+  const { duration, recurrence, ...fields } = changes
   const dueDate = changes.dueDate === undefined ? task.dueDate : changes.dueDate
   const dueTime =
     dueDate === null
@@ -186,9 +194,17 @@ function withDates(task: typeof tasks.$inferSelect, changes: TaskChanges) {
       : changes.dueTime === undefined
         ? task.dueTime
         : changes.dueTime
-  if (changes.dueTime && dueDate === null) throw new Refused('invalid_dates')
+  if ((changes.dueTime || recurrence) && dueDate === null) {
+    throw new Refused('invalid_dates')
+  }
+  const rule = dueDate === null ? null : recurrence
   return {
     ...fields,
+    ...(rule !== undefined && {
+      recurEvery: rule?.every ?? null,
+      recurUnit: rule?.unit ?? null,
+      recurFromCompletion: rule?.fromCompletion ?? false
+    }),
     dueTime,
     dueZone:
       dueTime === null
@@ -201,6 +217,23 @@ function withDates(task: typeof tasks.$inferSelect, changes: TaskChanges) {
       durationUnit: duration?.unit ?? null
     })
   }
+}
+
+// A recurring task stays open: completing it records the completion and moves
+// the due date to the next occurrence. Returns false for any other task.
+async function recur(tx: Tx, task: typeof tasks.$inferSelect) {
+  const rule = recurrenceOf(task)
+  if (!rule || task.dueDate === null) return false
+  await tx.execute(
+    sql`select log_task_change(${task.id}, ${task.organizationId}, 'completion', null, '"completed"'::jsonb)`
+  )
+  await tx
+    .update(tasks)
+    .set({
+      dueDate: nextOccurrence(task.dueDate, rule, todayIn(task.dueZone))
+    })
+    .where(eq(tasks.id, task.id))
+  return true
 }
 
 export function createTaskStore(db: Db) {
@@ -283,6 +316,9 @@ export function createTaskStore(db: Db) {
         const section = await sectionOf(tx, boardId, input.sectionId)
         const task = await taskOf(tx, boardId, taskId)
         if (task.parentId !== null) throw new Refused('invalid_section')
+        if (section?.category === 'completed' && (await recur(tx, task))) {
+          return null
+        }
         const others = await tx
           .select({ id: tasks.id, position: tasks.position })
           .from(tasks)
@@ -330,6 +366,7 @@ export function createTaskStore(db: Db) {
         await bumpBoard(tx, boardId)
         const task = await taskOf(tx, boardId, taskId)
         if (task.sectionId !== null) throw new Refused('invalid_section')
+        if (state === 'completed' && (await recur(tx, task))) return null
         await tx
           .update(tasks)
           .set(completionFor(state, task))

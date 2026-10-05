@@ -40,6 +40,13 @@ export const sectionCategory = pgEnum('section_category', [
 
 export const durationUnit = pgEnum('duration_unit', ['minutes', 'days'])
 
+export const recurrenceUnit = pgEnum('recurrence_unit', [
+  'days',
+  'weeks',
+  'months',
+  'years'
+])
+
 const id = () =>
   uuid()
     .primaryKey()
@@ -172,6 +179,12 @@ export const tasks = pgTable.withRLS(
     deadline: date({ mode: 'string' }),
     duration: integer(),
     durationUnit: durationUnit('duration_unit'),
+    recurEvery: integer('recur_every'),
+    recurUnit: recurrenceUnit('recur_unit'),
+    // "every!" in quick add: the next date counts from the completion day.
+    recurFromCompletion: boolean('recur_from_completion')
+      .notNull()
+      .default(false),
     position: sortKey().notNull(),
     createdBy: uuid('created_by').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
@@ -216,6 +229,14 @@ export const tasks = pgTable.withRLS(
     check(
       'tasks_duration',
       sql`(${table.duration} is null) = (${table.durationUnit} is null) and ${table.duration} > 0`
+    ),
+    check(
+      'tasks_recurrence',
+      sql`(${table.recurEvery} is null) = (${table.recurUnit} is null) and ${table.recurEvery} > 0`
+    ),
+    check(
+      'tasks_recurrence_on_a_date',
+      sql`${table.recurEvery} is null or ${table.dueDate} is not null`
     ),
     tenantPolicy(table.organizationId, visibleBoard(table.boardId))
   ]
