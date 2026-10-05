@@ -26,6 +26,8 @@ const configSchema = z
     OIDC_AUDIENCE: z.string().min(1).default('twaketasks'),
     OIDC_CLIENT_ID: z.string().min(1).default('twaketasks-backend'),
     OIDC_CLIENT_SECRET: z.string().min(1),
+    SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),
+    MAIL_FROM: z.string().min(1).default('Twake Tasks <tasks@twake.app>'),
     HTTP_HOST: z.string().min(1).default('0.0.0.0'),
     HTTP_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
     LOG_LEVEL: z

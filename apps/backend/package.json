@@ -23,6 +23,7 @@
     "jose": "^6.2.12",
     "mdast-util-from-markdown": "^2.1.0",
     "mdast-util-to-string": "^4.0.0",
+    "nodemailer": "^10.0.15",
     "openid-client": "^6.8.8",
     "pino": "^10.4.0",
     "postgres": "^3.4.9",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^12.2.0",
+    "@types/nodemailer": "^8.0.2",
     "drizzle-kit": "1.0.0-rc.4"
   }
 }

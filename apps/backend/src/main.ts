@@ -10,10 +10,15 @@ import {
   startDeadLetterProducer,
   startProducer
 } from './infra/kafka.ts'
+import { createMailer } from './infra/mail.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { accountRoutes } from './modules/boards/accounts.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
 import { listenToBoards } from './modules/boards/live.ts'
+import {
+  emailNotification,
+  NOTIFICATION_EMAIL_JOB
+} from './modules/boards/notificationEmails.ts'
 import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
 import {
   PURGE_SPACE_JOB,
@@ -69,7 +74,11 @@ const stopScheduler = createScheduler({
   handlers: {
     [REMINDER_JOB]: deliverReminder,
     [PURGE_JOB]: purgeTask,
-    [PURGE_SPACE_JOB]: purgeSpace
+    [PURGE_SPACE_JOB]: purgeSpace,
+    [NOTIFICATION_EMAIL_JOB]: emailNotification({
+      appUrl: config.APP_URL,
+      send: createMailer(config, logger)
+    })
   }
 }).start(5000)
 const stopRelay = createRelay({
