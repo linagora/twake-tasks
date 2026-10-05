@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query'
 
 import type {
+  Agenda,
   BoardsApi,
   Comment,
   Description,
@@ -20,10 +21,18 @@ import type {
 import type { Board, BoardSummary } from '@/domain/board'
 import { quickAdd } from '@/application/quickAdd'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
-import { localToday } from '@/ui/boards/dueLabel'
+import { localToday, localZone } from '@/ui/boards/dueLabel'
 
 const boardsKey = ['boards'] as const
 const boardKey = (boardId: string) => ['boards', boardId] as const
+
+export function useAgenda(days: number): UseQueryResult<Agenda> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: ['agenda', days],
+    queryFn: () => api.agenda(localZone(), days)
+  })
+}
 
 export function useBoards(): UseQueryResult<BoardSummary[]> {
   const api = useBoardsApi()

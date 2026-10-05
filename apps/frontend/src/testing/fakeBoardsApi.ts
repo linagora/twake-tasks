@@ -99,6 +99,31 @@ export function fakeBoardsApi(boards: Board[] = []) {
   }
 
   const api = {
+    agenda: vi.fn<BoardsApi['agenda']>((_zone, days) =>
+      Promise.resolve().then(() => {
+        const today = new Intl.DateTimeFormat('en-CA').format(new Date())
+        const until = new Date(`${today}T00:00:00Z`)
+        until.setUTCDate(until.getUTCDate() + days)
+        const end = until.toISOString().slice(0, 10)
+        const tasks = [...store.values()].flatMap(board =>
+          board.tasks
+            .filter(
+              task =>
+                task.dueDate !== null &&
+                task.dueDate < end &&
+                !task.completedAt &&
+                !task.canceledAt
+            )
+            .map(task => ({
+              ...structuredClone(task),
+              boardId: board.id,
+              boardName: board.name
+            }))
+        )
+        tasks.sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? ''))
+        return { today, tasks }
+      })
+    ),
     listBoards: vi.fn(() =>
       Promise.resolve(
         [...store.values()]

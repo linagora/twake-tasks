@@ -181,5 +181,12 @@
     "unknown_board": "No board named %{name}.",
     "unknown_section": "No section named %{name}.",
     "unknown_person": "No member named %{name}."
+  },
+  "agenda": {
+    "today": "Today",
+    "upcoming": "Upcoming",
+    "overdue": "Overdue",
+    "empty": "Nothing due.",
+    "loadFailed": "Your tasks could not be loaded."
   }
 }

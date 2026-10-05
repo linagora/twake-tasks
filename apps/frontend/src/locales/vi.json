@@ -181,5 +181,12 @@
     "unknown_board": "Không có bảng tên %{name}.",
     "unknown_section": "Không có mục tên %{name}.",
     "unknown_person": "Không có thành viên tên %{name}."
+  },
+  "agenda": {
+    "today": "Hôm nay",
+    "upcoming": "Sắp tới",
+    "overdue": "Quá hạn",
+    "empty": "Không có việc đến hạn.",
+    "loadFailed": "Không thể tải công việc."
   }
 }

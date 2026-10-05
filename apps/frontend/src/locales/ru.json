@@ -181,5 +181,12 @@
     "unknown_board": "Нет доски %{name}.",
     "unknown_section": "Нет раздела %{name}.",
     "unknown_person": "Нет участника %{name}."
+  },
+  "agenda": {
+    "today": "Сегодня",
+    "upcoming": "Предстоящие",
+    "overdue": "Просрочено",
+    "empty": "Ничего не запланировано.",
+    "loadFailed": "Не удалось загрузить задачи."
   }
 }
