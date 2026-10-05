@@ -37,6 +37,18 @@ const userinfoSchema = z.object({
   org_role: organizationRole.nullish().catch(null)
 })
 
+// openid-client URL-encodes Basic credentials, turning "-" into "%2D", and
+// LemonLDAP only decodes them from 2.23. Raw ones work on every version as
+// long as the id and secret hold no "%" or ":".
+function rawClientSecretBasic(clientSecret: string): client.ClientAuth {
+  return (_server, { client_id }, _body, headers) => {
+    headers.set(
+      'authorization',
+      `Basic ${btoa(`${client_id}:${clientSecret}`)}`
+    )
+  }
+}
+
 function hasAudience(aud: string | string[] | undefined, audience: string) {
   return Array.isArray(aud) ? aud.includes(audience) : aud === audience
 }
@@ -48,7 +60,7 @@ export async function discoverIdentityProvider(
     options.issuer,
     options.clientId,
     undefined,
-    client.ClientSecretBasic(options.clientSecret),
+    rawClientSecretBasic(options.clientSecret),
     { timeout: 5 }
   )
   const metadata = config.serverMetadata()
