@@ -8,7 +8,7 @@ import { useAgenda, useFilters, type AgendaView } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
-function Group({
+export function Group({
   label,
   tasks
 }: {

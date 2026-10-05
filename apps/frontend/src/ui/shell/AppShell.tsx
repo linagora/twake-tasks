@@ -9,6 +9,7 @@ import {
 import { useState, type ReactElement } from 'react'
 import { Outlet, Link as RouterLink } from 'react-router'
 
+import { SearchField } from '@/ui/agenda/SearchScreen'
 import { QuickAdd } from '@/ui/shell/QuickAdd'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
@@ -41,8 +42,9 @@ export function AppShell(): ReactElement {
             {t('filters.title')}
           </Link>
         </nav>
+        <SearchField />
         <Button
-          className="u-ml-auto u-mr-1"
+          className="u-ml-1 u-mr-1"
           onClick={() => {
             setQuickAdd(true)
           }}
