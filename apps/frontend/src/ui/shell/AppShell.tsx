@@ -27,7 +27,7 @@ export function AppShell(): ReactElement {
           {t('app.name')}
         </Link>
         <nav className="u-ml-2">
-          {(['today', 'upcoming'] as const).map(view => (
+          {(['today', 'upcoming', 'mine'] as const).map(view => (
             <Link
               key={view}
               component={RouterLink}
