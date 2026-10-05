@@ -87,12 +87,12 @@ function validToken(): FakeToken {
     introspection: {
       active: true,
       sub: 'alice@example.com',
-      sid: 'session-1',
       exp: now() + 300,
       aud: ['twaketasks']
     },
     userinfo: {
       sub: 'alice@example.com',
+      sid: 'session-1',
       email: 'alice@example.com',
       org_id: 'org-1',
       org_role: 'member'
@@ -164,7 +164,6 @@ describe('identify', () => {
     ['expired', { exp: now() - 1 }],
     ['without aud', { aud: undefined }],
     ['for another audience', { aud: 'tmail' }],
-    ['without sid', { sid: undefined }],
     ['for another subject', { sub: 'bob@example.com' }]
   ])('refuses a token %s', async (_case, override) => {
     const token = validToken()
@@ -174,9 +173,12 @@ describe('identify', () => {
     await expect(provider.identify('token')).resolves.toBeNull()
   })
 
-  it('refuses a token whose userinfo has no email', async () => {
+  it.each([
+    ['no email', { email: undefined }],
+    ['no sid', { sid: undefined }]
+  ])('refuses a token whose userinfo has %s', async (_case, override) => {
     const token = validToken()
-    token.userinfo = { ...token.userinfo, email: undefined }
+    token.userinfo = { ...token.userinfo, ...override }
     const { provider } = await setUp({ token })
 
     await expect(provider.identify('token')).resolves.toBeNull()
