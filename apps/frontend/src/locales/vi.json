@@ -80,6 +80,10 @@
     "priorityCleared": "%{actor} đã bỏ độ ưu tiên",
     "dueDate": "%{actor} đã đặt hạn %{date}",
     "dueDateCleared": "%{actor} đã bỏ hạn",
+    "deadline": "%{actor} đã đặt hạn chót %{date}",
+    "deadlineCleared": "%{actor} đã bỏ hạn chót",
+    "duration": "%{actor} đã đặt thời lượng %{duration}",
+    "durationCleared": "%{actor} đã bỏ thời lượng",
     "section": "%{actor} đã chuyển sang %{section}",
     "completed": "%{actor} đã hoàn thành",
     "canceled": "%{actor} đã hủy",
@@ -91,6 +95,22 @@
     "unlabeled": "%{actor} đã bỏ nhãn %{name}",
     "someone": "người đã rời bảng",
     "someLabel": "nhãn đã xóa"
+  },
+  "dates": {
+    "edit": "Sửa ngày",
+    "save": "Lưu ngày",
+    "dueDate": "Hạn",
+    "time": "Giờ",
+    "pin": "Giữ giờ này theo %{zone}",
+    "deadline": "Hạn chót",
+    "deadlineOn": "Hạn chót %{date}",
+    "duration": "Thời lượng",
+    "unit": "Đơn vị",
+    "unitMinutes": "Phút",
+    "unitDays": "Ngày",
+    "minutes": "%{amount} phút",
+    "days": "%{amount} ngày",
+    "saveFailed": "Không thể lưu ngày."
   },
   "section": {
     "new": "Mục mới",

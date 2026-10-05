@@ -22,6 +22,7 @@ import { useId, useState, type ReactElement } from 'react'
 
 import { Card, Row } from '@/ds/Columns'
 import type { Label, Person, Section, Task } from '@/domain/board'
+import { dueLabel } from '@/ui/boards/dueLabel'
 import { LabelsDialog } from '@/ui/boards/LabelsDialog'
 import { useBoardChange } from '@/ui/boards/queries'
 import { Subtasks } from '@/ui/boards/Subtasks'
@@ -58,12 +59,7 @@ export function TaskCard({
   const [labeling, setLabeling] = useState(false)
   const [open, setOpen] = useState(false)
   const editable = onMove !== undefined
-  const due =
-    task.dueDate &&
-    new Intl.DateTimeFormat(lang, {
-      dateStyle: 'medium',
-      timeZone: 'UTC'
-    }).format(new Date(task.dueDate))
+  const due = dueLabel(task, lang)
   const choose = (action: () => void) => () => {
     setMenuAnchor(null)
     action()

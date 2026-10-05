@@ -80,6 +80,10 @@
     "priorityCleared": "%{actor} removed the priority",
     "dueDate": "%{actor} set the due date to %{date}",
     "dueDateCleared": "%{actor} removed the due date",
+    "deadline": "%{actor} set the deadline to %{date}",
+    "deadlineCleared": "%{actor} removed the deadline",
+    "duration": "%{actor} set the duration to %{duration}",
+    "durationCleared": "%{actor} removed the duration",
     "section": "%{actor} moved it to %{section}",
     "completed": "%{actor} completed it",
     "canceled": "%{actor} canceled it",
@@ -91,6 +95,22 @@
     "unlabeled": "%{actor} removed the label %{name}",
     "someone": "someone who left the board",
     "someLabel": "a deleted label"
+  },
+  "dates": {
+    "edit": "Edit dates",
+    "save": "Save dates",
+    "dueDate": "Due date",
+    "time": "Time",
+    "pin": "Keep this time in %{zone}",
+    "deadline": "Deadline",
+    "deadlineOn": "Deadline %{date}",
+    "duration": "Duration",
+    "unit": "Unit",
+    "unitMinutes": "Minutes",
+    "unitDays": "Days",
+    "minutes": "%{amount} min",
+    "days": "%{amount} d",
+    "saveFailed": "The dates could not be saved."
   },
   "section": {
     "new": "New section",

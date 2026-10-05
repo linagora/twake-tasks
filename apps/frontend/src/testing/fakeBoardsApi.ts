@@ -46,6 +46,10 @@ export function aTask(section: Section | null, overrides: Partial<Task> = {}) {
     title: 'Logo',
     priority: null,
     dueDate: null,
+    dueTime: null,
+    dueZone: null,
+    deadline: null,
+    duration: null,
     completedAt: null,
     canceledAt: null,
     assignees: [],
@@ -159,6 +163,11 @@ export function fakeBoardsApi(boards: Board[] = []) {
         if (index < 0) board.tasks.push(task)
         else board.tasks.splice(index, 0, task)
         board.version += 1
+      })
+    ),
+    editTask: vi.fn<BoardsApi['editTask']>((boardId, taskId, changes) =>
+      Promise.resolve().then(() => {
+        Object.assign(findTask(boardId, taskId), changes)
       })
     ),
     getDescription: vi.fn<BoardsApi['getDescription']>((boardId, taskId) =>

@@ -2,7 +2,7 @@ import { Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 
 import type { HistoryEntry } from '@/application/boards'
-import type { Board, Task } from '@/domain/board'
+import type { Board, Duration, Task } from '@/domain/board'
 import { useBoard, useHistory } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -32,6 +32,19 @@ function describe(
       return added
         ? t('history.dueDate', { actor, date: value })
         : t('history.dueDateCleared', { actor })
+    case 'deadline':
+      return added
+        ? t('history.deadline', { actor, date: value })
+        : t('history.deadlineCleared', { actor })
+    case 'duration': {
+      const duration = entry.to as Duration | null
+      return duration
+        ? t('history.duration', {
+            actor,
+            duration: t(`dates.${duration.unit}`, { amount: duration.amount })
+          })
+        : t('history.durationCleared', { actor })
+    }
     case 'section':
       return t('history.section', {
         actor,

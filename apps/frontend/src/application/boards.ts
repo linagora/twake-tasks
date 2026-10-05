@@ -24,6 +24,19 @@ export interface TaskMove {
   beforeId?: string
 }
 
+export type TaskChanges = Partial<
+  Pick<
+    Task,
+    | 'title'
+    | 'priority'
+    | 'dueDate'
+    | 'dueTime'
+    | 'dueZone'
+    | 'deadline'
+    | 'duration'
+  >
+>
+
 export interface Description {
   markdown: string
   version: number
@@ -68,6 +81,12 @@ export interface BoardsApi {
     boardId: string,
     taskId: string,
     state: Completion
+  ) => Promise<void>
+  /** Clearing the due date clears its time, and clearing the time its zone. */
+  editTask: (
+    boardId: string,
+    taskId: string,
+    changes: TaskChanges
   ) => Promise<void>
   getDescription: (boardId: string, taskId: string) => Promise<Description>
   /** `version` is the one the edit started from; a newer one is refused. */
