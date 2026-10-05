@@ -41,6 +41,11 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
   }
 
   return {
+    agenda: (zone, days) =>
+      call(
+        'GET',
+        `/agenda?${new URLSearchParams({ zone, days: String(days) }).toString()}`
+      ),
     listBoards: async () =>
       (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
     getBoard: boardId => call('GET', `/boards/${boardId}`),

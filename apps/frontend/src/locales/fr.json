@@ -181,5 +181,12 @@
     "unknown_board": "Aucun tableau nommé %{name}.",
     "unknown_section": "Aucune section nommée %{name}.",
     "unknown_person": "Aucun membre nommé %{name}."
+  },
+  "agenda": {
+    "today": "Aujourd'hui",
+    "upcoming": "À venir",
+    "overdue": "En retard",
+    "empty": "Rien à faire.",
+    "loadFailed": "Vos tâches n'ont pas pu être chargées."
   }
 }

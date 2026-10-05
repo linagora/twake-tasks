@@ -26,6 +26,18 @@ export function AppShell(): ReactElement {
         <Link component={RouterLink} to="/" variant="h5" underline="none">
           {t('app.name')}
         </Link>
+        <nav className="u-ml-2">
+          {(['today', 'upcoming'] as const).map(view => (
+            <Link
+              key={view}
+              component={RouterLink}
+              to={`/${view}`}
+              className="u-mr-1"
+            >
+              {t(`agenda.${view}`)}
+            </Link>
+          ))}
+        </nav>
         <Button
           className="u-ml-auto u-mr-1"
           onClick={() => {

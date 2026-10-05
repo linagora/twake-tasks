@@ -77,8 +77,17 @@ export interface SectionMove {
   beforeId?: string
 }
 
+export type AgendaTask = Task & { boardId: string; boardName: string }
+
+export interface Agenda {
+  today: string
+  tasks: AgendaTask[]
+}
+
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
+  /** Overdue tasks, then those due within `days` days of today in `zone`. */
+  agenda: (zone: string, days: number) => Promise<Agenda>
   listBoards: () => Promise<BoardSummary[]>
   getBoard: (boardId: string) => Promise<Board>
   createBoard: (board: NewBoard) => Promise<Board>
