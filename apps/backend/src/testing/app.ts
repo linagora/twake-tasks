@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { pino } from 'pino'
 import { inject } from 'vitest'
 import { buildApp } from '../app.ts'
@@ -10,12 +11,9 @@ export interface TestUser {
   organizationId: string | null
 }
 
-let counter = 0
-
 // Each test gets its own people and organizations, so tests share one database.
 export function aUser(overrides: Partial<TestUser> = {}): TestUser {
-  counter += 1
-  const unique = `${String(Date.now())}-${String(counter)}`
+  const unique = randomUUID()
   return {
     email: `user-${unique}@example.com`,
     organizationId: `org-${unique}`,
