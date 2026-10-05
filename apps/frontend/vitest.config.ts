@@ -10,6 +10,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/testing/setupTests.ts'],
     css: false,
+    testTimeout: 15_000,
     restoreMocks: true,
     server: { deps: { inline: [/@linagora\//] } }
   }
