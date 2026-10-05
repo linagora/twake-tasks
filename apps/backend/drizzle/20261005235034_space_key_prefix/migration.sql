@@ -1,0 +1,2 @@
+ALTER TABLE "boards" DROP CONSTRAINT "boards_org_id_owner_id_key_prefix_unique";--> statement-breakpoint
+CREATE UNIQUE INDEX "boards_owner_key_prefix" ON "boards" (coalesce("org_id", ''),"owner_id","key_prefix") WHERE "owner_id" is not null;

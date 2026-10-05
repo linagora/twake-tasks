@@ -78,9 +78,13 @@ export const boards = pgTable.withRLS(
     unique().on(table.tenant, table.id),
     unique().on(table.spaceId, table.keyPrefix),
     // Row level security splits a person's boards by organization, B2C included.
-    unique()
-      .on(table.organizationId, table.ownerId, table.keyPrefix)
-      .nullsNotDistinct(),
+    uniqueIndex('boards_owner_key_prefix')
+      .on(
+        sql`coalesce(${table.organizationId}, '')`,
+        table.ownerId,
+        table.keyPrefix
+      )
+      .where(sql`${table.ownerId} is not null`),
     uniqueIndex('boards_one_inbox_per_owner')
       .on(sql`coalesce(${table.organizationId}, '')`, table.ownerId)
       .where(sql`${table.inbox}`),
