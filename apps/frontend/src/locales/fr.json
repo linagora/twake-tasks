@@ -38,6 +38,9 @@
     "add": "Ajouter",
     "priority": "P%{level}",
     "due": "Échéance le %{date}",
-    "assignee": "Assignée à %{name}"
+    "assignee": "Assignée à %{name}",
+    "move": "Déplacer %{key}",
+    "moveFailed": "La tâche n'a pas pu être déplacée.",
+    "addFailed": "La tâche n'a pas pu être ajoutée."
   }
 }

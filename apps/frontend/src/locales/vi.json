@@ -38,6 +38,9 @@
     "add": "Thêm",
     "priority": "P%{level}",
     "due": "Hạn %{date}",
-    "assignee": "Giao cho %{name}"
+    "assignee": "Giao cho %{name}",
+    "move": "Di chuyển %{key}",
+    "moveFailed": "Không thể di chuyển công việc.",
+    "addFailed": "Không thể thêm công việc."
   }
 }
