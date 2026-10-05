@@ -34,6 +34,11 @@ export interface BoardsApi {
     task: NewTask
   ) => Promise<Pick<Task, 'id' | 'key' | 'title' | 'sectionId'>>
   moveTask: (boardId: string, taskId: string, move: TaskMove) => Promise<void>
+  setAssignees: (
+    boardId: string,
+    taskId: string,
+    userIds: string[]
+  ) => Promise<void>
   createSection: (boardId: string, section: NewSection) => Promise<Section>
   editSection: (
     boardId: string,

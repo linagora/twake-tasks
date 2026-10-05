@@ -19,6 +19,7 @@ export function aBoard(overrides: Partial<Board> = {}): Board {
     archived: false,
     version: 1,
     role: 'admin',
+    members: [],
     sections: [
       { id: nextId(), name: 'To do', category: 'unstarted' },
       { id: nextId(), name: 'In progress', category: 'started' },
@@ -128,6 +129,16 @@ export function fakeBoardsApi(boards: Board[] = []) {
         if (index < 0) board.tasks.push(task)
         else board.tasks.splice(index, 0, task)
         board.version += 1
+      })
+    ),
+    setAssignees: vi.fn<BoardsApi['setAssignees']>((boardId, taskId, userIds) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        const task = board.tasks.find(candidate => candidate.id === taskId)
+        if (!task) throw new ApiError(404, 'not_found')
+        task.assignees = board.members.filter(member =>
+          userIds.includes(member.userId)
+        )
       })
     ),
     createSection: vi.fn<BoardsApi['createSection']>(

@@ -22,6 +22,11 @@ export interface Section {
   category: SectionCategory
 }
 
+export interface Person {
+  userId: string
+  email: string
+}
+
 export interface Task {
   id: string
   key: string
@@ -31,7 +36,7 @@ export interface Task {
   dueDate: string | null
   completedAt: string | null
   canceledAt: string | null
-  assignees: string[]
+  assignees: Person[]
 }
 
 export interface Board {
@@ -43,6 +48,7 @@ export interface Board {
   archived: boolean
   version: number
   role: Role
+  members: Person[]
   sections: Section[]
   tasks: Task[]
 }

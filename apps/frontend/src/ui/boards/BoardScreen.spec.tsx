@@ -5,8 +5,15 @@ import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
+const alice = { userId: 'alice', email: 'alice.martin@example.com' }
+const bob = { userId: 'bob', email: 'bob.durand@example.com' }
+
 function designBoard() {
-  const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
+  const board = aBoard({
+    name: 'Design',
+    keyPrefix: 'DES',
+    members: [alice, bob]
+  })
   const [todo, doing] = board.sections
   board.tasks = [
     aTask(todo ?? null, {
@@ -14,7 +21,7 @@ function designBoard() {
       title: 'Logo',
       priority: 1,
       dueDate: '2026-10-12',
-      assignees: ['alice.martin@example.com']
+      assignees: [alice]
     }),
     aTask(doing ?? null, { key: 'DES-2', title: 'Palette' })
   ]
@@ -109,8 +116,10 @@ describe('BoardScreen', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const logo = await screen.findByRole('article', { name: 'DES-1 Logo' })
-    fireEvent.click(within(logo).getByRole('button', { name: 'Move DES-1' }))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Done' }))
+    fireEvent.click(
+      within(logo).getByRole('button', { name: 'Options for DES-1' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Move to Done' }))
 
     expect(
       await within(column('Done')).findByRole('article', {
@@ -129,7 +138,7 @@ describe('BoardScreen', () => {
 
     const logo = await screen.findByRole('article', { name: 'DES-1 Logo' })
     expect(
-      within(logo).queryByRole('button', { name: 'Move DES-1' })
+      within(logo).queryByRole('button', { name: 'Options for DES-1' })
     ).not.toBeInTheDocument()
     expect(
       within(column('Done')).queryByRole('button', {
@@ -145,12 +154,66 @@ describe('BoardScreen', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const logo = await screen.findByRole('article', { name: 'DES-1 Logo' })
-    fireEvent.click(within(logo).getByRole('button', { name: 'Move DES-1' }))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Done' }))
+    fireEvent.click(
+      within(logo).getByRole('button', { name: 'Options for DES-1' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Move to Done' }))
 
     expect(
       await screen.findByText('The task could not be moved.')
     ).toBeInTheDocument()
+  })
+
+  it('assigns board members to a task', async () => {
+    const board = designBoard()
+    const palette = board.tasks[1]
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for DES-2' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Assign' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Assign DES-2' }))
+    fireEvent.click(dialog.getByRole('checkbox', { name: bob.email }))
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+
+    expect(
+      await within(
+        await screen.findByRole('article', { name: 'DES-2 Palette' })
+      ).findByRole('img', { name: `Assigned to ${bob.email}` })
+    ).toBeInTheDocument()
+    expect(boardsApi.setAssignees).toHaveBeenCalledWith(board.id, palette?.id, [
+      bob.userId
+    ])
+  })
+
+  it('keeps the dialog open when unassigning fails', async () => {
+    const board = designBoard()
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.setAssignees.mockRejectedValue(
+      new ApiError(400, 'invalid_assignee')
+    )
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for DES-1' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Assign' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Assign DES-1' }))
+    const aliceBox = dialog.getByRole('checkbox', { name: alice.email })
+    expect(aliceBox).toBeChecked()
+    fireEvent.click(aliceBox)
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+
+    expect(
+      await dialog.findByText('The assignees could not be saved.')
+    ).toBeInTheDocument()
+    expect(boardsApi.setAssignees).toHaveBeenCalledWith(
+      board.id,
+      board.tasks[0]?.id,
+      []
+    )
   })
 
   it('adds a section at the end', async () => {

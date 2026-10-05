@@ -76,6 +76,8 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
                 <TaskCard
                   key={task.id}
                   task={task}
+                  boardId={board.id}
+                  members={board.members}
                   destinations={board.sections.filter(
                     section => section.id !== task.sectionId
                   )}

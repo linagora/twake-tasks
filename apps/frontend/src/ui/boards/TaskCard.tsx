@@ -1,6 +1,14 @@
 import {
   Avatar,
+  Button,
+  Checkbox,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  FormGroup,
   getInitials,
   IconButton,
   Menu,
@@ -9,10 +17,11 @@ import {
   Typography
 } from '@linagora/twake-mui'
 import { Dots, Icon } from '@linagora/twake-icons'
-import { useState, type ReactElement } from 'react'
+import { useId, useState, type ReactElement } from 'react'
 
 import { Card, Row } from '@/ds/Columns'
-import type { Section, Task } from '@/domain/board'
+import type { Person, Section, Task } from '@/domain/board'
+import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const PRIORITY_COLOR = {
@@ -24,21 +33,30 @@ const PRIORITY_COLOR = {
 
 export function TaskCard({
   task,
+  boardId,
+  members,
   destinations,
   onMove
 }: {
   task: Task
+  boardId: string
+  members: Person[]
   destinations: { id: string | null; name: string }[]
   onMove: ((sectionId: Section['id'] | null) => void) | undefined
 }): ReactElement {
   const { t, lang } = useI18n()
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
+  const [assigning, setAssigning] = useState(false)
   const due =
     task.dueDate &&
     new Intl.DateTimeFormat(lang, {
       dateStyle: 'medium',
       timeZone: 'UTC'
     }).format(new Date(task.dueDate))
+  const choose = (action: () => void) => () => {
+    setMenuAnchor(null)
+    action()
+  }
 
   return (
     <Card label={`${task.key} ${task.title}`}>
@@ -46,12 +64,13 @@ export function TaskCard({
         <Typography variant="caption" color="textSecondary">
           {task.key}
         </Typography>
-        {onMove && destinations.length > 0 && (
+        {onMove && (
           <IconButton
             size="small"
             className="u-ml-auto"
-            aria-label={t('board.move', { key: task.key })}
+            aria-label={t('board.options', { key: task.key })}
             aria-haspopup="menu"
+            aria-expanded={menuAnchor !== null}
             onClick={event => {
               setMenuAnchor(event.currentTarget)
             }}
@@ -74,9 +93,9 @@ export function TaskCard({
             {t('board.due', { date: due })}
           </Typography>
         )}
-        {task.assignees.map((email, index) => (
+        {task.assignees.map(({ userId, email }, index) => (
           <Avatar
-            key={email}
+            key={userId}
             size="xs"
             color={nameToColor(email) ?? 'sunrise'}
             role="img"
@@ -94,18 +113,104 @@ export function TaskCard({
           setMenuAnchor(null)
         }}
       >
+        <MenuItem
+          onClick={choose(() => {
+            setAssigning(true)
+          })}
+        >
+          {t('board.assign')}
+        </MenuItem>
         {destinations.map(destination => (
           <MenuItem
             key={destination.id ?? 'none'}
-            onClick={() => {
-              setMenuAnchor(null)
+            onClick={choose(() => {
               onMove?.(destination.id)
-            }}
+            })}
           >
-            {destination.name}
+            {t('board.moveTo', { section: destination.name })}
           </MenuItem>
         ))}
       </Menu>
+      {assigning && (
+        <AssignDialog
+          task={task}
+          boardId={boardId}
+          members={members}
+          onClose={() => {
+            setAssigning(false)
+          }}
+        />
+      )}
     </Card>
+  )
+}
+
+function AssignDialog({
+  task,
+  boardId,
+  members,
+  onClose
+}: {
+  task: Task
+  boardId: string
+  members: Person[]
+  onClose: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const titleId = useId()
+  const [chosen, setChosen] = useState(
+    () => new Set(task.assignees.map(assignee => assignee.userId))
+  )
+  const assign = useBoardChange(boardId, (api, userIds: string[]) =>
+    api.setAssignees(boardId, task.id, userIds)
+  )
+  const toggle = (userId: string) => {
+    setChosen(previous => {
+      const next = new Set(previous)
+      if (!next.delete(userId)) next.add(userId)
+      return next
+    })
+  }
+
+  return (
+    <Dialog open onClose={onClose} aria-labelledby={titleId} size="small">
+      <form
+        onSubmit={event => {
+          event.preventDefault()
+          assign.mutate([...chosen], { onSuccess: onClose })
+        }}
+      >
+        <DialogTitle id={titleId}>
+          {t('board.assignTitle', { key: task.key })}
+        </DialogTitle>
+        <DialogContent>
+          <FormGroup>
+            {members.map(member => (
+              <FormControlLabel
+                key={member.userId}
+                label={member.email}
+                control={
+                  <Checkbox
+                    checked={chosen.has(member.userId)}
+                    onChange={() => {
+                      toggle(member.userId)
+                    }}
+                  />
+                }
+              />
+            ))}
+          </FormGroup>
+          {assign.isError && <p role="alert">{t('board.assignFailed')}</p>}
+        </DialogContent>
+        <DialogActions>
+          <Button variant="text" onClick={onClose}>
+            {t('board.cancel')}
+          </Button>
+          <Button type="submit" disabled={assign.isPending}>
+            {t('board.save')}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   )
 }
