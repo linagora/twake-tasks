@@ -68,6 +68,20 @@ export function useBoardChange<T>(
   })
 }
 
+export function useSetFavorite(): UseMutationResult<
+  void,
+  Error,
+  { boardId: string; favorite: boolean }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ boardId, favorite }) => api.setFavorite(boardId, favorite),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: boardsKey, exact: true })
+  })
+}
+
 export function useCreateBoard(): UseMutationResult<Board, Error, NewBoard> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()

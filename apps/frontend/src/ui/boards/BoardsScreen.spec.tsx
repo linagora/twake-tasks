@@ -32,6 +32,32 @@ describe('BoardsScreen', () => {
     ).toEqual(['Old plans'])
   })
 
+  it('pins a starred board first until it is unstarred', async () => {
+    const boardsApi = fakeBoardsApi([
+      aBoard({ name: 'Design' }),
+      aBoard({ name: 'Front UI', keyPrefix: 'FUI' })
+    ])
+    renderRoute('/', { boardsApi })
+    const names = () =>
+      within(screen.getByRole('list', { name: 'Boards' }))
+        .getAllByRole('link')
+        .map(link => link.textContent)
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Add Front UI to favorites' })
+    )
+    const unstar = await screen.findByRole('button', {
+      name: 'Remove Front UI from favorites'
+    })
+
+    expect(names()).toEqual(['Front UI', 'Design'])
+    fireEvent.click(unstar)
+    expect(
+      await screen.findByRole('button', { name: 'Add Front UI to favorites' })
+    ).toBeInTheDocument()
+    expect(names()).toEqual(['Design', 'Front UI'])
+  })
+
   it('opens a board from the list', async () => {
     const design = aBoard({ name: 'Design' })
     const { router } = renderRoute('/', {

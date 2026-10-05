@@ -28,6 +28,7 @@ export interface BoardsApi {
   listBoards: () => Promise<BoardSummary[]>
   getBoard: (boardId: string) => Promise<Board>
   createBoard: (board: NewBoard) => Promise<Board>
+  setFavorite: (boardId: string, favorite: boolean) => Promise<void>
   createTask: (
     boardId: string,
     task: NewTask

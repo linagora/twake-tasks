@@ -71,9 +71,22 @@ export function fakeBoardsApi(boards: Board[] = []) {
     return board
   }
 
+  const favorites = new Set<string>()
+
   const api = {
     listBoards: vi.fn(() =>
-      Promise.resolve([...store.values()].map(board => summaryOf(board)))
+      Promise.resolve(
+        [...store.values()]
+          .map(board => summaryOf(board, favorites.has(board.id)))
+          .sort((a, b) => Number(b.favorite) - Number(a.favorite))
+      )
+    ),
+    setFavorite: vi.fn<BoardsApi['setFavorite']>((boardId, favorite) =>
+      Promise.resolve().then(() => {
+        find(boardId)
+        if (favorite) favorites.add(boardId)
+        else favorites.delete(boardId)
+      })
     ),
     getBoard: vi.fn((boardId: string) =>
       Promise.resolve().then(() => structuredClone(find(boardId)))
