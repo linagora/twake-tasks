@@ -10,6 +10,7 @@ import {
   startDeadLetterProducer,
   startProducer
 } from './infra/kafka.ts'
+import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { accountRoutes } from './modules/boards/accounts.ts'
@@ -25,6 +26,7 @@ import {
   purgeSpace,
   spaceRoutes
 } from './modules/spaces/events.ts'
+import { planReconcile, reconcileJobs } from './modules/spaces/reconcile.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
@@ -78,9 +80,17 @@ const stopScheduler = createScheduler({
     [NOTIFICATION_EMAIL_JOB]: emailNotification({
       appUrl: config.APP_URL,
       send: createMailer(config, logger)
-    })
+    }),
+    ...reconcileJobs(
+      ldapRestClient({
+        url: config.LDAP_REST_URL,
+        serviceId: config.LDAP_REST_SERVICE_ID,
+        secret: config.LDAP_REST_SECRET
+      })
+    )
   }
 }).start(5000)
+await planReconcile(db)
 const stopRelay = createRelay({
   db,
   logger,

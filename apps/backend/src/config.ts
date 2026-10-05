@@ -28,6 +28,9 @@ const configSchema = z
     OIDC_CLIENT_SECRET: z.string().min(1),
     SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),
     MAIL_FROM: z.string().min(1).default('Twake Tasks <tasks@twake.app>'),
+    LDAP_REST_URL: z.url({ protocol: /^https?$/ }),
+    LDAP_REST_SERVICE_ID: z.string().min(1).default('twake-tasks'),
+    LDAP_REST_SECRET: z.string().min(1),
     HTTP_HOST: z.string().min(1).default('0.0.0.0'),
     HTTP_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
     LOG_LEVEL: z
