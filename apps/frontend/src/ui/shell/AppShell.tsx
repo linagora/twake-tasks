@@ -6,9 +6,10 @@ import {
   nameToColor,
   Typography
 } from '@linagora/twake-mui'
-import type { ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 import { Outlet, Link as RouterLink } from 'react-router'
 
+import { QuickAdd } from '@/ui/shell/QuickAdd'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 
@@ -17,6 +18,7 @@ export function AppShell(): ReactElement {
   const { user, signOut } = useSession()
   const email = user.email ?? ''
   const name = user.name ?? email
+  const [quickAdd, setQuickAdd] = useState(false)
 
   return (
     <>
@@ -24,10 +26,18 @@ export function AppShell(): ReactElement {
         <Link component={RouterLink} to="/" variant="h5" underline="none">
           {t('app.name')}
         </Link>
+        <Button
+          className="u-ml-auto u-mr-1"
+          onClick={() => {
+            setQuickAdd(true)
+          }}
+        >
+          {t('quickAdd.title')}
+        </Button>
         <Avatar
           size="s"
           color={nameToColor(name) ?? 'sunrise'}
-          className="u-ml-auto u-mr-half"
+          className="u-mr-half"
           aria-hidden
         >
           {getInitials(name, email)}
@@ -37,6 +47,13 @@ export function AppShell(): ReactElement {
           {t('session.signOut')}
         </Button>
       </header>
+      {quickAdd && (
+        <QuickAdd
+          onClose={() => {
+            setQuickAdd(false)
+          }}
+        />
+      )}
       <Outlet />
     </>
   )
