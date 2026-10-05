@@ -1,10 +1,10 @@
 import { Link, Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
-import { Link as RouterLink } from 'react-router'
+import { Link as RouterLink, useParams } from 'react-router'
 
 import type { AgendaTask } from '@/application/boards'
 import { dueLabel, formatDay } from '@/ui/boards/dueLabel'
-import { useAgenda, type AgendaView } from '@/ui/boards/queries'
+import { useAgenda, useFilters, type AgendaView } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -38,10 +38,27 @@ function Group({
   )
 }
 
-export function AgendaScreen({ view }: { view: AgendaView }): ReactElement {
+export function FilterScreen(): ReactElement {
+  const { filterId = '' } = useParams()
+  const filters = useFilters()
+  return (
+    <AgendaScreen
+      view={{ filterId }}
+      title={filters.data?.find(filter => filter.id === filterId)?.name ?? ''}
+    />
+  )
+}
+
+export function AgendaScreen(
+  props:
+    | { view: 'today' | 'upcoming' | 'mine' }
+    | { view: AgendaView; title: string }
+): ReactElement {
   const { t, lang } = useI18n()
+  const { view } = props
   const agenda = useAgenda(view)
-  useDocumentTitle(t(`agenda.${view}`))
+  const title = 'title' in props ? props.title : t(`agenda.${props.view}`)
+  useDocumentTitle(title || null)
 
   const today = agenda.data?.today ?? ''
   const tasks = agenda.data?.tasks ?? []
@@ -60,7 +77,7 @@ export function AgendaScreen({ view }: { view: AgendaView }): ReactElement {
   return (
     <main className="u-p-2">
       <Typography variant="h3" component="h1" className="u-mb-2">
-        {t(`agenda.${view}`)}
+        {title}
       </Typography>
       {agenda.isError && (
         <Typography role="alert">{t('agenda.loadFailed')}</Typography>

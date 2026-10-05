@@ -182,6 +182,28 @@
     "unknown_section": "Không có mục tên %{name}.",
     "unknown_person": "Không có thành viên tên %{name}."
   },
+  "filters": {
+    "title": "Bộ lọc",
+    "empty": "Chưa có bộ lọc nào.",
+    "loadFailed": "Không thể tải bộ lọc.",
+    "delete": "Xóa %{name}",
+    "new": "Bộ lọc mới",
+    "name": "Tên",
+    "assignee": "Người được giao",
+    "priority": "Độ ưu tiên",
+    "label": "Nhãn",
+    "due": "Hạn",
+    "save": "Lưu bộ lọc",
+    "saveFailed": "Không thể lưu bộ lọc.",
+    "assignees": { "any": "Bất kỳ", "me": "Tôi", "nobody": "Không ai" },
+    "dues": {
+      "any": "Bất kỳ",
+      "overdue": "Quá hạn",
+      "today": "Hôm nay",
+      "week": "7 ngày tới",
+      "none": "Không có ngày"
+    }
+  },
   "agenda": {
     "today": "Hôm nay",
     "upcoming": "Sắp tới",

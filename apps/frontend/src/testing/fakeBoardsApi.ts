@@ -6,7 +6,8 @@ import {
   type Comment,
   type Description,
   type HistoryEntry,
-  type Reminder
+  type Reminder,
+  type SavedFilter
 } from '@/application/boards'
 import type { Board, BoardSummary, Section, Task } from '@/domain/board'
 
@@ -98,7 +99,51 @@ export function fakeBoardsApi(boards: Board[] = []) {
     return task
   }
 
+  const filters: SavedFilter[] = []
+  const openTasks = () =>
+    [...store.values()].flatMap(board =>
+      board.tasks
+        .filter(task => !task.completedAt && !task.canceledAt)
+        .map(task => ({
+          ...structuredClone(task),
+          boardId: board.id,
+          boardName: board.name
+        }))
+    )
+
   const api = {
+    listFilters: vi.fn<BoardsApi['listFilters']>(() =>
+      Promise.resolve(structuredClone(filters))
+    ),
+    createFilter: vi.fn<BoardsApi['createFilter']>(filter =>
+      Promise.resolve().then(() => {
+        const id = nextId()
+        filters.push({ id, ...structuredClone(filter) })
+        return { id }
+      })
+    ),
+    deleteFilter: vi.fn<BoardsApi['deleteFilter']>(filterId =>
+      Promise.resolve().then(() => {
+        const index = filters.findIndex(filter => filter.id === filterId)
+        if (index < 0) throw new ApiError(404, 'not_found')
+        filters.splice(index, 1)
+      })
+    ),
+    filteredTasks: vi.fn<BoardsApi['filteredTasks']>(filterId =>
+      Promise.resolve().then(() => {
+        const filter = filters.find(candidate => candidate.id === filterId)
+        if (!filter) throw new ApiError(404, 'not_found')
+        const { priority, label } = filter.criteria
+        return openTasks().filter(
+          task =>
+            (priority === undefined || task.priority === priority) &&
+            (label === undefined ||
+              task.labels.some(
+                each => each.name.toLowerCase() === label.toLowerCase()
+              ))
+        )
+      })
+    ),
     agenda: vi.fn<BoardsApi['agenda']>((_zone, days) =>
       Promise.resolve().then(() => {
         const today = new Intl.DateTimeFormat('en-CA').format(new Date())
