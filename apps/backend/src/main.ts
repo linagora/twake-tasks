@@ -10,6 +10,7 @@ import {
   startProducer
 } from './infra/kafka.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
+import { accountRoutes } from './modules/boards/accounts.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
 import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
 import {
@@ -51,7 +52,10 @@ const consumer = await startConsumer(
   createMessageHandler({
     routes: {
       activity: new Map(),
-      platform: spaceRoutes((key, event) => producer.publish(key, event))
+      platform: new Map([
+        ...spaceRoutes((key, event) => producer.publish(key, event)),
+        ...accountRoutes
+      ])
     },
     dedupe: postgresDeduplicator(db, config.KAFKA_GROUP_ID),
     deadLetter: deadLetters.send,

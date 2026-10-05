@@ -1,0 +1,1 @@
+ALTER TABLE "board_members" ADD COLUMN "joined_at" timestamp with time zone DEFAULT now() NOT NULL;

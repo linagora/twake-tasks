@@ -121,6 +121,7 @@ export const boardMembers = pgTable.withRLS(
     userId: uuid('user_id').notNull(),
     email: text().notNull(),
     role: memberRole().notNull(),
+    joinedAt: timestamptz('joined_at').notNull().defaultNow(),
     tenant: tenant()
   },
   table => [
