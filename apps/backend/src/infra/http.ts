@@ -1,10 +1,13 @@
-import Fastify, { LogController } from 'fastify'
-import type { Logger } from 'pino'
+import Fastify, {
+  LogController,
+  type FastifyBaseLogger,
+  type FastifyInstance
+} from 'fastify'
 
 export function createServer(deps: {
-  logger: Logger
+  logger: FastifyBaseLogger
   isReady: () => Promise<boolean>
-}) {
+}): HttpServer {
   const app = Fastify({
     loggerInstance: deps.logger,
     logController: new LogController({
@@ -24,4 +27,4 @@ export function createServer(deps: {
   return app
 }
 
-export type HttpServer = ReturnType<typeof createServer>
+export type HttpServer = FastifyInstance
