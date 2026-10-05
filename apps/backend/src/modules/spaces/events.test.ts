@@ -3,9 +3,17 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { inject } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { MalformedEventError } from '../../events/router.ts'
-import { createDb } from '../../infra/db.ts'
+import { eq } from 'drizzle-orm'
+import { asOrganization, createDb } from '../../infra/db.ts'
+import { boards } from '../boards/schema.ts'
 import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { spaceRoutes, type Publish } from './events.ts'
+import { jobs } from '../../scheduler/schema.ts'
+import {
+  PURGE_SPACE_JOB,
+  purgeSpace,
+  spaceRoutes,
+  type Publish
+} from './events.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -39,6 +47,7 @@ async function spaceBoards(user: TestUser) {
   return (await api.as(user).get('/boards'))
     .json<{
       boards: {
+        id: string
         name: string
         keyPrefix: string
         spaceId: string
@@ -164,5 +173,78 @@ describe('space members and name', () => {
         spaces: { name: string }[]
       }>().spaces
     ).toEqual([expect.objectContaining({ name: 'Operations' })])
+  })
+})
+
+async function aSpaceWithATask(admin: TestUser, members: TestUser[]) {
+  if (!admin.organizationId) throw new Error('spaces are B2B')
+  const space = { organizationId: admin.organizationId, id: randomUUID() }
+  await deliver('twake.space.created', {
+    ...space,
+    name: 'Ops',
+    members: [
+      member(admin, 'admin'),
+      ...members.map(user => member(user, 'editor'))
+    ]
+  })
+  const [board] = await spaceBoards(admin)
+  if (!board) throw new Error('no space board')
+  const task = (
+    await api
+      .as(admin)
+      .post(`/boards/${board.id}/tasks`, { sectionId: null, title: 'Logo' })
+  ).json<{ id: string }>()
+  await api.as(admin).put(`/boards/${board.id}/tasks/${task.id}/assignees`, {
+    userIds: [admin.userId, ...members.map(user => user.userId)]
+  })
+  const assignees = async () =>
+    (await api.as(admin).get(`/boards/${board.id}`))
+      .json<{ tasks: { assignees: { userId: string }[] }[] }>()
+      .tasks[0]?.assignees.map(person => person.userId)
+  return { space, boardId: board.id, assignees }
+}
+
+describe('twake.space.member.removed', () => {
+  it('takes the board away and unassigns, matching by uuid or by email', async () => {
+    const admin = aUser()
+    const byUuid = aUser({ organizationId: admin.organizationId })
+    const byEmail = aUser({ organizationId: admin.organizationId })
+    const { space, assignees } = await aSpaceWithATask(admin, [byUuid, byEmail])
+
+    await deliver('twake.space.member.removed', {
+      ...space,
+      members: [{ uuid: byUuid.userId }, { email: byEmail.email }]
+    })
+
+    expect(await spaceBoards(byUuid)).toEqual([])
+    expect(await spaceBoards(byEmail)).toEqual([])
+    expect(await assignees()).toEqual([admin.userId])
+  })
+})
+
+describe('twake.space.deleted', () => {
+  it('hides the boards, then purges them after 30 days', async () => {
+    const admin = aUser()
+    const { space, boardId } = await aSpaceWithATask(admin, [])
+
+    await deliver('twake.space.deleted', space)
+
+    expect(await spaceBoards(admin)).toEqual([])
+    expect((await api.as(admin).get(`/boards/${boardId}`)).statusCode).toBe(404)
+    const [job] = await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.key, `${PURGE_SPACE_JOB}:${space.id}`))
+    if (!job) throw new Error('no purge job')
+    const days = (job.runAt.getTime() - Date.now()) / 86_400_000
+    expect(Math.round(days)).toBe(30)
+
+    await db.transaction(tx => purgeSpace(job.payload, tx))
+
+    const remaining = await db.transaction(async tx => {
+      await asOrganization(tx, space.organizationId)
+      return tx.select().from(boards).where(eq(boards.spaceId, space.id))
+    })
+    expect(remaining).toEqual([])
   })
 })
