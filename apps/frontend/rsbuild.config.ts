@@ -14,7 +14,8 @@ export default defineConfig({
   },
   server: {
     port: Number(process.env.PORT ?? 3000),
-    historyApiFallback: true
+    historyApiFallback: true,
+    proxy: { '/api': process.env.API_UPSTREAM ?? 'http://localhost:8080' }
   },
   output: {
     sourceMap: { js: false }

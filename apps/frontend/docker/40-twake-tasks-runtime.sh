@@ -71,3 +71,34 @@ add_header X-Content-Type-Options "nosniff" always;
 add_header Referrer-Policy "same-origin" always;
 add_header Permissions-Policy "$permissions_policy" always;
 EOF
+
+# Without an upstream, /api answers 404 rather than the SPA fallback. The upstream is a
+# variable so nginx resolves it per request: the backend may start after the frontend.
+# nginx ignores the search domains of resolv.conf: in Kubernetes, give the service's full name.
+api_upstream=${API_UPSTREAM:-}
+if [ -z "$api_upstream" ]; then
+  echo 'location /api/ { return 404; }' >"$OUT/api.conf"
+else
+  case "$api_upstream" in
+    http://* | https://*) ;;
+    *) fail "API_UPSTREAM must start with http:// or https://" ;;
+  esac
+  check_sources API_UPSTREAM "$api_upstream"
+  case "$api_upstream" in
+    *[[:space:]]* | *"'"* | *"{"* | *"}"*) fail "API_UPSTREAM must be a bare origin" ;;
+  esac
+  [ "${api_upstream%/}" = "$(origin "$api_upstream")" ] || fail "API_UPSTREAM must be a bare origin"
+  resolver=$(awk '$1 == "nameserver" { print $2; exit }' /etc/resolv.conf)
+  case "$resolver" in *:*) resolver="[$resolver]" ;; esac
+  cat >"$OUT/api.conf" <<EOF
+location /api/ {
+    resolver ${resolver:-127.0.0.11} valid=30s;
+    set \$api_upstream "$(origin "$api_upstream")";
+    proxy_pass \$api_upstream;
+    proxy_ssl_server_name on;
+    proxy_set_header Host \$proxy_host;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+}
+EOF
+fi
