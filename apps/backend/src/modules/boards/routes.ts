@@ -15,9 +15,15 @@ const newBoard = z.object({
 
 const boardParams = z.object({ boardId: z.uuid() })
 
-const newTask = z.object({
-  sectionId: z.uuid().nullable(),
-  title: z.string().trim().min(1).max(500)
+const taskTitle = z.string().trim().min(1).max(500)
+
+const newTask = z.union([
+  z.strictObject({ sectionId: z.uuid().nullable(), title: taskTitle }),
+  z.strictObject({ parentId: z.uuid(), title: taskTitle })
+])
+
+const completion = z.object({
+  state: z.enum(['completed', 'canceled']).nullable()
 })
 
 const taskParams = z.object({ boardId: z.uuid(), taskId: z.uuid() })
@@ -30,7 +36,7 @@ const taskMove = z.object({
 
 const taskChanges = z
   .object({
-    title: z.string().trim().min(1).max(500),
+    title: taskTitle,
     priority: z.int().min(1).max(4).nullable(),
     dueDate: z.iso.date().nullable()
   })
@@ -75,7 +81,9 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   stale_neighbours: 409,
   section_not_empty: 409,
   invalid_assignee: 400,
-  stale_version: 409
+  stale_version: 409,
+  invalid_parent: 400,
+  too_deep: 400
 }
 
 function refuse(reply: FastifyReply, error: Refusal) {
@@ -192,6 +200,29 @@ export function registerBoards(
         params.data.boardId,
         params.data.taskId,
         body.data
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.post(
+    '/boards/:boardId/tasks/:taskId/complete',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = completion.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await taskStore.completeTask(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        body.data.state
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()

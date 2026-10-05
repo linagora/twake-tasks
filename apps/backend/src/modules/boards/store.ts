@@ -214,6 +214,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
       id: task.id,
       key: `${board.keyPrefix}-${String(task.number)}`,
       sectionId: task.sectionId,
+      parentId: task.parentId,
       title: task.title,
       priority: task.priority,
       dueDate: task.dueDate,
