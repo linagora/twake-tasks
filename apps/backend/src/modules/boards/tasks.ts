@@ -10,6 +10,7 @@ import {
   todayIn,
   type Recurrence
 } from './recurrence.ts'
+import { moveReminders } from './reminderJobs.ts'
 import { boards, sections, taskAssignees, tasks } from './schema.ts'
 
 export type Refusal =
@@ -25,6 +26,7 @@ export type Refusal =
   | 'too_deep'
   | 'invalid_label'
   | 'invalid_dates'
+  | 'invalid_reminder'
   | 'label_taken'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
@@ -233,6 +235,7 @@ async function recur(tx: Tx, task: typeof tasks.$inferSelect) {
       dueDate: nextOccurrence(task.dueDate, rule, todayIn(task.dueZone))
     })
     .where(eq(tasks.id, task.id))
+  await moveReminders(tx, task.id)
   return true
 }
 
@@ -350,6 +353,7 @@ export function createTaskStore(db: Db) {
           .update(tasks)
           .set(withDates(task, changes))
           .where(eq(tasks.id, taskId))
+        await moveReminders(tx, taskId)
         return null
       })
     },

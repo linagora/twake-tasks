@@ -49,17 +49,27 @@ export function createDb(url: string) {
 export type Db = ReturnType<typeof createDb>['db']
 export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
+interface TenantIdentity {
+  organizationId: string | null
+  userId: string
+  email: string
+}
+
+export async function asTenant(tx: Tx, identity: TenantIdentity) {
+  await tx.execute(
+    sql`select set_config('app.org_id', ${identity.organizationId ?? ''}, true),
+               set_config('app.user_id', ${identity.userId}, true),
+               set_config('app.user_email', ${identity.email}, true)`
+  )
+}
+
 export function inTenant<T>(
   db: Db,
-  identity: { organizationId: string | null; userId: string; email: string },
+  identity: TenantIdentity,
   work: (tx: Tx) => Promise<T>
 ): Promise<T> {
   return db.transaction(async tx => {
-    await tx.execute(
-      sql`select set_config('app.org_id', ${identity.organizationId ?? ''}, true),
-                 set_config('app.user_id', ${identity.userId}, true),
-                 set_config('app.user_email', ${identity.email}, true)`
-    )
+    await asTenant(tx, identity)
     return work(tx)
   })
 }

@@ -29,7 +29,7 @@ describe('scheduler', () => {
       handlers: {
         [kind]: payload => {
           ran.push(payload)
-          return Promise.resolve()
+          return Promise.resolve(undefined)
         }
       }
     })
@@ -52,6 +52,7 @@ describe('scheduler', () => {
       [kind]: async payload => {
         ran.push(payload)
         await new Promise(resolve => setTimeout(resolve, 5))
+        return undefined
       }
     }
     for (let n = 0; n < 20; n++) {
@@ -91,6 +92,36 @@ describe('scheduler', () => {
     expect(await db.select().from(jobs).where(eq(jobs.kind, marker))).toEqual(
       []
     )
+  })
+
+  it('keeps a job its handler moved to run again', async () => {
+    const kind = aKind()
+    const key = randomUUID()
+    const scheduler = createScheduler({
+      db,
+      logger,
+      handlers: {
+        [kind]: async (_payload, tx) => {
+          await schedule(tx, {
+            kind,
+            key,
+            payload: 2,
+            runAt: new Date(Date.now() + 60_000)
+          })
+          return 'keep'
+        }
+      }
+    })
+    await schedule(db, { kind, key, payload: 1, runAt: past() })
+
+    expect(await scheduler.runDue()).toBe(1)
+
+    expect(
+      await db
+        .select({ payload: jobs.payload })
+        .from(jobs)
+        .where(eq(jobs.kind, kind))
+    ).toEqual([{ payload: 2 }])
   })
 
   it('moves a job scheduled again under the same key', async () => {
