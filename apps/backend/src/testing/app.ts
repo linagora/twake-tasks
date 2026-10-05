@@ -7,6 +7,7 @@ import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
 
 export interface TestUser {
+  userId: string
   email: string
   organizationId: string | null
 }
@@ -15,6 +16,7 @@ export interface TestUser {
 export function aUser(overrides: Partial<TestUser> = {}): TestUser {
   const unique = randomUUID()
   return {
+    userId: unique,
     email: `user-${unique}@example.com`,
     organizationId: `org-${unique}`,
     ...overrides
@@ -46,7 +48,8 @@ export async function startApp() {
   function as(user: TestUser) {
     const token = Buffer.from(
       JSON.stringify({
-        subject: user.email,
+        subject: user.userId,
+        userId: user.userId,
         email: user.email,
         organizationId: user.organizationId,
         organizationRole: user.organizationId ? 'member' : null

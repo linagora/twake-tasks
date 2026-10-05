@@ -3,6 +3,7 @@ import { generateNKeysBetween } from 'fractional-indexing'
 import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { spaceMembers } from '../spaces/schema.ts'
 import { accessibleBoards, roleOn } from './access.ts'
 import {
   sections,
@@ -35,7 +36,7 @@ export function createBoardStore(db: Db) {
     listBoards(identity: Identity) {
       return inTenant(db, identity, async tx => {
         await ensureInbox(tx, identity)
-        const accessible = accessibleBoards(tx, identity.email)
+        const accessible = accessibleBoards(tx, identity.userId)
         return tx
           .select({
             id: boards.id,
@@ -45,7 +46,7 @@ export function createBoardStore(db: Db) {
             inbox: boards.inbox,
             role: accessible.role,
             archived: sql<boolean>`${boards.archivedAt} is not null`,
-            favorite: sql<boolean>`${boardFavorites.email} is not null`
+            favorite: sql<boolean>`${boardFavorites.userId} is not null`
           })
           .from(boards)
           .innerJoin(accessible, eq(accessible.boardId, boards.id))
@@ -53,7 +54,7 @@ export function createBoardStore(db: Db) {
             boardFavorites,
             and(
               eq(boardFavorites.boardId, boards.id),
-              eq(boardFavorites.email, identity.email)
+              eq(boardFavorites.userId, identity.userId)
             )
           )
           .orderBy(desc(boards.inbox), asc(boards.name))
@@ -70,16 +71,17 @@ export function createBoardStore(db: Db) {
             .insert(boards)
             .values({
               organizationId: identity.organizationId,
-              ownerEmail: identity.email,
+              ownerId: identity.userId,
               name: input.name,
               keyPrefix: input.keyPrefix,
-              createdBy: identity.email
+              createdBy: identity.userId
             })
             .returning()
           if (!board) throw new Error('board insert returned nothing')
           await tx.insert(boardMembers).values({
             boardId: board.id,
             organizationId: identity.organizationId,
+            userId: identity.userId,
             email: identity.email,
             role: 'admin'
           })
@@ -96,7 +98,7 @@ export function createBoardStore(db: Db) {
               position: positions[index] ?? ''
             }))
           )
-          return loadBoard(tx, board.id, identity.email)
+          return loadBoard(tx, board.id, identity.userId)
         })
       } catch (error) {
         if (isUniqueViolation(error)) return null
@@ -106,7 +108,7 @@ export function createBoardStore(db: Db) {
 
     getBoard(identity: Identity, boardId: string) {
       return inTenant(db, identity, tx =>
-        loadBoard(tx, boardId, identity.email)
+        loadBoard(tx, boardId, identity.userId)
       )
     }
   }
@@ -119,10 +121,10 @@ async function ensureInbox(tx: Tx, identity: Identity) {
     .insert(boards)
     .values({
       organizationId: identity.organizationId,
-      ownerEmail: identity.email,
+      ownerId: identity.userId,
       name: 'Inbox',
       keyPrefix: INBOX_KEY_PREFIX,
-      createdBy: identity.email,
+      createdBy: identity.userId,
       inbox: true
     })
     .onConflictDoNothing()
@@ -131,13 +133,14 @@ async function ensureInbox(tx: Tx, identity: Identity) {
   await tx.insert(boardMembers).values({
     boardId: inbox.id,
     organizationId: identity.organizationId,
+    userId: identity.userId,
     email: identity.email,
     role: 'admin'
   })
 }
 
-async function loadBoard(tx: Tx, boardId: string, email: string) {
-  const role = await roleOn(tx, email, boardId)
+async function loadBoard(tx: Tx, boardId: string, userId: string) {
+  const role = await roleOn(tx, userId, boardId)
   if (!role) return null
   const [board] = await tx.select().from(boards).where(eq(boards.id, boardId))
   if (!board) return null
@@ -155,12 +158,28 @@ async function loadBoard(tx: Tx, boardId: string, email: string) {
     .from(tasks)
     .where(eq(tasks.boardId, boardId))
     .orderBy(asc(tasks.position))
+  // Assignees can open the board, so their email is on their membership.
+  const email = sql<string>`coalesce(${boardMembers.email}, ${spaceMembers.email})`
   const assignees = await tx
-    .select({ taskId: taskAssignees.taskId, email: taskAssignees.email })
+    .select({ taskId: taskAssignees.taskId, email })
     .from(taskAssignees)
     .innerJoin(tasks, eq(tasks.id, taskAssignees.taskId))
+    .leftJoin(
+      boardMembers,
+      and(
+        eq(boardMembers.boardId, boardId),
+        eq(boardMembers.userId, taskAssignees.userId)
+      )
+    )
+    .leftJoin(
+      spaceMembers,
+      and(
+        eq(spaceMembers.spaceId, sql`${board.spaceId}`),
+        eq(spaceMembers.userId, taskAssignees.userId)
+      )
+    )
     .where(eq(tasks.boardId, boardId))
-    .orderBy(asc(taskAssignees.email))
+    .orderBy(asc(email))
   return {
     id: board.id,
     name: board.name,
