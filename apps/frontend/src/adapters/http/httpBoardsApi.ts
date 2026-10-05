@@ -2,6 +2,7 @@ import {
   ApiError,
   type AgendaTask,
   type SavedFilter,
+  type Space,
   type BoardsApi,
   type Comment,
   type Reminder,
@@ -72,6 +73,10 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
     getBoard: boardId => call('GET', `/boards/${boardId}`),
     createBoard: board => call('POST', '/boards', board),
+    listSpaces: async () =>
+      (await call<{ spaces: Space[] }>('GET', '/spaces')).spaces,
+    moveToSpace: (boardId, spaceId) =>
+      call('POST', `/boards/${boardId}/move`, { spaceId }),
     getSharing: boardId => call('GET', `/boards/${boardId}/sharing`),
     invite: (boardId, email, role) =>
       call('POST', `/boards/${boardId}/invites`, { email, role }),

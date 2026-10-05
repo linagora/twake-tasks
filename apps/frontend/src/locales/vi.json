@@ -204,7 +204,13 @@
     "remove": "Xóa",
     "close": "Đóng",
     "failed": "Không thể lưu thay đổi.",
-    "loadFailed": "Không thể tải danh sách thành viên."
+    "loadFailed": "Không thể tải danh sách thành viên.",
+    "moveTitle": "Chuyển vào không gian",
+    "space": "Không gian",
+    "moveHelp": "Thành viên của bảng sẽ bị xóa và vai trò của không gian được áp dụng.",
+    "move": "Chuyển",
+    "prefixTaken": "Một bảng trong không gian này đã dùng %{prefix}.",
+    "moveFailed": "Không thể chuyển bảng."
   },
   "layout": {
     "title": "Bố cục",

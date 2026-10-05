@@ -9,8 +9,9 @@ import {
 } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement } from 'react'
 
+import { ApiError } from '@/application/boards'
 import { ROLES, type Board, type Role } from '@/domain/board'
-import { useBoardChange, useSharing } from '@/ui/boards/queries'
+import { useBoardChange, useSharing, useSpaces } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 function RoleSelect({
@@ -38,6 +39,65 @@ function RoleSelect({
         </option>
       ))}
     </TextField>
+  )
+}
+
+function MoveToSpace({
+  board,
+  onMoved
+}: {
+  board: Board
+  onMoved: () => void
+}): ReactElement | null {
+  const { t } = useI18n()
+  const spaces = useSpaces()
+  const [spaceId, setSpaceId] = useState('')
+  const move = useBoardChange(board.id, (api, to: string) =>
+    api.moveToSpace(board.id, to)
+  )
+  const targets = spaces.data?.filter(space => space.role !== 'viewer') ?? []
+  if (targets.length === 0) return null
+
+  return (
+    <form
+      aria-label={t('sharing.moveTitle')}
+      className="u-flex u-flex-items-center u-mt-2"
+      onSubmit={event => {
+        event.preventDefault()
+        move.mutate(spaceId, { onSuccess: onMoved })
+      }}
+    >
+      <TextField
+        select
+        size="small"
+        className="u-mr-1"
+        label={t('sharing.space')}
+        value={spaceId}
+        onChange={event => {
+          setSpaceId(event.target.value)
+        }}
+        helperText={t('sharing.moveHelp')}
+        slotProps={{ select: { native: true } }}
+      >
+        <option value="" />
+        {targets.map(space => (
+          <option key={space.id} value={space.id}>
+            {space.name}
+          </option>
+        ))}
+      </TextField>
+      <Button type="submit" disabled={!spaceId || move.isPending}>
+        {t('sharing.move')}
+      </Button>
+      {move.isError && (
+        <Typography role="alert" className="u-ml-1">
+          {move.error instanceof ApiError &&
+          move.error.code === 'key_prefix_taken'
+            ? t('sharing.prefixTaken', { prefix: board.keyPrefix })
+            : t('sharing.moveFailed')}
+        </Typography>
+      )}
+    </form>
   )
 }
 
@@ -170,6 +230,7 @@ export function ShareDialog({
             </li>
           ))}
         </ul>
+        <MoveToSpace board={board} onMoved={onClose} />
       </DialogContent>
       <DialogActions>
         <Button variant="secondary" onClick={onClose}>

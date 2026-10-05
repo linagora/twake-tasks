@@ -8,7 +8,8 @@ import {
   type HistoryEntry,
   type Reminder,
   type SavedFilter,
-  type Sharing
+  type Sharing,
+  type Space
 } from '@/application/boards'
 import type { Board, BoardSummary, Section, Task } from '@/domain/board'
 
@@ -122,7 +123,21 @@ export function fakeBoardsApi(boards: Board[] = []) {
     return sharing
   }
 
+  const spaces: Space[] = []
+
   const api = {
+    listSpaces: vi.fn<BoardsApi['listSpaces']>(() =>
+      Promise.resolve(structuredClone(spaces))
+    ),
+    moveToSpace: vi.fn<BoardsApi['moveToSpace']>((boardId, spaceId) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        board.spaceId = spaceId
+        board.role =
+          spaces.find(space => space.id === spaceId)?.role ?? 'viewer'
+        sharings.delete(boardId)
+      })
+    ),
     getSharing: vi.fn<BoardsApi['getSharing']>(boardId =>
       Promise.resolve().then(() => structuredClone(sharingOf(boardId)))
     ),
@@ -490,5 +505,11 @@ export function fakeBoardsApi(boards: Board[] = []) {
     )
   } satisfies BoardsApi
 
-  return Object.assign(api, { descriptions, comments, history, sharings })
+  return Object.assign(api, {
+    descriptions,
+    comments,
+    history,
+    sharings,
+    spaces
+  })
 }
