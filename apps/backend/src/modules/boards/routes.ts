@@ -4,6 +4,7 @@ import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
 import { createCommentStore } from './comments.ts'
+import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
 import { sectionCategory } from './schema.ts'
 import { createSectionStore } from './sections.ts'
@@ -329,6 +330,25 @@ export function registerBoards(
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()
+    }
+  )
+
+  app.get(
+    '/boards/:boardId/tasks/:taskId/history',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await historyOf(
+        deps.db,
+        identity,
+        params.data.boardId,
+        params.data.taskId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return { entries: result.value }
     }
   )
 

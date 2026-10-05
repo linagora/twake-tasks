@@ -7,6 +7,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgPolicy,
   pgTable,
@@ -301,6 +302,36 @@ export const comments = pgTable.withRLS(
   },
   table => [
     index().on(table.taskId, table.createdAt),
+    foreignKey({
+      columns: [table.tenant, table.taskId],
+      foreignColumns: [tasks.tenant, tasks.id]
+    }),
+    tenantPolicy(
+      table.organizationId,
+      sql`exists (select 1 from ${tasks} where ${tasks.id} = ${table.taskId})`
+    )
+  ]
+)
+
+// Written by triggers on tasks, task_assignees and task_labels.
+export const taskHistory = pgTable.withRLS(
+  'task_history',
+  {
+    id: id(),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    actorId: uuid('actor_id'),
+    actorEmail: text('actor_email').notNull(),
+    field: text().notNull(),
+    from: jsonb(),
+    to: jsonb(),
+    at: timestamptz('at').notNull().defaultNow(),
+    tenant: tenant()
+  },
+  table => [
+    index().on(table.taskId, table.at),
     foreignKey({
       columns: [table.tenant, table.taskId],
       foreignColumns: [tasks.tenant, tasks.id]

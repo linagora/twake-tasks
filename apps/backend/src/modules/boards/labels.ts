@@ -1,4 +1,4 @@
-import { asc, eq, sql } from 'drizzle-orm'
+import { and, asc, eq, notInArray, sql } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { labels, taskLabels } from './schema.ts'
@@ -67,15 +67,25 @@ export function createLabelStore(db: Db) {
         if (!labelIds.every(id => available.some(label => label.id === id))) {
           throw new Refused('invalid_label')
         }
-        await tx.delete(taskLabels).where(eq(taskLabels.taskId, taskId))
-        if (labelIds.length > 0) {
-          await tx.insert(taskLabels).values(
-            [...new Set(labelIds)].map(labelId => ({
-              taskId,
-              labelId,
-              organizationId: task.organizationId
-            }))
+        await tx
+          .delete(taskLabels)
+          .where(
+            and(
+              eq(taskLabels.taskId, taskId),
+              notInArray(taskLabels.labelId, labelIds)
+            )
           )
+        if (labelIds.length > 0) {
+          await tx
+            .insert(taskLabels)
+            .values(
+              [...new Set(labelIds)].map(labelId => ({
+                taskId,
+                labelId,
+                organizationId: task.organizationId
+              }))
+            )
+            .onConflictDoNothing()
         }
         return null
       })
