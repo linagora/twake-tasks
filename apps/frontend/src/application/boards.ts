@@ -104,8 +104,18 @@ export interface Sharing {
   invites: { id: string; email: string; role: Role }[]
 }
 
+export interface Space {
+  id: string
+  name: string
+  role: Role
+}
+
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
+  /** The spaces the signed-in person belongs to, with their role. */
+  listSpaces: () => Promise<Space[]>
+  /** The board's members and invites go, and the space's roles apply. */
+  moveToSpace: (boardId: string, spaceId: string) => Promise<void>
   /** A user's board's members and pending invites. Admins only. */
   getSharing: (boardId: string) => Promise<Sharing>
   /** Resolves whether or not the email has an account. */

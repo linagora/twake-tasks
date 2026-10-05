@@ -204,7 +204,13 @@
     "remove": "Retirer",
     "close": "Fermer",
     "failed": "La modification n'a pas pu être enregistrée.",
-    "loadFailed": "Les membres n'ont pas pu être chargés."
+    "loadFailed": "Les membres n'ont pas pu être chargés.",
+    "moveTitle": "Déplacer vers un espace",
+    "space": "Espace",
+    "moveHelp": "Ses membres sont retirés et les rôles de l'espace s'appliquent.",
+    "move": "Déplacer",
+    "prefixTaken": "Un tableau de cet espace utilise déjà %{prefix}.",
+    "moveFailed": "Le tableau n'a pas pu être déplacé."
   },
   "layout": {
     "title": "Affichage",

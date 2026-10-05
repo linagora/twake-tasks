@@ -19,6 +19,7 @@ import type {
   Reminder,
   SavedFilter,
   Sharing,
+  Space,
   TaskMove
 } from '@/application/boards'
 import type { Board, BoardSummary, Layout } from '@/domain/board'
@@ -95,6 +96,11 @@ export function useSharing(boardId: string): UseQueryResult<Sharing> {
     queryKey: [...boardKey(boardId), 'sharing'],
     queryFn: () => api.getSharing(boardId)
   })
+}
+
+export function useSpaces(): UseQueryResult<Space[]> {
+  const api = useBoardsApi()
+  return useQuery({ queryKey: ['spaces'], queryFn: () => api.listSpaces() })
 }
 
 export function useBoards(): UseQueryResult<BoardSummary[]> {

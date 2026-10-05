@@ -1,16 +1,20 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import type { Sharing } from '@/application/boards'
+import type { Sharing, Space } from '@/application/boards'
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 const me = { userId: 'me', email: 'me@example.com', role: 'admin' } as const
 
-async function openSharing(members: Sharing['members'] = [me]) {
+async function openSharing(
+  members: Sharing['members'] = [me],
+  spaces: Space[] = []
+) {
   const board = aBoard({ name: 'Design' })
   const boardsApi = fakeBoardsApi([board])
   boardsApi.sharings.set(board.id, { members, invites: [] })
+  boardsApi.spaces.push(...spaces)
   renderRoute(`/boards/${board.id}`, { boardsApi })
   fireEvent.click(await screen.findByRole('button', { name: 'Share' }))
   return {
@@ -70,6 +74,27 @@ describe('sharing a board', () => {
         dialog.queryByRole('listitem', { name: 'bob@example.com' })
       ).toBeNull()
     })
+  })
+
+  it('moves the board into a space I edit', async () => {
+    const { boardsApi, board, dialog } = await openSharing(
+      [me],
+      [
+        { id: 'ops', name: 'Ops', role: 'editor' },
+        { id: 'hr', name: 'HR', role: 'viewer' }
+      ]
+    )
+    const space = await dialog.findByRole('combobox', { name: 'Space' })
+
+    expect(within(space).queryByRole('option', { name: 'HR' })).toBeNull()
+    fireEvent.change(space, { target: { value: 'ops' } })
+    fireEvent.click(dialog.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(boardsApi.moveToSpace).toHaveBeenCalledWith(board.id, 'ops')
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
   })
 
   it('offers sharing only to admins of their own boards', async () => {

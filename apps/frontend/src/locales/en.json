@@ -200,7 +200,13 @@
     "remove": "Remove",
     "close": "Close",
     "failed": "The change could not be saved.",
-    "loadFailed": "The members could not be loaded."
+    "loadFailed": "The members could not be loaded.",
+    "moveTitle": "Move to a space",
+    "space": "Space",
+    "moveHelp": "Its members are removed and the space's roles apply.",
+    "move": "Move",
+    "prefixTaken": "A board of this space already uses %{prefix}.",
+    "moveFailed": "The board could not be moved."
   },
   "layout": {
     "title": "Layout",
