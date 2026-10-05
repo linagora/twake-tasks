@@ -84,8 +84,26 @@ export interface Agenda {
   tasks: AgendaTask[]
 }
 
+export interface FilterCriteria {
+  assignee?: 'me' | 'nobody'
+  priority?: number
+  label?: string
+  due?: 'overdue' | 'today' | 'week' | 'none'
+}
+
+export interface SavedFilter {
+  id: string
+  name: string
+  criteria: FilterCriteria
+}
+
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
+  listFilters: () => Promise<SavedFilter[]>
+  createFilter: (filter: Omit<SavedFilter, 'id'>) => Promise<{ id: string }>
+  deleteFilter: (filterId: string) => Promise<void>
+  /** Open tasks matching a saved filter, across the person's boards. */
+  filteredTasks: (filterId: string, zone: string) => Promise<AgendaTask[]>
   /** Overdue tasks, then those due within `days` days of today in `zone`. */
   agenda: (zone: string, days: number) => Promise<Agenda>
   /** Open tasks assigned to the signed-in person, dated ones first. */

@@ -16,6 +16,7 @@ import type {
   NewReminder,
   NewTask,
   Reminder,
+  SavedFilter,
   TaskMove
 } from '@/application/boards'
 import type { Board, BoardSummary } from '@/domain/board'
@@ -26,7 +27,7 @@ import { localToday, localZone } from '@/ui/boards/dueLabel'
 const boardsKey = ['boards'] as const
 const boardKey = (boardId: string) => ['boards', boardId] as const
 
-export type AgendaView = 'today' | 'upcoming' | 'mine'
+export type AgendaView = 'today' | 'upcoming' | 'mine' | { filterId: string }
 
 const AGENDA_DAYS = { today: 1, upcoming: 7 } as const
 
@@ -34,10 +35,46 @@ export function useAgenda(view: AgendaView): UseQueryResult<Agenda> {
   const api = useBoardsApi()
   return useQuery({
     queryKey: ['agenda', view],
-    queryFn: async () =>
-      view === 'mine'
+    queryFn: async () => {
+      if (typeof view === 'object') {
+        return {
+          today: localToday(),
+          tasks: await api.filteredTasks(view.filterId, localZone())
+        }
+      }
+      return view === 'mine'
         ? { today: localToday(), tasks: await api.myTasks() }
         : api.agenda(localZone(), AGENDA_DAYS[view])
+    }
+  })
+}
+
+const filtersKey = ['filters'] as const
+
+export function useFilters(): UseQueryResult<SavedFilter[]> {
+  const api = useBoardsApi()
+  return useQuery({ queryKey: filtersKey, queryFn: () => api.listFilters() })
+}
+
+export function useCreateFilter(): UseMutationResult<
+  { id: string },
+  Error,
+  Omit<SavedFilter, 'id'>
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (filter: Omit<SavedFilter, 'id'>) => api.createFilter(filter),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
+  })
+}
+
+export function useDeleteFilter(): UseMutationResult<void, Error, string> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (filterId: string) => api.deleteFilter(filterId),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
   })
 }
 

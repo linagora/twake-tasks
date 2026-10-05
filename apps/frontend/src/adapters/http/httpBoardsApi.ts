@@ -1,6 +1,7 @@
 import {
   ApiError,
   type AgendaTask,
+  type SavedFilter,
   type BoardsApi,
   type Comment,
   type Reminder,
@@ -47,6 +48,17 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
         'GET',
         `/agenda?${new URLSearchParams({ zone, days: String(days) }).toString()}`
       ),
+    listFilters: async () =>
+      (await call<{ filters: SavedFilter[] }>('GET', '/filters')).filters,
+    createFilter: filter => call('POST', '/filters', filter),
+    deleteFilter: filterId => call('DELETE', `/filters/${filterId}`),
+    filteredTasks: async (filterId, zone) =>
+      (
+        await call<{ tasks: AgendaTask[] }>(
+          'GET',
+          `/filters/${filterId}/tasks?${new URLSearchParams({ zone }).toString()}`
+        )
+      ).tasks,
     myTasks: async () =>
       (await call<{ tasks: AgendaTask[] }>('GET', '/my-tasks')).tasks,
     listBoards: async () =>

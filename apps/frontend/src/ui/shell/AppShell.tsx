@@ -37,6 +37,9 @@ export function AppShell(): ReactElement {
               {t(`agenda.${view}`)}
             </Link>
           ))}
+          <Link component={RouterLink} to="/filters" className="u-mr-1">
+            {t('filters.title')}
+          </Link>
         </nav>
         <Button
           className="u-ml-auto u-mr-1"

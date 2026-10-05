@@ -182,6 +182,28 @@
     "unknown_section": "Aucune section nommée %{name}.",
     "unknown_person": "Aucun membre nommé %{name}."
   },
+  "filters": {
+    "title": "Filtres",
+    "empty": "Aucun filtre enregistré.",
+    "loadFailed": "Impossible de charger les filtres.",
+    "delete": "Supprimer %{name}",
+    "new": "Nouveau filtre",
+    "name": "Nom",
+    "assignee": "Responsable",
+    "priority": "Priorité",
+    "label": "Étiquette",
+    "due": "Échéance",
+    "save": "Enregistrer le filtre",
+    "saveFailed": "Impossible d’enregistrer le filtre.",
+    "assignees": { "any": "Tous", "me": "Moi", "nobody": "Personne" },
+    "dues": {
+      "any": "Toutes",
+      "overdue": "En retard",
+      "today": "Aujourd’hui",
+      "week": "7 prochains jours",
+      "none": "Sans date"
+    }
+  },
   "agenda": {
     "today": "Aujourd'hui",
     "upcoming": "À venir",

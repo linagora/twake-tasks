@@ -182,6 +182,28 @@
     "unknown_section": "No section named %{name}.",
     "unknown_person": "No member named %{name}."
   },
+  "filters": {
+    "title": "Filters",
+    "empty": "No saved filters.",
+    "loadFailed": "Couldn’t load filters.",
+    "delete": "Delete %{name}",
+    "new": "New filter",
+    "name": "Name",
+    "assignee": "Assignee",
+    "priority": "Priority",
+    "label": "Label",
+    "due": "Due",
+    "save": "Save filter",
+    "saveFailed": "Couldn’t save the filter.",
+    "assignees": { "any": "Any", "me": "Me", "nobody": "Nobody" },
+    "dues": {
+      "any": "Any",
+      "overdue": "Overdue",
+      "today": "Today",
+      "week": "Next 7 days",
+      "none": "No date"
+    }
+  },
   "agenda": {
     "today": "Today",
     "upcoming": "Upcoming",

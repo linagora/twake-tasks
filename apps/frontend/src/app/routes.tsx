@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router'
 
-import { AgendaScreen } from '@/ui/agenda/AgendaScreen'
+import { AgendaScreen, FilterScreen } from '@/ui/agenda/AgendaScreen'
+import { FiltersScreen } from '@/ui/agenda/FiltersScreen'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { BoardsScreen } from '@/ui/boards/BoardsScreen'
 import { AppShell } from '@/ui/shell/AppShell'
@@ -13,7 +14,9 @@ export const routes: RouteObject[] = [
       { path: '/boards/:boardId', element: <BoardScreen /> },
       { path: '/today', element: <AgendaScreen view="today" /> },
       { path: '/upcoming', element: <AgendaScreen view="upcoming" /> },
-      { path: '/mine', element: <AgendaScreen view="mine" /> }
+      { path: '/mine', element: <AgendaScreen view="mine" /> },
+      { path: '/filters', element: <FiltersScreen /> },
+      { path: '/filters/:filterId', element: <FilterScreen /> }
     ]
   }
 ]
