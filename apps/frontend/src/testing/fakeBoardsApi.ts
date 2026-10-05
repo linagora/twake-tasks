@@ -27,6 +27,8 @@ export function aBoard(overrides: Partial<Board> = {}): Board {
     archived: false,
     version: 1,
     role: 'admin',
+    layout: 'board',
+    defaultLayout: 'board',
     members: [],
     labels: [],
     sections: [
@@ -220,6 +222,18 @@ export function fakeBoardsApi(boards: Board[] = []) {
         find(boardId)
         if (favorite) favorites.add(boardId)
         else favorites.delete(boardId)
+      })
+    ),
+    setLayout: vi.fn<BoardsApi['setLayout']>((boardId, layout) =>
+      Promise.resolve().then(() => {
+        find(boardId).layout = layout
+      })
+    ),
+    setDefaultLayout: vi.fn<BoardsApi['setDefaultLayout']>((boardId, layout) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        board.defaultLayout = layout
+        board.version += 1
       })
     ),
     getBoard: vi.fn((boardId: string) =>

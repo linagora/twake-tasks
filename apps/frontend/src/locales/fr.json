@@ -182,6 +182,16 @@
     "unknown_section": "Aucune section nommée %{name}.",
     "unknown_person": "Aucun membre nommé %{name}."
   },
+  "layout": {
+    "title": "Affichage",
+    "board": "Tableau",
+    "list": "Liste",
+    "calendar": "Calendrier",
+    "useAsDefault": "Utiliser par défaut",
+    "previousMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "noDate": "Sans date"
+  },
   "search": {
     "label": "Rechercher",
     "results": "Résultats pour « %{text} »",

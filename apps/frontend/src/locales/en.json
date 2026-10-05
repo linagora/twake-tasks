@@ -182,6 +182,16 @@
     "unknown_section": "No section named %{name}.",
     "unknown_person": "No member named %{name}."
   },
+  "layout": {
+    "title": "Layout",
+    "board": "Board",
+    "list": "List",
+    "calendar": "Calendar",
+    "useAsDefault": "Use as default",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "noDate": "No date"
+  },
   "search": {
     "label": "Search",
     "results": "Results for “%{text}”",
