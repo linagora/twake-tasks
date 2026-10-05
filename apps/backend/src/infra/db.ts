@@ -41,8 +41,12 @@ export function tenantPolicy(column: AnyPgColumn, b2cScope?: SQL) {
   return pgPolicy('tenant', { using: scoped, withCheck: scoped })
 }
 
-export function createDb(url: string) {
-  const client = postgres(url, { onnotice: () => undefined })
+// The app URL lets the database link to tasks in the events it writes.
+export function createDb(url: string, appUrl = '') {
+  const client = postgres(url, {
+    onnotice: () => undefined,
+    connection: { 'app.url': appUrl }
+  })
   return { sql: client, db: drizzle({ client }) }
 }
 

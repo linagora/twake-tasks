@@ -21,6 +21,7 @@ const configSchema = z
     KAFKA_BOOTSTRAP: z.string().min(1),
     KAFKA_GROUP_ID: z.string().min(1).default('twake-tasks'),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+    APP_URL: z.url({ protocol: /^https?$/ }),
     OIDC_ISSUER: z.url({ protocol: /^https$/ }),
     OIDC_AUDIENCE: z.string().min(1).default('twaketasks'),
     OIDC_CLIENT_ID: z.string().min(1).default('twaketasks-backend'),

@@ -28,7 +28,10 @@ export function aB2cUser(): TestUser {
 }
 
 export async function startApp() {
-  const { sql, db } = createDb(inject('databaseUrl'))
+  const { sql, db } = createDb(
+    inject('databaseUrl'),
+    'https://tasks.example.com/'
+  )
   const app = await buildApp({
     logger: pino({ level: 'silent' }),
     db,
