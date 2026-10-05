@@ -37,6 +37,8 @@ const taskChanges = z
   .partial()
   .refine(changes => Object.keys(changes).length > 0)
 
+const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
+
 const sectionName = z.string().trim().min(1).max(100)
 const category = z.enum(sectionCategory.enumValues)
 
@@ -66,7 +68,8 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   archived: 409,
   invalid_section: 400,
   stale_neighbours: 409,
-  section_not_empty: 409
+  section_not_empty: 409,
+  invalid_assignee: 400
 }
 
 function refuse(reply: FastifyReply, error: Refusal) {
@@ -206,6 +209,29 @@ export function registerBoards(
         params.data.boardId,
         params.data.taskId,
         body.data
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.put(
+    '/boards/:boardId/tasks/:taskId/assignees',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = assignment.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await taskStore.setAssignees(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        body.data.userIds
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()

@@ -3,8 +3,7 @@ import { generateNKeysBetween } from 'fractional-indexing'
 import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { spaceMembers } from '../spaces/schema.ts'
-import { accessibleBoards, roleOn } from './access.ts'
+import { accessibleBoards, membersOf, roleOn } from './access.ts'
 import {
   sections,
   boardFavorites,
@@ -194,28 +193,12 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     .from(tasks)
     .where(eq(tasks.boardId, boardId))
     .orderBy(asc(tasks.position))
-  // Assignees can open the board, so their email is on their membership.
-  const email = sql<string>`coalesce(${boardMembers.email}, ${spaceMembers.email})`
-  const assignees = await tx
-    .select({ taskId: taskAssignees.taskId, email })
+  const members = await membersOf(tx, board)
+  const assignments = await tx
+    .select({ taskId: taskAssignees.taskId, userId: taskAssignees.userId })
     .from(taskAssignees)
     .innerJoin(tasks, eq(tasks.id, taskAssignees.taskId))
-    .leftJoin(
-      boardMembers,
-      and(
-        eq(boardMembers.boardId, boardId),
-        eq(boardMembers.userId, taskAssignees.userId)
-      )
-    )
-    .leftJoin(
-      spaceMembers,
-      and(
-        eq(spaceMembers.spaceId, sql`${board.spaceId}`),
-        eq(spaceMembers.userId, taskAssignees.userId)
-      )
-    )
     .where(eq(tasks.boardId, boardId))
-    .orderBy(asc(email))
   return {
     id: board.id,
     name: board.name,
@@ -225,6 +208,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     archived: board.archivedAt !== null,
     version: board.version,
     role,
+    members,
     sections: sectionRows,
     tasks: rows.map(task => ({
       id: task.id,
@@ -235,9 +219,13 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
       dueDate: task.dueDate,
       completedAt: task.completedAt,
       canceledAt: task.canceledAt,
-      assignees: assignees
-        .filter(assignee => assignee.taskId === task.id)
-        .map(assignee => assignee.email)
+      // Someone who left the board stays assigned, but is not shown.
+      assignees: members.filter(member =>
+        assignments.some(
+          assigned =>
+            assigned.taskId === task.id && assigned.userId === member.userId
+        )
+      )
     }))
   }
 }
