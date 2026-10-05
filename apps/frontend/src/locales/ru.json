@@ -80,6 +80,10 @@
     "priorityCleared": "%{actor} убрал(а) приоритет",
     "dueDate": "%{actor} установил(а) срок %{date}",
     "dueDateCleared": "%{actor} убрал(а) срок",
+    "deadline": "%{actor} установил(а) крайний срок %{date}",
+    "deadlineCleared": "%{actor} убрал(а) крайний срок",
+    "duration": "%{actor} установил(а) длительность %{duration}",
+    "durationCleared": "%{actor} убрал(а) длительность",
     "section": "%{actor} переместил(а) задачу в %{section}",
     "completed": "%{actor} завершил(а) задачу",
     "canceled": "%{actor} отменил(а) задачу",
@@ -91,6 +95,22 @@
     "unlabeled": "%{actor} убрал(а) метку %{name}",
     "someone": "человек, покинувший доску",
     "someLabel": "удалённая метка"
+  },
+  "dates": {
+    "edit": "Изменить даты",
+    "save": "Сохранить даты",
+    "dueDate": "Срок",
+    "time": "Время",
+    "pin": "Сохранять это время в %{zone}",
+    "deadline": "Крайний срок",
+    "deadlineOn": "Крайний срок %{date}",
+    "duration": "Длительность",
+    "unit": "Единица",
+    "unitMinutes": "Минуты",
+    "unitDays": "Дни",
+    "minutes": "%{amount} мин",
+    "days": "%{amount} дн",
+    "saveFailed": "Не удалось сохранить даты."
   },
   "section": {
     "new": "Новый раздел",

@@ -13,6 +13,7 @@ import Markdown from 'react-markdown'
 import { ApiError } from '@/application/boards'
 import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
 import { Comments } from '@/ui/boards/Comments'
+import { Dates } from '@/ui/boards/Dates'
 import { History } from '@/ui/boards/History'
 import {
   useCreateTask,
@@ -46,6 +47,7 @@ export function TaskPanel({
     <Dialog open onClose={onClose} aria-labelledby={titleId} size="medium">
       <DialogTitle id={titleId}>{`${task.key} ${task.title}`}</DialogTitle>
       <DialogContent>
+        <Dates task={task} boardId={boardId} editable={editable} />
         {editable && depth < MAX_TASK_DEPTH && (
           <AddSubtask task={task} boardId={boardId} />
         )}

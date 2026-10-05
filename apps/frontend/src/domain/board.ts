@@ -35,10 +35,20 @@ export interface Task {
   title: string
   priority: Priority | null
   dueDate: string | null
+  /** `HH:MM`, the same wall clock time everywhere unless `dueZone` is set. */
+  dueTime: string | null
+  dueZone: string | null
+  deadline: string | null
+  duration: Duration | null
   completedAt: string | null
   canceledAt: string | null
   assignees: Person[]
   labels: Label[]
+}
+
+export interface Duration {
+  amount: number
+  unit: 'minutes' | 'days'
 }
 
 export interface Label {

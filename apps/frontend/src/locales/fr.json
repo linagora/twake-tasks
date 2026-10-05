@@ -80,6 +80,10 @@
     "priorityCleared": "%{actor} a retiré la priorité",
     "dueDate": "%{actor} a fixé l'échéance au %{date}",
     "dueDateCleared": "%{actor} a retiré l'échéance",
+    "deadline": "%{actor} a fixé la date limite au %{date}",
+    "deadlineCleared": "%{actor} a retiré la date limite",
+    "duration": "%{actor} a fixé la durée à %{duration}",
+    "durationCleared": "%{actor} a retiré la durée",
     "section": "%{actor} l'a déplacée vers %{section}",
     "completed": "%{actor} l'a terminée",
     "canceled": "%{actor} l'a annulée",
@@ -91,6 +95,22 @@
     "unlabeled": "%{actor} a retiré l'étiquette %{name}",
     "someone": "une personne qui a quitté le tableau",
     "someLabel": "une étiquette supprimée"
+  },
+  "dates": {
+    "edit": "Modifier les dates",
+    "save": "Enregistrer les dates",
+    "dueDate": "Échéance",
+    "time": "Heure",
+    "pin": "Garder cette heure en %{zone}",
+    "deadline": "Date limite",
+    "deadlineOn": "Date limite %{date}",
+    "duration": "Durée",
+    "unit": "Unité",
+    "unitMinutes": "Minutes",
+    "unitDays": "Jours",
+    "minutes": "%{amount} min",
+    "days": "%{amount} j",
+    "saveFailed": "Les dates n'ont pas pu être enregistrées."
   },
   "section": {
     "new": "Nouvelle section",

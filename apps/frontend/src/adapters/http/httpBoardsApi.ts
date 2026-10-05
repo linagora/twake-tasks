@@ -52,6 +52,8 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       call('POST', `/boards/${boardId}/tasks/${taskId}/move`, move),
     completeTask: (boardId, taskId, state) =>
       call('POST', `/boards/${boardId}/tasks/${taskId}/complete`, { state }),
+    editTask: (boardId, taskId, changes) =>
+      call('PATCH', `/boards/${boardId}/tasks/${taskId}`, changes),
     getDescription: (boardId, taskId) =>
       call('GET', `/boards/${boardId}/tasks/${taskId}/description`),
     setDescription: (boardId, taskId, edit) =>
