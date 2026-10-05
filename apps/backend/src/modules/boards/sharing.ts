@@ -1,6 +1,7 @@
-import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm'
-import type { Db, Tx } from '../../infra/db.ts'
+import { and, asc, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
+import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { spaceMembers, spaces } from '../spaces/schema.ts'
 import { roleOn, type Role } from './access.ts'
 import {
   boardInvites,
@@ -9,7 +10,7 @@ import {
   taskAssignees,
   tasks
 } from './schema.ts'
-import { checkRole, Refused, writeOrRefuse } from './tasks.ts'
+import { bumpBoard, checkRole, Refused, writeOrRefuse } from './tasks.ts'
 
 // Only a user's own boards are shared: a space board takes the space's members,
 // and the Inbox stays private.
@@ -18,6 +19,7 @@ async function sharedBoard(tx: Tx, identity: Identity, boardId: string) {
   const [board] = await tx
     .select({
       organizationId: boards.organizationId,
+      keyPrefix: boards.keyPrefix,
       spaceId: boards.spaceId,
       inbox: boards.inbox
     })
@@ -129,6 +131,65 @@ export function createSharingStore(db: Db) {
           )
           .returning({ userId: boardMembers.userId })
         if (updated.length === 0) throw new Refused('not_found')
+      })
+    },
+
+    mySpaces(identity: Identity) {
+      return inTenant(db, identity, tx =>
+        tx
+          .select({
+            id: spaces.id,
+            name: spaces.name,
+            role: spaceMembers.role
+          })
+          .from(spaceMembers)
+          .innerJoin(
+            spaces,
+            and(eq(spaces.id, spaceMembers.spaceId), isNull(spaces.deletedAt))
+          )
+          .where(eq(spaceMembers.userId, identity.userId))
+          .orderBy(asc(spaces.name))
+      )
+    },
+
+    // The board's members and invites go: the space's roles apply instead.
+    moveToSpace(identity: Identity, boardId: string, spaceId: string) {
+      return writeOrRefuse(db, identity, async tx => {
+        const board = await sharedBoard(tx, identity, boardId)
+        const [member] = await tx
+          .select({ role: spaceMembers.role })
+          .from(spaceMembers)
+          .innerJoin(
+            spaces,
+            and(eq(spaces.id, spaceMembers.spaceId), isNull(spaces.deletedAt))
+          )
+          .where(
+            and(
+              eq(spaceMembers.spaceId, spaceId),
+              eq(spaceMembers.userId, identity.userId)
+            )
+          )
+        if (!member || board.organizationId === null) {
+          throw new Refused('not_found')
+        }
+        if (member.role === 'viewer') throw new Refused('forbidden')
+        const [taken] = await tx
+          .select({ id: boards.id })
+          .from(boards)
+          .where(
+            and(
+              eq(boards.spaceId, spaceId),
+              eq(boards.keyPrefix, board.keyPrefix)
+            )
+          )
+        if (taken) throw new Refused('key_prefix_taken')
+        await bumpBoard(tx, boardId)
+        await tx
+          .update(boards)
+          .set({ spaceId, ownerId: null })
+          .where(eq(boards.id, boardId))
+        await tx.delete(boardMembers).where(eq(boardMembers.boardId, boardId))
+        await tx.delete(boardInvites).where(eq(boardInvites.boardId, boardId))
       })
     },
 
