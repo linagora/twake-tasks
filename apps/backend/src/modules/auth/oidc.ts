@@ -31,6 +31,7 @@ const BACKCHANNEL_LOGOUT_EVENT =
 
 const userinfoSchema = z.object({
   sub: z.string().min(1),
+  sid: z.string().min(1),
   email: z.email(),
   org_id: z.string().min(1).nullish(),
   org_role: organizationRole.nullish().catch(null)
@@ -69,8 +70,7 @@ export async function discoverIdentityProvider(
         !token.active ||
         token.exp === undefined ||
         token.exp * 1000 <= Date.now() ||
-        !hasAudience(token.aud, options.audience) ||
-        token.sid === undefined
+        !hasAudience(token.aud, options.audience)
       ) {
         return null
       }
@@ -83,7 +83,7 @@ export async function discoverIdentityProvider(
       return {
         subject: claims.sub,
         email: claims.email,
-        sessionId: token.sid,
+        sessionId: claims.sid,
         expiresAt: new Date(token.exp * 1000),
         organizationId: claims.org_id ?? null,
         organizationRole: claims.org_role ?? null
