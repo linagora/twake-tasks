@@ -13,6 +13,7 @@ import Markdown from 'react-markdown'
 import { ApiError } from '@/application/boards'
 import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
 import { RemoveTask } from '@/ui/boards/Archive'
+import { TransferTask } from '@/ui/boards/TransferTask'
 import { Comments } from '@/ui/boards/Comments'
 import { Dates } from '@/ui/boards/Dates'
 import { History } from '@/ui/boards/History'
@@ -52,6 +53,9 @@ export function TaskPanel({
         <Dates task={task} boardId={boardId} editable={editable} />
         {editable && depth < MAX_TASK_DEPTH && (
           <AddSubtask task={task} boardId={boardId} />
+        )}
+        {editable && task.parentId === null && (
+          <TransferTask task={task} boardId={boardId} onMoved={onClose} />
         )}
         {description.isError && (
           <Typography role="alert">{t('task.loadFailed')}</Typography>

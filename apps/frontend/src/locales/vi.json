@@ -187,6 +187,13 @@
     "then": "g rồi %{key}",
     "close": "Đóng"
   },
+  "transfer": {
+    "title": "Chuyển sang bảng khác",
+    "board": "Bảng",
+    "section": "Mục",
+    "move": "Chuyển",
+    "failed": "Không thể chuyển công việc."
+  },
   "archive": {
     "archive": "Lưu trữ",
     "delete": "Xóa",
