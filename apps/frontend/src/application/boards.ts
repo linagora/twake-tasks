@@ -50,6 +50,17 @@ export interface Comment {
   createdAt: string
 }
 
+/** `firesAt` is null while a relative reminder has no due date to follow. */
+export interface Reminder {
+  id: string
+  at: string | null
+  beforeMinutes: number | null
+  firesAt: string | null
+}
+
+export type NewReminder =
+  { at: string } | { beforeMinutes: number; zone: string }
+
 /** `from` and `to` are ids for `section`, `assignees` and `labels`. */
 export interface HistoryEntry {
   actor: Person
@@ -102,6 +113,17 @@ export interface BoardsApi {
   listHistory: (boardId: string, taskId: string) => Promise<HistoryEntry[]>
   listComments: (boardId: string, taskId: string) => Promise<Comment[]>
   addComment: (boardId: string, taskId: string, body: string) => Promise<void>
+  listReminders: (boardId: string, taskId: string) => Promise<Reminder[]>
+  addReminder: (
+    boardId: string,
+    taskId: string,
+    reminder: NewReminder
+  ) => Promise<void>
+  deleteReminder: (
+    boardId: string,
+    taskId: string,
+    reminderId: string
+  ) => Promise<void>
   setAssignees: (
     boardId: string,
     taskId: string,

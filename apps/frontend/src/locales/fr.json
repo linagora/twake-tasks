@@ -154,5 +154,19 @@
       "completed": "Terminé",
       "canceled": "Annulé"
     }
+  },
+  "reminders": {
+    "title": "Rappels",
+    "none": "Aucun rappel.",
+    "remindMe": "Me rappeler",
+    "setTime": "À une heure précise",
+    "at": "Le",
+    "atDue": "À l'échéance",
+    "minutesBefore": "%{smart_count} minute avant |||| %{smart_count} minutes avant",
+    "hoursBefore": "%{smart_count} heure avant |||| %{smart_count} heures avant",
+    "daysBefore": "%{smart_count} jour avant |||| %{smart_count} jours avant",
+    "add": "Ajouter un rappel",
+    "delete": "Supprimer le rappel",
+    "failed": "Le rappel n'a pas pu être enregistré."
   }
 }

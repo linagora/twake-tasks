@@ -5,7 +5,8 @@ import {
   type BoardsApi,
   type Comment,
   type Description,
-  type HistoryEntry
+  type HistoryEntry,
+  type Reminder
 } from '@/application/boards'
 import type { Board, BoardSummary, Section, Task } from '@/domain/board'
 
@@ -90,6 +91,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
   const descriptions = new Map<string, Description>()
   const comments = new Map<string, Comment[]>()
   const history = new Map<string, HistoryEntry[]>()
+  const reminders = new Map<string, Reminder[]>()
   const findTask = (boardId: string, taskId: string) => {
     const task = find(boardId).tasks.find(candidate => candidate.id === taskId)
     if (!task) throw new ApiError(404, 'not_found')
@@ -193,6 +195,40 @@ export function fakeBoardsApi(boards: Board[] = []) {
         findTask(boardId, taskId)
         return structuredClone(history.get(taskId) ?? [])
       })
+    ),
+    listReminders: vi.fn<BoardsApi['listReminders']>((boardId, taskId) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        return structuredClone(reminders.get(taskId) ?? [])
+      })
+    ),
+    addReminder: vi.fn<BoardsApi['addReminder']>((boardId, taskId, reminder) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        const at = 'at' in reminder ? reminder.at : null
+        reminders.set(taskId, [
+          ...(reminders.get(taskId) ?? []),
+          {
+            id: nextId(),
+            at,
+            beforeMinutes:
+              'beforeMinutes' in reminder ? reminder.beforeMinutes : null,
+            firesAt: at
+          }
+        ])
+      })
+    ),
+    deleteReminder: vi.fn<BoardsApi['deleteReminder']>(
+      (boardId, taskId, reminderId) =>
+        Promise.resolve().then(() => {
+          findTask(boardId, taskId)
+          reminders.set(
+            taskId,
+            (reminders.get(taskId) ?? []).filter(
+              reminder => reminder.id !== reminderId
+            )
+          )
+        })
     ),
     listComments: vi.fn<BoardsApi['listComments']>((boardId, taskId) =>
       Promise.resolve().then(() => {
