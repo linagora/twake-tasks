@@ -2,6 +2,7 @@ import { and, asc, desc, eq, ne, sql } from 'drizzle-orm'
 import { generateNKeysBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { shown } from './archive.ts'
 import { sections, sectionCategory, tasks } from './schema.ts'
 import {
   bumpBoard,
@@ -158,8 +159,9 @@ export function createSectionStore(db: Db) {
       })
     },
 
-    // Without `tasksTo`, only an empty section is deleted. A null `tasksTo`
-    // sends its tasks to No section.
+    // Without `tasksTo`, only a section with no shown task is deleted, and its
+    // archived and trashed tasks go to No section. A null `tasksTo` sends its
+    // tasks to No section.
     deleteSection(
       identity: Identity,
       boardId: string,
@@ -175,12 +177,11 @@ export function createSectionStore(db: Db) {
           const [task] = await tx
             .select({ id: tasks.id })
             .from(tasks)
-            .where(inSection(boardId, sectionId))
+            .where(and(inSection(boardId, sectionId), shown))
             .limit(1)
           if (task) throw new Refused('section_not_empty')
-        } else {
-          await moveTasks(tx, boardId, sectionId, tasksTo)
         }
+        await moveTasks(tx, boardId, sectionId, tasksTo ?? null)
         await tx.delete(sections).where(eq(sections.id, sectionId))
         return null
       })

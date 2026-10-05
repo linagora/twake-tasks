@@ -18,6 +18,7 @@ import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { accessibleBoards, membersOf, roleOn } from './access.ts'
+import { shown } from './archive.ts'
 import {
   sections,
   boardFavorites,
@@ -254,7 +255,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
   const rows = await tx
     .select()
     .from(tasks)
-    .where(eq(tasks.boardId, boardId))
+    .where(and(eq(tasks.boardId, boardId), shown))
     .orderBy(asc(tasks.position))
   const members = await membersOf(tx, board)
   const boardLabels = await labelsOn(tx, board)
@@ -386,7 +387,7 @@ async function tasksOf(
     .from(tasks)
     .innerJoin(boards, eq(boards.id, tasks.boardId))
     .innerJoin(accessible, eq(accessible.boardId, boards.id))
-    .where(which)
+    .where(and(shown, which))
     .orderBy(
       sql`${tasks.dueDate} asc nulls last`,
       sql`${tasks.dueTime} asc nulls last`,

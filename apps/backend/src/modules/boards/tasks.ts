@@ -56,8 +56,9 @@ export function completionFor(
 
 // Neighbours come from what the client saw. When they no longer sit next to
 // each other the board changed underneath, so the client reloads and retries.
+// Archived and trashed tasks keep their place between the ones it saw.
 export function positionBetween(
-  others: { id: string; position: string }[],
+  others: { id: string; position: string; hidden?: boolean }[],
   afterId: string | undefined,
   beforeId: string | undefined
 ): string {
@@ -66,7 +67,12 @@ export function positionBetween(
   if ((afterId && after < 0) || (beforeId && before < 0)) {
     throw new Refused('stale_neighbours')
   }
-  if (afterId && beforeId && before !== after + 1) {
+  if (
+    afterId &&
+    beforeId &&
+    (before <= after ||
+      others.slice(after + 1, before).some(task => !task.hidden))
+  ) {
     throw new Refused('stale_neighbours')
   }
   const lower = afterId
@@ -325,7 +331,11 @@ export function createTaskStore(db: Db) {
           return null
         }
         const others = await tx
-          .select({ id: tasks.id, position: tasks.position })
+          .select({
+            id: tasks.id,
+            position: tasks.position,
+            hidden: sql<boolean>`${tasks.archivedAt} is not null or ${tasks.deletedAt} is not null`
+          })
           .from(tasks)
           .where(and(inSection(boardId, input.sectionId), ne(tasks.id, taskId)))
           .orderBy(asc(tasks.position))
