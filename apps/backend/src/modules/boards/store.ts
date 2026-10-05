@@ -97,6 +97,7 @@ export function createBoardStore(db: Db) {
     listBoards(identity: Identity) {
       return inTenant(db, identity, async tx => {
         await ensureInbox(tx, identity)
+        await tx.execute(sql`select app_claim_invites()`)
         const accessible = accessibleBoards(tx, identity.userId)
         return tx
           .select({
