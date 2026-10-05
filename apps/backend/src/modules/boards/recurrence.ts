@@ -9,7 +9,7 @@ export interface Recurrence {
 }
 
 // Months keep the day when they can, and fall back to their last day.
-function shift(day: string, amount: number, unit: Unit): string {
+export function shift(day: string, amount: number, unit: Unit): string {
   const date = new Date(`${day}T00:00:00Z`)
   if (unit === 'days' || unit === 'weeks') {
     date.setUTCDate(date.getUTCDate() + amount * (unit === 'weeks' ? 7 : 1))
