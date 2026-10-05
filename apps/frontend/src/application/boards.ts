@@ -1,4 +1,4 @@
-import type { Board, BoardSummary, Task } from '@/domain/board'
+import type { Board, BoardSummary, Section, Task } from '@/domain/board'
 
 export interface NewBoard {
   name: string
@@ -16,6 +16,13 @@ export interface TaskMove {
   beforeId?: string
 }
 
+export type NewSection = Omit<Section, 'id'> & { afterId?: string }
+
+export interface SectionMove {
+  afterId?: string
+  beforeId?: string
+}
+
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
   listBoards: () => Promise<BoardSummary[]>
@@ -26,6 +33,23 @@ export interface BoardsApi {
     task: NewTask
   ) => Promise<Pick<Task, 'id' | 'key' | 'title' | 'sectionId'>>
   moveTask: (boardId: string, taskId: string, move: TaskMove) => Promise<void>
+  createSection: (boardId: string, section: NewSection) => Promise<Section>
+  editSection: (
+    boardId: string,
+    sectionId: string,
+    changes: Partial<Omit<Section, 'id'>>
+  ) => Promise<void>
+  moveSection: (
+    boardId: string,
+    sectionId: string,
+    move: SectionMove
+  ) => Promise<void>
+  /** Without `tasksTo`, the backend refuses a section that still has tasks. */
+  deleteSection: (
+    boardId: string,
+    sectionId: string,
+    tasksTo?: string | null
+  ) => Promise<void>
 }
 
 export class ApiError extends Error {

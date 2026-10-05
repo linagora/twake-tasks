@@ -41,5 +41,30 @@
     "move": "Move %{key}",
     "moveFailed": "The task could not be moved.",
     "addFailed": "The task could not be added."
+  },
+  "section": {
+    "new": "New section",
+    "editTitle": "Edit section",
+    "options": "Options for %{section}",
+    "edit": "Edit",
+    "moveLeft": "Move left",
+    "moveRight": "Move right",
+    "delete": "Delete",
+    "name": "Name",
+    "status": "Status",
+    "save": "Save",
+    "cancel": "Cancel",
+    "deleteTitle": "Delete %{section}?",
+    "tasksTo": "Move its tasks to",
+    "moveFailed": "The section could not be moved.",
+    "saveFailed": "The section could not be saved.",
+    "deleteFailed": "The section could not be deleted.",
+    "category": {
+      "backlog": "Backlog",
+      "unstarted": "To do",
+      "started": "In progress",
+      "completed": "Done",
+      "canceled": "Canceled"
+    }
   }
 }
