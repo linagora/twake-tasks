@@ -4,6 +4,7 @@ import {
   desc,
   eq,
   exists,
+  ilike,
   inArray,
   isNull,
   lt,
@@ -39,6 +40,8 @@ export const INBOX_KEY_PREFIX = 'INBOX'
 
 const UNIQUE_VIOLATION = '23505'
 
+const SEARCH_LIMIT = 50
+
 function isUniqueViolation(error: unknown): boolean {
   const cause = error instanceof Error ? error.cause : undefined
   return (
@@ -70,6 +73,23 @@ export function createBoardStore(db: Db) {
     assignedTasks(identity: Identity) {
       return inTenant(db, identity, tx =>
         openTasksOf(tx, identity.userId, assignedTo(tx, identity.userId))
+      )
+    },
+
+    /** Tasks whose key starts with, or whose title or description contains, `text`. */
+    search(identity: Identity, text: string) {
+      const pattern = text.replace(/[\\%_]/g, '\\$&')
+      return inTenant(db, identity, tx =>
+        tasksOf(
+          tx,
+          identity.userId,
+          or(
+            sql`${boards.keyPrefix} || '-' || ${tasks.number} ilike ${`${pattern}%`}`,
+            ilike(tasks.title, `%${pattern}%`),
+            ilike(tasks.descriptionText, `%${pattern}%`)
+          ),
+          SEARCH_LIMIT
+        )
       )
     },
 
@@ -331,25 +351,32 @@ const mine = (tx: Tx, userId: string) =>
     )
   )
 
-export async function openTasksOf(
+export function openTasksOf(tx: Tx, userId: string, which: SQL | undefined) {
+  return tasksOf(
+    tx,
+    userId,
+    and(
+      isNull(boards.archivedAt),
+      isNull(tasks.completedAt),
+      isNull(tasks.canceledAt),
+      which
+    )
+  )
+}
+
+async function tasksOf(
   tx: Tx,
   userId: string,
-  which: SQL | undefined
+  which: SQL | undefined,
+  limit?: number
 ) {
   const accessible = accessibleBoards(tx, userId)
-  const rows = await tx
+  const query = tx
     .select({ task: tasks, board: boards })
     .from(tasks)
     .innerJoin(boards, eq(boards.id, tasks.boardId))
     .innerJoin(accessible, eq(accessible.boardId, boards.id))
-    .where(
-      and(
-        isNull(boards.archivedAt),
-        isNull(tasks.completedAt),
-        isNull(tasks.canceledAt),
-        which
-      )
-    )
+    .where(which)
     .orderBy(
       sql`${tasks.dueDate} asc nulls last`,
       sql`${tasks.dueTime} asc nulls last`,
@@ -357,6 +384,7 @@ export async function openTasksOf(
       asc(boards.name),
       asc(tasks.number)
     )
+  const rows = await (limit === undefined ? query : query.limit(limit))
   const described = new Map<string, Awaited<ReturnType<typeof describeTasks>>>()
   for (const board of new Map(
     rows.map(row => [row.board.id, row.board])
