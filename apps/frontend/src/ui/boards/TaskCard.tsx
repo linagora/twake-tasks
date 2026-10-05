@@ -19,6 +19,7 @@ import {
 } from '@linagora/twake-mui'
 import { Dots, Icon } from '@linagora/twake-icons'
 import { useId, useState, type ReactElement } from 'react'
+import { useSearchParams } from 'react-router'
 
 import { Card, Row } from '@/ds/Columns'
 import type { Label, Person, Section, Task } from '@/domain/board'
@@ -57,7 +58,8 @@ export function TaskCard({
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState(false)
   const [labeling, setLabeling] = useState(false)
-  const [open, setOpen] = useState(false)
+  const [params] = useSearchParams()
+  const [open, setOpen] = useState(params.get('task') === task.key)
   const editable = onMove !== undefined
   const due = dueLabel(task, lang)
   const choose = (action: () => void) => () => {
