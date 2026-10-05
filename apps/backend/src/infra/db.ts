@@ -64,9 +64,9 @@ export async function asTenant(tx: Tx, identity: TenantIdentity) {
 }
 
 // For work on behalf of no one, such as applying a platform event.
-export async function asOrganization(tx: Tx, organizationId: string) {
+export async function asOrganization(tx: Tx, organizationId: string | null) {
   await tx.execute(
-    sql`select set_config('app.org_id', ${organizationId}, true),
+    sql`select set_config('app.org_id', ${organizationId ?? ''}, true),
                set_config('app.user_id', '', true),
                set_config('app.user_email', '', true)`
   )
