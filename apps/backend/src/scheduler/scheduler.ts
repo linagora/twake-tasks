@@ -3,7 +3,8 @@ import type { Logger } from 'pino'
 import type { Db, Tx } from '../infra/db.ts'
 import { jobs } from './schema.ts'
 
-export type Handler = (payload: unknown, tx: Tx) => Promise<void>
+/** Resolves to "keep" when the handler moved its job to run again. */
+export type Handler = (payload: unknown, tx: Tx) => Promise<'keep' | undefined>
 
 const MAX_ATTEMPTS = 10
 const LAG_WARNING_MS = 60_000
@@ -42,25 +43,30 @@ export function createScheduler(deps: {
   db: Db
   logger: Logger
   handlers: Record<string, Handler>
+  now?: () => Date
 }) {
   const kinds = Object.keys(deps.handlers)
+  const now = deps.now ?? (() => new Date())
+  const due = () => and(inArray(jobs.kind, kinds), lte(jobs.runAt, now()))
 
   const runOne = () =>
     deps.db.transaction(async tx => {
       const [job] = await tx
         .select()
         .from(jobs)
-        .where(and(inArray(jobs.kind, kinds), lte(jobs.runAt, sql`now()`)))
+        .where(due())
         .orderBy(asc(jobs.runAt))
         .limit(1)
         .for('update', { skipLocked: true })
       if (!job) return false
       const handler = deps.handlers[job.kind]
       try {
-        await tx.transaction(savepoint =>
-          handler ? handler(job.payload, savepoint) : Promise.resolve()
+        const outcome = await tx.transaction(savepoint =>
+          handler ? handler(job.payload, savepoint) : Promise.resolve(undefined)
         )
-        await tx.delete(jobs).where(eq(jobs.id, job.id))
+        if (outcome !== 'keep') {
+          await tx.delete(jobs).where(eq(jobs.id, job.id))
+        }
       } catch (error) {
         const attempts = job.attempts + 1
         const message = error instanceof Error ? error.message : String(error)
@@ -92,10 +98,10 @@ export function createScheduler(deps: {
     const [oldest] = await deps.db
       .select({ runAt: jobs.runAt })
       .from(jobs)
-      .where(and(inArray(jobs.kind, kinds), lte(jobs.runAt, sql`now()`)))
+      .where(due())
       .orderBy(asc(jobs.runAt))
       .limit(1)
-    const lag = oldest ? Date.now() - oldest.runAt.getTime() : 0
+    const lag = oldest ? now().getTime() - oldest.runAt.getTime() : 0
     if (lag > LAG_WARNING_MS) deps.logger.warn({ lagMs: lag }, 'jobs are late')
   }
 

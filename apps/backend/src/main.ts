@@ -6,6 +6,7 @@ import { createMessageHandler, type Routes } from './events/router.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import { startConsumer, startProducer } from './infra/kafka.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
+import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
@@ -44,7 +45,11 @@ const consumer = await startConsumer(
     logger
   })
 )
-const stopScheduler = createScheduler({ db, logger, handlers: {} }).start(5000)
+const stopScheduler = createScheduler({
+  db,
+  logger,
+  handlers: { [REMINDER_JOB]: deliverReminder }
+}).start(5000)
 accepting = true
 logger.info('twake-tasks backend started')
 

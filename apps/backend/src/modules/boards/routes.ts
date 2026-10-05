@@ -6,6 +6,7 @@ import type { RequireIdentity } from '../auth/index.ts'
 import { createCommentStore } from './comments.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
+import { createReminderStore } from './reminders.ts'
 import { durationUnit, recurrenceUnit, sectionCategory } from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
@@ -79,6 +80,21 @@ const labeling = z.object({ labelIds: z.array(z.uuid()).max(50) })
 
 const newComment = z.object({ body: z.string().trim().min(1).max(10_000) })
 
+const newReminder = z.union([
+  z.strictObject({
+    at: z.iso.datetime({ offset: true }).pipe(z.coerce.date())
+  }),
+  z.strictObject({
+    beforeMinutes: z
+      .int()
+      .min(0)
+      .max(60 * 24 * 365),
+    zone: z.string().max(64).refine(isTimeZone)
+  })
+])
+
+const reminderParams = taskParams.extend({ reminderId: z.uuid() })
+
 const descriptionEdit = z.object({
   markdown: z.string().max(50_000),
   version: z.int().min(0)
@@ -120,6 +136,7 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   too_deep: 400,
   invalid_label: 400,
   invalid_dates: 400,
+  invalid_reminder: 400,
   label_taken: 409
 }
 
@@ -136,6 +153,79 @@ export function registerBoards(
   const sectionStore = createSectionStore(deps.db)
   const labelStore = createLabelStore(deps.db)
   const commentStore = createCommentStore(deps.db)
+  const reminderStore = createReminderStore(deps.db)
+
+  app.get(
+    '/boards/:boardId/tasks/:taskId/reminders',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await reminderStore.listReminders(
+        identity,
+        params.data.boardId,
+        params.data.taskId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return { reminders: result.value }
+    }
+  )
+
+  app.post(
+    '/boards/:boardId/tasks/:taskId/reminders',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = newReminder.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await reminderStore.addReminder(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        body.data
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(201).send(result.value)
+    }
+  )
+
+  app.delete(
+    '/boards/:boardId/tasks/:taskId/reminders/:reminderId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = reminderParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await reminderStore.deleteReminder(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        params.data.reminderId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.get(
+    '/notifications',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await reminderStore.notificationsOf(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return { notifications: result.value }
+    }
+  )
 
   app.get(
     '/boards',

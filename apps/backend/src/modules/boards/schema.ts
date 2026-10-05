@@ -402,10 +402,77 @@ export const boardFavorites = pgTable.withRLS(
       foreignColumns: [boards.tenant, boards.id]
     }),
     tenantPolicy(table.organizationId, visibleBoard(table.boardId)),
-    pgPolicy('own', {
-      as: 'restrictive',
-      using: sql`${table.userId} = ${currentUser}`,
-      withCheck: sql`${table.userId} = ${currentUser}`
-    })
+    ownRows(table.userId)
+  ]
+)
+
+function ownRows(userId: AnyPgColumn) {
+  return pgPolicy('own', {
+    as: 'restrictive',
+    using: sql`${userId} = ${currentUser}`,
+    withCheck: sql`${userId} = ${currentUser}`
+  })
+}
+
+const visibleTask = (taskId: AnyPgColumn): SQL =>
+  sql`exists (select 1 from ${tasks} where ${tasks.id} = ${taskId})`
+
+// Either at a fixed moment, or some minutes before the due date. A due date
+// without a time counts from nine in the morning, and a floating due time in
+// the zone of whoever set the reminder.
+export const taskReminders = pgTable.withRLS(
+  'task_reminders',
+  {
+    id: id(),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    userId: uuid('user_id').notNull(),
+    email: text().notNull(),
+    at: timestamptz('at'),
+    beforeMinutes: integer('before_minutes'),
+    zone: text(),
+    tenant: tenant()
+  },
+  table => [
+    index().on(table.taskId),
+    foreignKey({
+      columns: [table.tenant, table.taskId],
+      foreignColumns: [tasks.tenant, tasks.id]
+    }),
+    check(
+      'task_reminders_at_or_before',
+      sql`(${table.at} is null) <> (${table.beforeMinutes} is null)
+        and (${table.beforeMinutes} is null) = (${table.zone} is null)
+        and ${table.beforeMinutes} >= 0`
+    ),
+    tenantPolicy(table.organizationId, visibleTask(table.taskId)),
+    ownRows(table.userId)
+  ]
+)
+
+export const notifications = pgTable.withRLS(
+  'notifications',
+  {
+    id: id(),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    userId: uuid('user_id').notNull(),
+    reason: text().notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+    readAt: timestamptz('read_at'),
+    tenant: tenant()
+  },
+  table => [
+    index().on(table.userId, table.createdAt),
+    foreignKey({
+      columns: [table.tenant, table.taskId],
+      foreignColumns: [tasks.tenant, tasks.id]
+    }),
+    tenantPolicy(table.organizationId, visibleTask(table.taskId)),
+    ownRows(table.userId)
   ]
 )
