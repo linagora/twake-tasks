@@ -11,13 +11,17 @@ const cloudEvent = z.looseObject({
   time: z.iso.datetime({ offset: true }).optional(),
   subject: z.string().optional(),
   twakeorg: z.string().min(1).optional(),
-  twakeactor: z.email(),
+  twakeactor: z.email().optional(),
   data: z.looseObject({
     object: z.looseObject({ space_id: z.uuid().optional() })
   })
 })
 
 export type CloudEvent = z.infer<typeof cloudEvent>
+
+export type OutgoingEvent = Omit<CloudEvent, 'data'> & {
+  data: Record<string, unknown>
+}
 
 export interface PlatformEvent {
   routingKey: string

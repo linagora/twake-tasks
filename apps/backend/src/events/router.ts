@@ -1,4 +1,5 @@
 import type { Logger } from 'pino'
+import { z } from 'zod'
 import type { Tx } from '../infra/db.ts'
 import type { Deduplicator, EventKey } from './dedupe.ts'
 import {
@@ -18,6 +19,18 @@ export class MalformedEventError extends Error {}
 // Thrown by a handler for a well-formed event that contradicts the copy; kept on a
 // dead letter topic to be looked at and replayed.
 export class RejectedEventError extends Error {}
+
+export function parseOrDrop<T extends z.ZodType>(
+  schema: T,
+  value: unknown,
+  label: string
+): z.output<T> {
+  const result = schema.safeParse(value)
+  if (!result.success) {
+    throw new MalformedEventError(`${label}: ${z.prettifyError(result.error)}`)
+  }
+  return result.data
+}
 
 export type DeadLetter = (
   topic: string,
