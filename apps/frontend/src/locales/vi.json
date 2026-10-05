@@ -71,6 +71,27 @@
     "commentsFailed": "Không thể tải bình luận.",
     "commentFailed": "Không thể gửi bình luận."
   },
+  "history": {
+    "heading": "Lịch sử",
+    "loadFailed": "Không thể tải lịch sử.",
+    "created": "%{actor} đã tạo",
+    "title": "%{actor} đã đổi tên từ %{from} thành %{to}",
+    "priority": "%{actor} đã đặt độ ưu tiên P%{level}",
+    "priorityCleared": "%{actor} đã bỏ độ ưu tiên",
+    "dueDate": "%{actor} đã đặt hạn %{date}",
+    "dueDateCleared": "%{actor} đã bỏ hạn",
+    "section": "%{actor} đã chuyển sang %{section}",
+    "completed": "%{actor} đã hoàn thành",
+    "canceled": "%{actor} đã hủy",
+    "reopened": "%{actor} đã mở lại",
+    "description": "%{actor} đã sửa mô tả",
+    "assigned": "%{actor} đã giao cho %{name}",
+    "unassigned": "%{actor} đã bỏ giao %{name}",
+    "labeled": "%{actor} đã thêm nhãn %{name}",
+    "unlabeled": "%{actor} đã bỏ nhãn %{name}",
+    "someone": "người đã rời bảng",
+    "someLabel": "nhãn đã xóa"
+  },
   "section": {
     "new": "Mục mới",
     "editTitle": "Sửa mục",

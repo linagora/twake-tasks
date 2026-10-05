@@ -71,6 +71,27 @@
     "commentsFailed": "The comments could not be loaded.",
     "commentFailed": "The comment could not be sent."
   },
+  "history": {
+    "heading": "History",
+    "loadFailed": "The history could not be loaded.",
+    "created": "%{actor} created it",
+    "title": "%{actor} renamed it from %{from} to %{to}",
+    "priority": "%{actor} set the priority to P%{level}",
+    "priorityCleared": "%{actor} removed the priority",
+    "dueDate": "%{actor} set the due date to %{date}",
+    "dueDateCleared": "%{actor} removed the due date",
+    "section": "%{actor} moved it to %{section}",
+    "completed": "%{actor} completed it",
+    "canceled": "%{actor} canceled it",
+    "reopened": "%{actor} reopened it",
+    "description": "%{actor} edited the description",
+    "assigned": "%{actor} assigned %{name}",
+    "unassigned": "%{actor} unassigned %{name}",
+    "labeled": "%{actor} added the label %{name}",
+    "unlabeled": "%{actor} removed the label %{name}",
+    "someone": "someone who left the board",
+    "someLabel": "a deleted label"
+  },
   "section": {
     "new": "New section",
     "editTitle": "Edit section",

@@ -4,7 +4,8 @@ import {
   ApiError,
   type BoardsApi,
   type Comment,
-  type Description
+  type Description,
+  type HistoryEntry
 } from '@/application/boards'
 import type { Board, BoardSummary, Section, Task } from '@/domain/board'
 
@@ -83,6 +84,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
   const favorites = new Set<string>()
   const descriptions = new Map<string, Description>()
   const comments = new Map<string, Comment[]>()
+  const history = new Map<string, HistoryEntry[]>()
   const findTask = (boardId: string, taskId: string) => {
     const task = find(boardId).tasks.find(candidate => candidate.id === taskId)
     if (!task) throw new ApiError(404, 'not_found')
@@ -175,6 +177,12 @@ export function fakeBoardsApi(boards: Board[] = []) {
           descriptions.set(taskId, { markdown, version: version + 1 })
           return { version: version + 1 }
         })
+    ),
+    listHistory: vi.fn<BoardsApi['listHistory']>((boardId, taskId) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        return structuredClone(history.get(taskId) ?? [])
+      })
     ),
     listComments: vi.fn<BoardsApi['listComments']>((boardId, taskId) =>
       Promise.resolve().then(() => {
@@ -275,5 +283,5 @@ export function fakeBoardsApi(boards: Board[] = []) {
     )
   } satisfies BoardsApi
 
-  return Object.assign(api, { descriptions, comments })
+  return Object.assign(api, { descriptions, comments, history })
 }

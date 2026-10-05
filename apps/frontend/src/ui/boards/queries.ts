@@ -10,6 +10,7 @@ import type {
   BoardsApi,
   Comment,
   Description,
+  HistoryEntry,
   NewBoard,
   NewTask,
   TaskMove
@@ -97,6 +98,17 @@ export function useSetDescription(
       queryClient.invalidateQueries({
         queryKey: descriptionKey(boardId, taskId)
       })
+  })
+}
+
+export function useHistory(
+  boardId: string,
+  taskId: string
+): UseQueryResult<HistoryEntry[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: ['boards', boardId, 'tasks', taskId, 'history'],
+    queryFn: () => api.listHistory(boardId, taskId)
   })
 }
 
