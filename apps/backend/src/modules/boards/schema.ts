@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm'
+import { sql, type SQL } from 'drizzle-orm'
 import {
   bigint,
   check,
@@ -11,9 +11,11 @@ import {
   smallint,
   text,
   unique,
-  uuid
+  uuid,
+  type AnyPgColumn
 } from 'drizzle-orm/pg-core'
 import {
+  currentEmail,
   organizationId,
   sortKey,
   tenantPolicy,
@@ -69,9 +71,16 @@ export const boards = pgTable.withRLS(
       'boards_key_prefix',
       sql`${table.keyPrefix} ~ '^[A-Z][A-Z0-9]{0,9}$'`
     ),
-    tenantPolicy(table.organizationId)
+    tenantPolicy(
+      table.organizationId,
+      sql`${table.ownerEmail} = ${currentEmail} or ${table.id} = any((select app_member_board_ids())::uuid[])`
+    )
   ]
 )
+
+// The boards policy applies inside the subquery: a B2C row is visible when its board is.
+const visibleBoard = (boardId: AnyPgColumn): SQL =>
+  sql`exists (select 1 from ${boards} where ${boards.id} = ${boardId})`
 
 export const boardMembers = pgTable.withRLS(
   'board_members',
@@ -89,7 +98,11 @@ export const boardMembers = pgTable.withRLS(
       columns: [table.organizationId, table.boardId],
       foreignColumns: [boards.organizationId, boards.id]
     }),
-    tenantPolicy(table.organizationId)
+    // The flag is on while app_member_board_ids reads this table (see its migration).
+    tenantPolicy(
+      table.organizationId,
+      sql`current_setting('app.membership_lookup', true) = 'on' or ${visibleBoard(table.boardId)}`
+    )
   ]
 )
 
@@ -112,7 +125,7 @@ export const sections = pgTable.withRLS(
       columns: [table.organizationId, table.boardId],
       foreignColumns: [boards.organizationId, boards.id]
     }),
-    tenantPolicy(table.organizationId)
+    tenantPolicy(table.organizationId, visibleBoard(table.boardId))
   ]
 )
 
@@ -151,7 +164,7 @@ export const tasks = pgTable.withRLS(
       foreignColumns: [boards.organizationId, boards.id]
     }),
     check('tasks_priority', sql`${table.priority} between 1 and 4`),
-    tenantPolicy(table.organizationId)
+    tenantPolicy(table.organizationId, visibleBoard(table.boardId))
   ]
 )
 
@@ -170,7 +183,10 @@ export const taskAssignees = pgTable.withRLS(
       columns: [table.organizationId, table.taskId],
       foreignColumns: [tasks.organizationId, tasks.id]
     }),
-    tenantPolicy(table.organizationId)
+    tenantPolicy(
+      table.organizationId,
+      sql`exists (select 1 from ${tasks} where ${tasks.id} = ${table.taskId})`
+    )
   ]
 )
 
@@ -189,6 +205,6 @@ export const boardFavorites = pgTable.withRLS(
       columns: [table.organizationId, table.boardId],
       foreignColumns: [boards.organizationId, boards.id]
     }),
-    tenantPolicy(table.organizationId)
+    tenantPolicy(table.organizationId, visibleBoard(table.boardId))
   ]
 )

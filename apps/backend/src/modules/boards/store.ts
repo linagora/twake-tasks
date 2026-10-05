@@ -31,7 +31,7 @@ function isUniqueViolation(error: unknown): boolean {
 export function createBoardStore(db: Db) {
   return {
     listBoards(identity: Identity) {
-      return inTenant(db, identity.organizationId, async tx => {
+      return inTenant(db, identity, async tx => {
         const accessible = accessibleBoards(tx, identity.email)
         return tx
           .select({
@@ -61,7 +61,7 @@ export function createBoardStore(db: Db) {
       input: { name: string; keyPrefix: string }
     ) {
       try {
-        return await inTenant(db, identity.organizationId, async tx => {
+        return await inTenant(db, identity, async tx => {
           const [board] = await tx
             .insert(boards)
             .values({
@@ -101,7 +101,7 @@ export function createBoardStore(db: Db) {
     },
 
     getBoard(identity: Identity, boardId: string) {
-      return inTenant(db, identity.organizationId, tx =>
+      return inTenant(db, identity, tx =>
         loadBoard(tx, boardId, identity.email)
       )
     }
