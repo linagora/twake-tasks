@@ -122,6 +122,11 @@ export interface HiddenTask {
 
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
+  /** Calls back with the board's version now, then with each new one. */
+  watchBoard: (
+    boardId: string,
+    onVersion: (version: number) => void
+  ) => () => void
   /**
    * Moves the task and its sub-tasks to another board, where they take new
    * keys. Search still finds them by the old ones.

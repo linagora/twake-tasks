@@ -13,6 +13,7 @@ import {
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { accountRoutes } from './modules/boards/accounts.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
+import { listenToBoards } from './modules/boards/live.ts'
 import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
 import {
   PURGE_SPACE_JOB,
@@ -29,9 +30,11 @@ await assertRowLevelSecurity(sql)
 await migrateDb(db)
 
 let accepting = false
+const boardChanges = await listenToBoards(sql)
 const server = await buildApp({
   logger,
   db,
+  boardChanges,
   ...(await connectIdentityProvider({
     db,
     oidc: {
@@ -90,6 +93,7 @@ async function shutdown(signal: string): Promise<void> {
     await producer.disconnect()
     await deadLetters.disconnect()
     await server.close()
+    await boardChanges.close()
     await sql.end({ timeout: 5 })
   } catch (error) {
     logger.error({ err: error }, 'shutdown failed')

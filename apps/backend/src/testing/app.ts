@@ -5,6 +5,7 @@ import { buildApp } from '../app.ts'
 import { createDb } from '../infra/db.ts'
 import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
+import { listenToBoards } from '../modules/boards/live.ts'
 
 export interface TestUser {
   userId: string
@@ -32,9 +33,11 @@ export async function startApp() {
     inject('databaseUrl'),
     'https://tasks.example.com/'
   )
+  const boardChanges = await listenToBoards(sql)
   const app = await buildApp({
     logger: pino({ level: 'silent' }),
     db,
+    boardChanges,
     provider: {
       identify: () => Promise.resolve(null),
       verifyLogoutToken: () => Promise.reject(new Error('not in tests'))
@@ -48,8 +51,8 @@ export async function startApp() {
     isReady: () => Promise.resolve(true)
   })
 
-  function as(user: TestUser) {
-    const token = Buffer.from(
+  function tokenOf(user: TestUser) {
+    return Buffer.from(
       JSON.stringify({
         subject: user.userId,
         userId: user.userId,
@@ -58,7 +61,10 @@ export async function startApp() {
         organizationRole: user.organizationId ? 'member' : null
       })
     ).toString('base64url')
-    const headers = { authorization: `Bearer ${token}` }
+  }
+
+  function as(user: TestUser) {
+    const headers = { authorization: `Bearer ${tokenOf(user)}` }
     return {
       get: (path: string) =>
         app.inject({ method: 'GET', url: `/api${path}`, headers }),
@@ -75,8 +81,11 @@ export async function startApp() {
 
   return {
     as,
+    tokenOf,
+    listen: () => app.listen({ host: '127.0.0.1', port: 0 }),
     close: async () => {
       await app.close()
+      await boardChanges.close()
       await sql.end()
     }
   }

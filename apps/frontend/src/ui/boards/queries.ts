@@ -5,6 +5,7 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from '@tanstack/react-query'
+import { useEffect } from 'react'
 
 import type {
   Agenda,
@@ -121,8 +122,21 @@ export function useBoards(): UseQueryResult<BoardSummary[]> {
   return useQuery({ queryKey: boardsKey, queryFn: () => api.listBoards() })
 }
 
+// Reloads on a newer version: a change made elsewhere, or one missed while
+// the stream was reconnecting.
 export function useBoard(boardId: string): UseQueryResult<Board> {
   const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  useEffect(
+    () =>
+      api.watchBoard(boardId, version => {
+        const shown = queryClient.getQueryData<Board>(boardKey(boardId))
+        if (shown && version > shown.version) {
+          void queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+        }
+      }),
+    [api, boardId, queryClient]
+  )
   return useQuery({
     queryKey: boardKey(boardId),
     queryFn: () => api.getBoard(boardId)
