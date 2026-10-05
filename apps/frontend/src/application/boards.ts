@@ -110,8 +110,26 @@ export interface Space {
   role: Role
 }
 
+export type Shelf = 'archived' | 'trash'
+
+/** `at` is when the task was archived or trashed. */
+export interface HiddenTask {
+  id: string
+  key: string
+  title: string
+  at: string
+}
+
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
+  /** Archiving or trashing a task also hides its sub-tasks. */
+  archiveTask: (boardId: string, taskId: string) => Promise<void>
+  /** The trash is purged after 30 days. */
+  trashTask: (boardId: string, taskId: string) => Promise<void>
+  restoreTask: (boardId: string, taskId: string) => Promise<void>
+  hiddenTasks: (boardId: string, shelf: Shelf) => Promise<HiddenTask[]>
+  /** An archived board is read only. Admins only. */
+  setBoardArchived: (boardId: string, archived: boolean) => Promise<void>
   /** The spaces the signed-in person belongs to, with their role. */
   listSpaces: () => Promise<Space[]>
   /** The board's members and invites go, and the space's roles apply. */

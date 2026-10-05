@@ -187,6 +187,19 @@
     "then": "g rồi %{key}",
     "close": "Đóng"
   },
+  "archive": {
+    "archive": "Lưu trữ",
+    "delete": "Xóa",
+    "restore": "Khôi phục",
+    "archivedTasks": "Công việc đã lưu trữ",
+    "trash": "Thùng rác",
+    "retention": "Công việc trong thùng rác sẽ bị xóa vĩnh viễn sau 30 ngày.",
+    "empty": "Không có gì ở đây.",
+    "failed": "Không thể lưu thay đổi.",
+    "archiveBoard": "Lưu trữ bảng",
+    "unarchiveBoard": "Bỏ lưu trữ bảng",
+    "boardArchived": "Bảng này đã được lưu trữ và chỉ có thể xem."
+  },
   "sharing": {
     "share": "Chia sẻ",
     "title": "Chia sẻ %{name}",

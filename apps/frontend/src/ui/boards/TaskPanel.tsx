@@ -12,6 +12,7 @@ import Markdown from 'react-markdown'
 
 import { ApiError } from '@/application/boards'
 import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
+import { RemoveTask } from '@/ui/boards/Archive'
 import { Comments } from '@/ui/boards/Comments'
 import { Dates } from '@/ui/boards/Dates'
 import { History } from '@/ui/boards/History'
@@ -108,6 +109,11 @@ export function TaskPanel({
         <Comments task={task} boardId={boardId} />
         <History task={task} boardId={boardId} />
       </DialogContent>
+      {draft === null && editable && (
+        <DialogActions>
+          <RemoveTask task={task} boardId={boardId} onRemoved={onClose} />
+        </DialogActions>
+      )}
       {draft !== null && (
         <DialogActions>
           <Button

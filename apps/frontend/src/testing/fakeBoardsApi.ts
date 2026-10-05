@@ -9,6 +9,7 @@ import {
   type Reminder,
   type SavedFilter,
   type Sharing,
+  type Shelf,
   type Space
 } from '@/application/boards'
 import type { Board, BoardSummary, Section, Task } from '@/domain/board'
@@ -125,7 +126,46 @@ export function fakeBoardsApi(boards: Board[] = []) {
 
   const spaces: Space[] = []
 
+  const hidden = new Map<string, { shelf: Shelf; task: Task; at: string }>()
+  const hide = (shelf: Shelf) => (boardId: string, taskId: string) =>
+    Promise.resolve().then(() => {
+      const board = find(boardId)
+      if (board.archived) throw new ApiError(409, 'archived')
+      const task = findTask(boardId, taskId)
+      board.tasks = board.tasks.filter(candidate => candidate !== task)
+      hidden.set(taskId, { shelf, task, at: new Date().toISOString() })
+    })
+
   const api = {
+    archiveTask: vi.fn<BoardsApi['archiveTask']>(hide('archived')),
+    trashTask: vi.fn<BoardsApi['trashTask']>(hide('trash')),
+    restoreTask: vi.fn<BoardsApi['restoreTask']>((boardId, taskId) =>
+      Promise.resolve().then(() => {
+        const entry = hidden.get(taskId)
+        if (!entry) throw new ApiError(404, 'not_found')
+        find(boardId).tasks.push(entry.task)
+        hidden.delete(taskId)
+      })
+    ),
+    hiddenTasks: vi.fn<BoardsApi['hiddenTasks']>((boardId, shelf) =>
+      Promise.resolve().then(() => {
+        find(boardId)
+        return [...hidden.values()]
+          .filter(entry => entry.shelf === shelf)
+          .map(({ task, at }) => ({
+            id: task.id,
+            key: task.key,
+            title: task.title,
+            at
+          }))
+      })
+    ),
+    setBoardArchived: vi.fn<BoardsApi['setBoardArchived']>(
+      (boardId, archived) =>
+        Promise.resolve().then(() => {
+          find(boardId).archived = archived
+        })
+    ),
     listSpaces: vi.fn<BoardsApi['listSpaces']>(() =>
       Promise.resolve(structuredClone(spaces))
     ),

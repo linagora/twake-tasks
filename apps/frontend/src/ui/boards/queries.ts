@@ -12,6 +12,7 @@ import type {
   BoardsApi,
   Comment,
   Description,
+  HiddenTask,
   HistoryEntry,
   NewBoard,
   NewReminder,
@@ -19,6 +20,7 @@ import type {
   Reminder,
   SavedFilter,
   Sharing,
+  Shelf,
   Space,
   TaskMove
 } from '@/application/boards'
@@ -95,6 +97,17 @@ export function useSharing(boardId: string): UseQueryResult<Sharing> {
   return useQuery({
     queryKey: [...boardKey(boardId), 'sharing'],
     queryFn: () => api.getSharing(boardId)
+  })
+}
+
+export function useHiddenTasks(
+  boardId: string,
+  shelf: Shelf
+): UseQueryResult<HiddenTask[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: [...boardKey(boardId), shelf],
+    queryFn: () => api.hiddenTasks(boardId, shelf)
   })
 }
 
