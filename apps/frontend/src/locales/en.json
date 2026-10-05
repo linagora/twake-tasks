@@ -1,0 +1,12 @@
+{
+  "app": {
+    "name": "Twake Tasks"
+  },
+  "session": {
+    "signingIn": "Signing in…",
+    "failed": "Sign-in failed.",
+    "retry": "Try again",
+    "signedInAs": "Signed in as %{name}",
+    "signOut": "Sign out"
+  }
+}
