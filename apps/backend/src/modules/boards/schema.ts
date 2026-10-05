@@ -47,6 +47,10 @@ export const recurrenceUnit = pgEnum('recurrence_unit', [
   'years'
 ])
 
+export const LAYOUTS = ['board', 'list', 'calendar'] as const
+
+export const boardLayout = pgEnum('board_layout', LAYOUTS)
+
 const id = () =>
   uuid()
     .primaryKey()
@@ -67,6 +71,7 @@ export const boards = pgTable.withRLS(
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     archivedAt: timestamptz('archived_at'),
     inbox: boolean().notNull().default(false),
+    layout: boardLayout().notNull().default('board'),
     tenant: tenant()
   },
   table => [
@@ -419,6 +424,28 @@ export const savedFilters = pgTable.withRLS(
   table => [
     index().on(table.userId),
     tenantPolicy(table.organizationId, sql`${table.userId} = ${currentUser}`),
+    ownRows(table.userId)
+  ]
+)
+
+export const boardLayouts = pgTable.withRLS(
+  'board_layouts',
+  {
+    boardId: uuid('board_id')
+      .notNull()
+      .references(() => boards.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    userId: uuid('user_id').notNull(),
+    layout: boardLayout().notNull(),
+    tenant: tenant()
+  },
+  table => [
+    primaryKey({ columns: [table.userId, table.boardId] }),
+    foreignKey({
+      columns: [table.tenant, table.boardId],
+      foreignColumns: [boards.tenant, boards.id]
+    }),
+    tenantPolicy(table.organizationId, visibleBoard(table.boardId)),
     ownRows(table.userId)
   ]
 )

@@ -7,8 +7,14 @@ import { createCommentStore } from './comments.ts'
 import { createFilterStore } from './filters.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
+import { createLayoutStore } from './layouts.ts'
 import { createReminderStore } from './reminders.ts'
-import { durationUnit, recurrenceUnit, sectionCategory } from './schema.ts'
+import {
+  durationUnit,
+  LAYOUTS,
+  recurrenceUnit,
+  sectionCategory
+} from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
 import { createTaskStore, type Refusal } from './tasks.ts'
@@ -47,6 +53,8 @@ function isTimeZone(zone: string): boolean {
     return false
   }
 }
+
+const layoutChoice = z.object({ layout: z.enum(LAYOUTS) })
 
 const searchQuery = z.object({ q: z.string().trim().min(1).max(200) })
 
@@ -177,6 +185,7 @@ export function registerBoards(
   const commentStore = createCommentStore(deps.db)
   const reminderStore = createReminderStore(deps.db)
   const filterStore = createFilterStore(deps.db)
+  const layoutStore = createLayoutStore(deps.db)
 
   app.get(
     '/filters',
@@ -420,6 +429,33 @@ export function registerBoards(
         return reply.code(204).send()
       }
     })
+  }
+
+  for (const [url, set] of [
+    ['/boards/:boardId/layout', 'setLayout'],
+    ['/boards/:boardId/default-layout', 'setDefaultLayout']
+  ] as const) {
+    app.put(
+      url,
+      { preHandler: deps.requireIdentity },
+      async (request, reply) => {
+        const identity = request.identity
+        if (!identity) return reply.code(401).send()
+        const params = boardParams.safeParse(request.params)
+        if (!params.success) return reply.code(404).send({ error: 'not_found' })
+        const body = layoutChoice.safeParse(request.body)
+        if (!body.success) {
+          return reply.code(400).send({ error: 'invalid_request' })
+        }
+        const result = await layoutStore[set](
+          identity,
+          params.data.boardId,
+          body.data.layout
+        )
+        if (!result.ok) return refuse(reply, result.error)
+        return reply.code(204).send()
+      }
+    )
   }
 
   app.post(
