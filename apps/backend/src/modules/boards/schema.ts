@@ -229,6 +229,8 @@ export const tasks = pgTable.withRLS(
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     completedAt: timestamptz('completed_at'),
     canceledAt: timestamptz('canceled_at'),
+    archivedAt: timestamptz('archived_at'),
+    deletedAt: timestamptz('deleted_at'),
     tenant: tenant()
   },
   table => [

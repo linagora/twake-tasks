@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
+import { createArchiveStore } from './archive.ts'
 import { createCommentStore } from './comments.ts'
 import { createFilterStore } from './filters.ts'
 import { historyOf } from './history.ts'
@@ -202,6 +203,7 @@ export function registerBoards(
   const filterStore = createFilterStore(deps.db)
   const layoutStore = createLayoutStore(deps.db)
   const sharingStore = createSharingStore(deps.db)
+  const archiveStore = createArchiveStore(deps.db)
 
   app.post(
     '/boards/:boardId/invites',
@@ -289,6 +291,77 @@ export function registerBoards(
       return reply.code(204).send()
     }
   )
+
+  for (const [path, archived] of [
+    ['archive', true],
+    ['unarchive', false]
+  ] as const) {
+    app.post(
+      `/boards/:boardId/${path}`,
+      { preHandler: deps.requireIdentity },
+      async (request, reply) => {
+        const identity = request.identity
+        if (!identity) return reply.code(401).send()
+        const params = boardParams.safeParse(request.params)
+        if (!params.success) return reply.code(404).send({ error: 'not_found' })
+        const result = await archiveStore.setBoardArchived(
+          identity,
+          params.data.boardId,
+          archived
+        )
+        if (!result.ok) return refuse(reply, result.error)
+        return reply.code(204).send()
+      }
+    )
+  }
+
+  for (const [path, stamp] of [
+    ['archived', 'archivedAt'],
+    ['trash', 'deletedAt']
+  ] as const) {
+    app.get(
+      `/boards/:boardId/${path}`,
+      { preHandler: deps.requireIdentity },
+      async (request, reply) => {
+        const identity = request.identity
+        if (!identity) return reply.code(401).send()
+        const params = boardParams.safeParse(request.params)
+        if (!params.success) return reply.code(404).send({ error: 'not_found' })
+        const hidden = await archiveStore.hiddenTasks(
+          identity,
+          params.data.boardId,
+          stamp
+        )
+        if (!hidden) return reply.code(404).send({ error: 'not_found' })
+        return { tasks: hidden }
+      }
+    )
+  }
+
+  for (const [method, path, change] of [
+    ['POST', '/archive', 'archiveTask'],
+    ['POST', '/restore', 'restoreTask'],
+    ['DELETE', '', 'trashTask']
+  ] as const) {
+    app.route({
+      method,
+      url: `/boards/:boardId/tasks/:taskId${path}`,
+      preHandler: deps.requireIdentity,
+      handler: async (request, reply) => {
+        const identity = request.identity
+        if (!identity) return reply.code(401).send()
+        const params = taskParams.safeParse(request.params)
+        if (!params.success) return reply.code(404).send({ error: 'not_found' })
+        const result = await archiveStore[change](
+          identity,
+          params.data.boardId,
+          params.data.taskId
+        )
+        if (!result.ok) return refuse(reply, result.error)
+        return reply.code(204).send()
+      }
+    })
+  }
 
   app.put(
     '/boards/:boardId/members/:userId',
