@@ -5,6 +5,7 @@ import {
   check,
   date,
   foreignKey,
+  index,
   integer,
   pgEnum,
   pgPolicy,
@@ -276,6 +277,33 @@ export const taskLabels = pgTable.withRLS(
     foreignKey({
       columns: [table.tenant, table.labelId],
       foreignColumns: [labels.tenant, labels.id]
+    }),
+    tenantPolicy(
+      table.organizationId,
+      sql`exists (select 1 from ${tasks} where ${tasks.id} = ${table.taskId})`
+    )
+  ]
+)
+
+export const comments = pgTable.withRLS(
+  'comments',
+  {
+    id: id(),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    authorId: uuid('author_id').notNull(),
+    authorEmail: text('author_email').notNull(),
+    body: text().notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+    tenant: tenant()
+  },
+  table => [
+    index().on(table.taskId, table.createdAt),
+    foreignKey({
+      columns: [table.tenant, table.taskId],
+      foreignColumns: [tasks.tenant, tasks.id]
     }),
     tenantPolicy(
       table.organizationId,
