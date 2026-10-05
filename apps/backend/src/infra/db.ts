@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { sql } from 'drizzle-orm'
+import { sql, type SQL } from 'drizzle-orm'
 import {
   customType,
   pgPolicy,
@@ -22,11 +22,16 @@ export const sortKey = customType<{ data: string }>({
 export const organizationId = () => text('org_id')
 
 const currentOrganization = sql`nullif(current_setting('app.org_id', true), '')`
+export const currentEmail = sql`nullif(current_setting('app.email', true), '')`
 
-// B2C rows have no organization: a request without one only sees those.
-export function tenantPolicy(column: AnyPgColumn) {
+// B2C rows have no organization: a request without one only sees those, and
+// only within `b2cScope`, since every B2C user shares the missing organization.
+export function tenantPolicy(column: AnyPgColumn, b2cScope?: SQL) {
   const sameTenant = sql`${column} is not distinct from ${currentOrganization}`
-  return pgPolicy('tenant', { using: sameTenant, withCheck: sameTenant })
+  const scoped = b2cScope
+    ? sql`${sameTenant} and (${column} is not null or ${b2cScope})`
+    : sameTenant
+  return pgPolicy('tenant', { using: scoped, withCheck: scoped })
 }
 
 export function createDb(url: string) {
@@ -39,12 +44,13 @@ export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
 export function inTenant<T>(
   db: Db,
-  organization: string | null,
+  identity: { organizationId: string | null; email: string },
   work: (tx: Tx) => Promise<T>
 ): Promise<T> {
   return db.transaction(async tx => {
     await tx.execute(
-      sql`select set_config('app.org_id', ${organization ?? ''}, true)`
+      sql`select set_config('app.org_id', ${identity.organizationId ?? ''}, true),
+                 set_config('app.email', ${identity.email}, true)`
     )
     return work(tx)
   })

@@ -122,7 +122,7 @@ export function createTaskStore(db: Db) {
     try {
       return {
         ok: true,
-        value: await inTenant(db, identity.organizationId, work)
+        value: await inTenant(db, identity, work)
       }
     } catch (error) {
       if (error instanceof Refused) return { ok: false, error: error.refusal }
