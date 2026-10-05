@@ -6,7 +6,7 @@ import {
   type UseQueryResult
 } from '@tanstack/react-query'
 
-import type { NewBoard } from '@/application/boards'
+import type { NewBoard, NewTask, TaskMove } from '@/application/boards'
 import type { Board, BoardSummary } from '@/domain/board'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 
@@ -23,6 +23,30 @@ export function useBoard(boardId: string): UseQueryResult<Board> {
   return useQuery({
     queryKey: boardKey(boardId),
     queryFn: () => api.getBoard(boardId)
+  })
+}
+
+export function useCreateTask(
+  boardId: string
+): UseMutationResult<unknown, Error, NewTask> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (task: NewTask) => api.createTask(boardId, task),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+  })
+}
+
+export function useMoveTask(
+  boardId: string
+): UseMutationResult<void, Error, { taskId: string; move: TaskMove }> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ taskId, move }) => api.moveTask(boardId, taskId, move),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
   })
 }
 

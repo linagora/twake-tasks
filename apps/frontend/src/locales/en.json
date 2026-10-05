@@ -38,6 +38,9 @@
     "add": "Add",
     "priority": "P%{level}",
     "due": "Due %{date}",
-    "assignee": "Assigned to %{name}"
+    "assignee": "Assigned to %{name}",
+    "move": "Move %{key}",
+    "moveFailed": "The task could not be moved.",
+    "addFailed": "The task could not be added."
   }
 }
