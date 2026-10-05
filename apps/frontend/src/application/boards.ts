@@ -4,6 +4,7 @@ import type {
   Label,
   Layout,
   Person,
+  Role,
   Section,
   Task
 } from '@/domain/board'
@@ -98,8 +99,20 @@ export interface SavedFilter {
   criteria: FilterCriteria
 }
 
+export interface Sharing {
+  members: (Person & { role: Role })[]
+  invites: { id: string; email: string; role: Role }[]
+}
+
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
+  /** A user's board's members and pending invites. Admins only. */
+  getSharing: (boardId: string) => Promise<Sharing>
+  /** Resolves whether or not the email has an account. */
+  invite: (boardId: string, email: string, role: Role) => Promise<void>
+  cancelInvite: (boardId: string, inviteId: string) => Promise<void>
+  setMemberRole: (boardId: string, userId: string, role: Role) => Promise<void>
+  removeMember: (boardId: string, userId: string) => Promise<void>
   listFilters: () => Promise<SavedFilter[]>
   createFilter: (filter: Omit<SavedFilter, 'id'>) => Promise<{ id: string }>
   deleteFilter: (filterId: string) => Promise<void>

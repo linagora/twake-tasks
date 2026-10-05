@@ -187,6 +187,21 @@
     "then": "g then %{key}",
     "close": "Close"
   },
+  "sharing": {
+    "share": "Share",
+    "title": "Share %{name}",
+    "email": "Email",
+    "role": "Role",
+    "roles": { "viewer": "Viewer", "editor": "Editor", "admin": "Admin" },
+    "invite": "Invite",
+    "invited": "Invited %{email}.",
+    "pending": "Invited as %{role}",
+    "cancelInvite": "Cancel invite",
+    "remove": "Remove",
+    "close": "Close",
+    "failed": "The change could not be saved.",
+    "loadFailed": "The members could not be loaded."
+  },
   "layout": {
     "title": "Layout",
     "board": "Board",

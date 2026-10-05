@@ -1,4 +1,5 @@
-export type Role = 'viewer' | 'editor' | 'admin'
+export const ROLES = ['viewer', 'editor', 'admin'] as const
+export type Role = (typeof ROLES)[number]
 
 export type SectionCategory =
   'backlog' | 'unstarted' | 'started' | 'completed' | 'canceled'

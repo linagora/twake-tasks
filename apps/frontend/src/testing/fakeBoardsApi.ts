@@ -7,7 +7,8 @@ import {
   type Description,
   type HistoryEntry,
   type Reminder,
-  type SavedFilter
+  type SavedFilter,
+  type Sharing
 } from '@/application/boards'
 import type { Board, BoardSummary, Section, Task } from '@/domain/board'
 
@@ -113,7 +114,44 @@ export function fakeBoardsApi(boards: Board[] = []) {
         }))
     )
 
+  const sharings = new Map<string, Sharing>()
+  const sharingOf = (boardId: string) => {
+    find(boardId)
+    const sharing = sharings.get(boardId) ?? { members: [], invites: [] }
+    sharings.set(boardId, sharing)
+    return sharing
+  }
+
   const api = {
+    getSharing: vi.fn<BoardsApi['getSharing']>(boardId =>
+      Promise.resolve().then(() => structuredClone(sharingOf(boardId)))
+    ),
+    invite: vi.fn<BoardsApi['invite']>((boardId, email, role) =>
+      Promise.resolve().then(() => {
+        sharingOf(boardId).invites.push({ id: nextId(), email, role })
+      })
+    ),
+    cancelInvite: vi.fn<BoardsApi['cancelInvite']>((boardId, inviteId) =>
+      Promise.resolve().then(() => {
+        const sharing = sharingOf(boardId)
+        sharing.invites = sharing.invites.filter(each => each.id !== inviteId)
+      })
+    ),
+    setMemberRole: vi.fn<BoardsApi['setMemberRole']>((boardId, userId, role) =>
+      Promise.resolve().then(() => {
+        const member = sharingOf(boardId).members.find(
+          each => each.userId === userId
+        )
+        if (!member) throw new ApiError(404, 'not_found')
+        member.role = role
+      })
+    ),
+    removeMember: vi.fn<BoardsApi['removeMember']>((boardId, userId) =>
+      Promise.resolve().then(() => {
+        const sharing = sharingOf(boardId)
+        sharing.members = sharing.members.filter(each => each.userId !== userId)
+      })
+    ),
     listFilters: vi.fn<BoardsApi['listFilters']>(() =>
       Promise.resolve(structuredClone(filters))
     ),
@@ -452,5 +490,5 @@ export function fakeBoardsApi(boards: Board[] = []) {
     )
   } satisfies BoardsApi
 
-  return Object.assign(api, { descriptions, comments, history })
+  return Object.assign(api, { descriptions, comments, history, sharings })
 }
