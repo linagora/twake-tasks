@@ -48,6 +48,8 @@ function isTimeZone(zone: string): boolean {
   }
 }
 
+const searchQuery = z.object({ q: z.string().trim().min(1).max(200) })
+
 const agendaQuery = z.object({
   zone: z.string().max(64).refine(isTimeZone),
   days: z.coerce.number().int().min(1).max(60)
@@ -326,6 +328,20 @@ export function registerBoards(
       const identity = request.identity
       if (!identity) return reply.code(401).send()
       return { boards: await store.listBoards(identity) }
+    }
+  )
+
+  app.get(
+    '/search',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const query = searchQuery.safeParse(request.query)
+      if (!query.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      return { tasks: await store.search(identity, query.data.q) }
     }
   )
 
