@@ -55,7 +55,9 @@
     "editDescription": "Sửa mô tả",
     "loadFailed": "Không thể tải mô tả.",
     "saveFailed": "Không thể lưu mô tả.",
-    "stale": "Người khác đã thay đổi mô tả. Nội dung của bạn vẫn được giữ: lưu lại để thay thế nội dung của họ."
+    "stale": "Người khác đã thay đổi mô tả. Nội dung của bạn vẫn được giữ: lưu lại để thay thế nội dung của họ.",
+    "addSubtask": "Thêm công việc con",
+    "subtaskTitle": "Tiêu đề công việc con"
   },
   "section": {
     "new": "Mục mới",

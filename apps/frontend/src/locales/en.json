@@ -55,7 +55,9 @@
     "editDescription": "Edit description",
     "loadFailed": "The description could not be loaded.",
     "saveFailed": "The description could not be saved.",
-    "stale": "Someone else changed the description. Your text is kept: save again to replace theirs."
+    "stale": "Someone else changed the description. Your text is kept: save again to replace theirs.",
+    "addSubtask": "Add a sub-task",
+    "subtaskTitle": "Sub-task title"
   },
   "section": {
     "new": "New section",

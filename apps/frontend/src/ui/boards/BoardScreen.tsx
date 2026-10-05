@@ -39,9 +39,10 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   const move = useMoveTask(board.id)
   const editable = board.role !== 'viewer' && !board.archived
   const manageable = board.role === 'admin' && !board.archived
+  const topLevel = board.tasks.filter(task => task.parentId === null)
   const loose =
     board.sections.length === 0 ||
-    board.tasks.some(task => task.sectionId === null)
+    topLevel.some(task => task.sectionId === null)
   const columns: { id: string | null; name: string; section?: Section }[] = [
     ...(loose ? [{ id: null, name: t('board.noSection') }] : []),
     ...board.sections.map(section => ({ ...section, section }))
@@ -59,7 +60,7 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
       )}
       <Columns>
         {columns.map(column => {
-          const tasks = board.tasks.filter(task => task.sectionId === column.id)
+          const tasks = topLevel.filter(task => task.sectionId === column.id)
           return (
             <Column
               key={column.id ?? 'none'}
@@ -76,6 +77,7 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
                 <TaskCard
                   key={task.id}
                   task={task}
+                  tasks={board.tasks}
                   boardId={board.id}
                   members={board.members}
                   destinations={board.sections.filter(

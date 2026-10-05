@@ -31,6 +31,7 @@ export interface Task {
   id: string
   key: string
   sectionId: string | null
+  parentId: string | null
   title: string
   priority: Priority | null
   dueDate: string | null
@@ -38,6 +39,8 @@ export interface Task {
   canceledAt: string | null
   assignees: Person[]
 }
+
+export const MAX_TASK_DEPTH = 4
 
 export interface Board {
   id: string

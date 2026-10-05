@@ -39,6 +39,7 @@ export function aTask(section: Section | null, overrides: Partial<Task> = {}) {
     id: nextId(),
     key: 'DES-1',
     sectionId: section?.id ?? null,
+    parentId: null,
     title: 'Logo',
     priority: null,
     dueDate: null,
@@ -111,19 +112,32 @@ export function fakeBoardsApi(boards: Board[] = []) {
       store.set(board.id, board)
       return Promise.resolve(structuredClone(board))
     }),
-    createTask: vi.fn<BoardsApi['createTask']>(
-      (boardId, { sectionId, title }) =>
-        Promise.resolve().then(() => {
-          const board = find(boardId)
-          const task = aTask(null, {
-            sectionId,
-            title,
-            key: `${board.keyPrefix}-${String(board.tasks.length + 1)}`
-          })
-          board.tasks.push(task)
-          board.version += 1
-          return { id: task.id, key: task.key, title, sectionId }
+    createTask: vi.fn<BoardsApi['createTask']>((boardId, input) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        const task = aTask(null, {
+          sectionId: 'sectionId' in input ? input.sectionId : null,
+          parentId: 'parentId' in input ? input.parentId : null,
+          title: input.title,
+          key: `${board.keyPrefix}-${String(board.tasks.length + 1)}`
         })
+        board.tasks.push(task)
+        board.version += 1
+        return {
+          id: task.id,
+          key: task.key,
+          title: task.title,
+          sectionId: task.sectionId
+        }
+      })
+    ),
+    completeTask: vi.fn<BoardsApi['completeTask']>((boardId, taskId, state) =>
+      Promise.resolve().then(() => {
+        const task = findTask(boardId, taskId)
+        const now = new Date().toISOString()
+        task.completedAt = state === 'completed' ? now : null
+        task.canceledAt = state === 'canceled' ? now : null
+      })
     ),
     moveTask: vi.fn<BoardsApi['moveTask']>((boardId, taskId, move) =>
       Promise.resolve().then(() => {
