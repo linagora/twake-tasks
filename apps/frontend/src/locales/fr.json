@@ -15,7 +15,9 @@
     "new": "Nouveau",
     "empty": "Aucun tableau pour l'instant.",
     "emptyArchived": "Aucun tableau archivé.",
-    "loadFailed": "Les tableaux n'ont pas pu être chargés."
+    "loadFailed": "Les tableaux n'ont pas pu être chargés.",
+    "star": "Ajouter %{name} aux favoris",
+    "unstar": "Retirer %{name} des favoris"
   },
   "newBoard": {
     "title": "Nouveau tableau",

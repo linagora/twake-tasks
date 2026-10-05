@@ -1,14 +1,62 @@
-import { Button, Link, Tab, Tabs, Typography } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import {
+  Button,
+  IconButton,
+  Link,
+  Tab,
+  Tabs,
+  Typography
+} from '@linagora/twake-mui'
+import { Icon, Star, StarOutline } from '@linagora/twake-icons'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 
 import { TileGrid, Tile } from '@/ds/TileGrid'
+import type { BoardSummary } from '@/domain/board'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
-import { useBoards } from '@/ui/boards/queries'
+import { useBoards, useSetFavorite } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 type Shelf = 'active' | 'archived'
+
+function FavoriteButton({ board }: { board: BoardSummary }): ReactElement {
+  const { t } = useI18n()
+  const setFavorite = useSetFavorite()
+  const button = useRef<HTMLButtonElement>(null)
+  const pressed = useRef(false)
+
+  // The list moves a toggled board, and moving a node drops its focus.
+  useEffect(() => {
+    if (!pressed.current) return
+    pressed.current = false
+    button.current?.focus()
+  }, [board.favorite])
+
+  return (
+    <IconButton
+      ref={button}
+      size="small"
+      className="u-ml-auto"
+      aria-label={t(board.favorite ? 'boards.unstar' : 'boards.star', {
+        name: board.name
+      })}
+      onClick={() => {
+        if (setFavorite.isPending) return
+        pressed.current = document.activeElement === button.current
+        setFavorite.mutate(
+          { boardId: board.id, favorite: !board.favorite },
+          {
+            onError: () => {
+              pressed.current = false
+            }
+          }
+        )
+      }}
+    >
+      <Icon icon={board.favorite ? Star : StarOutline} />
+    </IconButton>
+  )
+}
 
 export function BoardsScreen(): ReactElement {
   const { t } = useI18n()
@@ -67,6 +115,7 @@ export function BoardsScreen(): ReactElement {
               >
                 {board.name}
               </Link>
+              <FavoriteButton board={board} />
             </Tile>
           ))}
         </TileGrid>
