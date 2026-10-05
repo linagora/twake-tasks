@@ -29,4 +29,6 @@ npm run dev -w @twake-tasks/backend
 npm run dev -w @twake-tasks/frontend
 ```
 
+The backend refuses to connect to the database as a superuser, because a superuser skips the row level security that keeps organizations apart. Compose creates a `twake_tasks` role for it on a fresh volume. If your volume predates that, recreate it with `docker compose down -v`.
+
 Run `npm run check` before you push. It's what CI runs.
