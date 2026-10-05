@@ -47,9 +47,59 @@ describe('user boards', () => {
         }>()
         .boards.map(board => board.name)
 
-    expect(await boardNames(alice)).toEqual(['Design'])
-    expect(await boardNames(bob)).toEqual(['Ops'])
-    expect(await boardNames(carol)).toEqual(['Home'])
+    expect(await boardNames(alice)).toEqual(['Inbox', 'Design'])
+    expect(await boardNames(bob)).toEqual(['Inbox', 'Ops'])
+    expect(await boardNames(carol)).toEqual(['Inbox', 'Home'])
+  })
+
+  it.each([aUser, aB2cUser])(
+    'gives each user one Inbox on first use (%o)',
+    async makeUser => {
+      const alice = makeUser()
+
+      const [first, second] = await Promise.all([
+        api.as(alice).get('/boards'),
+        api.as(alice).get('/boards')
+      ])
+      const inboxes = (
+        response: typeof first
+      ): { id: string; inbox: boolean }[] =>
+        response
+          .json<{ boards: { id: string; inbox: boolean }[] }>()
+          .boards.filter(board => board.inbox)
+
+      expect(inboxes(first)).toHaveLength(1)
+      expect(inboxes(second)).toEqual(inboxes(first))
+      const inbox = await api
+        .as(alice)
+        .get(`/boards/${String(inboxes(first)[0]?.id)}`)
+      expect(inbox.json()).toMatchObject({
+        name: 'Inbox',
+        inbox: true,
+        role: 'admin',
+        sections: [],
+        tasks: []
+      })
+    }
+  )
+
+  it('keeps a person’s boards apart in each organization', async () => {
+    const b2c = aB2cUser()
+    const inOrg = aUser({ email: b2c.email })
+    await api.as(b2c).post('/boards', { name: 'Home', keyPrefix: 'HOME' })
+
+    const created = await api
+      .as(inOrg)
+      .post('/boards', { name: 'Home office', keyPrefix: 'HOME' })
+    const names = (await api.as(inOrg).get('/boards')).json<{
+      boards: { name: string }[]
+    }>()
+
+    expect(created.statusCode).toBe(201)
+    expect(names.boards.map(board => board.name)).toEqual([
+      'Inbox',
+      'Home office'
+    ])
   })
 
   it('opens a board for its members only', async () => {
@@ -90,5 +140,14 @@ describe('user boards', () => {
 
     expect(again.statusCode).toBe(409)
     expect(otherOwner.statusCode).toBe(201)
+  })
+
+  it('keeps the INBOX key prefix for the Inbox', async () => {
+    const response = await api
+      .as(aUser())
+      .post('/boards', { name: 'Mail', keyPrefix: 'INBOX' })
+
+    expect(response.statusCode).toBe(409)
+    expect(response.json()).toEqual({ error: 'key_prefix_taken' })
   })
 })

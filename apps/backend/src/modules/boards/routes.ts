@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
-import { createBoardStore } from './store.ts'
+import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
 import { createTaskStore, type Refusal } from './tasks.ts'
 
 const newBoard = z.object({
@@ -88,7 +88,9 @@ export function registerBoards(
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
-      const board = await store.createUserBoard(identity, body.data)
+      const board =
+        body.data.keyPrefix !== INBOX_KEY_PREFIX &&
+        (await store.createUserBoard(identity, body.data))
       if (!board) return reply.code(409).send({ error: 'key_prefix_taken' })
       return reply.code(201).send(board)
     }

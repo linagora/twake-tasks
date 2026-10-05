@@ -1,6 +1,7 @@
 import { sql, type SQL } from 'drizzle-orm'
 import {
   bigint,
+  boolean,
   check,
   date,
   foreignKey,
@@ -11,6 +12,7 @@ import {
   smallint,
   text,
   unique,
+  uniqueIndex,
   uuid,
   type AnyPgColumn
 } from 'drizzle-orm/pg-core'
@@ -49,12 +51,19 @@ export const boards = pgTable.withRLS(
     version: bigint({ mode: 'number' }).notNull().default(0),
     createdBy: text('created_by').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
-    archivedAt: timestamptz('archived_at')
+    archivedAt: timestamptz('archived_at'),
+    inbox: boolean().notNull().default(false)
   },
   table => [
     unique().on(table.organizationId, table.id),
     unique().on(table.spaceId, table.keyPrefix),
-    unique().on(table.ownerEmail, table.keyPrefix),
+    // Row level security splits a person's boards by organization, B2C included.
+    unique()
+      .on(table.organizationId, table.ownerEmail, table.keyPrefix)
+      .nullsNotDistinct(),
+    uniqueIndex('boards_one_inbox_per_owner')
+      .on(sql`coalesce(${table.organizationId}, '')`, table.ownerEmail)
+      .where(sql`${table.inbox}`),
     foreignKey({
       columns: [table.organizationId, table.spaceId],
       foreignColumns: [spaces.organizationId, spaces.id]

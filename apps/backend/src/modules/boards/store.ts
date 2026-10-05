@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { generateNKeysBetween } from 'fractional-indexing'
 import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
@@ -19,6 +19,8 @@ const DEFAULT_SECTIONS = [
   { name: 'Done', category: 'completed' }
 ] as const
 
+export const INBOX_KEY_PREFIX = 'INBOX'
+
 const UNIQUE_VIOLATION = '23505'
 
 function isUniqueViolation(error: unknown): boolean {
@@ -32,6 +34,7 @@ export function createBoardStore(db: Db) {
   return {
     listBoards(identity: Identity) {
       return inTenant(db, identity, async tx => {
+        await ensureInbox(tx, identity)
         const accessible = accessibleBoards(tx, identity.email)
         return tx
           .select({
@@ -39,6 +42,7 @@ export function createBoardStore(db: Db) {
             name: boards.name,
             keyPrefix: boards.keyPrefix,
             spaceId: boards.spaceId,
+            inbox: boards.inbox,
             role: accessible.role,
             archived: sql<boolean>`${boards.archivedAt} is not null`,
             favorite: sql<boolean>`${boardFavorites.email} is not null`
@@ -52,7 +56,7 @@ export function createBoardStore(db: Db) {
               eq(boardFavorites.email, identity.email)
             )
           )
-          .orderBy(asc(boards.name))
+          .orderBy(desc(boards.inbox), asc(boards.name))
       })
     },
 
@@ -108,6 +112,30 @@ export function createBoardStore(db: Db) {
   }
 }
 
+// The Inbox has no sections: its tasks show under "No section". Its key prefix is
+// reserved, so any unique conflict here means the Inbox already exists.
+async function ensureInbox(tx: Tx, identity: Identity) {
+  const [inbox] = await tx
+    .insert(boards)
+    .values({
+      organizationId: identity.organizationId,
+      ownerEmail: identity.email,
+      name: 'Inbox',
+      keyPrefix: INBOX_KEY_PREFIX,
+      createdBy: identity.email,
+      inbox: true
+    })
+    .onConflictDoNothing()
+    .returning({ id: boards.id })
+  if (!inbox) return
+  await tx.insert(boardMembers).values({
+    boardId: inbox.id,
+    organizationId: identity.organizationId,
+    email: identity.email,
+    role: 'admin'
+  })
+}
+
 async function loadBoard(tx: Tx, boardId: string, email: string) {
   const role = await roleOn(tx, email, boardId)
   if (!role) return null
@@ -138,6 +166,7 @@ async function loadBoard(tx: Tx, boardId: string, email: string) {
     name: board.name,
     keyPrefix: board.keyPrefix,
     spaceId: board.spaceId,
+    inbox: board.inbox,
     archived: board.archivedAt !== null,
     version: board.version,
     role,
