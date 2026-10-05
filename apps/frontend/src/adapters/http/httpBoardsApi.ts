@@ -1,0 +1,47 @@
+import { ApiError, type BoardsApi } from '@/application/boards'
+import type { BoardSummary } from '@/domain/board'
+
+export type Send = (request: Request) => Promise<Response>
+
+async function errorCode(response: Response): Promise<string | null> {
+  try {
+    const body: unknown = await response.json()
+    return typeof body === 'object' &&
+      body !== null &&
+      'error' in body &&
+      typeof body.error === 'string'
+      ? body.error
+      : null
+  } catch {
+    return null
+  }
+}
+
+export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
+  async function call<T>(method: string, path: string, body?: object) {
+    const response = await send(
+      new Request(new URL(`/api${path}`, baseUrl), {
+        method,
+        ...(body && {
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body)
+        })
+      })
+    )
+    if (!response.ok) {
+      throw new ApiError(response.status, await errorCode(response))
+    }
+    return (response.status === 204 ? undefined : await response.json()) as T
+  }
+
+  return {
+    listBoards: async () =>
+      (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
+    getBoard: boardId => call('GET', `/boards/${boardId}`),
+    createBoard: board => call('POST', '/boards', board),
+    createTask: (boardId, task) =>
+      call('POST', `/boards/${boardId}/tasks`, task),
+    moveTask: (boardId, taskId, move) =>
+      call('POST', `/boards/${boardId}/tasks/${taskId}/move`, move)
+  }
+}

@@ -1,8 +1,10 @@
 import {
+  addAuthorization,
   completeLogin,
   configureAuth,
   logOut,
   onSessionEndedElsewhere,
+  redirectOnUnauthorized,
   startLogin,
   type AuthConfig
 } from '@linagora/twake-oidc'
@@ -74,4 +76,11 @@ export function oidcSession(config: AuthConfig): SessionService {
     signOut: logOut,
     onEndedElsewhere: onSessionEndedElsewhere
   }
+}
+
+export async function sendSignedIn(request: Request): Promise<Response> {
+  addAuthorization(request)
+  const response = await fetch(request)
+  await redirectOnUnauthorized(request, undefined, response)
+  return response
 }
