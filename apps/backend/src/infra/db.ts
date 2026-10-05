@@ -21,6 +21,13 @@ export const sortKey = customType<{ data: string }>({
 
 export const organizationId = () => text('org_id')
 
+// A foreign key holding a null is not checked, so rows reference their board's
+// tenant through this column, which B2C rows fill too.
+export const tenant = () =>
+  text()
+    .notNull()
+    .generatedAlwaysAs(sql`coalesce(org_id, '')`)
+
 const currentOrganization = sql`nullif(current_setting('app.org_id', true), '')`
 export const currentUser = sql`nullif(current_setting('app.user_id', true), '')::uuid`
 
