@@ -2,6 +2,7 @@ import {
   ApiError,
   type AgendaTask,
   type HiddenTask,
+  type Notification,
   type SavedFilter,
   type Space,
   type BoardsApi,
@@ -215,6 +216,22 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
         'DELETE',
         `/boards/${boardId}/tasks/${taskId}/reminders/${reminderId}`
       ),
+    following: async (boardId, taskId) =>
+      (
+        await call<{ following: boolean }>(
+          'GET',
+          `/boards/${boardId}/tasks/${taskId}/follow`
+        )
+      ).following,
+    setFollowing: (boardId, taskId, following) =>
+      call(
+        following ? 'PUT' : 'DELETE',
+        `/boards/${boardId}/tasks/${taskId}/follow`
+      ),
+    listNotifications: async () =>
+      (await call<{ notifications: Notification[] }>('GET', '/notifications'))
+        .notifications,
+    markNotificationsRead: () => call('POST', '/notifications/read', {}),
     setAssignees: (boardId, taskId, userIds) =>
       call('PUT', `/boards/${boardId}/tasks/${taskId}/assignees`, { userIds }),
     createLabel: (boardId, name) =>

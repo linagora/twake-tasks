@@ -17,6 +17,7 @@ import { TransferTask } from '@/ui/boards/TransferTask'
 import { Comments } from '@/ui/boards/Comments'
 import { Dates } from '@/ui/boards/Dates'
 import { History } from '@/ui/boards/History'
+import { FollowButton } from '@/ui/boards/Notifications'
 import { Reminders } from '@/ui/boards/Reminders'
 import {
   useCreateTask,
@@ -50,6 +51,7 @@ export function TaskPanel({
     <Dialog open onClose={onClose} aria-labelledby={titleId} size="medium">
       <DialogTitle id={titleId}>{`${task.key} ${task.title}`}</DialogTitle>
       <DialogContent>
+        <FollowButton task={task} boardId={boardId} />
         <Dates task={task} boardId={boardId} editable={editable} />
         {editable && depth < MAX_TASK_DEPTH && (
           <AddSubtask task={task} boardId={boardId} />

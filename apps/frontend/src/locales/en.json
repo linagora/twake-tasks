@@ -244,6 +244,18 @@
     "empty": "No tasks match.",
     "failed": "Couldn’t search."
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications.",
+    "loadFailed": "Couldn’t load notifications.",
+    "follow": "Follow",
+    "reason": {
+      "assigned": "You were assigned",
+      "mentioned": "You were mentioned",
+      "following": "Changed while you follow it",
+      "reminder": "Reminder"
+    }
+  },
   "filters": {
     "title": "Filters",
     "empty": "No saved filters.",

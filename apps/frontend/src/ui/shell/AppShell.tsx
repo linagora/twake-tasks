@@ -55,6 +55,9 @@ export function AppShell(): ReactElement {
           <Link component={RouterLink} to="/filters" className="u-mr-1">
             {t('filters.title')}
           </Link>
+          <Link component={RouterLink} to="/notifications" className="u-mr-1">
+            {t('notifications.title')}
+          </Link>
         </nav>
         <SearchField inputRef={search} />
         <Button

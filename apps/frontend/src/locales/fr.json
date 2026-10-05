@@ -248,6 +248,18 @@
     "empty": "Aucune tâche ne correspond.",
     "failed": "La recherche a échoué."
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification.",
+    "loadFailed": "Impossible de charger les notifications.",
+    "follow": "Suivre",
+    "reason": {
+      "assigned": "Vous avez été assigné",
+      "mentioned": "Vous avez été mentionné",
+      "following": "Modifiée pendant que vous la suivez",
+      "reminder": "Rappel"
+    }
+  },
   "filters": {
     "title": "Filtres",
     "empty": "Aucun filtre enregistré.",

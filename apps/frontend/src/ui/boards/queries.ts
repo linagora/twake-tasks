@@ -18,6 +18,7 @@ import type {
   NewBoard,
   NewReminder,
   NewTask,
+  Notification,
   Reminder,
   SavedFilter,
   Sharing,
@@ -287,6 +288,51 @@ export function useDeleteReminder(
       api.deleteReminder(boardId, taskId, reminderId),
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: remindersKey(boardId, taskId) })
+  })
+}
+
+const followingKey = (boardId: string, taskId: string) =>
+  ['boards', boardId, 'tasks', taskId, 'following'] as const
+
+export function useFollowing(
+  boardId: string,
+  taskId: string
+): UseQueryResult<boolean> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: followingKey(boardId, taskId),
+    queryFn: () => api.following(boardId, taskId)
+  })
+}
+
+export function useSetFollowing(
+  boardId: string,
+  taskId: string
+): UseMutationResult<void, Error, boolean> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (following: boolean) =>
+      api.setFollowing(boardId, taskId, following),
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: followingKey(boardId, taskId)
+      })
+  })
+}
+
+// Opening the list reads them all.
+export function useNotifications(): UseQueryResult<Notification[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const notifications = await api.listNotifications()
+      if (notifications.some(notification => notification.readAt === null)) {
+        await api.markNotificationsRead()
+      }
+      return notifications
+    }
   })
 }
 
