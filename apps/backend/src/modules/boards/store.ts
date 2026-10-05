@@ -9,7 +9,8 @@ import {
   lt,
   notExists,
   or,
-  sql
+  sql,
+  type SQL
 } from 'drizzle-orm'
 import { generateNKeysBetween } from 'fractional-indexing'
 import postgres from 'postgres'
@@ -53,9 +54,23 @@ export function createBoardStore(db: Db) {
         const today = todayIn(zone)
         return {
           today,
-          tasks: await agendaOf(tx, identity.userId, shift(today, days, 'days'))
+          tasks: await openTasksOf(
+            tx,
+            identity.userId,
+            and(
+              lt(tasks.dueDate, shift(today, days, 'days')),
+              mine(tx, identity.userId)
+            )
+          )
         }
       })
+    },
+
+    /** Open tasks assigned to the person, dated ones first. */
+    assignedTasks(identity: Identity) {
+      return inTenant(db, identity, tx =>
+        openTasksOf(tx, identity.userId, assignedTo(tx, identity.userId))
+      )
     },
 
     listBoards(identity: Identity) {
@@ -287,9 +302,36 @@ async function describeTasks(
   }))
 }
 
+const assignedTo = (tx: Tx, userId: string) =>
+  exists(
+    tx
+      .select({ one: sql`1` })
+      .from(taskAssignees)
+      .where(
+        and(
+          eq(taskAssignees.taskId, tasks.id),
+          eq(taskAssignees.userId, userId)
+        )
+      )
+  )
+
 // A task is someone's when it is assigned to them, or when it sits unassigned
 // on one of their own boards. Unassigned space tasks belong to nobody yet.
-async function agendaOf(tx: Tx, userId: string, until: string) {
+const mine = (tx: Tx, userId: string) =>
+  or(
+    assignedTo(tx, userId),
+    and(
+      isNull(boards.spaceId),
+      notExists(
+        tx
+          .select({ one: sql`1` })
+          .from(taskAssignees)
+          .where(eq(taskAssignees.taskId, tasks.id))
+      )
+    )
+  )
+
+async function openTasksOf(tx: Tx, userId: string, which: SQL | undefined) {
   const accessible = accessibleBoards(tx, userId)
   const rows = await tx
     .select({ task: tasks, board: boards })
@@ -301,33 +343,11 @@ async function agendaOf(tx: Tx, userId: string, until: string) {
         isNull(boards.archivedAt),
         isNull(tasks.completedAt),
         isNull(tasks.canceledAt),
-        lt(tasks.dueDate, until),
-        or(
-          exists(
-            tx
-              .select({ one: sql`1` })
-              .from(taskAssignees)
-              .where(
-                and(
-                  eq(taskAssignees.taskId, tasks.id),
-                  eq(taskAssignees.userId, userId)
-                )
-              )
-          ),
-          and(
-            isNull(boards.spaceId),
-            notExists(
-              tx
-                .select({ one: sql`1` })
-                .from(taskAssignees)
-                .where(eq(taskAssignees.taskId, tasks.id))
-            )
-          )
-        )
+        which
       )
     )
     .orderBy(
-      asc(tasks.dueDate),
+      sql`${tasks.dueDate} asc nulls last`,
       sql`${tasks.dueTime} asc nulls last`,
       sql`${tasks.priority} asc nulls last`,
       asc(boards.name),

@@ -137,6 +137,34 @@ describe('agenda', () => {
     expect((await agenda(alice, 1)).tasks).toEqual([])
   })
 
+  it('lists my open tasks across boards, dated ones first', async () => {
+    const alice = aUser()
+    const design = await aBoardOf(alice, 'DES')
+    const home = await aBoardOf(alice, 'HOM')
+    const assign = (boardId: string, taskId: string, user: TestUser) =>
+      api.as(alice).put(`/boards/${boardId}/tasks/${taskId}/assignees`, {
+        userIds: [user.userId]
+      })
+    const undated = await design.add('Undated')
+    const dated = await home.add('Dated', { dueDate: shift(today, 9, 'days') })
+    const done = await home.add('Done')
+    await home.add('Mine by default, not assigned')
+    await assign(design.boardId, undated.id, alice)
+    await assign(home.boardId, dated.id, alice)
+    await assign(home.boardId, done.id, alice)
+    await api
+      .as(alice)
+      .post(`/boards/${home.boardId}/tasks/${done.id}/complete`, {
+        state: 'completed'
+      })
+
+    const response = await api.as(alice).get('/my-tasks')
+
+    expect(
+      response.json<{ tasks: { key: string }[] }>().tasks.map(task => task.key)
+    ).toEqual(['HOM-1', 'DES-1'])
+  })
+
   it('refuses an unknown zone', async () => {
     const response = await api.as(aUser()).get('/agenda?zone=Mars/Base&days=1')
 

@@ -243,6 +243,16 @@ export function registerBoards(
   )
 
   app.get(
+    '/my-tasks',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      return { tasks: await store.assignedTasks(identity) }
+    }
+  )
+
+  app.get(
     '/agenda',
     { preHandler: deps.requireIdentity },
     async (request, reply) => {
