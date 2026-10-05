@@ -64,7 +64,12 @@
     "saveFailed": "La description n'a pas pu être enregistrée.",
     "stale": "Quelqu'un d'autre a modifié la description. Votre texte est conservé : enregistrez à nouveau pour remplacer le sien.",
     "addSubtask": "Ajouter une sous-tâche",
-    "subtaskTitle": "Titre de la sous-tâche"
+    "subtaskTitle": "Titre de la sous-tâche",
+    "comments": "Commentaires",
+    "comment": "Commentaire",
+    "send": "Envoyer",
+    "commentsFailed": "Les commentaires n'ont pas pu être chargés.",
+    "commentFailed": "Le commentaire n'a pas pu être envoyé."
   },
   "section": {
     "new": "Nouvelle section",

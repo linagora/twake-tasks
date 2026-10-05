@@ -3,6 +3,7 @@ import { vi } from 'vitest'
 import {
   ApiError,
   type BoardsApi,
+  type Comment,
   type Description
 } from '@/application/boards'
 import type { Board, BoardSummary, Section, Task } from '@/domain/board'
@@ -81,6 +82,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
 
   const favorites = new Set<string>()
   const descriptions = new Map<string, Description>()
+  const comments = new Map<string, Comment[]>()
   const findTask = (boardId: string, taskId: string) => {
     const task = find(boardId).tasks.find(candidate => candidate.id === taskId)
     if (!task) throw new ApiError(404, 'not_found')
@@ -174,6 +176,26 @@ export function fakeBoardsApi(boards: Board[] = []) {
           return { version: version + 1 }
         })
     ),
+    listComments: vi.fn<BoardsApi['listComments']>((boardId, taskId) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        return structuredClone(comments.get(taskId) ?? [])
+      })
+    ),
+    addComment: vi.fn<BoardsApi['addComment']>((boardId, taskId, body) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        comments.set(taskId, [
+          ...(comments.get(taskId) ?? []),
+          {
+            id: nextId(),
+            author: { userId: 'me', email: 'me@example.com' },
+            body,
+            createdAt: new Date().toISOString()
+          }
+        ])
+      })
+    ),
     setAssignees: vi.fn<BoardsApi['setAssignees']>((boardId, taskId, userIds) =>
       Promise.resolve().then(() => {
         const board = find(boardId)
@@ -253,5 +275,5 @@ export function fakeBoardsApi(boards: Board[] = []) {
     )
   } satisfies BoardsApi
 
-  return Object.assign(api, { descriptions })
+  return Object.assign(api, { descriptions, comments })
 }

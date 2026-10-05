@@ -12,6 +12,7 @@ import Markdown from 'react-markdown'
 
 import { ApiError } from '@/application/boards'
 import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
+import { Comments } from '@/ui/boards/Comments'
 import {
   useCreateTask,
   useDescription,
@@ -99,6 +100,7 @@ export function TaskPanel({
             )}
           </form>
         )}
+        <Comments task={task} boardId={boardId} />
       </DialogContent>
       {draft !== null && (
         <DialogActions>

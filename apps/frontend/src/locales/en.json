@@ -64,7 +64,12 @@
     "saveFailed": "The description could not be saved.",
     "stale": "Someone else changed the description. Your text is kept: save again to replace theirs.",
     "addSubtask": "Add a sub-task",
-    "subtaskTitle": "Sub-task title"
+    "subtaskTitle": "Sub-task title",
+    "comments": "Comments",
+    "comment": "Comment",
+    "send": "Send",
+    "commentsFailed": "The comments could not be loaded.",
+    "commentFailed": "The comment could not be sent."
   },
   "section": {
     "new": "New section",
