@@ -6,6 +6,7 @@ import { SearchScreen } from '@/ui/agenda/SearchScreen'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { BoardsScreen } from '@/ui/boards/BoardsScreen'
 import { NotificationsScreen } from '@/ui/boards/Notifications'
+import { EmbedLayout, EmbedSpaceScreen } from '@/ui/embed/Embed'
 import { AppShell } from '@/ui/shell/AppShell'
 
 export const routes: RouteObject[] = [
@@ -21,6 +22,14 @@ export const routes: RouteObject[] = [
       { path: '/filters/:filterId', element: <FilterScreen /> },
       { path: '/search', element: <SearchScreen /> },
       { path: '/notifications', element: <NotificationsScreen /> }
+    ]
+  },
+  {
+    path: '/embed/spaces/:spaceId',
+    element: <EmbedLayout />,
+    children: [
+      { index: true, element: <EmbedSpaceScreen /> },
+      { path: 'boards/:boardId', element: <BoardScreen /> }
     ]
   }
 ]
