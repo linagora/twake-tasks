@@ -4,7 +4,7 @@ import { resolveLanguage } from '@/ui/i18n/languages'
 
 describe('resolveLanguage', () => {
   it('takes the first supported candidate by its primary subtag', () => {
-    expect(resolveLanguage(['pt-BR', 'de-AT', 'fr'])).toBe('de')
+    expect(resolveLanguage(['pt-BR', 'ru-UA', 'fr'])).toBe('ru')
   })
 
   it('ignores case and empty candidates', () => {
