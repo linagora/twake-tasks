@@ -551,11 +551,41 @@ export const notifications = pgTable.withRLS(
   },
   table => [
     index().on(table.userId, table.createdAt),
+    uniqueIndex()
+      .on(table.userId, table.taskId, table.reason)
+      .where(sql`${table.readAt} is null`),
     foreignKey({
       columns: [table.tenant, table.taskId],
       foreignColumns: [tasks.tenant, tasks.id]
     }),
     tenantPolicy(table.organizationId, visibleTask(table.taskId)),
-    ownRows(table.userId)
+    // Anyone who sees the task may notify someone of a change to it.
+    ...(['select', 'update', 'delete'] as const).map(command =>
+      pgPolicy(`own_${command}`, {
+        as: 'restrictive',
+        for: command,
+        using: sql`${table.userId} = ${currentUser}`
+      })
+    )
+  ]
+)
+
+export const taskFollowers = pgTable.withRLS(
+  'task_followers',
+  {
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    userId: uuid('user_id').notNull(),
+    tenant: tenant()
+  },
+  table => [
+    primaryKey({ columns: [table.taskId, table.userId] }),
+    foreignKey({
+      columns: [table.tenant, table.taskId],
+      foreignColumns: [tasks.tenant, tasks.id]
+    }),
+    tenantPolicy(table.organizationId, visibleTask(table.taskId))
   ]
 )
