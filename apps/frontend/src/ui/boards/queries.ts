@@ -8,6 +8,7 @@ import {
 
 import type {
   BoardsApi,
+  Description,
   NewBoard,
   NewTask,
   TaskMove
@@ -65,6 +66,36 @@ export function useBoardChange<T>(
     mutationFn: (input: T) => change(api, input),
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+  })
+}
+
+const descriptionKey = (boardId: string, taskId: string) =>
+  ['boards', boardId, 'tasks', taskId, 'description'] as const
+
+export function useDescription(
+  boardId: string,
+  taskId: string
+): UseQueryResult<Description> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: descriptionKey(boardId, taskId),
+    queryFn: () => api.getDescription(boardId, taskId)
+  })
+}
+
+export function useSetDescription(
+  boardId: string,
+  taskId: string
+): UseMutationResult<{ version: number }, Error, Description> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (edit: Description) =>
+      api.setDescription(boardId, taskId, edit),
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: descriptionKey(boardId, taskId)
+      })
   })
 }
 

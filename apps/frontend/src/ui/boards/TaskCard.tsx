@@ -11,6 +11,7 @@ import {
   FormGroup,
   getInitials,
   IconButton,
+  Link,
   Menu,
   MenuItem,
   nameToColor,
@@ -22,6 +23,7 @@ import { useId, useState, type ReactElement } from 'react'
 import { Card, Row } from '@/ds/Columns'
 import type { Person, Section, Task } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
+import { TaskPanel } from '@/ui/boards/TaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const PRIORITY_COLOR = {
@@ -47,6 +49,7 @@ export function TaskCard({
   const { t, lang } = useI18n()
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState(false)
+  const [open, setOpen] = useState(false)
   const due =
     task.dueDate &&
     new Intl.DateTimeFormat(lang, {
@@ -79,7 +82,18 @@ export function TaskCard({
           </IconButton>
         )}
       </Row>
-      <Typography variant="body1">{task.title}</Typography>
+      <Link
+        component="button"
+        variant="body1"
+        color="textPrimary"
+        underline="hover"
+        className="u-ta-left"
+        onClick={() => {
+          setOpen(true)
+        }}
+      >
+        {task.title}
+      </Link>
       <Row>
         {task.priority !== null && (
           <Chip
@@ -131,6 +145,16 @@ export function TaskCard({
           </MenuItem>
         ))}
       </Menu>
+      {open && (
+        <TaskPanel
+          task={task}
+          boardId={boardId}
+          editable={onMove !== undefined}
+          onClose={() => {
+            setOpen(false)
+          }}
+        />
+      )}
       {assigning && (
         <AssignDialog
           task={task}

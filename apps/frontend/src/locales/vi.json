@@ -50,6 +50,13 @@
     "moveFailed": "Không thể di chuyển công việc.",
     "addFailed": "Không thể thêm công việc."
   },
+  "task": {
+    "description": "Mô tả",
+    "editDescription": "Sửa mô tả",
+    "loadFailed": "Không thể tải mô tả.",
+    "saveFailed": "Không thể lưu mô tả.",
+    "stale": "Người khác đã thay đổi mô tả. Nội dung của bạn vẫn được giữ: lưu lại để thay thế nội dung của họ."
+  },
   "section": {
     "new": "Mục mới",
     "editTitle": "Sửa mục",

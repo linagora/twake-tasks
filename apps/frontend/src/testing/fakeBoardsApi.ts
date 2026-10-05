@@ -1,6 +1,10 @@
 import { vi } from 'vitest'
 
-import { ApiError, type BoardsApi } from '@/application/boards'
+import {
+  ApiError,
+  type BoardsApi,
+  type Description
+} from '@/application/boards'
 import type { Board, BoardSummary, Section, Task } from '@/domain/board'
 
 let counter = 0
@@ -73,6 +77,12 @@ export function fakeBoardsApi(boards: Board[] = []) {
   }
 
   const favorites = new Set<string>()
+  const descriptions = new Map<string, Description>()
+  const findTask = (boardId: string, taskId: string) => {
+    const task = find(boardId).tasks.find(candidate => candidate.id === taskId)
+    if (!task) throw new ApiError(404, 'not_found')
+    return task
+  }
 
   const api = {
     listBoards: vi.fn(() =>
@@ -130,6 +140,23 @@ export function fakeBoardsApi(boards: Board[] = []) {
         else board.tasks.splice(index, 0, task)
         board.version += 1
       })
+    ),
+    getDescription: vi.fn<BoardsApi['getDescription']>((boardId, taskId) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        return descriptions.get(taskId) ?? { markdown: '', version: 0 }
+      })
+    ),
+    setDescription: vi.fn<BoardsApi['setDescription']>(
+      (boardId, taskId, { markdown, version }) =>
+        Promise.resolve().then(() => {
+          findTask(boardId, taskId)
+          if ((descriptions.get(taskId)?.version ?? 0) !== version) {
+            throw new ApiError(409, 'stale_version')
+          }
+          descriptions.set(taskId, { markdown, version: version + 1 })
+          return { version: version + 1 }
+        })
     ),
     setAssignees: vi.fn<BoardsApi['setAssignees']>((boardId, taskId, userIds) =>
       Promise.resolve().then(() => {
@@ -191,5 +218,5 @@ export function fakeBoardsApi(boards: Board[] = []) {
     )
   } satisfies BoardsApi
 
-  return api
+  return Object.assign(api, { descriptions })
 }
