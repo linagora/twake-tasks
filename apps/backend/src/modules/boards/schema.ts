@@ -152,6 +152,7 @@ export const tasks = pgTable.withRLS(
       .notNull()
       .references(() => boards.id, { onDelete: 'cascade' }),
     sectionId: uuid('section_id'),
+    parentId: uuid('parent_id'),
     organizationId: organizationId(),
     number: integer().notNull(),
     title: text().notNull(),
@@ -169,15 +170,25 @@ export const tasks = pgTable.withRLS(
   },
   table => [
     unique().on(table.tenant, table.id),
+    unique().on(table.boardId, table.id),
     unique().on(table.boardId, table.number),
-    // Tasks without a section share one order on the board.
+    // Tasks without a section share one order on the board, and sub-tasks one
+    // order under their parent.
     unique()
-      .on(table.boardId, table.sectionId, table.position)
+      .on(table.boardId, table.parentId, table.sectionId, table.position)
       .nullsNotDistinct(),
     foreignKey({
       columns: [table.boardId, table.sectionId],
       foreignColumns: [sections.boardId, sections.id]
     }),
+    foreignKey({
+      columns: [table.boardId, table.parentId],
+      foreignColumns: [table.boardId, table.id]
+    }).onDelete('cascade'),
+    check(
+      'tasks_subtask_outside_sections',
+      sql`${table.parentId} is null or ${table.sectionId} is null`
+    ),
     foreignKey({
       columns: [table.tenant, table.boardId],
       foreignColumns: [boards.tenant, boards.id]

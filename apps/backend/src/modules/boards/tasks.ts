@@ -15,6 +15,8 @@ export type Refusal =
   | 'section_not_empty'
   | 'invalid_assignee'
   | 'stale_version'
+  | 'invalid_parent'
+  | 'too_deep'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
 // Thrown, not returned, so the transaction rolls back whatever ran before it.
@@ -99,9 +101,24 @@ async function taskOf(tx: Tx, boardId: string, taskId: string) {
   return task
 }
 
+const MAX_DEPTH = 4
+
+async function depthOf(tx: Tx, taskId: string): Promise<number> {
+  const [chain] = await tx.execute<{ depth: number }>(sql`
+    with recursive chain as (
+      select ${tasks.id}, ${tasks.parentId} from ${tasks} where ${tasks.id} = ${taskId}
+      union all
+      select parent.id, parent.parent_id from ${tasks} parent
+      join chain on parent.id = chain.parent_id
+    )
+    select count(*)::int as depth from chain`)
+  return chain?.depth ?? 0
+}
+
 export function inSection(boardId: string, sectionId: string | null) {
   return and(
     eq(tasks.boardId, boardId),
+    isNull(tasks.parentId),
     sectionId === null
       ? isNull(tasks.sectionId)
       : eq(tasks.sectionId, sectionId)
@@ -151,25 +168,44 @@ export function createTaskStore(db: Db) {
     createTask(
       identity: Identity,
       boardId: string,
-      input: { sectionId: string | null; title: string }
+      input: { title: string } & (
+        { sectionId: string | null } | { parentId: string }
+      )
     ) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
         const board = await bumpBoard(tx, boardId, {
           taskCounter: sql`${boards.taskCounter} + 1`
         })
-        const section = await sectionOf(tx, boardId, input.sectionId)
+        const sectionId = 'sectionId' in input ? input.sectionId : null
+        const parentId = 'parentId' in input ? input.parentId : null
+        const section = await sectionOf(tx, boardId, sectionId)
+        if (parentId !== null) {
+          const [parent] = await tx
+            .select({ id: tasks.id })
+            .from(tasks)
+            .where(and(eq(tasks.id, parentId), eq(tasks.boardId, boardId)))
+          if (!parent) throw new Refused('invalid_parent')
+          if ((await depthOf(tx, parentId)) >= MAX_DEPTH) {
+            throw new Refused('too_deep')
+          }
+        }
         const [last] = await tx
           .select({ position: tasks.position })
           .from(tasks)
-          .where(inSection(boardId, input.sectionId))
+          .where(
+            parentId === null
+              ? inSection(boardId, sectionId)
+              : and(eq(tasks.boardId, boardId), eq(tasks.parentId, parentId))
+          )
           .orderBy(desc(tasks.position))
           .limit(1)
         const [task] = await tx
           .insert(tasks)
           .values({
             boardId,
-            sectionId: input.sectionId,
+            sectionId,
+            parentId,
             organizationId: board.organizationId,
             number: board.number,
             title: input.title,
@@ -203,6 +239,7 @@ export function createTaskStore(db: Db) {
         await bumpBoard(tx, boardId)
         const section = await sectionOf(tx, boardId, input.sectionId)
         const task = await taskOf(tx, boardId, taskId)
+        if (task.parentId !== null) throw new Refused('invalid_section')
         const others = await tx
           .select({ id: tasks.id, position: tasks.position })
           .from(tasks)
@@ -235,6 +272,26 @@ export function createTaskStore(db: Db) {
         await bumpBoard(tx, boardId)
         await taskOf(tx, boardId, taskId)
         await tx.update(tasks).set(changes).where(eq(tasks.id, taskId))
+        return null
+      })
+    },
+
+    // A task in a section completes by moving to a completed section.
+    completeTask(
+      identity: Identity,
+      boardId: string,
+      taskId: string,
+      state: 'completed' | 'canceled' | null
+    ) {
+      return write(identity, async tx => {
+        await checkRole(tx, identity, boardId, 'editor')
+        await bumpBoard(tx, boardId)
+        const task = await taskOf(tx, boardId, taskId)
+        if (task.sectionId !== null) throw new Refused('invalid_section')
+        await tx
+          .update(tasks)
+          .set(completionFor(state, task))
+          .where(eq(tasks.id, taskId))
         return null
       })
     },
