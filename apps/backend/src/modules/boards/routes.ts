@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
+import { createCommentStore } from './comments.ts'
 import { createLabelStore } from './labels.ts'
 import { sectionCategory } from './schema.ts'
 import { createSectionStore } from './sections.ts'
@@ -49,6 +50,8 @@ const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
 const newLabel = z.object({ name: z.string().trim().min(1).max(50) })
 
 const labeling = z.object({ labelIds: z.array(z.uuid()).max(50) })
+
+const newComment = z.object({ body: z.string().trim().min(1).max(10_000) })
 
 const descriptionEdit = z.object({
   markdown: z.string().max(50_000),
@@ -105,6 +108,7 @@ export function registerBoards(
   const taskStore = createTaskStore(deps.db)
   const sectionStore = createSectionStore(deps.db)
   const labelStore = createLabelStore(deps.db)
+  const commentStore = createCommentStore(deps.db)
 
   app.get(
     '/boards',
@@ -325,6 +329,47 @@ export function registerBoards(
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()
+    }
+  )
+
+  app.get(
+    '/boards/:boardId/tasks/:taskId/comments',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await commentStore.listComments(
+        identity,
+        params.data.boardId,
+        params.data.taskId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return { comments: result.value }
+    }
+  )
+
+  app.post(
+    '/boards/:boardId/tasks/:taskId/comments',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = newComment.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await commentStore.addComment(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        body.data.body
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(201).send(result.value)
     }
   )
 
