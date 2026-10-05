@@ -83,6 +83,14 @@ export function Card({
   )
 }
 
+export function Checklist({ children }: { children: ReactNode }): ReactElement {
+  return (
+    <Box component="ul" sx={{ listStyle: 'none', m: 0, pl: 1 }}>
+      {children}
+    </Box>
+  )
+}
+
 export function Row({ children }: { children: ReactNode }): ReactElement {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{children}</Box>

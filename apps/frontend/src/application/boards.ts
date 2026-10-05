@@ -5,10 +5,11 @@ export interface NewBoard {
   keyPrefix: string
 }
 
-export interface NewTask {
-  sectionId: string | null
-  title: string
-}
+export type NewTask = { title: string } & (
+  { sectionId: string | null } | { parentId: string }
+)
+
+export type Completion = 'completed' | 'canceled' | null
 
 export interface TaskMove {
   sectionId: string | null
@@ -39,6 +40,12 @@ export interface BoardsApi {
     task: NewTask
   ) => Promise<Pick<Task, 'id' | 'key' | 'title' | 'sectionId'>>
   moveTask: (boardId: string, taskId: string, move: TaskMove) => Promise<void>
+  /** Only for a task outside sections: one in a section completes by moving. */
+  completeTask: (
+    boardId: string,
+    taskId: string,
+    state: Completion
+  ) => Promise<void>
   getDescription: (boardId: string, taskId: string) => Promise<Description>
   /** `version` is the one the edit started from; a newer one is refused. */
   setDescription: (

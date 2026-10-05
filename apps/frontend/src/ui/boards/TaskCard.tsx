@@ -23,6 +23,7 @@ import { useId, useState, type ReactElement } from 'react'
 import { Card, Row } from '@/ds/Columns'
 import type { Person, Section, Task } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
+import { Subtasks } from '@/ui/boards/Subtasks'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -35,12 +36,14 @@ const PRIORITY_COLOR = {
 
 export function TaskCard({
   task,
+  tasks,
   boardId,
   members,
   destinations,
   onMove
 }: {
   task: Task
+  tasks: Task[]
   boardId: string
   members: Person[]
   destinations: { id: string | null; name: string }[]
@@ -50,6 +53,7 @@ export function TaskCard({
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState(false)
   const [open, setOpen] = useState(false)
+  const editable = onMove !== undefined
   const due =
     task.dueDate &&
     new Intl.DateTimeFormat(lang, {
@@ -120,6 +124,13 @@ export function TaskCard({
           </Avatar>
         ))}
       </Row>
+      <Subtasks
+        parentId={task.id}
+        tasks={tasks}
+        boardId={boardId}
+        editable={editable}
+        depth={2}
+      />
       <Menu
         anchorEl={menuAnchor}
         open={menuAnchor !== null}
@@ -149,7 +160,8 @@ export function TaskCard({
         <TaskPanel
           task={task}
           boardId={boardId}
-          editable={onMove !== undefined}
+          editable={editable}
+          depth={1}
           onClose={() => {
             setOpen(false)
           }}

@@ -11,19 +11,25 @@ import { useId, useState, type ReactElement } from 'react'
 import Markdown from 'react-markdown'
 
 import { ApiError } from '@/application/boards'
-import type { Task } from '@/domain/board'
-import { useDescription, useSetDescription } from '@/ui/boards/queries'
+import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
+import {
+  useCreateTask,
+  useDescription,
+  useSetDescription
+} from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function TaskPanel({
   task,
   boardId,
   editable,
+  depth,
   onClose
 }: {
   task: Task
   boardId: string
   editable: boolean
+  depth: number
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
@@ -38,6 +44,9 @@ export function TaskPanel({
     <Dialog open onClose={onClose} aria-labelledby={titleId} size="medium">
       <DialogTitle id={titleId}>{`${task.key} ${task.title}`}</DialogTitle>
       <DialogContent>
+        {editable && depth < MAX_TASK_DEPTH && (
+          <AddSubtask task={task} boardId={boardId} />
+        )}
         {description.isError && (
           <Typography role="alert">{t('task.loadFailed')}</Typography>
         )}
@@ -112,5 +121,69 @@ export function TaskPanel({
         </DialogActions>
       )}
     </Dialog>
+  )
+}
+
+function AddSubtask({
+  task,
+  boardId
+}: {
+  task: Task
+  boardId: string
+}): ReactElement {
+  const { t } = useI18n()
+  const create = useCreateTask(boardId)
+  const [title, setTitle] = useState<string | null>(null)
+
+  if (title === null) {
+    return (
+      <Button
+        variant="text"
+        onClick={() => {
+          setTitle('')
+        }}
+      >
+        {t('task.addSubtask')}
+      </Button>
+    )
+  }
+  return (
+    <form
+      onSubmit={event => {
+        event.preventDefault()
+        create.mutate(
+          { parentId: task.id, title: title.trim() },
+          {
+            onSuccess: () => {
+              setTitle('')
+            }
+          }
+        )
+      }}
+    >
+      <TextField
+        label={t('task.subtaskTitle')}
+        value={title}
+        onChange={event => {
+          setTitle(event.target.value)
+        }}
+        size="small"
+        fullWidth
+        margin="dense"
+        slotProps={{ htmlInput: { maxLength: 500 } }}
+      />
+      {create.isError && (
+        <Typography role="alert" variant="caption">
+          {t('board.addFailed')}
+        </Typography>
+      )}
+      <Button
+        type="submit"
+        size="small"
+        disabled={create.isPending || !title.trim()}
+      >
+        {t('board.add')}
+      </Button>
+    </form>
   )
 }

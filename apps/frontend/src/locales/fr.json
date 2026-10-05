@@ -55,7 +55,9 @@
     "editDescription": "Modifier la description",
     "loadFailed": "La description n'a pas pu être chargée.",
     "saveFailed": "La description n'a pas pu être enregistrée.",
-    "stale": "Quelqu'un d'autre a modifié la description. Votre texte est conservé : enregistrez à nouveau pour remplacer le sien."
+    "stale": "Quelqu'un d'autre a modifié la description. Votre texte est conservé : enregistrez à nouveau pour remplacer le sien.",
+    "addSubtask": "Ajouter une sous-tâche",
+    "subtaskTitle": "Titre de la sous-tâche"
   },
   "section": {
     "new": "Nouvelle section",
