@@ -406,6 +406,23 @@ export const boardFavorites = pgTable.withRLS(
   ]
 )
 
+export const savedFilters = pgTable.withRLS(
+  'saved_filters',
+  {
+    id: id(),
+    organizationId: organizationId(),
+    userId: uuid('user_id').notNull(),
+    name: text().notNull(),
+    criteria: jsonb().notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow()
+  },
+  table => [
+    index().on(table.userId),
+    tenantPolicy(table.organizationId, sql`${table.userId} = ${currentUser}`),
+    ownRows(table.userId)
+  ]
+)
+
 function ownRows(userId: AnyPgColumn) {
   return pgPolicy('own', {
     as: 'restrictive',

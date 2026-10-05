@@ -4,6 +4,7 @@ import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
 import { createCommentStore } from './comments.ts'
+import { createFilterStore } from './filters.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
 import { createReminderStore } from './reminders.ts'
@@ -51,6 +52,20 @@ const agendaQuery = z.object({
   zone: z.string().max(64).refine(isTimeZone),
   days: z.coerce.number().int().min(1).max(60)
 })
+
+const newFilter = z.object({
+  name: z.string().trim().min(1).max(100),
+  criteria: z.strictObject({
+    assignee: z.enum(['me', 'nobody']).optional(),
+    priority: z.int().min(1).max(4).optional(),
+    label: z.string().trim().min(1).max(50).optional(),
+    due: z.enum(['overdue', 'today', 'week', 'none']).optional()
+  })
+})
+
+const filterParams = z.object({ filterId: z.uuid() })
+
+const zoneQuery = z.object({ zone: z.string().max(64).refine(isTimeZone) })
 
 const taskChanges = z
   .object({
@@ -159,6 +174,78 @@ export function registerBoards(
   const labelStore = createLabelStore(deps.db)
   const commentStore = createCommentStore(deps.db)
   const reminderStore = createReminderStore(deps.db)
+  const filterStore = createFilterStore(deps.db)
+
+  app.get(
+    '/filters',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await filterStore.listFilters(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return { filters: result.value }
+    }
+  )
+
+  app.post(
+    '/filters',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const body = newFilter.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await filterStore.createFilter(
+        identity,
+        body.data.name,
+        body.data.criteria
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(201).send(result.value)
+    }
+  )
+
+  app.delete(
+    '/filters/:filterId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = filterParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await filterStore.deleteFilter(
+        identity,
+        params.data.filterId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.get(
+    '/filters/:filterId/tasks',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = filterParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const query = zoneQuery.safeParse(request.query)
+      if (!query.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await filterStore.filteredTasks(
+        identity,
+        params.data.filterId,
+        query.data.zone
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return { tasks: result.value }
+    }
+  )
 
   app.get(
     '/boards/:boardId/tasks/:taskId/reminders',
