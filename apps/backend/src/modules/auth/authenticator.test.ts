@@ -13,8 +13,7 @@ function setUp(identity: Identity | null = anIdentity()) {
   }
   const store: AuthStore = {
     isRevoked: sessionId => Promise.resolve(revoked.has(sessionId)),
-    revoke: vi.fn(),
-    saveTicket: vi.fn()
+    revoke: vi.fn()
   }
   const authenticate = createAuthenticator({
     provider,

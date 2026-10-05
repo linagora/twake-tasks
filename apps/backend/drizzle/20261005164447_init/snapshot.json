@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "c44f416c-bec4-4d66-8e88-f8efa43dbd5b",
+  "id": "d7cf8263-fd0d-4dd7-8546-477b77bf01d4",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -15,12 +15,6 @@
     {
       "isRlsEnabled": false,
       "name": "oidc_revoked_sessions",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "ws_tickets",
       "entityType": "tables",
       "schema": "public"
     },
@@ -116,97 +110,6 @@
       "table": "oidc_revoked_sessions"
     },
     {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "ticket_hash",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "ws_tickets"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "username",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "ws_tickets"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "sid",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "ws_tickets"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "organization_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "ws_tickets"
-    },
-    {
-      "type": "timestamp with time zone",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "token_expires_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "ws_tickets"
-    },
-    {
-      "type": "timestamp with time zone",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "expires_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "ws_tickets"
-    },
-    {
-      "type": "timestamp with time zone",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "used_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "ws_tickets"
-    },
-    {
       "nameExplicit": false,
       "columns": [
         {
@@ -228,27 +131,6 @@
       "table": "oidc_revoked_sessions"
     },
     {
-      "nameExplicit": false,
-      "columns": [
-        {
-          "value": "expires_at",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "ws_tickets_expires_at_index",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "ws_tickets"
-    },
-    {
       "columns": [
         "consumer",
         "source",
@@ -268,16 +150,6 @@
       "name": "oidc_revoked_sessions_pkey",
       "schema": "public",
       "table": "oidc_revoked_sessions",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "ticket_hash"
-      ],
-      "nameExplicit": false,
-      "name": "ws_tickets_pkey",
-      "schema": "public",
-      "table": "ws_tickets",
       "entityType": "pks"
     }
   ],

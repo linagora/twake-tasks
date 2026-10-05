@@ -10,17 +10,3 @@ export const oidcRevokedSessions = pgTable(
   },
   table => [index().on(table.expiresAt)]
 )
-
-export const wsTickets = pgTable(
-  'ws_tickets',
-  {
-    ticketHash: text('ticket_hash').primaryKey(),
-    username: text().notNull(),
-    sid: text().notNull(),
-    organizationId: text('organization_id').notNull(),
-    tokenExpiresAt: timestamptz('token_expires_at').notNull(),
-    expiresAt: timestamptz('expires_at').notNull(),
-    usedAt: timestamptz('used_at')
-  },
-  table => [index().on(table.expiresAt)]
-)

@@ -1,20 +1,16 @@
-import { randomBytes } from 'node:crypto'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import type { HttpServer } from '../../infra/http.ts'
-import { sha256, type Authenticate } from './authenticator.ts'
+import type { Authenticate } from './authenticator.ts'
 import type { Identity, IdentityProvider } from './oidc.ts'
 import type { AuthStore } from './store.ts'
 
-export type OrganizationMember = Identity & { organizationId: string }
-
 declare module 'fastify' {
   interface FastifyRequest {
-    identity: OrganizationMember | null
+    identity: Identity | null
   }
 }
 
-const TICKET_TTL_MS = 60_000
 // Longer than any access token issued in the revoked session can live.
 const REVOCATION_TTL_MS = 24 * 60 * 60 * 1000
 
@@ -62,9 +58,7 @@ export function registerAuth(
       return reply.code(503).send({ error: 'unavailable' })
     }
     if (!identity) return unauthorized(reply, 'invalid_token')
-    const { organizationId } = identity
-    if (!organizationId) return reply.code(403).send({ error: 'forbidden' })
-    request.identity = { ...identity, organizationId }
+    request.identity = identity
   }
 
   app.post('/auth/backchannel-logout', async (request, reply) => {
@@ -81,25 +75,6 @@ export function registerAuth(
     await deps.store.revoke(sessionId, new Date(Date.now() + REVOCATION_TTL_MS))
     return reply.code(200).send()
   })
-
-  app.post(
-    '/ws/ticket',
-    { preHandler: requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return unauthorized(reply, null)
-      const ticket = randomBytes(32).toString('base64url')
-      await deps.store.saveTicket({
-        hash: sha256(ticket),
-        email: identity.email,
-        sessionId: identity.sessionId,
-        organizationId: identity.organizationId,
-        tokenExpiresAt: identity.expiresAt,
-        expiresAt: new Date(Date.now() + TICKET_TTL_MS)
-      })
-      return reply.header('cache-control', 'no-store').send({ ticket })
-    }
-  )
 
   return requireIdentity
 }

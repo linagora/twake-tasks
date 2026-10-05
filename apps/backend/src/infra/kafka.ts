@@ -88,7 +88,7 @@ export async function startConsumer(
 }
 
 export interface EventProducer {
-  publish(event: CloudEvent): Promise<void>
+  publish(key: string, event: CloudEvent): Promise<void>
   disconnect(): Promise<void>
 }
 
@@ -104,12 +104,12 @@ export async function startProducer(
   })
   await producer.connect()
   return {
-    async publish(event) {
+    async publish(key, event) {
       await producer.send({
         topic: TASKS_TOPIC,
         messages: [
           {
-            key: event.subject ?? null,
+            key,
             value: JSON.stringify(event),
             headers: { 'content-type': 'application/cloudevents+json' }
           }

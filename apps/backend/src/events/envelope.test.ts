@@ -11,7 +11,11 @@ const calendarAccepted = {
   twakeorg: 'linagora',
   twakeactor: 'user1@linagora.com',
   data: {
-    object: { type: 'event', id: '7f3c2a' }
+    object: {
+      type: 'event',
+      id: '7f3c2a',
+      space_id: '0f8e2c4a-6b1d-4e7a-9c3f-2d5b8a1e6f90'
+    }
   }
 }
 
@@ -24,6 +28,16 @@ describe('parseCloudEvent', () => {
     expect(result).toEqual({ ok: true, event: calendarAccepted })
   })
 
+  it('accepts a B2C event, without twakeorg nor space_id', () => {
+    const event = {
+      ...calendarAccepted,
+      twakeorg: undefined,
+      data: { object: { type: 'event', id: '7f3c2a' } }
+    }
+
+    expect(parseCloudEvent(JSON.stringify(event)).ok).toBe(true)
+  })
+
   it.each([
     ['invalid JSON', '{'],
     ['an empty message', null],
@@ -33,16 +47,19 @@ describe('parseCloudEvent', () => {
     ],
     ['a missing id', JSON.stringify({ ...calendarAccepted, id: undefined })],
     [
-      'a missing twakeorg',
-      JSON.stringify({ ...calendarAccepted, twakeorg: undefined })
-    ],
-    [
       'a twakeactor that is not an email',
       JSON.stringify({ ...calendarAccepted, twakeactor: 'user1' })
     ],
     [
       'data without an object',
       JSON.stringify({ ...calendarAccepted, data: {} })
+    ],
+    [
+      'a space_id that is not a UUID',
+      JSON.stringify({
+        ...calendarAccepted,
+        data: { object: { space_id: 'space-42' } }
+      })
     ]
   ])('rejects %s', (_case, value) => {
     expect(parseCloudEvent(value).ok).toBe(false)

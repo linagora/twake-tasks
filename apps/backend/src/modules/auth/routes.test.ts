@@ -1,7 +1,7 @@
 import { pino } from 'pino'
 import { describe, expect, it, vi } from 'vitest'
 import { createServer } from '../../infra/http.ts'
-import { sha256, type Authenticate } from './authenticator.ts'
+import type { Authenticate } from './authenticator.ts'
 import type { IdentityProvider } from './oidc.ts'
 import { registerAuth } from './routes.ts'
 import type { AuthStore } from './store.ts'
@@ -24,18 +24,21 @@ function setUp(
   }
   const store = {
     isRevoked: vi.fn(),
-    revoke: vi.fn(() => Promise.resolve()),
-    saveTicket: vi.fn(() => Promise.resolve())
+    revoke: vi.fn(() => Promise.resolve())
   } satisfies AuthStore
-  registerAuth(app, { authenticate, provider, store })
+  const requireIdentity = registerAuth(app, { authenticate, provider, store })
+  app.get('/whoami', { preHandler: requireIdentity }, request => ({
+    email: request.identity?.email,
+    organizationId: request.identity?.organizationId
+  }))
   return { app, store }
 }
 
-describe('POST /ws/ticket', () => {
+describe('requireIdentity', () => {
   it('asks for a bearer token', async () => {
     const { app } = setUp()
 
-    const response = await app.inject({ method: 'POST', url: '/ws/ticket' })
+    const response = await app.inject({ method: 'GET', url: '/whoami' })
 
     expect(response.statusCode).toBe(401)
     expect(response.headers['www-authenticate']).toBe('Bearer')
@@ -45,8 +48,8 @@ describe('POST /ws/ticket', () => {
     const { app } = setUp(() => Promise.resolve(null))
 
     const response = await app.inject({
-      method: 'POST',
-      url: '/ws/ticket',
+      method: 'GET',
+      url: '/whoami',
       headers: { authorization: 'Bearer nope' }
     })
 
@@ -60,47 +63,31 @@ describe('POST /ws/ticket', () => {
     const { app } = setUp(() => Promise.reject(new Error('sso down')))
 
     const response = await app.inject({
-      method: 'POST',
-      url: '/ws/ticket',
+      method: 'GET',
+      url: '/whoami',
       headers: { authorization: 'Bearer token' }
     })
 
     expect(response.statusCode).toBe(503)
   })
 
-  it('refuses a user outside any organization', async () => {
-    const { app, store } = setUp(() =>
-      Promise.resolve(anIdentity({ organizationId: null }))
-    )
+  it.each([
+    ['a B2B user', 'org-1'],
+    ['a B2C user, who has no organization', null]
+  ])('lets %s through', async (_case, organizationId) => {
+    const { app } = setUp(() => Promise.resolve(anIdentity({ organizationId })))
 
     const response = await app.inject({
-      method: 'POST',
-      url: '/ws/ticket',
-      headers: { authorization: 'Bearer token' }
-    })
-
-    expect(response.statusCode).toBe(403)
-    expect(store.saveTicket).not.toHaveBeenCalled()
-  })
-
-  it('stores a hashed ticket for the session', async () => {
-    const { app, store } = setUp()
-
-    const response = await app.inject({
-      method: 'POST',
-      url: '/ws/ticket',
+      method: 'GET',
+      url: '/whoami',
       headers: { authorization: 'Bearer token' }
     })
 
     expect(response.statusCode).toBe(200)
-    const { ticket } = response.json<{ ticket: string }>()
-    expect(store.saveTicket).toHaveBeenCalledWith(
-      expect.objectContaining({
-        hash: sha256(ticket),
-        email: 'alice@example.com',
-        sessionId: 'session-1'
-      })
-    )
+    expect(response.json()).toEqual({
+      email: 'alice@example.com',
+      organizationId
+    })
   })
 })
 
