@@ -12,7 +12,11 @@ import {
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
 import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
-import { spaceRoutes } from './modules/spaces/events.ts'
+import {
+  PURGE_SPACE_JOB,
+  purgeSpace,
+  spaceRoutes
+} from './modules/spaces/events.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
@@ -57,7 +61,11 @@ const consumer = await startConsumer(
 const stopScheduler = createScheduler({
   db,
   logger,
-  handlers: { [REMINDER_JOB]: deliverReminder, [PURGE_JOB]: purgeTask }
+  handlers: {
+    [REMINDER_JOB]: deliverReminder,
+    [PURGE_JOB]: purgeTask,
+    [PURGE_SPACE_JOB]: purgeSpace
+  }
 }).start(5000)
 accepting = true
 logger.info('twake-tasks backend started')
