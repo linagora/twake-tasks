@@ -154,5 +154,19 @@
       "completed": "Hoàn thành",
       "canceled": "Đã hủy"
     }
+  },
+  "reminders": {
+    "title": "Lời nhắc",
+    "none": "Chưa có lời nhắc.",
+    "remindMe": "Nhắc tôi",
+    "setTime": "Vào thời điểm cụ thể",
+    "at": "Lúc",
+    "atDue": "Đúng hạn",
+    "minutesBefore": "Trước %{smart_count} phút",
+    "hoursBefore": "Trước %{smart_count} giờ",
+    "daysBefore": "Trước %{smart_count} ngày",
+    "add": "Thêm lời nhắc",
+    "delete": "Xóa lời nhắc",
+    "failed": "Không thể lưu lời nhắc."
   }
 }

@@ -2,6 +2,7 @@ import {
   ApiError,
   type BoardsApi,
   type Comment,
+  type Reminder,
   type HistoryEntry
 } from '@/application/boards'
 import type { BoardSummary } from '@/domain/board'
@@ -77,6 +78,25 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
         body
       })
     },
+    listReminders: async (boardId, taskId) =>
+      (
+        await call<{ reminders: Reminder[] }>(
+          'GET',
+          `/boards/${boardId}/tasks/${taskId}/reminders`
+        )
+      ).reminders,
+    addReminder: async (boardId, taskId, reminder) => {
+      await call(
+        'POST',
+        `/boards/${boardId}/tasks/${taskId}/reminders`,
+        reminder
+      )
+    },
+    deleteReminder: (boardId, taskId, reminderId) =>
+      call(
+        'DELETE',
+        `/boards/${boardId}/tasks/${taskId}/reminders/${reminderId}`
+      ),
     setAssignees: (boardId, taskId, userIds) =>
       call('PUT', `/boards/${boardId}/tasks/${taskId}/assignees`, { userIds }),
     createLabel: (boardId, name) =>

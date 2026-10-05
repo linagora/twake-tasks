@@ -154,5 +154,19 @@
       "completed": "Done",
       "canceled": "Canceled"
     }
+  },
+  "reminders": {
+    "title": "Reminders",
+    "none": "No reminders.",
+    "remindMe": "Remind me",
+    "setTime": "At a set time",
+    "at": "At",
+    "atDue": "At the due time",
+    "minutesBefore": "%{smart_count} minute before |||| %{smart_count} minutes before",
+    "hoursBefore": "%{smart_count} hour before |||| %{smart_count} hours before",
+    "daysBefore": "%{smart_count} day before |||| %{smart_count} days before",
+    "add": "Add reminder",
+    "delete": "Delete reminder",
+    "failed": "The reminder could not be saved."
   }
 }

@@ -15,6 +15,7 @@ import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
 import { Comments } from '@/ui/boards/Comments'
 import { Dates } from '@/ui/boards/Dates'
 import { History } from '@/ui/boards/History'
+import { Reminders } from '@/ui/boards/Reminders'
 import {
   useCreateTask,
   useDescription,
@@ -103,6 +104,7 @@ export function TaskPanel({
             )}
           </form>
         )}
+        <Reminders task={task} boardId={boardId} />
         <Comments task={task} boardId={boardId} />
         <History task={task} boardId={boardId} />
       </DialogContent>
