@@ -7,6 +7,7 @@ import {
   type Authenticate,
   type IdentityProvider
 } from './modules/auth/index.ts'
+import { registerBoards } from './modules/boards/routes.ts'
 
 export async function buildApp(deps: {
   logger: Logger
@@ -19,11 +20,12 @@ export async function buildApp(deps: {
   // The frontend serves its own routes, such as /boards/<id>, on the same origin.
   await app.register(
     api => {
-      registerAuth(api, {
+      const requireIdentity = registerAuth(api, {
         authenticate: deps.authenticate,
         provider: deps.provider,
         store: postgresAuthStore(deps.db)
       })
+      registerBoards(api, { db: deps.db, requireIdentity })
       return Promise.resolve()
     },
     { prefix: '/api' }
