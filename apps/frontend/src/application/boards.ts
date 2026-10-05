@@ -1,4 +1,4 @@
-import type { Board, BoardSummary, Section, Task } from '@/domain/board'
+import type { Board, BoardSummary, Label, Section, Task } from '@/domain/board'
 
 export interface NewBoard {
   name: string
@@ -57,6 +57,13 @@ export interface BoardsApi {
     boardId: string,
     taskId: string,
     userIds: string[]
+  ) => Promise<void>
+  /** Rejects with `label_taken` when the board's space or owner has that name. */
+  createLabel: (boardId: string, name: string) => Promise<Label>
+  setLabels: (
+    boardId: string,
+    taskId: string,
+    labelIds: string[]
   ) => Promise<void>
   createSection: (boardId: string, section: NewSection) => Promise<Section>
   editSection: (

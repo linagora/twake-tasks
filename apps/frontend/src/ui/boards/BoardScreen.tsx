@@ -80,6 +80,7 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
                   tasks={board.tasks}
                   boardId={board.id}
                   members={board.members}
+                  labels={board.labels}
                   destinations={board.sections.filter(
                     section => section.id !== task.sectionId
                   )}

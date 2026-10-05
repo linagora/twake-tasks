@@ -53,6 +53,10 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       call('PUT', `/boards/${boardId}/tasks/${taskId}/description`, edit),
     setAssignees: (boardId, taskId, userIds) =>
       call('PUT', `/boards/${boardId}/tasks/${taskId}/assignees`, { userIds }),
+    createLabel: (boardId, name) =>
+      call('POST', `/boards/${boardId}/labels`, { name }),
+    setLabels: (boardId, taskId, labelIds) =>
+      call('PUT', `/boards/${boardId}/tasks/${taskId}/labels`, { labelIds }),
     createSection: (boardId, section) =>
       call('POST', `/boards/${boardId}/sections`, section),
     editSection: (boardId, sectionId, changes) =>

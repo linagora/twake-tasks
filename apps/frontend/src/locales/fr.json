@@ -47,6 +47,13 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "assignFailed": "Les personnes assignées n'ont pas pu être enregistrées.",
+    "labels": "Étiquettes",
+    "labelsTitle": "Étiquettes de %{key}",
+    "newLabel": "Nouvelle étiquette",
+    "create": "Créer",
+    "labelTaken": "Une étiquette nommée %{name} existe déjà.",
+    "labelFailed": "L'étiquette n'a pas pu être créée.",
+    "labelsFailed": "Les étiquettes n'ont pas pu être enregistrées.",
     "moveFailed": "La tâche n'a pas pu être déplacée.",
     "addFailed": "La tâche n'a pas pu être ajoutée."
   },
