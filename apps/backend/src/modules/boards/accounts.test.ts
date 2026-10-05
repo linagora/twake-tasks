@@ -104,10 +104,16 @@ describe.each([
     })
   },
   {
-    kind: 'B2C',
+    kind: 'B2C, matched by uuid',
     routingKey: 'user.deleted',
     makeUser: () => aB2cUser(),
     body: (user: TestUser) => ({ uuid: user.userId })
+  },
+  {
+    kind: 'B2C, matched by email',
+    routingKey: 'user.deleted',
+    makeUser: () => aB2cUser(),
+    body: (user: TestUser) => ({ internalEmail: user.email })
   }
 ])('a deleted account ($kind)', ({ routingKey, makeUser, body }) => {
   it('leaves its boards, hands them on or deletes them, and loses its Inbox', async () => {
@@ -149,9 +155,9 @@ describe('deleted accounts that cannot be applied', () => {
     ).rejects.toThrow(RejectedEventError)
   })
 
-  it('rejects a B2C deletion without a uuid', async () => {
-    await expect(
-      deliver('user.deleted', { email: 'a@example.com' })
-    ).rejects.toThrow(RejectedEventError)
+  it('rejects a B2C deletion without a uuid or an email', async () => {
+    await expect(deliver('user.deleted', { userId: 'alice' })).rejects.toThrow(
+      RejectedEventError
+    )
   })
 })

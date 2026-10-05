@@ -1,4 +1,4 @@
-import { and, asc, eq, ne, notExists } from 'drizzle-orm'
+import { and, asc, eq, ne, notExists, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import type { PlatformEvent } from '../../events/envelope.ts'
@@ -18,7 +18,25 @@ const b2bDeleted = z.looseObject({
   internalEmail: z.email().optional()
 })
 
-const b2cDeleted = z.looseObject({ uuid: z.uuid().optional() })
+const b2cDeleted = z.looseObject({
+  uuid: z.uuid().optional(),
+  internalEmail: z.email().optional()
+})
+
+// A B2C membership is visible only to its own user, so finding one by email
+// takes the lookup flag the membership policy honours. Goes once ldap-rest
+// sends the uuid in user.deleted.
+async function b2cUserIdByEmail(tx: Tx, email: string) {
+  await asOrganization(tx, null)
+  await tx.execute(sql`select set_config('app.membership_lookup', 'on', true)`)
+  const [member] = await tx
+    .select({ userId: boardMembers.userId })
+    .from(boardMembers)
+    .where(eq(boardMembers.email, email))
+    .limit(1)
+  await tx.execute(sql`select set_config('app.membership_lookup', '', true)`)
+  return member?.userId
+}
 
 async function userIdByEmail(tx: Tx, email: string) {
   const [member] = await tx
@@ -116,8 +134,15 @@ const onB2bDeleted: Handler<PlatformEvent> = async (event, tx) => {
 
 const onB2cDeleted: Handler<PlatformEvent> = async (event, tx) => {
   const account = parseOrDrop(b2cDeleted, event.body, event.routingKey)
-  if (!account.uuid) throw new RejectedEventError('no uuid')
-  await forget(tx, null, account.uuid)
+  if (!account.uuid && !account.internalEmail) {
+    throw new RejectedEventError('no uuid or internalEmail')
+  }
+  const userId =
+    account.uuid ??
+    (account.internalEmail
+      ? await b2cUserIdByEmail(tx, account.internalEmail)
+      : undefined)
+  if (userId) await forget(tx, null, userId)
 }
 
 export const accountRoutes: ReadonlyMap<
