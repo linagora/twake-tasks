@@ -7,6 +7,7 @@ import {
   foreignKey,
   integer,
   pgEnum,
+  pgPolicy,
   pgTable,
   primaryKey,
   smallint,
@@ -215,6 +216,11 @@ export const boardFavorites = pgTable.withRLS(
       columns: [table.organizationId, table.boardId],
       foreignColumns: [boards.organizationId, boards.id]
     }),
-    tenantPolicy(table.organizationId, visibleBoard(table.boardId))
+    tenantPolicy(table.organizationId, visibleBoard(table.boardId)),
+    pgPolicy('own', {
+      as: 'restrictive',
+      using: sql`${table.userId} = ${currentUser}`,
+      withCheck: sql`${table.userId} = ${currentUser}`
+    })
   ]
 )

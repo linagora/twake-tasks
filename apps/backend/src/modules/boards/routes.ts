@@ -123,6 +123,27 @@ export function registerBoards(
     }
   )
 
+  for (const [method, favorite] of [
+    ['PUT', true],
+    ['DELETE', false]
+  ] as const) {
+    app.route({
+      method,
+      url: '/boards/:boardId/favorite',
+      preHandler: deps.requireIdentity,
+      handler: async (request, reply) => {
+        const identity = request.identity
+        if (!identity) return reply.code(401).send()
+        const params = boardParams.safeParse(request.params)
+        const found =
+          params.success &&
+          (await store.setFavorite(identity, params.data.boardId, favorite))
+        if (!found) return reply.code(404).send({ error: 'not_found' })
+        return reply.code(204).send()
+      }
+    })
+  }
+
   app.post(
     '/boards/:boardId/tasks',
     { preHandler: deps.requireIdentity },

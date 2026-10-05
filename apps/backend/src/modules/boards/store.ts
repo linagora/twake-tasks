@@ -57,7 +57,43 @@ export function createBoardStore(db: Db) {
               eq(boardFavorites.userId, identity.userId)
             )
           )
-          .orderBy(desc(boards.inbox), asc(boards.name))
+          .orderBy(
+            desc(boards.inbox),
+            sql`${boardFavorites.userId} is null`,
+            asc(boards.name)
+          )
+      })
+    },
+
+    setFavorite(identity: Identity, boardId: string, favorite: boolean) {
+      return inTenant(db, identity, async tx => {
+        const [board] = await tx
+          .select({ organizationId: boards.organizationId })
+          .from(boards)
+          .where(eq(boards.id, boardId))
+        if (!board || !(await roleOn(tx, identity.userId, boardId))) {
+          return false
+        }
+        if (favorite) {
+          await tx
+            .insert(boardFavorites)
+            .values({
+              boardId,
+              organizationId: board.organizationId,
+              userId: identity.userId
+            })
+            .onConflictDoNothing()
+        } else {
+          await tx
+            .delete(boardFavorites)
+            .where(
+              and(
+                eq(boardFavorites.boardId, boardId),
+                eq(boardFavorites.userId, identity.userId)
+              )
+            )
+        }
+        return true
       })
     },
 
