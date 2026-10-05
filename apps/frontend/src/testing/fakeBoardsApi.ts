@@ -6,6 +6,7 @@ import {
   type Comment,
   type Description,
   type HistoryEntry,
+  type Notification,
   type Reminder,
   type SavedFilter,
   type Sharing,
@@ -99,6 +100,8 @@ export function fakeBoardsApi(boards: Board[] = []) {
   const comments = new Map<string, Comment[]>()
   const history = new Map<string, HistoryEntry[]>()
   const reminders = new Map<string, Reminder[]>()
+  const followed = new Set<string>()
+  const notifications: Notification[] = []
   const findTask = (boardId: string, taskId: string) => {
     const task = find(boardId).tasks.find(candidate => candidate.id === taskId)
     if (!task) throw new ApiError(404, 'not_found')
@@ -468,6 +471,30 @@ export function fakeBoardsApi(boards: Board[] = []) {
           )
         })
     ),
+    following: vi.fn<BoardsApi['following']>((boardId, taskId) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        return followed.has(taskId)
+      })
+    ),
+    setFollowing: vi.fn<BoardsApi['setFollowing']>(
+      (boardId, taskId, following) =>
+        Promise.resolve().then(() => {
+          findTask(boardId, taskId)
+          if (following) followed.add(taskId)
+          else followed.delete(taskId)
+        })
+    ),
+    listNotifications: vi.fn<BoardsApi['listNotifications']>(() =>
+      Promise.resolve(structuredClone(notifications))
+    ),
+    markNotificationsRead: vi.fn<BoardsApi['markNotificationsRead']>(() =>
+      Promise.resolve().then(() => {
+        for (const notification of notifications) {
+          notification.readAt ??= new Date().toISOString()
+        }
+      })
+    ),
     listComments: vi.fn<BoardsApi['listComments']>((boardId, taskId) =>
       Promise.resolve().then(() => {
         findTask(boardId, taskId)
@@ -577,6 +604,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
       }
     },
     descriptions,
+    notifications,
     comments,
     history,
     sharings,

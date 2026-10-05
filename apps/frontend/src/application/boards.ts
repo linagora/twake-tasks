@@ -52,6 +52,17 @@ export interface Comment {
   createdAt: string
 }
 
+export interface Notification {
+  id: string
+  reason: 'assigned' | 'mentioned' | 'following' | 'reminder'
+  boardId: string
+  taskId: string
+  key: string
+  title: string
+  createdAt: string
+  readAt: string | null
+}
+
 /** `firesAt` is null while a relative reminder has no due date to follow. */
 export interface Reminder {
   id: string
@@ -215,6 +226,14 @@ export interface BoardsApi {
     taskId: string,
     reminderId: string
   ) => Promise<void>
+  following: (boardId: string, taskId: string) => Promise<boolean>
+  setFollowing: (
+    boardId: string,
+    taskId: string,
+    following: boolean
+  ) => Promise<void>
+  listNotifications: () => Promise<Notification[]>
+  markNotificationsRead: () => Promise<void>
   setAssignees: (
     boardId: string,
     taskId: string,

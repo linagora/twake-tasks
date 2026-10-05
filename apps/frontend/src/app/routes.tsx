@@ -5,6 +5,7 @@ import { FiltersScreen } from '@/ui/agenda/FiltersScreen'
 import { SearchScreen } from '@/ui/agenda/SearchScreen'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { BoardsScreen } from '@/ui/boards/BoardsScreen'
+import { NotificationsScreen } from '@/ui/boards/Notifications'
 import { AppShell } from '@/ui/shell/AppShell'
 
 export const routes: RouteObject[] = [
@@ -18,7 +19,8 @@ export const routes: RouteObject[] = [
       { path: '/mine', element: <AgendaScreen view="mine" /> },
       { path: '/filters', element: <FiltersScreen /> },
       { path: '/filters/:filterId', element: <FilterScreen /> },
-      { path: '/search', element: <SearchScreen /> }
+      { path: '/search', element: <SearchScreen /> },
+      { path: '/notifications', element: <NotificationsScreen /> }
     ]
   }
 ]

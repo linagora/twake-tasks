@@ -26,7 +26,7 @@ async function removeLogo(action: 'Archive' | 'Delete') {
 }
 
 async function openShelf(name: 'Archived tasks' | 'Trash') {
-  fireEvent.click(screen.getByRole('button', { name }))
+  fireEvent.click(await screen.findByRole('button', { name }))
   return within(await screen.findByRole('dialog', { name }))
 }
 

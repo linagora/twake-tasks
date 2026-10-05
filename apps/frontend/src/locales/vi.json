@@ -248,6 +248,18 @@
     "empty": "Không có công việc nào khớp.",
     "failed": "Không thể tìm kiếm."
   },
+  "notifications": {
+    "title": "Thông báo",
+    "empty": "Không có thông báo.",
+    "loadFailed": "Không thể tải thông báo.",
+    "follow": "Theo dõi",
+    "reason": {
+      "assigned": "Bạn được giao",
+      "mentioned": "Bạn được nhắc đến",
+      "following": "Đã thay đổi khi bạn theo dõi",
+      "reminder": "Lời nhắc"
+    }
+  },
   "filters": {
     "title": "Bộ lọc",
     "empty": "Chưa có bộ lọc nào.",
