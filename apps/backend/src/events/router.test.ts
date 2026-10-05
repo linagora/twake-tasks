@@ -3,7 +3,13 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Tx } from '../infra/db.ts'
 import type { Deduplicator, EventKey } from './dedupe.ts'
 import type { CloudEvent, PlatformEvent } from './envelope.ts'
-import { createMessageHandler, type Handler } from './router.ts'
+import {
+  createMessageHandler,
+  MalformedEventError,
+  RejectedEventError,
+  type DeadLetter,
+  type Handler
+} from './router.ts'
 
 const tx = {} as Tx
 
@@ -27,15 +33,17 @@ function setup() {
   const activity = vi.fn<Handler<CloudEvent>>().mockResolvedValue()
   const platform = vi.fn<Handler<PlatformEvent>>().mockResolvedValue()
   const dedupe = memoryDeduplicator()
+  const deadLetter = vi.fn<DeadLetter>().mockResolvedValue()
   const handle = createMessageHandler({
     routes: {
       activity: new Map([['com.twake.drive.file.created.v1', activity]]),
       platform: new Map([['b2b.group.created', platform]])
     },
     dedupe,
+    deadLetter,
     logger: pino({ level: 'silent' })
   })
-  return { handle, activity, platform, dedupe }
+  return { handle, activity, platform, dedupe, deadLetter }
 }
 
 const fileCreated = {
@@ -122,6 +130,30 @@ describe('createMessageHandler', () => {
     )
     expect(activity).not.toHaveBeenCalled()
     expect(dedupe.keys).toEqual([{ source: 'amqp', id: 'm-1' }])
+  })
+
+  it('drops an event its handler finds malformed', async () => {
+    const { handle, activity, dedupe } = setup()
+    activity.mockRejectedValueOnce(new MalformedEventError('no space id'))
+
+    expect(await handle('twake.drive.events.v1', message(fileCreated))).toBe(
+      'malformed'
+    )
+    expect(dedupe.keys).toEqual([])
+  })
+
+  it('sends an event its handler rejects to the dead letter topic', async () => {
+    const { handle, activity, deadLetter, dedupe } = setup()
+    activity.mockRejectedValueOnce(new RejectedEventError('unknown space'))
+    const incoming = message(fileCreated)
+
+    expect(await handle('twake.drive.events.v1', incoming)).toBe('rejected')
+    expect(deadLetter).toHaveBeenCalledWith(
+      'twake.drive.events.v1.dlq.twake-tasks',
+      incoming,
+      'unknown space'
+    )
+    expect(dedupe.keys).toEqual([])
   })
 
   it('propagates a handler failure so the offset is not committed', async () => {
