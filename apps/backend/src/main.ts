@@ -1,11 +1,11 @@
 import { pino } from 'pino'
+import { buildApp } from './app.ts'
 import { loadConfig } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
 import { createMessageHandler, type Routes } from './events/router.ts'
-import { createDb, migrateDb } from './infra/db.ts'
-import { createServer } from './infra/http.ts'
+import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import { startConsumer, startProducer } from './infra/kafka.ts'
-import { setUpAuth } from './modules/auth/index.ts'
+import { connectIdentityProvider } from './modules/auth/index.ts'
 
 const config = loadConfig()
 const logger = pino({ level: config.LOG_LEVEL })
@@ -13,21 +13,23 @@ const logger = pino({ level: config.LOG_LEVEL })
 const routes: Routes = { activity: new Map(), platform: new Map() }
 
 const { sql, db } = createDb(config.DATABASE_URL)
+await assertRowLevelSecurity(sql)
 await migrateDb(db)
 
 let accepting = false
-const server = createServer({
+const server = await buildApp({
   logger,
-  isReady: async () => accepting && (await sql`select 1`).length === 1
-})
-await setUpAuth(server, {
   db,
-  oidc: {
-    issuer: new URL(config.OIDC_ISSUER),
-    clientId: config.OIDC_CLIENT_ID,
-    clientSecret: config.OIDC_CLIENT_SECRET,
-    audience: config.OIDC_AUDIENCE
-  }
+  ...(await connectIdentityProvider({
+    db,
+    oidc: {
+      issuer: new URL(config.OIDC_ISSUER),
+      clientId: config.OIDC_CLIENT_ID,
+      clientSecret: config.OIDC_CLIENT_SECRET,
+      audience: config.OIDC_AUDIENCE
+    }
+  })),
+  isReady: async () => accepting && (await sql`select 1`).length === 1
 })
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })
 
