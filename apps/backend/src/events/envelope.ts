@@ -19,9 +19,17 @@ const cloudEvent = z.looseObject({
 
 export type CloudEvent = z.infer<typeof cloudEvent>
 
-export type OutgoingEvent = Omit<CloudEvent, 'data'> & {
-  data: Record<string, unknown>
-}
+export type OutgoingEvent = Pick<
+  CloudEvent,
+  | 'specversion'
+  | 'id'
+  | 'source'
+  | 'type'
+  | 'time'
+  | 'subject'
+  | 'twakeorg'
+  | 'twakeactor'
+> & { data: Record<string, unknown> }
 
 export interface PlatformEvent {
   routingKey: string

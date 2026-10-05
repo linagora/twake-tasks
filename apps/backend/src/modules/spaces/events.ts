@@ -1,6 +1,7 @@
 import { and, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { OutgoingEvent, PlatformEvent } from '../../events/envelope.ts'
+import { enqueue } from '../../events/outbox.ts'
 import { parseOrDrop, type Handler } from '../../events/router.ts'
 import { asOrganization, type Tx } from '../../infra/db.ts'
 import {
@@ -10,8 +11,6 @@ import {
 import { boards, taskAssignees, tasks } from '../boards/schema.ts'
 import { addDefaultSections } from '../boards/store.ts'
 import { memberRole, spaceMembers, spaces } from './schema.ts'
-
-export type Publish = (key: string, event: OutgoingEvent) => Promise<void>
 
 const spaceEvent = z.looseObject({
   organizationId: z.string().min(1),
@@ -97,9 +96,7 @@ function provisioned(space: z.infer<typeof spaceEvent>): OutgoingEvent {
   }
 }
 
-export function spaceRoutes(
-  publish: Publish
-): ReadonlyMap<string, Handler<PlatformEvent>> {
+export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
   // A replay finds the space already has a board, creates nothing, and publishes
   // the same event again.
   const onCreated: Handler<PlatformEvent> = async (event, tx) => {
@@ -129,7 +126,7 @@ export function spaceRoutes(
       if (!board) throw new Error('board insert returned nothing')
       await addDefaultSections(tx, board)
     }
-    await publish(space.id, provisioned(space))
+    await enqueue(tx, space.id, provisioned(space))
   }
 
   const onUpdated: Handler<PlatformEvent> = async (event, tx) => {
