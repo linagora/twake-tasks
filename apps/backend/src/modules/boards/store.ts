@@ -227,6 +227,13 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
       title: task.title,
       priority: task.priority,
       dueDate: task.dueDate,
+      dueTime: task.dueTime?.slice(0, 5) ?? null,
+      dueZone: task.dueZone,
+      deadline: task.deadline,
+      duration:
+        task.duration && task.durationUnit
+          ? { amount: task.duration, unit: task.durationUnit }
+          : null,
       completedAt: task.completedAt,
       canceledAt: task.canceledAt,
       // Someone who left the board stays assigned, but is not shown.

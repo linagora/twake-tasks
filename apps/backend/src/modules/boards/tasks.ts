@@ -18,6 +18,7 @@ export type Refusal =
   | 'invalid_parent'
   | 'too_deep'
   | 'invalid_label'
+  | 'invalid_dates'
   | 'label_taken'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
@@ -163,6 +164,45 @@ export async function writeOrRefuse<T>(
   }
 }
 
+type Maybe<T> = T | undefined
+
+export interface TaskChanges {
+  title?: Maybe<string>
+  priority?: Maybe<number | null>
+  dueDate?: Maybe<string | null>
+  dueTime?: Maybe<string | null>
+  dueZone?: Maybe<string | null>
+  deadline?: Maybe<string | null>
+  duration?: Maybe<{ amount: number; unit: 'minutes' | 'days' } | null>
+}
+
+// Clearing the due date clears its time, and clearing the time its zone.
+function withDates(task: typeof tasks.$inferSelect, changes: TaskChanges) {
+  const { duration, ...fields } = changes
+  const dueDate = changes.dueDate === undefined ? task.dueDate : changes.dueDate
+  const dueTime =
+    dueDate === null
+      ? null
+      : changes.dueTime === undefined
+        ? task.dueTime
+        : changes.dueTime
+  if (changes.dueTime && dueDate === null) throw new Refused('invalid_dates')
+  return {
+    ...fields,
+    dueTime,
+    dueZone:
+      dueTime === null
+        ? null
+        : changes.dueZone === undefined
+          ? task.dueZone
+          : changes.dueZone,
+    ...(duration !== undefined && {
+      duration: duration?.amount ?? null,
+      durationUnit: duration?.unit ?? null
+    })
+  }
+}
+
 export function createTaskStore(db: Db) {
   const write = <T>(identity: Identity, work: (tx: Tx) => Promise<T>) =>
     writeOrRefuse(db, identity, work)
@@ -264,17 +304,16 @@ export function createTaskStore(db: Db) {
       identity: Identity,
       boardId: string,
       taskId: string,
-      changes: {
-        title?: string | undefined
-        priority?: number | null | undefined
-        dueDate?: string | null | undefined
-      }
+      changes: TaskChanges
     ) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
         await bumpBoard(tx, boardId)
-        await taskOf(tx, boardId, taskId)
-        await tx.update(tasks).set(changes).where(eq(tasks.id, taskId))
+        const task = await taskOf(tx, boardId, taskId)
+        await tx
+          .update(tasks)
+          .set(withDates(task, changes))
+          .where(eq(tasks.id, taskId))
         return null
       })
     },
