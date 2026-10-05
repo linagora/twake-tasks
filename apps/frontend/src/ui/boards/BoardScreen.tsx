@@ -37,7 +37,9 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   const { t } = useI18n()
   const move = useMoveTask(board.id)
   const editable = board.role !== 'viewer' && !board.archived
-  const loose = board.tasks.some(task => task.sectionId === null)
+  const loose =
+    board.sections.length === 0 ||
+    board.tasks.some(task => task.sectionId === null)
   const columns = [
     ...(loose ? [{ id: null, name: t('board.noSection') }] : []),
     ...board.sections

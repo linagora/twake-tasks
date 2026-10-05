@@ -15,6 +15,7 @@ export function aBoard(overrides: Partial<Board> = {}): Board {
     name: 'Design',
     keyPrefix: 'DES',
     spaceId: null,
+    inbox: false,
     archived: false,
     version: 1,
     role: 'admin',
@@ -49,6 +50,7 @@ function summaryOf(board: Board, favorite = false): BoardSummary {
     name: board.name,
     keyPrefix: board.keyPrefix,
     spaceId: board.spaceId,
+    inbox: board.inbox,
     role: board.role,
     archived: board.archived,
     favorite
