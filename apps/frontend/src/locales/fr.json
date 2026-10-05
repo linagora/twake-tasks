@@ -187,6 +187,19 @@
     "then": "g puis %{key}",
     "close": "Fermer"
   },
+  "archive": {
+    "archive": "Archiver",
+    "delete": "Supprimer",
+    "restore": "Restaurer",
+    "archivedTasks": "Tâches archivées",
+    "trash": "Corbeille",
+    "retention": "Les tâches de la corbeille sont définitivement supprimées après 30 jours.",
+    "empty": "Rien ici.",
+    "failed": "La modification n'a pas pu être enregistrée.",
+    "archiveBoard": "Archiver le tableau",
+    "unarchiveBoard": "Désarchiver le tableau",
+    "boardArchived": "Ce tableau est archivé et en lecture seule."
+  },
   "sharing": {
     "share": "Partager",
     "title": "Partager %{name}",

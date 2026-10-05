@@ -1,6 +1,7 @@
 import {
   ApiError,
   type AgendaTask,
+  type HiddenTask,
   type SavedFilter,
   type Space,
   type BoardsApi,
@@ -73,6 +74,25 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
     getBoard: boardId => call('GET', `/boards/${boardId}`),
     createBoard: board => call('POST', '/boards', board),
+    archiveTask: (boardId, taskId) =>
+      call('POST', `/boards/${boardId}/tasks/${taskId}/archive`, {}),
+    trashTask: (boardId, taskId) =>
+      call('DELETE', `/boards/${boardId}/tasks/${taskId}`),
+    restoreTask: (boardId, taskId) =>
+      call('POST', `/boards/${boardId}/tasks/${taskId}/restore`, {}),
+    hiddenTasks: async (boardId, shelf) =>
+      (
+        await call<{ tasks: HiddenTask[] }>(
+          'GET',
+          `/boards/${boardId}/${shelf}`
+        )
+      ).tasks,
+    setBoardArchived: (boardId, archived) =>
+      call(
+        'POST',
+        `/boards/${boardId}/${archived ? 'archive' : 'unarchive'}`,
+        {}
+      ),
     listSpaces: async () =>
       (await call<{ spaces: Space[] }>('GET', '/spaces')).spaces,
     moveToSpace: (boardId, spaceId) =>

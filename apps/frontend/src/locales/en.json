@@ -187,6 +187,19 @@
     "then": "g then %{key}",
     "close": "Close"
   },
+  "archive": {
+    "archive": "Archive",
+    "delete": "Delete",
+    "restore": "Restore",
+    "archivedTasks": "Archived tasks",
+    "trash": "Trash",
+    "retention": "Tasks in the trash are deleted for good after 30 days.",
+    "empty": "Nothing here.",
+    "failed": "The change could not be saved.",
+    "archiveBoard": "Archive board",
+    "unarchiveBoard": "Unarchive board",
+    "boardArchived": "This board is archived and read only."
+  },
   "sharing": {
     "share": "Share",
     "title": "Share %{name}",

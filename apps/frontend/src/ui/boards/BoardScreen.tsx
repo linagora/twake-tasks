@@ -2,9 +2,10 @@ import { Button, Link, TextField, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
-import { ApiError } from '@/application/boards'
+import { ApiError, type Shelf } from '@/application/boards'
 import { Column, Columns } from '@/ds/Columns'
 import type { Board, Section, Task } from '@/domain/board'
+import { ArchiveBoardButton, ShelfDialog } from '@/ui/boards/Archive'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
@@ -43,6 +44,7 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   const manageable = board.role === 'admin' && !board.archived
   const shareable = manageable && board.spaceId === null && !board.inbox
   const [sharing, setSharing] = useState(false)
+  const [shelf, setShelf] = useState<Shelf | null>(null)
   const topLevel = board.tasks.filter(task => task.parentId === null)
   const loose =
     board.sections.length === 0 ||
@@ -101,7 +103,34 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
             {t('sharing.share')}
           </Button>
         )}
+        {(['archived', 'trash'] as const).map(each => (
+          <Button
+            key={each}
+            variant="text"
+            className="u-ml-1"
+            onClick={() => {
+              setShelf(each)
+            }}
+          >
+            {t(each === 'archived' ? 'archive.archivedTasks' : 'archive.trash')}
+          </Button>
+        ))}
+        {board.role === 'admin' && !board.inbox && (
+          <ArchiveBoardButton board={board} />
+        )}
       </div>
+      {board.archived && (
+        <Typography className="u-mb-1">{t('archive.boardArchived')}</Typography>
+      )}
+      {shelf && (
+        <ShelfDialog
+          board={board}
+          shelf={shelf}
+          onClose={() => {
+            setShelf(null)
+          }}
+        />
+      )}
       {sharing && (
         <ShareDialog
           board={board}
