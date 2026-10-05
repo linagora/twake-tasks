@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, ne, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, ne, notInArray, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
@@ -353,15 +353,25 @@ export function createTaskStore(db: Db) {
         ) {
           throw new Refused('invalid_assignee')
         }
-        await tx.delete(taskAssignees).where(eq(taskAssignees.taskId, taskId))
-        if (userIds.length > 0) {
-          await tx.insert(taskAssignees).values(
-            [...new Set(userIds)].map(userId => ({
-              taskId,
-              organizationId: task.organizationId,
-              userId
-            }))
+        await tx
+          .delete(taskAssignees)
+          .where(
+            and(
+              eq(taskAssignees.taskId, taskId),
+              notInArray(taskAssignees.userId, userIds)
+            )
           )
+        if (userIds.length > 0) {
+          await tx
+            .insert(taskAssignees)
+            .values(
+              [...new Set(userIds)].map(userId => ({
+                taskId,
+                organizationId: task.organizationId,
+                userId
+              }))
+            )
+            .onConflictDoNothing()
         }
         return null
       })

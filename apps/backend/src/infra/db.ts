@@ -51,13 +51,14 @@ export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
 export function inTenant<T>(
   db: Db,
-  identity: { organizationId: string | null; userId: string },
+  identity: { organizationId: string | null; userId: string; email: string },
   work: (tx: Tx) => Promise<T>
 ): Promise<T> {
   return db.transaction(async tx => {
     await tx.execute(
       sql`select set_config('app.org_id', ${identity.organizationId ?? ''}, true),
-                 set_config('app.user_id', ${identity.userId}, true)`
+                 set_config('app.user_id', ${identity.userId}, true),
+                 set_config('app.user_email', ${identity.email}, true)`
     )
     return work(tx)
   })
