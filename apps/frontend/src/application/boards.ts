@@ -16,6 +16,11 @@ export interface TaskMove {
   beforeId?: string
 }
 
+export interface Description {
+  markdown: string
+  version: number
+}
+
 export type NewSection = Omit<Section, 'id'> & { afterId?: string }
 
 export interface SectionMove {
@@ -34,6 +39,13 @@ export interface BoardsApi {
     task: NewTask
   ) => Promise<Pick<Task, 'id' | 'key' | 'title' | 'sectionId'>>
   moveTask: (boardId: string, taskId: string, move: TaskMove) => Promise<void>
+  getDescription: (boardId: string, taskId: string) => Promise<Description>
+  /** `version` is the one the edit started from; a newer one is refused. */
+  setDescription: (
+    boardId: string,
+    taskId: string,
+    edit: Description
+  ) => Promise<{ version: number }>
   setAssignees: (
     boardId: string,
     taskId: string,

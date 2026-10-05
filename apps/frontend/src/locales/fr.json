@@ -50,6 +50,13 @@
     "moveFailed": "La tâche n'a pas pu être déplacée.",
     "addFailed": "La tâche n'a pas pu être ajoutée."
   },
+  "task": {
+    "description": "Description",
+    "editDescription": "Modifier la description",
+    "loadFailed": "La description n'a pas pu être chargée.",
+    "saveFailed": "La description n'a pas pu être enregistrée.",
+    "stale": "Quelqu'un d'autre a modifié la description. Votre texte est conservé : enregistrez à nouveau pour remplacer le sien."
+  },
   "section": {
     "new": "Nouvelle section",
     "editTitle": "Modifier la section",

@@ -50,6 +50,13 @@
     "moveFailed": "The task could not be moved.",
     "addFailed": "The task could not be added."
   },
+  "task": {
+    "description": "Description",
+    "editDescription": "Edit description",
+    "loadFailed": "The description could not be loaded.",
+    "saveFailed": "The description could not be saved.",
+    "stale": "Someone else changed the description. Your text is kept: save again to replace theirs."
+  },
   "section": {
     "new": "New section",
     "editTitle": "Edit section",
