@@ -8,5 +8,36 @@
     "retry": "Thử lại",
     "signedInAs": "Đã đăng nhập với tên %{name}",
     "signOut": "Đăng xuất"
+  },
+  "boards": {
+    "title": "Bảng",
+    "active": "Đang hoạt động",
+    "archived": "Đã lưu trữ",
+    "new": "Tạo mới",
+    "empty": "Chưa có bảng nào.",
+    "emptyArchived": "Không có bảng đã lưu trữ.",
+    "loadFailed": "Không thể tải các bảng."
+  },
+  "newBoard": {
+    "title": "Bảng mới",
+    "name": "Tên",
+    "keyPrefix": "Tiền tố khóa",
+    "keyPrefixHelp": "Tối đa 10 chữ cái hoặc chữ số, bắt đầu bằng chữ cái. Khóa của công việc bắt đầu bằng nó, ví dụ DES-1.",
+    "create": "Tạo",
+    "cancel": "Hủy",
+    "keyPrefixTaken": "Một bảng khác đã dùng %{prefix}.",
+    "failed": "Không thể tạo bảng."
+  },
+  "board": {
+    "back": "Quay lại danh sách bảng",
+    "notFound": "Bảng này không tồn tại, hoặc bạn không thể mở nó.",
+    "loadFailed": "Không thể tải bảng.",
+    "noSection": "Không có mục",
+    "addTask": "Thêm công việc vào %{section}",
+    "taskTitle": "Tiêu đề công việc",
+    "add": "Thêm",
+    "priority": "P%{level}",
+    "due": "Hạn %{date}",
+    "assignee": "Giao cho %{name}"
   }
 }

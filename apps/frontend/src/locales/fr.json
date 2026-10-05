@@ -8,5 +8,36 @@
     "retry": "Réessayer",
     "signedInAs": "Connecté en tant que %{name}",
     "signOut": "Se déconnecter"
+  },
+  "boards": {
+    "title": "Tableaux",
+    "active": "Actif",
+    "archived": "Archivé",
+    "new": "Nouveau",
+    "empty": "Aucun tableau pour l'instant.",
+    "emptyArchived": "Aucun tableau archivé.",
+    "loadFailed": "Les tableaux n'ont pas pu être chargés."
+  },
+  "newBoard": {
+    "title": "Nouveau tableau",
+    "name": "Nom",
+    "keyPrefix": "Préfixe des clés",
+    "keyPrefixHelp": "Jusqu'à 10 lettres ou chiffres, en commençant par une lettre. Les clés des tâches commencent par lui, comme DES-1.",
+    "create": "Créer",
+    "cancel": "Annuler",
+    "keyPrefixTaken": "Un autre tableau utilise déjà %{prefix}.",
+    "failed": "Le tableau n'a pas pu être créé."
+  },
+  "board": {
+    "back": "Retour aux tableaux",
+    "notFound": "Ce tableau n'existe pas, ou vous ne pouvez pas l'ouvrir.",
+    "loadFailed": "Le tableau n'a pas pu être chargé.",
+    "noSection": "Sans section",
+    "addTask": "Ajouter une tâche à %{section}",
+    "taskTitle": "Titre de la tâche",
+    "add": "Ajouter",
+    "priority": "P%{level}",
+    "due": "Échéance le %{date}",
+    "assignee": "Assignée à %{name}"
   }
 }

@@ -8,5 +8,36 @@
     "retry": "Try again",
     "signedInAs": "Signed in as %{name}",
     "signOut": "Sign out"
+  },
+  "boards": {
+    "title": "Boards",
+    "active": "Active",
+    "archived": "Archived",
+    "new": "New",
+    "empty": "No boards yet.",
+    "emptyArchived": "No archived boards.",
+    "loadFailed": "The boards could not be loaded."
+  },
+  "newBoard": {
+    "title": "New board",
+    "name": "Name",
+    "keyPrefix": "Key prefix",
+    "keyPrefixHelp": "Up to 10 letters or digits, starting with a letter. Task keys start with it, like DES-1.",
+    "create": "Create",
+    "cancel": "Cancel",
+    "keyPrefixTaken": "Another board already uses %{prefix}.",
+    "failed": "The board could not be created."
+  },
+  "board": {
+    "back": "Back to boards",
+    "notFound": "This board doesn't exist, or you can't open it.",
+    "loadFailed": "The board could not be loaded.",
+    "noSection": "No section",
+    "addTask": "Add a task to %{section}",
+    "taskTitle": "Task title",
+    "add": "Add",
+    "priority": "P%{level}",
+    "due": "Due %{date}",
+    "assignee": "Assigned to %{name}"
   }
 }
