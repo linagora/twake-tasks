@@ -6,7 +6,6 @@
     "signingIn": "Connexion…",
     "failed": "La connexion a échoué.",
     "retry": "Réessayer",
-    "signedInAs": "Connecté en tant que %{name}",
     "signOut": "Se déconnecter"
   },
   "boards": {
