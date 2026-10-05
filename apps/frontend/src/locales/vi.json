@@ -64,7 +64,12 @@
     "saveFailed": "Không thể lưu mô tả.",
     "stale": "Người khác đã thay đổi mô tả. Nội dung của bạn vẫn được giữ: lưu lại để thay thế nội dung của họ.",
     "addSubtask": "Thêm công việc con",
-    "subtaskTitle": "Tiêu đề công việc con"
+    "subtaskTitle": "Tiêu đề công việc con",
+    "comments": "Bình luận",
+    "comment": "Bình luận",
+    "send": "Gửi",
+    "commentsFailed": "Không thể tải bình luận.",
+    "commentFailed": "Không thể gửi bình luận."
   },
   "section": {
     "new": "Mục mới",

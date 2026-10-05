@@ -1,4 +1,11 @@
-import type { Board, BoardSummary, Label, Section, Task } from '@/domain/board'
+import type {
+  Board,
+  BoardSummary,
+  Label,
+  Person,
+  Section,
+  Task
+} from '@/domain/board'
 
 export interface NewBoard {
   name: string
@@ -20,6 +27,13 @@ export interface TaskMove {
 export interface Description {
   markdown: string
   version: number
+}
+
+export interface Comment {
+  id: string
+  author: Person
+  body: string
+  createdAt: string
 }
 
 export type NewSection = Omit<Section, 'id'> & { afterId?: string }
@@ -53,6 +67,8 @@ export interface BoardsApi {
     taskId: string,
     edit: Description
   ) => Promise<{ version: number }>
+  listComments: (boardId: string, taskId: string) => Promise<Comment[]>
+  addComment: (boardId: string, taskId: string, body: string) => Promise<void>
   setAssignees: (
     boardId: string,
     taskId: string,

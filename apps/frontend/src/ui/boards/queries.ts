@@ -8,6 +8,7 @@ import {
 
 import type {
   BoardsApi,
+  Comment,
   Description,
   NewBoard,
   NewTask,
@@ -96,6 +97,33 @@ export function useSetDescription(
       queryClient.invalidateQueries({
         queryKey: descriptionKey(boardId, taskId)
       })
+  })
+}
+
+const commentsKey = (boardId: string, taskId: string) =>
+  ['boards', boardId, 'tasks', taskId, 'comments'] as const
+
+export function useComments(
+  boardId: string,
+  taskId: string
+): UseQueryResult<Comment[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: commentsKey(boardId, taskId),
+    queryFn: () => api.listComments(boardId, taskId)
+  })
+}
+
+export function useAddComment(
+  boardId: string,
+  taskId: string
+): UseMutationResult<void, Error, string> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: string) => api.addComment(boardId, taskId, body),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: commentsKey(boardId, taskId) })
   })
 }
 
