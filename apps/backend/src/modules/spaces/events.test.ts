@@ -115,6 +115,24 @@ describe('twake.space.created', () => {
     })
   })
 
+  it('gives two spaces of an organization the same key prefix when their names start alike', async () => {
+    const admin = aUser()
+
+    for (const name of ['Roadmap 2026', 'Roadmap 2027']) {
+      await deliver('twake.space.created', {
+        organizationId: admin.organizationId,
+        id: randomUUID(),
+        name,
+        members: [member(admin, 'admin')]
+      })
+    }
+
+    expect(await spaceBoards(admin)).toEqual([
+      expect.objectContaining({ keyPrefix: 'ROA' }),
+      expect.objectContaining({ keyPrefix: 'ROA' })
+    ])
+  })
+
   it('falls back to a generic key prefix for a name without latin letters', async () => {
     const admin = aUser()
 
