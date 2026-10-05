@@ -63,8 +63,8 @@ export async function startApp() {
         app.inject({ method: 'POST', url: `/api${path}`, headers, payload }),
       patch: (path: string, payload: object) =>
         app.inject({ method: 'PATCH', url: `/api${path}`, headers, payload }),
-      put: (path: string) =>
-        app.inject({ method: 'PUT', url: `/api${path}`, headers }),
+      put: (path: string, payload: object = {}) =>
+        app.inject({ method: 'PUT', url: `/api${path}`, headers, payload }),
       delete: (path: string, payload: object = {}) =>
         app.inject({ method: 'DELETE', url: `/api${path}`, headers, payload })
     }

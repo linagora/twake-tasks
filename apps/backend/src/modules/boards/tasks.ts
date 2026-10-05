@@ -2,8 +2,8 @@ import { and, asc, desc, eq, isNull, ne, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { roleOn } from './access.ts'
-import { boards, sections, tasks } from './schema.ts'
+import { membersOf, roleOn } from './access.ts'
+import { boards, sections, taskAssignees, tasks } from './schema.ts'
 
 export type Refusal =
   | 'not_found'
@@ -12,6 +12,7 @@ export type Refusal =
   | 'invalid_section'
   | 'stale_neighbours'
   | 'section_not_empty'
+  | 'invalid_assignee'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
 // Thrown, not returned, so the transaction rolls back whatever ran before it.
@@ -120,7 +121,8 @@ export async function bumpBoard(
     .returning({
       number: boards.taskCounter,
       keyPrefix: boards.keyPrefix,
-      organizationId: boards.organizationId
+      organizationId: boards.organizationId,
+      spaceId: boards.spaceId
     })
   if (!board) throw new Refused('archived')
   return board
@@ -231,6 +233,38 @@ export function createTaskStore(db: Db) {
         await bumpBoard(tx, boardId)
         await taskOf(tx, boardId, taskId)
         await tx.update(tasks).set(changes).where(eq(tasks.id, taskId))
+        return null
+      })
+    },
+
+    setAssignees(
+      identity: Identity,
+      boardId: string,
+      taskId: string,
+      userIds: string[]
+    ) {
+      return write(identity, async tx => {
+        await checkRole(tx, identity, boardId, 'editor')
+        const board = await bumpBoard(tx, boardId)
+        const task = await taskOf(tx, boardId, taskId)
+        const members = await membersOf(tx, { id: boardId, ...board })
+        if (
+          !userIds.every(userId =>
+            members.some(member => member.userId === userId)
+          )
+        ) {
+          throw new Refused('invalid_assignee')
+        }
+        await tx.delete(taskAssignees).where(eq(taskAssignees.taskId, taskId))
+        if (userIds.length > 0) {
+          await tx.insert(taskAssignees).values(
+            [...new Set(userIds)].map(userId => ({
+              taskId,
+              organizationId: task.organizationId,
+              userId
+            }))
+          )
+        }
         return null
       })
     }
