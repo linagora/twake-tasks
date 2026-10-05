@@ -1,6 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { afterAll, describe, expect, inject, it } from 'vitest'
-import { boardMembers, boards, sections } from '../modules/boards/schema.ts'
+import {
+  boardFavorites,
+  boardMembers,
+  boards,
+  sections
+} from '../modules/boards/schema.ts'
 import { aB2cUser, aUser, type TestUser } from '../testing/app.ts'
 import { assertRowLevelSecurity, createDb, inTenant } from './db.ts'
 
@@ -120,6 +125,34 @@ describe('inTenant', () => {
           .where(eq(boardMembers.boardId, boardId))
       )
     ).toHaveLength(2)
+  })
+
+  it('keeps each person’s favorites to themselves', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const boardId = await aBoardOf(alice)
+    const favorite = (user: TestUser) => ({
+      boardId,
+      organizationId: alice.organizationId,
+      userId: user.userId
+    })
+    await inTenant(db, alice, async tx => {
+      await tx.insert(boardMembers).values({
+        boardId,
+        organizationId: alice.organizationId,
+        userId: bob.userId,
+        email: bob.email,
+        role: 'viewer'
+      })
+      await tx.insert(boardFavorites).values(favorite(alice))
+    })
+
+    expect(
+      await inTenant(db, bob, tx => tx.select().from(boardFavorites))
+    ).toEqual([])
+    await expect(
+      inTenant(db, bob, tx => tx.insert(boardFavorites).values(favorite(alice)))
+    ).rejects.toThrow()
   })
 })
 

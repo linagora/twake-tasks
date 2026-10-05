@@ -1,0 +1,1 @@
+CREATE POLICY "own" ON "board_favorites" AS RESTRICTIVE FOR ALL TO public USING ("board_favorites"."user_id" = nullif(current_setting('app.user_id', true), '')::uuid) WITH CHECK ("board_favorites"."user_id" = nullif(current_setting('app.user_id', true), '')::uuid);
