@@ -21,6 +21,7 @@ import { accessibleBoards, membersOf, roleOn } from './access.ts'
 import {
   sections,
   boardFavorites,
+  boardLayouts,
   boardMembers,
   boards,
   taskAssignees,
@@ -256,7 +257,15 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     .orderBy(asc(tasks.position))
   const members = await membersOf(tx, board)
   const boardLabels = await labelsOn(tx, board)
+  const [picked] = await tx
+    .select({ layout: boardLayouts.layout })
+    .from(boardLayouts)
+    .where(
+      and(eq(boardLayouts.boardId, boardId), eq(boardLayouts.userId, userId))
+    )
   return {
+    layout: picked?.layout ?? board.layout,
+    defaultLayout: board.layout,
     id: board.id,
     name: board.name,
     keyPrefix: board.keyPrefix,
