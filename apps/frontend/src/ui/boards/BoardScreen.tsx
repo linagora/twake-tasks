@@ -22,7 +22,7 @@ export function BoardScreen(): ReactElement {
 
   return (
     <main className="u-p-2">
-      <Link component={RouterLink} to="/">
+      <Link component={RouterLink} to="../.." relative="path">
         {t('board.back')}
       </Link>
       {board.isError && (
