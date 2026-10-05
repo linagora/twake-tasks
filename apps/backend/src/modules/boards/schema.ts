@@ -137,6 +137,40 @@ export const boardMembers = pgTable.withRLS(
   ]
 )
 
+// An invite waits for its email to sign in, then app_claim_invites turns it
+// into a membership. The organization keeps it inside its tenant.
+export const boardInvites = pgTable.withRLS(
+  'board_invites',
+  {
+    id: id(),
+    boardId: uuid('board_id')
+      .notNull()
+      .references(() => boards.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    email: text().notNull(),
+    role: memberRole().notNull(),
+    invitedBy: uuid('invited_by').notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+    tenant: tenant()
+  },
+  table => [
+    unique().on(table.boardId, table.email),
+    index().on(table.email),
+    foreignKey({
+      columns: [table.tenant, table.boardId],
+      foreignColumns: [boards.tenant, boards.id]
+    }),
+    check(
+      'board_invites_email_lower',
+      sql`${table.email} = lower(${table.email})`
+    ),
+    tenantPolicy(
+      table.organizationId,
+      sql`${visibleBoard(table.boardId)} or ${table.email} = lower(current_setting('app.user_email', true))`
+    )
+  ]
+)
+
 export const sections = pgTable.withRLS(
   'sections',
   {

@@ -1,0 +1,3710 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "bb2d70c2-29c5-4e6e-b068-8d542e26410b",
+  "prevIds": [
+    "eb8e28d1-cf44-4333-8dc2-950f6eb3866b"
+  ],
+  "ddl": [
+    {
+      "values": [
+        "board",
+        "list",
+        "calendar"
+      ],
+      "name": "board_layout",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "minutes",
+        "days"
+      ],
+      "name": "duration_unit",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "days",
+        "weeks",
+        "months",
+        "years"
+      ],
+      "name": "recurrence_unit",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "backlog",
+        "unstarted",
+        "started",
+        "completed",
+        "canceled"
+      ],
+      "name": "section_category",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "viewer",
+        "editor",
+        "admin"
+      ],
+      "name": "member_role",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "processed_events",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "oidc_revoked_sessions",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "board_favorites",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "board_invites",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "board_layouts",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "board_members",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "boards",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "comments",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "labels",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "notifications",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "saved_filters",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "sections",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "task_assignees",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "task_history",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "task_labels",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "task_reminders",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "tasks",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "space_members",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "spaces",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "jobs",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "consumer",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processed_events"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "source",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processed_events"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processed_events"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "processed_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processed_events"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sid",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "oidc_revoked_sessions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "revoked_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "oidc_revoked_sessions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "expires_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "oidc_revoked_sessions"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "board_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_favorites"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_favorites"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_favorites"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_favorites"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "board_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "type": "member_role",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "invited_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "board_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_layouts"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_layouts"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_layouts"
+    },
+    {
+      "type": "board_layout",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "layout",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_layouts"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_layouts"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "board_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_members"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_members"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_members"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_members"
+    },
+    {
+      "type": "member_role",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_members"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "board_members"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "space_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "owner_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "key_prefix",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "task_counter",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "archived_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "inbox",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "board_layout",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'board'",
+      "generated": null,
+      "identity": null,
+      "name": "layout",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "task_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "author_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "author_email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "body",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "space_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "owner_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "task_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reason",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "read_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "saved_filters"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "saved_filters"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "saved_filters"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "saved_filters"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "criteria",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "saved_filters"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "saved_filters"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "board_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "type": "section_category",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "category",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "type": "text COLLATE \"C\"",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "position",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "task_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_assignees"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_assignees"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_assignees"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_assignees"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "task_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "actor_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "actor_email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "field",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "from",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "to",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "task_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_labels"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "label_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_labels"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_labels"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_labels"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "task_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "before_minutes",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "zone",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "board_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "section_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "parent_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "description_text",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "description_version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "smallint",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "priority",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "date",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "due_date",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "time(0)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "due_time",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "due_zone",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "date",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deadline",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "duration",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "duration_unit",
+      "typeSchema": "public",
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "duration_unit",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "recur_every",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "recurrence_unit",
+      "typeSchema": "public",
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "recur_unit",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "recur_from_completion",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "text COLLATE \"C\"",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "position",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "completed_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "canceled_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "space_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "space_members"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "space_members"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "space_members"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "space_members"
+    },
+    {
+      "type": "member_role",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "space_members"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "spaces"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "spaces"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "spaces"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "spaces"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "jobs"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "kind",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "jobs"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "key",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "jobs"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "payload",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "jobs"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "run_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "jobs"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "attempts",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "jobs"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_error",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "jobs"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "jobs"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "expires_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "oidc_revoked_sessions_expires_at_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "oidc_revoked_sessions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "email",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "board_invites_email_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "coalesce(\"org_id\", '')",
+          "isExpression": true,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "owner_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": "\"inbox\"",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "boards_one_inbox_per_owner",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "task_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "created_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "comments_task_id_created_at_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "created_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "notifications_user_id_created_at_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "saved_filters_user_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "saved_filters"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "task_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "task_history_task_id_at_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "task_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "task_reminders_task_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "run_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "jobs_run_at_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "jobs"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "board_favorites_board_id_boards_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "board_favorites"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "board_favorites_tenant_board_id_boards_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "board_favorites"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "board_invites_board_id_boards_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "board_invites_tenant_board_id_boards_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "board_layouts_board_id_boards_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "board_layouts"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "board_layouts_tenant_board_id_boards_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "board_layouts"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "board_members_board_id_boards_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "board_members"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "board_members_tenant_board_id_boards_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "board_members"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "org_id",
+        "space_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "spaces",
+      "columnsTo": [
+        "org_id",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "boards_org_id_space_id_spaces_org_id_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "comments_task_id_tasks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "comments_tenant_task_id_tasks_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "org_id",
+        "space_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "spaces",
+      "columnsTo": [
+        "org_id",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "labels_org_id_space_id_spaces_org_id_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "notifications_task_id_tasks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "notifications_tenant_task_id_tasks_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "sections_board_id_boards_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "sections_tenant_board_id_boards_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_assignees_task_id_tasks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_assignees"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_assignees_tenant_task_id_tasks_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_assignees"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_history_task_id_tasks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_history_tenant_task_id_tasks_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_labels_task_id_tasks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "label_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "labels",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_labels_label_id_labels_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_labels_tenant_task_id_tasks_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "label_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "labels",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_labels_tenant_label_id_labels_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_reminders_task_id_tasks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_reminders_tenant_task_id_tasks_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "tasks_board_id_boards_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id",
+        "section_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "sections",
+      "columnsTo": [
+        "board_id",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "tasks_board_id_section_id_sections_board_id_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id",
+        "parent_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "board_id",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "tasks_board_id_parent_id_tasks_board_id_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "board_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "boards",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "tasks_tenant_board_id_boards_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "org_id",
+        "space_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "spaces",
+      "columnsTo": [
+        "org_id",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "space_members_org_id_space_id_spaces_org_id_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "space_members"
+    },
+    {
+      "columns": [
+        "consumer",
+        "source",
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "processed_events_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "processed_events"
+    },
+    {
+      "columns": [
+        "user_id",
+        "board_id"
+      ],
+      "nameExplicit": false,
+      "name": "board_favorites_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "board_favorites"
+    },
+    {
+      "columns": [
+        "user_id",
+        "board_id"
+      ],
+      "nameExplicit": false,
+      "name": "board_layouts_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "board_layouts"
+    },
+    {
+      "columns": [
+        "board_id",
+        "user_id"
+      ],
+      "nameExplicit": false,
+      "name": "board_members_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "board_members"
+    },
+    {
+      "columns": [
+        "task_id",
+        "user_id"
+      ],
+      "nameExplicit": false,
+      "name": "task_assignees_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "task_assignees"
+    },
+    {
+      "columns": [
+        "task_id",
+        "label_id"
+      ],
+      "nameExplicit": false,
+      "name": "task_labels_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "task_labels"
+    },
+    {
+      "columns": [
+        "space_id",
+        "user_id"
+      ],
+      "nameExplicit": false,
+      "name": "space_members_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "space_members"
+    },
+    {
+      "columns": [
+        "sid"
+      ],
+      "nameExplicit": false,
+      "name": "oidc_revoked_sessions_pkey",
+      "schema": "public",
+      "table": "oidc_revoked_sessions",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "board_invites_pkey",
+      "schema": "public",
+      "table": "board_invites",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "boards_pkey",
+      "schema": "public",
+      "table": "boards",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "comments_pkey",
+      "schema": "public",
+      "table": "comments",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "labels_pkey",
+      "schema": "public",
+      "table": "labels",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "notifications_pkey",
+      "schema": "public",
+      "table": "notifications",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "saved_filters_pkey",
+      "schema": "public",
+      "table": "saved_filters",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "sections_pkey",
+      "schema": "public",
+      "table": "sections",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "task_history_pkey",
+      "schema": "public",
+      "table": "task_history",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "task_reminders_pkey",
+      "schema": "public",
+      "table": "task_reminders",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "tasks_pkey",
+      "schema": "public",
+      "table": "tasks",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "spaces_pkey",
+      "schema": "public",
+      "table": "spaces",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "jobs_pkey",
+      "schema": "public",
+      "table": "jobs",
+      "entityType": "pks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id",
+        "email"
+      ],
+      "nullsNotDistinct": false,
+      "name": "board_invites_board_id_email_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "boards_tenant_id_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "space_id",
+        "key_prefix"
+      ],
+      "nullsNotDistinct": false,
+      "name": "boards_space_id_key_prefix_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "org_id",
+        "owner_id",
+        "key_prefix"
+      ],
+      "nullsNotDistinct": true,
+      "name": "boards_org_id_owner_id_key_prefix_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "labels_tenant_id_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "space_id",
+        "name"
+      ],
+      "nullsNotDistinct": false,
+      "name": "labels_space_id_name_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "org_id",
+        "owner_id",
+        "name"
+      ],
+      "nullsNotDistinct": true,
+      "name": "labels_org_id_owner_id_name_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "sections_board_id_id_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id",
+        "position"
+      ],
+      "nullsNotDistinct": false,
+      "name": "sections_board_id_position_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "tasks_tenant_id_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "tasks_board_id_id_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id",
+        "number"
+      ],
+      "nullsNotDistinct": false,
+      "name": "tasks_board_id_number_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "board_id",
+        "parent_id",
+        "section_id",
+        "position"
+      ],
+      "nullsNotDistinct": true,
+      "name": "tasks_board_id_parent_id_section_id_position_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "org_id",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "spaces_org_id_id_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "spaces"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "key"
+      ],
+      "nullsNotDistinct": false,
+      "name": "jobs_key_key",
+      "schema": "public",
+      "table": "jobs",
+      "entityType": "uniques"
+    },
+    {
+      "value": "\"email\" = lower(\"email\")",
+      "name": "board_invites_email_lower",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "value": "(\"space_id\" is null) <> (\"owner_id\" is null)",
+      "name": "boards_space_or_owner",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "value": "\"space_id\" is null or \"org_id\" is not null",
+      "name": "boards_space_has_organization",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "value": "\"key_prefix\" ~ '^[A-Z][A-Z0-9]{0,9}$'",
+      "name": "boards_key_prefix",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "value": "(\"space_id\" is null) <> (\"owner_id\" is null)",
+      "name": "labels_space_or_owner",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "value": "(\"at\" is null) <> (\"before_minutes\" is null)\n        and (\"before_minutes\" is null) = (\"zone\" is null)\n        and \"before_minutes\" >= 0",
+      "name": "task_reminders_at_or_before",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "value": "\"parent_id\" is null or \"section_id\" is null",
+      "name": "tasks_subtask_outside_sections",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "value": "\"priority\" between 1 and 4",
+      "name": "tasks_priority",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "value": "\"due_time\" is null or \"due_date\" is not null",
+      "name": "tasks_due_time_on_a_date",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "value": "\"due_zone\" is null or \"due_time\" is not null",
+      "name": "tasks_due_zone_on_a_time",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "value": "(\"duration\" is null) = (\"duration_unit\" is null) and \"duration\" > 0",
+      "name": "tasks_duration",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "value": "(\"recur_every\" is null) = (\"recur_unit\" is null) and \"recur_every\" > 0",
+      "name": "tasks_recurrence",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "value": "\"recur_every\" is null or \"due_date\" is not null",
+      "name": "tasks_recurrence_on_a_date",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"board_favorites\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"board_favorites\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"board_favorites\".\"board_id\"))",
+      "withCheck": "\"board_favorites\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"board_favorites\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"board_favorites\".\"board_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "board_favorites"
+    },
+    {
+      "as": "RESTRICTIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"board_favorites\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+      "withCheck": "\"board_favorites\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+      "name": "own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "board_favorites"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"board_invites\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"board_invites\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"board_invites\".\"board_id\") or \"board_invites\".\"email\" = lower(current_setting('app.user_email', true)))",
+      "withCheck": "\"board_invites\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"board_invites\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"board_invites\".\"board_id\") or \"board_invites\".\"email\" = lower(current_setting('app.user_email', true)))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "board_invites"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"board_layouts\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"board_layouts\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"board_layouts\".\"board_id\"))",
+      "withCheck": "\"board_layouts\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"board_layouts\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"board_layouts\".\"board_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "board_layouts"
+    },
+    {
+      "as": "RESTRICTIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"board_layouts\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+      "withCheck": "\"board_layouts\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+      "name": "own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "board_layouts"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"board_members\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"board_members\".\"org_id\" is not null or current_setting('app.membership_lookup', true) = 'on' or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"board_members\".\"board_id\"))",
+      "withCheck": "\"board_members\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"board_members\".\"org_id\" is not null or current_setting('app.membership_lookup', true) = 'on' or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"board_members\".\"board_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "board_members"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"boards\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"boards\".\"org_id\" is not null or \"boards\".\"owner_id\" = nullif(current_setting('app.user_id', true), '')::uuid or \"boards\".\"id\" = any((select app_member_board_ids())::uuid[]))",
+      "withCheck": "\"boards\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"boards\".\"org_id\" is not null or \"boards\".\"owner_id\" = nullif(current_setting('app.user_id', true), '')::uuid or \"boards\".\"id\" = any((select app_member_board_ids())::uuid[]))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"comments\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"comments\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"comments\".\"task_id\"))",
+      "withCheck": "\"comments\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"comments\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"comments\".\"task_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"labels\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"labels\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"owner_id\" = \"labels\".\"owner_id\"))",
+      "withCheck": "\"labels\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"labels\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"owner_id\" = \"labels\".\"owner_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "labels"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"notifications\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"notifications\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"notifications\".\"task_id\"))",
+      "withCheck": "\"notifications\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"notifications\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"notifications\".\"task_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "as": "RESTRICTIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"notifications\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+      "withCheck": "\"notifications\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+      "name": "own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "notifications"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"saved_filters\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"saved_filters\".\"org_id\" is not null or \"saved_filters\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid)",
+      "withCheck": "\"saved_filters\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"saved_filters\".\"org_id\" is not null or \"saved_filters\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid)",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "saved_filters"
+    },
+    {
+      "as": "RESTRICTIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"saved_filters\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+      "withCheck": "\"saved_filters\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+      "name": "own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "saved_filters"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"sections\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"sections\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"sections\".\"board_id\"))",
+      "withCheck": "\"sections\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"sections\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"sections\".\"board_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "sections"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"task_assignees\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_assignees\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_assignees\".\"task_id\"))",
+      "withCheck": "\"task_assignees\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_assignees\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_assignees\".\"task_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "task_assignees"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"task_history\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_history\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_history\".\"task_id\"))",
+      "withCheck": "\"task_history\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_history\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_history\".\"task_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"task_labels\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_labels\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_labels\".\"task_id\"))",
+      "withCheck": "\"task_labels\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_labels\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_labels\".\"task_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "task_labels"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"task_reminders\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_reminders\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_reminders\".\"task_id\"))",
+      "withCheck": "\"task_reminders\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_reminders\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_reminders\".\"task_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "as": "RESTRICTIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"task_reminders\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+      "withCheck": "\"task_reminders\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+      "name": "own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "task_reminders"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"tasks\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"tasks\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"tasks\".\"board_id\"))",
+      "withCheck": "\"tasks\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"tasks\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"tasks\".\"board_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"space_members\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '')",
+      "withCheck": "\"space_members\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '')",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "space_members"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"spaces\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '')",
+      "withCheck": "\"spaces\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '')",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "spaces"
+    }
+  ],
+  "renames": []
+}

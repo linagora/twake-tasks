@@ -8,6 +8,8 @@ import { createFilterStore } from './filters.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
+import { createSharingStore } from './sharing.ts'
+import { memberRole } from '../spaces/schema.ts'
 import { createReminderStore } from './reminders.ts'
 import {
   durationUnit,
@@ -55,6 +57,17 @@ function isTimeZone(zone: string): boolean {
 }
 
 const layoutChoice = z.object({ layout: z.enum(LAYOUTS) })
+
+const role = z.enum(memberRole.enumValues)
+
+const newInvite = z.object({
+  email: z.email().max(254).toLowerCase(),
+  role
+})
+
+const inviteParams = boardParams.extend({ inviteId: z.uuid() })
+
+const memberParams = boardParams.extend({ userId: z.uuid() })
 
 const searchQuery = z.object({ q: z.string().trim().min(1).max(200) })
 
@@ -167,7 +180,8 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   invalid_label: 400,
   invalid_dates: 400,
   invalid_reminder: 400,
-  label_taken: 409
+  label_taken: 409,
+  last_admin: 409
 }
 
 function refuse(reply: FastifyReply, error: Refusal) {
@@ -186,6 +200,103 @@ export function registerBoards(
   const reminderStore = createReminderStore(deps.db)
   const filterStore = createFilterStore(deps.db)
   const layoutStore = createLayoutStore(deps.db)
+  const sharingStore = createSharingStore(deps.db)
+
+  app.post(
+    '/boards/:boardId/invites',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = boardParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = newInvite.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await sharingStore.invite(
+        identity,
+        params.data.boardId,
+        body.data.email,
+        body.data.role
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(202).send({ status: 'invited' })
+    }
+  )
+
+  app.get(
+    '/boards/:boardId/sharing',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = boardParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await sharingStore.sharing(identity, params.data.boardId)
+      if (!result.ok) return refuse(reply, result.error)
+      return result.value
+    }
+  )
+
+  app.delete(
+    '/boards/:boardId/invites/:inviteId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = inviteParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await sharingStore.cancelInvite(
+        identity,
+        params.data.boardId,
+        params.data.inviteId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.put(
+    '/boards/:boardId/members/:userId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = memberParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = z.object({ role }).safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await sharingStore.setRole(
+        identity,
+        params.data.boardId,
+        params.data.userId,
+        body.data.role
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.delete(
+    '/boards/:boardId/members/:userId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = memberParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await sharingStore.removeMember(
+        identity,
+        params.data.boardId,
+        params.data.userId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
 
   app.get(
     '/filters',
