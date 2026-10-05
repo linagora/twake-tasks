@@ -21,6 +21,7 @@ import {
 import { createSectionStore } from './sections.ts'
 import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
 import { createTaskStore, type Refusal } from './tasks.ts'
+import { createTransferStore } from './transfer.ts'
 
 const newBoard = z.object({
   name: z.string().trim().min(1).max(100),
@@ -183,7 +184,8 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   invalid_reminder: 400,
   label_taken: 409,
   last_admin: 409,
-  key_prefix_taken: 409
+  key_prefix_taken: 409,
+  same_board: 400
 }
 
 function refuse(reply: FastifyReply, error: Refusal) {
@@ -204,6 +206,7 @@ export function registerBoards(
   const layoutStore = createLayoutStore(deps.db)
   const sharingStore = createSharingStore(deps.db)
   const archiveStore = createArchiveStore(deps.db)
+  const transferStore = createTransferStore(deps.db)
 
   app.post(
     '/boards/:boardId/invites',
@@ -362,6 +365,31 @@ export function registerBoards(
       }
     })
   }
+
+  app.post(
+    '/boards/:boardId/tasks/:taskId/transfer',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = z
+        .object({ boardId: z.uuid(), sectionId: z.uuid().nullable() })
+        .safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await transferStore.transferTask(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        body.data
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return result.value
+    }
+  )
 
   app.put(
     '/boards/:boardId/members/:userId',

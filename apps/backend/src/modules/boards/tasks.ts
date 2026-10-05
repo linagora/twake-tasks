@@ -30,6 +30,7 @@ export type Refusal =
   | 'label_taken'
   | 'last_admin'
   | 'key_prefix_taken'
+  | 'same_board'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
 // Thrown, not returned, so the transaction rolls back whatever ran before it.
