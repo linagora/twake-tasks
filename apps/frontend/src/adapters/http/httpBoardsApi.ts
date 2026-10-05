@@ -1,4 +1,9 @@
-import { ApiError, type BoardsApi, type Comment } from '@/application/boards'
+import {
+  ApiError,
+  type BoardsApi,
+  type Comment,
+  type HistoryEntry
+} from '@/application/boards'
 import type { BoardSummary } from '@/domain/board'
 
 export type Send = (request: Request) => Promise<Response>
@@ -51,6 +56,13 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       call('GET', `/boards/${boardId}/tasks/${taskId}/description`),
     setDescription: (boardId, taskId, edit) =>
       call('PUT', `/boards/${boardId}/tasks/${taskId}/description`, edit),
+    listHistory: async (boardId, taskId) =>
+      (
+        await call<{ entries: HistoryEntry[] }>(
+          'GET',
+          `/boards/${boardId}/tasks/${taskId}/history`
+        )
+      ).entries,
     listComments: async (boardId, taskId) =>
       (
         await call<{ comments: Comment[] }>(

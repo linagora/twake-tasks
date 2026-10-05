@@ -71,6 +71,27 @@
     "commentsFailed": "Les commentaires n'ont pas pu être chargés.",
     "commentFailed": "Le commentaire n'a pas pu être envoyé."
   },
+  "history": {
+    "heading": "Historique",
+    "loadFailed": "L'historique n'a pas pu être chargé.",
+    "created": "%{actor} l'a créée",
+    "title": "%{actor} l'a renommée de %{from} en %{to}",
+    "priority": "%{actor} a mis la priorité à P%{level}",
+    "priorityCleared": "%{actor} a retiré la priorité",
+    "dueDate": "%{actor} a fixé l'échéance au %{date}",
+    "dueDateCleared": "%{actor} a retiré l'échéance",
+    "section": "%{actor} l'a déplacée vers %{section}",
+    "completed": "%{actor} l'a terminée",
+    "canceled": "%{actor} l'a annulée",
+    "reopened": "%{actor} l'a rouverte",
+    "description": "%{actor} a modifié la description",
+    "assigned": "%{actor} a assigné %{name}",
+    "unassigned": "%{actor} a retiré %{name}",
+    "labeled": "%{actor} a ajouté l'étiquette %{name}",
+    "unlabeled": "%{actor} a retiré l'étiquette %{name}",
+    "someone": "une personne qui a quitté le tableau",
+    "someLabel": "une étiquette supprimée"
+  },
   "section": {
     "new": "Nouvelle section",
     "editTitle": "Modifier la section",

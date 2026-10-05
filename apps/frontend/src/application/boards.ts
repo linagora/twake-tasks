@@ -36,6 +36,15 @@ export interface Comment {
   createdAt: string
 }
 
+/** `from` and `to` are ids for `section`, `assignees` and `labels`. */
+export interface HistoryEntry {
+  actor: Person
+  field: string
+  from: unknown
+  to: unknown
+  at: string
+}
+
 export type NewSection = Omit<Section, 'id'> & { afterId?: string }
 
 export interface SectionMove {
@@ -67,6 +76,7 @@ export interface BoardsApi {
     taskId: string,
     edit: Description
   ) => Promise<{ version: number }>
+  listHistory: (boardId: string, taskId: string) => Promise<HistoryEntry[]>
   listComments: (boardId: string, taskId: string) => Promise<Comment[]>
   addComment: (boardId: string, taskId: string, body: string) => Promise<void>
   setAssignees: (

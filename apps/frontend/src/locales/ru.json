@@ -71,6 +71,27 @@
     "commentsFailed": "Не удалось загрузить комментарии.",
     "commentFailed": "Не удалось отправить комментарий."
   },
+  "history": {
+    "heading": "История",
+    "loadFailed": "Не удалось загрузить историю.",
+    "created": "%{actor} создал(а) задачу",
+    "title": "%{actor} переименовал(а) задачу: %{from} → %{to}",
+    "priority": "%{actor} установил(а) приоритет P%{level}",
+    "priorityCleared": "%{actor} убрал(а) приоритет",
+    "dueDate": "%{actor} установил(а) срок %{date}",
+    "dueDateCleared": "%{actor} убрал(а) срок",
+    "section": "%{actor} переместил(а) задачу в %{section}",
+    "completed": "%{actor} завершил(а) задачу",
+    "canceled": "%{actor} отменил(а) задачу",
+    "reopened": "%{actor} снова открыл(а) задачу",
+    "description": "%{actor} изменил(а) описание",
+    "assigned": "%{actor} назначил(а) %{name}",
+    "unassigned": "%{actor} снял(а) %{name}",
+    "labeled": "%{actor} добавил(а) метку %{name}",
+    "unlabeled": "%{actor} убрал(а) метку %{name}",
+    "someone": "человек, покинувший доску",
+    "someLabel": "удалённая метка"
+  },
   "section": {
     "new": "Новый раздел",
     "editTitle": "Изменить раздел",
