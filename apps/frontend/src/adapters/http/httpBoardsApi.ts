@@ -72,6 +72,15 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
     getBoard: boardId => call('GET', `/boards/${boardId}`),
     createBoard: board => call('POST', '/boards', board),
+    getSharing: boardId => call('GET', `/boards/${boardId}/sharing`),
+    invite: (boardId, email, role) =>
+      call('POST', `/boards/${boardId}/invites`, { email, role }),
+    cancelInvite: (boardId, inviteId) =>
+      call('DELETE', `/boards/${boardId}/invites/${inviteId}`),
+    setMemberRole: (boardId, userId, role) =>
+      call('PUT', `/boards/${boardId}/members/${userId}`, { role }),
+    removeMember: (boardId, userId) =>
+      call('DELETE', `/boards/${boardId}/members/${userId}`),
     setLayout: (boardId, layout) =>
       call('PUT', `/boards/${boardId}/layout`, { layout }),
     setDefaultLayout: (boardId, layout) =>

@@ -187,6 +187,25 @@
     "then": "g puis %{key}",
     "close": "Fermer"
   },
+  "sharing": {
+    "share": "Partager",
+    "title": "Partager %{name}",
+    "email": "E-mail",
+    "role": "Rôle",
+    "roles": {
+      "viewer": "Lecteur",
+      "editor": "Éditeur",
+      "admin": "Administrateur"
+    },
+    "invite": "Inviter",
+    "invited": "%{email} a été invité.",
+    "pending": "Invité comme %{role}",
+    "cancelInvite": "Annuler l'invitation",
+    "remove": "Retirer",
+    "close": "Fermer",
+    "failed": "La modification n'a pas pu être enregistrée.",
+    "loadFailed": "Les membres n'ont pas pu être chargés."
+  },
   "layout": {
     "title": "Affichage",
     "board": "Tableau",

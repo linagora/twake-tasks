@@ -18,6 +18,7 @@ import type {
   NewTask,
   Reminder,
   SavedFilter,
+  Sharing,
   TaskMove
 } from '@/application/boards'
 import type { Board, BoardSummary, Layout } from '@/domain/board'
@@ -85,6 +86,14 @@ export function useDeleteFilter(): UseMutationResult<void, Error, string> {
   return useMutation({
     mutationFn: (filterId: string) => api.deleteFilter(filterId),
     onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
+  })
+}
+
+export function useSharing(boardId: string): UseQueryResult<Sharing> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: [...boardKey(boardId), 'sharing'],
+    queryFn: () => api.getSharing(boardId)
   })
 }
 

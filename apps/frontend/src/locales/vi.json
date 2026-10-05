@@ -187,6 +187,25 @@
     "then": "g rồi %{key}",
     "close": "Đóng"
   },
+  "sharing": {
+    "share": "Chia sẻ",
+    "title": "Chia sẻ %{name}",
+    "email": "Email",
+    "role": "Vai trò",
+    "roles": {
+      "viewer": "Người xem",
+      "editor": "Người chỉnh sửa",
+      "admin": "Quản trị viên"
+    },
+    "invite": "Mời",
+    "invited": "Đã mời %{email}.",
+    "pending": "Đã mời với vai trò %{role}",
+    "cancelInvite": "Hủy lời mời",
+    "remove": "Xóa",
+    "close": "Đóng",
+    "failed": "Không thể lưu thay đổi.",
+    "loadFailed": "Không thể tải danh sách thành viên."
+  },
   "layout": {
     "title": "Bố cục",
     "board": "Bảng",

@@ -8,6 +8,7 @@ import type { Board, Section, Task } from '@/domain/board'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
+import { ShareDialog } from '@/ui/boards/ShareDialog'
 import { TaskCard } from '@/ui/boards/TaskCard'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -40,6 +41,8 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   const move = useMoveTask(board.id)
   const editable = board.role !== 'viewer' && !board.archived
   const manageable = board.role === 'admin' && !board.archived
+  const shareable = manageable && board.spaceId === null && !board.inbox
+  const [sharing, setSharing] = useState(false)
   const topLevel = board.tasks.filter(task => task.parentId === null)
   const loose =
     board.sections.length === 0 ||
@@ -87,7 +90,26 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
           {board.name}
         </Typography>
         <LayoutSwitch board={board} />
+        {shareable && (
+          <Button
+            variant="secondary"
+            className="u-ml-1"
+            onClick={() => {
+              setSharing(true)
+            }}
+          >
+            {t('sharing.share')}
+          </Button>
+        )}
       </div>
+      {sharing && (
+        <ShareDialog
+          board={board}
+          onClose={() => {
+            setSharing(false)
+          }}
+        />
+      )}
       {move.isError && (
         <Typography role="alert" className="u-mb-1">
           {t('board.moveFailed')}
