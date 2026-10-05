@@ -60,6 +60,28 @@ describe('BoardScreen', () => {
     ).toBeInTheDocument()
   })
 
+  it('adds tasks to a board without sections, like the Inbox', async () => {
+    const board = aBoard({ name: 'Inbox', keyPrefix: 'INBOX', sections: [] })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const loose = within(
+      await screen.findByRole('region', { name: 'No section' })
+    )
+    fireEvent.click(
+      loose.getByRole('button', { name: 'Add a task to No section' })
+    )
+    fireEvent.change(loose.getByRole('textbox', { name: 'Task title' }), {
+      target: { value: 'Call the bank' }
+    })
+    fireEvent.click(loose.getByRole('button', { name: 'Add' }))
+
+    expect(
+      await within(column('No section')).findByRole('article', {
+        name: 'INBOX-1 Call the bank'
+      })
+    ).toBeInTheDocument()
+  })
+
   it('adds a task to a section', async () => {
     const board = designBoard()
     const boardsApi = fakeBoardsApi([board])

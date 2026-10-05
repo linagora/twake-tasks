@@ -10,6 +10,7 @@ export interface BoardSummary {
   name: string
   keyPrefix: string
   spaceId: string | null
+  inbox: boolean
   role: Role
   archived: boolean
   favorite: boolean
@@ -38,6 +39,7 @@ export interface Board {
   name: string
   keyPrefix: string
   spaceId: string | null
+  inbox: boolean
   archived: boolean
   version: number
   role: Role
