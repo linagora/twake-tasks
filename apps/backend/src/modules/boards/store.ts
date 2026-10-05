@@ -302,7 +302,7 @@ async function describeTasks(
   }))
 }
 
-const assignedTo = (tx: Tx, userId: string) =>
+export const assignedTo = (tx: Tx, userId: string) =>
   exists(
     tx
       .select({ one: sql`1` })
@@ -331,7 +331,11 @@ const mine = (tx: Tx, userId: string) =>
     )
   )
 
-async function openTasksOf(tx: Tx, userId: string, which: SQL | undefined) {
+export async function openTasksOf(
+  tx: Tx,
+  userId: string,
+  which: SQL | undefined
+) {
   const accessible = accessibleBoards(tx, userId)
   const rows = await tx
     .select({ task: tasks, board: boards })
