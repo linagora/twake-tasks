@@ -34,6 +34,7 @@ export type TaskChanges = Partial<
     | 'dueZone'
     | 'deadline'
     | 'duration'
+    | 'recurrence'
   >
 >
 
@@ -82,7 +83,10 @@ export interface BoardsApi {
     taskId: string,
     state: Completion
   ) => Promise<void>
-  /** Clearing the due date clears its time, and clearing the time its zone. */
+  /**
+   * Clearing the due date clears its time and recurrence, and clearing the
+   * time its zone.
+   */
   editTask: (
     boardId: string,
     taskId: string,

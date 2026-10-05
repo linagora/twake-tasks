@@ -8,7 +8,7 @@ import {
 } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 
-import type { Duration, Task } from '@/domain/board'
+import type { Duration, Recurrence, Task } from '@/domain/board'
 import { dueLabel, formatDay, localZone } from '@/ui/boards/dueLabel'
 import { useBoardChange } from '@/ui/boards/queries'
 import { Row } from '@/ds/Columns'
@@ -21,6 +21,9 @@ interface Draft {
   deadline: string
   amount: string
   unit: Duration['unit']
+  every: string
+  recurUnit: Recurrence['unit']
+  fromCompletion: boolean
 }
 
 function draftOf(task: Task): Draft {
@@ -30,9 +33,19 @@ function draftOf(task: Task): Draft {
     pinned: task.dueZone !== null,
     deadline: task.deadline ?? '',
     amount: task.duration ? String(task.duration.amount) : '',
-    unit: task.duration?.unit ?? 'minutes'
+    unit: task.duration?.unit ?? 'minutes',
+    every: task.recurrence ? String(task.recurrence.every) : '',
+    recurUnit: task.recurrence?.unit ?? 'weeks',
+    fromCompletion: task.recurrence?.fromCompletion ?? false
   }
 }
+
+const RECURRENCE_UNITS: Recurrence['unit'][] = [
+  'days',
+  'weeks',
+  'months',
+  'years'
+]
 
 export function Dates({
   task,
@@ -55,6 +68,14 @@ export function Dates({
       duration:
         Number(next.amount) > 0
           ? { amount: Number(next.amount), unit: next.unit }
+          : null,
+      recurrence:
+        next.dueDate && Number(next.every) > 0
+          ? {
+              every: Number(next.every),
+              unit: next.recurUnit,
+              fromCompletion: next.fromCompletion
+            }
           : null
     })
   })
@@ -77,6 +98,16 @@ export function Dates({
             {t(`dates.${task.duration.unit}`, {
               amount: task.duration.amount
             })}
+          </Typography>
+        )}
+        {task.recurrence && (
+          <Typography>
+            {t(
+              task.recurrence.fromCompletion
+                ? `dates.every.${task.recurrence.unit}AfterCompletion`
+                : `dates.every.${task.recurrence.unit}`,
+              { smart_count: task.recurrence.every }
+            )}
           </Typography>
         )}
         {editable && (
@@ -172,6 +203,47 @@ export function Dates({
           <MenuItem value="minutes">{t('dates.unitMinutes')}</MenuItem>
           <MenuItem value="days">{t('dates.unitDays')}</MenuItem>
         </TextField>
+      </Row>
+      <Row>
+        <TextField
+          type="number"
+          label={t('dates.repeatEvery')}
+          value={draft.every}
+          disabled={!draft.dueDate}
+          onChange={event => {
+            set({ every: event.target.value })
+          }}
+          size="small"
+          slotProps={{ htmlInput: { min: 1, max: 1000 } }}
+        />
+        <TextField
+          select
+          label={t('dates.unit')}
+          value={draft.recurUnit}
+          disabled={!draft.dueDate}
+          onChange={event => {
+            set({ recurUnit: event.target.value as Recurrence['unit'] })
+          }}
+          size="small"
+        >
+          {RECURRENCE_UNITS.map(unit => (
+            <MenuItem key={unit} value={unit}>
+              {t(`dates.units.${unit}`)}
+            </MenuItem>
+          ))}
+        </TextField>
+        <FormControlLabel
+          label={t('dates.fromCompletion')}
+          control={
+            <Checkbox
+              checked={draft.fromCompletion}
+              disabled={!draft.dueDate}
+              onChange={event => {
+                set({ fromCompletion: event.target.checked })
+              }}
+            />
+          }
+        />
       </Row>
       {save.isError && (
         <Typography role="alert" variant="caption">

@@ -110,7 +110,25 @@
     "unitDays": "Ngày",
     "minutes": "%{amount} phút",
     "days": "%{amount} ngày",
-    "saveFailed": "Không thể lưu ngày."
+    "saveFailed": "Không thể lưu ngày.",
+    "repeatEvery": "Lặp lại mỗi",
+    "fromCompletion": "Tính từ ngày hoàn thành",
+    "units": {
+      "days": "Ngày",
+      "weeks": "Tuần",
+      "months": "Tháng",
+      "years": "Năm"
+    },
+    "every": {
+      "days": "Mỗi %{smart_count} ngày",
+      "weeks": "Mỗi %{smart_count} tuần",
+      "months": "Mỗi %{smart_count} tháng",
+      "years": "Mỗi %{smart_count} năm",
+      "daysAfterCompletion": "Mỗi %{smart_count} ngày sau khi hoàn thành",
+      "weeksAfterCompletion": "Mỗi %{smart_count} tuần sau khi hoàn thành",
+      "monthsAfterCompletion": "Mỗi %{smart_count} tháng sau khi hoàn thành",
+      "yearsAfterCompletion": "Mỗi %{smart_count} năm sau khi hoàn thành"
+    }
   },
   "section": {
     "new": "Mục mới",

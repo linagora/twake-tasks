@@ -110,7 +110,25 @@
     "unitDays": "Дни",
     "minutes": "%{amount} мин",
     "days": "%{amount} дн",
-    "saveFailed": "Не удалось сохранить даты."
+    "saveFailed": "Не удалось сохранить даты.",
+    "repeatEvery": "Повторять каждые",
+    "fromCompletion": "От даты выполнения",
+    "units": {
+      "days": "Дни",
+      "weeks": "Недели",
+      "months": "Месяцы",
+      "years": "Годы"
+    },
+    "every": {
+      "days": "Каждый %{smart_count} день |||| Каждые %{smart_count} дня |||| Каждые %{smart_count} дней",
+      "weeks": "Каждую %{smart_count} неделю |||| Каждые %{smart_count} недели |||| Каждые %{smart_count} недель",
+      "months": "Каждый %{smart_count} месяц |||| Каждые %{smart_count} месяца |||| Каждые %{smart_count} месяцев",
+      "years": "Каждый %{smart_count} год |||| Каждые %{smart_count} года |||| Каждые %{smart_count} лет",
+      "daysAfterCompletion": "Каждый %{smart_count} день после выполнения |||| Каждые %{smart_count} дня после выполнения |||| Каждые %{smart_count} дней после выполнения",
+      "weeksAfterCompletion": "Каждую %{smart_count} неделю после выполнения |||| Каждые %{smart_count} недели после выполнения |||| Каждые %{smart_count} недель после выполнения",
+      "monthsAfterCompletion": "Каждый %{smart_count} месяц после выполнения |||| Каждые %{smart_count} месяца после выполнения |||| Каждые %{smart_count} месяцев после выполнения",
+      "yearsAfterCompletion": "Каждый %{smart_count} год после выполнения |||| Каждые %{smart_count} года после выполнения |||| Каждые %{smart_count} лет после выполнения"
+    }
   },
   "section": {
     "new": "Новый раздел",

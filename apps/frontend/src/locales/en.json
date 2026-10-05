@@ -110,7 +110,25 @@
     "unitDays": "Days",
     "minutes": "%{amount} min",
     "days": "%{amount} d",
-    "saveFailed": "The dates could not be saved."
+    "saveFailed": "The dates could not be saved.",
+    "repeatEvery": "Repeat every",
+    "fromCompletion": "From the completion date",
+    "units": {
+      "days": "Days",
+      "weeks": "Weeks",
+      "months": "Months",
+      "years": "Years"
+    },
+    "every": {
+      "days": "Every day |||| Every %{smart_count} days",
+      "weeks": "Every week |||| Every %{smart_count} weeks",
+      "months": "Every month |||| Every %{smart_count} months",
+      "years": "Every year |||| Every %{smart_count} years",
+      "daysAfterCompletion": "Every day after completion |||| Every %{smart_count} days after completion",
+      "weeksAfterCompletion": "Every week after completion |||| Every %{smart_count} weeks after completion",
+      "monthsAfterCompletion": "Every month after completion |||| Every %{smart_count} months after completion",
+      "yearsAfterCompletion": "Every year after completion |||| Every %{smart_count} years after completion"
+    }
   },
   "section": {
     "new": "New section",

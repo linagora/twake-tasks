@@ -38,8 +38,37 @@ describe('Dates', () => {
       dueTime: '09:30',
       dueZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       deadline: '2026-11-06',
-      duration: { amount: 90, unit: 'minutes' }
+      duration: { amount: 90, unit: 'minutes' },
+      recurrence: null
     })
+  })
+
+  it('repeats a task from its completion date', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    Object.assign(logo, { dueDate: '2026-11-02' })
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+    fireEvent.click(panel.getByRole('button', { name: 'Edit dates' }))
+    change(panel.getByRole('spinbutton', { name: 'Repeat every' }), '2')
+    fireEvent.click(
+      panel.getByRole('checkbox', { name: 'From the completion date' })
+    )
+    fireEvent.click(panel.getByRole('button', { name: 'Save dates' }))
+
+    expect(
+      await panel.findByText('Every 2 weeks after completion')
+    ).toBeVisible()
+    expect(boardsApi.editTask).toHaveBeenCalledWith(
+      board.id,
+      logo.id,
+      expect.objectContaining({
+        recurrence: { every: 2, unit: 'weeks', fromCompletion: true }
+      })
+    )
   })
 
   it('shows the due time on the card', async () => {

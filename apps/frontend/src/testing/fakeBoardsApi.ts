@@ -50,6 +50,7 @@ export function aTask(section: Section | null, overrides: Partial<Task> = {}) {
     dueZone: null,
     deadline: null,
     duration: null,
+    recurrence: null,
     completedAt: null,
     canceledAt: null,
     assignees: [],
