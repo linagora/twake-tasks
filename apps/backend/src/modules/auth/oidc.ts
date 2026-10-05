@@ -7,6 +7,8 @@ export type OrganizationRole = z.infer<typeof organizationRole>
 
 export interface Identity {
   subject: string
+  // The LDAP entryUUID: the person, whatever their email.
+  userId: string
   email: string
   sessionId: string
   expiresAt: Date
@@ -32,6 +34,7 @@ const BACKCHANNEL_LOGOUT_EVENT =
 const userinfoSchema = z.object({
   sub: z.string().min(1),
   sid: z.string().min(1),
+  uuid: z.uuid(),
   email: z.email(),
   org_id: z.string().min(1).nullish(),
   org_role: organizationRole.nullish().catch(null)
@@ -82,6 +85,7 @@ export async function discoverIdentityProvider(
 
       return {
         subject: claims.sub,
+        userId: claims.uuid,
         email: claims.email,
         sessionId: claims.sid,
         expiresAt: new Date(token.exp * 1000),

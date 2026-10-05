@@ -13,10 +13,10 @@ afterAll(async () => {
 function aBoardRow(owner: TestUser) {
   return {
     organizationId: owner.organizationId,
-    ownerEmail: owner.email,
+    ownerId: owner.userId,
     name: 'Secret',
     keyPrefix: 'SEC',
-    createdBy: owner.email
+    createdBy: owner.userId
   }
 }
 
@@ -27,6 +27,7 @@ async function aBoardOf(owner: TestUser) {
     await tx.insert(boardMembers).values({
       boardId: board.id,
       organizationId: owner.organizationId,
+      userId: owner.userId,
       email: owner.email,
       role: 'admin'
     })
@@ -88,6 +89,7 @@ describe('inTenant', () => {
         tx.insert(boardMembers).values({
           boardId,
           organizationId: null,
+          userId: bob.userId,
           email: bob.email,
           role: 'admin'
         })
@@ -103,6 +105,7 @@ describe('inTenant', () => {
       tx.insert(boardMembers).values({
         boardId,
         organizationId: null,
+        userId: bob.userId,
         email: bob.email,
         role: 'viewer'
       })

@@ -85,7 +85,7 @@ describe('user boards', () => {
 
   it('keeps a person’s boards apart in each organization', async () => {
     const b2c = aB2cUser()
-    const inOrg = aUser({ email: b2c.email })
+    const inOrg = aUser({ userId: b2c.userId, email: b2c.email })
     await api.as(b2c).post('/boards', { name: 'Home', keyPrefix: 'HOME' })
 
     const created = await api
@@ -101,6 +101,26 @@ describe('user boards', () => {
       'Home office'
     ])
   })
+
+  it.each([aUser, aB2cUser])(
+    'keeps a person’s boards when their email changes (%o)',
+    async makeUser => {
+      const alice = makeUser()
+      const renamed = { ...alice, email: `renamed-${alice.email}` }
+      const reusedEmail = { ...aUser(alice), userId: aUser().userId }
+      const created = (
+        await api
+          .as(alice)
+          .post('/boards', { name: 'Design', keyPrefix: 'DES' })
+      ).json<{ id: string }>()
+
+      const own = await api.as(renamed).get(`/boards/${created.id}`)
+      const other = await api.as(reusedEmail).get(`/boards/${created.id}`)
+
+      expect(own.statusCode).toBe(200)
+      expect(other.statusCode).toBe(404)
+    }
+  )
 
   it('opens a board for its members only', async () => {
     const alice = aUser()

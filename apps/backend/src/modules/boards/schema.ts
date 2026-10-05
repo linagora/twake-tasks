@@ -17,7 +17,7 @@ import {
   type AnyPgColumn
 } from 'drizzle-orm/pg-core'
 import {
-  currentEmail,
+  currentUser,
   organizationId,
   sortKey,
   tenantPolicy,
@@ -44,12 +44,12 @@ export const boards = pgTable.withRLS(
     id: id(),
     organizationId: organizationId(),
     spaceId: uuid('space_id'),
-    ownerEmail: text('owner_email'),
+    ownerId: uuid('owner_id'),
     name: text().notNull(),
     keyPrefix: text('key_prefix').notNull(),
     taskCounter: integer('task_counter').notNull().default(0),
     version: bigint({ mode: 'number' }).notNull().default(0),
-    createdBy: text('created_by').notNull(),
+    createdBy: uuid('created_by').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     archivedAt: timestamptz('archived_at'),
     inbox: boolean().notNull().default(false)
@@ -59,10 +59,10 @@ export const boards = pgTable.withRLS(
     unique().on(table.spaceId, table.keyPrefix),
     // Row level security splits a person's boards by organization, B2C included.
     unique()
-      .on(table.organizationId, table.ownerEmail, table.keyPrefix)
+      .on(table.organizationId, table.ownerId, table.keyPrefix)
       .nullsNotDistinct(),
     uniqueIndex('boards_one_inbox_per_owner')
-      .on(sql`coalesce(${table.organizationId}, '')`, table.ownerEmail)
+      .on(sql`coalesce(${table.organizationId}, '')`, table.ownerId)
       .where(sql`${table.inbox}`),
     foreignKey({
       columns: [table.organizationId, table.spaceId],
@@ -70,7 +70,7 @@ export const boards = pgTable.withRLS(
     }),
     check(
       'boards_space_or_owner',
-      sql`(${table.spaceId} is null) <> (${table.ownerEmail} is null)`
+      sql`(${table.spaceId} is null) <> (${table.ownerId} is null)`
     ),
     check(
       'boards_space_has_organization',
@@ -82,7 +82,7 @@ export const boards = pgTable.withRLS(
     ),
     tenantPolicy(
       table.organizationId,
-      sql`${table.ownerEmail} = ${currentEmail} or ${table.id} = any((select app_member_board_ids())::uuid[])`
+      sql`${table.ownerId} = ${currentUser} or ${table.id} = any((select app_member_board_ids())::uuid[])`
     )
   ]
 )
@@ -98,11 +98,12 @@ export const boardMembers = pgTable.withRLS(
       .notNull()
       .references(() => boards.id, { onDelete: 'cascade' }),
     organizationId: organizationId(),
+    userId: uuid('user_id').notNull(),
     email: text().notNull(),
     role: memberRole().notNull()
   },
   table => [
-    primaryKey({ columns: [table.boardId, table.email] }),
+    primaryKey({ columns: [table.boardId, table.userId] }),
     foreignKey({
       columns: [table.organizationId, table.boardId],
       foreignColumns: [boards.organizationId, boards.id]
@@ -152,7 +153,7 @@ export const tasks = pgTable.withRLS(
     priority: smallint(),
     dueDate: date('due_date', { mode: 'string' }),
     position: sortKey().notNull(),
-    createdBy: text('created_by').notNull(),
+    createdBy: uuid('created_by').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     completedAt: timestamptz('completed_at'),
     canceledAt: timestamptz('canceled_at')
@@ -184,10 +185,10 @@ export const taskAssignees = pgTable.withRLS(
       .notNull()
       .references(() => tasks.id, { onDelete: 'cascade' }),
     organizationId: organizationId(),
-    email: text().notNull()
+    userId: uuid('user_id').notNull()
   },
   table => [
-    primaryKey({ columns: [table.taskId, table.email] }),
+    primaryKey({ columns: [table.taskId, table.userId] }),
     foreignKey({
       columns: [table.organizationId, table.taskId],
       foreignColumns: [tasks.organizationId, tasks.id]
@@ -206,10 +207,10 @@ export const boardFavorites = pgTable.withRLS(
       .notNull()
       .references(() => boards.id, { onDelete: 'cascade' }),
     organizationId: organizationId(),
-    email: text().notNull()
+    userId: uuid('user_id').notNull()
   },
   table => [
-    primaryKey({ columns: [table.email, table.boardId] }),
+    primaryKey({ columns: [table.userId, table.boardId] }),
     foreignKey({
       columns: [table.organizationId, table.boardId],
       foreignColumns: [boards.organizationId, boards.id]

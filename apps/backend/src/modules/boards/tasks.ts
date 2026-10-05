@@ -60,7 +60,7 @@ function positionBetween(
 }
 
 async function checkEditor(tx: Tx, identity: Identity, boardId: string) {
-  const role = await roleOn(tx, identity.email, boardId)
+  const role = await roleOn(tx, identity.userId, boardId)
   if (!role) throw new Refused('not_found')
   if (role === 'viewer') throw new Refused('forbidden')
 }
@@ -157,7 +157,7 @@ export function createTaskStore(db: Db) {
             number: board.number,
             title: input.title,
             position: generateKeyBetween(last?.position ?? null, null),
-            createdBy: identity.email,
+            createdBy: identity.userId,
             ...completionFor(section?.category ?? null)
           })
           .returning()

@@ -30,11 +30,12 @@ export const spaceMembers = pgTable.withRLS(
   {
     spaceId: uuid('space_id').notNull(),
     organizationId: organizationId().notNull(),
+    userId: uuid('user_id').notNull(),
     email: text().notNull(),
     role: memberRole().notNull()
   },
   table => [
-    primaryKey({ columns: [table.spaceId, table.email] }),
+    primaryKey({ columns: [table.spaceId, table.userId] }),
     foreignKey({
       columns: [table.organizationId, table.spaceId],
       foreignColumns: [spaces.organizationId, spaces.id]

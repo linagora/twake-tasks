@@ -93,6 +93,7 @@ function validToken(): FakeToken {
     userinfo: {
       sub: 'alice@example.com',
       sid: 'session-1',
+      uuid: '0b7f6a1e-3c2d-4e5f-8a9b-1c2d3e4f5a6b',
       email: 'alice@example.com',
       org_id: 'org-1',
       org_role: 'member'
@@ -152,6 +153,7 @@ describe('identify', () => {
 
     expect(identity).toMatchObject({
       subject: 'alice@example.com',
+      userId: '0b7f6a1e-3c2d-4e5f-8a9b-1c2d3e4f5a6b',
       email: 'alice@example.com',
       sessionId: 'session-1',
       organizationId: 'org-1',
@@ -175,7 +177,9 @@ describe('identify', () => {
 
   it.each([
     ['no email', { email: undefined }],
-    ['no sid', { sid: undefined }]
+    ['no sid', { sid: undefined }],
+    ['no uuid', { uuid: undefined }],
+    ['a uuid that is not one', { uuid: 'alice' }]
   ])('refuses a token whose userinfo has %s', async (_case, override) => {
     const token = validToken()
     token.userinfo = { ...token.userinfo, ...override }

@@ -7,7 +7,7 @@ export type Role = 'viewer' | 'editor' | 'admin'
 
 // Every permission check goes through this query: a space board takes the
 // person's role in the space, a user's board their role on the board.
-export function accessibleBoards(tx: Tx, email: string) {
+export function accessibleBoards(tx: Tx, userId: string) {
   return tx
     .select({
       boardId: boards.id,
@@ -18,7 +18,7 @@ export function accessibleBoards(tx: Tx, email: string) {
     .from(boards)
     .leftJoin(
       boardMembers,
-      and(eq(boardMembers.boardId, boards.id), eq(boardMembers.email, email))
+      and(eq(boardMembers.boardId, boards.id), eq(boardMembers.userId, userId))
     )
     .leftJoin(
       spaces,
@@ -26,12 +26,12 @@ export function accessibleBoards(tx: Tx, email: string) {
     )
     .leftJoin(
       spaceMembers,
-      and(eq(spaceMembers.spaceId, spaces.id), eq(spaceMembers.email, email))
+      and(eq(spaceMembers.spaceId, spaces.id), eq(spaceMembers.userId, userId))
     )
     .where(
       or(
-        and(isNull(boards.spaceId), eq(boardMembers.email, email)),
-        eq(spaceMembers.email, email)
+        and(isNull(boards.spaceId), eq(boardMembers.userId, userId)),
+        eq(spaceMembers.userId, userId)
       )
     )
     .as('accessible')
@@ -39,10 +39,10 @@ export function accessibleBoards(tx: Tx, email: string) {
 
 export async function roleOn(
   tx: Tx,
-  email: string,
+  userId: string,
   boardId: string
 ): Promise<Role | null> {
-  const accessible = accessibleBoards(tx, email)
+  const accessible = accessibleBoards(tx, userId)
   const [row] = await tx
     .select({ role: accessible.role })
     .from(accessible)
