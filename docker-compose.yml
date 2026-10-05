@@ -75,6 +75,8 @@ services:
       APP_URL: ${APP_URL:-http://localhost:3000}
       OIDC_ISSUER: ${OIDC_ISSUER:-https://sign-up.twake.app/}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-local-development-secret}
+      LDAP_REST_URL: ${LDAP_REST_URL:-http://host.docker.internal:8081}
+      LDAP_REST_SECRET: ${LDAP_REST_SECRET:-local-development-secret}
 
   frontend:
     profiles: [app]

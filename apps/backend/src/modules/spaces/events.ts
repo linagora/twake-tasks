@@ -1,4 +1,13 @@
-import { and, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
+import {
+  and,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+  type SQL
+} from 'drizzle-orm'
 import { z } from 'zod'
 import type { OutgoingEvent, PlatformEvent } from '../../events/envelope.ts'
 import { enqueue } from '../../events/outbox.ts'
@@ -51,9 +60,11 @@ function keyPrefixOf(name: string) {
   return letters.slice(0, 3) || FALLBACK_KEY_PREFIX
 }
 
-async function upsertMembers(
+type SpaceRef = z.infer<typeof spaceEvent>
+
+export async function upsertMembers(
   tx: Tx,
-  space: z.infer<typeof spaceEvent>,
+  space: SpaceRef,
   members: z.infer<typeof member>[]
 ) {
   // One upsert cannot touch a row twice, so a member listed twice keeps its last entry.
@@ -85,7 +96,7 @@ async function upsertMembers(
     })
 }
 
-function provisioned(space: z.infer<typeof spaceEvent>): OutgoingEvent {
+export function provisioned(space: SpaceRef): OutgoingEvent {
   return {
     specversion: '1.0',
     id: `tasks-space-provisioned-${space.id}`,
@@ -96,36 +107,89 @@ function provisioned(space: z.infer<typeof spaceEvent>): OutgoingEvent {
   }
 }
 
+/** Resolves to whether the space is new here. */
+export async function provisionSpace(
+  tx: Tx,
+  space: SpaceRef & { name: string }
+): Promise<boolean> {
+  const [created] = await tx
+    .insert(spaces)
+    .values({
+      id: space.id,
+      organizationId: space.organizationId,
+      name: space.name
+    })
+    .onConflictDoNothing()
+    .returning({ id: spaces.id })
+  if (created) {
+    const [board] = await tx
+      .insert(boards)
+      .values({
+        organizationId: space.organizationId,
+        spaceId: space.id,
+        name: space.name,
+        keyPrefix: keyPrefixOf(space.name),
+        createdBy: space.id
+      })
+      .returning({ id: boards.id, organizationId: boards.organizationId })
+    if (!board) throw new Error('board insert returned nothing')
+    await addDefaultSections(tx, board)
+  }
+  return created !== undefined
+}
+
+/** Takes the space's boards and its tasks away from these people. */
+export async function removeMembers(
+  tx: Tx,
+  space: SpaceRef,
+  which: SQL | undefined
+): Promise<void> {
+  const removed = await tx
+    .delete(spaceMembers)
+    .where(and(eq(spaceMembers.spaceId, space.id), which))
+    .returning({ userId: spaceMembers.userId })
+  if (removed.length === 0) return
+  await tx.delete(taskAssignees).where(
+    and(
+      inArray(
+        taskAssignees.userId,
+        removed.map(m => m.userId)
+      ),
+      inArray(
+        taskAssignees.taskId,
+        tx
+          .select({ id: tasks.id })
+          .from(tasks)
+          .innerJoin(boards, eq(boards.id, tasks.boardId))
+          .where(eq(boards.spaceId, space.id))
+      )
+    )
+  )
+}
+
+/** Hides the space's boards now, and purges them after 30 days. */
+export async function deleteSpace(tx: Tx, space: SpaceRef): Promise<void> {
+  const [deleted] = await tx
+    .update(spaces)
+    .set({ deletedAt: sql`now()` })
+    .where(and(eq(spaces.id, space.id), isNull(spaces.deletedAt)))
+    .returning({ id: spaces.id })
+  if (!deleted) return
+  await schedule(tx, {
+    kind: PURGE_SPACE_JOB,
+    key: `${PURGE_SPACE_JOB}:${space.id}`,
+    payload: { spaceId: space.id, organizationId: space.organizationId },
+    runAt: new Date(Date.now() + PURGE_AFTER_MS)
+  })
+}
+
 export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
-  // A replay finds the space already has a board, creates nothing, and publishes
-  // the same event again.
+  // A replay creates nothing, and publishes the same event again.
   const onCreated: Handler<PlatformEvent> = async (event, tx) => {
     const space = parseOrDrop(spaceCreated, event.body, event.routingKey)
     await asOrganization(tx, space.organizationId)
-    const [created] = await tx
-      .insert(spaces)
-      .values({
-        id: space.id,
-        organizationId: space.organizationId,
-        name: space.name
-      })
-      .onConflictDoNothing()
-      .returning({ id: spaces.id })
+    await provisionSpace(tx, space)
     await upsertMembers(tx, space, space.members)
-    if (created) {
-      const [board] = await tx
-        .insert(boards)
-        .values({
-          organizationId: space.organizationId,
-          spaceId: space.id,
-          name: space.name,
-          keyPrefix: keyPrefixOf(space.name),
-          createdBy: space.id
-        })
-        .returning({ id: boards.id, organizationId: boards.organizationId })
-      if (!board) throw new Error('board insert returned nothing')
-      await addDefaultSections(tx, board)
-    }
     await enqueue(tx, space.id, provisioned(space))
   }
 
@@ -150,33 +214,12 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
     await asOrganization(tx, space.organizationId)
     const uuids = space.members.flatMap(p => (p.uuid ? [p.uuid] : []))
     const emails = space.members.flatMap(p => (p.email ? [p.email] : []))
-    const removed = await tx
-      .delete(spaceMembers)
-      .where(
-        and(
-          eq(spaceMembers.spaceId, space.id),
-          or(
-            inArray(spaceMembers.userId, uuids),
-            inArray(spaceMembers.email, emails)
-          )
-        )
-      )
-      .returning({ userId: spaceMembers.userId })
-    if (removed.length === 0) return
-    await tx.delete(taskAssignees).where(
-      and(
-        inArray(
-          taskAssignees.userId,
-          removed.map(m => m.userId)
-        ),
-        inArray(
-          taskAssignees.taskId,
-          tx
-            .select({ id: tasks.id })
-            .from(tasks)
-            .innerJoin(boards, eq(boards.id, tasks.boardId))
-            .where(eq(boards.spaceId, space.id))
-        )
+    await removeMembers(
+      tx,
+      space,
+      or(
+        inArray(spaceMembers.userId, uuids),
+        inArray(spaceMembers.email, emails)
       )
     )
   }
@@ -184,18 +227,7 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
   const onDeleted: Handler<PlatformEvent> = async (event, tx) => {
     const space = parseOrDrop(spaceEvent, event.body, event.routingKey)
     await asOrganization(tx, space.organizationId)
-    const [deleted] = await tx
-      .update(spaces)
-      .set({ deletedAt: sql`now()` })
-      .where(and(eq(spaces.id, space.id), isNull(spaces.deletedAt)))
-      .returning({ id: spaces.id })
-    if (!deleted) return
-    await schedule(tx, {
-      kind: PURGE_SPACE_JOB,
-      key: `${PURGE_SPACE_JOB}:${space.id}`,
-      payload: { spaceId: space.id, organizationId: space.organizationId },
-      runAt: new Date(Date.now() + PURGE_AFTER_MS)
-    })
+    await deleteSpace(tx, space)
   }
 
   return new Map([
