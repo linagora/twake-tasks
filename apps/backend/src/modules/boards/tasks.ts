@@ -17,6 +17,8 @@ export type Refusal =
   | 'stale_version'
   | 'invalid_parent'
   | 'too_deep'
+  | 'invalid_label'
+  | 'label_taken'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
 // Thrown, not returned, so the transaction rolls back whatever ran before it.
@@ -92,7 +94,7 @@ export async function sectionOf(
   return section
 }
 
-async function taskOf(tx: Tx, boardId: string, taskId: string) {
+export async function taskOf(tx: Tx, boardId: string, taskId: string) {
   const [task] = await tx
     .select()
     .from(tasks)
@@ -141,7 +143,8 @@ export async function bumpBoard(
       number: boards.taskCounter,
       keyPrefix: boards.keyPrefix,
       organizationId: boards.organizationId,
-      spaceId: boards.spaceId
+      spaceId: boards.spaceId,
+      ownerId: boards.ownerId
     })
   if (!board) throw new Refused('archived')
   return board

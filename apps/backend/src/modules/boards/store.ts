@@ -10,8 +10,10 @@ import {
   boardMembers,
   boards,
   taskAssignees,
+  taskLabels,
   tasks
 } from './schema.ts'
+import { labelsOn } from './labels.ts'
 
 const DEFAULT_SECTIONS = [
   { name: 'To do', category: 'unstarted' },
@@ -199,6 +201,12 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     .from(taskAssignees)
     .innerJoin(tasks, eq(tasks.id, taskAssignees.taskId))
     .where(eq(tasks.boardId, boardId))
+  const boardLabels = await labelsOn(tx, board)
+  const labeled = await tx
+    .select({ taskId: taskLabels.taskId, labelId: taskLabels.labelId })
+    .from(taskLabels)
+    .innerJoin(tasks, eq(tasks.id, taskLabels.taskId))
+    .where(eq(tasks.boardId, boardId))
   return {
     id: board.id,
     name: board.name,
@@ -209,6 +217,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     version: board.version,
     role,
     members,
+    labels: boardLabels,
     sections: sectionRows,
     tasks: rows.map(task => ({
       id: task.id,
@@ -225,6 +234,11 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
         assignments.some(
           assigned =>
             assigned.taskId === task.id && assigned.userId === member.userId
+        )
+      ),
+      labels: boardLabels.filter(label =>
+        labeled.some(
+          entry => entry.taskId === task.id && entry.labelId === label.id
         )
       )
     }))
