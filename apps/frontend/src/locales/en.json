@@ -187,6 +187,13 @@
     "then": "g then %{key}",
     "close": "Close"
   },
+  "transfer": {
+    "title": "Move to another board",
+    "board": "Board",
+    "section": "Section",
+    "move": "Move",
+    "failed": "The task could not be moved."
+  },
   "archive": {
     "archive": "Archive",
     "delete": "Delete",

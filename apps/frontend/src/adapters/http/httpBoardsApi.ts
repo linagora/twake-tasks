@@ -74,6 +74,8 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
     getBoard: boardId => call('GET', `/boards/${boardId}`),
     createBoard: board => call('POST', '/boards', board),
+    transferTask: (boardId, taskId, to) =>
+      call('POST', `/boards/${boardId}/tasks/${taskId}/transfer`, to),
     archiveTask: (boardId, taskId) =>
       call('POST', `/boards/${boardId}/tasks/${taskId}/archive`, {}),
     trashTask: (boardId, taskId) =>

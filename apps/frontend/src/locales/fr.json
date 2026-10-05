@@ -187,6 +187,13 @@
     "then": "g puis %{key}",
     "close": "Fermer"
   },
+  "transfer": {
+    "title": "Déplacer vers un autre tableau",
+    "board": "Tableau",
+    "section": "Section",
+    "move": "Déplacer",
+    "failed": "La tâche n'a pas pu être déplacée."
+  },
   "archive": {
     "archive": "Archiver",
     "delete": "Supprimer",

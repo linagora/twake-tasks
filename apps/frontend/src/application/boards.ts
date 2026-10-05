@@ -122,6 +122,15 @@ export interface HiddenTask {
 
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
+  /**
+   * Moves the task and its sub-tasks to another board, where they take new
+   * keys. Search still finds them by the old ones.
+   */
+  transferTask: (
+    boardId: string,
+    taskId: string,
+    to: { boardId: string; sectionId: string | null }
+  ) => Promise<{ key: string }>
   /** Archiving or trashing a task also hides its sub-tasks. */
   archiveTask: (boardId: string, taskId: string) => Promise<void>
   /** The trash is purged after 30 days. */

@@ -137,6 +137,18 @@ export function fakeBoardsApi(boards: Board[] = []) {
     })
 
   const api = {
+    transferTask: vi.fn<BoardsApi['transferTask']>((boardId, taskId, to) =>
+      Promise.resolve().then(() => {
+        const source = find(boardId)
+        const target = find(to.boardId)
+        const task = findTask(boardId, taskId)
+        source.tasks = source.tasks.filter(candidate => candidate !== task)
+        task.key = `${target.keyPrefix}-${String(target.tasks.length + 1)}`
+        task.sectionId = to.sectionId
+        target.tasks.push(task)
+        return { key: task.key }
+      })
+    ),
     archiveTask: vi.fn<BoardsApi['archiveTask']>(hide('archived')),
     trashTask: vi.fn<BoardsApi['trashTask']>(hide('trash')),
     restoreTask: vi.fn<BoardsApi['restoreTask']>((boardId, taskId) =>
