@@ -4,7 +4,11 @@ import { loadConfig } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
 import { createMessageHandler, type Routes } from './events/router.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
-import { startConsumer, startProducer } from './infra/kafka.ts'
+import {
+  startConsumer,
+  startDeadLetterProducer,
+  startProducer
+} from './infra/kafka.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
 import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
@@ -37,12 +41,14 @@ const server = await buildApp({
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })
 
 const producer = await startProducer(config, logger)
+const deadLetters = await startDeadLetterProducer(config, logger)
 const consumer = await startConsumer(
   config,
   logger,
   createMessageHandler({
     routes,
     dedupe: postgresDeduplicator(db, config.KAFKA_GROUP_ID),
+    deadLetter: deadLetters.send,
     logger
   })
 )
@@ -64,6 +70,7 @@ async function shutdown(signal: string): Promise<void> {
     await stopScheduler()
     await consumer.disconnect()
     await producer.disconnect()
+    await deadLetters.disconnect()
     await server.close()
     await sql.end({ timeout: 5 })
   } catch (error) {
