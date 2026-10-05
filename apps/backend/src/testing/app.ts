@@ -59,7 +59,9 @@ export async function startApp() {
       get: (path: string) =>
         app.inject({ method: 'GET', url: `/api${path}`, headers }),
       post: (path: string, payload: object) =>
-        app.inject({ method: 'POST', url: `/api${path}`, headers, payload })
+        app.inject({ method: 'POST', url: `/api${path}`, headers, payload }),
+      patch: (path: string, payload: object) =>
+        app.inject({ method: 'PATCH', url: `/api${path}`, headers, payload })
     }
   }
 
