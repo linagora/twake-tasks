@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { inject } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { MalformedEventError } from '../../events/router.ts'
@@ -8,17 +8,12 @@ import { asOrganization, createDb } from '../../infra/db.ts'
 import { boards } from '../boards/schema.ts'
 import { aUser, startApp, type TestUser } from '../../testing/app.ts'
 import { jobs } from '../../scheduler/schema.ts'
-import {
-  PURGE_SPACE_JOB,
-  purgeSpace,
-  spaceRoutes,
-  type Publish
-} from './events.ts'
+import { outbox } from '../../events/schema.ts'
+import { PURGE_SPACE_JOB, purgeSpace, spaceRoutes } from './events.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
-const publish = vi.fn<Publish>().mockResolvedValue()
-const routes = spaceRoutes(publish)
+const routes = spaceRoutes()
 
 beforeAll(async () => {
   api = await startApp()
@@ -95,7 +90,6 @@ describe('twake.space.created', () => {
       name: 'Ops',
       members: [member(admin, 'admin')]
     }
-    publish.mockClear()
 
     await deliver('twake.space.created', created)
     await deliver('twake.space.created', { ...created, name: 'Renamed' })
@@ -103,18 +97,22 @@ describe('twake.space.created', () => {
     expect(await spaceBoards(admin)).toEqual([
       expect.objectContaining({ name: 'Ops' })
     ])
-    expect(publish).toHaveBeenCalledTimes(2)
-    expect(publish.mock.calls[1]).toEqual(publish.mock.calls[0])
-    expect(publish).toHaveBeenCalledWith(
-      spaceId,
-      expect.objectContaining({
+    const queued = await db
+      .select({ key: outbox.key, event: outbox.event })
+      .from(outbox)
+      .where(eq(outbox.key, spaceId))
+    expect(queued).toHaveLength(2)
+    expect(queued[1]).toEqual(queued[0])
+    expect(queued[0]).toMatchObject({
+      key: spaceId,
+      event: {
         specversion: '1.0',
         source: 'twake://tasks',
         type: 'com.twake.tasks.space.provisioned.v1',
         twakeorg: admin.organizationId,
         data: { space_id: spaceId, resource: { kind: 'tasks', id: spaceId } }
-      })
-    )
+      }
+    })
   })
 
   it('falls back to a generic key prefix for a name without latin letters', async () => {

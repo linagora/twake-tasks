@@ -2,6 +2,7 @@ import { pino } from 'pino'
 import { buildApp } from './app.ts'
 import { loadConfig } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
+import { createRelay } from './events/outbox.ts'
 import { createMessageHandler } from './events/router.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import {
@@ -52,10 +53,7 @@ const consumer = await startConsumer(
   createMessageHandler({
     routes: {
       activity: new Map(),
-      platform: new Map([
-        ...spaceRoutes((key, event) => producer.publish(key, event)),
-        ...accountRoutes
-      ])
+      platform: new Map([...spaceRoutes(), ...accountRoutes])
     },
     dedupe: postgresDeduplicator(db, config.KAFKA_GROUP_ID),
     deadLetter: deadLetters.send,
@@ -71,6 +69,11 @@ const stopScheduler = createScheduler({
     [PURGE_SPACE_JOB]: purgeSpace
   }
 }).start(5000)
+const stopRelay = createRelay({
+  db,
+  logger,
+  publish: (key, event) => producer.publish(key, event)
+}).start(500)
 accepting = true
 logger.info('twake-tasks backend started')
 
@@ -83,6 +86,7 @@ async function shutdown(signal: string): Promise<void> {
   try {
     await stopScheduler()
     await consumer.disconnect()
+    await stopRelay()
     await producer.disconnect()
     await deadLetters.disconnect()
     await server.close()
