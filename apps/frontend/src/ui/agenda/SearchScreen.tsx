@@ -1,5 +1,5 @@
 import { TextField, Typography } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import { useState, type ReactElement, type RefObject } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 
 import { Group } from '@/ui/agenda/AgendaScreen'
@@ -7,7 +7,11 @@ import { useSearch } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
-export function SearchField(): ReactElement {
+export function SearchField({
+  inputRef
+}: {
+  inputRef: RefObject<HTMLInputElement | null>
+}): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
   const [text, setText] = useState('')
@@ -31,6 +35,7 @@ export function SearchField(): ReactElement {
         onChange={event => {
           setText(event.target.value)
         }}
+        inputRef={inputRef}
         slotProps={{ htmlInput: { maxLength: 200 } }}
       />
     </form>

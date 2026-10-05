@@ -182,6 +182,11 @@
     "unknown_section": "Aucune section nommée %{name}.",
     "unknown_person": "Aucun membre nommé %{name}."
   },
+  "shortcuts": {
+    "title": "Raccourcis clavier",
+    "then": "g puis %{key}",
+    "close": "Fermer"
+  },
   "layout": {
     "title": "Affichage",
     "board": "Tableau",

@@ -182,6 +182,11 @@
     "unknown_section": "Нет раздела %{name}.",
     "unknown_person": "Нет участника %{name}."
   },
+  "shortcuts": {
+    "title": "Сочетания клавиш",
+    "then": "g, затем %{key}",
+    "close": "Закрыть"
+  },
   "layout": {
     "title": "Вид",
     "board": "Доска",
