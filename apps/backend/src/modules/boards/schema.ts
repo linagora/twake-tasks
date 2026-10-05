@@ -14,6 +14,7 @@ import {
   primaryKey,
   smallint,
   text,
+  time,
   unique,
   uniqueIndex,
   uuid,
@@ -36,6 +37,8 @@ export const sectionCategory = pgEnum('section_category', [
   'completed',
   'canceled'
 ])
+
+export const durationUnit = pgEnum('duration_unit', ['minutes', 'days'])
 
 const id = () =>
   uuid()
@@ -163,6 +166,12 @@ export const tasks = pgTable.withRLS(
     descriptionVersion: integer('description_version').notNull().default(0),
     priority: smallint(),
     dueDate: date('due_date', { mode: 'string' }),
+    dueTime: time('due_time', { precision: 0 }),
+    // Without a zone, the time is the same wall clock time everywhere.
+    dueZone: text('due_zone'),
+    deadline: date({ mode: 'string' }),
+    duration: integer(),
+    durationUnit: durationUnit('duration_unit'),
     position: sortKey().notNull(),
     createdBy: uuid('created_by').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
@@ -196,6 +205,18 @@ export const tasks = pgTable.withRLS(
       foreignColumns: [boards.tenant, boards.id]
     }),
     check('tasks_priority', sql`${table.priority} between 1 and 4`),
+    check(
+      'tasks_due_time_on_a_date',
+      sql`${table.dueTime} is null or ${table.dueDate} is not null`
+    ),
+    check(
+      'tasks_due_zone_on_a_time',
+      sql`${table.dueZone} is null or ${table.dueTime} is not null`
+    ),
+    check(
+      'tasks_duration',
+      sql`(${table.duration} is null) = (${table.durationUnit} is null) and ${table.duration} > 0`
+    ),
     tenantPolicy(table.organizationId, visibleBoard(table.boardId))
   ]
 )

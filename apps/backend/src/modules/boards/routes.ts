@@ -6,7 +6,7 @@ import type { RequireIdentity } from '../auth/index.ts'
 import { createCommentStore } from './comments.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
-import { sectionCategory } from './schema.ts'
+import { durationUnit, sectionCategory } from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
 import { createTaskStore, type Refusal } from './tasks.ts'
@@ -37,11 +37,29 @@ const taskMove = z.object({
   beforeId: z.uuid().optional()
 })
 
+function isTimeZone(zone: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: zone })
+    return true
+  } catch {
+    return false
+  }
+}
+
 const taskChanges = z
   .object({
     title: taskTitle,
     priority: z.int().min(1).max(4).nullable(),
-    dueDate: z.iso.date().nullable()
+    dueDate: z.iso.date().nullable(),
+    dueTime: z.iso.time({ precision: -1 }).nullable(),
+    dueZone: z.string().max(64).refine(isTimeZone).nullable(),
+    deadline: z.iso.date().nullable(),
+    duration: z
+      .object({
+        amount: z.int().min(1).max(100_000),
+        unit: z.enum(durationUnit.enumValues)
+      })
+      .nullable()
   })
   .partial()
   .refine(changes => Object.keys(changes).length > 0)
@@ -94,6 +112,7 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   invalid_parent: 400,
   too_deep: 400,
   invalid_label: 400,
+  invalid_dates: 400,
   label_taken: 409
 }
 
