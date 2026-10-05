@@ -11,10 +11,11 @@ export type Refusal =
   | 'archived'
   | 'invalid_section'
   | 'stale_neighbours'
+  | 'section_not_empty'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
 // Thrown, not returned, so the transaction rolls back whatever ran before it.
-class Refused extends Error {
+export class Refused extends Error {
   readonly refusal: Refusal
 
   constructor(refusal: Refusal) {
@@ -23,7 +24,7 @@ class Refused extends Error {
   }
 }
 
-function completionFor(
+export function completionFor(
   category: string | null,
   since?: { completedAt: Date | null; canceledAt: Date | null }
 ) {
@@ -37,7 +38,7 @@ function completionFor(
 
 // Neighbours come from what the client saw. When they no longer sit next to
 // each other the board changed underneath, so the client reloads and retries.
-function positionBetween(
+export function positionBetween(
   others: { id: string; position: string }[],
   afterId: string | undefined,
   beforeId: string | undefined
@@ -59,13 +60,24 @@ function positionBetween(
   return generateKeyBetween(lower?.position ?? null, upper?.position ?? null)
 }
 
-async function checkEditor(tx: Tx, identity: Identity, boardId: string) {
+export async function checkRole(
+  tx: Tx,
+  identity: Identity,
+  boardId: string,
+  needed: 'editor' | 'admin'
+) {
   const role = await roleOn(tx, identity.userId, boardId)
   if (!role) throw new Refused('not_found')
-  if (role === 'viewer') throw new Refused('forbidden')
+  if (role === 'viewer' || (needed === 'admin' && role !== 'admin')) {
+    throw new Refused('forbidden')
+  }
 }
 
-async function sectionOf(tx: Tx, boardId: string, sectionId: string | null) {
+export async function sectionOf(
+  tx: Tx,
+  boardId: string,
+  sectionId: string | null
+) {
   if (sectionId === null) return null
   const [section] = await tx
     .select()
@@ -84,7 +96,7 @@ async function taskOf(tx: Tx, boardId: string, taskId: string) {
   return task
 }
 
-function inSection(boardId: string, sectionId: string | null) {
+export function inSection(boardId: string, sectionId: string | null) {
   return and(
     eq(tasks.boardId, boardId),
     sectionId === null
@@ -96,7 +108,7 @@ function inSection(boardId: string, sectionId: string | null) {
 // Updating the board row serializes writes to the board, so call it before
 // reading what the write depends on. The version bump rides in the same
 // transaction as the change.
-async function bumpBoard(
+export async function bumpBoard(
   tx: Tx,
   boardId: string,
   extra: { taskCounter?: ReturnType<typeof sql> } = {}
@@ -114,21 +126,22 @@ async function bumpBoard(
   return board
 }
 
-export function createTaskStore(db: Db) {
-  async function write<T>(
-    identity: Identity,
-    work: (tx: Tx) => Promise<T>
-  ): Promise<Result<T>> {
-    try {
-      return {
-        ok: true,
-        value: await inTenant(db, identity, work)
-      }
-    } catch (error) {
-      if (error instanceof Refused) return { ok: false, error: error.refusal }
-      throw error
-    }
+export async function writeOrRefuse<T>(
+  db: Db,
+  identity: Identity,
+  work: (tx: Tx) => Promise<T>
+): Promise<Result<T>> {
+  try {
+    return { ok: true, value: await inTenant(db, identity, work) }
+  } catch (error) {
+    if (error instanceof Refused) return { ok: false, error: error.refusal }
+    throw error
   }
+}
+
+export function createTaskStore(db: Db) {
+  const write = <T>(identity: Identity, work: (tx: Tx) => Promise<T>) =>
+    writeOrRefuse(db, identity, work)
 
   return {
     createTask(
@@ -137,11 +150,11 @@ export function createTaskStore(db: Db) {
       input: { sectionId: string | null; title: string }
     ) {
       return write(identity, async tx => {
-        await checkEditor(tx, identity, boardId)
-        const section = await sectionOf(tx, boardId, input.sectionId)
+        await checkRole(tx, identity, boardId, 'editor')
         const board = await bumpBoard(tx, boardId, {
           taskCounter: sql`${boards.taskCounter} + 1`
         })
+        const section = await sectionOf(tx, boardId, input.sectionId)
         const [last] = await tx
           .select({ position: tasks.position })
           .from(tasks)
@@ -182,9 +195,9 @@ export function createTaskStore(db: Db) {
       }
     ) {
       return write(identity, async tx => {
-        await checkEditor(tx, identity, boardId)
-        const section = await sectionOf(tx, boardId, input.sectionId)
+        await checkRole(tx, identity, boardId, 'editor')
         await bumpBoard(tx, boardId)
+        const section = await sectionOf(tx, boardId, input.sectionId)
         const task = await taskOf(tx, boardId, taskId)
         const others = await tx
           .select({ id: tasks.id, position: tasks.position })
@@ -214,7 +227,7 @@ export function createTaskStore(db: Db) {
       }
     ) {
       return write(identity, async tx => {
-        await checkEditor(tx, identity, boardId)
+        await checkRole(tx, identity, boardId, 'editor')
         await bumpBoard(tx, boardId)
         await taskOf(tx, boardId, taskId)
         await tx.update(tasks).set(changes).where(eq(tasks.id, taskId))
