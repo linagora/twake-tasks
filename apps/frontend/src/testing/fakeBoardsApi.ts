@@ -24,6 +24,7 @@ export function aBoard(overrides: Partial<Board> = {}): Board {
     version: 1,
     role: 'admin',
     members: [],
+    labels: [],
     sections: [
       { id: nextId(), name: 'To do', category: 'unstarted' },
       { id: nextId(), name: 'In progress', category: 'started' },
@@ -46,6 +47,7 @@ export function aTask(section: Section | null, overrides: Partial<Task> = {}) {
     completedAt: null,
     canceledAt: null,
     assignees: [],
+    labels: [],
     ...overrides
   } satisfies Task
 }
@@ -179,6 +181,25 @@ export function fakeBoardsApi(boards: Board[] = []) {
         if (!task) throw new ApiError(404, 'not_found')
         task.assignees = board.members.filter(member =>
           userIds.includes(member.userId)
+        )
+      })
+    ),
+    createLabel: vi.fn<BoardsApi['createLabel']>((boardId, name) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        if (board.labels.some(label => label.name === name)) {
+          throw new ApiError(409, 'label_taken')
+        }
+        const label = { id: nextId(), name }
+        board.labels.push(label)
+        return label
+      })
+    ),
+    setLabels: vi.fn<BoardsApi['setLabels']>((boardId, taskId, labelIds) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        findTask(boardId, taskId).labels = board.labels.filter(label =>
+          labelIds.includes(label.id)
         )
       })
     ),

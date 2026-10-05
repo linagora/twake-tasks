@@ -38,6 +38,12 @@ export interface Task {
   completedAt: string | null
   canceledAt: string | null
   assignees: Person[]
+  labels: Label[]
+}
+
+export interface Label {
+  id: string
+  name: string
 }
 
 export const MAX_TASK_DEPTH = 4
@@ -52,6 +58,7 @@ export interface Board {
   version: number
   role: Role
   members: Person[]
+  labels: Label[]
   sections: Section[]
   tasks: Task[]
 }

@@ -21,7 +21,8 @@ import { Dots, Icon } from '@linagora/twake-icons'
 import { useId, useState, type ReactElement } from 'react'
 
 import { Card, Row } from '@/ds/Columns'
-import type { Person, Section, Task } from '@/domain/board'
+import type { Label, Person, Section, Task } from '@/domain/board'
+import { LabelsDialog } from '@/ui/boards/LabelsDialog'
 import { useBoardChange } from '@/ui/boards/queries'
 import { Subtasks } from '@/ui/boards/Subtasks'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
@@ -39,6 +40,7 @@ export function TaskCard({
   tasks,
   boardId,
   members,
+  labels,
   destinations,
   onMove
 }: {
@@ -46,12 +48,14 @@ export function TaskCard({
   tasks: Task[]
   boardId: string
   members: Person[]
+  labels: Label[]
   destinations: { id: string | null; name: string }[]
   onMove: ((sectionId: Section['id'] | null) => void) | undefined
 }): ReactElement {
   const { t, lang } = useI18n()
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState(false)
+  const [labeling, setLabeling] = useState(false)
   const [open, setOpen] = useState(false)
   const editable = onMove !== undefined
   const due =
@@ -111,6 +115,14 @@ export function TaskCard({
             {t('board.due', { date: due })}
           </Typography>
         )}
+        {task.labels.map(label => (
+          <Chip
+            key={label.id}
+            size="small"
+            variant="outlined"
+            label={label.name}
+          />
+        ))}
         {task.assignees.map(({ userId, email }, index) => (
           <Avatar
             key={userId}
@@ -145,6 +157,13 @@ export function TaskCard({
         >
           {t('board.assign')}
         </MenuItem>
+        <MenuItem
+          onClick={choose(() => {
+            setLabeling(true)
+          })}
+        >
+          {t('board.labels')}
+        </MenuItem>
         {destinations.map(destination => (
           <MenuItem
             key={destination.id ?? 'none'}
@@ -174,6 +193,16 @@ export function TaskCard({
           members={members}
           onClose={() => {
             setAssigning(false)
+          }}
+        />
+      )}
+      {labeling && (
+        <LabelsDialog
+          task={task}
+          boardId={boardId}
+          labels={labels}
+          onClose={() => {
+            setLabeling(false)
           }}
         />
       )}

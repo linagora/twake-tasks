@@ -47,6 +47,13 @@
     "save": "Save",
     "cancel": "Cancel",
     "assignFailed": "The assignees could not be saved.",
+    "labels": "Labels",
+    "labelsTitle": "Labels of %{key}",
+    "newLabel": "New label",
+    "create": "Create",
+    "labelTaken": "A label named %{name} already exists.",
+    "labelFailed": "The label could not be created.",
+    "labelsFailed": "The labels could not be saved.",
     "moveFailed": "The task could not be moved.",
     "addFailed": "The task could not be added."
   },
