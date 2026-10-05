@@ -168,5 +168,18 @@
     "add": "Add reminder",
     "delete": "Delete reminder",
     "failed": "The reminder could not be saved."
+  },
+  "quickAdd": {
+    "title": "Quick add",
+    "task": "Task",
+    "help": "Tomorrow 3pm, every monday, p1, #board, /section, %label, +person, {deadline}, !30m",
+    "add": "Add",
+    "close": "Close",
+    "added": "%{key} added.",
+    "failed": "The task could not be added.",
+    "no_title": "The task needs a title.",
+    "unknown_board": "No board named %{name}.",
+    "unknown_section": "No section named %{name}.",
+    "unknown_person": "No member named %{name}."
   }
 }

@@ -168,5 +168,18 @@
     "add": "Thêm lời nhắc",
     "delete": "Xóa lời nhắc",
     "failed": "Không thể lưu lời nhắc."
+  },
+  "quickAdd": {
+    "title": "Thêm nhanh",
+    "task": "Công việc",
+    "help": "Tomorrow 3pm, every monday, p1, #bảng, /mục, %nhãn, +người, {hạn chót}, !30m",
+    "add": "Thêm",
+    "close": "Đóng",
+    "added": "Đã thêm %{key}.",
+    "failed": "Không thể thêm công việc.",
+    "no_title": "Công việc cần có tiêu đề.",
+    "unknown_board": "Không có bảng tên %{name}.",
+    "unknown_section": "Không có mục tên %{name}.",
+    "unknown_person": "Không có thành viên tên %{name}."
   }
 }

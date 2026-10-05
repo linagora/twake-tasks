@@ -168,5 +168,18 @@
     "add": "Ajouter un rappel",
     "delete": "Supprimer le rappel",
     "failed": "Le rappel n'a pas pu être enregistré."
+  },
+  "quickAdd": {
+    "title": "Ajout rapide",
+    "task": "Tâche",
+    "help": "Demain 15h, tous les lundis, p1, #tableau, /section, %étiquette, +personne, {échéance}, !30m",
+    "add": "Ajouter",
+    "close": "Fermer",
+    "added": "%{key} ajoutée.",
+    "failed": "La tâche n'a pas pu être ajoutée.",
+    "no_title": "La tâche doit avoir un titre.",
+    "unknown_board": "Aucun tableau nommé %{name}.",
+    "unknown_section": "Aucune section nommée %{name}.",
+    "unknown_person": "Aucun membre nommé %{name}."
   }
 }

@@ -3,6 +3,10 @@ import type { Task } from '@/domain/board'
 export const localZone = (): string =>
   Intl.DateTimeFormat().resolvedOptions().timeZone
 
+// en-CA formats a date as YYYY-MM-DD.
+export const localToday = (): string =>
+  new Intl.DateTimeFormat('en-CA').format(new Date())
+
 export function formatDay(day: string, lang: string): string {
   return new Intl.DateTimeFormat(lang, {
     dateStyle: 'medium',

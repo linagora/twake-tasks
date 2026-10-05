@@ -18,7 +18,9 @@ import type {
   TaskMove
 } from '@/application/boards'
 import type { Board, BoardSummary } from '@/domain/board'
+import { quickAdd } from '@/application/quickAdd'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
+import { localToday } from '@/ui/boards/dueLabel'
 
 const boardsKey = ['boards'] as const
 const boardKey = (boardId: string) => ['boards', boardId] as const
@@ -180,6 +182,20 @@ export function useDeleteReminder(
       api.deleteReminder(boardId, taskId, reminderId),
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: remindersKey(boardId, taskId) })
+  })
+}
+
+export function useQuickAdd(): UseMutationResult<
+  { boardId: string; key: string },
+  Error,
+  string
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (line: string) => quickAdd(api, line, localToday()),
+    onSuccess: ({ boardId }) =>
+      queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
   })
 }
 
