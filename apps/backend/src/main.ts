@@ -2,7 +2,7 @@ import { pino } from 'pino'
 import { buildApp } from './app.ts'
 import { loadConfig } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
-import { createMessageHandler, type Routes } from './events/router.ts'
+import { createMessageHandler } from './events/router.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import {
   startConsumer,
@@ -12,12 +12,11 @@ import {
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
 import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
+import { spaceRoutes } from './modules/spaces/events.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
 const logger = pino({ level: config.LOG_LEVEL })
-
-const routes: Routes = { activity: new Map(), platform: new Map() }
 
 const { sql, db } = createDb(config.DATABASE_URL)
 await assertRowLevelSecurity(sql)
@@ -46,7 +45,10 @@ const consumer = await startConsumer(
   config,
   logger,
   createMessageHandler({
-    routes,
+    routes: {
+      activity: new Map(),
+      platform: spaceRoutes((key, event) => producer.publish(key, event))
+    },
     dedupe: postgresDeduplicator(db, config.KAFKA_GROUP_ID),
     deadLetter: deadLetters.send,
     logger

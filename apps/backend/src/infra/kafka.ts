@@ -4,7 +4,7 @@ import type { Config } from '../config.ts'
 import {
   PLATFORM_TOPIC,
   TASKS_TOPIC,
-  type CloudEvent
+  type OutgoingEvent
 } from '../events/envelope.ts'
 import type { DeadLetter, IncomingMessage, Outcome } from '../events/router.ts'
 
@@ -125,7 +125,7 @@ export async function startDeadLetterProducer(
 }
 
 export interface EventProducer {
-  publish(key: string, event: CloudEvent): Promise<void>
+  publish(key: string, event: OutgoingEvent): Promise<void>
   disconnect(): Promise<void>
 }
 

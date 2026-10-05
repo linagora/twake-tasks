@@ -185,19 +185,7 @@ export function createBoardStore(db: Db) {
             email: identity.email,
             role: 'admin'
           })
-          const positions = generateNKeysBetween(
-            null,
-            null,
-            DEFAULT_SECTIONS.length
-          )
-          await tx.insert(sections).values(
-            DEFAULT_SECTIONS.map((section, index) => ({
-              ...section,
-              boardId: board.id,
-              organizationId: identity.organizationId,
-              position: positions[index] ?? ''
-            }))
-          )
+          await addDefaultSections(tx, board)
           return loadBoard(tx, board.id, identity.userId)
         })
       } catch (error) {
@@ -212,6 +200,21 @@ export function createBoardStore(db: Db) {
       )
     }
   }
+}
+
+export async function addDefaultSections(
+  tx: Tx,
+  board: { id: string; organizationId: string | null }
+) {
+  const positions = generateNKeysBetween(null, null, DEFAULT_SECTIONS.length)
+  await tx.insert(sections).values(
+    DEFAULT_SECTIONS.map((section, index) => ({
+      ...section,
+      boardId: board.id,
+      organizationId: board.organizationId,
+      position: positions[index] ?? ''
+    }))
+  )
 }
 
 // The Inbox has no sections: its tasks show under "No section". Its key prefix is
