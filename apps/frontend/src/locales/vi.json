@@ -182,6 +182,11 @@
     "unknown_section": "Không có mục tên %{name}.",
     "unknown_person": "Không có thành viên tên %{name}."
   },
+  "shortcuts": {
+    "title": "Phím tắt",
+    "then": "g rồi %{key}",
+    "close": "Đóng"
+  },
   "layout": {
     "title": "Bố cục",
     "board": "Bảng",

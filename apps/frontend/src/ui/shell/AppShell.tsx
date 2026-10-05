@@ -6,11 +6,12 @@ import {
   nameToColor,
   Typography
 } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import { useRef, useState, type ReactElement } from 'react'
 import { Outlet, Link as RouterLink } from 'react-router'
 
 import { SearchField } from '@/ui/agenda/SearchScreen'
 import { QuickAdd } from '@/ui/shell/QuickAdd'
+import { ShortcutsHelp, useShortcuts } from '@/ui/shell/Shortcuts'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 
@@ -20,6 +21,19 @@ export function AppShell(): ReactElement {
   const email = user.email ?? ''
   const name = user.name ?? email
   const [quickAdd, setQuickAdd] = useState(false)
+  const [help, setHelp] = useState(false)
+  const search = useRef<HTMLInputElement>(null)
+  useShortcuts({
+    quickAdd: () => {
+      setQuickAdd(true)
+    },
+    search: () => {
+      search.current?.focus()
+    },
+    help: () => {
+      setHelp(true)
+    }
+  })
 
   return (
     <>
@@ -42,7 +56,7 @@ export function AppShell(): ReactElement {
             {t('filters.title')}
           </Link>
         </nav>
-        <SearchField />
+        <SearchField inputRef={search} />
         <Button
           className="u-ml-1 u-mr-1"
           onClick={() => {
@@ -68,6 +82,13 @@ export function AppShell(): ReactElement {
         <QuickAdd
           onClose={() => {
             setQuickAdd(false)
+          }}
+        />
+      )}
+      {help && (
+        <ShortcutsHelp
+          onClose={() => {
+            setHelp(false)
           }}
         />
       )}
