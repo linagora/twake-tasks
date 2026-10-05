@@ -1,0 +1,1 @@
+ALTER TABLE "tasks" ADD COLUMN "previous_keys" text[] DEFAULT '{}'::text[] NOT NULL;

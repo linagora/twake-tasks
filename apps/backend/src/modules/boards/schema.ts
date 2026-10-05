@@ -206,6 +206,8 @@ export const tasks = pgTable.withRLS(
     parentId: uuid('parent_id'),
     organizationId: organizationId(),
     number: integer().notNull(),
+    // Keys the task had on boards it was moved from, so search still finds it.
+    previousKeys: text('previous_keys').array().notNull().default([]),
     title: text().notNull(),
     description: text().notNull().default(''),
     descriptionText: text('description_text').notNull().default(''),

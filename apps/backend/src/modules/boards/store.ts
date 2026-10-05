@@ -87,6 +87,7 @@ export function createBoardStore(db: Db) {
           identity.userId,
           or(
             sql`${boards.keyPrefix} || '-' || ${tasks.number} ilike ${`${pattern}%`}`,
+            sql`exists (select 1 from unnest(${tasks.previousKeys}) as key where key ilike ${`${pattern}%`})`,
             ilike(tasks.title, `%${pattern}%`),
             ilike(tasks.descriptionText, `%${pattern}%`)
           ),
