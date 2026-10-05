@@ -12,7 +12,8 @@ export const routes: RouteObject[] = [
       { path: '/', element: <BoardsScreen /> },
       { path: '/boards/:boardId', element: <BoardScreen /> },
       { path: '/today', element: <AgendaScreen view="today" /> },
-      { path: '/upcoming', element: <AgendaScreen view="upcoming" /> }
+      { path: '/upcoming', element: <AgendaScreen view="upcoming" /> },
+      { path: '/mine', element: <AgendaScreen view="mine" /> }
     ]
   }
 ]

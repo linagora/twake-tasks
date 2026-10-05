@@ -53,6 +53,34 @@ describe('AgendaScreen', () => {
     expect(boardsApi.agenda).toHaveBeenLastCalledWith(localZone(), 7)
   })
 
+  it('lists the tasks assigned to me, undated ones last', async () => {
+    const { design, boardsApi } = boards()
+    const me = { userId: 'me', email: 'me@example.com' }
+    design.tasks.push(
+      aTask(null, { key: 'DES-4', title: 'Brief', assignees: [me] }),
+      aTask(null, {
+        key: 'DES-5',
+        title: 'Mockups',
+        dueDate: day(5),
+        assignees: [me]
+      })
+    )
+    renderRoute('/mine', { boardsApi })
+
+    expect(
+      within(await screen.findByRole('region', { name: 'No date' })).getByText(
+        'Brief'
+      )
+    ).toBeVisible()
+    expect(screen.getByText('Mockups')).toBeVisible()
+    expect(screen.queryByText('Logo')).not.toBeInTheDocument()
+    expect(
+      within(screen.getByRole('navigation')).getByRole('link', {
+        name: 'My tasks'
+      })
+    ).toHaveAttribute('href', '/mine')
+  })
+
   it('says when there is nothing to do', async () => {
     renderRoute('/today', { boardsApi: fakeBoardsApi() })
 

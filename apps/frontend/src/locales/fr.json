@@ -185,6 +185,8 @@
   "agenda": {
     "today": "Aujourd'hui",
     "upcoming": "À venir",
+    "mine": "Mes tâches",
+    "noDate": "Sans date",
     "overdue": "En retard",
     "empty": "Rien à faire.",
     "loadFailed": "Vos tâches n'ont pas pu être chargées."

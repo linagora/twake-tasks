@@ -124,6 +124,28 @@ export function fakeBoardsApi(boards: Board[] = []) {
         return { today, tasks }
       })
     ),
+    myTasks: vi.fn<BoardsApi['myTasks']>(() =>
+      Promise.resolve(
+        [...store.values()]
+          .flatMap(board =>
+            board.tasks
+              .filter(
+                task =>
+                  task.assignees.some(person => person.userId === 'me') &&
+                  !task.completedAt &&
+                  !task.canceledAt
+              )
+              .map(task => ({
+                ...structuredClone(task),
+                boardId: board.id,
+                boardName: board.name
+              }))
+          )
+          .sort((a, b) =>
+            (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999')
+          )
+      )
+    ),
     listBoards: vi.fn(() =>
       Promise.resolve(
         [...store.values()]

@@ -26,11 +26,18 @@ import { localToday, localZone } from '@/ui/boards/dueLabel'
 const boardsKey = ['boards'] as const
 const boardKey = (boardId: string) => ['boards', boardId] as const
 
-export function useAgenda(days: number): UseQueryResult<Agenda> {
+export type AgendaView = 'today' | 'upcoming' | 'mine'
+
+const AGENDA_DAYS = { today: 1, upcoming: 7 } as const
+
+export function useAgenda(view: AgendaView): UseQueryResult<Agenda> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: ['agenda', days],
-    queryFn: () => api.agenda(localZone(), days)
+    queryKey: ['agenda', view],
+    queryFn: async () =>
+      view === 'mine'
+        ? { today: localToday(), tasks: await api.myTasks() }
+        : api.agenda(localZone(), AGENDA_DAYS[view])
   })
 }
 

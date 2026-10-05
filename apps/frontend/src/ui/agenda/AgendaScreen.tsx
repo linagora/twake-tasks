@@ -4,13 +4,11 @@ import { Link as RouterLink } from 'react-router'
 
 import type { AgendaTask } from '@/application/boards'
 import { dueLabel, formatDay } from '@/ui/boards/dueLabel'
-import { useAgenda } from '@/ui/boards/queries'
+import { useAgenda, type AgendaView } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
-const DAYS = { today: 1, upcoming: 7 } as const
-
-function Day({
+function Group({
   label,
   tasks
 }: {
@@ -40,18 +38,17 @@ function Day({
   )
 }
 
-export function AgendaScreen({
-  view
-}: {
-  view: keyof typeof DAYS
-}): ReactElement {
+export function AgendaScreen({ view }: { view: AgendaView }): ReactElement {
   const { t, lang } = useI18n()
-  const agenda = useAgenda(DAYS[view])
+  const agenda = useAgenda(view)
   useDocumentTitle(t(`agenda.${view}`))
 
   const today = agenda.data?.today ?? ''
   const tasks = agenda.data?.tasks ?? []
-  const overdue = tasks.filter(task => (task.dueDate ?? '') < today)
+  const overdue = tasks.filter(
+    task => task.dueDate !== null && task.dueDate < today
+  )
+  const undated = tasks.filter(task => task.dueDate === null)
   const days = [
     ...new Set(
       tasks.flatMap(task =>
@@ -72,15 +69,18 @@ export function AgendaScreen({
         <Typography>{t('agenda.empty')}</Typography>
       )}
       {overdue.length > 0 && (
-        <Day label={t('agenda.overdue')} tasks={overdue} />
+        <Group label={t('agenda.overdue')} tasks={overdue} />
       )}
       {days.map(day => (
-        <Day
+        <Group
           key={day}
           label={day === today ? t('agenda.today') : formatDay(day, lang)}
           tasks={tasks.filter(task => task.dueDate === day)}
         />
       ))}
+      {undated.length > 0 && (
+        <Group label={t('agenda.noDate')} tasks={undated} />
+      )}
     </main>
   )
 }

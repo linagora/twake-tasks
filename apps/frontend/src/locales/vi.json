@@ -185,6 +185,8 @@
   "agenda": {
     "today": "Hôm nay",
     "upcoming": "Sắp tới",
+    "mine": "Việc của tôi",
+    "noDate": "Không có ngày",
     "overdue": "Quá hạn",
     "empty": "Không có việc đến hạn.",
     "loadFailed": "Không thể tải công việc."

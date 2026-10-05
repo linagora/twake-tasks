@@ -88,6 +88,8 @@ export interface Agenda {
 export interface BoardsApi {
   /** Overdue tasks, then those due within `days` days of today in `zone`. */
   agenda: (zone: string, days: number) => Promise<Agenda>
+  /** Open tasks assigned to the signed-in person, dated ones first. */
+  myTasks: () => Promise<AgendaTask[]>
   listBoards: () => Promise<BoardSummary[]>
   getBoard: (boardId: string) => Promise<Board>
   createBoard: (board: NewBoard) => Promise<Board>
