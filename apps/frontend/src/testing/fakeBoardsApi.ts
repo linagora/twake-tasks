@@ -93,6 +93,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
     return board
   }
 
+  const watchers = new Map<string, Set<(version: number) => void>>()
   const favorites = new Set<string>()
   const descriptions = new Map<string, Description>()
   const comments = new Map<string, Comment[]>()
@@ -344,6 +345,15 @@ export function fakeBoardsApi(boards: Board[] = []) {
     getBoard: vi.fn((boardId: string) =>
       Promise.resolve().then(() => structuredClone(find(boardId)))
     ),
+    watchBoard: vi.fn<BoardsApi['watchBoard']>((boardId, onVersion) => {
+      const listeners = watchers.get(boardId) ?? new Set()
+      watchers.set(boardId, listeners.add(onVersion))
+      const board = store.get(boardId)
+      if (board) onVersion(board.version)
+      return () => {
+        listeners.delete(onVersion)
+      }
+    }),
     createBoard: vi.fn<BoardsApi['createBoard']>(({ name, keyPrefix }) => {
       const taken = [...store.values()].some(
         board => board.keyPrefix === keyPrefix
@@ -558,6 +568,14 @@ export function fakeBoardsApi(boards: Board[] = []) {
   } satisfies BoardsApi
 
   return Object.assign(api, {
+    changeElsewhere(boardId: string, change: (board: Board) => void) {
+      const board = find(boardId)
+      change(board)
+      board.version += 1
+      for (const listener of watchers.get(boardId) ?? []) {
+        listener(board.version)
+      }
+    },
     descriptions,
     comments,
     history,

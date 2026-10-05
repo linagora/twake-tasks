@@ -7,11 +7,13 @@ import {
   type Authenticate,
   type IdentityProvider
 } from './modules/auth/index.ts'
+import { registerLive, type BoardChanges } from './modules/boards/live.ts'
 import { registerBoards } from './modules/boards/routes.ts'
 
 export async function buildApp(deps: {
   logger: Logger
   db: Db
+  boardChanges: BoardChanges
   provider: IdentityProvider
   authenticate: Authenticate
   isReady: () => Promise<boolean>
@@ -26,6 +28,11 @@ export async function buildApp(deps: {
         store: postgresAuthStore(deps.db)
       })
       registerBoards(api, { db: deps.db, requireIdentity })
+      registerLive(api, {
+        db: deps.db,
+        requireIdentity,
+        changes: deps.boardChanges
+      })
       return Promise.resolve()
     },
     { prefix: '/api' }

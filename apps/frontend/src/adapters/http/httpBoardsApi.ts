@@ -27,6 +27,31 @@ async function errorCode(response: Response): Promise<string | null> {
   }
 }
 
+const RETRY_MS = 1000
+const MAX_RETRY_MS = 30_000
+
+// The stream's messages each carry the board version as their id.
+async function readVersions(
+  body: ReadableStream<Uint8Array>,
+  onVersion: (version: number) => void
+) {
+  const decoder = new TextDecoder()
+  let buffer = ''
+  for await (const chunk of body) {
+    buffer += decoder.decode(chunk, { stream: true })
+    const messages = buffer.split('\n\n')
+    buffer = messages.pop() ?? ''
+    for (const message of messages) {
+      const id = message
+        .split('\n')
+        .find(line => line.startsWith('id:'))
+        ?.slice(3)
+        .trim()
+      if (id) onVersion(Number(id))
+    }
+  }
+}
+
 export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
   async function call<T>(method: string, path: string, body?: object) {
     const response = await send(
@@ -73,6 +98,32 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     listBoards: async () =>
       (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
     getBoard: boardId => call('GET', `/boards/${boardId}`),
+    watchBoard(boardId, onVersion) {
+      const stop = new AbortController()
+      void (async () => {
+        let delay = RETRY_MS
+        while (!stop.signal.aborted) {
+          try {
+            const response = await send(
+              new Request(new URL(`/api/boards/${boardId}/events`, baseUrl), {
+                signal: stop.signal
+              })
+            )
+            if (response.ok && response.body) {
+              delay = RETRY_MS
+              await readVersions(response.body, onVersion)
+            }
+          } catch {
+            // Dropped: reconnect below, unless stopped.
+          }
+          await new Promise(resolve => setTimeout(resolve, delay))
+          delay = Math.min(delay * 2, MAX_RETRY_MS)
+        }
+      })()
+      return () => {
+        stop.abort()
+      }
+    },
     createBoard: board => call('POST', '/boards', board),
     transferTask: (boardId, taskId, to) =>
       call('POST', `/boards/${boardId}/tasks/${taskId}/transfer`, to),

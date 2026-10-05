@@ -89,4 +89,37 @@ describe('httpBoardsApi', () => {
       new ApiError(502, null)
     )
   })
+
+  it('reads board versions from the event stream, across chunks', async () => {
+    const encoder = new TextEncoder()
+    const chunks = [
+      'id: 4\ndata: {"version":4}\n\n:\n\nid: 5\nda',
+      'ta: {}\n\n'
+    ]
+    const send = vi.fn<Send>(() =>
+      Promise.resolve(
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              for (const chunk of chunks)
+                controller.enqueue(encoder.encode(chunk))
+            }
+          }),
+          { headers: { 'content-type': 'text/event-stream' } }
+        )
+      )
+    )
+    const versions: number[] = []
+
+    const stop = httpBoardsApi(BASE, send).watchBoard('b1', version => {
+      versions.push(version)
+    })
+
+    await vi.waitFor(() => {
+      expect(versions).toEqual([4, 5])
+    })
+    stop()
+    const [request] = send.mock.calls[0] ?? []
+    expect(request?.url).toBe(`${BASE}/api/boards/b1/events`)
+  })
 })
