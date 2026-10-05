@@ -221,6 +221,69 @@ export const taskAssignees = pgTable.withRLS(
   ]
 )
 
+// A label belongs to a space, or to the owner of personal boards.
+export const labels = pgTable.withRLS(
+  'labels',
+  {
+    id: id(),
+    organizationId: organizationId(),
+    spaceId: uuid('space_id'),
+    ownerId: uuid('owner_id'),
+    name: text().notNull(),
+    tenant: tenant()
+  },
+  table => [
+    unique().on(table.tenant, table.id),
+    unique().on(table.spaceId, table.name),
+    unique()
+      .on(table.organizationId, table.ownerId, table.name)
+      .nullsNotDistinct(),
+    foreignKey({
+      columns: [table.organizationId, table.spaceId],
+      foreignColumns: [spaces.organizationId, spaces.id]
+    }).onDelete('cascade'),
+    check(
+      'labels_space_or_owner',
+      sql`(${table.spaceId} is null) <> (${table.ownerId} is null)`
+    ),
+    // The boards policy applies inside the subquery: a B2C label is visible
+    // with any board of its owner.
+    tenantPolicy(
+      table.organizationId,
+      sql`exists (select 1 from ${boards} where ${boards.ownerId} = ${table.ownerId})`
+    )
+  ]
+)
+
+export const taskLabels = pgTable.withRLS(
+  'task_labels',
+  {
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    labelId: uuid('label_id')
+      .notNull()
+      .references(() => labels.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    tenant: tenant()
+  },
+  table => [
+    primaryKey({ columns: [table.taskId, table.labelId] }),
+    foreignKey({
+      columns: [table.tenant, table.taskId],
+      foreignColumns: [tasks.tenant, tasks.id]
+    }),
+    foreignKey({
+      columns: [table.tenant, table.labelId],
+      foreignColumns: [labels.tenant, labels.id]
+    }),
+    tenantPolicy(
+      table.organizationId,
+      sql`exists (select 1 from ${tasks} where ${tasks.id} = ${table.taskId})`
+    )
+  ]
+)
+
 export const boardFavorites = pgTable.withRLS(
   'board_favorites',
   {

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
+import { createLabelStore } from './labels.ts'
 import { sectionCategory } from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
@@ -45,6 +46,10 @@ const taskChanges = z
 
 const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
 
+const newLabel = z.object({ name: z.string().trim().min(1).max(50) })
+
+const labeling = z.object({ labelIds: z.array(z.uuid()).max(50) })
+
 const descriptionEdit = z.object({
   markdown: z.string().max(50_000),
   version: z.int().min(0)
@@ -83,7 +88,9 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   invalid_assignee: 400,
   stale_version: 409,
   invalid_parent: 400,
-  too_deep: 400
+  too_deep: 400,
+  invalid_label: 400,
+  label_taken: 409
 }
 
 function refuse(reply: FastifyReply, error: Refusal) {
@@ -97,6 +104,7 @@ export function registerBoards(
   const store = createBoardStore(deps.db)
   const taskStore = createTaskStore(deps.db)
   const sectionStore = createSectionStore(deps.db)
+  const labelStore = createLabelStore(deps.db)
 
   app.get(
     '/boards',
@@ -269,6 +277,51 @@ export function registerBoards(
         params.data.boardId,
         params.data.taskId,
         body.data.userIds
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.post(
+    '/boards/:boardId/labels',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = boardParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = newLabel.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await labelStore.createLabel(
+        identity,
+        params.data.boardId,
+        body.data.name
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(201).send(result.value)
+    }
+  )
+
+  app.put(
+    '/boards/:boardId/tasks/:taskId/labels',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = labeling.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await labelStore.setLabels(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        body.data.labelIds
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()

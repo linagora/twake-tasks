@@ -214,4 +214,13 @@ describe('assertRowLevelSecurity', () => {
   it('accepts the app role, which is not a superuser', async () => {
     await expect(assertRowLevelSecurity(sql)).resolves.toBeUndefined()
   })
+
+  it('forces row level security wherever it is enabled', async () => {
+    const unforced = await sql`
+      select relname from pg_class
+      where relnamespace = 'public'::regnamespace
+        and relrowsecurity and not relforcerowsecurity`
+
+    expect(unforced).toEqual([])
+  })
 })
