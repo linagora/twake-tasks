@@ -1,9 +1,15 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { roleOn } from './access.ts'
 import { scheduleReminder, unscheduleReminder } from './reminderJobs.ts'
-import { boards, notifications, taskReminders, tasks } from './schema.ts'
+import {
+  boards,
+  notifications,
+  taskFollowers,
+  taskReminders,
+  tasks
+} from './schema.ts'
 import { Refused, taskOf, writeOrRefuse } from './tasks.ts'
 
 export type NewReminder = { at: Date } | { beforeMinutes: number; zone: string }
@@ -107,6 +113,68 @@ export function createReminderStore(db: Db) {
           .returning({ id: taskReminders.id })
         if (deleted.length === 0) throw new Refused('not_found')
         await unscheduleReminder(tx, reminderId)
+        return null
+      })
+    },
+
+    following(identity: Identity, boardId: string, taskId: string) {
+      return writeOrRefuse(db, identity, async tx => {
+        await visibleTask(tx, identity, boardId, taskId)
+        const [row] = await tx
+          .select({ taskId: taskFollowers.taskId })
+          .from(taskFollowers)
+          .where(
+            and(
+              eq(taskFollowers.taskId, taskId),
+              eq(taskFollowers.userId, identity.userId)
+            )
+          )
+        return row !== undefined
+      })
+    },
+
+    setFollowing(
+      identity: Identity,
+      boardId: string,
+      taskId: string,
+      following: boolean
+    ) {
+      return writeOrRefuse(db, identity, async tx => {
+        const task = await visibleTask(tx, identity, boardId, taskId)
+        if (following) {
+          await tx
+            .insert(taskFollowers)
+            .values({
+              taskId,
+              organizationId: task.organizationId,
+              userId: identity.userId
+            })
+            .onConflictDoNothing()
+        } else {
+          await tx
+            .delete(taskFollowers)
+            .where(
+              and(
+                eq(taskFollowers.taskId, taskId),
+                eq(taskFollowers.userId, identity.userId)
+              )
+            )
+        }
+        return null
+      })
+    },
+
+    markAllRead(identity: Identity) {
+      return writeOrRefuse(db, identity, async tx => {
+        await tx
+          .update(notifications)
+          .set({ readAt: sql`now()` })
+          .where(
+            and(
+              eq(notifications.userId, identity.userId),
+              isNull(notifications.readAt)
+            )
+          )
         return null
       })
     },

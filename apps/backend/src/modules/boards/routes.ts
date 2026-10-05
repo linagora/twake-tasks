@@ -564,6 +564,63 @@ export function registerBoards(
   )
 
   app.get(
+    '/boards/:boardId/tasks/:taskId/follow',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await reminderStore.following(
+        identity,
+        params.data.boardId,
+        params.data.taskId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return { following: result.value }
+    }
+  )
+
+  for (const [method, following] of [
+    ['PUT', true],
+    ['DELETE', false]
+  ] as const) {
+    app.route({
+      method,
+      url: '/boards/:boardId/tasks/:taskId/follow',
+      preHandler: deps.requireIdentity,
+      handler: async (request, reply) => {
+        const identity = request.identity
+        if (!identity) return reply.code(401).send()
+        const params = taskParams.safeParse(request.params)
+        if (!params.success) {
+          return reply.code(404).send({ error: 'not_found' })
+        }
+        const result = await reminderStore.setFollowing(
+          identity,
+          params.data.boardId,
+          params.data.taskId,
+          following
+        )
+        if (!result.ok) return refuse(reply, result.error)
+        return reply.code(204).send()
+      }
+    })
+  }
+
+  app.post(
+    '/notifications/read',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await reminderStore.markAllRead(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.get(
     '/notifications',
     { preHandler: deps.requireIdentity },
     async (request, reply) => {
