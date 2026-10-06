@@ -17,6 +17,16 @@ import type { ReactElement, ReactNode } from 'react'
 
 export const TOP_BAR_HEIGHT = 64
 
+// Layout forwards `sx` to its div, so it is styled from outside.
+const FrameLayout = styled(Layout)(({ theme }) => ({
+  flex: '1 1 auto',
+  minHeight: 0,
+  [theme.breakpoints.down('lg')]: {
+    height: 'auto',
+    paddingBottom: 'var(--sidebarHeight)'
+  }
+}))
+
 export function AppFrame({
   topBar,
   sidebar,
@@ -29,20 +39,10 @@ export function AppFrame({
   return (
     <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
       {topBar}
-      <Layout
-        withTopBar={false}
-        sx={(theme: Theme) => ({
-          flex: '1 1 auto',
-          minHeight: 0,
-          [theme.breakpoints.down('lg')]: {
-            height: 'auto',
-            paddingBottom: 'var(--sidebarHeight)'
-          }
-        })}
-      >
+      <FrameLayout withTopBar={false}>
         <Sidebar>{sidebar}</Sidebar>
         <Content role={undefined}>{children}</Content>
-      </Layout>
+      </FrameLayout>
     </Box>
   )
 }
