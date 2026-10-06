@@ -46,6 +46,7 @@ export interface Task {
   canceledAt: string | null
   assignees: Person[]
   labels: Label[]
+  commentCount: number
 }
 
 export interface Duration {

@@ -10,9 +10,10 @@ import {
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { Dots, Icon } from '@linagora/twake-icons'
+import { Dots, Icon, Plus } from '@linagora/twake-icons'
 import { useId, useState, type ReactElement } from 'react'
 
+import { NewColumnButton } from '@/ds/Columns'
 import type { Board, Section, SectionCategory } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -34,15 +35,15 @@ export function NewSectionButton({ board }: { board: Board }): ReactElement {
 
   return (
     <>
-      <Button
-        variant="secondary"
-        className="u-flex-shrink-0"
+      <NewColumnButton
+        variant="text"
+        startIcon={<Icon icon={Plus} />}
         onClick={() => {
           setOpen(true)
         }}
       >
         {t('section.new')}
-      </Button>
+      </NewColumnButton>
       {open && (
         <SectionDialog
           title={t('section.new')}

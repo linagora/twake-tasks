@@ -82,7 +82,7 @@ describe('Dates', () => {
     expect(
       within(
         await screen.findByRole('article', { name: 'DES-1 Logo' })
-      ).getByText('Due Nov 2, 2026, 09:30')
+      ).getByLabelText(/due Nov 2, 2026, 09:30$/i)
     ).toBeInTheDocument()
   })
 })

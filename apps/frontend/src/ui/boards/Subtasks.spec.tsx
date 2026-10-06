@@ -16,8 +16,16 @@ function logoWithSketch() {
   return { board, logo, sketch, boardsApi: fakeBoardsApi([board]) }
 }
 
-const logoCard = async () =>
-  within(await screen.findByRole('article', { name: 'DES-1 Logo' }))
+async function logoCard() {
+  const card = within(
+    await screen.findByRole('article', { name: 'DES-1 Logo' })
+  )
+  const progress = card.getByRole('button', { name: /^Sub-tasks, / })
+  if (progress.getAttribute('aria-expanded') === 'false') {
+    fireEvent.click(progress)
+  }
+  return card
+}
 
 describe('Sub-tasks', () => {
   it('shows sub-tasks inside their parent, not as a column', async () => {
