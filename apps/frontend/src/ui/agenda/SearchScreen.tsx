@@ -19,7 +19,7 @@ export function SearchField({
   const { t } = useI18n()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const searched = params.get('q') ?? ''
+  const searched = params.get('q')?.trim() ?? ''
   const [text, setText] = useState(searched)
   const [shown, setShown] = useState(searched)
   if (searched !== shown) {
