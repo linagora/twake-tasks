@@ -33,6 +33,7 @@ import { Subtasks } from '@/ui/boards/Subtasks'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
+import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const MAX_DESCRIPTION = 50_000
@@ -407,6 +408,7 @@ function AddSubtask({
         size="small"
         fullWidth
         margin="dense"
+        inputRef={focusOnMount}
         slotProps={{ htmlInput: { maxLength: 500 } }}
       />
       {create.isError && (

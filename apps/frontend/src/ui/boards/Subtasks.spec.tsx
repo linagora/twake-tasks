@@ -69,9 +69,9 @@ describe('Sub-tasks', () => {
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     )
     fireEvent.click(panel.getByRole('button', { name: 'Add a sub-task' }))
-    fireEvent.change(panel.getByRole('textbox', { name: 'Sub-task title' }), {
-      target: { value: 'Colors' }
-    })
+    const title = panel.getByRole('textbox', { name: 'Sub-task title' })
+    expect(title).toHaveFocus()
+    fireEvent.change(title, { target: { value: 'Colors' } })
     fireEvent.click(panel.getByRole('button', { name: 'Add' }))
 
     await waitFor(() => {

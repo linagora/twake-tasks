@@ -11,6 +11,7 @@ import { useId, useState, type ReactElement } from 'react'
 
 import { QuickAddError } from '@/application/quickAdd'
 import { useQuickAdd } from '@/ui/boards/queries'
+import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
@@ -48,6 +49,7 @@ export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
             helperText={t('quickAdd.help')}
             fullWidth
             margin="dense"
+            inputRef={focusOnMount}
             slotProps={{ htmlInput: { maxLength: 1000 } }}
           />
           {add.isSuccess && (
