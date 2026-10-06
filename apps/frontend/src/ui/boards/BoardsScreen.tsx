@@ -1,26 +1,17 @@
-import {
-  Button,
-  IconButton,
-  Link,
-  Tab,
-  Tabs,
-  Typography
-} from '@linagora/twake-mui'
+import { Button, IconButton, Link, Tab, Typography } from '@linagora/twake-mui'
 import {
   Archive,
   Icon,
   Mosaic,
-  People,
   Plus,
   Star,
-  StarOutline,
-  Team
+  StarOutline
 } from '@linagora/twake-icons'
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
-import { CardTile, TileGrid } from '@/ds/TileGrid'
+import { CardTile, ShelfTabs, Shelves, TileShelf } from '@/ds/TileGrid'
 import type { BoardSummary, ProjectSummary } from '@/domain/board'
 import { groupBoards } from '@/domain/boardGroups'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
@@ -93,42 +84,30 @@ function BoardShelf({
       ? t('boards.noOpenTasks')
       : t('boards.openTasks', { smart_count: board.openTasks })
   return (
-    <section className="u-mb-2">
-      <Typography variant="h5" component="h2">
-        {name}
-      </Typography>
-      {hint && (
-        <Typography variant="caption" color="text.secondary">
-          {hint}
-        </Typography>
-      )}
-      <div className="u-mt-1">
-        <TileGrid label={name}>
-          {boards.map(board => (
-            <CardTile
-              key={board.id}
-              label={board.name}
-              icon={board.project.managed ? Team : People}
-              iconLabel={t(
-                board.project.managed ? 'boards.space' : 'boards.personal'
-              )}
-              title={
-                <Link component={RouterLink} to={`/boards/${board.id}`}>
-                  {board.name}
-                </Link>
-              }
-              tag={board.keyPrefix}
-              meta={
-                withProject
-                  ? `${projectName(board.project)} · ${openTasks(board)}`
-                  : openTasks(board)
-              }
-              action={<FavoriteButton board={board} />}
-            />
-          ))}
-        </TileGrid>
-      </div>
-    </section>
+    <TileShelf name={name} hint={hint}>
+      {boards.map(board => (
+        <CardTile
+          key={board.id}
+          label={board.name}
+          badge={(Array.from(board.name)[0] ?? '').toUpperCase()}
+          badgeLabel={t(
+            board.project.managed ? 'boards.space' : 'boards.personal'
+          )}
+          title={
+            <Link component={RouterLink} to={`/boards/${board.id}`}>
+              {board.name}
+            </Link>
+          }
+          tag={board.keyPrefix}
+          meta={
+            withProject
+              ? `${projectName(board.project)} · ${openTasks(board)}`
+              : openTasks(board)
+          }
+          action={<FavoriteButton board={board} />}
+        />
+      ))}
+    </TileShelf>
   )
 }
 
@@ -161,7 +140,7 @@ export function BoardsScreen(): ReactElement {
           {t('boards.new')}
         </Button>
       </div>
-      <Tabs
+      <ShelfTabs
         segmented
         value={shelf}
         onChange={(_event, value: Shelf) => {
@@ -171,7 +150,7 @@ export function BoardsScreen(): ReactElement {
       >
         <Tab value="active" label={t('boards.active')} />
         <Tab value="archived" label={t('boards.archived')} />
-      </Tabs>
+      </ShelfTabs>
       {boards.isError && (
         <Typography role="alert">{t('boards.loadFailed')}</Typography>
       )}
@@ -201,17 +180,23 @@ export function BoardsScreen(): ReactElement {
             text={t('boards.emptyArchivedHint')}
           />
         ))}
-      {starred.length > 0 && (
-        <BoardShelf name={t('boards.favorites')} boards={starred} withProject />
-      )}
-      {projects.map(({ project, boards }) => (
-        <BoardShelf
-          key={project.id}
-          name={projectName(project)}
-          hint={project.managed ? t('boards.fromSpace') : undefined}
-          boards={boards}
-        />
-      ))}
+      <Shelves>
+        {starred.length > 0 && (
+          <BoardShelf
+            name={t('boards.favorites')}
+            boards={starred}
+            withProject
+          />
+        )}
+        {projects.map(({ project, boards }) => (
+          <BoardShelf
+            key={project.id}
+            name={projectName(project)}
+            hint={project.managed ? t('boards.fromSpace') : undefined}
+            boards={boards}
+          />
+        ))}
+      </Shelves>
       {creating && (
         <NewBoardDialog
           onClose={() => {

@@ -114,9 +114,11 @@ describe('BoardsScreen', () => {
     expect(designCard.getByText('2 open tasks')).toBeVisible()
     expect(
       designCard.getByRole('img', { name: 'Personal board' })
-    ).toBeVisible()
+    ).toHaveTextContent('D')
     expect(opsCard.getByText('No open tasks')).toBeVisible()
-    expect(opsCard.getByRole('img', { name: 'Space board' })).toBeVisible()
+    expect(opsCard.getByRole('img', { name: 'Space board' })).toHaveTextContent(
+      'O'
+    )
   })
 
   it('pins a starred board above the projects until it is unstarred', async () => {
