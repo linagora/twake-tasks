@@ -1,4 +1,12 @@
 {
+  "drag": {
+    "card": "draggable task",
+    "instructions": "To move a task, press space or enter. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.",
+    "picked": "Picked up %{task}.",
+    "over": "%{task} is over %{place}.",
+    "dropped": "%{task} dropped in %{place}.",
+    "canceled": "Moving %{task} was canceled."
+  },
   "app": {
     "name": "Twake Tasks",
     "loading": "Loading"

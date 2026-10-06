@@ -6,7 +6,13 @@ import {
   styled,
   Typography
 } from '@linagora/twake-mui'
-import { useId, type ReactElement, type ReactNode } from 'react'
+import {
+  useId,
+  type HTMLAttributes,
+  type ReactElement,
+  type ReactNode,
+  type Ref
+} from 'react'
 
 export function Columns({ children }: { children: ReactNode }): ReactElement {
   return (
@@ -77,31 +83,42 @@ export function ColumnsSkeleton({ label }: { label: string }): ReactElement {
   )
 }
 
-export function Column({
-  title,
-  count,
-  actions,
-  children
-}: {
+export interface ColumnProps {
   title: string
   count: number
   actions?: ReactNode
   children: ReactNode
+}
+
+export function Column({
+  title,
+  count,
+  actions,
+  children,
+  ref,
+  highlighted = false
+}: ColumnProps & {
+  ref?: Ref<HTMLElement>
+  highlighted?: boolean
 }): ReactElement {
   const titleId = useId()
   return (
     <Box
+      ref={ref}
       component="section"
       aria-labelledby={titleId}
-      sx={{
+      sx={theme => ({
         flex: '0 0 18rem',
         display: 'flex',
         flexDirection: 'column',
         gap: 1,
         p: 1.5,
         borderRadius: 2,
-        bgcolor: 'action.hover'
-      }}
+        bgcolor: highlighted
+          ? alpha(theme.palette.primary.main, 0.08)
+          : 'action.hover',
+        transition: 'background-color 120ms'
+      })}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography id={titleId} variant="subtitle1" component="h2">
@@ -131,21 +148,33 @@ export const NewColumnButton = styled(ColumnAddButton)(({ theme }) => ({
   borderRadius: theme.spacing(1)
 }))
 
+export interface CardProps {
+  label: string
+  menu?: ReactNode
+  children: ReactNode
+}
+
 // The menu shows on hover or focus; touch screens always show it.
 export function Card({
   label,
   menu,
-  children
-}: {
-  label: string
-  menu?: ReactNode
-  children: ReactNode
-}): ReactElement {
+  children,
+  ref,
+  drag = 'none',
+  ...rest
+}: CardProps &
+  HTMLAttributes<HTMLElement> & {
+    ref?: Ref<HTMLElement>
+    /** `placeholder` is the slot a dragged card leaves, `lifted` the card under the pointer. */
+    drag?: 'none' | 'placeholder' | 'lifted'
+  }): ReactElement {
   return (
     <Box
+      {...rest}
+      ref={ref}
       component="article"
       aria-label={label}
-      sx={{
+      sx={theme => ({
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
@@ -157,11 +186,25 @@ export function Card({
         borderColor: 'divider',
         transition: 'box-shadow 120ms, border-color 120ms',
         '&:hover': { boxShadow: 2, borderColor: 'transparent' },
+        '&:focus-visible': {
+          outline: `2px solid ${theme.palette.primary.main}`,
+          outlineOffset: 2
+        },
+        ...(drag === 'placeholder' && {
+          opacity: 0.4,
+          '&:hover': {}
+        }),
+        ...(drag === 'lifted' && {
+          cursor: 'grabbing',
+          boxShadow: 8,
+          borderColor: 'transparent',
+          rotate: '2deg'
+        }),
         '& > [data-card-menu]': { opacity: 0, transition: 'opacity 120ms' },
         '&:hover > [data-card-menu], &:focus-within > [data-card-menu], & > [data-card-menu]:has([aria-expanded="true"])':
           { opacity: 1 },
         '@media (hover: none)': { '& > [data-card-menu]': { opacity: 1 } }
-      }}
+      })}
     >
       {menu && (
         <Box
