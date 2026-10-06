@@ -1,25 +1,68 @@
 import {
+  Bell,
+  Calendar,
+  CalendarToday,
+  Filter,
+  Home,
+  Icon,
+  Logout,
+  Plus,
+  Profile,
+  Star
+} from '@linagora/twake-icons'
+import {
   Avatar,
   Button,
+  Divider,
   getInitials,
+  IconButton,
   Link,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   nameToColor,
-  Typography
+  Nav,
+  NavIcon,
+  NavItem,
+  NavLink,
+  NavText,
+  useMediaQuery,
+  useTheme
 } from '@linagora/twake-mui'
-import { useRef, useState, type ReactElement } from 'react'
-import { Outlet, Link as RouterLink } from 'react-router'
+import {
+  useRef,
+  useState,
+  type ElementType,
+  type ReactElement,
+  type RefObject
+} from 'react'
+import {
+  Outlet,
+  Link as RouterLink,
+  NavLink as RouterNavLink
+} from 'react-router'
 
+import {
+  AccountCard,
+  AppFrame,
+  BrandMark,
+  CountBadge,
+  PhoneMenuItem,
+  SidebarSection,
+  TopBar,
+  TopBarSearch,
+  TopBarSpacer,
+  WideScreenNavItem
+} from '@/ds/AppFrame'
 import { SearchField } from '@/ui/agenda/SearchScreen'
+import { useBoards, useUnreadNotifications } from '@/ui/boards/queries'
 import { QuickAdd } from '@/ui/shell/QuickAdd'
 import { ShortcutsHelp, useShortcuts } from '@/ui/shell/Shortcuts'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 
 export function AppShell(): ReactElement {
-  const { t } = useI18n()
-  const { user, signOut } = useSession()
-  const email = user.email ?? ''
-  const name = user.name ?? email
   const [quickAdd, setQuickAdd] = useState(false)
   const [help, setHelp] = useState(false)
   const search = useRef<HTMLInputElement>(null)
@@ -36,51 +79,23 @@ export function AppShell(): ReactElement {
   })
 
   return (
-    <>
-      <header className="u-flex u-flex-wrap u-flex-items-center u-ph-2 u-pv-1">
-        <Link component={RouterLink} to="/" variant="h5" underline="none">
-          {t('app.name')}
-        </Link>
-        <nav className="u-flex u-flex-wrap u-ml-2 u-ml-0-m u-w-100-m u-mv-half">
-          {(['today', 'upcoming', 'mine'] as const).map(view => (
-            <Link
-              key={view}
-              component={RouterLink}
-              to={`/${view}`}
-              className="u-mr-1"
-            >
-              {t(`agenda.${view}`)}
-            </Link>
-          ))}
-          <Link component={RouterLink} to="/filters" className="u-mr-1">
-            {t('filters.title')}
-          </Link>
-          <Link component={RouterLink} to="/notifications" className="u-mr-1">
-            {t('notifications.title')}
-          </Link>
-        </nav>
-        <SearchField inputRef={search} />
-        <Button
-          className="u-ml-1 u-ml-0-m u-mr-1 u-mv-half"
-          onClick={() => {
+    <AppFrame
+      topBar={
+        <Header
+          searchRef={search}
+          onQuickAdd={() => {
             setQuickAdd(true)
           }}
-        >
-          {t('quickAdd.title')}
-        </Button>
-        <Avatar
-          size="s"
-          color={nameToColor(name) ?? 'sunrise'}
-          className="u-mr-half"
-          aria-hidden
-        >
-          {getInitials(name, email)}
-        </Avatar>
-        <Typography className="u-mr-1">{name}</Typography>
-        <Button variant="text" onClick={() => void signOut()}>
-          {t('session.signOut')}
-        </Button>
-      </header>
+        />
+      }
+      sidebar={
+        <>
+          <AppNav />
+          <Favorites />
+        </>
+      }
+    >
+      <Outlet />
       {quickAdd && (
         <QuickAdd
           onClose={() => {
@@ -95,7 +110,194 @@ export function AppShell(): ReactElement {
           }}
         />
       )}
-      <Outlet />
+    </AppFrame>
+  )
+}
+
+function Header({
+  searchRef,
+  onQuickAdd
+}: {
+  searchRef: RefObject<HTMLInputElement | null>
+  onQuickAdd: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const theme = useTheme()
+  const compact = useMediaQuery(theme.breakpoints.down('md'))
+
+  return (
+    <TopBar>
+      <Link
+        component={RouterLink}
+        to="/"
+        underline="none"
+        aria-label={t('app.name')}
+      >
+        <BrandMark name={t('app.name')} />
+      </Link>
+      <TopBarSearch>
+        <SearchField inputRef={searchRef} />
+      </TopBarSearch>
+      <TopBarSpacer />
+      {compact ? (
+        <IconButton
+          color="primary"
+          aria-label={t('quickAdd.title')}
+          onClick={onQuickAdd}
+        >
+          <Icon icon={Plus} />
+        </IconButton>
+      ) : (
+        <Button startIcon={<Icon icon={Plus} />} onClick={onQuickAdd}>
+          {t('quickAdd.title')}
+        </Button>
+      )}
+      <AccountMenu />
+    </TopBar>
+  )
+}
+
+function AccountMenu(): ReactElement {
+  const { t } = useI18n()
+  const { user, signOut } = useSession()
+  const email = user.email ?? ''
+  const name = user.name ?? email
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const close = (): void => {
+    setAnchor(null)
+  }
+  const avatar = (size: 's' | 'l'): ReactElement => (
+    <Avatar size={size} color={nameToColor(name) ?? 'sunrise'} aria-hidden>
+      {getInitials(name, email)}
+    </Avatar>
+  )
+
+  return (
+    <>
+      <IconButton
+        aria-label={name}
+        aria-haspopup="menu"
+        aria-expanded={anchor !== null}
+        onClick={event => {
+          setAnchor(event.currentTarget)
+        }}
+      >
+        {avatar('s')}
+      </IconButton>
+      <Menu
+        anchorEl={anchor}
+        open={anchor !== null}
+        onClose={close}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <AccountCard
+          avatar={avatar('l')}
+          name={name}
+          email={email === name ? undefined : email}
+        />
+        <Divider />
+        <PhoneMenuItem component={RouterLink} to="/filters" onClick={close}>
+          <ListItemIcon>
+            <Icon icon={Filter} />
+          </ListItemIcon>
+          <ListItemText>{t('filters.title')}</ListItemText>
+        </PhoneMenuItem>
+        <MenuItem
+          onClick={() => {
+            close()
+            void signOut()
+          }}
+        >
+          <ListItemIcon>
+            <Icon icon={Logout} />
+          </ListItemIcon>
+          <ListItemText>{t('session.signOut')}</ListItemText>
+        </MenuItem>
+      </Menu>
     </>
+  )
+}
+
+function AppNav(): ReactElement {
+  const { t } = useI18n()
+  const unread = useUnreadNotifications().data ?? 0
+
+  return (
+    <Nav>
+      <AppNavLink to="/" end icon={Home} label={t('boards.title')} />
+      <AppNavLink to="/today" icon={CalendarToday} label={t('agenda.today')} />
+      <AppNavLink to="/upcoming" icon={Calendar} label={t('agenda.upcoming')} />
+      <AppNavLink to="/mine" icon={Profile} label={t('agenda.mine')} />
+      <AppNavLink
+        to="/notifications"
+        icon={Bell}
+        label={t('notifications.title')}
+        count={unread}
+        countLabel={t('notifications.unread', { count: unread })}
+      />
+      <AppNavLink
+        to="/filters"
+        icon={Filter}
+        label={t('filters.title')}
+        wideScreenOnly
+      />
+    </Nav>
+  )
+}
+
+function AppNavLink({
+  to,
+  end = false,
+  icon,
+  label,
+  count = 0,
+  countLabel,
+  wideScreenOnly = false
+}: {
+  to: string
+  end?: boolean
+  icon: ElementType
+  label: string
+  count?: number
+  countLabel?: string
+  wideScreenOnly?: boolean
+}): ReactElement {
+  const Item = wideScreenOnly ? WideScreenNavItem : NavItem
+  return (
+    <Item>
+      <NavLink
+        component={RouterNavLink}
+        to={to}
+        end={end}
+        aria-label={count > 0 ? countLabel : undefined}
+      >
+        <CountBadge count={count}>
+          <NavIcon icon={icon} />
+        </CountBadge>
+        <NavText>{label}</NavText>
+      </NavLink>
+    </Item>
+  )
+}
+
+function Favorites(): ReactElement | null {
+  const { t } = useI18n()
+  const favorites = (useBoards().data ?? []).filter(
+    board => board.favorite && !board.archived
+  )
+  if (favorites.length === 0) return null
+
+  return (
+    <SidebarSection label={t('boards.favorites')}>
+      {favorites.map(board => (
+        <NavItem key={board.id}>
+          <NavLink component={RouterNavLink} to={`/boards/${board.id}`}>
+            <NavIcon icon={Star} />
+            <NavText>{board.name}</NavText>
+          </NavLink>
+        </NavItem>
+      ))}
+    </SidebarSection>
   )
 }
