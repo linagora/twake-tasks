@@ -328,6 +328,45 @@ describe('BoardScreen', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('keeps one add task form open at a time', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+    const todo = within(await screen.findByRole('region', { name: 'To do' }))
+    const done = within(screen.getByRole('region', { name: 'Done' }))
+
+    fireEvent.click(todo.getByRole('button', { name: 'Add a task to To do' }))
+    fireEvent.click(done.getByRole('button', { name: 'Add a task to Done' }))
+
+    expect(
+      todo.queryByRole('textbox', { name: 'Task title' })
+    ).not.toBeInTheDocument()
+    expect(done.getByRole('textbox', { name: 'Task title' })).toHaveFocus()
+  })
+
+  it('closes the add task form on a click outside and keeps the draft', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+    const todo = within(await screen.findByRole('region', { name: 'To do' }))
+    const opener = () =>
+      todo.getByRole('button', { name: 'Add a task to To do' })
+
+    fireEvent.click(opener())
+    fireEvent.change(todo.getByRole('textbox', { name: 'Task title' }), {
+      target: { value: 'Banner' }
+    })
+    await waitFor(() => {
+      fireEvent.click(document.body)
+      expect(
+        todo.queryByRole('textbox', { name: 'Task title' })
+      ).not.toBeInTheDocument()
+    })
+
+    fireEvent.click(opener())
+    expect(todo.getByRole('textbox', { name: 'Task title' })).toHaveValue(
+      'Banner'
+    )
+  })
+
   it('adds a section at the end', async () => {
     const board = designBoard()
     const boardsApi = fakeBoardsApi([board])

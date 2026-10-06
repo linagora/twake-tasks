@@ -1,5 +1,12 @@
 import { Compass, Icon, Left, Plus, Share } from '@linagora/twake-icons'
-import { Alert, Button, Link, TextField, Typography } from '@linagora/twake-mui'
+import {
+  Alert,
+  Button,
+  ClickAwayListener,
+  Link,
+  TextField,
+  Typography
+} from '@linagora/twake-mui'
 import { useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
@@ -89,12 +96,9 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   const targets = useMoveTargets(board)
   const movable = shareable && targets.length > 0
   const [shelf, setShelf] = useState<Shelf | null>(null)
-  const [adding, setAdding] = useState<ReadonlySet<string>>(new Set())
-  const startAdding = (key: string): void => {
-    setAdding(keys => new Set(keys).add(key))
-  }
+  const [adding, setAdding] = useState<string | null>(null)
   const stopAdding = (key: string): void => {
-    setAdding(keys => new Set([...keys].filter(each => each !== key)))
+    setAdding(current => (current === key ? null : current))
   }
   const topLevel = board.tasks.filter(task => task.parentId === null)
   const loose =
@@ -136,9 +140,9 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
         boardId={board.id}
         sectionId={column.id}
         sectionName={column.name}
-        open={adding.has(columnKey(column))}
+        open={adding === columnKey(column)}
         onOpen={() => {
-          startAdding(columnKey(column))
+          setAdding(columnKey(column))
         }}
         onClose={() => {
           stopAdding(columnKey(column))
@@ -176,7 +180,7 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
               <Button
                 startIcon={<Icon icon={Plus} />}
                 onClick={() => {
-                  startAdding(columnKey(first))
+                  setAdding(columnKey(first))
                 }}
               >
                 {t('board.newTask')}
@@ -375,51 +379,58 @@ function AddTask({
     )
   }
   return (
-    <form
-      onSubmit={event => {
-        event.preventDefault()
-        create.mutate(
-          { sectionId, title: title.trim() },
-          {
-            onSuccess: () => {
-              setTitle('')
+    <ClickAwayListener onClickAway={onClose}>
+      <form
+        onSubmit={event => {
+          event.preventDefault()
+          create.mutate(
+            { sectionId, title: title.trim() },
+            {
+              onSuccess: () => {
+                setTitle('')
+              }
             }
-          }
-        )
-      }}
-    >
-      <TextField
-        label={t('board.taskTitle')}
-        value={title}
-        onChange={event => {
-          setTitle(event.target.value)
+          )
         }}
-        onKeyDown={event => {
-          if (event.key === 'Escape') close()
-        }}
-        size="small"
-        fullWidth
-        inputRef={focusOnMount}
-        slotProps={{ htmlInput: { maxLength: 500 } }}
-      />
-      {create.isError && (
-        <Typography role="alert" variant="caption">
-          {t('board.addFailed')}
-        </Typography>
-      )}
-      <Inline>
-        <Button
-          type="submit"
+      >
+        <TextField
+          label={t('board.taskTitle')}
+          value={title}
+          onChange={event => {
+            setTitle(event.target.value)
+          }}
+          onKeyDown={event => {
+            if (event.key === 'Escape') close()
+          }}
           size="small"
-          className="u-mt-1"
-          disabled={create.isPending || !title.trim()}
-        >
-          {t('board.add')}
-        </Button>
-        <Button variant="text" size="small" className="u-mt-1" onClick={close}>
-          {t('board.cancel')}
-        </Button>
-      </Inline>
-    </form>
+          fullWidth
+          inputRef={focusOnMount}
+          slotProps={{ htmlInput: { maxLength: 500 } }}
+        />
+        {create.isError && (
+          <Typography role="alert" variant="caption">
+            {t('board.addFailed')}
+          </Typography>
+        )}
+        <Inline>
+          <Button
+            type="submit"
+            size="small"
+            className="u-mt-1"
+            disabled={create.isPending || !title.trim()}
+          >
+            {t('board.add')}
+          </Button>
+          <Button
+            variant="text"
+            size="small"
+            className="u-mt-1"
+            onClick={close}
+          >
+            {t('board.cancel')}
+          </Button>
+        </Inline>
+      </form>
+    </ClickAwayListener>
   )
 }
