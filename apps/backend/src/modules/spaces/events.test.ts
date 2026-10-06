@@ -45,7 +45,7 @@ async function spaceBoards(user: TestUser) {
         id: string
         name: string
         keyPrefix: string
-        project: { name: string; managed: boolean }
+        project: { id: string; name: string; managed: boolean }
         role: string
       }[]
     }>()
@@ -81,7 +81,7 @@ describe('twake.space.created', () => {
     ).toEqual([])
   })
 
-  it('publishes the space as provisioned, and the same event again on replay', async () => {
+  it('publishes the space project as provisioned, and the same event again on replay', async () => {
     const admin = aUser()
     const spaceId = randomUUID()
     const created = {
@@ -94,9 +94,8 @@ describe('twake.space.created', () => {
     await deliver('twake.space.created', created)
     await deliver('twake.space.created', { ...created, name: 'Renamed' })
 
-    expect(await spaceBoards(admin)).toEqual([
-      expect.objectContaining({ name: 'Ops' })
-    ])
+    const boards = await spaceBoards(admin)
+    expect(boards).toEqual([expect.objectContaining({ name: 'Ops' })])
     const queued = await db
       .select({ event: outbox.event })
       .from(outbox)
@@ -109,7 +108,10 @@ describe('twake.space.created', () => {
         source: 'twake://tasks',
         type: 'com.twake.tasks.space.provisioned.v1',
         twakeorg: admin.organizationId,
-        data: { space_id: spaceId, resource: { kind: 'tasks', id: spaceId } }
+        data: {
+          space_id: spaceId,
+          resource: { kind: 'project', id: boards[0]?.project.id }
+        }
       }
     })
   })

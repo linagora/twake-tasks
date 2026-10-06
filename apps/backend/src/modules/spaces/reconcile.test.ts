@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto'
-import { eq } from 'drizzle-orm'
+import { eq, sql as raw } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
-import { createDb } from '../../infra/db.ts'
+import { outbox } from '../../events/schema.ts'
+import { asOrganization, createDb } from '../../infra/db.ts'
 import type { LdapRest, RemoteSpace } from '../../infra/ldapRest.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { aUser, startApp, type TestUser } from '../../testing/app.ts'
 import { spaceRoutes } from './events.ts'
+import { spaces } from './schema.ts'
 import {
   RECONCILE_SPACE_JOB,
   RECONCILE_SPACES_JOB,
@@ -80,6 +82,35 @@ describe('reconciling a space', () => {
     expect(await spaceBoards(viewer)).toEqual([
       expect.objectContaining({ role: 'viewer' })
     ])
+  })
+
+  it('publishes the project of a space it creates', async () => {
+    const admin = aUser()
+    const org = admin.organizationId ?? ''
+    const space = { id: randomUUID(), name: 'Hiring', members: [] }
+
+    await run(fakeLdapRest(org, [space]), space.id, org)
+
+    const [project] = await db.transaction(async tx => {
+      await asOrganization(tx, org)
+      return tx
+        .select({ id: spaces.projectId })
+        .from(spaces)
+        .where(eq(spaces.id, space.id))
+    })
+    const queued = await db
+      .select({ event: outbox.event })
+      .from(outbox)
+      .where(raw`${outbox.event} -> 'data' ->> 'space_id' = ${space.id}`)
+    expect(queued).toHaveLength(1)
+    expect(queued[0]).toMatchObject({
+      event: {
+        data: {
+          space_id: space.id,
+          resource: { kind: 'project', id: project?.id }
+        }
+      }
+    })
   })
 
   it('repairs the name, the roles, and takes the board from people who left', async () => {

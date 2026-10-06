@@ -117,14 +117,19 @@ export async function upsertMembers(
     })
 }
 
-export function provisioned(space: SpaceRef): OutgoingEvent {
+export async function provisioned(
+  tx: Tx,
+  space: SpaceRef
+): Promise<OutgoingEvent> {
+  const projectId = await projectOf(tx, space)
+  if (!projectId) throw new Error(`space ${space.id} has no project`)
   return {
     specversion: '1.0',
     id: `tasks-space-provisioned-${space.id}`,
     source: 'twake://tasks',
     type: 'com.twake.tasks.space.provisioned.v1',
     twakeorg: space.organizationId,
-    data: { space_id: space.id, resource: { kind: 'tasks', id: space.id } }
+    data: { space_id: space.id, resource: { kind: 'project', id: projectId } }
   }
 }
 
@@ -234,7 +239,7 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
     await asOrganization(tx, space.organizationId)
     await provisionSpace(tx, space)
     await upsertMembers(tx, space, space.members)
-    await enqueue(tx, provisioned(space))
+    await enqueue(tx, await provisioned(tx, space))
   }
 
   const onUpdated: Handler<PlatformEvent> = async (event, tx) => {
