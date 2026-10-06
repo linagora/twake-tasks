@@ -46,6 +46,38 @@ export function createDb(url: string) {
   return { sql: client, db: drizzle({ client }) }
 }
 
+// Socket errors from Node, and postgres.js's own connection errors.
+const CONNECTION_ERRORS = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EPIPE',
+  'CONNECT_TIMEOUT',
+  'CONNECTION_CLOSED',
+  'CONNECTION_ENDED',
+  'CONNECTION_DESTROYED'
+])
+
+// Connection exceptions, insufficient resources, server shutting down.
+const TRANSIENT_SQLSTATE = /^(08|53|57P0)/
+
+/** Whether the work may succeed if tried again later, unchanged. */
+export function isTransient(error: unknown): boolean {
+  for (let cause = error; cause instanceof Error; cause = cause.cause) {
+    const code = (cause as { code?: unknown }).code
+    if (typeof code !== 'string') continue
+    if (CONNECTION_ERRORS.has(code)) return true
+    if (cause.name === 'PostgresError') {
+      return (
+        code === '40001' || code === '40P01' || TRANSIENT_SQLSTATE.test(code)
+      )
+    }
+  }
+  return false
+}
+
 export type Db = ReturnType<typeof createDb>['db']
 export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 

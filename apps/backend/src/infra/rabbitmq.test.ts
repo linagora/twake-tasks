@@ -66,9 +66,13 @@ async function consume(
     container.getAmqpUrl(),
     under,
     pino({ level: 'silent' }),
-    handle
+    handle,
+    { retryDelayMs: 10 }
   )
 }
+
+const unreachable = () =>
+  Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' })
 
 function publish(
   exchange: string,
@@ -174,6 +178,51 @@ describe('startConsumer', () => {
       expect(await ready(DEAD_LETTER_QUEUE)).toBe(1)
     })
     expect(handle).not.toHaveBeenCalled()
+  })
+
+  it('dead letters an event that keeps failing, and goes on with the next', async () => {
+    const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    handle.mockImplementation(delivery =>
+      delivery.messageId === 'm-1'
+        ? Promise.reject(new Error('bug'))
+        : Promise.resolve('processed')
+    )
+    await consume(handle)
+
+    publish('space', 'twake.space.updated', 'm-1')
+    publish('space', 'twake.space.updated', 'm-2')
+
+    await vi.waitFor(() => {
+      expect(handle).toHaveBeenLastCalledWith(
+        expect.objectContaining({ messageId: 'm-2' })
+      )
+    })
+    expect(
+      handle.mock.calls.filter(([delivery]) => delivery.messageId === 'm-1')
+    ).toHaveLength(5)
+    await vi.waitFor(async () => {
+      expect(await ready(DEAD_LETTER_QUEUE)).toBe(1)
+    })
+  })
+
+  it('keeps retrying while the database is unreachable', async () => {
+    const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    for (let i = 0; i < 8; i++) handle.mockRejectedValueOnce(unreachable())
+    handle.mockResolvedValue('processed')
+    await consume(handle)
+
+    publish('space', 'twake.space.updated', 'm-1')
+
+    await vi.waitFor(
+      () => {
+        expect(handle).toHaveBeenCalledTimes(9)
+      },
+      { timeout: 10_000 }
+    )
+    await consumer?.close()
+    consumer = undefined
+    expect(await ready(QUEUE)).toBe(0)
+    expect(await ready(DEAD_LETTER_QUEUE)).toBe(0)
   })
 
   it('retries an event whose handling failed until it succeeds', async () => {

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { DeadLetterError, RabbitMQClient } from '@linagora/rabbitmq-client'
 import type { Logger } from 'pino'
+import { isTransient } from './db.ts'
 import type { OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 
@@ -22,24 +23,50 @@ export interface Consumer {
   close(): Promise<void>
 }
 
+const MAX_ATTEMPTS = 5
+
 // One message at a time on a single active consumer, so the events of a space
 // are handled in the order ldap-rest published them, even with several replicas.
-// A failing event is retried until it succeeds rather than skipped, since the
-// events behind it may depend on it.
+// An event that keeps failing goes to the dead letter queue so the ones behind
+// it go on; nobody replays it, and the next space sync repairs its space. A
+// failure that is not the event's fault, such as the database being down,
+// retries until it passes.
 export async function startConsumer(
   url: string,
   names: ConsumerNames,
   logger: Logger,
-  handle: (delivery: Delivery) => Promise<Outcome>
+  handle: (delivery: Delivery) => Promise<Outcome>,
+  options: { retryDelayMs?: number } = {}
 ): Promise<Consumer> {
-  const client = new RabbitMQClient({ url, logger, prefetch: 1 })
+  const client = new RabbitMQClient({
+    url,
+    logger,
+    prefetch: 1,
+    retryDelay: options.retryDelayMs ?? 1000
+  })
   await client.init()
+  // prefetch 1: only one message is ever being retried.
+  let failing = { messageId: undefined as string | undefined, attempts: 0 }
   await client.subscribe(
     names.spaceExchange,
     'twake.space.#',
     names.queue,
     async (body, { routingKey, messageId }) => {
-      const outcome = await handle({ routingKey, messageId, body })
+      let outcome: Outcome
+      try {
+        outcome = await handle({ routingKey, messageId, body })
+      } catch (error) {
+        if (isTransient(error)) throw error
+        if (failing.messageId !== messageId)
+          failing = { messageId, attempts: 0 }
+        failing.attempts++
+        if (failing.attempts < MAX_ATTEMPTS) throw error
+        logger.error(
+          { err: error, routingKey, messageId },
+          'event sent to the dead letter queue after repeated failures'
+        )
+        throw new DeadLetterError(`${routingKey} kept failing`)
+      }
       if (outcome === 'rejected') {
         throw new DeadLetterError(`${routingKey} rejected`)
       }
