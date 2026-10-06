@@ -29,7 +29,8 @@ export function SearchField({
       onChange={event => {
         setText(event.target.value)
       }}
-      onSubmit={() => {
+      onSubmit={event => {
+        event.preventDefault()
         if (!text.trim()) return
         void navigate(
           `/search?${new URLSearchParams({ q: text.trim() }).toString()}`

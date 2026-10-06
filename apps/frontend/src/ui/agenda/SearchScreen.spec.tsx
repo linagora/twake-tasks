@@ -23,8 +23,9 @@ describe('SearchScreen', () => {
       within(await screen.findByRole('search')).getByLabelText('Search'),
       { target: { value: 'logo' } }
     )
-    fireEvent.submit(screen.getByRole('search'))
+    const reloads = fireEvent.submit(screen.getByRole('search'))
 
+    expect(reloads).toBe(false)
     const results = within(
       await screen.findByRole('region', { name: 'Results for “logo”' })
     )
