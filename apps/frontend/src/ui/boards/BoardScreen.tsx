@@ -87,8 +87,12 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
 
   return (
     <>
-      <div className="u-flex u-flex-items-center u-mt-1 u-mb-2">
-        <Typography variant="h3" component="h1">
+      <div className="u-flex u-flex-wrap u-flex-items-center u-mt-1 u-mb-2">
+        <Typography
+          variant="h3"
+          component="h1"
+          className="u-w-100-m u-mb-half-m"
+        >
           {board.name}
         </Typography>
         <LayoutSwitch board={board} />
