@@ -87,21 +87,25 @@ export function Dates({
   if (draft === null) {
     return (
       <Row>
-        {due && <Typography>{t('board.due', { date: due })}</Typography>}
+        {due && (
+          <Typography variant="body2">
+            {t('board.due', { date: due })}
+          </Typography>
+        )}
         {task.deadline && (
-          <Typography>
+          <Typography variant="body2">
             {t('dates.deadlineOn', { date: formatDay(task.deadline, lang) })}
           </Typography>
         )}
         {task.duration && (
-          <Typography>
+          <Typography variant="body2">
             {t(`dates.${task.duration.unit}`, {
               amount: task.duration.amount
             })}
           </Typography>
         )}
         {task.recurrence && (
-          <Typography>
+          <Typography variant="body2">
             {t(
               task.recurrence.fromCompletion
                 ? `dates.every.${task.recurrence.unit}AfterCompletion`
@@ -113,6 +117,7 @@ export function Dates({
         {editable && (
           <Button
             variant="text"
+            size="small"
             onClick={() => {
               setDraft(draftOf(task))
             }}

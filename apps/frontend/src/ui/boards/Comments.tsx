@@ -24,7 +24,6 @@ export function Comments({
 
   return (
     <section aria-label={t('task.comments')}>
-      <Typography variant="h6">{t('task.comments')}</Typography>
       {comments.isError && (
         <Typography role="alert">{t('task.commentsFailed')}</Typography>
       )}

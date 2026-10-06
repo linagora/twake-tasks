@@ -2,6 +2,8 @@ import { Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 
 import type { HistoryEntry } from '@/application/boards'
+import { Feed, FeedItem } from '@/ds/SidePanel'
+import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import type { Board, Duration, Task } from '@/domain/board'
 import { useBoard, useHistory } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -101,19 +103,28 @@ export function History({
 
   return (
     <>
-      <Typography variant="h6">{t('history.heading')}</Typography>
       {history.isError && (
         <Typography role="alert">{t('history.loadFailed')}</Typography>
       )}
-      <ul aria-label={t('history.heading')}>
+      <Feed label={t('history.heading')}>
         {history.data?.map((entry, index) => (
-          <li key={index}>
+          <FeedItem
+            key={index}
+            avatar={<PersonAvatar email={entry.actor.email} />}
+          >
             <Typography variant="body2">
-              {`${describe(entry, board.data, t)} · ${format.format(new Date(entry.at))}`}
+              {`${describe(entry, board.data, t)} · `}
+              <Typography
+                component="span"
+                variant="caption"
+                color="textSecondary"
+              >
+                {format.format(new Date(entry.at))}
+              </Typography>
             </Typography>
-          </li>
+          </FeedItem>
         ))}
-      </ul>
+      </Feed>
     </>
   )
 }

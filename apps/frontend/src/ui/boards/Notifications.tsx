@@ -1,3 +1,4 @@
+import { Bell, Icon } from '@linagora/twake-icons'
 import { Button, Link, Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
@@ -26,6 +27,8 @@ export function FollowButton({
   return (
     <Button
       variant={pressed ? 'secondary' : 'text'}
+      size="small"
+      startIcon={<Icon icon={Bell} size={16} />}
       aria-pressed={pressed}
       disabled={!following.isSuccess}
       onClick={() => {
