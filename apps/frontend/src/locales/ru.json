@@ -262,7 +262,20 @@
   "quickAdd": {
     "title": "Быстрое добавление",
     "task": "Задача",
-    "help": "Tomorrow 3pm, every monday, p1, #доска, /раздел, %метка, +человек, {крайний срок}, !30m",
+    "syntaxHelp": "Справка по синтаксису",
+    "syntax": {
+      "dates": "Даты и время: today, tomorrow, friday, 12 oct, in 3 days, 3pm, 15h30",
+      "repeat": "Повтор: every monday, every 2 weeks, daily",
+      "priority": "Приоритет: от p1 до p4",
+      "names": "#доска, /раздел, %метка, +человек",
+      "more": "{friday} задаёт крайний срок, !30m задаёт длительность. Разделяйте пробелами или запятыми."
+    },
+    "understood": "Распознано",
+    "suggestions": "Подсказки",
+    "at": "Срок в %{time}",
+    "board": "Доска %{name}",
+    "section": "Раздел %{name}",
+    "person": "Назначить %{name}",
     "add": "Добавить",
     "close": "Закрыть",
     "added": "%{key} добавлена.",

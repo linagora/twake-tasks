@@ -1,4 +1,5 @@
 import type { BoardsApi, TaskChanges } from '@/application/boards'
+import type { BoardSummary } from '@/domain/board'
 import { parseQuickAdd } from '@/domain/quickAdd'
 
 export type QuickAddRefusal =
@@ -22,7 +23,28 @@ const simple = (name: string) =>
     .replace(/[^\p{L}\p{N}]/gu, '')
     .toLowerCase()
 
-const same = (typed: string, name: string) => simple(typed) === simple(name)
+export const same = (typed: string, name: string): boolean =>
+  simple(typed) === simple(name)
+
+export const isPerson = (typed: string, email: string): boolean =>
+  same(typed, email) || same(typed, email.split('@')[0] ?? '')
+
+export const nameHas = (name: string, typed: string): boolean =>
+  simple(name).includes(simple(typed))
+
+/** The board a line names, or the inbox when it names none. */
+export function findBoard(
+  summaries: BoardSummary[],
+  name: string | undefined
+): BoardSummary | undefined {
+  return name === undefined
+    ? summaries.find(each => each.inbox)
+    : summaries.find(
+        each =>
+          !each.archived &&
+          (same(name, each.name) || same(name, each.keyPrefix))
+      )
+}
 
 /**
  * Everything the line names is found before the task is created, so a typo
@@ -36,17 +58,8 @@ export async function quickAdd(
   const parsed = parseQuickAdd(line, today)
   if (!parsed.title) throw new QuickAddError('no_title')
 
-  const { board: boardName } = parsed
-  const summaries = await api.listBoards()
-  const summary =
-    boardName === undefined
-      ? summaries.find(each => each.inbox)
-      : summaries.find(
-          each =>
-            !each.archived &&
-            (same(boardName, each.name) || same(boardName, each.keyPrefix))
-        )
-  if (!summary) throw new QuickAddError('unknown_board', boardName)
+  const summary = findBoard(await api.listBoards(), parsed.board)
+  if (!summary) throw new QuickAddError('unknown_board', parsed.board)
   const board = await api.getBoard(summary.id)
 
   const { section: sectionName } = parsed
@@ -59,11 +72,7 @@ export async function quickAdd(
   }
 
   const assignees = parsed.people.map(typed => {
-    const person = board.members.find(
-      member =>
-        same(typed, member.email) ||
-        same(typed, member.email.split('@')[0] ?? '')
-    )
+    const person = board.members.find(member => isPerson(typed, member.email))
     if (!person) throw new QuickAddError('unknown_person', typed)
     return person.userId
   })

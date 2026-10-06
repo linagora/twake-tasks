@@ -17,9 +17,10 @@ export interface QuickTask {
 
 type Unit = Recurrence['unit']
 
-const START = '(?<=^|\\s)'
+// Commas separate tokens too, as in "3pm,p2,#design".
+const START = '(?<=^|[\\s,])'
 // A date word followed by ".com" is not a date.
-const END = '(?=$|\\s|[,.;:!?](?:\\s|$))'
+const END = '(?=$|[\\s,]|[.;:!?](?:\\s|$))'
 
 const WEEKDAYS: Record<string, number> = {
   sunday: 0,
@@ -276,13 +277,52 @@ function takeAll(
 ): { names: string[]; rest: string } {
   const names: string[] = []
   const rest = text.replace(
-    new RegExp(`${START}[${sigil}](\\S+)`, 'gu'),
+    new RegExp(`${START}[${sigil}]([^\\s,]+)`, 'gu'),
     (_, name: string) => {
       names.push(name)
       return ''
     }
   )
   return { names, rest }
+}
+
+export type Sigil = '#' | '/' | '%' | '+'
+
+/** A board, section, label or person name being typed at the caret. */
+export interface Mention {
+  sigil: Sigil
+  typed: string
+  start: number
+  end: number
+}
+
+export function mentionAt(line: string, caret: number): Mention | null {
+  const match = /(?:^|[\s,])([#/%+])([^\s,]*)$/u.exec(line.slice(0, caret))
+  if (!match) return null
+  const typed = match[2] ?? ''
+  const rest = /^[^\s,]*/u.exec(line.slice(caret))?.[0] ?? ''
+  return {
+    sigil: match[1] as Sigil,
+    typed,
+    start: caret - typed.length - 1,
+    end: caret + rest.length
+  }
+}
+
+// Names stop at a space, so "Product Design" goes in as "Product-Design",
+// which still finds the board.
+export function pickMention(
+  line: string,
+  mention: Mention,
+  name: string
+): { line: string; caret: number } {
+  const token = `${mention.sigil}${name.trim().replace(/\s+/gu, '-')}`
+  const after = line.slice(mention.end)
+  const spaced = after.startsWith(' ') ? after : ` ${after}`
+  return {
+    line: line.slice(0, mention.start) + token + spaced,
+    caret: mention.start + token.length + 1
+  }
 }
 
 /** `today` is the person's own calendar day, `YYYY-MM-DD`. */
@@ -362,6 +402,10 @@ export function parseQuickAdd(line: string, today: string): QuickTask {
     task.dueDate = recurrence?.value.from ?? today
   }
 
-  task.title = text.replace(/\s+/gu, ' ').trim()
+  task.title = text
+    .split(/\s+/u)
+    .filter(each => !/^,*$/u.test(each))
+    .join(' ')
+    .replace(/,+$/u, '')
   return task
 }
