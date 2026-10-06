@@ -18,7 +18,14 @@ export function SearchField({
 }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const [text, setText] = useState('')
+  const [params] = useSearchParams()
+  const searched = params.get('q')?.trim() ?? ''
+  const [text, setText] = useState(searched)
+  const [shown, setShown] = useState(searched)
+  if (searched !== shown) {
+    setShown(searched)
+    setText(searched)
+  }
   return (
     <SearchBar
       role="search"

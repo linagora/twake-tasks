@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -38,6 +38,27 @@ describe('SearchScreen', () => {
     )
     expect(screen.queryByText('Poster')).not.toBeInTheDocument()
     expect(boardsApi.search).toHaveBeenCalledWith('logo')
+  })
+
+  it('keeps the searched words in the search field', async () => {
+    renderRoute('/search?q=logo', { boardsApi: boards().boardsApi })
+
+    expect(
+      within(await screen.findByRole('search')).getByLabelText('Search')
+    ).toHaveValue('logo')
+  })
+
+  it('empties the search field when leaving the search', async () => {
+    renderRoute('/search?q=logo', { boardsApi: boards().boardsApi })
+    const field = within(await screen.findByRole('search')).getByLabelText(
+      'Search'
+    )
+
+    fireEvent.click(screen.getByRole('link', { name: 'Twake Tasks' }))
+
+    await waitFor(() => {
+      expect(field).toHaveValue('')
+    })
   })
 
   it('says when nothing matches', async () => {
