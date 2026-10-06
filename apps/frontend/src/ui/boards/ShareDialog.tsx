@@ -11,7 +11,7 @@ import { useId, useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { ROLES, type Board, type Role } from '@/domain/board'
-import { useBoardChange, useSharing, useSpaces } from '@/ui/boards/queries'
+import { useBoardChange, useProjects, useSharing } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 function RoleSelect({
@@ -43,7 +43,7 @@ function RoleSelect({
   )
 }
 
-function MoveToSpace({
+function MoveToProject({
   board,
   onMoved
 }: {
@@ -51,12 +51,18 @@ function MoveToSpace({
   onMoved: () => void
 }): ReactElement | null {
   const { t } = useI18n()
-  const spaces = useSpaces()
-  const [spaceId, setSpaceId] = useState('')
+  const projects = useProjects()
+  const [projectId, setProjectId] = useState('')
   const move = useBoardChange(board.id, (api, to: string) =>
-    api.moveToSpace(board.id, to)
+    api.moveToProject(board.id, to)
   )
-  const targets = spaces.data?.filter(space => space.role !== 'viewer') ?? []
+  const targets =
+    projects.data?.filter(
+      project =>
+        project.role !== 'viewer' &&
+        !project.personal &&
+        project.id !== board.project.id
+    ) ?? []
   if (targets.length === 0) return null
 
   return (
@@ -65,29 +71,29 @@ function MoveToSpace({
       className="u-flex u-flex-items-center u-mt-2"
       onSubmit={event => {
         event.preventDefault()
-        move.mutate(spaceId, { onSuccess: onMoved })
+        move.mutate(projectId, { onSuccess: onMoved })
       }}
     >
       <TextField
         select
         size="small"
         className="u-mr-1"
-        label={t('sharing.space')}
-        value={spaceId}
+        label={t('sharing.project')}
+        value={projectId}
         onChange={event => {
-          setSpaceId(event.target.value)
+          setProjectId(event.target.value)
         }}
         helperText={t('sharing.moveHelp')}
         slotProps={{ select: { native: true } }}
       >
         <option value="" />
-        {targets.map(space => (
-          <option key={space.id} value={space.id}>
-            {space.name}
+        {targets.map(project => (
+          <option key={project.id} value={project.id}>
+            {project.name}
           </option>
         ))}
       </TextField>
-      <Button type="submit" disabled={!spaceId || move.isPending}>
+      <Button type="submit" disabled={!projectId || move.isPending}>
         {t('sharing.move')}
       </Button>
       {move.isError && (
@@ -231,7 +237,7 @@ export function ShareDialog({
             </li>
           ))}
         </ul>
-        <MoveToSpace board={board} onMoved={onClose} />
+        <MoveToProject board={board} onMoved={onClose} />
       </DialogContent>
       <DialogActions>
         <Button variant="secondary" onClick={onClose}>

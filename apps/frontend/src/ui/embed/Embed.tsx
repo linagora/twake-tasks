@@ -8,7 +8,7 @@ import {
 } from 'react-router'
 
 import { TileGrid, Tile } from '@/ds/TileGrid'
-import { useBoards } from '@/ui/boards/queries'
+import { useBoards, useProjectOfSpace } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const spaceOrigins = (): string[] =>
@@ -49,18 +49,19 @@ export function EmbedLayout(): ReactElement {
 
 export function EmbedSpaceScreen(): ReactElement {
   const { t } = useI18n()
-  const { spaceId } = useParams()
+  const { spaceId = '' } = useParams()
+  const project = useProjectOfSpace(spaceId)
   const boards = useBoards()
   const shown = (boards.data ?? []).filter(
-    board => board.spaceId === spaceId && !board.archived
+    board => board.project.id === project.data && !board.archived
   )
 
   return (
     <main className="u-p-2">
-      {boards.isError && (
+      {(boards.isError || project.isError) && (
         <Typography role="alert">{t('boards.loadFailed')}</Typography>
       )}
-      {boards.isSuccess && shown.length === 0 && (
+      {boards.isSuccess && project.isSuccess && shown.length === 0 && (
         <Typography>{t('boards.empty')}</Typography>
       )}
       {shown.length > 0 && (

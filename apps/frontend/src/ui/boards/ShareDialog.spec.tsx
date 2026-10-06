@@ -1,20 +1,20 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import type { Sharing, Space } from '@/application/boards'
-import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import type { Project, Sharing } from '@/application/boards'
+import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 const me = { userId: 'me', email: 'me@example.com', role: 'admin' } as const
 
 async function openSharing(
   members: Sharing['members'] = [me],
-  spaces: Space[] = []
+  projects: Project[] = []
 ) {
   const board = aBoard({ name: 'Design' })
   const boardsApi = fakeBoardsApi([board])
   boardsApi.sharings.set(board.id, { members, invites: [] })
-  boardsApi.spaces.push(...spaces)
+  boardsApi.projects.push({ ...board.project, role: 'admin' }, ...projects)
   renderRoute(`/boards/${board.id}`, { boardsApi })
   fireEvent.click(await screen.findByRole('button', { name: 'Share' }))
   return {
@@ -76,32 +76,40 @@ describe('sharing a board', () => {
     })
   })
 
-  it('moves the board into a space I edit', async () => {
+  it('moves the board into another project I edit', async () => {
     const { boardsApi, board, dialog } = await openSharing(
       [me],
       [
-        { id: 'ops', name: 'Ops', role: 'editor' },
-        { id: 'hr', name: 'HR', role: 'viewer' }
+        {
+          ...aProject({ id: 'ops', name: 'Ops', managed: true }),
+          role: 'editor'
+        },
+        { ...aProject({ id: 'hr', name: 'HR' }), role: 'viewer' },
+        { ...aProject({ name: 'Personal', personal: true }), role: 'admin' }
       ]
     )
-    const space = await dialog.findByRole('combobox', { name: 'Space' })
+    const project = await dialog.findByRole('combobox', { name: 'Project' })
 
-    expect(within(space).queryByRole('option', { name: 'HR' })).toBeNull()
-    fireEvent.change(space, { target: { value: 'ops' } })
+    expect(
+      within(project)
+        .getAllByRole('option')
+        .map(option => option.textContent)
+    ).toEqual(['', 'Ops'])
+    fireEvent.change(project, { target: { value: 'ops' } })
     fireEvent.click(dialog.getByRole('button', { name: 'Move' }))
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).toBeNull()
     })
-    expect(boardsApi.moveToSpace).toHaveBeenCalledWith(board.id, 'ops')
+    expect(boardsApi.moveToProject).toHaveBeenCalledWith(board.id, 'ops')
     expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
   })
 
-  it('offers sharing only to admins of their own boards', async () => {
+  it('offers sharing only to admins of shareable projects', async () => {
     for (const board of [
       aBoard({ role: 'editor' }),
-      aBoard({ inbox: true }),
-      aBoard({ spaceId: 'space' })
+      aBoard({ inbox: true, project: aProject({ personal: true }) }),
+      aBoard({ project: aProject({ managed: true }) })
     ]) {
       const view = renderRoute(`/boards/${board.id}`, {
         boardsApi: fakeBoardsApi([board])
