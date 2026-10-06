@@ -143,6 +143,9 @@ describe('BoardsScreen', () => {
     expect(boardNames(home.getByRole('list', { name: 'Favorites' }))).toEqual([
       'Front UI'
     ])
+    expect(home.getByRole('listitem', { name: 'Front UI' })).toHaveTextContent(
+      'Product · No open tasks'
+    )
     expect(boardNames(home.getByRole('list', { name: 'Product' }))).toEqual([
       'Design'
     ])

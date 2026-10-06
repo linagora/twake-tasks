@@ -21,7 +21,7 @@ import { Link as RouterLink, useNavigate } from 'react-router'
 
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { CardTile, TileGrid } from '@/ds/TileGrid'
-import type { BoardSummary } from '@/domain/board'
+import type { BoardSummary, ProjectSummary } from '@/domain/board'
 import { groupBoards } from '@/domain/boardGroups'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { useBoards, useSetFavorite } from '@/ui/boards/queries'
@@ -69,16 +69,29 @@ function FavoriteButton({ board }: { board: BoardSummary }): ReactElement {
   )
 }
 
+function useProjectName(): (project: ProjectSummary) => string {
+  const { t } = useI18n()
+  return project =>
+    project.personal ? t('boards.personalProject') : project.name
+}
+
 function BoardShelf({
   name,
   hint,
-  boards
+  boards,
+  withProject = false
 }: {
   name: string
   hint?: string | undefined
   boards: BoardSummary[]
+  withProject?: boolean
 }): ReactElement {
   const { t } = useI18n()
+  const projectName = useProjectName()
+  const openTasks = (board: BoardSummary) =>
+    board.openTasks === 0
+      ? t('boards.noOpenTasks')
+      : t('boards.openTasks', { smart_count: board.openTasks })
   return (
     <section className="u-mb-2">
       <Typography variant="h5" component="h2">
@@ -106,9 +119,9 @@ function BoardShelf({
               }
               tag={board.keyPrefix}
               meta={
-                board.openTasks === 0
-                  ? t('boards.noOpenTasks')
-                  : t('boards.openTasks', { smart_count: board.openTasks })
+                withProject
+                  ? `${projectName(board.project)} · ${openTasks(board)}`
+                  : openTasks(board)
               }
               action={<FavoriteButton board={board} />}
             />
@@ -131,6 +144,7 @@ export function BoardsScreen(): ReactElement {
     board => board.archived === (shelf === 'archived')
   )
   const { starred, projects } = groupBoards(shown)
+  const projectName = useProjectName()
 
   return (
     <main className="u-p-2">
@@ -188,12 +202,12 @@ export function BoardsScreen(): ReactElement {
           />
         ))}
       {starred.length > 0 && (
-        <BoardShelf name={t('boards.favorites')} boards={starred} />
+        <BoardShelf name={t('boards.favorites')} boards={starred} withProject />
       )}
       {projects.map(({ project, boards }) => (
         <BoardShelf
           key={project.id}
-          name={project.personal ? t('boards.personalProject') : project.name}
+          name={projectName(project)}
           hint={project.managed ? t('boards.fromSpace') : undefined}
           boards={boards}
         />
