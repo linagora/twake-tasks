@@ -102,7 +102,7 @@ describe('moving a task to another board', () => {
 
     expect((await load(owner, ops.id)).tasks).toEqual([
       expect.objectContaining({
-        assignees: [{ userId: owner.userId, email: owner.email }]
+        assignees: [{ userId: owner.userId, email: owner.email, name: null }]
       })
     ])
   })

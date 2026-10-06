@@ -10,6 +10,7 @@ export interface Identity {
   // The LDAP entryUUID: the person, whatever their email.
   userId: string
   email: string
+  name: string | null
   sessionId: string
   expiresAt: Date
   organizationId: string | null
@@ -36,9 +37,22 @@ const userinfoSchema = z.object({
   sid: z.string().min(1),
   uuid: z.uuid(),
   email: z.email(),
+  name: z.string().nullish().catch(null),
+  given_name: z.string().nullish().catch(null),
+  family_name: z.string().nullish().catch(null),
   org_id: z.string().min(1).nullish(),
   org_role: organizationRole.nullish().catch(null)
 })
+
+// The name claim can be the uid (it is LemonLDAP's cn), so the given and
+// family names come first.
+function nameOf(claims: z.infer<typeof userinfoSchema>): string | null {
+  const full = [claims.given_name, claims.family_name]
+    .map(part => part?.trim())
+    .filter(Boolean)
+    .join(' ')
+  return full || claims.name?.trim() || null
+}
 
 // openid-client URL-encodes Basic credentials, turning "-" into "%2D", and
 // LemonLDAP only decodes them from 2.23. Raw ones work on every version as
@@ -99,6 +113,7 @@ export async function discoverIdentityProvider(
         subject: claims.sub,
         userId: claims.uuid,
         email: claims.email,
+        name: nameOf(claims),
         sessionId: claims.sid,
         expiresAt: new Date(token.exp * 1000),
         organizationId: claims.org_id ?? null,

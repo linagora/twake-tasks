@@ -66,7 +66,8 @@ describe('task history', () => {
     )
     expect(entries[0]?.actor).toEqual({
       userId: alice.userId,
-      email: alice.email
+      email: alice.email,
+      name: null
     })
   })
 

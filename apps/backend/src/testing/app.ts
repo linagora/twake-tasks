@@ -14,6 +14,7 @@ export interface TestUser {
   userId: string
   email: string
   organizationId: string | null
+  name?: string | null
 }
 
 // Each test gets its own people and organizations, so tests share one database.
@@ -137,6 +138,7 @@ export async function startApp() {
         subject: user.userId,
         userId: user.userId,
         email: user.email,
+        name: user.name ?? null,
         organizationId: user.organizationId,
         organizationRole: user.organizationId ? 'member' : null
       })

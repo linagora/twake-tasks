@@ -103,6 +103,8 @@ export const projectMembers = pgTable.withRLS(
     organizationId: organizationId(),
     userId: uuid('user_id').notNull(),
     email: text().notNull(),
+    // From the person's last sign-in: null for someone who never signed in.
+    name: text(),
     role: memberRole().notNull(),
     joinedAt: timestamptz('joined_at').notNull().defaultNow(),
     tenant: tenant()
