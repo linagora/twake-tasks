@@ -19,9 +19,22 @@
     "loading": "Chargement"
   },
   "session": {
-    "signingIn": "Connexion…",
-    "failed": "La connexion a échoué.",
+    "signingIn": "Connexion en cours…",
+    "opening": {
+      "task": "Ouverture de %{key}…",
+      "board": "Ouverture de votre tableau…"
+    },
+    "slow": "Connexion à votre compte toujours en cours…",
+    "failed": {
+      "title": "Impossible de vous connecter",
+      "hint": "Un problème est survenu lors de la connexion à votre compte."
+    },
+    "timeout": {
+      "title": "Cela prend plus de temps que d’habitude",
+      "hint": "Le service de connexion met du temps à répondre."
+    },
     "retry": "Réessayer",
+    "backToSignIn": "Retour à la connexion",
     "signOut": "Se déconnecter"
   },
   "boards": {

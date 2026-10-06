@@ -19,9 +19,22 @@
     "loading": "Loading"
   },
   "session": {
-    "signingIn": "Signing in…",
-    "failed": "Sign-in failed.",
+    "signingIn": "Signing you in…",
+    "opening": {
+      "task": "Opening %{key}…",
+      "board": "Opening your board…"
+    },
+    "slow": "Still connecting to your account…",
+    "failed": {
+      "title": "We couldn’t sign you in",
+      "hint": "Something went wrong while connecting to your account."
+    },
+    "timeout": {
+      "title": "This is taking longer than usual",
+      "hint": "The sign-in service is slow to answer."
+    },
     "retry": "Try again",
+    "backToSignIn": "Back to sign-in",
     "signOut": "Sign out"
   },
   "boards": {
