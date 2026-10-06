@@ -39,8 +39,8 @@ describe('outbox', () => {
   it('publishes committed events in order, once', async () => {
     const [first, second] = [anEvent(), anEvent()]
     await db.transaction(async tx => {
-      await enqueue(tx, 'board-1', first)
-      await enqueue(tx, 'board-1', second)
+      await enqueue(tx, first)
+      await enqueue(tx, second)
     })
     const { sent, publish } = recorder()
     const relay = createRelay({ db, logger, publish })
@@ -59,7 +59,7 @@ describe('outbox', () => {
     const event = anEvent()
     await db
       .transaction(async tx => {
-        await enqueue(tx, 'board-1', event)
+        await enqueue(tx, event)
         throw new Error('rollback')
       })
       .catch(() => undefined)
@@ -72,7 +72,7 @@ describe('outbox', () => {
 
   it('keeps an event the broker refused, and sends it on the next run', async () => {
     const event = anEvent()
-    await db.transaction(tx => enqueue(tx, 'board-1', event))
+    await db.transaction(tx => enqueue(tx, event))
     const failing = vi.fn(() => Promise.reject(new Error('broker down')))
 
     await createRelay({ db, logger, publish: failing }).relayOnce()

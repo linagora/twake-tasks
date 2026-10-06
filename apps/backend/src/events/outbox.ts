@@ -9,8 +9,8 @@ const KEEP_SENT = '1 day'
 // Any constant shared by every replica: only the holder relays, so events leave in order.
 const RELAY_LOCK = 0x7461736b
 
-export async function enqueue(tx: Tx, key: string, event: OutgoingEvent) {
-  await tx.insert(outbox).values({ key, event })
+export async function enqueue(tx: Tx, event: OutgoingEvent) {
+  await tx.insert(outbox).values({ event })
 }
 
 export function createRelay(deps: {
