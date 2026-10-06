@@ -86,9 +86,10 @@ export function reconcileSpace(ldapRest: LdapRest): Handler {
       await deleteSpace(tx, ref)
       return undefined
     }
-    if (await provisionSpace(tx, { ...ref, name: remote.name })) {
-      await enqueue(tx, await provisioned(tx, ref))
-    }
+    await provisionSpace(tx, { ...ref, name: remote.name })
+    // Every run, so TwakeSpace learns the project even if an earlier event was
+    // lost; it ignores the repeats, which share the event id.
+    await enqueue(tx, await provisioned(tx, ref))
     await renameSpace(tx, ref, remote.name)
     await upsertMembers(tx, ref, remote.members)
     await removeMembers(

@@ -84,11 +84,12 @@ describe('reconciling a space', () => {
     ])
   })
 
-  it('publishes the project of a space it creates', async () => {
+  it('publishes the project of every space it repairs, the same event each time', async () => {
     const admin = aUser()
     const org = admin.organizationId ?? ''
     const space = { id: randomUUID(), name: 'Hiring', members: [] }
 
+    await run(fakeLdapRest(org, [space]), space.id, org)
     await run(fakeLdapRest(org, [space]), space.id, org)
 
     const [project] = await db.transaction(async tx => {
@@ -102,7 +103,8 @@ describe('reconciling a space', () => {
       .select({ event: outbox.event })
       .from(outbox)
       .where(raw`${outbox.event} -> 'data' ->> 'space_id' = ${space.id}`)
-    expect(queued).toHaveLength(1)
+    expect(queued).toHaveLength(2)
+    expect(queued[1]).toEqual(queued[0])
     expect(queued[0]).toMatchObject({
       event: {
         data: {

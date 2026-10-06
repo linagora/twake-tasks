@@ -133,12 +133,11 @@ export async function provisioned(
   }
 }
 
-/** Resolves to whether the space is new here. */
 export async function provisionSpace(
   tx: Tx,
   space: SpaceRef & { name: string }
-): Promise<boolean> {
-  if (await projectOf(tx, space)) return false
+): Promise<void> {
+  if (await projectOf(tx, space)) return
   const [project] = await tx
     .insert(projects)
     .values({
@@ -160,7 +159,7 @@ export async function provisionSpace(
     .returning({ id: spaces.id })
   if (!created) {
     await tx.delete(projects).where(eq(projects.id, project.id))
-    return false
+    return
   }
   const [board] = await tx
     .insert(boards)
@@ -174,7 +173,6 @@ export async function provisionSpace(
     .returning({ id: boards.id, organizationId: boards.organizationId })
   if (!board) throw new Error('board insert returned nothing')
   await addDefaultSections(tx, board)
-  return true
 }
 
 export async function renameSpace(tx: Tx, space: SpaceRef, name: string) {
