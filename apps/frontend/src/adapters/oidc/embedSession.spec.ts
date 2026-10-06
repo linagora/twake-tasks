@@ -2,13 +2,13 @@ import { setTokenSet } from '@linagora/twake-oidc'
 import * as client from 'openid-client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { embedSession } from '@/adapters/oidc/embedSession'
+import { readSsoConfig } from '@/adapters/oidc/oidcSession'
 import {
-  embedSession,
   POPUP_NAME,
   relayCallback,
   SILENT_NAME
-} from '@/adapters/oidc/embedSession'
-import { readSsoConfig } from '@/adapters/oidc/oidcSession'
+} from '@/adapters/oidc/ssoFrame'
 
 vi.mock('@linagora/twake-oidc', () => ({
   addAuthorization: vi.fn(),
