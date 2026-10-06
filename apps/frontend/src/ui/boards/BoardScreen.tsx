@@ -28,8 +28,11 @@ import type { Board, Section, Task } from '@/domain/board'
 import { ShelfDialog } from '@/ui/boards/Archive'
 import { BoardDrag } from '@/ui/boards/BoardDrag'
 import { BoardMenu } from '@/ui/boards/BoardMenu'
+import { CalendarTask } from '@/ui/boards/CalendarTask'
+import { localToday } from '@/ui/boards/dueLabel'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
+import { NewDatedTask } from '@/ui/boards/NewDatedTask'
 import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { ShareDialog } from '@/ui/boards/ShareDialog'
@@ -177,7 +180,7 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
                 {t('sharing.share')}
               </Button>
             )}
-            {editable && first && board.layout !== 'calendar' && (
+            {editable && first && (
               <Button
                 startIcon={<Icon icon={Plus} />}
                 onClick={() => {
@@ -336,7 +339,27 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
         />
       )}
       {board.layout === 'calendar' && (
-        <CalendarLayout tasks={topLevel} card={card} />
+        <CalendarLayout
+          tasks={topLevel}
+          item={task => (
+            <CalendarTask
+              key={task.id}
+              task={task}
+              boardId={board.id}
+              editable={editable}
+            />
+          )}
+        />
+      )}
+      {board.layout === 'calendar' && first && adding !== null && (
+        <NewDatedTask
+          boardId={board.id}
+          sectionId={first.id}
+          day={localToday()}
+          onClose={() => {
+            setAdding(null)
+          }}
+        />
       )}
     </>
   )

@@ -1,8 +1,17 @@
 import { Calendar, Icon, List, Mosaic } from '@linagora/twake-icons'
-import { Box, Button, ToggleButton, Typography } from '@linagora/twake-mui'
-import { useId, useState, type ReactElement, type ReactNode } from 'react'
+import { ToggleButton, useMediaQuery, useTheme } from '@linagora/twake-mui'
+import { useState, type ReactElement, type ReactNode } from 'react'
 
-import { DayCell, MonthGrid, Stack } from '@/ds/Calendar'
+import {
+  CalendarBody,
+  CalendarToolbar,
+  CalendarTray,
+  ChipList,
+  DayAgenda,
+  DayButton,
+  DayCell,
+  MonthGrid
+} from '@/ds/Calendar'
 import { ListHeader, ListSection } from '@/ds/ListView'
 import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
 import { LAYOUTS, type Board, type Layout, type Task } from '@/domain/board'
@@ -36,24 +45,6 @@ export function LayoutSwitch({ board }: { board: Board }): ReactElement {
         </ToggleButton>
       ))}
     </HeaderToggleGroup>
-  )
-}
-
-function Titled({
-  title,
-  children
-}: {
-  title: string
-  children: ReactNode
-}): ReactElement {
-  const titleId = useId()
-  return (
-    <section aria-labelledby={titleId} className="u-mb-2">
-      <Typography id={titleId} variant="subtitle1" component="h2">
-        {title}
-      </Typography>
-      {children}
-    </section>
   )
 }
 
@@ -128,64 +119,108 @@ const shiftMonth = (month: string, amount: number) => {
   return date.toISOString().slice(0, 7)
 }
 
+// Phones get a grid of day buttons with the picked day's tasks below it,
+// since seven columns leave no room for titles.
 export function CalendarLayout({
   tasks,
-  card
+  item
 }: {
   tasks: Task[]
-  card: (task: Task) => ReactElement
+  item: (task: Task) => ReactElement
 }): ReactElement {
   const { t, lang } = useI18n()
-  const [month, setMonth] = useState(() => localToday().slice(0, 7))
+  const theme = useTheme()
+  const compact = useMediaQuery(theme.breakpoints.down('md'))
+  const today = localToday()
+  const [month, setMonth] = useState(() => today.slice(0, 7))
+  const [picked, setPicked] = useState(today)
+  const [trayOpen, setTrayOpen] = useState<boolean | null>(null)
   const undated = tasks.filter(task => task.dueDate === null)
+  const dueOn = (day: string) => tasks.filter(task => task.dueDate === day)
   const title = new Intl.DateTimeFormat(lang, {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC'
   }).format(new Date(`${month}-01T00:00:00Z`))
+  const weekdayName = new Intl.DateTimeFormat(lang, {
+    weekday: compact ? 'narrow' : 'short',
+    timeZone: 'UTC'
+  })
+  const weekdays = monthGrid('2024-01')
+    .slice(0, 7)
+    .map(day => weekdayName.format(new Date(`${day}T00:00:00Z`)))
 
   return (
     <>
-      <Box className="u-flex u-flex-items-center u-mb-1">
-        <Button
-          variant="text"
-          size="small"
-          onClick={() => {
-            setMonth(shiftMonth(month, -1))
-          }}
-        >
-          {t('layout.previousMonth')}
-        </Button>
-        <Typography variant="h5" component="h2" className="u-mh-1">
-          {title}
-        </Typography>
-        <Button
-          variant="text"
-          size="small"
-          onClick={() => {
-            setMonth(shiftMonth(month, 1))
-          }}
-        >
-          {t('layout.nextMonth')}
-        </Button>
-      </Box>
-      <MonthGrid>
-        {monthGrid(month).map(day => (
-          <DayCell
-            key={day}
-            label={formatDay(day, lang)}
-            number={Number(day.slice(8))}
-            outside={!day.startsWith(month)}
+      <CalendarToolbar
+        title={title}
+        previousLabel={t('layout.previousMonth')}
+        nextLabel={t('layout.nextMonth')}
+        todayLabel={t('layout.today')}
+        onPrevious={() => {
+          setMonth(shiftMonth(month, -1))
+        }}
+        onNext={() => {
+          setMonth(shiftMonth(month, 1))
+        }}
+        onToday={() => {
+          setMonth(today.slice(0, 7))
+          setPicked(today)
+        }}
+      />
+      <CalendarBody
+        aside={
+          undated.length > 0 && (
+            <CalendarTray
+              label={t('layout.noDate')}
+              count={undated.length}
+              expanded={trayOpen ?? !compact}
+              onToggle={() => {
+                setTrayOpen(!(trayOpen ?? !compact))
+              }}
+            >
+              {undated.map(item)}
+            </CalendarTray>
+          )
+        }
+      >
+        <MonthGrid weekdays={weekdays}>
+          {monthGrid(month).map(day =>
+            compact ? (
+              <DayButton
+                key={day}
+                label={formatDay(day, lang)}
+                number={Number(day.slice(8))}
+                outside={!day.startsWith(month)}
+                today={day === today}
+                selected={day === picked}
+                marks={dueOn(day).length}
+                onSelect={() => {
+                  setPicked(day)
+                }}
+              />
+            ) : (
+              <DayCell
+                key={day}
+                label={formatDay(day, lang)}
+                number={Number(day.slice(8))}
+                outside={!day.startsWith(month)}
+                today={day === today}
+              >
+                <ChipList>{dueOn(day).map(item)}</ChipList>
+              </DayCell>
+            )
+          )}
+        </MonthGrid>
+        {compact && (
+          <DayAgenda
+            label={formatDay(picked, lang)}
+            empty={t('layout.nothingDue')}
           >
-            {tasks.filter(task => task.dueDate === day).map(card)}
-          </DayCell>
-        ))}
-      </MonthGrid>
-      {undated.length > 0 && (
-        <Titled title={t('layout.noDate')}>
-          <Stack>{undated.map(card)}</Stack>
-        </Titled>
-      )}
+            {dueOn(picked).map(item)}
+          </DayAgenda>
+        )}
+      </CalendarBody>
     </>
   )
 }

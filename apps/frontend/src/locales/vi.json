@@ -341,7 +341,9 @@
     "noDate": "Không có ngày",
     "task": "Công việc",
     "due": "Hạn",
-    "complete": "Hoàn thành %{title}"
+    "complete": "Hoàn thành %{title}",
+    "today": "Hôm nay",
+    "nothingDue": "Không có việc nào đến hạn hôm đó."
   },
   "search": {
     "label": "Tìm kiếm",
