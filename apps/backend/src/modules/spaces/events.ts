@@ -28,9 +28,12 @@ import {
 import { addDefaultSections } from '../boards/store.ts'
 import { spaces } from './schema.ts'
 
+const timestamp = z.iso.datetime({ offset: true })
+
 const spaceEvent = z.looseObject({
   organizationId: z.string().min(1),
-  id: z.uuid()
+  id: z.uuid(),
+  timestamp
 })
 
 // People are keyed by entryUUID; one sent without it waits for the nightly
@@ -67,7 +70,29 @@ function keyPrefixOf(name: string) {
   return letters.slice(0, 3) || FALLBACK_KEY_PREFIX
 }
 
-type SpaceRef = z.infer<typeof spaceEvent>
+type SpaceRef = Pick<z.infer<typeof spaceEvent>, 'organizationId' | 'id'>
+type TimedSpace = SpaceRef & { timestamp: string }
+
+// A late or redelivered event must not undo a newer one; equal timestamps
+// apply in the order they arrive.
+async function isStale(tx: Tx, space: TimedSpace): Promise<boolean> {
+  const [row] = await tx
+    .select({
+      stale: sql<boolean>`${spaces.lastEventAt} > ${space.timestamp}::timestamptz`
+    })
+    .from(spaces)
+    .where(eq(spaces.id, space.id))
+  return row?.stale === true
+}
+
+async function applied(tx: Tx, space: TimedSpace) {
+  await tx
+    .update(spaces)
+    .set({
+      lastEventAt: sql`greatest(${spaces.lastEventAt}, ${space.timestamp}::timestamptz)`
+    })
+    .where(eq(spaces.id, space.id))
+}
 
 /** The project kept for the space, deleted or not. */
 export async function projectOf(
@@ -238,32 +263,42 @@ export async function deleteSpace(tx: Tx, space: SpaceRef): Promise<void> {
   })
 }
 
+function inOrder<S extends z.ZodType<TimedSpace>>(
+  schema: S,
+  apply: (tx: Tx, space: z.output<S>) => Promise<void>
+): Handler<PlatformEvent> {
+  return async (event, tx) => {
+    const space = parseOrDrop(schema, event.body, event.routingKey)
+    await asOrganization(tx, space.organizationId)
+    if (await isStale(tx, space)) return
+    await apply(tx, space)
+    await applied(tx, space)
+  }
+}
+
 export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
   // A replay creates nothing, and publishes the same event again.
   const onCreated: Handler<PlatformEvent> = async (event, tx) => {
     const space = parseOrDrop(spaceCreated, event.body, event.routingKey)
     await asOrganization(tx, space.organizationId)
+    const stale = await isStale(tx, space)
     await provisionSpace(tx, space)
-    await upsertMembers(tx, space, space.members)
+    if (!stale) {
+      await upsertMembers(tx, space, space.members)
+      await applied(tx, space)
+    }
     await enqueue(tx, await provisioned(tx, space))
   }
 
-  const onUpdated: Handler<PlatformEvent> = async (event, tx) => {
-    const space = parseOrDrop(spaceUpdated, event.body, event.routingKey)
-    if (space.name === undefined) return
-    await asOrganization(tx, space.organizationId)
-    await renameSpace(tx, space, space.name)
-  }
+  const onUpdated = inOrder(spaceUpdated, async (tx, space) => {
+    if (space.name !== undefined) await renameSpace(tx, space, space.name)
+  })
 
-  const onMembersChanged: Handler<PlatformEvent> = async (event, tx) => {
-    const space = parseOrDrop(membersChanged, event.body, event.routingKey)
-    await asOrganization(tx, space.organizationId)
-    await upsertMembers(tx, space, space.members)
-  }
+  const onMembersChanged = inOrder(membersChanged, (tx, space) =>
+    upsertMembers(tx, space, space.members)
+  )
 
-  const onMembersRemoved: Handler<PlatformEvent> = async (event, tx) => {
-    const space = parseOrDrop(membersRemoved, event.body, event.routingKey)
-    await asOrganization(tx, space.organizationId)
+  const onMembersRemoved = inOrder(membersRemoved, async (tx, space) => {
     const uuids = space.members.flatMap(p => (p.uuid ? [p.uuid] : []))
     const emails = space.members.flatMap(p => (p.email ? [p.email] : []))
     await removeMembers(
@@ -274,12 +309,14 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
         inArray(projectMembers.email, emails)
       )
     )
-  }
+  })
 
+  // Applied whatever its timestamp, since a space id is never reused.
   const onDeleted: Handler<PlatformEvent> = async (event, tx) => {
     const space = parseOrDrop(spaceEvent, event.body, event.routingKey)
     await asOrganization(tx, space.organizationId)
     await deleteSpace(tx, space)
+    await applied(tx, space)
   }
 
   return new Map([

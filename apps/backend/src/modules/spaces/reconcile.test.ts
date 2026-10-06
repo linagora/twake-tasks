@@ -59,7 +59,11 @@ const run = (ldapRest: LdapRest, spaceId: string, organizationId: string) =>
 function deliver(routingKey: string, body: object) {
   const handler = spaceRoutes().get(routingKey)
   if (!handler) throw new Error(`no handler for ${routingKey}`)
-  const event: PlatformEvent = { routingKey, messageId: randomUUID(), body }
+  const event: PlatformEvent = {
+    routingKey,
+    messageId: randomUUID(),
+    body: { timestamp: new Date().toISOString(), ...body }
+  }
   return db.transaction(tx => handler(event, tx))
 }
 

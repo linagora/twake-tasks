@@ -27,9 +27,16 @@ afterAll(async () => {
 function deliver(routingKey: string, body: object) {
   const handler = routes.get(routingKey)
   if (!handler) throw new Error(`no handler for ${routingKey}`)
-  const event: PlatformEvent = { routingKey, messageId: randomUUID(), body }
+  const event: PlatformEvent = {
+    routingKey,
+    messageId: randomUUID(),
+    body: { timestamp: new Date().toISOString(), ...body }
+  }
   return db.transaction(tx => handler(event, tx))
 }
+
+const at = (minute: number) =>
+  new Date(Date.UTC(2026, 9, 6, 9, minute)).toISOString()
 
 const member = (user: TestUser, role: string) => ({
   uuid: user.userId,
@@ -290,5 +297,126 @@ describe('twake.space.deleted', () => {
       return tx.select().from(boards).where(eq(boards.id, boardId))
     })
     expect(remaining).toEqual([])
+  })
+
+  it('applies even when older than the last event of the space', async () => {
+    const admin = aUser()
+    const { space } = await aSpaceWithATask(admin, [])
+    await deliver('twake.space.updated', {
+      ...space,
+      name: 'Renamed',
+      timestamp: at(30)
+    })
+
+    await deliver('twake.space.deleted', { ...space, timestamp: at(10) })
+
+    expect(await spaceBoards(admin)).toEqual([])
+  })
+})
+
+describe('the order of space events', () => {
+  it('ignores an event older than the last one applied to its space', async () => {
+    const admin = aUser()
+    const other = aUser({ organizationId: admin.organizationId })
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+    await deliver('twake.space.created', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(0)
+    })
+    await deliver('twake.space.member.added', {
+      ...space,
+      members: [member(other, 'editor')],
+      timestamp: at(20)
+    })
+
+    await deliver('twake.space.member.removed', {
+      ...space,
+      members: [{ uuid: other.userId }],
+      timestamp: at(10)
+    })
+    await deliver('twake.space.updated', {
+      ...space,
+      name: 'Stale',
+      timestamp: at(15)
+    })
+
+    expect(await spaceBoards(other)).toEqual([
+      expect.objectContaining({ role: 'editor' })
+    ])
+    expect(await spaceBoards(admin)).toEqual([
+      expect.objectContaining({
+        project: expect.objectContaining({ name: 'Ops' }) as object
+      })
+    ])
+  })
+
+  it('applies events with the same timestamp in the order they arrive', async () => {
+    const admin = aUser()
+    const other = aUser({ organizationId: admin.organizationId })
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+    await deliver('twake.space.created', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(0)
+    })
+
+    await deliver('twake.space.member.added', {
+      ...space,
+      members: [member(other, 'viewer')],
+      timestamp: at(5)
+    })
+    await deliver('twake.space.member.role.changed', {
+      ...space,
+      members: [member(other, 'editor')],
+      timestamp: at(5)
+    })
+
+    expect(await spaceBoards(other)).toEqual([
+      expect.objectContaining({ role: 'editor' })
+    ])
+  })
+
+  it('publishes the project again on a late twake.space.created', async () => {
+    const admin = aUser()
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+    const created = {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(0)
+    }
+    await deliver('twake.space.created', created)
+    await deliver('twake.space.member.role.changed', {
+      ...space,
+      members: [member(admin, 'viewer')],
+      timestamp: at(10)
+    })
+
+    await deliver('twake.space.created', created)
+
+    expect(await spaceBoards(admin)).toEqual([
+      expect.objectContaining({ role: 'viewer' })
+    ])
+    const queued = await db
+      .select({ event: outbox.event })
+      .from(outbox)
+      .where(raw`${outbox.event} -> 'data' ->> 'space_id' = ${space.id}`)
+    expect(queued).toHaveLength(2)
+  })
+
+  it('drops a space event without a timestamp', async () => {
+    const handler = routes.get('twake.space.updated')
+    const event: PlatformEvent = {
+      routingKey: 'twake.space.updated',
+      messageId: randomUUID(),
+      body: { organizationId: 'org', id: randomUUID(), name: 'Ops' }
+    }
+
+    await expect(
+      db.transaction(tx => handler?.(event, tx) ?? Promise.resolve())
+    ).rejects.toThrow(MalformedEventError)
   })
 })

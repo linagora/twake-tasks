@@ -1,5 +1,12 @@
-import { foreignKey, pgTable, unique, uuid } from 'drizzle-orm/pg-core'
-import { organizationId, tenantPolicy } from '../../infra/db.ts'
+import { sql } from 'drizzle-orm'
+import {
+  foreignKey,
+  pgPolicy,
+  pgTable,
+  unique,
+  uuid
+} from 'drizzle-orm/pg-core'
+import { organizationId, tenantPolicy, timestamptz } from '../../infra/db.ts'
 import { projects } from '../boards/schema.ts'
 
 // The space integration's own table: the project it keeps for each space.
@@ -8,7 +15,8 @@ export const spaces = pgTable.withRLS(
   {
     id: uuid().primaryKey(),
     organizationId: organizationId().notNull(),
-    projectId: uuid('project_id').notNull()
+    projectId: uuid('project_id').notNull(),
+    lastEventAt: timestamptz('last_event_at')
   },
   table => [
     unique().on(table.projectId),
@@ -16,6 +24,11 @@ export const spaces = pgTable.withRLS(
       columns: [table.organizationId, table.projectId],
       foreignColumns: [projects.tenant, projects.id]
     }).onDelete('cascade'),
-    tenantPolicy(table.organizationId)
+    tenantPolicy(table.organizationId),
+    // Lets the startup check see whether any organization has a space.
+    pgPolicy('space_lookup', {
+      for: 'select',
+      using: sql`current_setting('app.space_lookup', true) = 'on'`
+    })
   ]
 )
