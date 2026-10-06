@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import type { RouteObject } from 'react-router'
 
 import { AgendaScreen, FilterScreen } from '@/ui/agenda/AgendaScreen'
@@ -6,7 +7,11 @@ import { SearchScreen } from '@/ui/agenda/SearchScreen'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { BoardsScreen } from '@/ui/boards/BoardsScreen'
 import { NotificationsScreen } from '@/ui/boards/Notifications'
-import { EmbedLayout, EmbedSpaceScreen } from '@/ui/embed/Embed'
+import {
+  EmbedLayout,
+  EmbedProjectScreen,
+  EmbedSpaceScreen
+} from '@/ui/embed/Embed'
 import { AppShell } from '@/ui/shell/AppShell'
 import { CrashScreen, NotFoundScreen } from '@/ui/shell/Problems'
 
@@ -31,17 +36,22 @@ export const routes: RouteObject[] = [
       }
     ]
   },
-  {
-    path: '/embed/spaces/:spaceId',
+  embed('/embed/projects/:projectId', <EmbedProjectScreen />),
+  embed('/embed/spaces/:spaceId', <EmbedSpaceScreen />)
+]
+
+function embed(path: string, index: ReactElement): RouteObject {
+  return {
+    path,
     element: <EmbedLayout />,
     children: [
       {
         errorElement: <CrashScreen />,
         children: [
-          { index: true, element: <EmbedSpaceScreen /> },
+          { index: true, element: index },
           { path: 'boards/:boardId', element: <BoardScreen /> }
         ]
       }
     ]
   }
-]
+}

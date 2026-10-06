@@ -8,6 +8,12 @@ import { renderRoute } from '@/testing/renderWithProviders'
 const SPACE = 'https://space.example.com'
 const roadmap = aProject({ name: 'Roadmap', managed: true })
 
+function projectBoardsApi(boards: Board[]) {
+  const boardsApi = fakeBoardsApi(boards)
+  boardsApi.projects.push({ ...roadmap, role: 'editor' })
+  return boardsApi
+}
+
 function spaceBoardsApi(boards: Board[]) {
   const boardsApi = fakeBoardsApi(boards)
   boardsApi.spaceProjects.set('s1', roadmap.id)
@@ -40,6 +46,49 @@ describe('the embedded view', () => {
         .map(link => link.textContent)
     ).toEqual(['Roadmap'])
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
+  })
+
+  it("lists a project's boards from its id", async () => {
+    renderRoute(`/embed/projects/${roadmap.id}`, {
+      boardsApi: projectBoardsApi([
+        aBoard({ name: 'Roadmap', project: roadmap }),
+        aBoard({ name: 'Old roadmap', project: roadmap, archived: true }),
+        aBoard({ name: 'Mine' })
+      ])
+    })
+
+    const list = await screen.findByRole('list', { name: 'Boards' })
+    expect(
+      within(list)
+        .getAllByRole('link')
+        .map(link => link.textContent)
+    ).toEqual(['Roadmap'])
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
+  })
+
+  it('says so when the project cannot be found', async () => {
+    renderRoute('/embed/projects/unknown', {
+      boardsApi: projectBoardsApi([aBoard({ project: roadmap })])
+    })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The boards could not be loaded.'
+    )
+  })
+
+  it('opens a board inside the project embed and comes back', async () => {
+    const board = aBoard({ name: 'Roadmap', project: roadmap })
+    const { router } = renderRoute(`/embed/projects/${roadmap.id}`, {
+      boardsApi: projectBoardsApi([board])
+    })
+
+    fireEvent.click(await screen.findByRole('link', { name: 'Roadmap' }))
+    expect(router.state.location.pathname).toBe(
+      `/embed/projects/${roadmap.id}/boards/${board.id}`
+    )
+
+    fireEvent.click(await screen.findByRole('link', { name: 'Back to boards' }))
+    expect(router.state.location.pathname).toBe(`/embed/projects/${roadmap.id}`)
   })
 
   it('says so when the space cannot be found', async () => {

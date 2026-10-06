@@ -87,7 +87,7 @@ export function reconcileSpace(ldapRest: LdapRest): Handler {
       return undefined
     }
     if (await provisionSpace(tx, { ...ref, name: remote.name })) {
-      await enqueue(tx, provisioned(ref))
+      await enqueue(tx, await provisioned(tx, ref))
     }
     await renameSpace(tx, ref, remote.name)
     await upsertMembers(tx, ref, remote.members)
