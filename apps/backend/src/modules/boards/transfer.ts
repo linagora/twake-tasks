@@ -84,10 +84,7 @@ export function createTransferStore(db: Db) {
             )
           )
         )
-        const members = await membersOf(tx, {
-          id: to.boardId,
-          spaceId: target.spaceId
-        })
+        const members = await membersOf(tx, target)
         await tx.delete(taskAssignees).where(
           and(
             inArray(taskAssignees.taskId, ids),

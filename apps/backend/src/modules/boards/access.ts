@@ -1,64 +1,39 @@
-import { and, asc, eq, isNull, or, sql } from 'drizzle-orm'
+import { and, asc, eq, isNull } from 'drizzle-orm'
 import type { Tx } from '../../infra/db.ts'
-import { spaceMembers, spaces } from '../spaces/schema.ts'
-import { boardMembers, boards } from './schema.ts'
+import { boards, projectMembers, projects } from './schema.ts'
 
 export type Role = 'viewer' | 'editor' | 'admin'
 
-// Every permission check goes through this query: a space board takes the
-// person's role in the space, a user's board their role on the board.
+// Every permission check goes through this query: a board takes the person's
+// role in its project.
 export function accessibleBoards(tx: Tx, userId: string) {
   return tx
-    .select({
-      boardId: boards.id,
-      role: sql<Role>`coalesce(${spaceMembers.role}, ${boardMembers.role})`.as(
-        'role'
-      )
-    })
+    .select({ boardId: boards.id, role: projectMembers.role })
     .from(boards)
-    .leftJoin(
-      boardMembers,
-      and(eq(boardMembers.boardId, boards.id), eq(boardMembers.userId, userId))
+    .innerJoin(
+      projects,
+      and(eq(projects.id, boards.projectId), isNull(projects.deletedAt))
     )
-    .leftJoin(
-      spaces,
-      and(eq(spaces.id, boards.spaceId), isNull(spaces.deletedAt))
-    )
-    .leftJoin(
-      spaceMembers,
-      and(eq(spaceMembers.spaceId, spaces.id), eq(spaceMembers.userId, userId))
-    )
-    .where(
-      or(
-        and(isNull(boards.spaceId), eq(boardMembers.userId, userId)),
-        eq(spaceMembers.userId, userId)
+    .innerJoin(
+      projectMembers,
+      and(
+        eq(projectMembers.projectId, projects.id),
+        eq(projectMembers.userId, userId)
       )
     )
     .as('accessible')
 }
 
-// The people who can open a board: its space's members for a space board,
-// its own members otherwise.
+// The people who can open a board: the members of its project.
 export function membersOf(
   tx: Tx,
-  board: { id: string; spaceId: string | null }
+  board: { projectId: string }
 ): Promise<{ userId: string; email: string }[]> {
-  if (board.spaceId === null) {
-    return tx
-      .select({ userId: boardMembers.userId, email: boardMembers.email })
-      .from(boardMembers)
-      .where(eq(boardMembers.boardId, board.id))
-      .orderBy(asc(boardMembers.email))
-  }
   return tx
-    .select({ userId: spaceMembers.userId, email: spaceMembers.email })
-    .from(spaceMembers)
-    .innerJoin(
-      spaces,
-      and(eq(spaces.id, spaceMembers.spaceId), isNull(spaces.deletedAt))
-    )
-    .where(eq(spaceMembers.spaceId, board.spaceId))
-    .orderBy(asc(spaceMembers.email))
+    .select({ userId: projectMembers.userId, email: projectMembers.email })
+    .from(projectMembers)
+    .where(eq(projectMembers.projectId, board.projectId))
+    .orderBy(asc(projectMembers.email))
 }
 
 export async function roleOn(
@@ -71,5 +46,26 @@ export async function roleOn(
     .select({ role: accessible.role })
     .from(accessible)
     .where(eq(accessible.boardId, boardId))
+  return row?.role ?? null
+}
+
+export async function roleIn(
+  tx: Tx,
+  userId: string,
+  projectId: string
+): Promise<Role | null> {
+  const [row] = await tx
+    .select({ role: projectMembers.role })
+    .from(projectMembers)
+    .innerJoin(
+      projects,
+      and(eq(projects.id, projectMembers.projectId), isNull(projects.deletedAt))
+    )
+    .where(
+      and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, userId)
+      )
+    )
   return row?.role ?? null
 }

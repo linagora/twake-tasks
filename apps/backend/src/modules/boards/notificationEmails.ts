@@ -2,8 +2,13 @@ import { and, eq, isNull, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { asTenant } from '../../infra/db.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
-import { spaceMembers } from '../spaces/schema.ts'
-import { boardMembers, boards, notifications, tasks } from './schema.ts'
+import {
+  boards,
+  notifications,
+  projectMembers,
+  projects,
+  tasks
+} from './schema.ts'
 
 export const NOTIFICATION_EMAIL_JOB = 'notification_email'
 
@@ -41,26 +46,20 @@ export function emailNotification(deps: {
         boardId: boards.id,
         key: sql<string>`${boards.keyPrefix} || '-' || ${tasks.number}`,
         title: tasks.title,
-        email: sql<
-          string | null
-        >`coalesce(${boardMembers.email}, ${spaceMembers.email})`
+        email: projectMembers.email
       })
       .from(notifications)
       .innerJoin(tasks, eq(tasks.id, notifications.taskId))
       .innerJoin(boards, eq(boards.id, tasks.boardId))
-      .leftJoin(
-        boardMembers,
-        and(
-          eq(boardMembers.boardId, boards.id),
-          isNull(boards.spaceId),
-          eq(boardMembers.userId, job.userId)
-        )
+      .innerJoin(
+        projects,
+        and(eq(projects.id, boards.projectId), isNull(projects.deletedAt))
       )
-      .leftJoin(
-        spaceMembers,
+      .innerJoin(
+        projectMembers,
         and(
-          eq(spaceMembers.spaceId, boards.spaceId),
-          eq(spaceMembers.userId, job.userId)
+          eq(projectMembers.projectId, projects.id),
+          eq(projectMembers.userId, job.userId)
         )
       )
       .where(
@@ -69,7 +68,7 @@ export function emailNotification(deps: {
           isNull(notifications.readAt)
         )
       )
-    if (!row?.email) return undefined
+    if (!row) return undefined
     const link = `${deps.appUrl.replace(/\/$/, '')}/boards/${row.boardId}?task=${row.key}`
     await deps.send({
       to: row.email,
