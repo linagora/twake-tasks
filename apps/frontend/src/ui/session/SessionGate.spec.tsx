@@ -62,6 +62,7 @@ describe('SessionGate', () => {
     const session = fakeSession()
     renderWithProviders(<p>app</p>, { session })
     await screen.findByText('app')
+    await act(() => Promise.resolve())
 
     session.endElsewhere()
 
