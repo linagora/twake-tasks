@@ -6,6 +6,9 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { oidcSession, readSsoConfig } from '@/adapters/oidc/oidcSession'
+import { signInSilently } from '@/adapters/oidc/ssoFrame'
+
+vi.mock('@/adapters/oidc/ssoFrame', () => ({ signInSilently: vi.fn() }))
 
 vi.mock('@linagora/twake-oidc', () => ({
   configureAuth: vi.fn(),
@@ -24,6 +27,8 @@ const settings = {
 }
 
 const config = readSsoConfig(settings, 'http://localhost:3000')
+
+const ALICE = { name: 'Alice Martin', email: 'alice@test' }
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -62,8 +67,19 @@ describe('oidcSession', () => {
     expect(startLogin).toHaveBeenCalled()
   })
 
-  it('sends the user to the SSO from any other page', async () => {
+  it('signs in silently on any other page, staying on it', async () => {
+    window.history.replaceState(null, '', '/boards/b1')
+    vi.mocked(signInSilently).mockResolvedValue(ALICE)
+
+    await expect(oidcSession(config).start()).resolves.toEqual(ALICE)
+    expect(signInSilently).toHaveBeenCalledWith(config)
+    expect(startLogin).not.toHaveBeenCalled()
+    expect(window.location.pathname).toBe('/boards/b1')
+  })
+
+  it('sends the user to the SSO when the silent sign-in fails', async () => {
     window.history.replaceState(null, '', '/tasks')
+    vi.mocked(signInSilently).mockRejectedValue(new Error('login_required'))
 
     await expect(oidcSession(config).start()).resolves.toBeNull()
     expect(completeLogin).not.toHaveBeenCalled()

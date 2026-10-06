@@ -9,6 +9,7 @@ import {
   type AuthConfig
 } from '@linagora/twake-oidc'
 
+import { signInSilently } from '@/adapters/oidc/ssoFrame'
 import type { SessionService } from '@/application/session'
 
 export type SsoSettings = Pick<
@@ -67,6 +68,12 @@ export function oidcSession(config: AuthConfig): SessionService {
             name: login.userinfo.name ?? null,
             email: login.userinfo.email ?? null
           }
+        }
+      } else {
+        try {
+          return await signInSilently(config)
+        } catch {
+          // No SSO session to reuse: the SSO asks the user to sign in.
         }
       }
       await startLogin()

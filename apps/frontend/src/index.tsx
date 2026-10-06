@@ -4,16 +4,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import { httpBoardsApi } from '@/adapters/http/httpBoardsApi'
-import {
-  embedSession,
-  isEmbedded,
-  relayCallback
-} from '@/adapters/oidc/embedSession'
+import { embedSession, isEmbedded } from '@/adapters/oidc/embedSession'
 import {
   oidcSession,
   readSsoConfig,
   sendSignedIn
 } from '@/adapters/oidc/oidcSession'
+import { relayCallback } from '@/adapters/oidc/ssoFrame'
 import { App } from '@/app/App'
 
 const container = document.getElementById('root')
