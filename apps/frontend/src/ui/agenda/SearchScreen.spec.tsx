@@ -40,6 +40,14 @@ describe('SearchScreen', () => {
     expect(boardsApi.search).toHaveBeenCalledWith('logo')
   })
 
+  it('keeps the searched words in the search field', async () => {
+    renderRoute('/search?q=logo', { boardsApi: boards().boardsApi })
+
+    expect(
+      within(await screen.findByRole('search')).getByLabelText('Search')
+    ).toHaveValue('logo')
+  })
+
   it('says when nothing matches', async () => {
     renderRoute('/search?q=zebra', { boardsApi: boards().boardsApi })
 
