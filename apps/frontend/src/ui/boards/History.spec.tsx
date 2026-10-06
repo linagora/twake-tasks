@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
-const alice = { userId: 'alice', email: 'alice@example.com' }
-const bob = { userId: 'bob', email: 'bob@example.com' }
+const alice = { userId: 'alice', email: 'alice@example.com', name: 'Alice' }
+const bob = { userId: 'bob', email: 'bob@example.com', name: null }
 
 function logoBoard() {
   const board = aBoard({ name: 'Design', keyPrefix: 'DES', members: [bob] })
@@ -37,10 +37,10 @@ describe('History', () => {
         item => within(item).getByRole('paragraph').textContent.split(' · ')[0]
       )
     ).toEqual([
-      'alice@example.com assigned bob@example.com',
-      'alice@example.com moved it to In progress',
-      'alice@example.com renamed it from Draft to Logo',
-      'alice@example.com created it'
+      'Alice assigned bob@example.com',
+      'Alice moved it to In progress',
+      'Alice renamed it from Draft to Logo',
+      'Alice created it'
     ])
   })
 })

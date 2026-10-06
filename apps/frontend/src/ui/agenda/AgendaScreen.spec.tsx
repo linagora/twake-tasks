@@ -47,7 +47,9 @@ describe('AgendaScreen', () => {
       title: 'Logo',
       dueDate: day(0),
       priority: 1,
-      assignees: [{ userId: 'u1', email: 'ana@example.com' }],
+      assignees: [
+        { userId: 'u1', email: 'ana@example.com', name: 'Ana Lopez' }
+      ],
       labels: [{ id: 'l1', name: 'client' }]
     })
     renderRoute('/today', { boardsApi })
@@ -57,7 +59,7 @@ describe('AgendaScreen', () => {
     expect(row.getByText('DES-1 · Design')).toBeVisible()
     expect(row.getByRole('img', { name: 'Priority 1' })).toBeVisible()
     expect(
-      row.getByRole('img', { name: 'Assigned to ana@example.com' })
+      row.getByRole('img', { name: 'Assigned to Ana Lopez' })
     ).toBeVisible()
     expect(row.getByText('client')).toBeVisible()
   })
@@ -133,7 +135,7 @@ describe('AgendaScreen', () => {
 
   it('lists the tasks assigned to me, undated ones last', async () => {
     const { design, boardsApi } = boards()
-    const me = { userId: 'me', email: 'me@example.com' }
+    const me = { userId: 'me', email: 'me@example.com', name: null }
     design.tasks.push(
       aTask(null, { key: 'DES-4', title: 'Brief', assignees: [me] }),
       aTask(null, {

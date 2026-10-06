@@ -39,6 +39,8 @@ export interface Section {
 export interface Person {
   userId: string
   email: string
+  /** Null until the person signs in to Tasks. */
+  name: string | null
 }
 
 export interface Task {

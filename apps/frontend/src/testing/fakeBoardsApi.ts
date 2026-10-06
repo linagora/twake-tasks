@@ -546,7 +546,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
           ...(comments.get(taskId) ?? []),
           {
             id: nextId(),
-            author: { userId: 'me', email: 'me@example.com' },
+            author: { userId: 'me', email: 'me@example.com', name: null },
             body,
             createdAt: new Date().toISOString()
           }

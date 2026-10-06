@@ -38,7 +38,7 @@ describe('board layouts', () => {
 
   it('lists each task on one row with its facts', async () => {
     const board = designBoard({ layout: 'list', defaultLayout: 'list' })
-    const ann = { userId: 'ann', email: 'ann@example.com' }
+    const ann = { userId: 'ann', email: 'ann@example.com', name: 'Ann Lee' }
     board.members = [ann]
     Object.assign(board.tasks[0] ?? {}, {
       priority: 1,
@@ -52,9 +52,7 @@ describe('board layouts', () => {
     )
     expect(row.getByText('DES-1')).toBeVisible()
     expect(row.getByRole('button', { name: 'Logo' })).toBeVisible()
-    expect(
-      row.getByRole('img', { name: 'Assigned to ann@example.com' })
-    ).toBeVisible()
+    expect(row.getByRole('img', { name: 'Assigned to Ann Lee' })).toBeVisible()
     expect(row.getByLabelText(/^Due /)).toBeVisible()
     expect(row.getByLabelText('Priority 1')).toBeVisible()
     expect(row.getByText('Urgent')).toBeVisible()

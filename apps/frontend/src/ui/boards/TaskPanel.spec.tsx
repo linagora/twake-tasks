@@ -151,7 +151,7 @@ describe('TaskPanel', () => {
 
   it('assigns from the panel without a save step', async () => {
     const { board, logo, boardsApi } = logoBoard()
-    board.members = [{ userId: 'ann', email: 'ann@example.com' }]
+    board.members = [{ userId: 'ann', email: 'ann@example.com', name: null }]
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const panel = await openLogo()

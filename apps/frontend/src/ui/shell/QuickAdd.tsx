@@ -41,6 +41,7 @@ import {
   SyntaxHelp
 } from '@/ds/QuickEntry'
 import type { Board, BoardSummary } from '@/domain/board'
+import { displayName } from '@/domain/person'
 import {
   mentionAt,
   parseQuickAdd,
@@ -56,7 +57,9 @@ import { useI18n } from '@/ui/i18n/useI18n'
 
 interface Suggestion {
   key: string
+  /** What picking it types after the sigil. */
   name: string
+  label?: string
   hint?: string
 }
 
@@ -87,13 +90,14 @@ function suggest(
           : (board?.members ?? []).map(each => ({
               key: each.userId,
               name: each.email.split('@')[0] ?? each.email,
+              label: displayName(each),
               hint: each.email
             }))
   return all
-    .filter(
-      each =>
-        nameHas(each.name, mention.typed) ||
-        (each.hint !== undefined && nameHas(each.hint, mention.typed))
+    .filter(each =>
+      [each.name, each.label, each.hint].some(
+        text => text !== undefined && nameHas(text, mention.typed)
+      )
     )
     .slice(0, 6)
 }
@@ -233,14 +237,15 @@ function Understood({
       ))}
       {parsed.people.map(typed => {
         const member = memberOf(typed)
+        const name = member ? displayName(member) : typed
         return (
           <ParsedPart key={`+${typed}`}>
             <MetaChip
               icon={<Icon icon={Profile} />}
               tone={member || !board ? 'info' : 'warning'}
-              label={t('quickAdd.person', { name: member?.email ?? typed })}
+              label={t('quickAdd.person', { name })}
             >
-              {member?.email ?? typed}
+              {name}
             </MetaChip>
           </ParsedPart>
         )
@@ -393,7 +398,7 @@ export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
                   onPick={() => {
                     pick(suggestion)
                   }}
-                  primary={suggestion.name}
+                  primary={suggestion.label ?? suggestion.name}
                   secondary={suggestion.hint}
                 />
               ))}
