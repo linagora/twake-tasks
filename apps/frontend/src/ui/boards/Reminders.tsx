@@ -1,6 +1,14 @@
-import { Button, IconButton, TextField, Typography } from '@linagora/twake-mui'
+import { Bell, CrossSmall, Icon, Plus } from '@linagora/twake-icons'
+import {
+  Button,
+  Chip,
+  IconButton,
+  TextField,
+  Typography
+} from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 
+import { Chips } from '@/ds/SidePanel'
 import type { Task } from '@/domain/board'
 import { localZone } from '@/ui/boards/dueLabel'
 import {
@@ -48,29 +56,34 @@ export function Reminders({
 
   return (
     <section aria-label={t('reminders.title')}>
-      <Typography variant="h6">{t('reminders.title')}</Typography>
-      {reminders.data?.length === 0 && (
-        <Typography color="textSecondary">{t('reminders.none')}</Typography>
+      {reminders.data && reminders.data.length > 0 && (
+        <Chips label={t('reminders.title')}>
+          {reminders.data.map(reminder => (
+            <li key={reminder.id}>
+              <Chip
+                size="small"
+                icon={<Icon icon={Bell} size={12} />}
+                label={
+                  reminder.beforeMinutes === null
+                    ? format.format(new Date(reminder.at ?? ''))
+                    : beforeLabel(reminder.beforeMinutes)
+                }
+              />
+              <IconButton
+                size="small"
+                aria-label={t('reminders.delete')}
+                onClick={() => {
+                  remove.mutate(reminder.id)
+                }}
+              >
+                <Icon icon={CrossSmall} size={12} />
+              </IconButton>
+            </li>
+          ))}
+        </Chips>
       )}
-      <ul>
-        {reminders.data?.map(reminder => (
-          <li key={reminder.id}>
-            {reminder.beforeMinutes === null
-              ? format.format(new Date(reminder.at ?? ''))
-              : beforeLabel(reminder.beforeMinutes)}
-            <IconButton
-              size="small"
-              aria-label={t('reminders.delete')}
-              onClick={() => {
-                remove.mutate(reminder.id)
-              }}
-            >
-              ×
-            </IconButton>
-          </li>
-        ))}
-      </ul>
       <form
+        className="u-flex u-flex-items-center u-flex-wrap"
         onSubmit={event => {
           event.preventDefault()
           add.mutate(
@@ -93,7 +106,8 @@ export function Reminders({
             onChange={event => {
               setBefore(event.target.value as Before)
             }}
-            margin="dense"
+            size="small"
+            className="u-mr-half u-mt-half"
             slotProps={{ select: { native: true } }}
           >
             {BEFORE.map(value => (
@@ -113,7 +127,8 @@ export function Reminders({
             onChange={event => {
               setAt(event.target.value)
             }}
-            margin="dense"
+            size="small"
+            className="u-mr-half u-mt-half"
             slotProps={{ inputLabel: { shrink: true } }}
           />
         )}
@@ -124,7 +139,10 @@ export function Reminders({
         )}
         <Button
           type="submit"
+          variant="text"
           size="small"
+          className="u-mt-half"
+          startIcon={<Icon icon={Plus} size={14} />}
           disabled={add.isPending || (fixed && !at)}
         >
           {t('reminders.add')}

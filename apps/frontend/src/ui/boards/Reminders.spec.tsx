@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -69,6 +69,8 @@ describe('Reminders', () => {
       within(item).getByRole('button', { name: 'Delete reminder' })
     )
 
-    expect(await reminders.findByText('No reminders.')).toBeVisible()
+    await waitFor(() => {
+      expect(reminders.queryByRole('listitem')).toBeNull()
+    })
   })
 })
