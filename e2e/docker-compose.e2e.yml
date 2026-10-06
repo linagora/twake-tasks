@@ -1,9 +1,6 @@
 # docker compose -p twake-tasks-e2e -f docker-compose.yml -f e2e/docker-compose.e2e.yml --profile app up
 # Only the frontend and the SSO reach the host, on ports the dev stack leaves free.
 services:
-  kafka:
-    ports: !reset []
-
   rabbitmq:
     ports: !reset []
 

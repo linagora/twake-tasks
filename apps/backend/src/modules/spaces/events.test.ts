@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { inject } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { MalformedEventError } from '../../events/router.ts'
-import { eq } from 'drizzle-orm'
+import { eq, sql as raw } from 'drizzle-orm'
 import { asOrganization, createDb } from '../../infra/db.ts'
 import { boards } from '../boards/schema.ts'
 import { aUser, startApp, type TestUser } from '../../testing/app.ts'
@@ -98,13 +98,12 @@ describe('twake.space.created', () => {
       expect.objectContaining({ name: 'Ops' })
     ])
     const queued = await db
-      .select({ key: outbox.key, event: outbox.event })
+      .select({ event: outbox.event })
       .from(outbox)
-      .where(eq(outbox.key, spaceId))
+      .where(raw`${outbox.event} -> 'data' ->> 'space_id' = ${spaceId}`)
     expect(queued).toHaveLength(2)
     expect(queued[1]).toEqual(queued[0])
     expect(queued[0]).toMatchObject({
-      key: spaceId,
       event: {
         specversion: '1.0',
         source: 'twake://tasks',

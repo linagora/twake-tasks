@@ -234,7 +234,7 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
     await asOrganization(tx, space.organizationId)
     await provisionSpace(tx, space)
     await upsertMembers(tx, space, space.members)
-    await enqueue(tx, space.id, provisioned(space))
+    await enqueue(tx, provisioned(space))
   }
 
   const onUpdated: Handler<PlatformEvent> = async (event, tx) => {

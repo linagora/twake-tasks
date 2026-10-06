@@ -1,7 +1,5 @@
 import type { Delivery } from '../infra/rabbitmq.ts'
 
-export const TASKS_TOPIC = 'twake.tasks.events.v1'
-
 export interface OutgoingEvent {
   specversion: '1.0'
   id: string

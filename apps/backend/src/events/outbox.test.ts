@@ -23,7 +23,7 @@ const anEvent = (): OutgoingEvent => ({
 // Tests share one outbox, so each looks only at the events it enqueued.
 function recorder() {
   const sent: string[] = []
-  const publish = vi.fn((_key: string, event: OutgoingEvent) => {
+  const publish = vi.fn((event: OutgoingEvent) => {
     sent.push(event.id)
     return Promise.resolve()
   })
@@ -39,8 +39,8 @@ describe('outbox', () => {
   it('publishes committed events in order, once', async () => {
     const [first, second] = [anEvent(), anEvent()]
     await db.transaction(async tx => {
-      await enqueue(tx, 'board-1', first)
-      await enqueue(tx, 'board-1', second)
+      await enqueue(tx, first)
+      await enqueue(tx, second)
     })
     const { sent, publish } = recorder()
     const relay = createRelay({ db, logger, publish })
@@ -52,14 +52,14 @@ describe('outbox', () => {
       first.id,
       second.id
     ])
-    expect(publish).toHaveBeenCalledWith('board-1', first)
+    expect(publish).toHaveBeenCalledWith(first)
   })
 
   it('drops the events of a rolled back change', async () => {
     const event = anEvent()
     await db
       .transaction(async tx => {
-        await enqueue(tx, 'board-1', event)
+        await enqueue(tx, event)
         throw new Error('rollback')
       })
       .catch(() => undefined)
@@ -70,10 +70,10 @@ describe('outbox', () => {
     expect(sent).not.toContain(event.id)
   })
 
-  it('keeps an event Kafka refused, and sends it on the next run', async () => {
+  it('keeps an event the broker refused, and sends it on the next run', async () => {
     const event = anEvent()
-    await db.transaction(tx => enqueue(tx, 'board-1', event))
-    const failing = vi.fn(() => Promise.reject(new Error('kafka down')))
+    await db.transaction(tx => enqueue(tx, event))
+    const failing = vi.fn(() => Promise.reject(new Error('broker down')))
 
     await createRelay({ db, logger, publish: failing }).relayOnce()
     const { sent, publish } = recorder()

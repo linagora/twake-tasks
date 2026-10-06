@@ -13,7 +13,6 @@ export const outbox = pgTable(
   'outbox',
   {
     id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
-    key: text().notNull(),
     event: jsonb().notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     sentAt: timestamptz('sent_at')

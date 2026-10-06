@@ -1,7 +1,9 @@
 import { DeadLetterError, RabbitMQClient } from '@linagora/rabbitmq-client'
 import type { Logger } from 'pino'
+import type { OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 
+export const ACTIVITY_EXCHANGE = 'activity'
 export const QUEUE = 'platform.all.twake-tasks'
 export const DEAD_LETTER_QUEUE = `${QUEUE}.dlq`
 
@@ -49,4 +51,33 @@ export async function startConsumer(
     }
   )
   return { close: () => client.close() }
+}
+
+export interface Publisher {
+  publish(event: OutgoingEvent): Promise<void>
+  close(): Promise<void>
+}
+
+// One attempt per call: the outbox relay retries on its next run, and a
+// backoff here would hold its transaction open. Not mandatory, since Tasks
+// runs with no subscriber on the activity exchange when it is standalone.
+export async function startPublisher(
+  url: string,
+  logger: Logger
+): Promise<Publisher> {
+  const client = new RabbitMQClient({ url, logger, publishMaxAttempts: 1 })
+  await client.init()
+  return {
+    async publish(event) {
+      await client.publish(
+        ACTIVITY_EXCHANGE,
+        event.type,
+        { ...event },
+        {
+          messageId: event.id
+        }
+      )
+    },
+    close: () => client.close()
+  }
 }

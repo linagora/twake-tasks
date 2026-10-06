@@ -43,20 +43,18 @@ async function aTaskOn(
 
 async function eventsOf(taskId: string) {
   return db
-    .select({ key: outbox.key, event: outbox.event })
+    .select({ event: outbox.event })
     .from(outbox)
     .where(raw`${outbox.event} -> 'data' -> 'object' ->> 'id' = ${taskId}`)
     .orderBy(asc(outbox.id))
-    .then(rows =>
-      rows.map(row => ({ key: row.key, event: row.event as OutgoingEvent }))
-    )
+    .then(rows => rows.map(row => ({ event: row.event as OutgoingEvent })))
 }
 
 const actions = (events: { event: OutgoingEvent }[]) =>
   events.map(({ event }) => event.type.split('.').at(-2))
 
 describe('task events', () => {
-  it('publishes each change to a task, keyed by its project', async () => {
+  it('publishes each change to a task, in its project', async () => {
     const alice = aUser()
     const board = await aBoardOf(alice)
     const [todo, doing] = board.sections
@@ -89,7 +87,11 @@ describe('task events', () => {
       'deleted',
       'restored'
     ])
-    expect(events.every(({ key }) => key === board.project.id)).toBe(true)
+    for (const { event } of events) {
+      expect(event.data).toMatchObject({
+        object: { container: { kind: 'project', id: board.project.id } }
+      })
+    }
     expect(events[0]?.event).toMatchObject({
       specversion: '1.0',
       source: 'twake://tasks',
