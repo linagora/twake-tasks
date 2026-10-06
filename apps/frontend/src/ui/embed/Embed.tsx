@@ -1,4 +1,4 @@
-import { Link, Typography, useColorScheme } from '@linagora/twake-mui'
+import { Link, Typography } from '@linagora/twake-mui'
 import { useEffect, type ReactElement } from 'react'
 import {
   Outlet,
@@ -14,15 +14,8 @@ import { useI18n } from '@/ui/i18n/useI18n'
 const spaceOrigins = (): string[] =>
   (window.TWAKE_SPACE_ORIGIN ?? '').split(' ').filter(Boolean)
 
-function isTheme(data: unknown): data is { theme: 'light' | 'dark' } {
-  if (typeof data !== 'object' || data === null) return false
-  const { type, theme } = data as Record<string, unknown>
-  return type === 'twake-space:theme' && (theme === 'light' || theme === 'dark')
-}
-
 export function EmbedLayout(): ReactElement {
   const { pathname, search } = useLocation()
-  const { setMode } = useColorScheme()
 
   useEffect(() => {
     for (const origin of spaceOrigins()) {
@@ -32,17 +25,6 @@ export function EmbedLayout(): ReactElement {
       )
     }
   }, [pathname, search])
-
-  useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      if (!spaceOrigins().includes(event.origin) || !isTheme(event.data)) return
-      setMode(event.data.theme)
-    }
-    window.addEventListener('message', onMessage)
-    return () => {
-      window.removeEventListener('message', onMessage)
-    }
-  }, [setMode])
 
   return <Outlet />
 }

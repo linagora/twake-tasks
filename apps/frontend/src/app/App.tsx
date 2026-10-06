@@ -9,6 +9,7 @@ import { routes } from '@/app/routes'
 import { BoardsApiProvider } from '@/ui/boards/BoardsApiProvider'
 import { findPreferredLanguage } from '@/ui/i18n/languages'
 import { SessionGate } from '@/ui/session/SessionGate'
+import { FollowSettings } from '@/ui/settings/FollowSettings'
 
 export interface AppProps {
   session: SessionService
@@ -23,7 +24,9 @@ export function App({ session, boardsApi }: AppProps): ReactElement {
     <AppProviders lang={lang} queryClient={queryClient}>
       <SessionGate session={session}>
         <BoardsApiProvider api={boardsApi}>
-          <AppRouter />
+          <FollowSettings>
+            <AppRouter />
+          </FollowSettings>
         </BoardsApiProvider>
       </SessionGate>
     </AppProviders>

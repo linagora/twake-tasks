@@ -1,7 +1,8 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { followZone } from '@/ui/boards/dueLabel'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 function logoBoard() {
@@ -28,6 +29,11 @@ async function openDates(
   const editor = within(await screen.findByRole('dialog', { name: 'Dates' }))
   return { panel, editor }
 }
+
+afterEach(() => {
+  followZone(null)
+  vi.useRealTimers()
+})
 
 describe('Dates', () => {
   it('says when a task has no dates', async () => {
@@ -88,6 +94,25 @@ describe('Dates', () => {
         expect.objectContaining({
           dueDate: new Intl.DateTimeFormat('en-CA').format(tomorrow)
         })
+      )
+    })
+  })
+
+  it("picks tomorrow in the person's time zone", async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-06T12:00:00Z'))
+    followZone('Pacific/Kiritimati')
+    const { board, logo, boardsApi } = logoBoard()
+    const { editor } = await openDates(board.id, boardsApi)
+
+    fireEvent.click(editor.getByRole('button', { name: 'Tomorrow' }))
+    fireEvent.click(editor.getByRole('button', { name: 'Save dates' }))
+
+    await waitFor(() => {
+      expect(boardsApi.editTask).toHaveBeenCalledWith(
+        board.id,
+        logo.id,
+        expect.objectContaining({ dueDate: '2026-10-08' })
       )
     })
   })

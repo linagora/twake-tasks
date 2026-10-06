@@ -12,7 +12,7 @@ import { Row } from '@/ds/Columns'
 import { EditorActions, EditorPopover, MomentField } from '@/ds/Pickers'
 import { Chips } from '@/ds/SidePanel'
 import type { Task } from '@/domain/board'
-import { localZone } from '@/ui/boards/dueLabel'
+import { localZone, zonedInstant } from '@/ui/boards/dueLabel'
 import {
   useAddReminder,
   useDeleteReminder,
@@ -45,7 +45,8 @@ export function Reminders({
   }
   const format = new Intl.DateTimeFormat(lang, {
     dateStyle: 'medium',
-    timeStyle: 'short'
+    timeStyle: 'short',
+    timeZone: localZone()
   })
   const fixed = task.dueDate === null || before === 'at'
 
@@ -115,7 +116,7 @@ export function Reminders({
         onSubmit={() => {
           add.mutate(
             fixed
-              ? { at: new Date(at).toISOString() }
+              ? { at: zonedInstant(at).toISOString() }
               : { beforeMinutes: Number(before), zone: localZone() },
             {
               onSuccess: () => {

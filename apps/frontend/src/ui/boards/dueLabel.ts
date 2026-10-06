@@ -1,11 +1,53 @@
 import type { Task } from '@/domain/board'
 
+let followedZone: string | null = null
+
+function isZone(zone: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: zone })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Counts days in this zone rather than the browser's, unless it is null or unknown. */
+export function followZone(zone: string | null): void {
+  followedZone = zone && isZone(zone) ? zone : null
+}
+
 export const localZone = (): string =>
-  Intl.DateTimeFormat().resolvedOptions().timeZone
+  followedZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone
 
 // en-CA formats a date as YYYY-MM-DD.
 export const localToday = (): string =>
-  new Intl.DateTimeFormat('en-CA').format(new Date())
+  new Intl.DateTimeFormat('en-CA', { timeZone: localZone() }).format(new Date())
+
+/** The instant a YYYY-MM-DDTHH:mm wall clock time shows in the local zone. */
+export function zonedInstant(wallClock: string): Date {
+  const asUtc = Date.parse(`${wallClock}Z`)
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: localZone(),
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric'
+    })
+      .formatToParts(asUtc)
+      .map(part => [part.type, Number(part.value)])
+  ) as Record<'year' | 'month' | 'day' | 'hour' | 'minute', number>
+  const shown = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute
+  )
+  return new Date(2 * asUtc - shown)
+}
 
 export function formatDay(day: string, lang: string): string {
   return new Intl.DateTimeFormat(lang, {
