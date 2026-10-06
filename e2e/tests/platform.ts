@@ -4,12 +4,25 @@ import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
 
-/** Publishes an event the way ldap-rest's bridge does: AMQP routing key and id as headers. */
+const publish = `
+const { connect } = await import('amqplib')
+const [exchange, routingKey, messageId, body] = process.argv.slice(1)
+const connection = await connect(process.env.RABBITMQ_URL)
+const channel = await connection.createConfirmChannel()
+channel.publish(exchange, routingKey, Buffer.from(body), {
+  messageId,
+  persistent: true,
+  contentType: 'application/json'
+})
+await channel.waitForConfirms()
+await connection.close()
+`
+
+/** Publishes a space event the way ldap-rest does, on its `space` exchange. */
 export function publishPlatformEvent(
-  routingKey: string,
+  routingKey: `twake.space.${string}`,
   body: { organizationId: string } & Record<string, unknown>
 ) {
-  const headers = `amqp_routing_key:${routingKey},amqp_message_id:${randomUUID()}`
   execFileSync(
     'docker',
     [
@@ -22,22 +35,16 @@ export function publishPlatformEvent(
       'e2e/docker-compose.e2e.yml',
       'exec',
       '-T',
-      'kafka',
-      '/opt/kafka/bin/kafka-console-producer.sh',
-      '--bootstrap-server',
-      'kafka:29092',
-      '--topic',
-      'twake.platform.events.v1',
-      '--property',
-      'parse.key=true',
-      '--property',
-      'key.separator=|',
-      '--property',
-      'parse.headers=true'
+      'backend',
+      'node',
+      '--input-type=module',
+      '-e',
+      publish,
+      'space',
+      routingKey,
+      randomUUID(),
+      JSON.stringify(body)
     ],
-    {
-      cwd: root,
-      input: `${headers}\t${body.organizationId}|${JSON.stringify(body)}\n`
-    }
+    { cwd: root }
   )
 }

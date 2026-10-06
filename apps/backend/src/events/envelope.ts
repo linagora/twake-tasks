@@ -1,37 +1,19 @@
-import { z } from 'zod'
+import type { Delivery } from '../infra/rabbitmq.ts'
 
-export const PLATFORM_TOPIC = 'twake.platform.events.v1'
 export const TASKS_TOPIC = 'twake.tasks.events.v1'
 
-const cloudEvent = z.looseObject({
-  specversion: z.literal('1.0'),
-  id: z.string().min(1),
-  source: z.string().min(1),
-  type: z.string().min(1),
-  time: z.iso.datetime({ offset: true }).optional(),
-  subject: z.string().optional(),
-  twakeorg: z.string().min(1).optional(),
-  twakeactor: z.email().optional(),
-  twakeactorid: z.string().min(1).optional(),
-  data: z.looseObject({
-    object: z.looseObject({ space_id: z.uuid().optional() })
-  })
-})
-
-export type CloudEvent = z.infer<typeof cloudEvent>
-
-export type OutgoingEvent = Pick<
-  CloudEvent,
-  | 'specversion'
-  | 'id'
-  | 'source'
-  | 'type'
-  | 'time'
-  | 'subject'
-  | 'twakeorg'
-  | 'twakeactor'
-  | 'twakeactorid'
-> & { data: Record<string, unknown> }
+export interface OutgoingEvent {
+  specversion: '1.0'
+  id: string
+  source: string
+  type: string
+  time?: string | undefined
+  subject?: string | undefined
+  twakeorg?: string | undefined
+  twakeactor?: string | undefined
+  twakeactorid?: string | undefined
+  data: Record<string, unknown>
+}
 
 export interface PlatformEvent {
   routingKey: string
@@ -42,45 +24,20 @@ export interface PlatformEvent {
 export type ParseResult<T> =
   { ok: true; event: T } | { ok: false; error: string }
 
-export function parseCloudEvent(
-  value: Buffer | string | null
-): ParseResult<CloudEvent> {
-  const json = parseJson(value)
-  if (!json.ok) return json
-  const result = cloudEvent.safeParse(json.event)
-  return result.success
-    ? { ok: true, event: result.data }
-    : { ok: false, error: z.prettifyError(result.error) }
-}
-
 export function parsePlatformEvent(
-  value: Buffer | string | null,
-  headers: Record<string, unknown> = {}
+  delivery: Delivery
 ): ParseResult<PlatformEvent> {
-  const routingKey = headerString(headers.amqp_routing_key)
-  const messageId = headerString(headers.amqp_message_id)
-  if (!routingKey || !messageId) {
-    return {
-      ok: false,
-      error: 'missing amqp_routing_key or amqp_message_id header'
-    }
-  }
-  const json = parseJson(value)
-  if (!json.ok) return json
-  return { ok: true, event: { routingKey, messageId, body: json.event } }
-}
-
-function parseJson(value: Buffer | string | null): ParseResult<unknown> {
-  if (value === null) return { ok: false, error: 'empty message' }
+  if (!delivery.messageId) return { ok: false, error: 'missing message id' }
   try {
-    return { ok: true, event: JSON.parse(value.toString()) as unknown }
+    return {
+      ok: true,
+      event: {
+        routingKey: delivery.routingKey,
+        messageId: delivery.messageId,
+        body: JSON.parse(delivery.content.toString()) as unknown
+      }
+    }
   } catch (error) {
     return { ok: false, error: `invalid JSON: ${(error as Error).message}` }
   }
-}
-
-function headerString(value: unknown): string | undefined {
-  const first: unknown = Array.isArray(value) ? value[0] : value
-  if (Buffer.isBuffer(first)) return first.toString()
-  return typeof first === 'string' ? first : undefined
 }

@@ -1,13 +1,13 @@
 import { pino } from 'pino'
 import { describe, expect, it, vi } from 'vitest'
 import type { Tx } from '../infra/db.ts'
+import type { Delivery } from '../infra/rabbitmq.ts'
 import type { Deduplicator, EventKey } from './dedupe.ts'
-import type { CloudEvent, PlatformEvent } from './envelope.ts'
+import type { PlatformEvent } from './envelope.ts'
 import {
   createMessageHandler,
   MalformedEventError,
   RejectedEventError,
-  type DeadLetter,
   type Handler
 } from './router.ts'
 
@@ -30,141 +30,87 @@ function memoryDeduplicator(): Deduplicator & { keys: EventKey[] } {
 }
 
 function setup() {
-  const activity = vi.fn<Handler<CloudEvent>>().mockResolvedValue()
-  const platform = vi.fn<Handler<PlatformEvent>>().mockResolvedValue()
+  const handler = vi.fn<Handler<PlatformEvent>>().mockResolvedValue()
   const dedupe = memoryDeduplicator()
-  const deadLetter = vi.fn<DeadLetter>().mockResolvedValue()
   const handle = createMessageHandler({
-    routes: {
-      activity: new Map([['com.twake.drive.file.created.v1', activity]]),
-      platform: new Map([['b2b.group.created', platform]])
-    },
+    routes: new Map([['twake.space.created', handler]]),
     dedupe,
-    deadLetter,
     logger: pino({ level: 'silent' })
   })
-  return { handle, activity, platform, dedupe, deadLetter }
+  return { handle, handler, dedupe }
 }
 
-const fileCreated = {
-  specversion: '1.0',
-  id: 'evt-1',
-  source: 'twake://drive',
-  type: 'com.twake.drive.file.created.v1',
-  twakeorg: 'linagora',
-  twakeactor: 'user1@linagora.com',
-  data: {
-    object: { type: 'file', id: 'f1' }
-  }
-}
-
-const message = (value: unknown, headers?: Record<string, unknown>) => ({
-  value: Buffer.from(JSON.stringify(value)),
-  offset: '0',
-  ...(headers && { headers })
+const delivery = (overrides: Partial<Delivery> = {}): Delivery => ({
+  routingKey: 'twake.space.created',
+  messageId: 'm-1',
+  content: Buffer.from(JSON.stringify({ id: 's1' })),
+  ...overrides
 })
 
 describe('createMessageHandler', () => {
-  it('routes an activity event by type and dedupes on source and id', async () => {
-    const { handle, activity, dedupe } = setup()
+  it('routes an event by routing key and dedupes on its message id', async () => {
+    const { handle, handler, dedupe } = setup()
 
-    expect(await handle('twake.drive.events.v1', message(fileCreated))).toBe(
-      'processed'
-    )
-    expect(activity).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'evt-1' }),
-      tx
-    )
-    expect(dedupe.keys).toEqual([{ source: 'twake://drive', id: 'evt-1' }])
-  })
-
-  it('skips a redelivered event', async () => {
-    const { handle, activity } = setup()
-
-    await handle('twake.drive.events.v1', message(fileCreated))
-    expect(await handle('twake.drive.events.v1', message(fileCreated))).toBe(
-      'duplicate'
-    )
-    expect(activity).toHaveBeenCalledOnce()
-  })
-
-  it('ignores a type without handler', async () => {
-    const { handle, activity } = setup()
-    const event = { ...fileCreated, type: 'com.twake.drive.file.moved.v1' }
-
-    expect(await handle('twake.drive.events.v1', message(event))).toBe(
-      'unrouted'
-    )
-    expect(activity).not.toHaveBeenCalled()
-  })
-
-  it('drops a malformed event without calling any handler', async () => {
-    const { handle, activity } = setup()
-
-    expect(
-      await handle('twake.drive.events.v1', message({ hello: 'world' }))
-    ).toBe('malformed')
-    expect(activity).not.toHaveBeenCalled()
-  })
-
-  it('routes a platform event by AMQP routing key and dedupes on message id', async () => {
-    const { handle, platform, activity, dedupe } = setup()
-    const headers = {
-      amqp_routing_key: Buffer.from('b2b.group.created'),
-      amqp_message_id: Buffer.from('m-1')
-    }
-
-    expect(
-      await handle(
-        'twake.platform.events.v1',
-        message({ groupId: 'g1' }, headers)
-      )
-    ).toBe('processed')
-    expect(platform).toHaveBeenCalledWith(
+    expect(await handle(delivery())).toBe('processed')
+    expect(handler).toHaveBeenCalledWith(
       {
-        routingKey: 'b2b.group.created',
+        routingKey: 'twake.space.created',
         messageId: 'm-1',
-        body: { groupId: 'g1' }
+        body: { id: 's1' }
       },
       tx
     )
-    expect(activity).not.toHaveBeenCalled()
     expect(dedupe.keys).toEqual([{ source: 'amqp', id: 'm-1' }])
   })
 
+  it('skips a redelivered event', async () => {
+    const { handle, handler } = setup()
+
+    await handle(delivery())
+    expect(await handle(delivery())).toBe('duplicate')
+    expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it('ignores a routing key without handler', async () => {
+    const { handle, handler } = setup()
+
+    expect(await handle(delivery({ routingKey: 'twake.space.archived' }))).toBe(
+      'unrouted'
+    )
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['without a message id', { messageId: undefined }],
+    ['that is not JSON', { content: Buffer.from('{') }]
+  ])('drops an event %s', async (_case, overrides) => {
+    const { handle, handler } = setup()
+
+    expect(await handle(delivery(overrides))).toBe('malformed')
+    expect(handler).not.toHaveBeenCalled()
+  })
+
   it('drops an event its handler finds malformed', async () => {
-    const { handle, activity, dedupe } = setup()
-    activity.mockRejectedValueOnce(new MalformedEventError('no space id'))
+    const { handle, handler, dedupe } = setup()
+    handler.mockRejectedValueOnce(new MalformedEventError('no space id'))
 
-    expect(await handle('twake.drive.events.v1', message(fileCreated))).toBe(
-      'malformed'
-    )
+    expect(await handle(delivery())).toBe('malformed')
     expect(dedupe.keys).toEqual([])
   })
 
-  it('sends an event its handler rejects to the dead letter topic', async () => {
-    const { handle, activity, deadLetter, dedupe } = setup()
-    activity.mockRejectedValueOnce(new RejectedEventError('unknown space'))
-    const incoming = message(fileCreated)
+  it('rejects an event its handler rejects, without marking it processed', async () => {
+    const { handle, handler, dedupe } = setup()
+    handler.mockRejectedValueOnce(new RejectedEventError('unknown space'))
 
-    expect(await handle('twake.drive.events.v1', incoming)).toBe('rejected')
-    expect(deadLetter).toHaveBeenCalledWith(
-      'twake.drive.events.v1.dlq.twake-tasks',
-      incoming,
-      'unknown space'
-    )
+    expect(await handle(delivery())).toBe('rejected')
     expect(dedupe.keys).toEqual([])
   })
 
-  it('propagates a handler failure so the offset is not committed', async () => {
-    const { handle, activity } = setup()
-    activity.mockRejectedValueOnce(new Error('db down'))
+  it('propagates a handler failure so the event is redelivered', async () => {
+    const { handle, handler } = setup()
+    handler.mockRejectedValueOnce(new Error('db down'))
 
-    await expect(
-      handle('twake.drive.events.v1', message(fileCreated))
-    ).rejects.toThrow('db down')
-    expect(await handle('twake.drive.events.v1', message(fileCreated))).toBe(
-      'processed'
-    )
+    await expect(handle(delivery())).rejects.toThrow('db down')
+    expect(await handle(delivery())).toBe('processed')
   })
 })
