@@ -162,6 +162,25 @@ describe('BoardScreen', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('shows a moved task in its new section before the server answers', async () => {
+    const board = designBoard()
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.moveTask.mockReturnValue(new Promise(() => undefined))
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const logo = await screen.findByRole('article', { name: 'DES-1 Logo' })
+    fireEvent.click(
+      within(logo).getByRole('button', { name: 'Options for DES-1' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Move to Done' }))
+
+    expect(
+      await within(column('Done')).findByRole('article', {
+        name: 'DES-1 Logo'
+      })
+    ).toBeInTheDocument()
+  })
+
   it('says when a move fails', async () => {
     const board = designBoard()
     const boardsApi = fakeBoardsApi([board])
@@ -176,6 +195,9 @@ describe('BoardScreen', () => {
 
     expect(
       await screen.findByText('The task could not be moved.')
+    ).toBeInTheDocument()
+    expect(
+      within(column('To do')).getByRole('article', { name: 'DES-1 Logo' })
     ).toBeInTheDocument()
   })
 
