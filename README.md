@@ -12,7 +12,7 @@ docker compose up -d
 cp apps/backend/.env.example apps/backend/.env
 ```
 
-Fill in `OIDC_CLIENT_SECRET` and `LDAP_REST_SECRET` in `apps/backend/.env`, then put your SSO settings in `apps/frontend/public/.env.js`:
+Fill in `OIDC_CLIENT_SECRET` in `apps/backend/.env` (and the `LDAP_REST_*` settings if you turn on `SPACE_INTEGRATION`), then put your SSO settings in `apps/frontend/public/.env.js`:
 
 ```js
 var SSO_BASE_URL = 'https://sign-up.twake.app/'

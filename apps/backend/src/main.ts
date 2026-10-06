@@ -28,6 +28,7 @@ import { createScheduler } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
 const logger = pino({ level: config.LOG_LEVEL })
+const spaces = config.SPACE_INTEGRATION === 'true'
 
 const { sql, db } = createDb(config.DATABASE_URL, config.APP_URL)
 await assertRowLevelSecurity(sql)
@@ -48,7 +49,8 @@ const server = await buildApp({
       audience: config.OIDC_AUDIENCE
     }
   })),
-  isReady: async () => accepting && (await sql`select 1`).length === 1
+  isReady: async () => accepting && (await sql`select 1`).length === 1,
+  spaces
 })
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })
 
@@ -56,8 +58,10 @@ const producer = await startProducer(config, logger)
 const consumer = await startConsumer(
   config.RABBITMQ_URL,
   logger,
+  // The queue stays bound to space events either way, since its first binding
+  // fixes its dead letter key; without the integration they find no route.
   createMessageHandler({
-    routes: new Map([...spaceRoutes(), ...accountRoutes]),
+    routes: new Map([...(spaces ? spaceRoutes() : []), ...accountRoutes]),
     dedupe: postgresDeduplicator(db, 'twake-tasks'),
     logger
   })
@@ -68,21 +72,23 @@ const stopScheduler = createScheduler({
   handlers: {
     [REMINDER_JOB]: deliverReminder,
     [PURGE_JOB]: purgeTask,
+    // Purges a space deleted while the integration was on.
     [PURGE_SPACE_JOB]: purgeSpace,
     [NOTIFICATION_EMAIL_JOB]: emailNotification({
       appUrl: config.APP_URL,
       send: createMailer(config, logger)
     }),
-    ...reconcileJobs(
-      ldapRestClient({
-        url: config.LDAP_REST_URL,
-        serviceId: config.LDAP_REST_SERVICE_ID,
-        secret: config.LDAP_REST_SECRET
-      })
-    )
+    ...(spaces &&
+      reconcileJobs(
+        ldapRestClient({
+          url: config.LDAP_REST_URL,
+          serviceId: config.LDAP_REST_SERVICE_ID,
+          secret: config.LDAP_REST_SECRET
+        })
+      ))
   }
 }).start(5000)
-await planReconcile(db)
+if (spaces) await planReconcile(db)
 const stopRelay = createRelay({
   db,
   logger,

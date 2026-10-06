@@ -48,6 +48,7 @@ services:
       OIDC_ISSUER: https://oidc:8443
       OIDC_CLIENT_SECRET: e2e-backend-secret
       NODE_EXTRA_CA_CERTS: /certs/oidc.crt
+      SPACE_INTEGRATION: 'true'
       # No ldap-rest here: the nightly reconcile fails and retries, nothing else needs it.
       LDAP_REST_URL: http://ldap-rest.invalid
       LDAP_REST_SECRET: e2e

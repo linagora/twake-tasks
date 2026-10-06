@@ -18,6 +18,7 @@ export async function buildApp(deps: {
   provider: IdentityProvider
   authenticate: Authenticate
   isReady: () => Promise<boolean>
+  spaces: boolean
 }) {
   const app = createServer({ logger: deps.logger, isReady: deps.isReady })
   // The frontend serves its own routes, such as /boards/<id>, on the same origin.
@@ -29,7 +30,7 @@ export async function buildApp(deps: {
         store: postgresAuthStore(deps.db)
       })
       registerBoards(api, { db: deps.db, requireIdentity })
-      registerSpaces(api, { db: deps.db, requireIdentity })
+      if (deps.spaces) registerSpaces(api, { db: deps.db, requireIdentity })
       registerLive(api, {
         db: deps.db,
         requireIdentity,
