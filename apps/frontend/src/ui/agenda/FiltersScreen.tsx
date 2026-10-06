@@ -1,8 +1,10 @@
+import { Filter } from '@linagora/twake-icons'
 import { Button, Link, TextField, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
 import type { FilterCriteria } from '@/application/boards'
+import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import {
   useCreateFilter,
   useDeleteFilter,
@@ -29,8 +31,13 @@ export function FiltersScreen(): ReactElement {
       {filters.isError && (
         <Typography role="alert">{t('filters.loadFailed')}</Typography>
       )}
+      {filters.isPending && <ListSkeleton label={t('app.loading')} rows={2} />}
       {filters.data?.length === 0 && (
-        <Typography>{t('filters.empty')}</Typography>
+        <EmptyState
+          icon={Filter}
+          title={t('filters.empty')}
+          text={t('filters.emptyHint')}
+        />
       )}
       <ul>
         {filters.data?.map(filter => (

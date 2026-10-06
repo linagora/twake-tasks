@@ -2,6 +2,7 @@ import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { localZone } from '@/ui/boards/dueLabel'
 
@@ -62,7 +63,9 @@ describe('FiltersScreen', () => {
       await screen.findByRole('button', { name: 'Delete Urgent' })
     )
 
-    expect(await screen.findByText('No saved filters.')).toBeVisible()
+    expect(await findEmptyState('No saved filters')).toHaveTextContent(
+      'Save the criteria you look for often, like your P1 tasks.'
+    )
     expect(
       screen.getByRole('navigation').querySelector('a[href="/filters"]')
     ).not.toBeNull()

@@ -1,8 +1,10 @@
+import { CheckCircle } from '@linagora/twake-icons'
 import { Link, Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
 import type { AgendaTask } from '@/application/boards'
+import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { dueLabel, formatDay } from '@/ui/boards/dueLabel'
 import { useAgenda, useFilters, type AgendaView } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -82,8 +84,13 @@ export function AgendaScreen(
       {agenda.isError && (
         <Typography role="alert">{t('agenda.loadFailed')}</Typography>
       )}
+      {agenda.isPending && <ListSkeleton label={t('app.loading')} />}
       {agenda.isSuccess && tasks.length === 0 && (
-        <Typography>{t('agenda.empty')}</Typography>
+        <EmptyState
+          icon={CheckCircle}
+          title={t('agenda.empty')}
+          text={t('agenda.emptyHint')}
+        />
       )}
       {overdue.length > 0 && (
         <Group label={t('agenda.overdue')} tasks={overdue} />

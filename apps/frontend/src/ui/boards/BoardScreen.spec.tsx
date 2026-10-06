@@ -55,6 +55,19 @@ describe('BoardScreen', () => {
       })
     ).toBeInTheDocument()
     expect(within(column('Done')).queryAllByRole('article')).toHaveLength(0)
+    expect(within(column('Done')).getByRole('status')).toHaveTextContent(
+      'No tasks'
+    )
+  })
+
+  it('shows placeholder columns while the board loads', async () => {
+    const boardsApi = fakeBoardsApi()
+    boardsApi.getBoard.mockReturnValue(new Promise(() => undefined))
+    renderRoute('/boards/any', { boardsApi })
+
+    expect(
+      await screen.findByRole('progressbar', { name: 'Loading' })
+    ).toBeInTheDocument()
   })
 
   it('shows a No section column only when a task has no section', async () => {

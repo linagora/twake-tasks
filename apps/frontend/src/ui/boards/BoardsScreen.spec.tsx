@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 describe('BoardsScreen', () => {
@@ -30,6 +31,30 @@ describe('BoardsScreen', () => {
         .getAllByRole('link')
         .map(link => link.textContent)
     ).toEqual(['Old plans'])
+  })
+
+  it('offers to create the first board', async () => {
+    renderRoute('/', { boardsApi: fakeBoardsApi() })
+
+    const empty = await findEmptyState('No boards yet')
+    expect(empty).toHaveTextContent(
+      'Create a board to plan work with your team.'
+    )
+    fireEvent.click(
+      within(empty).getByRole('button', { name: 'Create a board' })
+    )
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('shows placeholders while the boards load', async () => {
+    const boardsApi = fakeBoardsApi()
+    boardsApi.listBoards.mockReturnValue(new Promise(() => undefined))
+    renderRoute('/', { boardsApi })
+
+    expect(
+      await screen.findByRole('progressbar', { name: 'Loading' })
+    ).toBeInTheDocument()
   })
 
   it('pins a starred board first until it is unstarred', async () => {
