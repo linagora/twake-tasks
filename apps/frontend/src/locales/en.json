@@ -321,7 +321,10 @@
     "useAsDefault": "Use as default layout",
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
-    "noDate": "No date"
+    "noDate": "No date",
+    "task": "Task",
+    "due": "Due",
+    "complete": "Complete %{title}"
   },
   "search": {
     "label": "Search",

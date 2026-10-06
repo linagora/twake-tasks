@@ -325,7 +325,10 @@
     "useAsDefault": "Сделать видом по умолчанию",
     "previousMonth": "Предыдущий месяц",
     "nextMonth": "Следующий месяц",
-    "noDate": "Без даты"
+    "noDate": "Без даты",
+    "task": "Задача",
+    "due": "Срок",
+    "complete": "Завершить %{title}"
   },
   "search": {
     "label": "Поиск",

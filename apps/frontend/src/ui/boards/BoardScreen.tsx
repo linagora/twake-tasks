@@ -34,6 +34,7 @@ import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { ShareDialog } from '@/ui/boards/ShareDialog'
 import { TaskCard } from '@/ui/boards/TaskCard'
+import { TaskListRow } from '@/ui/boards/TaskListRow'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -323,7 +324,15 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
             tasks: tasksIn(column),
             footer: addTask(column)
           }))}
-          card={card}
+          row={task => (
+            <TaskListRow
+              key={task.id}
+              task={task}
+              boardId={board.id}
+              sections={board.sections}
+              editable={editable}
+            />
+          )}
         />
       )}
       {board.layout === 'calendar' && (
