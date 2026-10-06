@@ -1,19 +1,25 @@
-import { Icon, type IconProps } from '@linagora/twake-icons'
-import { alpha, Box, Typography } from '@linagora/twake-mui'
+import {
+  Avatar,
+  Box,
+  nameToColor,
+  styled,
+  Tabs,
+  Typography
+} from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
 export function CardTile({
   label,
-  icon,
-  iconLabel,
+  badge,
+  badgeLabel,
   title,
   tag,
   meta,
   action
 }: {
   label: string
-  icon: IconProps['icon']
-  iconLabel: string
+  badge: string
+  badgeLabel: string
   title: ReactNode
   tag: string
   meta: string
@@ -25,10 +31,11 @@ export function CardTile({
       aria-label={label}
       sx={theme => ({
         position: 'relative',
+        width: { xs: '100%', sm: '17rem' },
         display: 'flex',
-        flexDirection: 'column',
+        alignItems: 'center',
         gap: 1.5,
-        p: 2,
+        p: 1.5,
         borderRadius: 3,
         border: 1,
         borderColor: 'divider',
@@ -43,54 +50,106 @@ export function CardTile({
         '& a:focus-visible': { outline: 'none' }
       })}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 36 }}>
-        <Box
-          role="img"
-          aria-label={iconLabel}
-          sx={theme => ({
-            width: 36,
-            height: 36,
-            borderRadius: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'primary.main',
-            bgcolor: alpha(theme.palette.primary.main, 0.1)
-          })}
-        >
-          <Icon icon={icon} size={18} />
-        </Box>
-        {action && (
-          <Box sx={{ ml: 'auto', position: 'relative', zIndex: 1 }}>
-            {action}
-          </Box>
-        )}
-      </Box>
-      <Typography
-        variant="subtitle1"
-        component="h3"
-        noWrap
-        sx={{ fontWeight: 600 }}
+      <Avatar
+        variant="rounded"
+        size={40}
+        color={nameToColor(label) ?? 'sunrise'}
+        role="img"
+        aria-label={badgeLabel}
+        sx={{ borderRadius: 2, fontWeight: 600 }}
       >
-        {title}
-      </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {badge}
+      </Avatar>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
         <Typography
-          variant="caption"
-          sx={{
-            px: 0.75,
-            borderRadius: 1,
-            fontWeight: 600,
-            letterSpacing: '0.04em',
-            color: 'text.secondary',
-            bgcolor: 'action.hover'
-          }}
+          variant="subtitle1"
+          component="h3"
+          noWrap
+          sx={{ fontWeight: 600 }}
         >
-          {tag}
+          {title}
         </Typography>
-        <Typography variant="caption" color="textSecondary">
-          {meta}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              px: 0.75,
+              borderRadius: 1,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              color: 'text.secondary',
+              bgcolor: 'action.hover'
+            }}
+          >
+            {tag}
+          </Typography>
+          <Typography variant="caption" color="textSecondary" noWrap>
+            {meta}
+          </Typography>
+        </Box>
+      </Box>
+      {action && <Box sx={{ position: 'relative', zIndex: 1 }}>{action}</Box>}
+    </Box>
+  )
+}
+
+export const ShelfTabs = styled(Tabs)(({ theme }) => ({
+  [theme.breakpoints.up('sm')]: { width: 'fit-content' }
+}))
+
+// Projects flow side by side, so one-board projects share a row.
+export function Shelves({ children }: { children: ReactNode }): ReactElement {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'flex-start',
+        columnGap: 4,
+        rowGap: 3
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
+
+export function TileShelf({
+  name,
+  hint,
+  children
+}: {
+  name: string
+  hint?: string | undefined
+  children: ReactNode
+}): ReactElement {
+  return (
+    <Box
+      component="section"
+      sx={{ width: { xs: '100%', sm: 'auto' }, maxWidth: '100%', minWidth: 0 }}
+    >
+      <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 600 }}>
+        {name}
+      </Typography>
+      {hint && (
+        <Typography variant="caption" color="textSecondary" component="p">
+          {hint}
         </Typography>
+      )}
+      <Box
+        component="ul"
+        aria-label={name}
+        sx={{
+          listStyle: 'none',
+          m: 0,
+          mt: 1,
+          p: 0,
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 2
+        }}
+      >
+        {children}
       </Box>
     </Box>
   )
