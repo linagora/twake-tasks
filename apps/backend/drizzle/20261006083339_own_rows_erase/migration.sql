@@ -1,0 +1,1 @@
+ALTER POLICY "own" ON "saved_filters" TO public USING ("saved_filters"."user_id" = nullif(current_setting('app.user_id', true), '')::uuid or current_setting('app.erasing_organization', true) = 'on') WITH CHECK ("saved_filters"."user_id" = nullif(current_setting('app.user_id', true), '')::uuid);

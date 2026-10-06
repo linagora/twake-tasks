@@ -8,13 +8,23 @@ import {
   type Handler
 } from '../../events/router.ts'
 import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
-import { projectMembers, projects, taskAssignees } from './schema.ts'
+import { jobs } from '../../scheduler/schema.ts'
+import {
+  projectMembers,
+  projects,
+  savedFilters,
+  taskAssignees
+} from './schema.ts'
 
 // ldap-rest names B2B users by email until it sends their entryUUID.
 const b2bDeleted = z.looseObject({
   organizationId: z.string().min(1).optional(),
   uuid: z.uuid().optional(),
   internalEmail: z.email().optional()
+})
+
+const organizationDeleted = z.looseObject({
+  organizationId: z.string().min(1).optional()
 })
 
 const b2cDeleted = z.looseObject({
@@ -102,6 +112,7 @@ async function handOnProjects(tx: Tx, userId: string) {
 async function forget(tx: Tx, organizationId: string | null, userId: string) {
   await asTenant(tx, { organizationId, userId, email: '' })
   await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
+  await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
   await tx
     .delete(projects)
     .where(and(eq(projects.createdBy, userId), eq(projects.personal, true)))
@@ -139,10 +150,31 @@ const onB2cDeleted: Handler<PlatformEvent> = async (event, tx) => {
   if (userId) await forget(tx, null, userId)
 }
 
+// Arrives after every member's domain.user.deleted, and may be replayed.
+const onOrganizationDeleted: Handler<PlatformEvent> = async (event, tx) => {
+  const { organizationId } = parseOrDrop(
+    organizationDeleted,
+    event.body,
+    event.routingKey
+  )
+  if (!organizationId) throw new RejectedEventError('no organizationId')
+  await asOrganization(tx, organizationId)
+  await tx.execute(
+    sql`select set_config('app.erasing_organization', 'on', true)`
+  )
+  await tx.delete(projects)
+  await tx.delete(savedFilters)
+  await tx.execute(sql`select set_config('app.erasing_organization', '', true)`)
+  await tx
+    .delete(jobs)
+    .where(sql`${jobs.payload}->>'organizationId' = ${organizationId}`)
+}
+
 export const accountRoutes: ReadonlyMap<
   string,
   Handler<PlatformEvent>
 > = new Map([
   ['domain.user.deleted', onB2bDeleted],
-  ['user.deleted', onB2cDeleted]
+  ['user.deleted', onB2cDeleted],
+  ['domain.organization.deleted', onOrganizationDeleted]
 ])

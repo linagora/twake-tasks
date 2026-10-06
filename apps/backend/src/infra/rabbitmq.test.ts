@@ -99,13 +99,15 @@ describe('startConsumer', () => {
     publish('b2b', 'domain.user.created', 'm-1')
     publish('b2b', 'domain.user.deleted', 'm-2')
     publish('auth', 'user.deleted', 'm-3')
+    publish('b2b', 'domain.organization.deleted', 'm-4')
 
     await vi.waitFor(() => {
-      expect(handle).toHaveBeenCalledTimes(2)
+      expect(handle).toHaveBeenCalledTimes(3)
     })
     expect(handle.mock.calls.map(([delivery]) => delivery.routingKey)).toEqual([
       'domain.user.deleted',
-      'user.deleted'
+      'user.deleted',
+      'domain.organization.deleted'
     ])
   })
 
