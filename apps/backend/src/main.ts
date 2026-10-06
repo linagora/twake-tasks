@@ -5,10 +5,9 @@ import { postgresDeduplicator } from './events/dedupe.ts'
 import { createRelay } from './events/outbox.ts'
 import { createMessageHandler } from './events/router.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
-import { startProducer } from './infra/kafka.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
-import { startConsumer } from './infra/rabbitmq.ts'
+import { startConsumer, startPublisher } from './infra/rabbitmq.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { accountRoutes } from './modules/boards/accounts.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
@@ -54,7 +53,7 @@ const server = await buildApp({
 })
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })
 
-const producer = await startProducer(config, logger)
+const publisher = await startPublisher(config.RABBITMQ_URL, logger)
 const consumer = await startConsumer(
   config.RABBITMQ_URL,
   logger,
@@ -92,7 +91,7 @@ if (spaces) await planReconcile(db)
 const stopRelay = createRelay({
   db,
   logger,
-  publish: (key, event) => producer.publish(key, event)
+  publish: event => publisher.publish(event)
 }).start(500)
 accepting = true
 logger.info('twake-tasks backend started')
@@ -107,7 +106,7 @@ async function shutdown(signal: string): Promise<void> {
     await stopScheduler()
     await consumer.close()
     await stopRelay()
-    await producer.disconnect()
+    await publisher.close()
     await server.close()
     await boardChanges.close()
     await sql.end({ timeout: 5 })

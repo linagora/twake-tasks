@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { loadConfig } from './config.ts'
 
 const required = {
-  KAFKA_BOOTSTRAP: 'kafka:9092',
-  KAFKA_SECURITY: 'plaintext',
   RABBITMQ_URL: 'amqp://rabbitmq:5672',
   DATABASE_URL: 'postgres://tasks@postgres/tasks',
   APP_URL: 'https://tasks.example.com',

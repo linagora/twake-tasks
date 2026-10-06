@@ -16,7 +16,7 @@ export async function enqueue(tx: Tx, key: string, event: OutgoingEvent) {
 export function createRelay(deps: {
   db: Db
   logger: Logger
-  publish: (key: string, event: OutgoingEvent) => Promise<void>
+  publish: (event: OutgoingEvent) => Promise<void>
 }) {
   // A failure stops the batch so later events wait for it; what was already
   // published is marked sent, and the rest is retried on the next run.
@@ -35,7 +35,7 @@ export function createRelay(deps: {
       const sent: number[] = []
       for (const row of pending) {
         try {
-          await deps.publish(row.key, row.event as OutgoingEvent)
+          await deps.publish(row.event as OutgoingEvent)
         } catch (error) {
           deps.logger.warn({ err: error, outbox: row.id }, 'relay failed')
           break

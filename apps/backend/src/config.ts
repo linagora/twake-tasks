@@ -1,21 +1,5 @@
 import { z } from 'zod'
 
-const kafkaSecurity = z.discriminatedUnion('KAFKA_SECURITY', [
-  z.object({ KAFKA_SECURITY: z.literal('plaintext') }),
-  z.object({
-    KAFKA_SECURITY: z.literal('ssl'),
-    KAFKA_SSL_CA: z.string().min(1),
-    KAFKA_SSL_CERT: z.string().min(1),
-    KAFKA_SSL_KEY: z.string().min(1)
-  }),
-  z.object({
-    KAFKA_SECURITY: z.literal('sasl_ssl'),
-    KAFKA_SASL_USERNAME: z.string().min(1),
-    KAFKA_SASL_PASSWORD: z.string().min(1),
-    KAFKA_SSL_CA: z.string().min(1).optional()
-  })
-])
-
 // Off where there are no spaces; only the space integration reads ldap-rest.
 const spaceIntegration = z.discriminatedUnion('SPACE_INTEGRATION', [
   z.object({ SPACE_INTEGRATION: z.literal('false') }),
@@ -29,7 +13,6 @@ const spaceIntegration = z.discriminatedUnion('SPACE_INTEGRATION', [
 
 const configSchema = z
   .object({
-    KAFKA_BOOTSTRAP: z.string().min(1),
     RABBITMQ_URL: z.url({ protocol: /^amqps?$/ }),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     APP_URL: z.url({ protocol: /^https?$/ }),
@@ -45,7 +28,6 @@ const configSchema = z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
       .default('info')
   })
-  .and(kafkaSecurity)
   .and(spaceIntegration)
 
 export type Config = z.infer<typeof configSchema>
