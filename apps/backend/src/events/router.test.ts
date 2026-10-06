@@ -43,7 +43,7 @@ function setup() {
 const delivery = (overrides: Partial<Delivery> = {}): Delivery => ({
   routingKey: 'twake.space.created',
   messageId: 'm-1',
-  content: Buffer.from(JSON.stringify({ id: 's1' })),
+  body: { id: 's1' },
   ...overrides
 })
 
@@ -80,13 +80,10 @@ describe('createMessageHandler', () => {
     expect(handler).not.toHaveBeenCalled()
   })
 
-  it.each([
-    ['without a message id', { messageId: undefined }],
-    ['that is not JSON', { content: Buffer.from('{') }]
-  ])('drops an event %s', async (_case, overrides) => {
+  it('drops an event without a message id', async () => {
     const { handle, handler } = setup()
 
-    expect(await handle(delivery(overrides))).toBe('malformed')
+    expect(await handle(delivery({ messageId: undefined }))).toBe('malformed')
     expect(handler).not.toHaveBeenCalled()
   })
 

@@ -28,16 +28,12 @@ export function parsePlatformEvent(
   delivery: Delivery
 ): ParseResult<PlatformEvent> {
   if (!delivery.messageId) return { ok: false, error: 'missing message id' }
-  try {
-    return {
-      ok: true,
-      event: {
-        routingKey: delivery.routingKey,
-        messageId: delivery.messageId,
-        body: JSON.parse(delivery.content.toString()) as unknown
-      }
+  return {
+    ok: true,
+    event: {
+      routingKey: delivery.routingKey,
+      messageId: delivery.messageId,
+      body: delivery.body
     }
-  } catch (error) {
-    return { ok: false, error: `invalid JSON: ${(error as Error).message}` }
   }
 }

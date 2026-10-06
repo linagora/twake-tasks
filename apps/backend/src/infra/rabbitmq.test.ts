@@ -55,8 +55,13 @@ async function consume(
   )
 }
 
-function publish(exchange: string, key: string, messageId?: string): void {
-  channel.publish(exchange, key, Buffer.from(JSON.stringify({ key })), {
+function publish(
+  exchange: string,
+  key: string,
+  messageId?: string,
+  content = Buffer.from(JSON.stringify({ key }))
+): void {
+  channel.publish(exchange, key, content, {
     persistent: true,
     ...(messageId && { messageId })
   })
@@ -78,7 +83,7 @@ describe('startConsumer', () => {
       expect(handle).toHaveBeenCalledWith({
         routingKey: 'twake.space.created',
         messageId: 'm-1',
-        content: Buffer.from(JSON.stringify({ key: 'twake.space.created' }))
+        body: { key: 'twake.space.created' }
       })
     })
     await consumer?.close()
@@ -141,9 +146,22 @@ describe('startConsumer', () => {
     expect(await ready(QUEUE)).toBe(0)
   })
 
-  it('redelivers an event whose handling failed', async () => {
+  it('dead letters a message that is not JSON', async () => {
+    const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    await consume(handle)
+
+    publish('space', 'twake.space.created', 'm-1', Buffer.from('{'))
+
+    await vi.waitFor(async () => {
+      expect(await ready(DEAD_LETTER_QUEUE)).toBe(1)
+    })
+    expect(handle).not.toHaveBeenCalled()
+  })
+
+  it('retries an event whose handling failed until it succeeds', async () => {
     const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
     handle
+      .mockRejectedValueOnce(new Error('db down'))
       .mockRejectedValueOnce(new Error('db down'))
       .mockResolvedValue('processed')
     await consume(handle)
@@ -152,10 +170,13 @@ describe('startConsumer', () => {
 
     await vi.waitFor(
       () => {
-        expect(handle).toHaveBeenCalledTimes(2)
+        expect(handle).toHaveBeenCalledTimes(3)
       },
-      { timeout: 5000 }
+      { timeout: 10_000 }
     )
+    await consumer?.close()
+    consumer = undefined
+    expect(await ready(QUEUE)).toBe(0)
     expect(await ready(DEAD_LETTER_QUEUE)).toBe(0)
   })
 })

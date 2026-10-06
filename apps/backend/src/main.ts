@@ -60,12 +60,7 @@ const consumer = await startConsumer(
     routes: new Map([...spaceRoutes(), ...accountRoutes]),
     dedupe: postgresDeduplicator(db, 'twake-tasks'),
     logger
-  }),
-  error => {
-    logger.fatal({ err: error }, 'lost the RabbitMQ connection')
-    process.exitCode = 1
-    void shutdown('rabbitmq')
-  }
+  })
 )
 const stopScheduler = createScheduler({
   db,

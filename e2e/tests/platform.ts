@@ -5,17 +5,12 @@ import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('../..', import.meta.url))
 
 const publish = `
-const { connect } = await import('amqplib')
+const { RabbitMQClient } = await import('@linagora/rabbitmq-client')
 const [exchange, routingKey, messageId, body] = process.argv.slice(1)
-const connection = await connect(process.env.RABBITMQ_URL)
-const channel = await connection.createConfirmChannel()
-channel.publish(exchange, routingKey, Buffer.from(body), {
-  messageId,
-  persistent: true,
-  contentType: 'application/json'
-})
-await channel.waitForConfirms()
-await connection.close()
+const client = new RabbitMQClient({ url: process.env.RABBITMQ_URL })
+await client.init()
+await client.publish(exchange, routingKey, JSON.parse(body), { messageId })
+await client.close()
 `
 
 /** Publishes a space event the way ldap-rest does, on its `space` exchange. */
