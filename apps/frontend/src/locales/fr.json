@@ -1,4 +1,11 @@
 {
+  "problems": {
+    "notFound": "Page introuvable",
+    "notFoundHint": "Le lien est peut-être cassé, ou la page a été déplacée.",
+    "crash": "Un problème est survenu",
+    "crashHint": "Cet écran a rencontré un problème. Recharger la page suffit en général.",
+    "reload": "Recharger"
+  },
   "drag": {
     "card": "tâche déplaçable",
     "instructions": "Pour déplacer une tâche, appuyez sur espace ou entrée. Utilisez les flèches pour la déplacer, espace ou entrée pour la déposer, et échap pour annuler.",

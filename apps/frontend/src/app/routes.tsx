@@ -8,28 +8,40 @@ import { BoardsScreen } from '@/ui/boards/BoardsScreen'
 import { NotificationsScreen } from '@/ui/boards/Notifications'
 import { EmbedLayout, EmbedSpaceScreen } from '@/ui/embed/Embed'
 import { AppShell } from '@/ui/shell/AppShell'
+import { CrashScreen, NotFoundScreen } from '@/ui/shell/Problems'
 
 export const routes: RouteObject[] = [
   {
     element: <AppShell />,
     children: [
-      { path: '/', element: <BoardsScreen /> },
-      { path: '/boards/:boardId', element: <BoardScreen /> },
-      { path: '/today', element: <AgendaScreen view="today" /> },
-      { path: '/upcoming', element: <AgendaScreen view="upcoming" /> },
-      { path: '/mine', element: <AgendaScreen view="mine" /> },
-      { path: '/filters', element: <FiltersScreen /> },
-      { path: '/filters/:filterId', element: <FilterScreen /> },
-      { path: '/search', element: <SearchScreen /> },
-      { path: '/notifications', element: <NotificationsScreen /> }
+      {
+        errorElement: <CrashScreen />,
+        children: [
+          { path: '/', element: <BoardsScreen /> },
+          { path: '/boards/:boardId', element: <BoardScreen /> },
+          { path: '/today', element: <AgendaScreen view="today" /> },
+          { path: '/upcoming', element: <AgendaScreen view="upcoming" /> },
+          { path: '/mine', element: <AgendaScreen view="mine" /> },
+          { path: '/filters', element: <FiltersScreen /> },
+          { path: '/filters/:filterId', element: <FilterScreen /> },
+          { path: '/search', element: <SearchScreen /> },
+          { path: '/notifications', element: <NotificationsScreen /> },
+          { path: '*', element: <NotFoundScreen /> }
+        ]
+      }
     ]
   },
   {
     path: '/embed/spaces/:spaceId',
     element: <EmbedLayout />,
     children: [
-      { index: true, element: <EmbedSpaceScreen /> },
-      { path: 'boards/:boardId', element: <BoardScreen /> }
+      {
+        errorElement: <CrashScreen />,
+        children: [
+          { index: true, element: <EmbedSpaceScreen /> },
+          { path: 'boards/:boardId', element: <BoardScreen /> }
+        ]
+      }
     ]
   }
 ]

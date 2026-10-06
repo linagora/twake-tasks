@@ -7,18 +7,20 @@ export function EmptyState({
   title,
   text,
   action,
-  compact = false
+  compact = false,
+  tone = 'default'
 }: {
   icon: IconProps['icon']
   title: string
   text?: string
   action?: ReactNode
   compact?: boolean
+  tone?: 'default' | 'error'
 }): ReactElement {
   const badge = compact ? 40 : 64
   return (
     <Empty
-      role="status"
+      role={tone === 'error' ? 'alert' : 'status'}
       icon={
         <Box
           sx={{
@@ -29,7 +31,7 @@ export function EmptyState({
             alignItems: 'center',
             justifyContent: 'center',
             bgcolor: 'action.hover',
-            color: 'primary.main'
+            color: tone === 'error' ? 'error.main' : 'primary.main'
           }}
         >
           <Icon icon={icon} size={compact ? 18 : 28} />
@@ -44,6 +46,7 @@ export function EmptyState({
       sx={{
         p: compact ? 2 : 6,
         '& .Empty-icon': {
+          display: 'flex',
           height: badge,
           mb: compact ? 1 : 2
         }

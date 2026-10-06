@@ -1,4 +1,11 @@
 {
+  "problems": {
+    "notFound": "Không tìm thấy trang",
+    "notFoundHint": "Liên kết có thể bị hỏng, hoặc trang đã được chuyển đi.",
+    "crash": "Đã xảy ra lỗi",
+    "crashHint": "Màn hình này gặp sự cố. Tải lại trang thường sẽ khắc phục được.",
+    "reload": "Tải lại"
+  },
   "drag": {
     "card": "công việc có thể kéo",
     "instructions": "Để di chuyển công việc, nhấn phím cách hoặc Enter. Dùng các phím mũi tên để di chuyển, phím cách hoặc Enter để thả, và Escape để hủy.",
