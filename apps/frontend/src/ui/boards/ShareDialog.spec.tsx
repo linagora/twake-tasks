@@ -32,15 +32,14 @@ describe('sharing a board', () => {
     fireEvent.change(form.getByRole('textbox', { name: 'Email' }), {
       target: { value: 'bob@example.com' }
     })
-    fireEvent.change(form.getByRole('combobox', { name: 'Role' }), {
-      target: { value: 'editor' }
-    })
+    fireEvent.click(form.getByRole('button', { name: 'Role: Viewer' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Editor' }))
     fireEvent.click(form.getByRole('button', { name: 'Invite' }))
 
     expect(await dialog.findByText('Invited bob@example.com.')).toBeVisible()
     expect(
       await dialog.findByRole('listitem', { name: 'bob@example.com' })
-    ).toHaveTextContent('Invited')
+    ).toHaveTextContent('Pending')
     expect(boardsApi.invite).toHaveBeenCalledWith(
       board.id,
       'bob@example.com',
@@ -57,9 +56,8 @@ describe('sharing a board', () => {
       await dialog.findByRole('listitem', { name: 'bob@example.com' })
     )
 
-    fireEvent.change(bob.getByRole('combobox', { name: 'Role' }), {
-      target: { value: 'editor' }
-    })
+    fireEvent.click(bob.getByRole('button', { name: 'Role: Viewer' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Editor' }))
     await waitFor(() => {
       expect(boardsApi.setMemberRole).toHaveBeenCalledWith(
         board.id,
@@ -67,7 +65,8 @@ describe('sharing a board', () => {
         'editor'
       )
     })
-    fireEvent.click(bob.getByRole('button', { name: 'Remove' }))
+    fireEvent.click(await bob.findByRole('button', { name: 'Role: Editor' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove' }))
 
     await waitFor(() => {
       expect(
@@ -76,17 +75,50 @@ describe('sharing a board', () => {
     })
   })
 
+  it('cancels a pending invite', async () => {
+    const board = aBoard({ name: 'Design' })
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.sharings.set(board.id, {
+      members: [me],
+      invites: [{ id: 'inv', email: 'eve@example.com', role: 'editor' }]
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    fireEvent.click(await screen.findByRole('button', { name: 'Share' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    const eve = within(
+      await dialog.findByRole('listitem', { name: 'eve@example.com' })
+    )
+
+    expect(eve.getByText('Pending')).toBeVisible()
+    fireEvent.click(eve.getByRole('button', { name: 'Role: Editor' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Cancel invite' }))
+
+    await waitFor(() => {
+      expect(boardsApi.cancelInvite).toHaveBeenCalledWith(board.id, 'inv')
+    })
+  })
+
   it('moves the board into another project I edit', async () => {
-    const { boardsApi, board, dialog } = await openSharing(
-      [me],
-      [
-        {
-          ...aProject({ id: 'ops', name: 'Ops', managed: true }),
-          role: 'editor'
-        },
-        { ...aProject({ id: 'hr', name: 'HR' }), role: 'viewer' },
-        { ...aProject({ name: 'Personal', personal: true }), role: 'admin' }
-      ]
+    const board = aBoard({ name: 'Design' })
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.projects.push(
+      { ...board.project, role: 'admin' },
+      {
+        ...aProject({ id: 'ops', name: 'Ops', managed: true }),
+        role: 'editor'
+      },
+      { ...aProject({ id: 'hr', name: 'HR' }), role: 'viewer' },
+      { ...aProject({ name: 'Personal', personal: true }), role: 'admin' }
+    )
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Board options' })
+    )
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: 'Move to project' })
+    )
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Move Design' })
     )
     const project = await dialog.findByRole('combobox', { name: 'Project' })
 

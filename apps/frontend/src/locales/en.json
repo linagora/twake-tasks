@@ -287,18 +287,24 @@
     "roles": { "viewer": "Viewer", "editor": "Editor", "admin": "Admin" },
     "invite": "Invite",
     "invited": "Invited %{email}.",
-    "pending": "Invited as %{role}",
+    "pending": "Pending",
+    "roleOf": "Role: %{role}",
+    "people": "People with access",
     "cancelInvite": "Cancel invite",
     "remove": "Remove",
     "close": "Close",
     "failed": "The change could not be saved.",
-    "loadFailed": "The members could not be loaded.",
-    "moveTitle": "Move to another project",
+    "loadFailed": "The members could not be loaded."
+  },
+  "moveBoard": {
+    "action": "Move to project",
+    "title": "Move %{name}",
     "project": "Project",
-    "moveHelp": "The project's members and labels apply to the board.",
+    "help": "The project's members and labels apply to the board.",
+    "cancel": "Cancel",
     "move": "Move",
     "prefixTaken": "A board of this project already uses %{prefix}.",
-    "moveFailed": "The board could not be moved."
+    "failed": "The board could not be moved."
   },
   "layout": {
     "title": "Layout",
