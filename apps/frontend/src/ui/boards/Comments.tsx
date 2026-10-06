@@ -4,6 +4,7 @@ import { useState, type ReactElement } from 'react'
 import { RichText, RichTextEditor } from '@/ds/RichText'
 import { Feed, FeedItem } from '@/ds/SidePanel'
 import type { Task } from '@/domain/board'
+import { displayName } from '@/domain/person'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useAddComment, useComments } from '@/ui/boards/queries'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
@@ -48,11 +49,17 @@ export function Comments({
         {comments.data?.map(comment => (
           <FeedItem
             key={comment.id}
-            avatar={<PersonAvatar email={comment.author.email} size={28} />}
+            avatar={
+              <PersonAvatar
+                email={comment.author.email}
+                name={comment.author.name}
+                size={28}
+              />
+            }
           >
-            <article aria-label={comment.author.email}>
+            <article aria-label={displayName(comment.author)}>
               <Typography variant="body2" component="div">
-                <strong>{comment.author.email}</strong>
+                <strong>{displayName(comment.author)}</strong>
                 <Typography
                   component="span"
                   variant="caption"

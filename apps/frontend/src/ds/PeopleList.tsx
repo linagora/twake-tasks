@@ -38,17 +38,26 @@ export function InviteRow({
 
 export function PersonRow({
   label,
+  detail,
   avatar,
   children
 }: {
   label: string
+  detail?: string | undefined
   avatar: ReactNode
   children: ReactNode
 }): ReactElement {
   return (
     <ListItem aria-label={label} gutters="disabled">
       <ListItemAvatar sx={{ minWidth: 44 }}>{avatar}</ListItemAvatar>
-      <ListItemText primary={label} />
+      <ListItemText
+        primary={label}
+        secondary={detail}
+        slotProps={{
+          primary: { noWrap: true },
+          secondary: { noWrap: true }
+        }}
+      />
       <Box
         sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
       >

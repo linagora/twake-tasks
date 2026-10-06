@@ -7,7 +7,8 @@ import { renderRoute } from '@/testing/renderWithProviders'
 
 const person = (name: string) => ({
   userId: name,
-  email: `${name}@example.com`
+  email: `${name}@example.com`,
+  name: null
 })
 
 async function cardOf(overrides: Partial<Task>, extra: Task[] = []) {

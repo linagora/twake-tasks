@@ -1,12 +1,16 @@
 import { Avatar, getInitials, nameToColor } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 
+import { displayName } from '@/domain/person'
+
 export function PersonAvatar({
   email,
+  name = null,
   label,
   size = 24
 }: {
   email: string
+  name?: string | null
   label?: string
   size?: number
 }): ReactElement {
@@ -18,7 +22,7 @@ export function PersonAvatar({
         ? { role: 'img', 'aria-label': label }
         : { 'aria-hidden': true })}
     >
-      {getInitials(email, email)}
+      {getInitials(displayName({ email, name }), email)}
     </Avatar>
   )
 }

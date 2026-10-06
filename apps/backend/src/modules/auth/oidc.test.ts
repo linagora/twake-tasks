@@ -186,6 +186,23 @@ describe('identify', () => {
     await expect(provider.identify('token')).resolves.toBeNull()
   })
 
+  it.each([
+    [
+      'given and family names',
+      { name: 'qvalmori', given_name: 'Quentin', family_name: 'VALMORI' },
+      'Quentin VALMORI'
+    ],
+    ['only a name', { name: 'Alice Martin' }, 'Alice Martin'],
+    ['blank names', { name: ' ', given_name: '' }, null],
+    ['no name', {}, null]
+  ])('names the person from %s', async (_case, claims, name) => {
+    const token = validToken()
+    token.userinfo = { ...token.userinfo, ...claims }
+    const { provider } = await setUp({ token })
+
+    expect((await provider.identify('token'))?.name).toBe(name)
+  })
+
   it('drops an organization role it does not know', async () => {
     const token = validToken()
     token.userinfo = { ...token.userinfo, org_role: 'superuser' }

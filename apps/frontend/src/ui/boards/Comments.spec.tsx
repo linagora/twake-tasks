@@ -13,7 +13,7 @@ function logoBoard(role: 'admin' | 'viewer' = 'admin') {
   boardsApi.comments.set(logo.id, [
     {
       id: 'c1',
-      author: { userId: 'bob', email: 'bob@example.com' },
+      author: { userId: 'bob', email: 'bob@example.com', name: 'Bob Durand' },
       body: 'Which palette?',
       createdAt: '2026-10-05T09:00:00Z'
     }
@@ -32,9 +32,7 @@ describe('Comments', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const comment = within(
-      await (
-        await openLogo()
-      ).findByRole('article', { name: 'bob@example.com' })
+      await (await openLogo()).findByRole('article', { name: 'Bob Durand' })
     )
 
     expect(comment.getByText('Which palette?')).toBeInTheDocument()
@@ -71,7 +69,7 @@ describe('Comments', () => {
     boardsApi.comments.set(logo.id, [
       {
         id: 'c2',
-        author: { userId: 'bob', email: 'bob@example.com' },
+        author: { userId: 'bob', email: 'bob@example.com', name: null },
         body: 'Use the **new** one:\n\n- [x] logo\n- [ ] icons',
         createdAt: '2026-10-05T09:00:00Z'
       }

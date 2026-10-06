@@ -24,16 +24,40 @@ export function accessibleBoards(tx: Tx, userId: string) {
     .as('accessible')
 }
 
+export interface Member {
+  userId: string
+  email: string
+  name: string | null
+}
+
 // The people who can open a board: the members of its project.
 export function membersOf(
   tx: Tx,
   board: { projectId: string }
-): Promise<{ userId: string; email: string }[]> {
+): Promise<Member[]> {
   return tx
-    .select({ userId: projectMembers.userId, email: projectMembers.email })
+    .select({
+      userId: projectMembers.userId,
+      email: projectMembers.email,
+      name: projectMembers.name
+    })
     .from(projectMembers)
     .where(eq(projectMembers.projectId, board.projectId))
     .orderBy(asc(projectMembers.email))
+}
+
+// Someone who left the board keeps their email on what they wrote, not a name.
+export async function namesOn(
+  tx: Tx,
+  boardId: string
+): Promise<(userId: string) => string | null> {
+  const rows = await tx
+    .select({ userId: projectMembers.userId, name: projectMembers.name })
+    .from(projectMembers)
+    .innerJoin(boards, eq(boards.projectId, projectMembers.projectId))
+    .where(eq(boards.id, boardId))
+  const names = new Map(rows.map(row => [row.userId, row.name]))
+  return userId => names.get(userId) ?? null
 }
 
 export async function roleOn(

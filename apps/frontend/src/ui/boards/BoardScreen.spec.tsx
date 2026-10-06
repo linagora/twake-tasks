@@ -5,8 +5,12 @@ import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
-const alice = { userId: 'alice', email: 'alice.martin@example.com' }
-const bob = { userId: 'bob', email: 'bob.durand@example.com' }
+const alice = {
+  userId: 'alice',
+  email: 'alice.martin@example.com',
+  name: 'Alice Martin'
+}
+const bob = { userId: 'bob', email: 'bob.durand@example.com', name: null }
 
 function designBoard() {
   const board = aBoard({
@@ -46,7 +50,7 @@ describe('BoardScreen', () => {
     ).toBeInTheDocument()
     expect(
       within(logo).getByRole('img', {
-        name: 'Assigned to alice.martin@example.com'
+        name: 'Assigned to Alice Martin'
       })
     ).toBeInTheDocument()
     expect(

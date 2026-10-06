@@ -20,6 +20,7 @@ import {
   TitleInput
 } from '@/ds/SidePanel'
 import type { Board, Task } from '@/domain/board'
+import { displayName } from '@/domain/person'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
 import { Dates } from '@/ui/boards/Dates'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
@@ -59,8 +60,8 @@ export function TaskProperties({
         <Property icon={<Icon icon={People} />} label={t('task.assignees')}>
           {task.assignees.map(person => (
             <Inline key={person.userId}>
-              <PersonAvatar email={person.email} />
-              <Typography variant="body2">{person.email}</Typography>
+              <PersonAvatar email={person.email} name={person.name} />
+              <Typography variant="body2">{displayName(person)}</Typography>
             </Inline>
           ))}
           {task.assignees.length === 0 && (

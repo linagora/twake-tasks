@@ -17,7 +17,13 @@ import { generateNKeysBetween } from 'fractional-indexing'
 import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { accessibleBoards, membersOf, roleIn, roleOn } from './access.ts'
+import {
+  accessibleBoards,
+  membersOf,
+  roleIn,
+  roleOn,
+  type Member
+} from './access.ts'
 import { shown } from './archive.ts'
 import {
   sections,
@@ -103,6 +109,17 @@ export function createBoardStore(db: Db) {
       return inTenant(db, identity, async tx => {
         await ensureInbox(tx, identity)
         await tx.execute(sql`select app_claim_invites()`)
+        if (identity.name !== null) {
+          await tx
+            .update(projectMembers)
+            .set({ name: identity.name })
+            .where(
+              and(
+                eq(projectMembers.userId, identity.userId),
+                sql`${projectMembers.name} is distinct from ${identity.name}`
+              )
+            )
+        }
         const accessible = accessibleBoards(tx, identity.userId)
         return tx
           .select({
@@ -264,6 +281,7 @@ export async function createProject(
     organizationId: identity.organizationId,
     userId: identity.userId,
     email: identity.email,
+    name: identity.name,
     role: 'admin'
   })
   return project.id
@@ -288,6 +306,7 @@ async function ensureInbox(tx: Tx, identity: Identity) {
     organizationId: identity.organizationId,
     userId: identity.userId,
     email: identity.email,
+    name: identity.name,
     role: 'admin'
   })
   await tx.insert(boards).values({
@@ -354,7 +373,7 @@ async function describeTasks(
   tx: Tx,
   board: typeof boards.$inferSelect,
   rows: (typeof tasks.$inferSelect)[],
-  members: { userId: string; email: string }[],
+  members: Member[],
   boardLabels: { id: string; name: string }[]
 ) {
   const ids = rows.map(task => task.id)

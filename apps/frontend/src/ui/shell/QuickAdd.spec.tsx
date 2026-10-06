@@ -9,7 +9,7 @@ async function openQuickAdd() {
   const design = aBoard({
     name: 'Product Design',
     keyPrefix: 'DES',
-    members: [{ userId: 'u-ana', email: 'ana@example.com' }],
+    members: [{ userId: 'u-ana', email: 'ana@example.com', name: 'Ana Lopez' }],
     labels: [{ id: 'l1', name: 'ops' }]
   })
   const boardsApi = fakeBoardsApi([inbox, design])
@@ -73,7 +73,7 @@ describe('QuickAdd', () => {
     ).toBeVisible()
     expect(parts.getByText('ops')).toBeVisible()
     expect(
-      await parts.findByRole('img', { name: 'Assign ana@example.com' })
+      await parts.findByRole('img', { name: 'Assign Ana Lopez' })
     ).toBeVisible()
   })
 
@@ -91,7 +91,7 @@ describe('QuickAdd', () => {
 
     type('Logo #Product-Design +a')
     expect(
-      await dialog.findByRole('option', { name: /ana@example.com/ })
+      await dialog.findByRole('option', { name: /Ana Lopez/ })
     ).toBeVisible()
     fireEvent.keyDown(field(), { key: 'Enter' })
     expect(field()).toHaveValue('Logo #Product-Design +ana ')

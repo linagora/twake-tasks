@@ -1,10 +1,12 @@
-import { Avatar, getInitials, nameToColor } from '@linagora/twake-mui'
+import { Avatar } from '@linagora/twake-mui'
 import { CalendarToday, Flag, Icon } from '@linagora/twake-icons'
 import type { ReactElement } from 'react'
 
 import { AvatarStack, MetaChip } from '@/ds/Columns'
 import type { Person, Priority, Task } from '@/domain/board'
+import { displayName } from '@/domain/person'
 import { dueLabel, shortDay, urgency } from '@/ui/boards/dueLabel'
+import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const PRIORITY_TONE = {
@@ -57,16 +59,13 @@ export function Assignees({ people }: { people: Person[] }): ReactElement {
   const hidden = people.length - shown
   return (
     <AvatarStack>
-      {people.slice(0, shown).map(({ userId, email }) => (
-        <Avatar
-          key={userId}
-          size={24}
-          color={nameToColor(email) ?? 'sunrise'}
-          role="img"
-          aria-label={t('board.assignee', { name: email })}
-        >
-          {getInitials(email, email)}
-        </Avatar>
+      {people.slice(0, shown).map(person => (
+        <PersonAvatar
+          key={person.userId}
+          email={person.email}
+          name={person.name}
+          label={t('board.assignee', { name: displayName(person) })}
+        />
       ))}
       {hidden > 0 && (
         <Avatar

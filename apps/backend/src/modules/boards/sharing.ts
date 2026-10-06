@@ -91,6 +91,7 @@ export function createSharingStore(db: Db) {
             .select({
               userId: projectMembers.userId,
               email: projectMembers.email,
+              name: projectMembers.name,
               role: projectMembers.role
             })
             .from(projectMembers)

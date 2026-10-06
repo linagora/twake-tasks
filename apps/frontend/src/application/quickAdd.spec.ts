@@ -16,8 +16,8 @@ function boards() {
     name: 'Product Design',
     keyPrefix: 'DES',
     members: [
-      { userId: 'u-alice', email: 'alice@example.com' },
-      { userId: 'u-bob', email: 'bob@example.com' }
+      { userId: 'u-alice', email: 'alice@example.com', name: null },
+      { userId: 'u-bob', email: 'bob@example.com', name: null }
     ],
     labels: [{ id: 'l-urgent', name: 'Urgent' }]
   })

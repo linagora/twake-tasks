@@ -5,7 +5,12 @@ import type { Project, Sharing } from '@/application/boards'
 import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
-const me = { userId: 'me', email: 'me@example.com', role: 'admin' } as const
+const me = {
+  userId: 'me',
+  email: 'me@example.com',
+  name: null,
+  role: 'admin'
+} as const
 
 async function openSharing(
   members: Sharing['members'] = [me],
@@ -50,11 +55,17 @@ describe('sharing a board', () => {
   it('changes a member role and removes a member', async () => {
     const { boardsApi, board, dialog } = await openSharing([
       me,
-      { userId: 'bob', email: 'bob@example.com', role: 'viewer' }
+      {
+        userId: 'bob',
+        email: 'bob@example.com',
+        name: 'Bob Durand',
+        role: 'viewer'
+      }
     ])
     const bob = within(
-      await dialog.findByRole('listitem', { name: 'bob@example.com' })
+      await dialog.findByRole('listitem', { name: 'Bob Durand' })
     )
+    expect(bob.getByText('bob@example.com')).toBeVisible()
 
     fireEvent.click(bob.getByRole('button', { name: 'Role: Viewer' }))
     fireEvent.click(screen.getByRole('menuitem', { name: 'Editor' }))

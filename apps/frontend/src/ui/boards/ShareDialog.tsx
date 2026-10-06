@@ -20,6 +20,7 @@ import { useId, useState, type ReactElement } from 'react'
 
 import { InviteRow, PersonRow } from '@/ds/PeopleList'
 import { ROLES, type Board, type Role } from '@/domain/board'
+import { displayName } from '@/domain/person'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoardChange, useSharing } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -186,8 +187,17 @@ export function ShareDialog({
           {sharing.data?.members.map(member => (
             <PersonRow
               key={member.userId}
-              label={member.email}
-              avatar={<PersonAvatar email={member.email} size={32} />}
+              label={displayName(member)}
+              detail={
+                displayName(member) === member.email ? undefined : member.email
+              }
+              avatar={
+                <PersonAvatar
+                  email={member.email}
+                  name={member.name}
+                  size={32}
+                />
+              }
             >
               <RoleMenu
                 value={member.role}

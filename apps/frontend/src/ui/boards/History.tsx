@@ -5,6 +5,7 @@ import type { HistoryEntry } from '@/application/boards'
 import { Feed, FeedItem } from '@/ds/SidePanel'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import type { Board, Duration, Task } from '@/domain/board'
+import { displayName } from '@/domain/person'
 import { useBoard, useHistory } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -18,7 +19,7 @@ function describe(
   board: Board | undefined,
   t: Translate
 ): string {
-  const actor = entry.actor.email
+  const actor = displayName(entry.actor)
   const value = text(entry.to ?? entry.from)
   const added = entry.to !== null
   switch (entry.field) {
@@ -64,9 +65,8 @@ function describe(
         { actor }
       )
     case 'assignees': {
-      const name =
-        board?.members.find(member => member.userId === value)?.email ??
-        t('history.someone')
+      const member = board?.members.find(each => each.userId === value)
+      const name = member ? displayName(member) : t('history.someone')
       return t(added ? 'history.assigned' : 'history.unassigned', {
         actor,
         name
@@ -110,7 +110,9 @@ export function History({
         {history.data?.map((entry, index) => (
           <FeedItem
             key={index}
-            avatar={<PersonAvatar email={entry.actor.email} />}
+            avatar={
+              <PersonAvatar email={entry.actor.email} name={entry.actor.name} />
+            }
           >
             <Typography variant="body2">
               {`${describe(entry, board.data, t)} · `}

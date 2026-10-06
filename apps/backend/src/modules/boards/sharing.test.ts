@@ -174,8 +174,8 @@ describe('sharing a board', () => {
       }>().members
     ).toEqual(
       [
-        { userId: owner.userId, email: owner.email, role: 'admin' },
-        { userId: guest.userId, email: guest.email, role: 'admin' }
+        { userId: owner.userId, email: owner.email, name: null, role: 'admin' },
+        { userId: guest.userId, email: guest.email, name: null, role: 'admin' }
       ].sort((a, b) => a.email.localeCompare(b.email))
     )
 
