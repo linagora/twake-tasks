@@ -40,7 +40,8 @@ import {
 import {
   Outlet,
   Link as RouterLink,
-  NavLink as RouterNavLink
+  NavLink as RouterNavLink,
+  useLocation
 } from 'react-router'
 
 import {
@@ -48,7 +49,6 @@ import {
   AppFrame,
   BrandMark,
   CountBadge,
-  PhoneMenuItem,
   SidebarSection,
   TopBar,
   TopBarSearch,
@@ -162,7 +162,14 @@ function AccountMenu(): ReactElement {
   const { user, signOut } = useSession()
   const email = user.email ?? ''
   const name = user.name ?? email
+  const theme = useTheme()
+  // The menu focuses its first item on open, so an item hidden with CSS
+  // would keep the focus, and Escape, outside the menu.
+  const phone = useMediaQuery(theme.breakpoints.down('lg'))
+  const { pathname } = useLocation()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const [openedOn, setOpenedOn] = useState(pathname)
+  if (anchor !== null && openedOn !== pathname) setAnchor(null)
   const close = (): void => {
     setAnchor(null)
   }
@@ -180,6 +187,7 @@ function AccountMenu(): ReactElement {
         aria-expanded={anchor !== null}
         onClick={event => {
           setAnchor(event.currentTarget)
+          setOpenedOn(pathname)
         }}
       >
         {avatar('s')}
@@ -197,12 +205,14 @@ function AccountMenu(): ReactElement {
           email={email === name ? undefined : email}
         />
         <Divider />
-        <PhoneMenuItem component={RouterLink} to="/filters" onClick={close}>
-          <ListItemIcon>
-            <Icon icon={Filter} />
-          </ListItemIcon>
-          <ListItemText>{t('filters.title')}</ListItemText>
-        </PhoneMenuItem>
+        {phone && (
+          <MenuItem component={RouterLink} to="/filters" onClick={close}>
+            <ListItemIcon>
+              <Icon icon={Filter} />
+            </ListItemIcon>
+            <ListItemText>{t('filters.title')}</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             close()

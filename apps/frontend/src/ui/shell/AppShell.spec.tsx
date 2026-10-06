@@ -21,6 +21,43 @@ describe('AppShell', () => {
     }
   )
 
+  it('moves focus into the account menu so Escape closes it', async () => {
+    renderRoute('/', { boardsApi: fakeBoardsApi() })
+
+    fireEvent.click(
+      within(await screen.findByRole('banner')).getByRole('button', {
+        name: 'Alice Martin'
+      })
+    )
+    const signOut = await screen.findByRole('menuitem', { name: 'Sign out' })
+    await waitFor(() => {
+      expect(signOut).toHaveFocus()
+    })
+    fireEvent.keyDown(signOut, { key: 'Escape' })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('menu')).toBeNull()
+    })
+  })
+
+  it('closes the account menu when the page changes', async () => {
+    renderRoute('/', { boardsApi: fakeBoardsApi() })
+    fireEvent.click(
+      within(await screen.findByRole('banner')).getByRole('button', {
+        name: 'Alice Martin'
+      })
+    )
+    await screen.findByRole('menu')
+
+    fireEvent.keyDown(document.body, { key: 'g' })
+    fireEvent.keyDown(document.body, { key: 't' })
+
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeVisible()
+    await waitFor(() => {
+      expect(screen.queryByRole('menu')).toBeNull()
+    })
+  })
+
   it('links the app name to the boards', async () => {
     renderRoute('/boards/board-1', { boardsApi: fakeBoardsApi() })
 
