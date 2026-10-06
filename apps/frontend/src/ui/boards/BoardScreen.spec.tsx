@@ -162,6 +162,27 @@ describe('BoardScreen', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('lets editors pick a card up from the keyboard', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const logo = await screen.findByRole('article', { name: 'DES-1 Logo' })
+    expect(logo).toHaveAttribute('aria-roledescription', 'draggable task')
+    expect(logo).toHaveAttribute('tabindex', '0')
+    expect(
+      document.getElementById(logo.getAttribute('aria-describedby') ?? '')
+    ).toHaveTextContent('To move a task, press space or enter.')
+  })
+
+  it('keeps cards in place for a viewer', async () => {
+    const board = { ...designBoard(), role: 'viewer' as const }
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const logo = await screen.findByRole('article', { name: 'DES-1 Logo' })
+    expect(logo).not.toHaveAttribute('aria-roledescription')
+    expect(logo).not.toHaveAttribute('tabindex')
+  })
+
   it('shows a moved task in its new section before the server answers', async () => {
     const board = designBoard()
     const boardsApi = fakeBoardsApi([board])

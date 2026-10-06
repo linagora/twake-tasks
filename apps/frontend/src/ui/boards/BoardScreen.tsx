@@ -5,6 +5,8 @@ import { Link as RouterLink, useParams } from 'react-router'
 
 import { ApiError, type Shelf } from '@/application/boards'
 import {
+  Card,
+  CardTitle,
   Column,
   ColumnAddButton,
   Columns,
@@ -12,8 +14,10 @@ import {
   EmptyColumn
 } from '@/ds/Columns'
 import { PageHeader } from '@/ds/PageHeader'
+import { DropColumn, SortableList } from '@/ds/Sortable'
 import type { Board, Section, Task } from '@/domain/board'
 import { ShelfDialog } from '@/ui/boards/Archive'
+import { BoardDrag } from '@/ui/boards/BoardDrag'
 import { BoardMenu } from '@/ui/boards/BoardMenu'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
@@ -84,9 +88,11 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
     ...board.sections.map(section => ({ ...section, section }))
   ]
 
-  const card = (task: Task) => (
+  const byId = new Map(topLevel.map(task => [task.id, task]))
+  const card = (task: Task, sortable = false) => (
     <TaskCard
       key={task.id}
+      sortable={sortable}
       task={task}
       tasks={board.tasks}
       boardId={board.id}
@@ -105,6 +111,8 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
     />
   )
   const columnKey = (column: (typeof columns)[number]) => column.id ?? 'none'
+  const laneKey = (column: (typeof columns)[number]) =>
+    `lane:${columnKey(column)}`
   const addTask = (column: (typeof columns)[number]) =>
     editable && (
       <AddTask
@@ -185,29 +193,85 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
           {t('board.moveFailed')}
         </Typography>
       )}
-      {board.layout === 'board' && (
+      {board.layout === 'board' && !editable && (
         <Columns>
           {columns.map(column => (
             <Column
-              key={column.id ?? 'none'}
+              key={columnKey(column)}
               title={column.name}
               count={tasksIn(column).length}
-              actions={
-                manageable &&
-                column.section && (
-                  <SectionMenu board={board} section={column.section} />
-                )
-              }
             >
-              {tasksIn(column).map(card)}
+              {tasksIn(column).map(task => card(task))}
               {tasksIn(column).length === 0 && (
                 <EmptyColumn label={t('board.emptyColumn')} />
               )}
-              {addTask(column)}
             </Column>
           ))}
-          {manageable && <NewSectionButton board={board} />}
         </Columns>
+      )}
+      {board.layout === 'board' && editable && (
+        <BoardDrag
+          lanes={columns.map(column => ({
+            key: laneKey(column),
+            sectionId: column.id,
+            name: column.name,
+            taskIds: tasksIn(column).map(task => task.id)
+          }))}
+          titleOf={id => {
+            const task = byId.get(id)
+            return task ? `${task.key} ${task.title}` : ''
+          }}
+          onMove={(taskId, to) => {
+            move.mutate({ taskId, move: to })
+          }}
+          preview={id => {
+            const task = byId.get(id)
+            return (
+              task && (
+                <Card label={`${task.key} ${task.title}`} drag="lifted">
+                  <Typography variant="caption" color="textSecondary">
+                    {task.key}
+                  </Typography>
+                  <CardTitle>{task.title}</CardTitle>
+                </Card>
+              )
+            )
+          }}
+        >
+          {idsOf => (
+            <Columns>
+              {columns.map(column => {
+                const ids = idsOf(laneKey(column))
+                return (
+                  <DropColumn
+                    key={columnKey(column)}
+                    id={laneKey(column)}
+                    title={column.name}
+                    count={ids.length}
+                    actions={
+                      manageable &&
+                      column.section && (
+                        <SectionMenu board={board} section={column.section} />
+                      )
+                    }
+                  >
+                    <SortableList ids={ids}>
+                      {ids.flatMap(id => {
+                        const task = byId.get(id)
+                        return task ? [card(task, true)] : []
+                      })}
+                    </SortableList>
+                    {ids.length === 0 && (
+                      <EmptyColumn label={t('board.emptyColumn')} />
+                    )}
+                    {addTask(column)}
+                  </DropColumn>
+                )
+              })}
+              {manageable && <NewSectionButton board={board} />}
+            </Columns>
+          )}
+        </BoardDrag>
       )}
       {board.layout === 'list' && (
         <ListLayout

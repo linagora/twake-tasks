@@ -11,6 +11,7 @@ import { useState, type ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { Card, CardTitle, LabelChip, Meta, MetaChip } from '@/ds/Columns'
+import { SortableCard } from '@/ds/Sortable'
 import type { Label, Person, Section, Task } from '@/domain/board'
 import { AssignDialog } from '@/ui/boards/AssignDialog'
 import { LabelsDialog } from '@/ui/boards/LabelsDialog'
@@ -26,7 +27,8 @@ export function TaskCard({
   members,
   labels,
   destinations,
-  onMove
+  onMove,
+  sortable = false
 }: {
   task: Task
   tasks: Task[]
@@ -35,6 +37,7 @@ export function TaskCard({
   labels: Label[]
   destinations: { id: string | null; name: string }[]
   onMove: ((sectionId: Section['id'] | null) => void) | undefined
+  sortable?: boolean
 }): ReactElement {
   const { t } = useI18n()
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
@@ -56,25 +59,8 @@ export function TaskCard({
     action()
   }
 
-  return (
-    <Card
-      label={`${task.key} ${task.title}`}
-      menu={
-        onMove && (
-          <IconButton
-            size="small"
-            aria-label={t('board.options', { key: task.key })}
-            aria-haspopup="menu"
-            aria-expanded={menuAnchor !== null}
-            onClick={event => {
-              setMenuAnchor(event.currentTarget)
-            }}
-          >
-            <Icon icon={Dots} />
-          </IconButton>
-        )
-      }
-    >
+  const body = (
+    <>
       <Meta>
         <Typography variant="caption" color="textSecondary">
           {task.key}
@@ -140,6 +126,36 @@ export function TaskCard({
           depth={2}
         />
       )}
+    </>
+  )
+  const frame = {
+    label: `${task.key} ${task.title}`,
+    menu: onMove && (
+      <IconButton
+        size="small"
+        aria-label={t('board.options', { key: task.key })}
+        aria-haspopup="menu"
+        aria-expanded={menuAnchor !== null}
+        onClick={event => {
+          setMenuAnchor(event.currentTarget)
+        }}
+      >
+        <Icon icon={Dots} />
+      </IconButton>
+    )
+  }
+
+  // Portalled panels sit outside the card: React bubbles their pointer events
+  // through the tree, and they must not start a drag.
+  return (
+    <>
+      {sortable ? (
+        <SortableCard id={task.id} description={t('drag.card')} {...frame}>
+          {body}
+        </SortableCard>
+      ) : (
+        <Card {...frame}>{body}</Card>
+      )}
       <Menu
         anchorEl={menuAnchor}
         open={menuAnchor !== null}
@@ -203,6 +219,6 @@ export function TaskCard({
           }}
         />
       )}
-    </Card>
+    </>
   )
 }
