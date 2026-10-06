@@ -366,8 +366,13 @@ export function AvatarStack({
       sx={{
         display: 'flex',
         ml: 'auto',
-        '& > *': { border: 2, borderColor: 'background.paper' },
-        '& > * + *': { ml: -0.75 }
+        '& > *': {
+          border: 2,
+          borderColor: 'background.paper',
+          fontSize: 10,
+          letterSpacing: 0
+        },
+        '& > * + *': { ml: -0.5 }
       }}
     >
       {children}
