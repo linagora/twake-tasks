@@ -1,0 +1,61 @@
+# docker compose -p twake-tasks-e2e -f docker-compose.yml -f e2e/docker-compose.e2e.yml --profile app up
+# Only the frontend and the SSO reach the host, on ports the dev stack leaves free.
+services:
+  kafka:
+    ports: !reset []
+
+  postgres:
+    ports: !reset []
+    volumes: !override
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  oidc:
+    image: node:24-slim
+    working_dir: /oidc
+    command: ['node', 'server.ts']
+    volumes:
+      - ./e2e/oidc:/oidc:ro
+      - ./e2e/.certs:/certs:ro
+    ports:
+      - '127.0.0.1:8443:8443'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('https://localhost:8443/.well-known/openid-configuration').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+        ]
+      interval: 2s
+      retries: 20
+    environment:
+      NODE_EXTRA_CA_CERTS: /certs/oidc.crt
+
+  backend:
+    ports: !reset []
+    depends_on:
+      oidc:
+        condition: service_healthy
+    volumes:
+      - ./e2e/.certs:/certs:ro
+    environment:
+      APP_URL: http://localhost:3300
+      OIDC_ISSUER: https://oidc:8443
+      OIDC_CLIENT_SECRET: e2e-backend-secret
+      NODE_EXTRA_CA_CERTS: /certs/oidc.crt
+      # No ldap-rest here: the nightly reconcile fails and retries, nothing else needs it.
+      LDAP_REST_URL: http://ldap-rest.invalid
+      LDAP_REST_SECRET: e2e
+
+  frontend:
+    ports: !override
+      - '127.0.0.1:3300:8080'
+    environment:
+      SSO_BASE_URL: https://oidc:8443
+      SSO_CLIENT_ID: twaketasks
+      SSO_SCOPE: openid email profile
+      SSO_REDIRECT_URI: http://localhost:3300/auth/callback
+      SSO_POST_LOGOUT_REDIRECT: http://localhost:3300/
+      # The page the suite plays TwakeSpace on
+      TWAKE_SPACE_ORIGIN: http://localhost:3301
+      CSP_FRAME_ANCESTORS: http://localhost:3301
