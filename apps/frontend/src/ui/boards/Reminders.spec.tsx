@@ -42,6 +42,9 @@ describe('Reminders', () => {
     expect(
       reminders.queryByRole('combobox', { name: 'Remind me' })
     ).not.toBeInTheDocument()
+    expect(
+      reminders.getByRole('button', { name: 'Add reminder' })
+    ).toHaveFocus()
   })
 
   it('reminds an hour before the due date, in the local zone', async () => {

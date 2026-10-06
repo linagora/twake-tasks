@@ -6,7 +6,7 @@ import {
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import { useRef, useState, type ReactElement } from 'react'
 
 import { Row } from '@/ds/Columns'
 import { Chips } from '@/ds/SidePanel'
@@ -39,6 +39,11 @@ export function Reminders({
   const [before, setBefore] = useState<Before>('0')
   const [at, setAt] = useState('')
   const [open, setOpen] = useState(false)
+  const refocus = useRef(false)
+  const shut = () => {
+    refocus.current = true
+    setOpen(false)
+  }
   const format = new Intl.DateTimeFormat(lang, {
     dateStyle: 'medium',
     timeStyle: 'short'
@@ -58,7 +63,7 @@ export function Reminders({
 
   const close = () => {
     add.reset()
-    setOpen(false)
+    shut()
   }
 
   return (
@@ -98,6 +103,12 @@ export function Reminders({
         )}
         {!open && (
           <IconButton
+            ref={node => {
+              if (node && refocus.current) {
+                refocus.current = false
+                node.focus()
+              }
+            }}
             size="small"
             aria-label={t('reminders.add')}
             onClick={() => {
@@ -120,7 +131,7 @@ export function Reminders({
               {
                 onSuccess: () => {
                   setAt('')
-                  setOpen(false)
+                  shut()
                 }
               }
             )
