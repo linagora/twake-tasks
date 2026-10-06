@@ -138,6 +138,15 @@ describe('overlayThemeOptions', () => {
     expect(typeof container === 'function' ? container() : container).toBe(body)
     expect(components?.MuiDrawer?.defaultProps?.container).toBe(container)
   })
+
+  it('shows the backdrop of a drawer at once', () => {
+    const { overlay } = fakeOverlay()
+    const drawer = overlayThemeOptions(overlay).components?.MuiDrawer
+
+    expect(drawer?.defaultProps?.slotProps?.backdrop).toEqual({
+      transitionDuration: 0
+    })
+  })
 })
 
 describe('computeOverlayRegion', () => {
