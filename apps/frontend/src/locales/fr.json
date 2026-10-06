@@ -1,4 +1,12 @@
 {
+  "drag": {
+    "card": "tâche déplaçable",
+    "instructions": "Pour déplacer une tâche, appuyez sur espace ou entrée. Utilisez les flèches pour la déplacer, espace ou entrée pour la déposer, et échap pour annuler.",
+    "picked": "%{task} est saisie.",
+    "over": "%{task} est au-dessus de %{place}.",
+    "dropped": "%{task} est déposée dans %{place}.",
+    "canceled": "Le déplacement de %{task} est annulé."
+  },
   "app": {
     "name": "Twake Tasks",
     "loading": "Chargement"

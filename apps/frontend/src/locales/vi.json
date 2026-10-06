@@ -1,4 +1,12 @@
 {
+  "drag": {
+    "card": "công việc có thể kéo",
+    "instructions": "Để di chuyển công việc, nhấn phím cách hoặc Enter. Dùng các phím mũi tên để di chuyển, phím cách hoặc Enter để thả, và Escape để hủy.",
+    "picked": "Đã chọn %{task}.",
+    "over": "%{task} đang ở trên %{place}.",
+    "dropped": "Đã thả %{task} vào %{place}.",
+    "canceled": "Đã hủy di chuyển %{task}."
+  },
   "app": {
     "name": "Twake Tasks",
     "loading": "Đang tải"
