@@ -1,9 +1,18 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type MockInstance
+} from 'vitest'
 
 import type { Board } from '@/domain/board'
 import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
-import { renderRoute } from '@/testing/renderWithProviders'
+import { renderBrowserRoute, renderRoute } from '@/testing/renderWithProviders'
+import { installSpaceHistory } from '@/ui/embed/spaceHistory'
 
 const SPACE = 'https://space.example.com'
 const roadmap = aProject({ name: 'Roadmap', managed: true })
@@ -112,17 +121,152 @@ describe('the embedded view', () => {
     fireEvent.click(await screen.findByRole('link', { name: 'Back to boards' }))
     expect(router.state.location.pathname).toBe(`/embed/projects/${roadmap.id}`)
   })
+})
 
-  it('tells each TwakeSpace origin where it is', async () => {
-    const post = vi.spyOn(window.parent, 'postMessage')
-    const board = aBoard({ name: 'Roadmap', project: roadmap })
-    const path = `/embed/projects/${roadmap.id}/boards/${board.id}?task=DES-1`
-    renderRoute(path, { boardsApi: projectBoardsApi([board]) })
+describe('the history of the embedded view', () => {
+  const OTHER = 'http://localhost:3000'
+  const board = aBoard({ name: 'Roadmap', project: roadmap })
+  const other = aProject({ name: 'Other', managed: true })
+  const otherBoard = aBoard({ name: 'Other board', project: other })
+  let uninstall: () => void
+  let post: MockInstance<Window['postMessage']>
 
-    const message = { type: 'twake-tasks:path', path }
-    await waitFor(() => {
-      expect(post).toHaveBeenCalledWith(message, SPACE)
+  const pathMessages = () =>
+    post.mock.calls
+      .map(([message]) => message as { type: string })
+      .filter(message => message.type === 'twake-embed:path')
+  const tell = (data: unknown, origin = SPACE) => {
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent('message', { data, origin, source: window })
+      )
     })
-    expect(post).toHaveBeenCalledWith(message, 'http://localhost:3000')
+  }
+
+  function renderEmbed(path: string) {
+    window.history.replaceState(null, '', path)
+    uninstall = installSpaceHistory()
+    const boardsApi = projectBoardsApi([board, otherBoard])
+    boardsApi.projects.push({ ...other, role: 'editor' })
+    return renderBrowserRoute({ boardsApi }).router
+  }
+
+  beforeEach(() => {
+    post = vi.spyOn(window.parent, 'postMessage')
+  })
+
+  afterEach(() => {
+    uninstall()
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('reports the first path as a replace, and no longer sends twake-tasks:path', async () => {
+    renderEmbed(`/embed/projects/${roadmap.id}/boards/${board.id}?task=DES-1`)
+
+    await waitFor(() => {
+      expect(post).toHaveBeenCalledWith(
+        {
+          type: 'twake-embed:path',
+          resourceId: roadmap.id,
+          path: `/boards/${board.id}?task=DES-1`,
+          replace: true
+        },
+        SPACE
+      )
+    })
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'twake-embed:path' }),
+      OTHER
+    )
+    expect(post).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'twake-tasks:path' }),
+      expect.anything()
+    )
+  })
+
+  it('reports a user navigation as a push that adds no entry', async () => {
+    renderEmbed(`/embed/projects/${roadmap.id}`)
+    const link = await screen.findByRole('link', { name: 'Roadmap' })
+    const length = window.history.length
+    post.mockClear()
+
+    fireEvent.click(link)
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe(
+        `/embed/projects/${roadmap.id}/boards/${board.id}`
+      )
+    })
+    expect(window.history.length).toBe(length)
+    expect(pathMessages()).toContainEqual({
+      type: 'twake-embed:path',
+      resourceId: roadmap.id,
+      path: `/boards/${board.id}`,
+      replace: false
+    })
+  })
+
+  it('shows another project on load, without reporting it', async () => {
+    const router = renderEmbed(`/embed/projects/${roadmap.id}`)
+    await screen.findByRole('link', { name: 'Roadmap' })
+    post.mockClear()
+
+    tell({ type: 'twake-embed:load', resourceId: other.id, path: '' })
+
+    expect(
+      await screen.findByRole('link', { name: 'Other board' })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Roadmap' })).toBeNull()
+    expect(router.state.location.pathname).toBe(`/embed/projects/${other.id}`)
+    expect(pathMessages()).toEqual([])
+  })
+
+  it('goes to a board of the shown project on navigate', async () => {
+    const router = renderEmbed(`/embed/projects/${roadmap.id}`)
+    await screen.findByRole('link', { name: 'Roadmap' })
+    post.mockClear()
+
+    tell({
+      type: 'twake-embed:navigate',
+      resourceId: roadmap.id,
+      path: `/boards/${board.id}?task=DES-1`
+    })
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        `/embed/projects/${roadmap.id}/boards/${board.id}`
+      )
+    })
+    expect(router.state.location.search).toBe('?task=DES-1')
+    expect(pathMessages()).toEqual([])
+  })
+
+  it('drops a navigate meant for another project', async () => {
+    const router = renderEmbed(`/embed/projects/${roadmap.id}`)
+    await screen.findByRole('link', { name: 'Roadmap' })
+
+    tell({
+      type: 'twake-embed:navigate',
+      resourceId: other.id,
+      path: `/boards/${otherBoard.id}`
+    })
+
+    expect(router.state.location.pathname).toBe(`/embed/projects/${roadmap.id}`)
+  })
+
+  it('ignores other origins, and paths that leave the embed route', async () => {
+    const router = renderEmbed(`/embed/projects/${roadmap.id}`)
+    await screen.findByRole('link', { name: 'Roadmap' })
+
+    tell(
+      { type: 'twake-embed:load', resourceId: other.id, path: '' },
+      'https://evil.example.com'
+    )
+    for (const path of ['//evil.test', '/../../boards', 'boards', 3]) {
+      tell({ type: 'twake-embed:load', resourceId: roadmap.id, path })
+    }
+    tell({ type: 'twake-embed:load', resourceId: '../x', path: '' })
+
+    expect(router.state.location.pathname).toBe(`/embed/projects/${roadmap.id}`)
   })
 })

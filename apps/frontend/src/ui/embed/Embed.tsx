@@ -5,6 +5,7 @@ import {
   Outlet,
   Link as RouterLink,
   useLocation,
+  useNavigate,
   useParams
 } from 'react-router'
 
@@ -13,20 +14,49 @@ import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { useBoards, useProjects } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-const spaceOrigins = (): string[] =>
-  (window.TWAKE_SPACE_ORIGIN ?? '').split(' ').filter(Boolean)
+import {
+  EMBED_PREFIX,
+  isValidEmbedPath,
+  isValidResourceId,
+  parseEmbedUrl,
+  postEmbedPath,
+  spaceOrigins,
+  suppress
+} from '@/ui/embed/spaceHistory'
 
 export function EmbedLayout(): ReactElement {
-  const { pathname, search } = useLocation()
+  const { pathname, search, hash } = useLocation()
+  const { projectId = '' } = useParams()
+  const navigate = useNavigate()
+
+  // The first URL comes from no history call: it is reported once, as a replace
+  useEffect(() => {
+    const location = parseEmbedUrl(pathname, search, hash)
+    if (location) postEmbedPath(location, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
-    for (const origin of spaceOrigins()) {
-      window.parent.postMessage(
-        { type: 'twake-tasks:path', path: pathname + search },
-        origin
+    const onMessage = (event: MessageEvent<unknown>): void => {
+      if (!spaceOrigins().includes(event.origin)) return
+      if (event.source !== window.parent) return
+      const { data } = event
+      if (typeof data !== 'object' || data === null) return
+      const { type, resourceId, path } = data as Record<string, unknown>
+      if (type !== 'twake-embed:load' && type !== 'twake-embed:navigate') return
+      if (!isValidResourceId(resourceId) || !isValidEmbedPath(path)) return
+      if (type === 'twake-embed:navigate' && resourceId !== projectId) return
+      void suppress(() =>
+        navigate(`${EMBED_PREFIX}${encodeURIComponent(resourceId)}${path}`, {
+          replace: true
+        })
       )
     }
-  }, [pathname, search])
+    window.addEventListener('message', onMessage)
+    return () => {
+      window.removeEventListener('message', onMessage)
+    }
+  }, [navigate, projectId])
 
   return <Outlet />
 }
