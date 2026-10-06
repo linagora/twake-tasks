@@ -61,7 +61,7 @@ test('notifies the person a task is assigned to', async ({ page, browser }) => {
   await assign.getByLabel('bob@acme.e2e.test').check()
   await assign.getByRole('button', { name: 'Save' }).click()
 
-  await bob.getByRole('link', { name: 'Notifications' }).click()
+  await bob.getByRole('link', { name: /^Notifications/ }).click()
   const notification = bob.getByRole('listitem').filter({
     has: bob.getByRole('link', { name: `${prefix}-1 Order the badges` })
   })
