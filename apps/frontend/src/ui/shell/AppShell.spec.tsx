@@ -31,6 +31,16 @@ describe('AppShell', () => {
     ).toHaveAttribute('href', '/')
   })
 
+  it('offers a search box in the header', async () => {
+    renderRoute('/', { boardsApi: fakeBoardsApi() })
+
+    expect(
+      within(await screen.findByRole('banner')).getByRole('searchbox', {
+        name: 'Search'
+      })
+    ).toBeInTheDocument()
+  })
+
   it('lists the views in the sidebar and marks the current one', async () => {
     renderRoute('/upcoming')
 
