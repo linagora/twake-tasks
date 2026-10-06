@@ -40,6 +40,8 @@
     "unstar": "Убрать %{name} из избранного",
     "personal": "Личная доска",
     "space": "Доска пространства",
+    "personalProject": "Личное",
+    "fromSpace": "Участники берутся из пространства.",
     "openTasks": "%{smart_count} открытая задача |||| %{smart_count} открытые задачи |||| %{smart_count} открытых задач",
     "noOpenTasks": "Нет открытых задач"
   },

@@ -68,7 +68,7 @@ export function CardTile({
       </Box>
       <Typography
         variant="subtitle1"
-        component="h2"
+        component="h3"
         noWrap
         sx={{ fontWeight: 600 }}
       >

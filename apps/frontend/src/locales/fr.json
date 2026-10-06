@@ -40,6 +40,8 @@
     "unstar": "Retirer %{name} des favoris",
     "personal": "Tableau personnel",
     "space": "Tableau d'espace",
+    "personalProject": "Personnel",
+    "fromSpace": "Les membres viennent de l'espace.",
     "openTasks": "%{smart_count} tâche ouverte |||| %{smart_count} tâches ouvertes",
     "noOpenTasks": "Aucune tâche ouverte"
   },
