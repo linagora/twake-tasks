@@ -30,6 +30,8 @@ services:
       retries: 20
     environment:
       NODE_EXTRA_CA_CERTS: /certs/oidc.crt
+      # Like a real SSO, it lets only some hosts frame it: TwakeSpace on 3302 is not one
+      FRAME_ANCESTORS: "'self' http://localhost:3300 http://localhost:3301"
 
   backend:
     ports: !reset []
@@ -56,6 +58,6 @@ services:
       SSO_SCOPE: openid email profile
       SSO_REDIRECT_URI: http://localhost:3300/auth/callback
       SSO_POST_LOGOUT_REDIRECT: http://localhost:3300/
-      # The page the suite plays TwakeSpace on
-      TWAKE_SPACE_ORIGIN: http://localhost:3301
-      CSP_FRAME_ANCESTORS: http://localhost:3301
+      # The pages the suite plays TwakeSpace on
+      TWAKE_SPACE_ORIGIN: http://localhost:3301 http://localhost:3302
+      CSP_FRAME_ANCESTORS: http://localhost:3301 http://localhost:3302
