@@ -1,7 +1,11 @@
+import {
+  attachFeedback,
+  makeFeedbackIntegration,
+  type FeedbackIntegration
+} from '@linagora/twake-feedback/sentry'
 import * as Sentry from '@sentry/react'
 
 import {
-  FEEDBACK_HOST_ID,
   noReporting,
   type FeedbackWidget,
   type Reporting
@@ -30,15 +34,11 @@ export function readSentryConfig(
   }
 }
 
-function sentryFeedback(
-  integration: ReturnType<typeof Sentry.feedbackIntegration>
-): FeedbackWidget {
+function sentryFeedback(integration: FeedbackIntegration): FeedbackWidget {
   return {
-    mount: texts => {
-      const widget = integration.createWidget({ ...texts })
-      return () => {
-        widget.removeFromDom()
-      }
+    attach: (el, labels) => attachFeedback(integration, el, labels),
+    setColorScheme: scheme => {
+      integration.setTheme(scheme)
     }
   }
 }
@@ -55,17 +55,7 @@ export function startSentry(
 
   // The sync integration is bundled; the async one loads from Sentry's CDN,
   // which script-src 'self' refuses.
-  const feedback = config.feedback
-    ? Sentry.feedbackIntegration({
-        id: FEEDBACK_HOST_ID,
-        autoInject: false,
-        enableScreenshot: true,
-        showBranding: false,
-        showName: false,
-        showEmail: true,
-        isEmailRequired: false
-      })
-    : null
+  const feedback = config.feedback ? makeFeedbackIntegration() : null
 
   Sentry.init({
     dsn: config.dsn,

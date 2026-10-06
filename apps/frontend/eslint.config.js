@@ -25,6 +25,10 @@ const EVERYWHERE = [
   {
     group: ['@sentry/*'],
     message: 'Only adapters/sentry/ imports @sentry/*.'
+  },
+  {
+    group: ['@linagora/twake-feedback/sentry'],
+    message: 'Only adapters/sentry/ imports @linagora/twake-feedback/sentry.'
   }
 ]
 
@@ -158,7 +162,13 @@ export default defineConfig(
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: EVERYWHERE.filter(p => !p.group.includes('@sentry/*')) }
+        {
+          patterns: EVERYWHERE.filter(
+            p =>
+              !p.group.includes('@sentry/*') &&
+              !p.group.includes('@linagora/twake-feedback/sentry')
+          )
+        }
       ]
     }
   },

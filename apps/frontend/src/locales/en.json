@@ -318,7 +318,11 @@
     "title": "Share %{name}",
     "email": "Email",
     "role": "Role",
-    "roles": { "viewer": "Viewer", "editor": "Editor", "admin": "Admin" },
+    "roles": {
+      "viewer": "Viewer",
+      "editor": "Editor",
+      "admin": "Admin"
+    },
     "invite": "Invite",
     "invited": "Invited %{email}.",
     "pending": "Pending",
@@ -395,7 +399,11 @@
     "due": "Due",
     "save": "Save filter",
     "saveFailed": "Couldn’t save the filter.",
-    "assignees": { "any": "Any", "me": "Me", "nobody": "Nobody" },
+    "assignees": {
+      "any": "Any",
+      "me": "Me",
+      "nobody": "Nobody"
+    },
     "dues": {
       "any": "Any",
       "overdue": "Overdue",

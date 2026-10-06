@@ -1,22 +1,25 @@
 import { vi, type Mock } from 'vitest'
 
-import type { FeedbackTexts, Reporting } from '@/application/reporting'
+import type { FeedbackWidget, Reporting } from '@/application/reporting'
 
 export interface FakeReporting extends Reporting {
   reportCrash: Mock<Reporting['reportCrash']>
-  mount: Mock<(texts: FeedbackTexts) => () => void>
-  unmount: Mock<() => void>
+  attach: Mock<FeedbackWidget['attach']>
+  setColorScheme: Mock<FeedbackWidget['setColorScheme']>
+  detach: Mock<() => void>
 }
 
 export function fakeReporting({
   feedback = true
 }: { feedback?: boolean } = {}): FakeReporting {
-  const unmount = vi.fn<() => void>()
-  const mount = vi.fn<(texts: FeedbackTexts) => () => void>(() => unmount)
+  const detach = vi.fn<() => void>()
+  const attach = vi.fn<FeedbackWidget['attach']>(() => detach)
+  const setColorScheme = vi.fn<FeedbackWidget['setColorScheme']>()
   return {
     reportCrash: vi.fn<Reporting['reportCrash']>(),
-    feedback: feedback ? { mount } : null,
-    mount,
-    unmount
+    feedback: feedback ? { attach, setColorScheme } : null,
+    attach,
+    setColorScheme,
+    detach
   }
 }
