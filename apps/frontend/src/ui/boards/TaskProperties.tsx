@@ -20,9 +20,9 @@ import {
   TitleInput
 } from '@/ds/SidePanel'
 import type { Board, Task } from '@/domain/board'
-import { AssignDialog } from '@/ui/boards/AssignDialog'
+import { AssignPicker } from '@/ui/boards/AssignPicker'
 import { Dates } from '@/ui/boards/Dates'
-import { LabelsDialog } from '@/ui/boards/LabelsDialog'
+import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoardChange, useMoveTask } from '@/ui/boards/queries'
 import { Reminders } from '@/ui/boards/Reminders'
@@ -42,8 +42,8 @@ export function TaskProperties({
   editable: boolean
 }): ReactElement {
   const { t } = useI18n()
-  const [assigning, setAssigning] = useState(false)
-  const [labeling, setLabeling] = useState(false)
+  const [assigning, setAssigning] = useState<HTMLElement | null>(null)
+  const [labeling, setLabeling] = useState<HTMLElement | null>(null)
 
   return (
     <>
@@ -72,8 +72,8 @@ export function TaskProperties({
             <IconButton
               size="small"
               aria-label={t('task.editAssignees')}
-              onClick={() => {
-                setAssigning(true)
+              onClick={event => {
+                setAssigning(event.currentTarget)
               }}
             >
               <Icon icon={Pen} size={14} />
@@ -93,8 +93,8 @@ export function TaskProperties({
             <IconButton
               size="small"
               aria-label={t('task.editLabels')}
-              onClick={() => {
-                setLabeling(true)
+              onClick={event => {
+                setLabeling(event.currentTarget)
               }}
             >
               <Icon icon={Pen} size={14} />
@@ -110,22 +110,24 @@ export function TaskProperties({
         </Property>
       </Properties>
       {assigning && board && (
-        <AssignDialog
+        <AssignPicker
           task={task}
           boardId={boardId}
           members={board.members}
+          anchor={assigning}
           onClose={() => {
-            setAssigning(false)
+            setAssigning(null)
           }}
         />
       )}
       {labeling && board && (
-        <LabelsDialog
+        <LabelsPicker
           task={task}
           boardId={boardId}
           labels={board.labels}
+          anchor={labeling}
           onClose={() => {
-            setLabeling(false)
+            setLabeling(null)
           }}
         />
       )}

@@ -232,21 +232,31 @@ describe('BoardScreen', () => {
       await screen.findByRole('button', { name: 'Options for DES-2' })
     )
     fireEvent.click(screen.getByRole('menuitem', { name: 'Assign' }))
-    const dialog = within(screen.getByRole('dialog', { name: 'Assign DES-2' }))
-    fireEvent.click(dialog.getByRole('checkbox', { name: bob.email }))
-    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+    const picker = within(
+      await screen.findByRole('dialog', { name: 'Assign DES-2' })
+    )
+    fireEvent.change(picker.getByRole('textbox', { name: 'Search people' }), {
+      target: { value: 'bob' }
+    })
+    expect(
+      picker.queryByRole('menuitemcheckbox', { name: alice.email })
+    ).not.toBeInTheDocument()
+    fireEvent.click(picker.getByRole('menuitemcheckbox', { name: bob.email }))
 
     expect(
       await within(
-        await screen.findByRole('article', { name: 'DES-2 Palette' })
-      ).findByRole('img', { name: `Assigned to ${bob.email}` })
+        await screen.findByRole('article', {
+          name: 'DES-2 Palette',
+          hidden: true
+        })
+      ).findByRole('img', { name: `Assigned to ${bob.email}`, hidden: true })
     ).toBeInTheDocument()
     expect(boardsApi.setAssignees).toHaveBeenCalledWith(board.id, palette?.id, [
       bob.userId
     ])
   })
 
-  it('keeps the dialog open when unassigning fails', async () => {
+  it('says when unassigning fails and keeps the assignee', async () => {
     const board = designBoard()
     const boardsApi = fakeBoardsApi([board])
     boardsApi.setAssignees.mockRejectedValue(
@@ -258,15 +268,19 @@ describe('BoardScreen', () => {
       await screen.findByRole('button', { name: 'Options for DES-1' })
     )
     fireEvent.click(screen.getByRole('menuitem', { name: 'Assign' }))
-    const dialog = within(screen.getByRole('dialog', { name: 'Assign DES-1' }))
-    const aliceBox = dialog.getByRole('checkbox', { name: alice.email })
-    expect(aliceBox).toBeChecked()
-    fireEvent.click(aliceBox)
-    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+    const picker = within(
+      await screen.findByRole('dialog', { name: 'Assign DES-1' })
+    )
+    const aliceItem = picker.getByRole('menuitemcheckbox', {
+      name: alice.email
+    })
+    expect(aliceItem).toBeChecked()
+    fireEvent.click(aliceItem)
 
     expect(
-      await dialog.findByText('The assignees could not be saved.')
+      await picker.findByText('The assignees could not be saved.')
     ).toBeInTheDocument()
+    expect(aliceItem).toBeChecked()
     expect(boardsApi.setAssignees).toHaveBeenCalledWith(
       board.id,
       board.tasks[0]?.id,
