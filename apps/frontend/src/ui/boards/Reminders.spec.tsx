@@ -28,15 +28,38 @@ async function openLogo(dueDate: string | null) {
 }
 
 describe('Reminders', () => {
+  it('keeps the reminder form closed until asked for', async () => {
+    const { reminders } = await openLogo('2026-11-02')
+
+    expect(reminders.getByText('None')).toBeVisible()
+    expect(
+      reminders.queryByRole('combobox', { name: 'Remind me' })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(reminders.getByRole('button', { name: 'Add reminder' }))
+    fireEvent.click(reminders.getByRole('button', { name: 'Cancel' }))
+
+    expect(
+      reminders.queryByRole('combobox', { name: 'Remind me' })
+    ).not.toBeInTheDocument()
+  })
+
   it('reminds an hour before the due date, in the local zone', async () => {
     const { board, logo, boardsApi, reminders } = await openLogo('2026-11-02')
 
+    fireEvent.click(reminders.getByRole('button', { name: 'Add reminder' }))
     fireEvent.change(reminders.getByRole('combobox', { name: 'Remind me' }), {
       target: { value: '60' }
     })
-    fireEvent.click(reminders.getByRole('button', { name: 'Add reminder' }))
+    fireEvent.click(reminders.getByRole('button', { name: 'Save reminder' }))
 
-    expect(await reminders.findByText('1 hour before')).toBeVisible()
+    expect(await reminders.findByRole('listitem')).toHaveTextContent(
+      '1 hour before'
+    )
+    expect(reminders.queryByText('None')).not.toBeInTheDocument()
+    expect(
+      reminders.queryByRole('combobox', { name: 'Remind me' })
+    ).not.toBeInTheDocument()
     expect(boardsApi.addReminder).toHaveBeenCalledWith(board.id, logo.id, {
       beforeMinutes: 60,
       zone: localZone()
@@ -46,13 +69,14 @@ describe('Reminders', () => {
   it('reminds at a set time, and only then without a due date', async () => {
     const { board, logo, boardsApi, reminders } = await openLogo(null)
 
+    fireEvent.click(reminders.getByRole('button', { name: 'Add reminder' }))
     expect(
       reminders.queryByRole('combobox', { name: 'Remind me' })
     ).not.toBeInTheDocument()
     fireEvent.change(reminders.getByLabelText('At'), {
       target: { value: '2026-11-02T08:00' }
     })
-    fireEvent.click(reminders.getByRole('button', { name: 'Add reminder' }))
+    fireEvent.click(reminders.getByRole('button', { name: 'Save reminder' }))
 
     await reminders.findByRole('listitem')
     expect(boardsApi.addReminder).toHaveBeenCalledWith(board.id, logo.id, {
@@ -63,6 +87,7 @@ describe('Reminders', () => {
   it('deletes a reminder', async () => {
     const { reminders } = await openLogo('2026-11-02')
     fireEvent.click(reminders.getByRole('button', { name: 'Add reminder' }))
+    fireEvent.click(reminders.getByRole('button', { name: 'Save reminder' }))
     const item = await reminders.findByRole('listitem')
 
     fireEvent.click(

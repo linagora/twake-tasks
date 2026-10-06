@@ -1,7 +1,9 @@
+import { Icon, Pen } from '@linagora/twake-icons'
 import {
   Button,
   Checkbox,
   FormControlLabel,
+  IconButton,
   MenuItem,
   TextField,
   Typography
@@ -114,16 +116,21 @@ export function Dates({
             )}
           </Typography>
         )}
+        {!due && !task.deadline && !task.duration && !task.recurrence && (
+          <Typography variant="body2" color="textSecondary">
+            {t('dates.none')}
+          </Typography>
+        )}
         {editable && (
-          <Button
-            variant="text"
+          <IconButton
             size="small"
+            aria-label={t('dates.edit')}
             onClick={() => {
               setDraft(draftOf(task))
             }}
           >
-            {t('dates.edit')}
-          </Button>
+            <Icon icon={Pen} size={14} />
+          </IconButton>
         )}
       </Row>
     )

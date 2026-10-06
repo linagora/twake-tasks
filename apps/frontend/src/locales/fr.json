@@ -164,6 +164,7 @@
   },
   "dates": {
     "edit": "Modifier les dates",
+    "none": "Aucune",
     "save": "Enregistrer les dates",
     "dueDate": "Échéance",
     "time": "Heure",
@@ -223,7 +224,7 @@
   },
   "reminders": {
     "title": "Rappels",
-    "none": "Aucun rappel.",
+    "none": "Aucun",
     "remindMe": "Me rappeler",
     "setTime": "À une heure précise",
     "at": "Le",
@@ -232,6 +233,7 @@
     "hoursBefore": "%{smart_count} heure avant |||| %{smart_count} heures avant",
     "daysBefore": "%{smart_count} jour avant |||| %{smart_count} jours avant",
     "add": "Ajouter un rappel",
+    "save": "Enregistrer le rappel",
     "delete": "Supprimer le rappel",
     "failed": "Le rappel n'a pas pu être enregistré."
   },
