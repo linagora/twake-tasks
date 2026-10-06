@@ -21,6 +21,10 @@ const EVERYWHERE = [
   {
     group: ['posthog-js', 'posthog-js/**'],
     message: 'Only adapters/posthog/ imports posthog-js.'
+  },
+  {
+    group: ['@sentry/*'],
+    message: 'Only adapters/sentry/ imports @sentry/*.'
   }
 ]
 
@@ -146,6 +150,15 @@ export default defineConfig(
       'no-restricted-imports': [
         'error',
         { patterns: EVERYWHERE.filter(p => !p.group.includes('posthog-js')) }
+      ]
+    }
+  },
+  {
+    files: ['src/adapters/sentry/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: EVERYWHERE.filter(p => !p.group.includes('@sentry/*')) }
       ]
     }
   },

@@ -7,6 +7,7 @@ import {
 } from 'react-router'
 
 import type { BoardsApi } from '@/application/boards'
+import { noReporting, type Reporting } from '@/application/reporting'
 import type { SessionService } from '@/application/session'
 import { AppProviders } from '@/app/AppProviders'
 import { makeQueryClient } from '@/app/queryClient'
@@ -15,12 +16,14 @@ import { fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { fakeSession } from '@/testing/fakeSession'
 import { BoardsApiProvider } from '@/ui/boards/BoardsApiProvider'
 import type { SupportedLanguage } from '@/ui/i18n/languages'
+import { ReportingProvider } from '@/ui/reporting/ReportingProvider'
 import { SessionGate } from '@/ui/session/SessionGate'
 
 interface Options {
   lang?: SupportedLanguage
   session?: SessionService
   boardsApi?: BoardsApi
+  reporting?: Reporting
 }
 
 export function renderWithProviders(
@@ -28,14 +31,17 @@ export function renderWithProviders(
   {
     lang = 'en',
     session = fakeSession(),
-    boardsApi = fakeBoardsApi()
+    boardsApi = fakeBoardsApi(),
+    reporting = noReporting
   }: Options = {}
 ): RenderResult {
   return render(
     <AppProviders lang={lang} queryClient={makeQueryClient()}>
-      <SessionGate session={session}>
-        <BoardsApiProvider api={boardsApi}>{ui}</BoardsApiProvider>
-      </SessionGate>
+      <ReportingProvider reporting={reporting}>
+        <SessionGate session={session}>
+          <BoardsApiProvider api={boardsApi}>{ui}</BoardsApiProvider>
+        </SessionGate>
+      </ReportingProvider>
     </AppProviders>
   )
 }
