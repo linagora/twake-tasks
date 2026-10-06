@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "Twake Tasks"
+    "name": "Twake Tasks",
+    "loading": "Đang tải"
   },
   "session": {
     "signingIn": "Đang đăng nhập…",
@@ -14,8 +15,11 @@
     "active": "Đang hoạt động",
     "archived": "Đã lưu trữ",
     "new": "Tạo mới",
-    "empty": "Chưa có bảng nào.",
-    "emptyArchived": "Không có bảng đã lưu trữ.",
+    "empty": "Chưa có bảng nào",
+    "emptyHint": "Tạo một bảng để lên kế hoạch công việc cùng nhóm.",
+    "createFirst": "Tạo bảng",
+    "emptyArchived": "Không có bảng đã lưu trữ",
+    "emptyArchivedHint": "Các bảng đã lưu trữ nằm ở đây, chỉ để xem.",
     "loadFailed": "Không thể tải các bảng.",
     "star": "Thêm %{name} vào mục yêu thích",
     "unstar": "Bỏ %{name} khỏi mục yêu thích"
@@ -37,6 +41,7 @@
     "notFound": "Bảng này không tồn tại, hoặc bạn không thể mở nó.",
     "loadFailed": "Không thể tải bảng.",
     "noSection": "Không có mục",
+    "emptyColumn": "Không có công việc",
     "addTask": "Thêm công việc vào %{section}",
     "taskTitle": "Tiêu đề công việc",
     "add": "Thêm",
@@ -243,7 +248,9 @@
     "archivedTasks": "Công việc đã lưu trữ",
     "trash": "Thùng rác",
     "retention": "Công việc trong thùng rác sẽ bị xóa vĩnh viễn sau 30 ngày.",
-    "empty": "Không có gì ở đây.",
+    "emptyArchived": "Không có công việc đã lưu trữ",
+    "emptyArchivedHint": "Lưu trữ một công việc để ẩn nó khỏi bảng mà không xóa.",
+    "emptyTrash": "Thùng rác trống",
     "failed": "Không thể lưu thay đổi.",
     "archiveBoard": "Lưu trữ bảng",
     "unarchiveBoard": "Bỏ lưu trữ bảng",
@@ -287,13 +294,15 @@
   "search": {
     "label": "Tìm kiếm",
     "results": "Kết quả cho “%{text}”",
-    "empty": "Không có công việc nào khớp.",
+    "empty": "Không có công việc nào khớp",
+    "emptyHint": "Thử một từ khác hoặc kiểm tra chính tả.",
     "failed": "Không thể tìm kiếm."
   },
   "notifications": {
     "title": "Thông báo",
     "unread": "Thông báo, %{count} chưa đọc",
-    "empty": "Không có thông báo.",
+    "empty": "Không có thông báo",
+    "emptyHint": "Theo dõi một công việc để nhận thông báo về thay đổi tại đây.",
     "loadFailed": "Không thể tải thông báo.",
     "follow": "Theo dõi",
     "reason": {
@@ -305,7 +314,8 @@
   },
   "filters": {
     "title": "Bộ lọc",
-    "empty": "Chưa có bộ lọc nào.",
+    "empty": "Chưa có bộ lọc nào",
+    "emptyHint": "Lưu các tiêu chí bạn hay dùng, như các công việc P1 của bạn.",
     "loadFailed": "Không thể tải bộ lọc.",
     "delete": "Xóa %{name}",
     "new": "Bộ lọc mới",
@@ -331,7 +341,8 @@
     "mine": "Việc của tôi",
     "noDate": "Không có ngày",
     "overdue": "Quá hạn",
-    "empty": "Không có việc đến hạn.",
+    "empty": "Không có việc đến hạn",
+    "emptyHint": "Bạn đã xong hết mọi việc.",
     "loadFailed": "Không thể tải công việc."
   }
 }

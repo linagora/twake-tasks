@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { Board } from '@/domain/board'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 function logoBoard(overrides: Partial<Board> = {}) {
@@ -47,7 +48,9 @@ describe('archive and trash', () => {
       await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
     )
     fireEvent.click(item.getByRole('button', { name: 'Restore' }))
-    expect(await shelf.findByText('Nothing here.')).toBeVisible()
+    expect(await findEmptyState('No archived tasks')).toHaveTextContent(
+      'Archive a task to hide it from the board without deleting it.'
+    )
     fireEvent.click(shelf.getByRole('button', { name: 'Close' }))
 
     expect(await screen.findByRole('button', { name: 'Logo' })).toBeVisible()

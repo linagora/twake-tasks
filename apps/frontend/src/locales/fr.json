@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "Twake Tasks"
+    "name": "Twake Tasks",
+    "loading": "Chargement"
   },
   "session": {
     "signingIn": "Connexion…",
@@ -14,8 +15,11 @@
     "active": "Actif",
     "archived": "Archivé",
     "new": "Nouveau",
-    "empty": "Aucun tableau pour l'instant.",
-    "emptyArchived": "Aucun tableau archivé.",
+    "empty": "Aucun tableau pour l'instant",
+    "emptyHint": "Créez un tableau pour organiser le travail avec votre équipe.",
+    "createFirst": "Créer un tableau",
+    "emptyArchived": "Aucun tableau archivé",
+    "emptyArchivedHint": "Les tableaux archivés restent ici, en lecture seule.",
     "loadFailed": "Les tableaux n'ont pas pu être chargés.",
     "star": "Ajouter %{name} aux favoris",
     "unstar": "Retirer %{name} des favoris"
@@ -37,6 +41,7 @@
     "notFound": "Ce tableau n'existe pas, ou vous ne pouvez pas l'ouvrir.",
     "loadFailed": "Le tableau n'a pas pu être chargé.",
     "noSection": "Sans section",
+    "emptyColumn": "Aucune tâche",
     "addTask": "Ajouter une tâche à %{section}",
     "taskTitle": "Titre de la tâche",
     "add": "Ajouter",
@@ -243,7 +248,9 @@
     "archivedTasks": "Tâches archivées",
     "trash": "Corbeille",
     "retention": "Les tâches de la corbeille sont définitivement supprimées après 30 jours.",
-    "empty": "Rien ici.",
+    "emptyArchived": "Aucune tâche archivée",
+    "emptyArchivedHint": "Archivez une tâche pour la retirer du tableau sans la supprimer.",
+    "emptyTrash": "La corbeille est vide",
     "failed": "La modification n'a pas pu être enregistrée.",
     "archiveBoard": "Archiver le tableau",
     "unarchiveBoard": "Désarchiver le tableau",
@@ -287,13 +294,15 @@
   "search": {
     "label": "Rechercher",
     "results": "Résultats pour « %{text} »",
-    "empty": "Aucune tâche ne correspond.",
+    "empty": "Aucune tâche ne correspond",
+    "emptyHint": "Essayez un autre mot ou vérifiez l'orthographe.",
     "failed": "La recherche a échoué."
   },
   "notifications": {
     "title": "Notifications",
     "unread": "Notifications, %{count} non lues",
-    "empty": "Aucune notification.",
+    "empty": "Aucune notification",
+    "emptyHint": "Suivez une tâche pour être informé ici de ses changements.",
     "loadFailed": "Impossible de charger les notifications.",
     "follow": "Suivre",
     "reason": {
@@ -305,7 +314,8 @@
   },
   "filters": {
     "title": "Filtres",
-    "empty": "Aucun filtre enregistré.",
+    "empty": "Aucun filtre enregistré",
+    "emptyHint": "Enregistrez les critères que vous utilisez souvent, comme vos tâches P1.",
     "loadFailed": "Impossible de charger les filtres.",
     "delete": "Supprimer %{name}",
     "new": "Nouveau filtre",
@@ -331,7 +341,8 @@
     "mine": "Mes tâches",
     "noDate": "Sans date",
     "overdue": "En retard",
-    "empty": "Rien à faire.",
+    "empty": "Rien à faire",
+    "emptyHint": "Vous êtes à jour.",
     "loadFailed": "Vos tâches n'ont pas pu être chargées."
   }
 }

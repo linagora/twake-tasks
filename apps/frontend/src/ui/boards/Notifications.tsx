@@ -3,6 +3,7 @@ import { Button, Link, Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
+import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import type { Task } from '@/domain/board'
 import {
   useFollowing,
@@ -57,10 +58,13 @@ export function NotificationsScreen(): ReactElement {
       {notifications.isError && (
         <Typography role="alert">{t('notifications.loadFailed')}</Typography>
       )}
+      {notifications.isPending && <ListSkeleton label={t('app.loading')} />}
       {notifications.data?.length === 0 && (
-        <Typography color="textSecondary">
-          {t('notifications.empty')}
-        </Typography>
+        <EmptyState
+          icon={Bell}
+          title={t('notifications.empty')}
+          text={t('notifications.emptyHint')}
+        />
       )}
       <ul>
         {notifications.data?.map(notification => (

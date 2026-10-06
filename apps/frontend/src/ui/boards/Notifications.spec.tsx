@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 function aBoardWithLogo() {
@@ -55,6 +56,8 @@ describe('notifications', () => {
   it('says when there are none', async () => {
     renderRoute('/notifications', { boardsApi: fakeBoardsApi() })
 
-    expect(await screen.findByText('No notifications.')).toBeVisible()
+    expect(await findEmptyState('No notifications')).toHaveTextContent(
+      'Follow a task to hear about its changes here.'
+    )
   })
 })

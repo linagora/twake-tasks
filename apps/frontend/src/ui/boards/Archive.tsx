@@ -1,3 +1,4 @@
+import { Archive, Trash } from '@linagora/twake-icons'
 import {
   Button,
   Dialog,
@@ -9,6 +10,7 @@ import {
 import { useId, type ReactElement } from 'react'
 
 import type { Shelf } from '@/application/boards'
+import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import type { Board, Task } from '@/domain/board'
 import { useBoardChange, useHiddenTasks } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -44,14 +46,27 @@ export function ShelfDialog({
         {t(shelf === 'archived' ? 'archive.archivedTasks' : 'archive.trash')}
       </DialogTitle>
       <DialogContent>
-        {shelf === 'trash' && (
+        {shelf === 'trash' && hidden.data?.length !== 0 && (
           <Typography variant="caption">{t('archive.retention')}</Typography>
         )}
         {(hidden.isError || restore.isError) && (
           <Typography role="alert">{t('archive.failed')}</Typography>
         )}
+        {hidden.isPending && <ListSkeleton label={t('app.loading')} rows={2} />}
         {hidden.data?.length === 0 && (
-          <Typography className="u-mt-1">{t('archive.empty')}</Typography>
+          <EmptyState
+            icon={shelf === 'archived' ? Archive : Trash}
+            title={t(
+              shelf === 'archived'
+                ? 'archive.emptyArchived'
+                : 'archive.emptyTrash'
+            )}
+            text={t(
+              shelf === 'archived'
+                ? 'archive.emptyArchivedHint'
+                : 'archive.retention'
+            )}
+          />
         )}
         <ul className="u-mt-1">
           {hidden.data?.map(task => (

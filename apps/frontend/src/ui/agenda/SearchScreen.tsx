@@ -1,7 +1,9 @@
+import { Magnifier } from '@linagora/twake-icons'
 import { SearchBar, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type RefObject } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 
+import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Group } from '@/ui/agenda/AgendaScreen'
 import { useSearch } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -52,8 +54,15 @@ export function SearchScreen(): ReactElement {
       {results.isError && (
         <Typography role="alert">{t('search.failed')}</Typography>
       )}
+      {text !== '' && results.isPending && (
+        <ListSkeleton label={t('app.loading')} />
+      )}
       {results.data?.length === 0 && (
-        <Typography>{t('search.empty')}</Typography>
+        <EmptyState
+          icon={Magnifier}
+          title={t('search.empty')}
+          text={t('search.emptyHint')}
+        />
       )}
       {results.data && results.data.length > 0 && (
         <Group label={t('search.results', { text })} tasks={results.data} />

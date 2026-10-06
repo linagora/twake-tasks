@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "Twake Tasks"
+    "name": "Twake Tasks",
+    "loading": "Loading"
   },
   "session": {
     "signingIn": "Signing in…",
@@ -14,8 +15,11 @@
     "active": "Active",
     "archived": "Archived",
     "new": "New",
-    "empty": "No boards yet.",
-    "emptyArchived": "No archived boards.",
+    "empty": "No boards yet",
+    "emptyHint": "Create a board to plan work with your team.",
+    "createFirst": "Create a board",
+    "emptyArchived": "No archived boards",
+    "emptyArchivedHint": "Boards you archive stay here, read only.",
     "loadFailed": "The boards could not be loaded.",
     "star": "Add %{name} to favorites",
     "unstar": "Remove %{name} from favorites"
@@ -37,6 +41,7 @@
     "notFound": "This board doesn't exist, or you can't open it.",
     "loadFailed": "The board could not be loaded.",
     "noSection": "No section",
+    "emptyColumn": "No tasks",
     "addTask": "Add a task to %{section}",
     "taskTitle": "Task title",
     "add": "Add",
@@ -243,7 +248,9 @@
     "archivedTasks": "Archived tasks",
     "trash": "Trash",
     "retention": "Tasks in the trash are deleted for good after 30 days.",
-    "empty": "Nothing here.",
+    "emptyArchived": "No archived tasks",
+    "emptyArchivedHint": "Archive a task to hide it from the board without deleting it.",
+    "emptyTrash": "The trash is empty",
     "failed": "The change could not be saved.",
     "archiveBoard": "Archive board",
     "unarchiveBoard": "Unarchive board",
@@ -283,13 +290,15 @@
   "search": {
     "label": "Search",
     "results": "Results for “%{text}”",
-    "empty": "No tasks match.",
+    "empty": "No tasks match",
+    "emptyHint": "Try another word, or check the spelling.",
     "failed": "Couldn’t search."
   },
   "notifications": {
     "title": "Notifications",
     "unread": "Notifications, %{count} unread",
-    "empty": "No notifications.",
+    "empty": "No notifications",
+    "emptyHint": "Follow a task to hear about its changes here.",
     "loadFailed": "Couldn’t load notifications.",
     "follow": "Follow",
     "reason": {
@@ -301,7 +310,8 @@
   },
   "filters": {
     "title": "Filters",
-    "empty": "No saved filters.",
+    "empty": "No saved filters",
+    "emptyHint": "Save the criteria you look for often, like your P1 tasks.",
     "loadFailed": "Couldn’t load filters.",
     "delete": "Delete %{name}",
     "new": "New filter",
@@ -327,7 +337,8 @@
     "mine": "My tasks",
     "noDate": "No date",
     "overdue": "Overdue",
-    "empty": "Nothing due.",
+    "empty": "Nothing due",
+    "emptyHint": "You are all caught up.",
     "loadFailed": "Your tasks could not be loaded."
   }
 }

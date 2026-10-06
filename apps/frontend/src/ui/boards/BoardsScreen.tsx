@@ -6,10 +6,18 @@ import {
   Tabs,
   Typography
 } from '@linagora/twake-mui'
-import { Icon, Star, StarOutline } from '@linagora/twake-icons'
+import {
+  Archive,
+  Icon,
+  Mosaic,
+  Plus,
+  Star,
+  StarOutline
+} from '@linagora/twake-icons'
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 
+import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { TileGrid, Tile } from '@/ds/TileGrid'
 import type { BoardSummary } from '@/domain/board'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
@@ -98,11 +106,32 @@ export function BoardsScreen(): ReactElement {
       {boards.isError && (
         <Typography role="alert">{t('boards.loadFailed')}</Typography>
       )}
-      {boards.isSuccess && shown.length === 0 && (
-        <Typography>
-          {t(shelf === 'active' ? 'boards.empty' : 'boards.emptyArchived')}
-        </Typography>
-      )}
+      {boards.isPending && <ListSkeleton label={t('app.loading')} rows={3} />}
+      {boards.isSuccess &&
+        shown.length === 0 &&
+        (shelf === 'active' ? (
+          <EmptyState
+            icon={Mosaic}
+            title={t('boards.empty')}
+            text={t('boards.emptyHint')}
+            action={
+              <Button
+                startIcon={<Icon icon={Plus} />}
+                onClick={() => {
+                  setCreating(true)
+                }}
+              >
+                {t('boards.createFirst')}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={Archive}
+            title={t('boards.emptyArchived')}
+            text={t('boards.emptyArchivedHint')}
+          />
+        ))}
       {shown.length > 0 && (
         <TileGrid label={t('boards.title')}>
           {shown.map(board => (

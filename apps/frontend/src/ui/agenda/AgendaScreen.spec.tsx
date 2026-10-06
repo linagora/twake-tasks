@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
 
@@ -84,6 +85,18 @@ describe('AgendaScreen', () => {
   it('says when there is nothing to do', async () => {
     renderRoute('/today', { boardsApi: fakeBoardsApi() })
 
-    expect(await screen.findByText('Nothing due.')).toBeVisible()
+    expect(await findEmptyState('Nothing due')).toHaveTextContent(
+      'You are all caught up.'
+    )
+  })
+
+  it('shows placeholders while the tasks load', async () => {
+    const boardsApi = fakeBoardsApi()
+    boardsApi.agenda.mockReturnValue(new Promise(() => undefined))
+    renderRoute('/today', { boardsApi })
+
+    expect(
+      await screen.findByRole('progressbar', { name: 'Loading' })
+    ).toBeInTheDocument()
   })
 })

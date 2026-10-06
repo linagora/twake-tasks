@@ -4,7 +4,13 @@ import { useState, type ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
 import { ApiError, type Shelf } from '@/application/boards'
-import { Column, ColumnAddButton, Columns } from '@/ds/Columns'
+import {
+  Column,
+  ColumnAddButton,
+  Columns,
+  ColumnsSkeleton,
+  EmptyColumn
+} from '@/ds/Columns'
 import { PageHeader } from '@/ds/PageHeader'
 import type { Board, Section, Task } from '@/domain/board'
 import { ShelfDialog } from '@/ui/boards/Archive'
@@ -33,6 +39,7 @@ export function BoardScreen(): ReactElement {
             : t('board.loadFailed')}
         </Typography>
       )}
+      {board.isPending && <ColumnsSkeleton label={t('app.loading')} />}
       {board.data && <BoardColumns board={board.data} />}
     </main>
   )
@@ -193,6 +200,9 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
               }
             >
               {tasksIn(column).map(card)}
+              {tasksIn(column).length === 0 && (
+                <EmptyColumn label={t('board.emptyColumn')} />
+              )}
               {addTask(column)}
             </Column>
           ))}

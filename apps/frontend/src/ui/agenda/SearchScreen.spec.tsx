@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 function boards() {
@@ -38,6 +39,8 @@ describe('SearchScreen', () => {
   it('says when nothing matches', async () => {
     renderRoute('/search?q=zebra', { boardsApi: boards().boardsApi })
 
-    expect(await screen.findByText('No tasks match.')).toBeVisible()
+    expect(await findEmptyState('No tasks match')).toHaveTextContent(
+      'Try another word, or check the spelling.'
+    )
   })
 })
