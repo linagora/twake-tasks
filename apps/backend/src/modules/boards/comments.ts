@@ -1,7 +1,7 @@
 import { asc, eq } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { namesOn, roleOn } from './access.ts'
+import { looksOn, roleOn } from './access.ts'
 import { comments } from './schema.ts'
 import { Refused, taskOf, writeOrRefuse } from './tasks.ts'
 
@@ -27,13 +27,13 @@ export function createCommentStore(db: Db) {
           .from(comments)
           .where(eq(comments.taskId, taskId))
           .orderBy(asc(comments.createdAt), asc(comments.id))
-        const nameOf = await namesOn(tx, boardId)
+        const looksOf = await looksOn(tx, boardId)
         return rows.map(row => ({
           id: row.id,
           author: {
             userId: row.authorId,
             email: row.authorEmail,
-            name: nameOf(row.authorId)
+            ...looksOf(row.authorId)
           },
           body: row.body,
           createdAt: row.createdAt

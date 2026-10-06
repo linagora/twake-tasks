@@ -9,6 +9,7 @@ import {
 } from './modules/auth/index.ts'
 import { registerLive, type BoardChanges } from './modules/boards/live.ts'
 import { registerBoards } from './modules/boards/routes.ts'
+import { registerSettings } from './modules/settings/routes.ts'
 
 export async function buildApp(deps: {
   logger: Logger
@@ -33,6 +34,7 @@ export async function buildApp(deps: {
         requireIdentity,
         changes: deps.boardChanges
       })
+      registerSettings(api, { db: deps.db, requireIdentity })
       return Promise.resolve()
     },
     { prefix: '/api' }

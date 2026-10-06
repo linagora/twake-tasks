@@ -38,6 +38,22 @@ describe('Comments', () => {
     expect(comment.getByText('Which palette?')).toBeInTheDocument()
   })
 
+  it("shows the author's Twake Workplace avatar", async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    const [first] = boardsApi.comments.get(logo.id) ?? []
+    if (first) first.author.avatar = 'https://avatars.example.com/bob.png'
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    await panel.findByRole('article', { name: 'Bob Durand' })
+
+    expect(
+      panel
+        .getAllByRole('img', { hidden: true })
+        .map(img => img.getAttribute('src'))
+    ).toContain('https://avatars.example.com/bob.png')
+  })
+
   it('lets a viewer add a comment', async () => {
     const { board, logo, boardsApi } = logoBoard('viewer')
     renderRoute(`/boards/${board.id}`, { boardsApi })

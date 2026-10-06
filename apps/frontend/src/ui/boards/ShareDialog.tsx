@@ -195,6 +195,7 @@ export function ShareDialog({
                 <PersonAvatar
                   email={member.email}
                   name={member.name}
+                  avatar={member.avatar}
                   size={32}
                 />
               }

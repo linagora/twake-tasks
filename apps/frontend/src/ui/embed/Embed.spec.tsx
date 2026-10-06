@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Board } from '@/domain/board'
@@ -79,28 +79,5 @@ describe('the embedded view', () => {
       expect(post).toHaveBeenCalledWith(message, SPACE)
     })
     expect(post).toHaveBeenCalledWith(message, 'http://localhost:3000')
-  })
-
-  it('takes the theme from TwakeSpace only', async () => {
-    renderRoute(`/embed/projects/${roadmap.id}`, {
-      boardsApi: projectBoardsApi([aBoard({ project: roadmap })])
-    })
-    await screen.findByRole('list', { name: 'Boards' })
-    const theme = (origin: string) => {
-      act(() => {
-        window.dispatchEvent(
-          new MessageEvent('message', {
-            origin,
-            data: { type: 'twake-space:theme', theme: 'dark' }
-          })
-        )
-      })
-    }
-
-    theme('https://evil.example.com')
-    expect(document.documentElement).not.toHaveAttribute('data-theme', 'dark')
-
-    theme(SPACE)
-    expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
   })
 })

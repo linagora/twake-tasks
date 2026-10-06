@@ -133,8 +133,18 @@ export interface HiddenTask {
   at: string
 }
 
+/** The person's Twake Workplace settings; null where they never chose. */
+export interface UserSettings {
+  language: string | null
+  timezone: string | null
+  theme: 'light' | 'dark' | 'auto'
+  avatar: string | null
+  name: string | null
+}
+
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
+  settings: () => Promise<UserSettings>
   /** Calls back with the board's version now, then with each new one. */
   watchBoard: (
     boardId: string,

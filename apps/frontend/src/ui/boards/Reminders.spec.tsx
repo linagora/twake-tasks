@@ -1,9 +1,13 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
-import { localZone } from '@/ui/boards/dueLabel'
+import { followZone, localZone } from '@/ui/boards/dueLabel'
+
+afterEach(() => {
+  followZone(null)
+})
 
 async function openLogo(dueDate: string | null) {
   const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
@@ -91,6 +95,25 @@ describe('Reminders', () => {
     await reminders.findByRole('listitem')
     expect(boardsApi.addReminder).toHaveBeenCalledWith(board.id, logo.id, {
       at: new Date('2026-11-02T08:00').toISOString()
+    })
+  })
+
+  it("reminds at a set time of the person's time zone", async () => {
+    followZone('Asia/Tokyo')
+    const { board, logo, boardsApi, reminders, openEditor } =
+      await openLogo(null)
+
+    const editor = await openEditor()
+    fireEvent.change(editor.getByDisplayValue(''), {
+      target: { value: '11/02/2026 08:00' }
+    })
+    fireEvent.click(editor.getByRole('button', { name: 'Save reminder' }))
+
+    expect(await reminders.findByRole('listitem')).toHaveTextContent(
+      'Nov 2, 2026, 8:00 AM'
+    )
+    expect(boardsApi.addReminder).toHaveBeenCalledWith(board.id, logo.id, {
+      at: '2026-11-01T23:00:00.000Z'
     })
   })
 

@@ -22,7 +22,12 @@ import {
   QuickPicks
 } from '@/ds/Pickers'
 import type { Duration, Recurrence, Task } from '@/domain/board'
-import { dueLabel, formatDay, localZone } from '@/ui/boards/dueLabel'
+import {
+  dueLabel,
+  formatDay,
+  localToday,
+  localZone
+} from '@/ui/boards/dueLabel'
 import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -59,14 +64,15 @@ const RECURRENCE_UNITS: Recurrence['unit'][] = [
   'years'
 ]
 
-// en-CA formats a date as YYYY-MM-DD.
+const today = () => new Date(`${localToday()}T00:00:00Z`)
+
 function inDays(days: number): string {
-  const day = new Date()
-  day.setDate(day.getDate() + days)
-  return new Intl.DateTimeFormat('en-CA').format(day)
+  const day = today()
+  day.setUTCDate(day.getUTCDate() + days)
+  return day.toISOString().slice(0, 10)
 }
 
-const untilNextMonday = (): number => 8 - (new Date().getDay() || 7)
+const untilNextMonday = (): number => 8 - (today().getUTCDay() || 7)
 
 function Summary({ task }: { task: Task }): ReactElement {
   const { t, lang } = useI18n()

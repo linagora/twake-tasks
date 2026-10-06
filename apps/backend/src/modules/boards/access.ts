@@ -1,5 +1,6 @@
-import { and, asc, eq, isNull } from 'drizzle-orm'
+import { and, asc, eq, isNull, sql } from 'drizzle-orm'
 import type { Tx } from '../../infra/db.ts'
+import { userSettings } from '../settings/schema.ts'
 import { boards, projectMembers, projects } from './schema.ts'
 
 export type Role = 'viewer' | 'editor' | 'admin'
@@ -28,6 +29,21 @@ export interface Member {
   userId: string
   email: string
   name: string | null
+  avatar: string | null
+}
+
+export const settingsOfMember = eq(
+  userSettings.email,
+  sql`lower(${projectMembers.email})`
+)
+
+// The name a member chose in their Twake Workplace settings, else the one
+// they last signed in with.
+export const memberLooks = {
+  name: sql<
+    string | null
+  >`coalesce(${userSettings.name}, ${projectMembers.name})`,
+  avatar: userSettings.avatar
 }
 
 // The people who can open a board: the members of its project.
@@ -39,25 +55,31 @@ export function membersOf(
     .select({
       userId: projectMembers.userId,
       email: projectMembers.email,
-      name: projectMembers.name
+      ...memberLooks
     })
     .from(projectMembers)
+    .leftJoin(userSettings, settingsOfMember)
     .where(eq(projectMembers.projectId, board.projectId))
     .orderBy(asc(projectMembers.email))
 }
 
+type Looks = Pick<Member, 'name' | 'avatar'>
+
 // Someone who left the board keeps their email on what they wrote, not a name.
-export async function namesOn(
+export async function looksOn(
   tx: Tx,
   boardId: string
-): Promise<(userId: string) => string | null> {
+): Promise<(userId: string | null) => Looks> {
   const rows = await tx
-    .select({ userId: projectMembers.userId, name: projectMembers.name })
+    .select({ userId: projectMembers.userId, ...memberLooks })
     .from(projectMembers)
     .innerJoin(boards, eq(boards.projectId, projectMembers.projectId))
+    .leftJoin(userSettings, settingsOfMember)
     .where(eq(boards.id, boardId))
-  const names = new Map(rows.map(row => [row.userId, row.name]))
-  return userId => names.get(userId) ?? null
+  const looks = new Map<string | null, Looks>(
+    rows.map(({ userId, name, avatar }) => [userId, { name, avatar }])
+  )
+  return userId => looks.get(userId) ?? { name: null, avatar: null }
 }
 
 export async function roleOn(

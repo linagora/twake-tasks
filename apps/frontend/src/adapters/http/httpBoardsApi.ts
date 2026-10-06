@@ -72,6 +72,7 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
   }
 
   return {
+    settings: () => call('GET', '/settings'),
     agenda: (zone, days) =>
       call(
         'GET',

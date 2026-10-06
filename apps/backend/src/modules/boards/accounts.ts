@@ -1,4 +1,4 @@
-import { and, asc, eq, ne, notExists, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, ne, notExists, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import type { PlatformEvent } from '../../events/envelope.ts'
@@ -9,6 +9,7 @@ import {
 } from '../../events/router.ts'
 import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
 import { jobs } from '../../scheduler/schema.ts'
+import { userSettings } from '../settings/schema.ts'
 import {
   projectMembers,
   projects,
@@ -111,6 +112,15 @@ async function handOnProjects(tx: Tx, userId: string) {
 // memberships go last, since they are what makes those projects visible.
 async function forget(tx: Tx, organizationId: string | null, userId: string) {
   await asTenant(tx, { organizationId, userId, email: '' })
+  await tx.delete(userSettings).where(
+    inArray(
+      userSettings.email,
+      tx
+        .select({ email: sql<string>`lower(${projectMembers.email})` })
+        .from(projectMembers)
+        .where(eq(projectMembers.userId, userId))
+    )
+  )
   await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
   await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
   await tx

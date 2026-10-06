@@ -14,6 +14,8 @@ import {
   startApp,
   type TestUser
 } from '../../testing/app.ts'
+import { keepSettings } from '../settings/events.ts'
+import { userSettings } from '../settings/schema.ts'
 import { accountRoutes } from './accounts.ts'
 import { projects } from './schema.ts'
 
@@ -163,6 +165,23 @@ describe.each([
     await deliver(routingKey, body(gone))
 
     expect(await filtersOf(gone)).toEqual([])
+  })
+
+  it('loses its Twake Workplace settings', async () => {
+    const gone = makeUser()
+    await boardsOf(gone)
+    await db.transaction(tx =>
+      keepSettings(tx, 1, { email: gone.email, display_name: 'Gone' })
+    )
+
+    await deliver(routingKey, body(gone))
+
+    expect(
+      await db
+        .select()
+        .from(userSettings)
+        .where(eq(userSettings.email, gone.email.toLowerCase()))
+    ).toEqual([])
   })
 })
 

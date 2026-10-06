@@ -1,7 +1,15 @@
 import { and, asc, eq, inArray, isNull, ne, notInArray, sql } from 'drizzle-orm'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { membersOf, roleIn, roleOn, type Role } from './access.ts'
+import { userSettings } from '../settings/schema.ts'
+import {
+  memberLooks,
+  membersOf,
+  roleIn,
+  roleOn,
+  settingsOfMember,
+  type Role
+} from './access.ts'
 import {
   boards,
   projectInvites,
@@ -91,10 +99,11 @@ export function createSharingStore(db: Db) {
             .select({
               userId: projectMembers.userId,
               email: projectMembers.email,
-              name: projectMembers.name,
+              ...memberLooks,
               role: projectMembers.role
             })
             .from(projectMembers)
+            .leftJoin(userSettings, settingsOfMember)
             .where(eq(projectMembers.projectId, project.id))
             .orderBy(asc(projectMembers.email)),
           invites: await tx

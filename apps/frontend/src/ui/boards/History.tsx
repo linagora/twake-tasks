@@ -111,7 +111,11 @@ export function History({
           <FeedItem
             key={index}
             avatar={
-              <PersonAvatar email={entry.actor.email} name={entry.actor.name} />
+              <PersonAvatar
+                email={entry.actor.email}
+                name={entry.actor.name}
+                avatar={entry.actor.avatar}
+              />
             }
           >
             <Typography variant="body2">

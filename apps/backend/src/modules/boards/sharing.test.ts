@@ -174,9 +174,11 @@ describe('sharing a board', () => {
       }>().members
     ).toEqual(
       [
-        { userId: owner.userId, email: owner.email, name: null, role: 'admin' },
-        { userId: guest.userId, email: guest.email, name: null, role: 'admin' }
-      ].sort((a, b) => a.email.localeCompare(b.email))
+        { userId: owner.userId, email: owner.email, role: 'admin' },
+        { userId: guest.userId, email: guest.email, role: 'admin' }
+      ]
+        .map(member => ({ ...member, name: null, avatar: null }))
+        .sort((a, b) => a.email.localeCompare(b.email))
     )
 
     expect((await api.as(guest).delete(member(owner.userId))).statusCode).toBe(

@@ -60,7 +60,11 @@ export function TaskProperties({
         <Property icon={<Icon icon={People} />} label={t('task.assignees')}>
           {task.assignees.map(person => (
             <Inline key={person.userId}>
-              <PersonAvatar email={person.email} name={person.name} />
+              <PersonAvatar
+                email={person.email}
+                name={person.name}
+                avatar={person.avatar}
+              />
               <Typography variant="body2">{displayName(person)}</Typography>
             </Inline>
           ))}

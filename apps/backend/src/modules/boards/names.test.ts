@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
 import { aUser, joinBoard, startApp } from '../../testing/app.ts'
+import { keepSettings } from '../settings/events.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -18,6 +19,7 @@ interface Person {
   userId: string
   email: string
   name: string | null
+  avatar: string | null
 }
 
 describe('names', () => {
@@ -46,7 +48,8 @@ describe('names', () => {
     expect(before.members).toContainEqual({
       userId: bob.userId,
       email: bob.email,
-      name: null
+      name: null,
+      avatar: null
     })
 
     await api.as(bob).get('/boards')
@@ -73,6 +76,60 @@ describe('names', () => {
     expect(names(sharing.members).sort()).toEqual(['Alice Martin', 'Bob'])
     expect(comments[0]?.author.name).toBe('Alice Martin')
     expect(entries[0]?.actor.name).toBe('Alice Martin')
+  })
+
+  it('shows people by the name and avatar of their Twake Workplace settings', async () => {
+    const alice = aUser({ name: 'alice' })
+    const bob = aUser({ organizationId: alice.organizationId })
+    const board = (
+      await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
+    ).json<{ id: string; sections: { id: string }[] }>()
+    await joinBoard(db, alice, board.id, bob, 'editor')
+    await db.transaction(async tx => {
+      await keepSettings(tx, 1, {
+        email: alice.email,
+        display_name: 'Alice Martin',
+        avatar: 'https://avatars.example.com/alice.png'
+      })
+      await keepSettings(tx, 1, { email: bob.email, first_name: 'Bob' })
+    })
+    const task = (
+      await api.as(alice).post(`/boards/${board.id}/tasks`, {
+        sectionId: board.sections[0]?.id,
+        title: 'Logo'
+      })
+    ).json<{ id: string }>()
+    const path = `/boards/${board.id}/tasks/${task.id}`
+    await api.as(alice).put(`${path}/assignees`, { userIds: [alice.userId] })
+    await api.as(alice).post(`${path}/comments`, { body: 'Which palette?' })
+
+    const { members, tasks } = (
+      await api.as(alice).get(`/boards/${board.id}`)
+    ).json<{ members: Person[]; tasks: { assignees: Person[] }[] }>()
+    const sharing = (
+      await api.as(alice).get(`/boards/${board.id}/sharing`)
+    ).json<{ members: Person[] }>()
+    const { comments } = (await api.as(alice).get(`${path}/comments`)).json<{
+      comments: { author: Person }[]
+    }>()
+    const { entries } = (await api.as(alice).get(`${path}/history`)).json<{
+      entries: { actor: Person }[]
+    }>()
+
+    const alicePerson = {
+      userId: alice.userId,
+      email: alice.email,
+      name: 'Alice Martin',
+      avatar: 'https://avatars.example.com/alice.png'
+    }
+    expect(members).toContainEqual(alicePerson)
+    expect(members).toContainEqual(
+      expect.objectContaining({ name: 'Bob', avatar: null })
+    )
+    expect(tasks[0]?.assignees).toEqual([alicePerson])
+    expect(sharing.members).toContainEqual(expect.objectContaining(alicePerson))
+    expect(comments[0]?.author).toEqual(alicePerson)
+    expect(entries[0]?.actor).toEqual(alicePerson)
   })
 
   it('keeps the last name the person signed in with', async () => {
