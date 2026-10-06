@@ -76,7 +76,11 @@ export function SearchScreen(): ReactElement {
         />
       )}
       {results.data && results.data.length > 0 && (
-        <Group label={t('search.results', { text })} tasks={results.data} />
+        <Group
+          label={t('search.results', { text })}
+          tasks={results.data}
+          highlight={text}
+        />
       )}
     </main>
   )

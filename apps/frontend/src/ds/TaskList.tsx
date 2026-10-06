@@ -51,6 +51,7 @@ export function TaskRow({
   label,
   title,
   context,
+  excerpt,
   facts,
   check,
   leading,
@@ -60,6 +61,7 @@ export function TaskRow({
   label: string
   title: ReactNode
   context: string
+  excerpt?: ReactNode
   facts?: ReactNode
   check?: ReactNode
   leading?: ReactNode
@@ -131,6 +133,11 @@ export function TaskRow({
           >
             {title}
           </Typography>
+          {excerpt && (
+            <Typography variant="body2" color="textSecondary" noWrap>
+              {excerpt}
+            </Typography>
+          )}
           <Typography
             variant="caption"
             component="p"

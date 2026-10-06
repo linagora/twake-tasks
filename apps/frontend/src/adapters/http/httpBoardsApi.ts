@@ -8,7 +8,8 @@ import {
   type BoardsApi,
   type Comment,
   type Reminder,
-  type HistoryEntry
+  type HistoryEntry,
+  type SearchResult
 } from '@/application/boards'
 import type { BoardSummary } from '@/domain/board'
 
@@ -91,7 +92,7 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       ).tasks,
     search: async text =>
       (
-        await call<{ tasks: AgendaTask[] }>(
+        await call<{ tasks: SearchResult[] }>(
           'GET',
           `/search?${new URLSearchParams({ q: text }).toString()}`
         )

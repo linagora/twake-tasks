@@ -305,7 +305,8 @@ export function fakeBoardsApi(boards: Board[] = []) {
             .map(task => ({
               ...structuredClone(task),
               boardId: board.id,
-              boardName: board.name
+              boardName: board.name,
+              excerpt: null
             }))
         )
       )

@@ -69,6 +69,19 @@ describe('AssignPicker', () => {
     expect(rows[3]).toHaveAccessibleName('new@example.com')
   })
 
+  it('highlights each searched word, ignoring case and accents', async () => {
+    const task = aTask(null, { key: 'DES-1' })
+    open(task, [task])
+    await options()
+
+    search('NGU chlo')
+
+    const [row] = await options()
+    expect(
+      [...(row?.querySelectorAll('mark') ?? [])].map(mark => mark.textContent)
+    ).toEqual(['Chlo', 'Ngu', 'chlo'])
+  })
+
   it('pins the current assignees on top and removes one in a click', async () => {
     const task = aTask(null, { key: 'DES-1', assignees: [chloe] })
     const boardsApi = open(task, [task])

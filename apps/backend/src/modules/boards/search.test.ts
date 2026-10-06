@@ -53,6 +53,36 @@ describe('search', () => {
     expect(await search(owner, '100%')).toEqual([])
   })
 
+  it('quotes the part of the description that matches, when the title does not', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    await design.add('Poster', 'Use the **new** palette')
+    await design.add(
+      'Brochure',
+      `${'Intro sentence. '.repeat(10)}Print it on recycled paper for the spring fair. ${'Closing words. '.repeat(10)}`
+    )
+    await design.add('Palette swatches', 'Pick a palette')
+
+    const found = (await api.as(owner).get('/search?q=palet')).json<{
+      tasks: { key: string; excerpt: string | null }[]
+    }>().tasks
+    const recycled = (await api.as(owner).get('/search?q=RECYCLED')).json<{
+      tasks: { key: string; excerpt: string | null }[]
+    }>().tasks
+
+    expect(found).toEqual([
+      expect.objectContaining({ key: 'DES-1', excerpt: 'Use the new palette' }),
+      expect.objectContaining({ key: 'DES-3', excerpt: null })
+    ])
+    expect(recycled).toEqual([
+      expect.objectContaining({
+        key: 'DES-2',
+        excerpt:
+          '…Intro sentence. Print it on recycled paper for the spring fair. Closing words. Closing…'
+      })
+    ])
+  })
+
   it('only finds tasks on boards I can see', async () => {
     const owner = aUser()
     const stranger = aUser({ organizationId: owner.organizationId })

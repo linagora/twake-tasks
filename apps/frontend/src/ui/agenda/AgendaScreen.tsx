@@ -3,9 +3,10 @@ import { Checkbox, Link, Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
-import type { AgendaTask } from '@/application/boards'
+import type { AgendaTask, SearchResult } from '@/application/boards'
 import { LabelChip } from '@/ds/Columns'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
+import { Highlight } from '@/ds/Highlight'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import { formatDay } from '@/ui/boards/dueLabel'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
@@ -22,17 +23,24 @@ export function Group({
   label,
   tasks,
   tone,
-  dated = false
+  dated = false,
+  highlight = ''
 }: {
   label: string
-  tasks: AgendaTask[]
+  tasks: (AgendaTask | SearchResult)[]
   tone?: 'error'
   dated?: boolean
+  highlight?: string
 }): ReactElement {
   return (
     <TaskGroup label={label} count={tasks.length} tone={tone}>
       {tasks.map(task => (
-        <AgendaRow key={task.id} task={task} showDue={!dated} />
+        <AgendaRow
+          key={task.id}
+          task={task}
+          showDue={!dated}
+          highlight={highlight}
+        />
       ))}
     </TaskGroup>
   )
@@ -40,10 +48,12 @@ export function Group({
 
 function AgendaRow({
   task,
-  showDue
+  showDue,
+  highlight
 }: {
-  task: AgendaTask
+  task: AgendaTask | SearchResult
   showDue: boolean
+  highlight: string
 }): ReactElement {
   const { t } = useI18n()
   const complete = useCompleteAgendaTask()
@@ -72,10 +82,14 @@ function AgendaRow({
           component={RouterLink}
           to={`/boards/${task.boardId}?task=${task.key}`}
         >
-          {task.title}
+          <Highlight text={task.title} query={highlight} />
         </Link>
       }
       context={`${task.key} · ${task.boardName}`}
+      excerpt={
+        'excerpt' in task &&
+        task.excerpt && <Highlight text={task.excerpt} query={highlight} />
+      }
       facts={
         <>
           {complete.isError && (

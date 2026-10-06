@@ -15,6 +15,8 @@ import {
   type Ref
 } from 'react'
 
+import { Highlight } from '@/ds/Highlight'
+
 export function Columns({ children }: { children: ReactNode }): ReactElement {
   return (
     <Box
@@ -323,7 +325,13 @@ function hueOf(name: string): number {
 }
 
 // Labels have no stored colour, so each name gets a stable hue.
-export function LabelChip({ name }: { name: string }): ReactElement {
+export function LabelChip({
+  name,
+  highlight = ''
+}: {
+  name: string
+  highlight?: string
+}): ReactElement {
   const hue = hueOf(name)
   return (
     <Box
@@ -351,7 +359,7 @@ export function LabelChip({ name }: { name: string }): ReactElement {
             : `hsl(${String(hue)} 75% 93%)`
       })}
     >
-      {name}
+      <Highlight text={name} query={highlight} />
     </Box>
   )
 }
