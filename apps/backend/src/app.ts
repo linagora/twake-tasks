@@ -9,6 +9,7 @@ import {
 } from './modules/auth/index.ts'
 import { registerLive, type BoardChanges } from './modules/boards/live.ts'
 import { registerBoards } from './modules/boards/routes.ts'
+import { registerSpaces } from './modules/spaces/routes.ts'
 
 export async function buildApp(deps: {
   logger: Logger
@@ -28,6 +29,7 @@ export async function buildApp(deps: {
         store: postgresAuthStore(deps.db)
       })
       registerBoards(api, { db: deps.db, requireIdentity })
+      registerSpaces(api, { db: deps.db, requireIdentity })
       registerLive(api, {
         db: deps.db,
         requireIdentity,
