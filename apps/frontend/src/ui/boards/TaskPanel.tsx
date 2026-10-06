@@ -13,9 +13,9 @@ import {
   Typography
 } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement } from 'react'
-import Markdown from 'react-markdown'
 
 import { ApiError } from '@/application/boards'
+import { RichText, RichTextEditor } from '@/ds/RichText'
 import { Grow, Inline, PanelSection, SidePanel } from '@/ds/SidePanel'
 import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
 import { useRemoveTask } from '@/ui/boards/Archive'
@@ -32,7 +32,10 @@ import {
 import { Subtasks } from '@/ui/boards/Subtasks'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
+import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { useI18n } from '@/ui/i18n/useI18n'
+
+const MAX_DESCRIPTION = 50_000
 
 export function TaskPanel({
   task,
@@ -257,6 +260,7 @@ function Description({
   editable: boolean
 }): ReactElement {
   const { t } = useI18n()
+  const labels = useRichTextLabels()
   const description = useDescription(boardId, task.id)
   const save = useSetDescription(boardId, task.id)
   const [draft, setDraft] = useState<string | null>(null)
@@ -290,9 +294,7 @@ function Description({
       {description.data &&
         draft === null &&
         (description.data.markdown.trim() ? (
-          <Typography component="div" variant="body2">
-            <Markdown>{description.data.markdown}</Markdown>
-          </Typography>
+          <RichText markdown={description.data.markdown} />
         ) : (
           <Typography variant="body2" color="textSecondary">
             {t('task.noDescription')}
@@ -312,38 +314,45 @@ function Description({
             )
           }}
         >
-          <TextField
+          <RichTextEditor
             label={t('task.description')}
-            value={draft}
-            onChange={event => {
-              setDraft(event.target.value)
-            }}
-            multiline
-            minRows={6}
-            fullWidth
-            margin="dense"
-            slotProps={{ htmlInput: { maxLength: 50_000 } }}
+            initial={description.data.markdown}
+            placeholder={t('editor.descriptionPlaceholder')}
+            labels={labels}
+            minHeight={144}
+            onChange={setDraft}
+            footer={
+              <>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => {
+                    save.reset()
+                    setDraft(null)
+                  }}
+                >
+                  {t('board.cancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  size="small"
+                  disabled={save.isPending || draft.length > MAX_DESCRIPTION}
+                >
+                  {t('board.save')}
+                </Button>
+              </>
+            }
           />
           {save.isError && (
-            <Typography role="alert">
+            <Typography
+              role="alert"
+              variant="body2"
+              color="error"
+              className="u-mt-half"
+            >
               {stale ? t('task.stale') : t('task.saveFailed')}
             </Typography>
           )}
-          <Inline>
-            <Button type="submit" size="small" disabled={save.isPending}>
-              {t('board.save')}
-            </Button>
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => {
-                save.reset()
-                setDraft(null)
-              }}
-            >
-              {t('board.cancel')}
-            </Button>
-          </Inline>
         </form>
       )}
     </PanelSection>

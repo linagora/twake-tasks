@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
+import { typeRichText } from '@/testing/richText'
 
 function logoBoard() {
   const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
@@ -40,16 +41,17 @@ describe('TaskPanel', () => {
     fireEvent.click(
       await panel.findByRole('button', { name: 'Edit description' })
     )
-    fireEvent.change(panel.getByRole('textbox', { name: 'Description' }), {
-      target: { value: '# Brief' }
-    })
+    const editor = await panel.findByRole('textbox', { name: 'Description' })
+    expect(editor.querySelector('strong')).toHaveTextContent('new')
+    await typeRichText(editor, 'Brief')
     fireEvent.click(panel.getByRole('button', { name: 'Save' }))
 
-    expect(
-      await panel.findByRole('heading', { name: 'Brief' })
-    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(panel.queryByRole('textbox', { name: 'Description' })).toBeNull()
+    })
+    expect(panel.getByText('Brief')).toBeVisible()
     expect(boardsApi.setDescription).toHaveBeenCalledWith(board.id, logo.id, {
-      markdown: '# Brief',
+      markdown: 'Brief',
       version: 3
     })
   })
@@ -65,9 +67,10 @@ describe('TaskPanel', () => {
     fireEvent.click(
       await panel.findByRole('button', { name: 'Edit description' })
     )
-    fireEvent.change(panel.getByRole('textbox', { name: 'Description' }), {
-      target: { value: 'Mine' }
-    })
+    await typeRichText(
+      await panel.findByRole('textbox', { name: 'Description' }),
+      'Mine'
+    )
     fireEvent.click(panel.getByRole('button', { name: 'Save' }))
 
     expect(
@@ -75,9 +78,9 @@ describe('TaskPanel', () => {
         'Someone else changed the description. Your text is kept: save again to replace theirs.'
       )
     ).toBeInTheDocument()
-    expect(panel.getByRole('textbox', { name: 'Description' })).toHaveValue(
-      'Mine'
-    )
+    expect(
+      panel.getByRole('textbox', { name: 'Description' })
+    ).toHaveTextContent('Mine')
   })
 
   it('renames the task in place', async () => {
