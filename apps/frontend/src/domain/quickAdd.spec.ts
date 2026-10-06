@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseQuickAdd } from '@/domain/quickAdd'
+import { mentionAt, parseQuickAdd, pickMention } from '@/domain/quickAdd'
 
 // A Wednesday.
 const today = '2026-10-07'
@@ -140,11 +140,70 @@ describe('parseQuickAdd', () => {
     expect(parse(`Write ${words}`)).toMatchObject({ duration })
   })
 
+  it('reads tokens separated by commas', () => {
+    expect(parse('Call Bob tomorrow, 3pm,p2,#ABDC, %ops,+ana')).toEqual({
+      title: 'Call Bob',
+      board: 'ABDC',
+      priority: 2,
+      dueDate: '2026-10-08',
+      dueTime: '15:00',
+      labels: ['ops'],
+      people: ['ana']
+    })
+  })
+
+  it('keeps commas that belong to the title', () => {
+    expect(parse('Buy milk, eggs, bread p3')).toMatchObject({
+      title: 'Buy milk, eggs, bread',
+      priority: 3
+    })
+  })
+
   it('leaves words that only look like dates in the title', () => {
     expect(parse('Read Monday.com docs about Mars')).toEqual({
       title: 'Read Monday.com docs about Mars',
       labels: [],
       people: []
+    })
+  })
+})
+
+describe('mentionAt', () => {
+  it('finds the name being typed after a sigil', () => {
+    expect(mentionAt('Logo p1 #Des', 12)).toEqual({
+      sigil: '#',
+      typed: 'Des',
+      start: 8,
+      end: 12
+    })
+    expect(mentionAt('Logo,+an', 8)).toMatchObject({ sigil: '+', typed: 'an' })
+    expect(mentionAt('Logo /', 6)).toMatchObject({ sigil: '/', typed: '' })
+  })
+
+  it('takes the whole name when the caret is inside it', () => {
+    expect(mentionAt('Logo %urg now', 7)).toMatchObject({
+      typed: 'u',
+      start: 5,
+      end: 9
+    })
+  })
+
+  it('finds nothing outside a name', () => {
+    expect(mentionAt('Logo #Design ', 13)).toBeNull()
+    expect(mentionAt('a/b', 3)).toBeNull()
+  })
+})
+
+describe('pickMention', () => {
+  it('puts the picked name in place, joined by dashes, and a space after it', () => {
+    const mention = { sigil: '#', typed: 'pro', start: 5, end: 9 } as const
+    expect(pickMention('Logo #pro p1', mention, 'Product Design')).toEqual({
+      line: 'Logo #Product-Design p1',
+      caret: 21
+    })
+    expect(pickMention('Logo #pro', mention, 'Product Design')).toEqual({
+      line: 'Logo #Product-Design ',
+      caret: 21
     })
   })
 })
