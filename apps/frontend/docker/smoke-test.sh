@@ -15,7 +15,7 @@ docker run -d --name "$NAME" \
   -e SSO_BASE_URL='https://sso.example.com/' \
   -e SSO_CLIENT_ID='twake-tasks' \
   -e POSTHOG_HOST='https://posthog.example.com' \
-  -e CSP_FRAME_ANCESTORS="'self' https://workplace.example.com" \
+  -e CSP_FRAME_ANCESTORS='https://workplace.example.com' \
   -e API_UPSTREAM='http://127.0.0.1:9' \
   "$IMAGE" >/dev/null
 BASE="http://$(docker port "$NAME" 8080/tcp | head -1)"
@@ -55,8 +55,9 @@ expect 'hashed assets are cached for a year' "$(header "$script" Cache-Control)"
 csp="$(header / Content-Security-Policy)"
 expect 'CSP sent' "$csp" "default-src 'self'; script-src 'self';*"
 expect 'CSP: SSO and PostHog origins in connect-src' "$csp" "*connect-src 'self' https://sso.example.com https://posthog.example.com;*"
+expect 'CSP: the SSO may be framed, for the silent sign-in' "$csp" "*frame-src 'self' https://sso.example.com;*"
 expect 'CSP: pages refuse to be framed' "$csp" "*frame-ancestors 'none'"
-expect 'CSP: the embedded view may be framed by the host' \
+expect 'CSP: the embedded view may be framed by Tasks and the host' \
   "$(header /embed/spaces/s1 Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"
 expect 'CSP: so may the sign-in callback' \
   "$(header /auth/callback Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"

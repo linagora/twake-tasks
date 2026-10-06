@@ -6,7 +6,8 @@ export interface User {
 export interface SessionService {
   /** Resolves to null when the browser is being sent to the SSO. */
   start: () => Promise<User | null>
-  signIn: () => Promise<void>
+  /** Resolves to null when the browser is being sent to the SSO. */
+  signIn: () => Promise<User | null>
   signOut: () => Promise<void>
   onEndedElsewhere: (onEnded: () => void) => () => void
 }

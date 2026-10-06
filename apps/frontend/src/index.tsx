@@ -7,8 +7,7 @@ import { httpBoardsApi } from '@/adapters/http/httpBoardsApi'
 import {
   embedSession,
   isEmbedded,
-  POPUP_NAME,
-  signInInPopup
+  relayCallback
 } from '@/adapters/oidc/embedSession'
 import {
   oidcSession,
@@ -23,9 +22,7 @@ if (!container) throw new Error('Root element #root not found')
 const apiUrl = window.location.origin
 const config = readSsoConfig(window, apiUrl)
 
-if (window.name === POPUP_NAME) {
-  void signInInPopup(oidcSession(config))
-} else {
+if (!relayCallback()) {
   const embed = isEmbedded() ? embedSession(config) : null
   const session = embed ?? oidcSession(config)
   const boardsApi = httpBoardsApi(apiUrl, embed?.send ?? sendSignedIn)

@@ -47,8 +47,12 @@ for url in "${SSO_BASE_URL:-}" "${POSTHOG_HOST:-}"; do
   [ -n "$url" ] && connect_src="$connect_src $(origin "$url")"
 done
 [ -n "${CSP_CONNECT_SRC:-}" ] && connect_src="$connect_src $CSP_CONNECT_SRC"
-frame_src=${CSP_FRAME_SRC:-"'self'"}
-frame_ancestors=${CSP_FRAME_ANCESTORS:-"'none'"}
+# The embedded view signs in silently in a hidden frame on the SSO, which comes
+# back to the sign-in callback inside that frame.
+frame_src="'self'"
+[ -n "${SSO_BASE_URL:-}" ] && frame_src="$frame_src $(origin "$SSO_BASE_URL")"
+[ -n "${CSP_FRAME_SRC:-}" ] && frame_src="$frame_src $CSP_FRAME_SRC"
+frame_ancestors="'self'${CSP_FRAME_ANCESTORS:+ $CSP_FRAME_ANCESTORS}"
 permissions_policy=${PERMISSIONS_POLICY:-"accelerometer=(), geolocation=(), gyroscope=(), magnetometer=(), payment=(), usb=()"}
 check_sources CSP_CONNECT_SRC "$connect_src"
 check_sources CSP_FRAME_SRC "$frame_src"

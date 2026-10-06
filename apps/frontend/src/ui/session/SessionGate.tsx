@@ -68,7 +68,18 @@ export function SessionGate({
     return (
       <main className="u-p-2">
         <Typography>{t('session.failed')}</Typography>
-        <Button onClick={() => void session.signIn()}>
+        <Button
+          onClick={() => {
+            session.signIn().then(
+              user => {
+                if (user) setState({ status: 'signedIn', user })
+              },
+              (error: unknown) => {
+                console.error('Sign-in failed:', error)
+              }
+            )
+          }}
+        >
           {t('session.retry')}
         </Button>
       </main>
