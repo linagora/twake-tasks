@@ -37,11 +37,11 @@ export function AppShell(): ReactElement {
 
   return (
     <>
-      <header className="u-flex u-flex-items-center u-ph-2 u-pv-1">
+      <header className="u-flex u-flex-wrap u-flex-items-center u-ph-2 u-pv-1">
         <Link component={RouterLink} to="/" variant="h5" underline="none">
           {t('app.name')}
         </Link>
-        <nav className="u-ml-2">
+        <nav className="u-flex u-flex-wrap u-ml-2 u-ml-0-m u-w-100-m u-mv-half">
           {(['today', 'upcoming', 'mine'] as const).map(view => (
             <Link
               key={view}
@@ -61,7 +61,7 @@ export function AppShell(): ReactElement {
         </nav>
         <SearchField inputRef={search} />
         <Button
-          className="u-ml-1 u-mr-1"
+          className="u-ml-1 u-ml-0-m u-mr-1 u-mv-half"
           onClick={() => {
             setQuickAdd(true)
           }}

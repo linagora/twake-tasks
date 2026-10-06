@@ -18,7 +18,7 @@ export function SearchField({
   return (
     <form
       role="search"
-      className="u-ml-auto"
+      className="u-ml-auto u-w-100-m u-mv-half"
       onSubmit={event => {
         event.preventDefault()
         if (!text.trim()) return
@@ -31,6 +31,7 @@ export function SearchField({
         label={t('search.label')}
         type="search"
         size="small"
+        fullWidth
         value={text}
         onChange={event => {
           setText(event.target.value)
