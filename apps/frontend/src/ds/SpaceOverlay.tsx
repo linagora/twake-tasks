@@ -78,7 +78,14 @@ export function overlayThemeOptions(overlay: SpaceOverlay): ThemeOptions {
   return {
     components: {
       MuiDialog: { defaultProps: { container } },
-      MuiDrawer: { defaultProps: { container } }
+      // Its backdrop dims all of TwakeSpace: shown at once with its panel,
+      // not faded in over the whole page
+      MuiDrawer: {
+        defaultProps: {
+          container,
+          slotProps: { backdrop: { transitionDuration: 0 } }
+        }
+      }
     }
   }
 }
