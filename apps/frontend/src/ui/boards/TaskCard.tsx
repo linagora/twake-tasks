@@ -1,47 +1,23 @@
 import {
-  Avatar,
   Button,
-  getInitials,
   IconButton,
   Link,
   Menu,
   MenuItem,
-  nameToColor,
   Typography
 } from '@linagora/twake-mui'
-import {
-  CalendarToday,
-  CheckList,
-  Comment,
-  Dots,
-  Flag,
-  Icon
-} from '@linagora/twake-icons'
+import { CheckList, Comment, Dots, Icon } from '@linagora/twake-icons'
 import { useState, type ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
 
-import {
-  AvatarStack,
-  Card,
-  CardTitle,
-  LabelChip,
-  Meta,
-  MetaChip
-} from '@/ds/Columns'
+import { Card, CardTitle, LabelChip, Meta, MetaChip } from '@/ds/Columns'
 import type { Label, Person, Section, Task } from '@/domain/board'
 import { AssignDialog } from '@/ui/boards/AssignDialog'
-import { dueLabel, shortDay, urgency } from '@/ui/boards/dueLabel'
 import { LabelsDialog } from '@/ui/boards/LabelsDialog'
 import { Subtasks } from '@/ui/boards/Subtasks'
+import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
-
-const PRIORITY_TONE = {
-  1: 'error',
-  2: 'warning',
-  3: 'info',
-  4: 'neutral'
-} as const
 
 export function TaskCard({
   task,
@@ -60,20 +36,16 @@ export function TaskCard({
   destinations: { id: string | null; name: string }[]
   onMove: ((sectionId: Section['id'] | null) => void) | undefined
 }): ReactElement {
-  const { t, lang } = useI18n()
+  const { t } = useI18n()
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState(false)
   const [labeling, setLabeling] = useState(false)
   const [params] = useSearchParams()
   const [open, setOpen] = useState(params.get('task') === task.key)
   const editable = onMove !== undefined
-  const due = dueLabel(task, lang)
   const [showSubtasks, setShowSubtasks] = useState(false)
   const children = tasks.filter(each => each.parentId === task.id)
   const done = children.filter(each => each.completedAt !== null).length
-  const dueTone = urgency(task)
-  const shownAssignees = task.assignees.length > 3 ? 2 : 3
-  const hiddenAssignees = task.assignees.length - shownAssignees
   const facts =
     task.priority !== null ||
     task.dueDate !== null ||
@@ -127,28 +99,8 @@ export function TaskCard({
       </CardTitle>
       {(facts || task.assignees.length > 0) && (
         <Meta>
-          {task.priority !== null && (
-            <MetaChip
-              icon={<Icon icon={Flag} />}
-              tone={PRIORITY_TONE[task.priority]}
-              label={t('board.priorityLabel', { level: task.priority })}
-            >
-              {t('board.priority', { level: task.priority })}
-            </MetaChip>
-          )}
-          {task.dueDate && due && (
-            <MetaChip
-              icon={<Icon icon={CalendarToday} />}
-              tone={dueTone}
-              label={
-                dueTone === 'error'
-                  ? t('board.overdue', { date: due })
-                  : t('board.due', { date: due })
-              }
-            >
-              {shortDay(task.dueDate, lang)}
-            </MetaChip>
-          )}
+          {task.priority !== null && <PriorityChip priority={task.priority} />}
+          <DueChip task={task} />
           {children.length > 0 && (
             <Button
               variant="text"
@@ -176,34 +128,7 @@ export function TaskCard({
               {task.commentCount}
             </MetaChip>
           )}
-          {task.assignees.length > 0 && (
-            <AvatarStack>
-              {task.assignees
-                .slice(0, shownAssignees)
-                .map(({ userId, email }) => (
-                  <Avatar
-                    key={userId}
-                    size={24}
-                    color={nameToColor(email) ?? 'sunrise'}
-                    role="img"
-                    aria-label={t('board.assignee', { name: email })}
-                  >
-                    {getInitials(email, email)}
-                  </Avatar>
-                ))}
-              {hiddenAssignees > 0 && (
-                <Avatar
-                  size={24}
-                  role="img"
-                  aria-label={t('board.moreAssignees', {
-                    smart_count: hiddenAssignees
-                  })}
-                >
-                  {`+${String(hiddenAssignees)}`}
-                </Avatar>
-              )}
-            </AvatarStack>
-          )}
+          {task.assignees.length > 0 && <Assignees people={task.assignees} />}
         </Meta>
       )}
       {showSubtasks && (
