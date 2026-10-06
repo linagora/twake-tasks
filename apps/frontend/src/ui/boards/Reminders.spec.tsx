@@ -19,50 +19,56 @@ async function openLogo(dueDate: string | null) {
   const panel = within(
     await screen.findByRole('dialog', { name: 'DES-1 Logo' })
   )
+  const reminders = within(panel.getByRole('region', { name: 'Reminders' }))
   return {
     board,
     logo,
     boardsApi,
-    reminders: within(panel.getByRole('region', { name: 'Reminders' }))
+    reminders,
+    openEditor: async () => {
+      const add = reminders.getByRole('button', { name: 'Add reminder' })
+      add.focus()
+      fireEvent.click(add)
+      return within(await screen.findByRole('dialog', { name: 'Add reminder' }))
+    }
   }
 }
 
 describe('Reminders', () => {
   it('keeps the reminder form closed until asked for', async () => {
-    const { reminders } = await openLogo('2026-11-02')
+    const { reminders, openEditor } = await openLogo('2026-11-02')
 
     expect(reminders.getByText('None')).toBeVisible()
-    expect(
-      reminders.queryByRole('combobox', { name: 'Remind me' })
-    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Add reminder' })).toBeNull()
 
-    fireEvent.click(reminders.getByRole('button', { name: 'Add reminder' }))
-    fireEvent.click(reminders.getByRole('button', { name: 'Cancel' }))
+    const editor = await openEditor()
+    fireEvent.click(editor.getByRole('button', { name: 'Cancel' }))
 
-    expect(
-      reminders.queryByRole('combobox', { name: 'Remind me' })
-    ).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Add reminder' })).toBeNull()
+    })
     expect(
       reminders.getByRole('button', { name: 'Add reminder' })
     ).toHaveFocus()
   })
 
   it('reminds an hour before the due date, in the local zone', async () => {
-    const { board, logo, boardsApi, reminders } = await openLogo('2026-11-02')
+    const { board, logo, boardsApi, reminders, openEditor } =
+      await openLogo('2026-11-02')
 
-    fireEvent.click(reminders.getByRole('button', { name: 'Add reminder' }))
-    fireEvent.change(reminders.getByRole('combobox', { name: 'Remind me' }), {
+    const editor = await openEditor()
+    fireEvent.change(editor.getByRole('combobox', { name: 'Remind me' }), {
       target: { value: '60' }
     })
-    fireEvent.click(reminders.getByRole('button', { name: 'Save reminder' }))
+    fireEvent.click(editor.getByRole('button', { name: 'Save reminder' }))
 
     expect(await reminders.findByRole('listitem')).toHaveTextContent(
       '1 hour before'
     )
     expect(reminders.queryByText('None')).not.toBeInTheDocument()
-    expect(
-      reminders.queryByRole('combobox', { name: 'Remind me' })
-    ).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Add reminder' })).toBeNull()
+    })
     expect(boardsApi.addReminder).toHaveBeenCalledWith(board.id, logo.id, {
       beforeMinutes: 60,
       zone: localZone()
@@ -70,16 +76,17 @@ describe('Reminders', () => {
   })
 
   it('reminds at a set time, and only then without a due date', async () => {
-    const { board, logo, boardsApi, reminders } = await openLogo(null)
+    const { board, logo, boardsApi, reminders, openEditor } =
+      await openLogo(null)
 
-    fireEvent.click(reminders.getByRole('button', { name: 'Add reminder' }))
+    const editor = await openEditor()
     expect(
-      reminders.queryByRole('combobox', { name: 'Remind me' })
+      editor.queryByRole('combobox', { name: 'Remind me' })
     ).not.toBeInTheDocument()
-    fireEvent.change(reminders.getByLabelText('At'), {
-      target: { value: '2026-11-02T08:00' }
+    fireEvent.change(editor.getByDisplayValue(''), {
+      target: { value: '11/02/2026 08:00' }
     })
-    fireEvent.click(reminders.getByRole('button', { name: 'Save reminder' }))
+    fireEvent.click(editor.getByRole('button', { name: 'Save reminder' }))
 
     await reminders.findByRole('listitem')
     expect(boardsApi.addReminder).toHaveBeenCalledWith(board.id, logo.id, {
@@ -88,9 +95,9 @@ describe('Reminders', () => {
   })
 
   it('deletes a reminder', async () => {
-    const { reminders } = await openLogo('2026-11-02')
-    fireEvent.click(reminders.getByRole('button', { name: 'Add reminder' }))
-    fireEvent.click(reminders.getByRole('button', { name: 'Save reminder' }))
+    const { reminders, openEditor } = await openLogo('2026-11-02')
+    const editor = await openEditor()
+    fireEvent.click(editor.getByRole('button', { name: 'Save reminder' }))
     const item = await reminders.findByRole('listitem')
 
     fireEvent.click(

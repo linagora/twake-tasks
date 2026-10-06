@@ -6,9 +6,10 @@ import {
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { useRef, useState, type ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 
 import { Row } from '@/ds/Columns'
+import { EditorActions, EditorPopover, MomentField } from '@/ds/Pickers'
 import { Chips } from '@/ds/SidePanel'
 import type { Task } from '@/domain/board'
 import { localZone } from '@/ui/boards/dueLabel'
@@ -38,11 +39,9 @@ export function Reminders({
   const remove = useDeleteReminder(boardId, task.id)
   const [before, setBefore] = useState<Before>('0')
   const [at, setAt] = useState('')
-  const [open, setOpen] = useState(false)
-  const refocus = useRef(false)
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const shut = () => {
-    refocus.current = true
-    setOpen(false)
+    setAnchor(null)
   }
   const format = new Intl.DateTimeFormat(lang, {
     dateStyle: 'medium',
@@ -95,105 +94,76 @@ export function Reminders({
             ))}
           </Chips>
         ) : (
-          !open && (
-            <Typography variant="body2" color="textSecondary">
-              {t('reminders.none')}
-            </Typography>
-          )
+          <Typography variant="body2" color="textSecondary">
+            {t('reminders.none')}
+          </Typography>
         )}
-        {!open && (
-          <IconButton
-            ref={node => {
-              if (node && refocus.current) {
-                refocus.current = false
-                node.focus()
-              }
-            }}
-            size="small"
-            aria-label={t('reminders.add')}
-            onClick={() => {
-              setOpen(true)
-            }}
-          >
-            <Icon icon={Plus} size={14} />
-          </IconButton>
-        )}
-      </Row>
-      {open && (
-        <form
-          className="u-flex u-flex-items-center u-flex-wrap u-mt-half"
-          onSubmit={event => {
-            event.preventDefault()
-            add.mutate(
-              fixed
-                ? { at: new Date(at).toISOString() }
-                : { beforeMinutes: Number(before), zone: localZone() },
-              {
-                onSuccess: () => {
-                  setAt('')
-                  shut()
-                }
-              }
-            )
+        <IconButton
+          size="small"
+          aria-label={t('reminders.add')}
+          onClick={event => {
+            setAnchor(event.currentTarget)
           }}
         >
-          {task.dueDate !== null && (
-            <TextField
-              select
-              label={t('reminders.remindMe')}
-              value={before}
-              onChange={event => {
-                setBefore(event.target.value as Before)
-              }}
-              size="small"
-              className="u-mr-half u-mt-half"
-              slotProps={{ select: { native: true } }}
-            >
-              {BEFORE.map(value => (
-                <option key={value} value={value}>
-                  {value === 'at'
-                    ? t('reminders.setTime')
-                    : beforeLabel(Number(value))}
-                </option>
-              ))}
-            </TextField>
-          )}
-          {fixed && (
-            <TextField
-              type="datetime-local"
-              label={t('reminders.at')}
-              value={at}
-              onChange={event => {
-                setAt(event.target.value)
-              }}
-              size="small"
-              className="u-mr-half u-mt-half"
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
-          )}
-          {add.isError && (
-            <Typography role="alert" variant="caption">
-              {t('reminders.failed')}
-            </Typography>
-          )}
-          <Button
-            variant="text"
+          <Icon icon={Plus} size={14} />
+        </IconButton>
+      </Row>
+      <EditorPopover
+        label={t('reminders.add')}
+        anchor={anchor}
+        onClose={close}
+        onSubmit={() => {
+          add.mutate(
+            fixed
+              ? { at: new Date(at).toISOString() }
+              : { beforeMinutes: Number(before), zone: localZone() },
+            {
+              onSuccess: () => {
+                setAt('')
+                shut()
+              }
+            }
+          )
+        }}
+      >
+        {task.dueDate !== null && (
+          <TextField
+            select
+            label={t('reminders.remindMe')}
+            value={before}
+            onChange={event => {
+              setBefore(event.target.value as Before)
+            }}
             size="small"
-            className="u-mt-half"
-            onClick={close}
+            fullWidth
+            slotProps={{ select: { native: true } }}
           >
+            {BEFORE.map(value => (
+              <option key={value} value={value}>
+                {value === 'at'
+                  ? t('reminders.setTime')
+                  : beforeLabel(Number(value))}
+              </option>
+            ))}
+          </TextField>
+        )}
+        {fixed && (
+          <MomentField label={t('reminders.at')} value={at} onChange={setAt} />
+        )}
+        {add.isError && (
+          <Typography role="alert" variant="caption" color="error">
+            {t('reminders.failed')}
+          </Typography>
+        )}
+        <EditorActions>
+          <Button variant="text" onClick={close}>
             {t('board.cancel')}
           </Button>
-          <Button
-            type="submit"
-            size="small"
-            className="u-mt-half"
-            disabled={add.isPending || (fixed && !at)}
-          >
+          <Button type="submit" disabled={add.isPending || (fixed && !at)}>
             {t('reminders.save')}
           </Button>
-        </form>
-      )}
+        </EditorActions>
+      </EditorPopover>
     </section>
   )
 }
