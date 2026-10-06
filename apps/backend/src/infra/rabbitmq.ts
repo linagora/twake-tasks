@@ -3,9 +3,13 @@ import type { Logger } from 'pino'
 import type { OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 
-export const ACTIVITY_EXCHANGE = 'activity'
-export const QUEUE = 'platform.all.twake-tasks'
-export const DEAD_LETTER_QUEUE = `${QUEUE}.dlq`
+export interface ConsumerNames {
+  spaceExchange: string
+  b2bExchange: string
+  authExchange: string
+  queue: string
+  deadLetterExchange: string
+}
 
 export interface Delivery {
   routingKey: string
@@ -23,15 +27,16 @@ export interface Consumer {
 // events behind it may depend on it.
 export async function startConsumer(
   url: string,
+  names: ConsumerNames,
   logger: Logger,
   handle: (delivery: Delivery) => Promise<Outcome>
 ): Promise<Consumer> {
   const client = new RabbitMQClient({ url, logger, prefetch: 1 })
   await client.init()
   await client.subscribe(
-    'space',
+    names.spaceExchange,
     'twake.space.#',
-    QUEUE,
+    names.queue,
     async (body, { routingKey, messageId }) => {
       const outcome = await handle({ routingKey, messageId, body })
       if (outcome === 'rejected') {
@@ -40,11 +45,14 @@ export async function startConsumer(
     },
     {
       bindings: [
-        { exchange: 'b2b', routingKey: 'domain.user.deleted' },
-        { exchange: 'auth', routingKey: 'user.deleted' },
-        { exchange: 'b2b', routingKey: 'domain.organization.deleted' }
+        { exchange: names.b2bExchange, routingKey: 'domain.user.deleted' },
+        { exchange: names.authExchange, routingKey: 'user.deleted' },
+        {
+          exchange: names.b2bExchange,
+          routingKey: 'domain.organization.deleted'
+        }
       ],
-      deadLetterExchange: 'twake-tasks.dlx',
+      deadLetterExchange: names.deadLetterExchange,
       queueArguments: { 'x-single-active-consumer': true },
       maxRetries: Infinity,
       maxRetryDelay: 60_000
@@ -63,6 +71,7 @@ export interface Publisher {
 // runs with no subscriber on the activity exchange when it is standalone.
 export async function startPublisher(
   url: string,
+  exchange: string,
   logger: Logger
 ): Promise<Publisher> {
   const client = new RabbitMQClient({ url, logger, publishMaxAttempts: 1 })
@@ -70,7 +79,7 @@ export async function startPublisher(
   return {
     async publish(event) {
       await client.publish(
-        ACTIVITY_EXCHANGE,
+        exchange,
         event.type,
         { ...event },
         {
