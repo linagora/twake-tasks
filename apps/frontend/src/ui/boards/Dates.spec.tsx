@@ -16,6 +16,20 @@ const change = (field: HTMLElement, value: string) => {
 }
 
 describe('Dates', () => {
+  it('says when a task has no dates', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+
+    expect(
+      panel.getByRole('button', { name: 'Edit dates' }).closest('dd')
+    ).toHaveTextContent('None')
+  })
+
   it('sets a due date and time, a deadline and a duration', async () => {
     const { board, logo, boardsApi } = logoBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })

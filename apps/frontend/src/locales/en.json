@@ -164,6 +164,7 @@
   },
   "dates": {
     "edit": "Edit dates",
+    "none": "None",
     "save": "Save dates",
     "dueDate": "Due date",
     "time": "Time",
@@ -223,7 +224,7 @@
   },
   "reminders": {
     "title": "Reminders",
-    "none": "No reminders.",
+    "none": "None",
     "remindMe": "Remind me",
     "setTime": "At a set time",
     "at": "At",
@@ -232,6 +233,7 @@
     "hoursBefore": "%{smart_count} hour before |||| %{smart_count} hours before",
     "daysBefore": "%{smart_count} day before |||| %{smart_count} days before",
     "add": "Add reminder",
+    "save": "Save reminder",
     "delete": "Delete reminder",
     "failed": "The reminder could not be saved."
   },

@@ -89,8 +89,9 @@ export function Chips({
         p: 0,
         display: 'flex',
         flexWrap: 'wrap',
+        alignItems: 'center',
         gap: 0.5,
-        width: '100%'
+        '& > li': { display: 'inline-flex', alignItems: 'center' }
       }}
     >
       {children}
