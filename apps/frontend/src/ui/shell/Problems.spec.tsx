@@ -13,13 +13,13 @@ describe('problem pages', () => {
   it('says a page does not exist and keeps the app around it', async () => {
     renderRoute('/no-such-page')
 
+    expect(await screen.findByRole('navigation')).toBeInTheDocument()
     expect(await screen.findByRole('status')).toHaveTextContent(
       'Page not found'
     )
     expect(
       screen.getByRole('link', { name: 'Back to boards' })
     ).toHaveAttribute('href', '/')
-    expect(screen.getByRole('navigation')).toBeInTheDocument()
   })
 
   it('offers a reload when a screen breaks', async () => {
