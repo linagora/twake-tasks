@@ -4,7 +4,7 @@ import { useState, type ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
 import { ApiError, type Shelf } from '@/application/boards'
-import { Column, Columns } from '@/ds/Columns'
+import { Column, ColumnAddButton, Columns } from '@/ds/Columns'
 import { PageHeader } from '@/ds/PageHeader'
 import type { Board, Section, Task } from '@/domain/board'
 import { ShelfDialog } from '@/ui/boards/Archive'
@@ -241,13 +241,15 @@ function AddTask({
 
   if (!open) {
     return (
-      <Button
+      <ColumnAddButton
         variant="text"
+        fullWidth
+        startIcon={<Icon icon={Plus} />}
         onClick={onOpen}
         aria-label={t('board.addTask', { section: sectionName })}
       >
-        +
-      </Button>
+        {t('board.newTask')}
+      </ColumnAddButton>
     )
   }
   return (

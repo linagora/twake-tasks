@@ -41,7 +41,9 @@ describe('BoardScreen', () => {
     const todo = within(column('To do'))
     const logo = todo.getByRole('article', { name: 'DES-1 Logo' })
     expect(within(logo).getByText('P1')).toBeInTheDocument()
-    expect(within(logo).getByText('Due Oct 12, 2026')).toBeInTheDocument()
+    expect(
+      within(logo).getByLabelText(/due Oct 12, 2026$/i)
+    ).toBeInTheDocument()
     expect(
       within(logo).getByRole('img', {
         name: 'Assigned to alice.martin@example.com'

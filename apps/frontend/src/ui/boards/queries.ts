@@ -245,7 +245,15 @@ export function useAddComment(
   return useMutation({
     mutationFn: (body: string) => api.addComment(boardId, taskId, body),
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: commentsKey(boardId, taskId) })
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: commentsKey(boardId, taskId)
+        }),
+        queryClient.invalidateQueries({
+          queryKey: boardKey(boardId),
+          exact: true
+        })
+      ])
   })
 }
 

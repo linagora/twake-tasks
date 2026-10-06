@@ -63,6 +63,7 @@ export function aTask(section: Section | null, overrides: Partial<Task> = {}) {
     canceledAt: null,
     assignees: [],
     labels: [],
+    commentCount: 0,
     ...overrides
   } satisfies Task
 }
@@ -503,7 +504,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
     ),
     addComment: vi.fn<BoardsApi['addComment']>((boardId, taskId, body) =>
       Promise.resolve().then(() => {
-        findTask(boardId, taskId)
+        findTask(boardId, taskId).commentCount += 1
         comments.set(taskId, [
           ...(comments.get(taskId) ?? []),
           {
