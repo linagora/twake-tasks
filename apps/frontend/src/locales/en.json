@@ -94,6 +94,8 @@
     "save": "Save",
     "cancel": "Cancel",
     "assignFailed": "The assignees could not be saved.",
+    "retryAssign": "Retry",
+    "noPeopleMatch": "No one matches “%{search}”",
     "labels": "Labels",
     "labelsTitle": "Labels of %{key}",
     "searchPeople": "Search people",

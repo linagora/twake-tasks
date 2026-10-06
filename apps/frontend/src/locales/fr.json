@@ -94,6 +94,8 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "assignFailed": "Les personnes assignées n'ont pas pu être enregistrées.",
+    "retryAssign": "Réessayer",
+    "noPeopleMatch": "Personne ne correspond à « %{search} »",
     "labels": "Étiquettes",
     "labelsTitle": "Étiquettes de %{key}",
     "searchPeople": "Rechercher une personne",

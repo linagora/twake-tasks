@@ -7,7 +7,7 @@ import {
   Typography
 } from '@linagora/twake-mui'
 import { CheckList, Comment, Dots, Icon } from '@linagora/twake-icons'
-import { useState, type ReactElement } from 'react'
+import { useState, type KeyboardEvent, type ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { Card, CardTitle, LabelChip, Meta, MetaChip } from '@/ds/Columns'
@@ -142,7 +142,19 @@ export function TaskCard({
       >
         <Icon icon={Dots} />
       </IconButton>
-    )
+    ),
+    onKeyDownCapture: (event: KeyboardEvent<HTMLElement>) => {
+      const plain = !event.ctrlKey && !event.metaKey && !event.altKey
+      if (
+        editable &&
+        plain &&
+        event.key === 'a' &&
+        event.target === event.currentTarget
+      ) {
+        event.preventDefault()
+        setAssigning(event.currentTarget)
+      }
+    }
   }
 
   // Portalled panels sit outside the card: React bubbles their pointer events
@@ -204,6 +216,7 @@ export function TaskCard({
           task={task}
           boardId={boardId}
           members={members}
+          tasks={tasks}
           anchor={assigning}
           onClose={() => {
             setAssigning(null)

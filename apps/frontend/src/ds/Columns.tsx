@@ -9,6 +9,7 @@ import {
 import {
   useId,
   type HTMLAttributes,
+  type KeyboardEventHandler,
   type ReactElement,
   type ReactNode,
   type Ref
@@ -152,6 +153,8 @@ export interface CardProps {
   label: string
   menu?: ReactNode
   children: ReactNode
+  // Capture phase: the drag sensor owns the card's own onKeyDown.
+  onKeyDownCapture?: KeyboardEventHandler<HTMLElement>
 }
 
 // The menu shows on hover or focus; touch screens always show it.

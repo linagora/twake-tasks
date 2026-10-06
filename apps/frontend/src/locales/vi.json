@@ -94,6 +94,8 @@
     "save": "Lưu",
     "cancel": "Hủy",
     "assignFailed": "Không thể lưu người được giao.",
+    "retryAssign": "Thử lại",
+    "noPeopleMatch": "Không ai khớp với “%{search}”",
     "labels": "Nhãn",
     "labelsTitle": "Nhãn của %{key}",
     "searchPeople": "Tìm người",

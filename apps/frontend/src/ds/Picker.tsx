@@ -1,13 +1,19 @@
 import { Check, Icon, Plus } from '@linagora/twake-icons'
 import {
   Box,
+  Button,
   MenuItem,
   MenuList,
   Popover,
   SearchBar,
   Typography
 } from '@linagora/twake-mui'
-import { useRef, type ReactElement, type ReactNode } from 'react'
+import {
+  useRef,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode
+} from 'react'
 
 export function PickerPopover({
   label,
@@ -16,6 +22,7 @@ export function PickerPopover({
   searchLabel,
   search,
   onSearch,
+  onPickFirst,
   footer,
   children
 }: {
@@ -25,10 +32,26 @@ export function PickerPopover({
   searchLabel: string
   search: string
   onSearch: (search: string) => void
+  onPickFirst?: () => void
   footer?: ReactNode
   children: ReactNode
 }): ReactElement {
   const searchRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
+
+  const onSearchKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      listRef.current
+        ?.querySelector<HTMLElement>(
+          '[role^="menuitem"]:not([aria-disabled="true"])'
+        )
+        ?.focus()
+    } else if (event.key === 'Enter' && onPickFirst) {
+      event.preventDefault()
+      onPickFirst()
+    }
+  }
 
   return (
     <Popover
@@ -55,6 +78,12 @@ export function PickerPopover({
           size="small"
           elevation={0}
           placeholder={searchLabel}
+          // SearchBar bakes in the light palette; the theme's CSS variables
+          // follow a color scheme switched at runtime.
+          sx={{
+            bgcolor: 'background.default',
+            '&:focus-within': { bgcolor: 'background.paper' }
+          }}
           value={search}
           onChange={event => {
             onSearch(event.target.value)
@@ -65,12 +94,17 @@ export function PickerPopover({
           componentsProps={{
             inputBase: {
               inputRef: searchRef,
-              inputProps: { 'aria-label': searchLabel, maxLength: 50 }
+              inputProps: {
+                'aria-label': searchLabel,
+                maxLength: 50,
+                onKeyDown: onSearchKeyDown
+              }
             }
           }}
         />
       </Box>
       <MenuList
+        ref={listRef}
         dense
         aria-label={label}
         sx={{ maxHeight: 320, overflowY: 'auto' }}
@@ -151,5 +185,26 @@ export function PickerEmpty({
     >
       {children}
     </Typography>
+  )
+}
+
+export function PickerError({
+  retryLabel,
+  onRetry,
+  children
+}: {
+  retryLabel: string
+  onRetry: () => void
+  children: ReactNode
+}): ReactElement {
+  return (
+    <Box role="alert" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Typography variant="caption" color="error" sx={{ flex: 1 }}>
+        {children}
+      </Typography>
+      <Button size="small" variant="text" onClick={onRetry}>
+        {retryLabel}
+      </Button>
+    </Box>
   )
 }
