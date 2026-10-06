@@ -99,7 +99,16 @@ export function TopBarSearch({
   children: ReactNode
 }): ReactElement {
   return (
-    <Box sx={{ flex: '1 1 auto', minWidth: 0, maxWidth: 640 }}>{children}</Box>
+    <Box
+      sx={{
+        flex: '1 1 auto',
+        minWidth: 0,
+        maxWidth: 640,
+        '& input::-webkit-search-cancel-button': { display: 'none' }
+      }}
+    >
+      {children}
+    </Box>
   )
 }
 
