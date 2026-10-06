@@ -81,6 +81,13 @@ export async function projectOf(
   return row?.projectId
 }
 
+// Names are copied onto memberships at sign-in, so a new membership starts
+// from one the person already has.
+const knownName = (userId: string) =>
+  sql<string | null>`(select ${projectMembers.name} from ${projectMembers}
+    where ${projectMembers.userId} = ${userId} and ${projectMembers.name} is not null
+    limit 1)`
+
 export async function upsertMembers(
   tx: Tx,
   space: SpaceRef,
@@ -100,7 +107,8 @@ export async function upsertMembers(
                 organizationId: space.organizationId,
                 userId: uuid,
                 email,
-                role
+                role,
+                name: knownName(uuid)
               }
             ] as const
           ]
