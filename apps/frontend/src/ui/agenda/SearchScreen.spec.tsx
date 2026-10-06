@@ -82,7 +82,7 @@ describe('SearchScreen', () => {
       'Search'
     )
 
-    fireEvent.click(screen.getByRole('link', { name: 'Twake Tasks' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Twake Project' }))
 
     await waitFor(() => {
       expect(field).toHaveValue('')

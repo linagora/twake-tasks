@@ -1,4 +1,4 @@
-# Twake Tasks
+# Twake Project
 
 Task management for Twake Workplace.
 

@@ -15,7 +15,7 @@
     "canceled": "Le déplacement de %{task} est annulé."
   },
   "app": {
-    "name": "Twake Tasks",
+    "name": "Twake Project",
     "loading": "Chargement"
   },
   "session": {

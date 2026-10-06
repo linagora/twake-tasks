@@ -15,7 +15,7 @@
     "canceled": "Перемещение задачи %{task} отменено."
   },
   "app": {
-    "name": "Twake Tasks",
+    "name": "Twake Project",
     "loading": "Загрузка"
   },
   "session": {
