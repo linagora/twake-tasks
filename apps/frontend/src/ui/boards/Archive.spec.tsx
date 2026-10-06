@@ -19,7 +19,8 @@ async function removeLogo(action: 'Archive' | 'Delete') {
   const panel = within(
     await screen.findByRole('dialog', { name: 'DES-1 Logo' })
   )
-  fireEvent.click(panel.getByRole('button', { name: action }))
+  fireEvent.click(panel.getByRole('button', { name: 'Task options' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: action }))
   await waitFor(() => {
     expect(screen.queryByRole('button', { name: 'Logo' })).toBeNull()
   })
@@ -107,6 +108,6 @@ describe('archive and trash', () => {
     const panel = within(
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     )
-    expect(panel.queryByRole('button', { name: 'Archive' })).toBeNull()
+    expect(panel.queryByRole('button', { name: 'Task options' })).toBeNull()
   })
 })

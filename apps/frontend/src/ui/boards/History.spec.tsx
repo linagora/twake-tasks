@@ -29,11 +29,12 @@ describe('History', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+    fireEvent.click(await screen.findByRole('tab', { name: 'History' }))
     const history = within(await screen.findByRole('list', { name: 'History' }))
 
     expect(
       (await history.findAllByRole('listitem')).map(
-        item => item.textContent.split(' · ')[0]
+        item => within(item).getByRole('paragraph').textContent.split(' · ')[0]
       )
     ).toEqual([
       'alice@example.com assigned bob@example.com',

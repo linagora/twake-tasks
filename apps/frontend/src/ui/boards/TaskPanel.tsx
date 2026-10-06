@@ -1,9 +1,14 @@
+import { CheckList, Cross, Dots, Icon, Pen } from '@linagora/twake-icons'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
+  Menu,
+  MenuItem,
+  Tab,
+  Tabs,
   TextField,
   Typography
 } from '@linagora/twake-mui'
@@ -11,19 +16,22 @@ import { useId, useState, type ReactElement } from 'react'
 import Markdown from 'react-markdown'
 
 import { ApiError } from '@/application/boards'
+import { Grow, Inline, PanelSection, SidePanel } from '@/ds/SidePanel'
 import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
-import { RemoveTask } from '@/ui/boards/Archive'
-import { TransferTask } from '@/ui/boards/TransferTask'
+import { useRemoveTask } from '@/ui/boards/Archive'
 import { Comments } from '@/ui/boards/Comments'
-import { Dates } from '@/ui/boards/Dates'
 import { History } from '@/ui/boards/History'
 import { FollowButton } from '@/ui/boards/Notifications'
-import { Reminders } from '@/ui/boards/Reminders'
 import {
+  useBoard,
+  useBoards,
   useCreateTask,
   useDescription,
   useSetDescription
 } from '@/ui/boards/queries'
+import { Subtasks } from '@/ui/boards/Subtasks'
+import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
+import { TransferTask } from '@/ui/boards/TransferTask'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function TaskPanel({
@@ -40,7 +48,215 @@ export function TaskPanel({
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
+  const board = useBoard(boardId).data
+  const [tab, setTab] = useState<'comments' | 'history'>('comments')
+  const tabsId = useId()
+  const children = board?.tasks.filter(each => each.parentId === task.id) ?? []
+  const done = children.filter(each => each.completedAt !== null).length
+
+  return (
+    <SidePanel
+      label={`${task.key} ${task.title}`}
+      onClose={onClose}
+      header={
+        <>
+          <Typography variant="body2" color="textSecondary">
+            {task.key}
+          </Typography>
+          <Grow />
+          <FollowButton task={task} boardId={boardId} />
+          {editable && (
+            <TaskMenu task={task} boardId={boardId} onRemoved={onClose} />
+          )}
+          <IconButton
+            size="small"
+            aria-label={t('task.close')}
+            onClick={onClose}
+          >
+            <Icon icon={Cross} />
+          </IconButton>
+        </>
+      }
+    >
+      <Title task={task} boardId={boardId} editable={editable} />
+      <TaskProperties
+        task={task}
+        boardId={boardId}
+        board={board}
+        editable={editable}
+      />
+      <Description task={task} boardId={boardId} editable={editable} />
+      {(children.length > 0 || (editable && depth < MAX_TASK_DEPTH)) && (
+        <PanelSection
+          title={t('task.subtasks')}
+          action={
+            children.length > 0 && (
+              <Inline>
+                <Icon icon={CheckList} size={14} />
+                <Typography variant="body2" color="textSecondary">
+                  {`${String(done)}/${String(children.length)}`}
+                </Typography>
+              </Inline>
+            )
+          }
+        >
+          {board && (
+            <Subtasks
+              parentId={task.id}
+              tasks={board.tasks}
+              boardId={boardId}
+              editable={editable}
+              depth={depth + 1}
+              label={t('task.subtasks')}
+            />
+          )}
+          {editable && depth < MAX_TASK_DEPTH && (
+            <AddSubtask task={task} boardId={boardId} />
+          )}
+        </PanelSection>
+      )}
+      <div>
+        <Tabs
+          value={tab}
+          onChange={(_event, value: 'comments' | 'history') => {
+            setTab(value)
+          }}
+        >
+          <Tab
+            value="comments"
+            label={t('task.comments')}
+            id={`${tabsId}-comments`}
+            aria-controls={`${tabsId}-panel`}
+          />
+          <Tab
+            value="history"
+            label={t('history.heading')}
+            id={`${tabsId}-history`}
+            aria-controls={`${tabsId}-panel`}
+          />
+        </Tabs>
+        <div
+          role="tabpanel"
+          id={`${tabsId}-panel`}
+          aria-labelledby={`${tabsId}-${tab}`}
+          className="u-pt-1"
+        >
+          {tab === 'comments' ? (
+            <Comments task={task} boardId={boardId} />
+          ) : (
+            <History task={task} boardId={boardId} />
+          )}
+        </div>
+      </div>
+    </SidePanel>
+  )
+}
+
+function TaskMenu({
+  task,
+  boardId,
+  onRemoved
+}: {
+  task: Task
+  boardId: string
+  onRemoved: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const [moving, setMoving] = useState(false)
   const titleId = useId()
+  const remove = useRemoveTask(boardId, task)
+  const boards = useBoards()
+  const movable =
+    task.parentId === null &&
+    (boards.data?.some(
+      board =>
+        board.id !== boardId && board.role !== 'viewer' && !board.archived
+    ) ??
+      false)
+  const choose = (action: () => void) => () => {
+    setAnchor(null)
+    action()
+  }
+
+  return (
+    <>
+      <IconButton
+        size="small"
+        aria-label={t('task.options')}
+        aria-haspopup="menu"
+        aria-expanded={anchor !== null}
+        onClick={event => {
+          setAnchor(event.currentTarget)
+        }}
+      >
+        <Icon icon={Dots} />
+      </IconButton>
+      {remove.isError && (
+        <Typography role="alert" variant="caption" color="error">
+          {t('archive.failed')}
+        </Typography>
+      )}
+      <Menu
+        anchorEl={anchor}
+        open={anchor !== null}
+        onClose={() => {
+          setAnchor(null)
+        }}
+      >
+        {movable && (
+          <MenuItem
+            onClick={choose(() => {
+              setMoving(true)
+            })}
+          >
+            {t('transfer.title')}
+          </MenuItem>
+        )}
+        <MenuItem
+          onClick={choose(() => {
+            remove.mutate('archived', { onSuccess: onRemoved })
+          })}
+        >
+          {t('archive.archive')}
+        </MenuItem>
+        <MenuItem
+          onClick={choose(() => {
+            remove.mutate('trash', { onSuccess: onRemoved })
+          })}
+        >
+          {t('archive.delete')}
+        </MenuItem>
+      </Menu>
+      {moving && (
+        <Dialog
+          open
+          onClose={() => {
+            setMoving(false)
+          }}
+          aria-labelledby={titleId}
+          size="small"
+        >
+          <DialogTitle id={titleId}>{t('transfer.title')}</DialogTitle>
+          <DialogContent>
+            <TransferTask task={task} boardId={boardId} onMoved={onRemoved} />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  )
+}
+
+function Description({
+  task,
+  boardId,
+  editable
+}: {
+  task: Task
+  boardId: string
+  editable: boolean
+}): ReactElement {
+  const { t } = useI18n()
   const description = useDescription(boardId, task.id)
   const save = useSetDescription(boardId, task.id)
   const [draft, setDraft] = useState<string | null>(null)
@@ -48,99 +264,89 @@ export function TaskPanel({
     save.error instanceof ApiError && save.error.code === 'stale_version'
 
   return (
-    <Dialog open onClose={onClose} aria-labelledby={titleId} size="medium">
-      <DialogTitle id={titleId}>{`${task.key} ${task.title}`}</DialogTitle>
-      <DialogContent>
-        <FollowButton task={task} boardId={boardId} />
-        <Dates task={task} boardId={boardId} editable={editable} />
-        {editable && depth < MAX_TASK_DEPTH && (
-          <AddSubtask task={task} boardId={boardId} />
-        )}
-        {editable && task.parentId === null && (
-          <TransferTask task={task} boardId={boardId} onMoved={onClose} />
-        )}
-        {description.isError && (
-          <Typography role="alert">{t('task.loadFailed')}</Typography>
-        )}
-        {description.data && draft === null && (
-          <>
-            <Markdown>{description.data.markdown}</Markdown>
-            {editable && (
-              <Button
-                variant="text"
-                onClick={() => {
-                  setDraft(description.data.markdown)
-                }}
-              >
-                {t('task.editDescription')}
-              </Button>
-            )}
-          </>
-        )}
-        {description.data && draft !== null && (
-          <form
-            id={`${titleId}-form`}
-            onSubmit={event => {
-              event.preventDefault()
-              save.mutate(
-                { markdown: draft, version: description.data.version },
-                {
-                  onSuccess: () => {
-                    setDraft(null)
-                  }
-                }
-              )
-            }}
-          >
-            <TextField
-              label={t('task.description')}
-              value={draft}
-              onChange={event => {
-                setDraft(event.target.value)
-              }}
-              multiline
-              minRows={6}
-              fullWidth
-              margin="dense"
-              slotProps={{ htmlInput: { maxLength: 50_000 } }}
-            />
-            {save.isError && (
-              <Typography role="alert">
-                {stale ? t('task.stale') : t('task.saveFailed')}
-              </Typography>
-            )}
-          </form>
-        )}
-        <Reminders task={task} boardId={boardId} />
-        <Comments task={task} boardId={boardId} />
-        <History task={task} boardId={boardId} />
-      </DialogContent>
-      {draft === null && editable && (
-        <DialogActions>
-          <RemoveTask task={task} boardId={boardId} onRemoved={onClose} />
-        </DialogActions>
-      )}
-      {draft !== null && (
-        <DialogActions>
+    <PanelSection
+      title={t('task.description')}
+      action={
+        editable &&
+        description.data &&
+        draft === null && (
           <Button
             variant="text"
+            size="small"
+            startIcon={<Icon icon={Pen} size={14} />}
+            aria-label={t('task.editDescription')}
             onClick={() => {
-              save.reset()
-              setDraft(null)
+              setDraft(description.data.markdown)
             }}
           >
-            {t('board.cancel')}
+            {t('task.edit')}
           </Button>
-          <Button
-            type="submit"
-            form={`${titleId}-form`}
-            disabled={save.isPending}
-          >
-            {t('board.save')}
-          </Button>
-        </DialogActions>
+        )
+      }
+    >
+      {description.isError && (
+        <Typography role="alert">{t('task.loadFailed')}</Typography>
       )}
-    </Dialog>
+      {description.data &&
+        draft === null &&
+        (description.data.markdown.trim() ? (
+          <Typography component="div" variant="body2">
+            <Markdown>{description.data.markdown}</Markdown>
+          </Typography>
+        ) : (
+          <Typography variant="body2" color="textSecondary">
+            {t('task.noDescription')}
+          </Typography>
+        ))}
+      {description.data && draft !== null && (
+        <form
+          onSubmit={event => {
+            event.preventDefault()
+            save.mutate(
+              { markdown: draft, version: description.data.version },
+              {
+                onSuccess: () => {
+                  setDraft(null)
+                }
+              }
+            )
+          }}
+        >
+          <TextField
+            label={t('task.description')}
+            value={draft}
+            onChange={event => {
+              setDraft(event.target.value)
+            }}
+            multiline
+            minRows={6}
+            fullWidth
+            margin="dense"
+            slotProps={{ htmlInput: { maxLength: 50_000 } }}
+          />
+          {save.isError && (
+            <Typography role="alert">
+              {stale ? t('task.stale') : t('task.saveFailed')}
+            </Typography>
+          )}
+          <Inline>
+            <Button type="submit" size="small" disabled={save.isPending}>
+              {t('board.save')}
+            </Button>
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => {
+                save.reset()
+                setDraft(null)
+              }}
+            >
+              {t('board.cancel')}
+            </Button>
+          </Inline>
+        </form>
+      )}
+    </PanelSection>
   )
 }
 
@@ -159,6 +365,8 @@ function AddSubtask({
     return (
       <Button
         variant="text"
+        size="small"
+        startIcon={<Icon icon={CheckList} size={14} />}
         onClick={() => {
           setTitle('')
         }}
@@ -197,13 +405,24 @@ function AddSubtask({
           {t('board.addFailed')}
         </Typography>
       )}
-      <Button
-        type="submit"
-        size="small"
-        disabled={create.isPending || !title.trim()}
-      >
-        {t('board.add')}
-      </Button>
+      <Inline>
+        <Button
+          type="submit"
+          size="small"
+          disabled={create.isPending || !title.trim()}
+        >
+          {t('board.add')}
+        </Button>
+        <Button
+          variant="text"
+          size="small"
+          onClick={() => {
+            setTitle(null)
+          }}
+        >
+          {t('board.cancel')}
+        </Button>
+      </Inline>
     </form>
   )
 }

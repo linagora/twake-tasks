@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { ApiError } from '@/application/boards'
@@ -80,6 +80,107 @@ describe('TaskPanel', () => {
     )
   })
 
+  it('renames the task in place', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    const title = panel.getByRole('textbox', { name: 'Title' })
+    fireEvent.change(title, { target: { value: 'Logo v2' } })
+    fireEvent.blur(title)
+
+    await waitFor(() => {
+      expect(boardsApi.editTask).toHaveBeenCalledWith(board.id, logo.id, {
+        title: 'Logo v2'
+      })
+    })
+  })
+
+  it('sets the priority from its row', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.mouseDown(panel.getByRole('combobox', { name: 'Priority' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'P2' }))
+
+    await waitFor(() => {
+      expect(boardsApi.editTask).toHaveBeenCalledWith(board.id, logo.id, {
+        priority: 2
+      })
+    })
+  })
+
+  it('moves the task to another section from its row', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.mouseDown(panel.getByRole('combobox', { name: 'Section' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Done' }))
+
+    await waitFor(() => {
+      expect(boardsApi.moveTask).toHaveBeenCalledWith(board.id, logo.id, {
+        sectionId: board.sections[2]?.id
+      })
+    })
+  })
+
+  it('lists the assignees and labels', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    Object.assign(logo, {
+      assignees: [{ userId: 'ann', email: 'ann@example.com' }],
+      labels: [{ id: 'l1', name: 'Urgent' }]
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+
+    expect(panel.getByText('ann@example.com')).toBeVisible()
+    expect(panel.getByText('Urgent')).toBeVisible()
+    expect(
+      panel.getByRole('button', { name: 'Edit assignees' })
+    ).toBeInTheDocument()
+    expect(
+      panel.getByRole('button', { name: 'Edit labels' })
+    ).toBeInTheDocument()
+  })
+
+  it('lists the sub-tasks and completes one', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    const sketch = aTask(null, {
+      key: 'DES-2',
+      title: 'Sketch',
+      parentId: logo.id
+    })
+    board.tasks.push(sketch)
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    const subtasks = within(panel.getByRole('list', { name: 'Sub-tasks' }))
+    fireEvent.click(subtasks.getByRole('checkbox', { name: 'Sketch' }))
+
+    await waitFor(() => {
+      expect(boardsApi.completeTask).toHaveBeenCalledWith(
+        board.id,
+        sketch.id,
+        'completed'
+      )
+    })
+  })
+
+  it('closes from its close button', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(panel.getByRole('button', { name: 'Close' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+  })
+
   it('offers no edit to a viewer', async () => {
     const { board, boardsApi } = logoBoard()
     board.role = 'viewer'
@@ -91,5 +192,7 @@ describe('TaskPanel', () => {
     expect(
       panel.queryByRole('button', { name: 'Edit description' })
     ).not.toBeInTheDocument()
+    expect(panel.queryByRole('textbox', { name: 'Title' })).toBeNull()
+    expect(panel.getByRole('heading', { name: 'Logo' })).toBeVisible()
   })
 })
