@@ -14,6 +14,8 @@ import type { Identity } from '../auth/index.ts'
 import { shift, todayIn } from './recurrence.ts'
 import {
   labels,
+  projectMembers,
+  projects,
   savedFilters,
   taskAssignees,
   taskLabels,
@@ -96,6 +98,33 @@ export function createFilterStore(db: Db) {
           .returning({ id: savedFilters.id })
         if (!row) throw new Error('filter insert returned nothing')
         return row
+      })
+    },
+
+    // A label criterion matches any case, so names differing only by case are one.
+    labelNames(identity: Identity) {
+      return writeOrRefuse(db, identity, async tx => {
+        const rows = await tx
+          .selectDistinctOn([sql`lower(${labels.name})`], {
+            name: labels.name
+          })
+          .from(labels)
+          .innerJoin(
+            projects,
+            and(eq(projects.id, labels.projectId), isNull(projects.deletedAt))
+          )
+          .innerJoin(
+            projectMembers,
+            and(
+              eq(projectMembers.projectId, projects.id),
+              eq(projectMembers.userId, identity.userId)
+            )
+          )
+          .orderBy(
+            sql`lower(${labels.name})`,
+            sql`${labels.name} collate "C" desc`
+          )
+        return rows.map(row => row.name)
       })
     },
 

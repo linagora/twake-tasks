@@ -445,6 +445,18 @@ export function registerBoards(
     }
   )
 
+  app.get(
+    '/labels',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await filterStore.labelNames(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return { labels: result.value }
+    }
+  )
+
   app.post(
     '/filters',
     { preHandler: deps.requireIdentity },

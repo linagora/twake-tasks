@@ -52,6 +52,7 @@ export function TaskRow({
   title,
   context,
   facts,
+  check,
   leading,
   trailing,
   unread = false
@@ -60,6 +61,7 @@ export function TaskRow({
   title: ReactNode
   context: string
   facts?: ReactNode
+  check?: ReactNode
   leading?: ReactNode
   trailing?: ReactNode
   unread?: boolean
@@ -72,9 +74,10 @@ export function TaskRow({
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
-        gap: 2,
+        gap: check ? 1 : 2,
         minHeight: 56,
-        px: 2,
+        pl: check ? 1 : 2,
+        pr: 2,
         py: 1,
         bgcolor: 'background.paper',
         '& + &': { borderTop: 1, borderColor: 'divider' },
@@ -85,6 +88,11 @@ export function TaskRow({
         '& a:focus-visible': { outline: 'none' }
       }}
     >
+      {check && (
+        <Box sx={{ position: 'relative', zIndex: 1, flexShrink: 0 }}>
+          {check}
+        </Box>
+      )}
       {leading && (
         <Box
           aria-hidden
@@ -136,9 +144,10 @@ export function TaskRow({
           <Box
             sx={{
               display: 'flex',
+              flexWrap: 'wrap',
               alignItems: 'center',
               gap: 1,
-              flexShrink: 0
+              minWidth: 0
             }}
           >
             {facts}

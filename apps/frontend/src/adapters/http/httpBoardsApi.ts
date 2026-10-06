@@ -80,6 +80,8 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (await call<{ filters: SavedFilter[] }>('GET', '/filters')).filters,
     createFilter: filter => call('POST', '/filters', filter),
     deleteFilter: filterId => call('DELETE', `/filters/${filterId}`),
+    labelNames: async () =>
+      (await call<{ labels: string[] }>('GET', '/labels')).labels,
     filteredTasks: async (filterId, zone) =>
       (
         await call<{ tasks: AgendaTask[] }>(

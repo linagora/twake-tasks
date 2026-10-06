@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -40,14 +40,15 @@ describe('AgendaScreen', () => {
     expect(boardsApi.agenda).toHaveBeenCalledWith(localZone(), 1)
   })
 
-  it('shows the key, board, priority and assignees of each task', async () => {
+  it('shows the key, board, priority, assignees and labels of each task', async () => {
     const { design, boardsApi } = boards()
     design.tasks[0] = aTask(null, {
       key: 'DES-1',
       title: 'Logo',
       dueDate: day(0),
       priority: 1,
-      assignees: [{ userId: 'u1', email: 'ana@example.com' }]
+      assignees: [{ userId: 'u1', email: 'ana@example.com' }],
+      labels: [{ id: 'l1', name: 'client' }]
     })
     renderRoute('/today', { boardsApi })
 
@@ -57,6 +58,62 @@ describe('AgendaScreen', () => {
     expect(row.getByRole('img', { name: 'Priority 1' })).toBeVisible()
     expect(
       row.getByRole('img', { name: 'Assigned to ana@example.com' })
+    ).toBeVisible()
+    expect(row.getByText('client')).toBeVisible()
+  })
+
+  it('completes a task from its row', async () => {
+    const { design, boardsApi } = boards()
+    renderRoute('/today', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('checkbox', { name: 'Complete Logo' })
+    )
+
+    await waitFor(() => {
+      expect(boardsApi.completeTask).toHaveBeenCalledWith(
+        design.id,
+        design.tasks[0]?.id,
+        'completed'
+      )
+    })
+    await waitFor(() => {
+      expect(screen.queryByText('Logo')).not.toBeInTheDocument()
+    })
+  })
+
+  it('completes a task in a section by moving it to the done one', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    const [todo, , done] = design.sections
+    design.tasks = [
+      aTask(todo ?? null, { key: 'DES-1', title: 'Logo', dueDate: day(0) })
+    ]
+    const boardsApi = fakeBoardsApi([design])
+    renderRoute('/today', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('checkbox', { name: 'Complete Logo' })
+    )
+
+    await waitFor(() => {
+      expect(boardsApi.moveTask).toHaveBeenCalledWith(
+        design.id,
+        design.tasks[0]?.id,
+        { sectionId: done?.id }
+      )
+    })
+  })
+
+  it('leaves the day out of rows already grouped by day', async () => {
+    const { boardsApi } = boards()
+    renderRoute('/upcoming', { boardsApi })
+
+    const flyer = within(await screen.findByRole('listitem', { name: /Flyer/ }))
+    expect(flyer.queryByLabelText(/due /i)).toBeNull()
+    expect(
+      within(screen.getByRole('listitem', { name: /Poster/ })).getByLabelText(
+        /^Overdue, due /
+      )
     ).toBeVisible()
   })
 
@@ -107,6 +164,14 @@ describe('AgendaScreen', () => {
 
     expect(await findEmptyState('Nothing due')).toHaveTextContent(
       'You are all caught up.'
+    )
+  })
+
+  it('says when nothing is assigned to me', async () => {
+    renderRoute('/mine', { boardsApi: fakeBoardsApi() })
+
+    expect(await findEmptyState('Nothing assigned to you')).toHaveTextContent(
+      'Tasks assigned to you on any board show up here.'
     )
   })
 

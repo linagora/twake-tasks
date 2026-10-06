@@ -398,6 +398,9 @@
     "overdue": "Overdue",
     "empty": "Nothing due",
     "emptyHint": "You are all caught up.",
-    "loadFailed": "Your tasks could not be loaded."
+    "loadFailed": "Your tasks could not be loaded.",
+    "mineEmpty": "Nothing assigned to you",
+    "mineEmptyHint": "Tasks assigned to you on any board show up here.",
+    "completeFailed": "Couldn’t complete the task."
   }
 }

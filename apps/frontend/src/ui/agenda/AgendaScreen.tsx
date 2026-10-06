@@ -1,55 +1,97 @@
-import { CheckCircle } from '@linagora/twake-icons'
-import { Link, Typography } from '@linagora/twake-mui'
+import { CheckCircle, Profile } from '@linagora/twake-icons'
+import { Checkbox, Link, Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
 import type { AgendaTask } from '@/application/boards'
+import { LabelChip } from '@/ds/Columns'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import { formatDay } from '@/ui/boards/dueLabel'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
-import { useAgenda, useFilters, type AgendaView } from '@/ui/boards/queries'
+import {
+  useAgenda,
+  useCompleteAgendaTask,
+  useFilters,
+  type AgendaView
+} from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 export function Group({
   label,
   tasks,
-  tone
+  tone,
+  dated = false
 }: {
   label: string
   tasks: AgendaTask[]
   tone?: 'error'
+  dated?: boolean
 }): ReactElement {
   return (
     <TaskGroup label={label} count={tasks.length} tone={tone}>
       {tasks.map(task => (
-        <TaskRow
-          key={task.id}
-          label={`${task.key} ${task.title}`}
-          title={
-            <Link
-              component={RouterLink}
-              to={`/boards/${task.boardId}?task=${task.key}`}
-            >
-              {task.title}
-            </Link>
-          }
-          context={`${task.key} · ${task.boardName}`}
-          facts={
-            <>
-              {task.priority !== null && (
-                <PriorityChip priority={task.priority} />
-              )}
-              <DueChip task={task} />
-              {task.assignees.length > 0 && (
-                <Assignees people={task.assignees} />
-              )}
-            </>
-          }
-        />
+        <AgendaRow key={task.id} task={task} showDue={!dated} />
       ))}
     </TaskGroup>
+  )
+}
+
+function AgendaRow({
+  task,
+  showDue
+}: {
+  task: AgendaTask
+  showDue: boolean
+}): ReactElement {
+  const { t } = useI18n()
+  const complete = useCompleteAgendaTask()
+  const done = task.completedAt !== null
+
+  return (
+    <TaskRow
+      label={`${task.key} ${task.title}`}
+      check={
+        <Checkbox
+          size="small"
+          checked={done || complete.isPending || complete.isSuccess}
+          disabled={done || task.canceledAt !== null || complete.isPending}
+          slotProps={{
+            input: {
+              'aria-label': t('layout.complete', { title: task.title })
+            }
+          }}
+          onChange={() => {
+            complete.mutate(task)
+          }}
+        />
+      }
+      title={
+        <Link
+          component={RouterLink}
+          to={`/boards/${task.boardId}?task=${task.key}`}
+        >
+          {task.title}
+        </Link>
+      }
+      context={`${task.key} · ${task.boardName}`}
+      facts={
+        <>
+          {complete.isError && (
+            <Typography role="alert" variant="caption" color="error">
+              {t('agenda.completeFailed')}
+            </Typography>
+          )}
+          {task.priority !== null && <PriorityChip priority={task.priority} />}
+          {showDue && <DueChip task={task} />}
+          {task.labels.map(label => (
+            <LabelChip key={label.id} name={label.name} />
+          ))}
+          {task.assignees.length > 0 && <Assignees people={task.assignees} />}
+        </>
+      }
+    />
   )
 }
 
@@ -98,13 +140,21 @@ export function AgendaScreen(
         <Typography role="alert">{t('agenda.loadFailed')}</Typography>
       )}
       {agenda.isPending && <ListSkeleton label={t('app.loading')} />}
-      {agenda.isSuccess && tasks.length === 0 && (
-        <EmptyState
-          icon={CheckCircle}
-          title={t('agenda.empty')}
-          text={t('agenda.emptyHint')}
-        />
-      )}
+      {agenda.isSuccess &&
+        tasks.length === 0 &&
+        (view === 'mine' ? (
+          <EmptyState
+            icon={Profile}
+            title={t('agenda.mineEmpty')}
+            text={t('agenda.mineEmptyHint')}
+          />
+        ) : (
+          <EmptyState
+            icon={CheckCircle}
+            title={t('agenda.empty')}
+            text={t('agenda.emptyHint')}
+          />
+        ))}
       {overdue.length > 0 && (
         <Group label={t('agenda.overdue')} tasks={overdue} tone="error" />
       )}
@@ -113,6 +163,7 @@ export function AgendaScreen(
           key={day}
           label={day === today ? t('agenda.today') : formatDay(day, lang)}
           tasks={tasks.filter(task => task.dueDate === day)}
+          dated
         />
       ))}
       {undated.length > 0 && (

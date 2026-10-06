@@ -16,7 +16,8 @@ import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import {
   useCreateFilter,
   useDeleteFilter,
-  useFilters
+  useFilters,
+  useLabelNames
 } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -35,6 +36,7 @@ export function FiltersScreen(): ReactElement {
   const { t } = useI18n()
   const filters = useFilters()
   const remove = useDeleteFilter()
+  const [creating, setCreating] = useState(false)
   useDocumentTitle(t('filters.title'))
   const summary = (criteria: FilterCriteria) => {
     const parts = [
@@ -57,9 +59,28 @@ export function FiltersScreen(): ReactElement {
 
   return (
     <main className="u-p-2">
-      <Typography variant="h3" component="h1" className="u-mb-2">
-        {t('filters.title')}
-      </Typography>
+      <div className="u-flex u-flex-items-center u-flex-justify-between u-mb-2">
+        <Typography variant="h3" component="h1">
+          {t('filters.title')}
+        </Typography>
+        {!creating && (
+          <Button
+            startIcon={<Icon icon={Plus} />}
+            onClick={() => {
+              setCreating(true)
+            }}
+          >
+            {t('filters.new')}
+          </Button>
+        )}
+      </div>
+      {creating && (
+        <NewFilter
+          onClose={() => {
+            setCreating(false)
+          }}
+        />
+      )}
       {filters.isError && (
         <Typography role="alert">{t('filters.loadFailed')}</Typography>
       )}
@@ -100,14 +121,14 @@ export function FiltersScreen(): ReactElement {
           ))}
         </TaskGroup>
       )}
-      <NewFilter />
     </main>
   )
 }
 
-function NewFilter(): ReactElement {
+function NewFilter({ onClose }: { onClose: () => void }): ReactElement {
   const { t } = useI18n()
   const create = useCreateFilter()
+  const labelNames = useLabelNames()
   const [name, setName] = useState('')
   const [assignee, setAssignee] = useState<(typeof ASSIGNEES)[number]>('')
   const [priority, setPriority] = useState<(typeof PRIORITIES)[number]>('')
@@ -117,7 +138,7 @@ function NewFilter(): ReactElement {
   const criteria: FilterCriteria = {
     ...(assignee && { assignee }),
     ...(priority && { priority: Number(priority) }),
-    ...(label.trim() && { label: label.trim() }),
+    ...(label && { label }),
     ...(due && { due })
   }
 
@@ -126,14 +147,7 @@ function NewFilter(): ReactElement {
       title={t('filters.new')}
       onSubmit={event => {
         event.preventDefault()
-        create.mutate(
-          { name: name.trim(), criteria },
-          {
-            onSuccess: () => {
-              setName('')
-            }
-          }
-        )
+        create.mutate({ name: name.trim(), criteria }, { onSuccess: onClose })
       }}
       actions={
         <>
@@ -142,6 +156,9 @@ function NewFilter(): ReactElement {
               {t('filters.saveFailed')}
             </Typography>
           )}
+          <Button variant="text" onClick={onClose}>
+            {t('board.cancel')}
+          </Button>
           <Button
             type="submit"
             startIcon={<Icon icon={Plus} />}
@@ -193,13 +210,21 @@ function NewFilter(): ReactElement {
         ))}
       </TextField>
       <TextField
+        select
         label={t('filters.label')}
         value={label}
         onChange={event => {
           setLabel(event.target.value)
         }}
-        slotProps={{ htmlInput: { maxLength: 50 } }}
-      />
+        slotProps={SELECT_SLOTS}
+      >
+        <option value="">{t('filters.assignees.any')}</option>
+        {labelNames.data?.map(name => (
+          <option key={name} value={name}>
+            {name}
+          </option>
+        ))}
+      </TextField>
       <TextField
         select
         label={t('filters.due')}
