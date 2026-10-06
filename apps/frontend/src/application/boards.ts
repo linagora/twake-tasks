@@ -161,8 +161,6 @@ export interface BoardsApi {
    * labels and assignees the project does not have.
    */
   moveToProject: (boardId: string, projectId: string) => Promise<void>
-  /** The project a space's boards live in, for the space embed. */
-  projectOfSpace: (spaceId: string) => Promise<string>
   /** A user's board's members and pending invites. Admins only. */
   getSharing: (boardId: string) => Promise<Sharing>
   /** Resolves whether or not the email has an account. */

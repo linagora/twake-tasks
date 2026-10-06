@@ -14,12 +14,6 @@ function projectBoardsApi(boards: Board[]) {
   return boardsApi
 }
 
-function spaceBoardsApi(boards: Board[]) {
-  const boardsApi = fakeBoardsApi(boards)
-  boardsApi.spaceProjects.set('s1', roadmap.id)
-  return boardsApi
-}
-
 beforeEach(() => {
   window.TWAKE_SPACE_ORIGIN = `${SPACE} http://localhost:3000`
 })
@@ -30,29 +24,12 @@ afterEach(() => {
 })
 
 describe('the embedded view', () => {
-  it("lists the space's boards, without the app's navigation", async () => {
-    const boardsApi = spaceBoardsApi([
-      aBoard({ name: 'Roadmap', project: roadmap }),
-      aBoard({ name: 'Old roadmap', project: roadmap, archived: true }),
-      aBoard({ name: 'Elsewhere', project: aProject({ managed: true }) }),
-      aBoard({ name: 'Mine' })
-    ])
-    renderRoute('/embed/spaces/s1', { boardsApi })
-
-    const list = await screen.findByRole('list', { name: 'Boards' })
-    expect(
-      within(list)
-        .getAllByRole('link')
-        .map(link => link.textContent)
-    ).toEqual(['Roadmap'])
-    expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
-  })
-
-  it("lists a project's boards from its id", async () => {
+  it("lists a project's boards, without the app's navigation", async () => {
     renderRoute(`/embed/projects/${roadmap.id}`, {
       boardsApi: projectBoardsApi([
         aBoard({ name: 'Roadmap', project: roadmap }),
         aBoard({ name: 'Old roadmap', project: roadmap, archived: true }),
+        aBoard({ name: 'Elsewhere', project: aProject({ managed: true }) }),
         aBoard({ name: 'Mine' })
       ])
     })
@@ -91,42 +68,13 @@ describe('the embedded view', () => {
     expect(router.state.location.pathname).toBe(`/embed/projects/${roadmap.id}`)
   })
 
-  it('says so when the space cannot be found', async () => {
-    renderRoute('/embed/spaces/unknown', {
-      boardsApi: spaceBoardsApi([aBoard({ project: roadmap })])
-    })
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'The boards could not be loaded.'
-    )
-  })
-
-  it('opens a board inside the embed and comes back to the space', async () => {
-    const board = aBoard({ name: 'Roadmap', project: roadmap })
-    const { router } = renderRoute('/embed/spaces/s1', {
-      boardsApi: spaceBoardsApi([board])
-    })
-
-    fireEvent.click(await screen.findByRole('link', { name: 'Roadmap' }))
-    expect(router.state.location.pathname).toBe(
-      `/embed/spaces/s1/boards/${board.id}`
-    )
-
-    fireEvent.click(await screen.findByRole('link', { name: 'Back to boards' }))
-    expect(router.state.location.pathname).toBe('/embed/spaces/s1')
-  })
-
   it('tells each TwakeSpace origin where it is', async () => {
     const post = vi.spyOn(window.parent, 'postMessage')
     const board = aBoard({ name: 'Roadmap', project: roadmap })
-    renderRoute(`/embed/spaces/s1/boards/${board.id}?task=DES-1`, {
-      boardsApi: spaceBoardsApi([board])
-    })
+    const path = `/embed/projects/${roadmap.id}/boards/${board.id}?task=DES-1`
+    renderRoute(path, { boardsApi: projectBoardsApi([board]) })
 
-    const message = {
-      type: 'twake-tasks:path',
-      path: `/embed/spaces/s1/boards/${board.id}?task=DES-1`
-    }
+    const message = { type: 'twake-tasks:path', path }
     await waitFor(() => {
       expect(post).toHaveBeenCalledWith(message, SPACE)
     })
@@ -134,8 +82,8 @@ describe('the embedded view', () => {
   })
 
   it('takes the theme from TwakeSpace only', async () => {
-    renderRoute('/embed/spaces/s1', {
-      boardsApi: spaceBoardsApi([aBoard({ project: roadmap })])
+    renderRoute(`/embed/projects/${roadmap.id}`, {
+      boardsApi: projectBoardsApi([aBoard({ project: roadmap })])
     })
     await screen.findByRole('list', { name: 'Boards' })
     const theme = (origin: string) => {

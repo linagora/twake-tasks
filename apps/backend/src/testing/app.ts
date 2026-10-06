@@ -108,7 +108,7 @@ export async function aBoardIn(
   })
 }
 
-export async function startApp({ spaces = true } = {}) {
+export async function startApp() {
   const { sql, db } = createDb(
     inject('databaseUrl'),
     'https://tasks.example.com/'
@@ -128,8 +128,7 @@ export async function startApp({ spaces = true } = {}) {
           JSON.parse(Buffer.from(token, 'base64url').toString()) as Identity
         )
       ),
-    isReady: () => Promise.resolve(true),
-    spaces
+    isReady: () => Promise.resolve(true)
   })
 
   function tokenOf(user: TestUser) {

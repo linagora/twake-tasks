@@ -58,10 +58,10 @@ expect 'CSP: SSO and PostHog origins in connect-src' "$csp" "*connect-src 'self'
 expect 'CSP: the SSO may be framed, for the silent sign-in' "$csp" "*frame-src 'self' https://sso.example.com;*"
 expect 'CSP: pages refuse to be framed' "$csp" "*frame-ancestors 'none'"
 expect 'CSP: the embedded view may be framed by Tasks and the host' \
-  "$(header /embed/spaces/s1 Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"
+  "$(header /embed/projects/p1 Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"
 expect 'CSP: so may the sign-in callback' \
   "$(header /auth/callback Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"
-expect 'the embedded view serves index.html' "$(body "$BASE/embed/spaces/s1")" '*<div id="root"*'
+expect 'the embedded view serves index.html' "$(body "$BASE/embed/projects/p1")" '*<div id="root"*'
 expect 'CSP on the SPA fallback too' "$(header /tasks/42 Content-Security-Policy)" "$csp"
 expect 'CSP on assets too' "$(header "$script" Content-Security-Policy)" "$csp"
 expect 'X-Content-Type-Options' "$(header / X-Content-Type-Options)" 'nosniff'

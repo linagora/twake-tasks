@@ -13,12 +13,19 @@ await client.publish(exchange, routingKey, JSON.parse(body), { messageId })
 await client.close()
 `
 
-/** Publishes a space event the way ldap-rest does, on its `space` exchange. */
-export function publishPlatformEvent(
-  routingKey: `twake.space.${string}`,
-  body: { organizationId: string } & Record<string, unknown>
-) {
-  execFileSync(
+const provisionedProject = `
+const { default: postgres } = await import('postgres')
+const sql = postgres(process.env.DATABASE_URL)
+const [row] = await sql\`
+  select event -> 'data' -> 'resource' ->> 'id' as id from outbox
+  where event ->> 'type' = 'com.twake.tasks.space.provisioned.v1'
+    and event -> 'data' ->> 'space_id' = \${process.argv[1]}\`
+await sql.end()
+process.stdout.write(row?.id ?? '')
+`
+
+function inBackend(script: string, ...args: string[]) {
+  return execFileSync(
     'docker',
     [
       'compose',
@@ -34,12 +41,22 @@ export function publishPlatformEvent(
       'node',
       '--input-type=module',
       '-e',
-      publish,
-      'space',
-      routingKey,
-      randomUUID(),
-      JSON.stringify(body)
+      script,
+      ...args
     ],
-    { cwd: root }
+    { cwd: root, encoding: 'utf8' }
   )
+}
+
+/** Publishes a space event the way ldap-rest does, on its `space` exchange. */
+export function publishPlatformEvent(
+  routingKey: `twake.space.${string}`,
+  body: { organizationId: string } & Record<string, unknown>
+) {
+  inBackend(publish, 'space', routingKey, randomUUID(), JSON.stringify(body))
+}
+
+/** The project id TwakeSpace learns from the space's provisioned event. */
+export function projectOfSpace(spaceId: string) {
+  return inBackend(provisionedProject, spaceId)
 }
