@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -13,6 +13,20 @@ function logoBoard() {
 
 const change = (field: HTMLElement, value: string) => {
   fireEvent.change(field, { target: { value } })
+}
+
+async function openDates(
+  boardId: string,
+  boardsApi: ReturnType<typeof fakeBoardsApi>
+) {
+  renderRoute(`/boards/${boardId}`, { boardsApi })
+  fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+  const panel = within(
+    await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+  )
+  fireEvent.click(panel.getByRole('button', { name: 'Edit dates' }))
+  const editor = within(await screen.findByRole('dialog', { name: 'Dates' }))
+  return { panel, editor }
 }
 
 describe('Dates', () => {
@@ -30,21 +44,21 @@ describe('Dates', () => {
     ).toHaveTextContent('None')
   })
 
-  it('sets a due date and time, a deadline and a duration', async () => {
+  it('picks a due day on the calendar, a time, a deadline and a duration', async () => {
     const { board, logo, boardsApi } = logoBoard()
-    renderRoute(`/boards/${board.id}`, { boardsApi })
+    Object.assign(logo, { dueDate: '2026-11-10', deadline: '2026-11-20' })
+    const { panel, editor } = await openDates(board.id, boardsApi)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
-    const panel = within(
-      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    fireEvent.click(editor.getByRole('gridcell', { name: '2' }))
+    change(editor.getByLabelText('Time'), '09:30')
+    fireEvent.click(editor.getByRole('checkbox', { name: /Keep this time in/ }))
+    fireEvent.click(editor.getByRole('button', { name: /Choose date/ }))
+    const picker = (await screen.findAllByRole('dialog')).at(-1)
+    fireEvent.click(
+      within(picker ?? document.body).getByRole('gridcell', { name: '6' })
     )
-    fireEvent.click(panel.getByRole('button', { name: 'Edit dates' }))
-    change(panel.getByLabelText('Due date'), '2026-11-02')
-    change(panel.getByLabelText('Time'), '09:30')
-    fireEvent.click(panel.getByRole('checkbox', { name: /Keep this time in/ }))
-    change(panel.getByLabelText('Deadline'), '2026-11-06')
-    change(panel.getByRole('spinbutton', { name: 'Duration' }), '90')
-    fireEvent.click(panel.getByRole('button', { name: 'Save dates' }))
+    change(editor.getByRole('spinbutton', { name: 'Duration' }), '90')
+    fireEvent.click(editor.getByRole('button', { name: 'Save dates' }))
 
     expect(await panel.findByText(/Due Nov 2, 2026, 09:30/)).toBeVisible()
     expect(boardsApi.editTask).toHaveBeenCalledWith(board.id, logo.id, {
@@ -57,25 +71,42 @@ describe('Dates', () => {
     })
   })
 
+  it('offers quick picks for the due day', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    Object.assign(logo, { dueDate: '2026-11-02' })
+    const { editor } = await openDates(board.id, boardsApi)
+
+    fireEvent.click(editor.getByRole('button', { name: 'Tomorrow' }))
+    fireEvent.click(editor.getByRole('button', { name: 'Save dates' }))
+
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    await waitFor(() => {
+      expect(boardsApi.editTask).toHaveBeenCalledWith(
+        board.id,
+        logo.id,
+        expect.objectContaining({
+          dueDate: new Intl.DateTimeFormat('en-CA').format(tomorrow)
+        })
+      )
+    })
+  })
+
   it('repeats a task from its completion date', async () => {
     const { board, logo, boardsApi } = logoBoard()
     Object.assign(logo, { dueDate: '2026-11-02' })
-    renderRoute(`/boards/${board.id}`, { boardsApi })
+    const { panel, editor } = await openDates(board.id, boardsApi)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
-    const panel = within(
-      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
-    )
-    fireEvent.click(panel.getByRole('button', { name: 'Edit dates' }))
-    change(panel.getByRole('spinbutton', { name: 'Repeat every' }), '2')
+    change(editor.getByRole('spinbutton', { name: 'Repeat every' }), '2')
     fireEvent.click(
-      panel.getByRole('checkbox', { name: 'From the completion date' })
+      editor.getByRole('checkbox', { name: 'From the completion date' })
     )
-    fireEvent.click(panel.getByRole('button', { name: 'Save dates' }))
+    fireEvent.click(editor.getByRole('button', { name: 'Save dates' }))
 
     expect(
-      await panel.findByText('Every 2 weeks after completion')
+      await panel.findByText(/Every 2 weeks after completion/)
     ).toBeVisible()
+    expect(screen.queryByRole('dialog', { name: 'Dates' })).toBeNull()
     expect(boardsApi.editTask).toHaveBeenCalledWith(
       board.id,
       logo.id,

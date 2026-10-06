@@ -2,6 +2,7 @@ import { TwakeMuiThemeProvider } from '@linagora/twake-mui'
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query'
 import type { ReactElement, ReactNode } from 'react'
 
+import { PickersProvider } from '@/ds/Pickers'
 import { I18nProvider } from '@/ui/i18n/I18nProvider'
 import type { SupportedLanguage } from '@/ui/i18n/languages'
 
@@ -19,9 +20,11 @@ export function AppProviders({
   return (
     <TwakeMuiThemeProvider>
       <I18nProvider lang={lang}>
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
+        <PickersProvider lang={lang}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </PickersProvider>
       </I18nProvider>
     </TwakeMuiThemeProvider>
   )
