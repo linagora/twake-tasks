@@ -266,9 +266,19 @@ export function Spacer(): ReactElement {
   return <Box sx={{ flex: 1 }} />
 }
 
-export function Checklist({ children }: { children: ReactNode }): ReactElement {
+export function Checklist({
+  label,
+  children
+}: {
+  label?: string
+  children: ReactNode
+}): ReactElement {
   return (
-    <Box component="ul" sx={{ listStyle: 'none', m: 0, pl: 1 }}>
+    <Box
+      component="ul"
+      aria-label={label}
+      sx={{ listStyle: 'none', m: 0, pl: 1 }}
+    >
       {children}
     </Box>
   )
