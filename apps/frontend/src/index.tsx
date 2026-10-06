@@ -12,6 +12,7 @@ import {
 } from '@/adapters/oidc/oidcSession'
 import { relayCallback } from '@/adapters/oidc/ssoFrame'
 import { App } from '@/app/App'
+import { connectSpaceOverlay } from '@/ds/spaceOverlay'
 
 const container = document.getElementById('root')
 if (!container) throw new Error('Root element #root not found')
@@ -23,10 +24,23 @@ if (!relayCallback()) {
   const embed = isEmbedded() ? embedSession(config) : null
   const session = embed ?? oidcSession(config)
   const boardsApi = httpBoardsApi(apiUrl, embed?.send ?? sendSignedIn)
+  // Framed by TwakeSpace, the dialogs and the side panel go onto its page:
+  // the region they cover is sent to TwakeSpace, which shows that part only
+  const overlay = embed
+    ? connectSpaceOverlay(region => {
+        for (const origin of (window.TWAKE_SPACE_ORIGIN ?? '').split(' ')) {
+          if (origin === '') continue
+          window.parent.postMessage(
+            { type: 'twake-embed:overlay-region', region },
+            origin
+          )
+        }
+      })
+    : null
 
   createRoot(container).render(
     <StrictMode>
-      <App session={session} boardsApi={boardsApi} />
+      <App session={session} boardsApi={boardsApi} overlay={overlay} />
     </StrictMode>
   )
 }

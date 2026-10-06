@@ -62,6 +62,9 @@ expect 'CSP: the embedded view may be framed by Tasks and the host' \
 expect 'CSP: so may the sign-in callback' \
   "$(header /auth/callback Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"
 expect 'the embedded view serves index.html' "$(body "$BASE/embed/projects/p1")" '*<div id="root"*'
+expect 'the overlay of TwakeSpace is a file, not the app' "$(body "$BASE/embed/overlay.html")" '*<body></body>*'
+expect 'CSP: the overlay may be framed by the host' \
+  "$(header /embed/overlay.html Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"
 expect 'CSP on the SPA fallback too' "$(header /tasks/42 Content-Security-Policy)" "$csp"
 expect 'CSP on assets too' "$(header "$script" Content-Security-Policy)" "$csp"
 expect 'X-Content-Type-Options' "$(header / X-Content-Type-Options)" 'nosniff'

@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router'
 
 import type { BoardsApi } from '@/application/boards'
 import type { SessionService } from '@/application/session'
+import type { SpaceOverlay } from '@/ds/spaceOverlay'
 import { AppProviders } from '@/app/AppProviders'
 import { makeQueryClient } from '@/app/queryClient'
 import { routes } from '@/app/routes'
@@ -13,14 +14,19 @@ import { SessionGate } from '@/ui/session/SessionGate'
 export interface AppProps {
   session: SessionService
   boardsApi: BoardsApi
+  overlay?: SpaceOverlay | null
 }
 
-export function App({ session, boardsApi }: AppProps): ReactElement {
+export function App({
+  session,
+  boardsApi,
+  overlay = null
+}: AppProps): ReactElement {
   const [queryClient] = useState(makeQueryClient)
   const [lang] = useState(findPreferredLanguage)
 
   return (
-    <AppProviders lang={lang} queryClient={queryClient}>
+    <AppProviders lang={lang} queryClient={queryClient} overlay={overlay}>
       <SessionGate session={session}>
         <BoardsApiProvider api={boardsApi}>
           <AppRouter />
