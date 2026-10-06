@@ -420,3 +420,162 @@ describe('the order of space events', () => {
     ).rejects.toThrow(MalformedEventError)
   })
 })
+
+describe('twake.space.synced', () => {
+  it('creates a space it never heard of, with its members, and publishes its project', async () => {
+    const admin = aUser()
+    const viewer = aUser({ organizationId: admin.organizationId })
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+
+    await deliver('twake.space.synced', {
+      ...space,
+      name: 'Roadmap',
+      members: [member(admin, 'admin'), member(viewer, 'viewer')],
+      groups: []
+    })
+
+    const boards = await spaceBoards(admin)
+    expect(boards).toEqual([
+      expect.objectContaining({ name: 'Roadmap', role: 'admin' })
+    ])
+    expect(await spaceBoards(viewer)).toEqual([
+      expect.objectContaining({ role: 'viewer' })
+    ])
+    const queued = await db
+      .select({ event: outbox.event })
+      .from(outbox)
+      .where(raw`${outbox.event} -> 'data' ->> 'space_id' = ${space.id}`)
+    expect(queued).toEqual([
+      expect.objectContaining({
+        event: expect.objectContaining({
+          data: {
+            space_id: space.id,
+            resource: { kind: 'project', id: boards[0]?.project.id }
+          }
+        }) as object
+      })
+    ])
+  })
+
+  it('makes the project match the space: name, roles, and who left', async () => {
+    const admin = aUser()
+    const leaver = aUser({ organizationId: admin.organizationId })
+    const promoted = aUser({ organizationId: admin.organizationId })
+    const joiner = aUser({ organizationId: admin.organizationId })
+    const { space, assignees } = await aSpaceWithATask(admin, [
+      leaver,
+      promoted
+    ])
+
+    await deliver('twake.space.synced', {
+      ...space,
+      name: 'Operations',
+      members: [
+        member(admin, 'admin'),
+        member(promoted, 'admin'),
+        member(joiner, 'viewer')
+      ],
+      groups: []
+    })
+
+    expect(await spaceBoards(leaver)).toEqual([])
+    expect(await spaceBoards(promoted)).toEqual([
+      expect.objectContaining({ role: 'admin' })
+    ])
+    expect(await spaceBoards(joiner)).toEqual([
+      expect.objectContaining({ role: 'viewer' })
+    ])
+    expect(await assignees()).toEqual(
+      expect.arrayContaining([admin.userId, promoted.userId])
+    )
+    expect(await assignees()).not.toContain(leaver.userId)
+    expect(await spaceBoards(admin)).toEqual([
+      expect.objectContaining({
+        project: expect.objectContaining({ name: 'Operations' }) as object
+      })
+    ])
+  })
+
+  it('ignores a snapshot older than the last event of the space', async () => {
+    const admin = aUser()
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+    await deliver('twake.space.created', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(30)
+    })
+
+    await deliver('twake.space.synced', {
+      ...space,
+      name: 'Stale',
+      members: [],
+      groups: [],
+      timestamp: at(10)
+    })
+
+    expect(await spaceBoards(admin)).toEqual([
+      expect.objectContaining({ role: 'admin' })
+    ])
+  })
+
+  it('leaves a deleted space deleted', async () => {
+    const admin = aUser()
+    const { space } = await aSpaceWithATask(admin, [])
+    await deliver('twake.space.deleted', { ...space, timestamp: at(0) })
+
+    await deliver('twake.space.synced', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      groups: []
+    })
+
+    expect(await spaceBoards(admin)).toEqual([])
+  })
+})
+
+describe('twake.space.sync.completed', () => {
+  it('deletes the spaces of the organization it does not list, except newer ones', async () => {
+    const listedAdmin = aUser()
+    const goneAdmin = aUser({ organizationId: listedAdmin.organizationId })
+    const newerAdmin = aUser({ organizationId: listedAdmin.organizationId })
+    const elsewhere = aUser()
+    const listed = await aSpaceWithATask(listedAdmin, [])
+    const gone = await aSpaceWithATask(goneAdmin, [])
+    const newer = await aSpaceWithATask(newerAdmin, [])
+    await aSpaceWithATask(elsewhere, [])
+    await deliver('twake.space.updated', {
+      ...newer.space,
+      name: 'Newer',
+      timestamp: '2999-01-01T00:00:00.000Z'
+    })
+
+    await deliver('twake.space.sync.completed', {
+      organizationId: listedAdmin.organizationId,
+      spaceIds: [listed.space.id]
+    })
+
+    expect(await spaceBoards(goneAdmin)).toEqual([])
+    expect(await spaceBoards(listedAdmin)).toHaveLength(1)
+    expect(await spaceBoards(newerAdmin)).toHaveLength(1)
+    expect(await spaceBoards(elsewhere)).toHaveLength(1)
+    const [job] = await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.key, `${PURGE_SPACE_JOB}:${gone.space.id}`))
+    expect(job).toBeDefined()
+  })
+
+  it('deletes every space of an organization that has none left', async () => {
+    const admin = aUser()
+    await aSpaceWithATask(admin, [])
+
+    await deliver('twake.space.sync.completed', {
+      organizationId: admin.organizationId,
+      spaceIds: []
+    })
+
+    expect(await spaceBoards(admin)).toEqual([])
+  })
+})
