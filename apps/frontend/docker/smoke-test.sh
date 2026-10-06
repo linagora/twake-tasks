@@ -15,6 +15,9 @@ docker run -d --name "$NAME" \
   -e SSO_BASE_URL='https://sso.example.com/' \
   -e SSO_CLIENT_ID='twake-tasks' \
   -e POSTHOG_HOST='https://posthog.example.com' \
+  -e SENTRY_DSN='https://public-key@errors.example.com/42' \
+  -e SENTRY_ENVIRONMENT='smoke' \
+  -e SENTRY_FEEDBACK_ENABLED='true' \
   -e CSP_FRAME_ANCESTORS='https://workplace.example.com' \
   -e CSP_IMG_SRC='https://avatars.example.com' \
   -e API_UPSTREAM='http://127.0.0.1:9' \
@@ -50,12 +53,14 @@ expect 'unknown routes fall back to index.html' "$(body "$BASE/tasks/42")" '*<di
 expect '/api goes to the backend' "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/api/boards")" '502'
 expect 'index.html is revalidated' "$(header / Cache-Control)" 'no-cache'
 expect '/.env.js comes from the environment' "$(body "$BASE/.env.js")" '*var SSO_CLIENT_ID = "twake-tasks"*'
+expect '/.env.js carries the Sentry DSN' "$(body "$BASE/.env.js")" '*var SENTRY_DSN = "https://public-key@errors.example.com/42"*'
+expect '/.env.js carries the feedback switch' "$(body "$BASE/.env.js")" '*var SENTRY_FEEDBACK_ENABLED = "true"*'
 expect '/.env.js is never cached' "$(header /.env.js Cache-Control)" 'no-store'
 script="$(body "$BASE/" | grep -o 'src="/static/js/index[^"]*"' | head -1 | cut -d'"' -f2)"
 expect 'hashed assets are cached for a year' "$(header "$script" Cache-Control)" '*immutable'
 csp="$(header / Content-Security-Policy)"
 expect 'CSP sent' "$csp" "default-src 'self'; script-src 'self';*"
-expect 'CSP: SSO and PostHog origins in connect-src' "$csp" "*connect-src 'self' https://sso.example.com https://posthog.example.com;*"
+expect 'CSP: SSO, PostHog and Sentry origins in connect-src, without the DSN key' "$csp" "*connect-src 'self' https://sso.example.com https://posthog.example.com https://errors.example.com;*"
 expect 'CSP: the SSO may be framed, for the silent sign-in' "$csp" "*frame-src 'self' https://sso.example.com;*"
 expect 'CSP: pictures from the hosts in CSP_IMG_SRC' "$csp" "*img-src 'self' data: blob: https://avatars.example.com;*"
 expect 'CSP: pages refuse to be framed' "$csp" "*frame-ancestors 'none'"
