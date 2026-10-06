@@ -53,10 +53,13 @@ frame_src="'self'"
 [ -n "${SSO_BASE_URL:-}" ] && frame_src="$frame_src $(origin "$SSO_BASE_URL")"
 [ -n "${CSP_FRAME_SRC:-}" ] && frame_src="$frame_src $CSP_FRAME_SRC"
 frame_ancestors="'self'${CSP_FRAME_ANCESTORS:+ $CSP_FRAME_ANCESTORS}"
+# People's pictures come from Twake Workplace, on its own hosts.
+img_src="'self' data: blob:${CSP_IMG_SRC:+ $CSP_IMG_SRC}"
 permissions_policy=${PERMISSIONS_POLICY:-"accelerometer=(), geolocation=(), gyroscope=(), magnetometer=(), payment=(), usb=()"}
 check_sources CSP_CONNECT_SRC "$connect_src"
 check_sources CSP_FRAME_SRC "$frame_src"
 check_sources CSP_FRAME_ANCESTORS "$frame_ancestors"
+check_sources CSP_IMG_SRC "$img_src"
 one_line PERMISSIONS_POLICY "$permissions_policy"
 case "$permissions_policy" in
   *[\"\\\$\;]*) fail "PERMISSIONS_POLICY must not contain double quotes, backslashes, dollar signs nor semicolons" ;;
@@ -64,7 +67,7 @@ esac
 
 # style-src 'unsafe-inline': MUI (emotion) injects its styles at runtime.
 csp="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
-csp="$csp; img-src 'self' data: blob:; font-src 'self' data:"
+csp="$csp; img-src $img_src; font-src 'self' data:"
 csp="$csp; connect-src $connect_src; frame-src $frame_src"
 csp="$csp; object-src 'none'; base-uri 'self'; form-action 'self'"
 
