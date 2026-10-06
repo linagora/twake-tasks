@@ -22,6 +22,7 @@ import { ShelfDialog } from '@/ui/boards/Archive'
 import { BoardDrag } from '@/ui/boards/BoardDrag'
 import { BoardMenu } from '@/ui/boards/BoardMenu'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
+import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
 import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { ShareDialog } from '@/ui/boards/ShareDialog'
@@ -84,6 +85,9 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   const shareable =
     manageable && !board.project.personal && !board.project.managed
   const [sharing, setSharing] = useState(false)
+  const [moving, setMoving] = useState(false)
+  const targets = useMoveTargets(board)
+  const movable = shareable && targets.length > 0
   const [shelf, setShelf] = useState<Shelf | null>(null)
   const [adding, setAdding] = useState<ReadonlySet<string>>(new Set())
   const startAdding = (key: string): void => {
@@ -178,7 +182,17 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
                 {t('board.newTask')}
               </Button>
             )}
-            <BoardMenu board={board} onOpenShelf={setShelf} />
+            <BoardMenu
+              board={board}
+              onOpenShelf={setShelf}
+              onMove={
+                movable
+                  ? () => {
+                      setMoving(true)
+                    }
+                  : undefined
+              }
+            />
           </>
         }
       />
@@ -201,6 +215,14 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
           board={board}
           onClose={() => {
             setSharing(false)
+          }}
+        />
+      )}
+      {moving && (
+        <MoveBoardDialog
+          board={board}
+          onClose={() => {
+            setMoving(false)
           }}
         />
       )}

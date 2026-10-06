@@ -291,18 +291,24 @@
     },
     "invite": "Inviter",
     "invited": "%{email} a été invité.",
-    "pending": "Invité comme %{role}",
+    "pending": "En attente",
+    "roleOf": "Rôle : %{role}",
+    "people": "Personnes ayant accès",
     "cancelInvite": "Annuler l'invitation",
     "remove": "Retirer",
     "close": "Fermer",
     "failed": "La modification n'a pas pu être enregistrée.",
-    "loadFailed": "Les membres n'ont pas pu être chargés.",
-    "moveTitle": "Déplacer vers un autre projet",
+    "loadFailed": "Les membres n'ont pas pu être chargés."
+  },
+  "moveBoard": {
+    "action": "Déplacer vers un projet",
+    "title": "Déplacer %{name}",
     "project": "Projet",
-    "moveHelp": "Les membres et les étiquettes du projet s'appliquent au tableau.",
+    "help": "Les membres et les étiquettes du projet s'appliquent au tableau.",
+    "cancel": "Annuler",
     "move": "Déplacer",
     "prefixTaken": "Un tableau de ce projet utilise déjà %{prefix}.",
-    "moveFailed": "Le tableau n'a pas pu être déplacé."
+    "failed": "Le tableau n'a pas pu être déplacé."
   },
   "layout": {
     "title": "Affichage",

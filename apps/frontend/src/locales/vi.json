@@ -291,18 +291,24 @@
     },
     "invite": "Mời",
     "invited": "Đã mời %{email}.",
-    "pending": "Đã mời với vai trò %{role}",
+    "pending": "Đang chờ",
+    "roleOf": "Vai trò: %{role}",
+    "people": "Những người có quyền truy cập",
     "cancelInvite": "Hủy lời mời",
     "remove": "Xóa",
     "close": "Đóng",
     "failed": "Không thể lưu thay đổi.",
-    "loadFailed": "Không thể tải danh sách thành viên.",
-    "moveTitle": "Chuyển sang dự án khác",
+    "loadFailed": "Không thể tải danh sách thành viên."
+  },
+  "moveBoard": {
+    "action": "Chuyển sang dự án",
+    "title": "Chuyển %{name}",
     "project": "Dự án",
-    "moveHelp": "Thành viên và nhãn của dự án được áp dụng cho bảng.",
+    "help": "Thành viên và nhãn của dự án được áp dụng cho bảng.",
+    "cancel": "Hủy",
     "move": "Chuyển",
     "prefixTaken": "Một bảng trong dự án này đã dùng %{prefix}.",
-    "moveFailed": "Không thể chuyển bảng."
+    "failed": "Không thể chuyển bảng."
   },
   "layout": {
     "title": "Bố cục",

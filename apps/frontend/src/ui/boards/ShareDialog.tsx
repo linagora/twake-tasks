@@ -1,110 +1,94 @@
+import { Check, Cross, Icon } from '@linagora/twake-icons'
 import {
   Button,
+  Chip,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
+  DropdownButton,
+  IconButton,
+  List,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   TextField,
   Typography
 } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement } from 'react'
 
-import { ApiError } from '@/application/boards'
+import { InviteRow, PersonRow } from '@/ds/PeopleList'
 import { ROLES, type Board, type Role } from '@/domain/board'
-import { useBoardChange, useProjects, useSharing } from '@/ui/boards/queries'
+import { PersonAvatar } from '@/ui/boards/PersonAvatar'
+import { useBoardChange, useSharing } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-function RoleSelect({
+function RoleMenu({
   value,
-  onChange
+  onChange,
+  action
 }: {
   value: Role
-  onChange: (role: Role) => void
+  onChange?: (role: Role) => void
+  action?: { label: string; run: () => void }
 }): ReactElement {
   const { t } = useI18n()
-  return (
-    <TextField
-      select
-      size="small"
-      className="u-flex-shrink-0"
-      label={t('sharing.role')}
-      value={value}
-      onChange={event => {
-        onChange(event.target.value as Role)
-      }}
-      slotProps={{ select: { native: true } }}
-    >
-      {ROLES.map(role => (
-        <option key={role} value={role}>
-          {t(`sharing.roles.${role}`)}
-        </option>
-      ))}
-    </TextField>
-  )
-}
-
-function MoveToProject({
-  board,
-  onMoved
-}: {
-  board: Board
-  onMoved: () => void
-}): ReactElement | null {
-  const { t } = useI18n()
-  const projects = useProjects()
-  const [projectId, setProjectId] = useState('')
-  const move = useBoardChange(board.id, (api, to: string) =>
-    api.moveToProject(board.id, to)
-  )
-  const targets =
-    projects.data?.filter(
-      project =>
-        project.role !== 'viewer' &&
-        !project.personal &&
-        project.id !== board.project.id
-    ) ?? []
-  if (targets.length === 0) return null
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const close = (): void => {
+    setAnchor(null)
+  }
+  const label = t(`sharing.roles.${value}`)
 
   return (
-    <form
-      aria-label={t('sharing.moveTitle')}
-      className="u-flex u-flex-items-center u-mt-2"
-      onSubmit={event => {
-        event.preventDefault()
-        move.mutate(projectId, { onSuccess: onMoved })
-      }}
-    >
-      <TextField
-        select
-        size="small"
-        className="u-mr-1"
-        label={t('sharing.project')}
-        value={projectId}
-        onChange={event => {
-          setProjectId(event.target.value)
+    <>
+      <DropdownButton
+        textVariant="body2"
+        aria-label={t('sharing.roleOf', { role: label })}
+        aria-haspopup="menu"
+        aria-expanded={anchor !== null}
+        onClick={event => {
+          setAnchor(event.currentTarget)
         }}
-        helperText={t('sharing.moveHelp')}
-        slotProps={{ select: { native: true } }}
       >
-        <option value="" />
-        {targets.map(project => (
-          <option key={project.id} value={project.id}>
-            {project.name}
-          </option>
-        ))}
-      </TextField>
-      <Button type="submit" disabled={!projectId || move.isPending}>
-        {t('sharing.move')}
-      </Button>
-      {move.isError && (
-        <Typography role="alert" className="u-ml-1">
-          {move.error instanceof ApiError &&
-          move.error.code === 'key_prefix_taken'
-            ? t('sharing.prefixTaken', { prefix: board.keyPrefix })
-            : t('sharing.moveFailed')}
-        </Typography>
-      )}
-    </form>
+        {label}
+      </DropdownButton>
+      <Menu
+        anchorEl={anchor}
+        open={anchor !== null}
+        onClose={close}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        {onChange &&
+          ROLES.map(role => (
+            <MenuItem
+              key={role}
+              selected={role === value}
+              onClick={() => {
+                close()
+                if (role !== value) onChange(role)
+              }}
+            >
+              <ListItemIcon>
+                {role === value && <Icon icon={Check} />}
+              </ListItemIcon>
+              <ListItemText>{t(`sharing.roles.${role}`)}</ListItemText>
+            </MenuItem>
+          ))}
+        {onChange && action && <Divider />}
+        {action && (
+          <MenuItem
+            onClick={() => {
+              close()
+              action.run()
+            }}
+          >
+            <ListItemText className="u-error">{action.label}</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
+    </>
   )
 }
 
@@ -136,16 +120,26 @@ export function ShareDialog({
   )
 
   return (
-    <Dialog open onClose={onClose} aria-labelledby={titleId} fullWidth>
-      <DialogTitle id={titleId}>
-        {t('sharing.title', { name: board.name })}
+    <Dialog open onClose={onClose} aria-labelledby={titleId}>
+      <DialogTitle
+        id={titleId}
+        className="u-flex u-flex-items-center u-flex-justify-between"
+      >
+        <span className="u-ellipsis">
+          {t('sharing.title', { name: board.name })}
+        </span>
+        <IconButton
+          aria-label={t('sharing.close')}
+          onClick={onClose}
+          className="u-ml-half"
+        >
+          <Icon icon={Cross} />
+        </IconButton>
       </DialogTitle>
-      <DialogContent>
-        <form
-          aria-label={t('sharing.invite')}
-          className="u-flex u-flex-wrap u-flex-items-center u-mt-half"
-          onSubmit={event => {
-            event.preventDefault()
+      <DialogContent className="u-pb-1-half">
+        <InviteRow
+          label={t('sharing.invite')}
+          onSubmit={() => {
             const to = email.trim().toLowerCase()
             invite.mutate(to, {
               onSuccess: () => {
@@ -159,91 +153,76 @@ export function ShareDialog({
             label={t('sharing.email')}
             type="email"
             size="small"
-            className="u-mr-1 u-mb-half-m"
             value={email}
             onChange={event => {
               setEmail(event.target.value)
             }}
             slotProps={{ htmlInput: { maxLength: 254 } }}
           />
-          <RoleSelect value={role} onChange={setRole} />
-          <Button
-            type="submit"
-            className="u-ml-1"
-            disabled={invite.isPending || !email.trim()}
-          >
+          <RoleMenu value={role} onChange={setRole} />
+          <Button type="submit" disabled={invite.isPending || !email.trim()}>
             {t('sharing.invite')}
           </Button>
-        </form>
+        </InviteRow>
         {invited && (
-          <Typography role="status" className="u-mt-1">
+          <Typography role="status" variant="body2" className="u-mt-1">
             {t('sharing.invited', { email: invited })}
           </Typography>
         )}
         {(invite.isError || change.isError || cancel.isError) && (
-          <Typography role="alert" className="u-mt-1">
+          <Typography role="alert" color="error" className="u-mt-1">
             {t('sharing.failed')}
           </Typography>
         )}
         {sharing.isError && (
-          <Typography role="alert" className="u-mt-1">
+          <Typography role="alert" color="error" className="u-mt-1">
             {t('sharing.loadFailed')}
           </Typography>
         )}
-        <ul className="u-mt-1">
+        <Typography variant="subtitle2" className="u-mt-1-half">
+          {t('sharing.people')}
+        </Typography>
+        <List dense>
           {sharing.data?.members.map(member => (
-            <li
+            <PersonRow
               key={member.userId}
-              aria-label={member.email}
-              className="u-flex u-flex-wrap u-flex-items-center u-mb-half"
+              label={member.email}
+              avatar={<PersonAvatar email={member.email} size={32} />}
             >
-              <Typography className="u-mr-auto">{member.email}</Typography>
-              <RoleSelect
+              <RoleMenu
                 value={member.role}
                 onChange={next => {
                   change.mutate({ userId: member.userId, role: next })
                 }}
-              />
-              <Button
-                variant="text"
-                onClick={() => {
-                  change.mutate({ userId: member.userId, role: null })
+                action={{
+                  label: t('sharing.remove'),
+                  run: () => {
+                    change.mutate({ userId: member.userId, role: null })
+                  }
                 }}
-              >
-                {t('sharing.remove')}
-              </Button>
-            </li>
+              />
+            </PersonRow>
           ))}
           {sharing.data?.invites.map(pending => (
-            <li
+            <PersonRow
               key={pending.id}
-              aria-label={pending.email}
-              className="u-flex u-flex-wrap u-flex-items-center u-mb-half"
+              label={pending.email}
+              avatar={<PersonAvatar email={pending.email} size={32} />}
             >
-              <Typography className="u-mr-auto">{pending.email}</Typography>
-              <Typography variant="caption" className="u-mr-1">
-                {t('sharing.pending', {
-                  role: t(`sharing.roles.${pending.role}`)
-                })}
-              </Typography>
-              <Button
-                variant="text"
-                onClick={() => {
-                  cancel.mutate(pending.id)
+              <Chip size="small" label={t('sharing.pending')} />
+              <RoleMenu
+                value={pending.role}
+                action={{
+                  label: t('sharing.cancelInvite'),
+                  run: () => {
+                    cancel.mutate(pending.id)
+                  }
                 }}
-              >
-                {t('sharing.cancelInvite')}
-              </Button>
-            </li>
+              />
+            </PersonRow>
           ))}
-        </ul>
-        <MoveToProject board={board} onMoved={onClose} />
+        </List>
       </DialogContent>
-      <DialogActions>
-        <Button variant="secondary" onClick={onClose}>
-          {t('sharing.close')}
-        </Button>
-      </DialogActions>
     </Dialog>
   )
 }

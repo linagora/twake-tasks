@@ -2,6 +2,7 @@ import {
   Archive,
   Check,
   Dots,
+  FolderMoveto,
   Icon,
   Restore,
   Trash
@@ -23,10 +24,12 @@ import { useI18n } from '@/ui/i18n/useI18n'
 
 export function BoardMenu({
   board,
-  onOpenShelf
+  onOpenShelf,
+  onMove
 }: {
   board: Board
   onOpenShelf: (shelf: Shelf) => void
+  onMove?: (() => void) | undefined
 }): ReactElement {
   const { t } = useI18n()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
@@ -84,6 +87,7 @@ export function BoardMenu({
           onOpenShelf('trash')
         })}
         {admin && !board.inbox && <Divider />}
+        {onMove && item(FolderMoveto, t('moveBoard.action'), onMove)}
         {admin &&
           !board.inbox &&
           item(
