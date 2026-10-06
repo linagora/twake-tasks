@@ -1,5 +1,7 @@
+import { randomUUID } from 'node:crypto'
 import { DeadLetterError, RabbitMQClient } from '@linagora/rabbitmq-client'
 import type { Logger } from 'pino'
+import { isTransient } from './db.ts'
 import type { OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 
@@ -21,24 +23,50 @@ export interface Consumer {
   close(): Promise<void>
 }
 
+const MAX_ATTEMPTS = 5
+
 // One message at a time on a single active consumer, so the events of a space
 // are handled in the order ldap-rest published them, even with several replicas.
-// A failing event is retried until it succeeds rather than skipped, since the
-// events behind it may depend on it.
+// An event that keeps failing is dead lettered so the ones behind it go on.
+// Never replay a space event from there (it could undo newer ones, and the next
+// space sync repairs it); an account deletion can be replayed once fixed.
+// A transient failure, such as the database being down, retries until it passes.
 export async function startConsumer(
   url: string,
   names: ConsumerNames,
   logger: Logger,
-  handle: (delivery: Delivery) => Promise<Outcome>
+  handle: (delivery: Delivery) => Promise<Outcome>,
+  options: { retryDelayMs?: number } = {}
 ): Promise<Consumer> {
-  const client = new RabbitMQClient({ url, logger, prefetch: 1 })
+  const client = new RabbitMQClient({
+    url,
+    logger,
+    prefetch: 1,
+    retryDelay: options.retryDelayMs ?? 1000
+  })
   await client.init()
+  // prefetch 1: only one message is ever being retried.
+  let failing = { messageId: undefined as string | undefined, attempts: 0 }
   await client.subscribe(
     names.spaceExchange,
     'twake.space.#',
     names.queue,
     async (body, { routingKey, messageId }) => {
-      const outcome = await handle({ routingKey, messageId, body })
+      let outcome: Outcome
+      try {
+        outcome = await handle({ routingKey, messageId, body })
+      } catch (error) {
+        if (isTransient(error)) throw error
+        if (failing.messageId !== messageId)
+          failing = { messageId, attempts: 0 }
+        failing.attempts++
+        if (failing.attempts < MAX_ATTEMPTS) throw error
+        logger.error(
+          { err: error, routingKey, messageId },
+          'event sent to the dead letter queue after repeated failures'
+        )
+        throw new DeadLetterError(`${routingKey} kept failing`)
+      }
       if (outcome === 'rejected') {
         throw new DeadLetterError(`${routingKey} rejected`)
       }
@@ -59,6 +87,27 @@ export async function startConsumer(
     }
   )
   return { close: () => client.close() }
+}
+
+// With no organizationId, ldap-rest answers with a twake.space.synced for every
+// space of every organization.
+export async function requestSpaceSync(
+  url: string,
+  spaceExchange: string,
+  logger: Logger
+): Promise<void> {
+  const client = new RabbitMQClient({ url, logger, publishMaxAttempts: 1 })
+  await client.init()
+  try {
+    await client.publish(
+      spaceExchange,
+      'twake.space.sync.requested',
+      { timestamp: new Date().toISOString() },
+      { messageId: randomUUID() }
+    )
+  } finally {
+    await client.close()
+  }
 }
 
 export interface Publisher {

@@ -110,10 +110,7 @@ export async function aBoardIn(
 }
 
 export async function startApp() {
-  const { sql, db } = createDb(
-    inject('databaseUrl'),
-    'https://tasks.example.com/'
-  )
+  const { sql, db } = createDb(inject('databaseUrl'))
   const boardChanges = await listenToBoards(sql)
   const app = await buildApp({
     logger: pino({ level: 'silent' }),

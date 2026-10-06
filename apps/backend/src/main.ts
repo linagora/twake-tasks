@@ -7,7 +7,11 @@ import { createMessageHandler } from './events/router.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
-import { startConsumer, startPublisher } from './infra/rabbitmq.ts'
+import {
+  requestSpaceSync,
+  startConsumer,
+  startPublisher
+} from './infra/rabbitmq.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { accountRoutes } from './modules/boards/accounts.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
@@ -18,6 +22,7 @@ import {
 } from './modules/boards/notificationEmails.ts'
 import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
 import {
+  knowsAnySpace,
   PURGE_SPACE_JOB,
   purgeSpace,
   spaceRoutes
@@ -29,7 +34,7 @@ const config = loadConfig()
 const logger = pino({ level: config.LOG_LEVEL })
 const spaces = config.SPACE_INTEGRATION === 'true'
 
-const { sql, db } = createDb(config.DATABASE_URL, config.APP_URL)
+const { sql, db } = createDb(config.DATABASE_URL)
 await assertRowLevelSecurity(sql)
 await migrateDb(db)
 
@@ -75,6 +80,22 @@ const consumer = await startConsumer(
     logger
   })
 )
+// A sync request fans out to every app and every space, so it is sent only
+// while no space is known, once the queue is bound to receive the answers.
+// The nightly sync repairs what a failed request misses, so it never stops
+// the start.
+if (spaces && !(await knowsAnySpace(db))) {
+  try {
+    await requestSpaceSync(
+      config.RABBITMQ_URL,
+      config.RABBITMQ_SPACE_EXCHANGE,
+      logger
+    )
+    logger.info('no space known yet, sync of every organization requested')
+  } catch (error) {
+    logger.error({ err: error }, 'space sync request failed')
+  }
+}
 const stopScheduler = createScheduler({
   db,
   logger,

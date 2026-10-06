@@ -53,7 +53,13 @@ export function publishPlatformEvent(
   routingKey: `twake.space.${string}`,
   body: { organizationId: string } & Record<string, unknown>
 ) {
-  inBackend(publish, 'space', routingKey, randomUUID(), JSON.stringify(body))
+  inBackend(
+    publish,
+    'space',
+    routingKey,
+    randomUUID(),
+    JSON.stringify({ timestamp: new Date().toISOString(), ...body })
+  )
 }
 
 /** The project id TwakeSpace learns from the space's provisioned event. */

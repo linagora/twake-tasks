@@ -11,7 +11,13 @@ import {
 import { aB2cUser, aUser, type TestUser } from '../testing/app.ts'
 import { PostgreSqlContainer } from '@testcontainers/postgresql'
 import postgres from 'postgres'
-import { assertRowLevelSecurity, createDb, inTenant, migrateDb } from './db.ts'
+import {
+  assertRowLevelSecurity,
+  createDb,
+  inTenant,
+  isTransient,
+  migrateDb
+} from './db.ts'
 
 const { sql, db } = createDb(inject('databaseUrl'))
 
@@ -250,6 +256,53 @@ describe('assertRowLevelSecurity', () => {
         and relrowsecurity and not relforcerowsecurity`
 
     expect(unforced).toEqual([])
+  })
+})
+
+describe('isTransient', () => {
+  const failure = (work: Promise<unknown>) =>
+    work.then(
+      () => {
+        throw new Error('expected a failure')
+      },
+      (error: unknown) => error
+    )
+  const raise = (code: string) =>
+    failure(
+      db.execute(
+        statement.raw(
+          `do $$ begin raise exception 'boom' using errcode = '${code}'; end $$`
+        )
+      )
+    )
+
+  it('holds for a database that cannot be reached', async () => {
+    const down = createDb('postgres://app:app@127.0.0.1:1/tasks')
+    try {
+      expect(
+        isTransient(await failure(down.db.execute(statement`select 1`)))
+      ).toBe(true)
+    } finally {
+      await down.sql.end()
+    }
+  })
+
+  it.each(['40001', '40P01', '55P03', '57014', '57P01', '53300', '08006'])(
+    'holds for SQLSTATE %s',
+    async code => {
+      expect(isTransient(await raise(code))).toBe(true)
+    }
+  )
+
+  it.each(['23505', '22P02', 'P0001'])(
+    'does not hold for SQLSTATE %s',
+    async code => {
+      expect(isTransient(await raise(code))).toBe(false)
+    }
+  )
+
+  it('does not hold for a plain error', () => {
+    expect(isTransient(new Error('bug'))).toBe(false)
   })
 })
 

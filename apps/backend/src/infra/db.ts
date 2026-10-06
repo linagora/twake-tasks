@@ -41,13 +41,38 @@ export function tenantPolicy(column: AnyPgColumn, b2cScope?: SQL) {
   return pgPolicy('tenant', { using: scoped, withCheck: scoped })
 }
 
-// The app URL lets the database link to tasks in the events it writes.
-export function createDb(url: string, appUrl = '') {
-  const client = postgres(url, {
-    onnotice: () => undefined,
-    connection: { 'app.url': appUrl }
-  })
+export function createDb(url: string) {
+  const client = postgres(url, { onnotice: () => undefined })
   return { sql: client, db: drizzle({ client }) }
+}
+
+// Socket errors from Node, and postgres.js's own connection errors.
+const CONNECTION_ERRORS = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EPIPE',
+  'CONNECT_TIMEOUT',
+  'CONNECTION_CLOSED',
+  'CONNECTION_ENDED',
+  'CONNECTION_DESTROYED'
+])
+
+// Connection exceptions, insufficient resources, server shutting down,
+// serialization failures and deadlocks, lock and statement timeouts.
+const TRANSIENT_SQLSTATE = /^(08|53|57P0|40001$|40P01$|55P03$|57014$)/
+
+/** Whether the work may succeed if tried again later, unchanged. */
+export function isTransient(error: unknown): boolean {
+  for (let cause = error; cause instanceof Error; cause = cause.cause) {
+    const code = (cause as { code?: unknown }).code
+    if (typeof code !== 'string') continue
+    if (CONNECTION_ERRORS.has(code)) return true
+    if (cause.name === 'PostgresError') return TRANSIENT_SQLSTATE.test(code)
+  }
+  return false
 }
 
 export type Db = ReturnType<typeof createDb>['db']

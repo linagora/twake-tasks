@@ -1,19 +1,11 @@
-import { eq, isNull, notInArray } from 'drizzle-orm'
+import { eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { asOrganization, type Db, type Tx } from '../../infra/db.ts'
 import type { LdapRest } from '../../infra/ldapRest.ts'
 import { schedule, type Handler } from '../../scheduler/scheduler.ts'
 import { jobs } from '../../scheduler/schema.ts'
-import { enqueue } from '../../events/outbox.ts'
-import { projectMembers, projects } from '../boards/schema.ts'
-import {
-  deleteSpace,
-  provisioned,
-  provisionSpace,
-  removeMembers,
-  renameSpace,
-  upsertMembers
-} from './events.ts'
+import { projects } from '../boards/schema.ts'
+import { deleteSpace, matchSpace } from './events.ts'
 import { spaces } from './schema.ts'
 
 export const RECONCILE_SPACES_JOB = 'reconcile-spaces'
@@ -86,22 +78,7 @@ export function reconcileSpace(ldapRest: LdapRest): Handler {
       await deleteSpace(tx, ref)
       return undefined
     }
-    await provisionSpace(tx, { ...ref, name: remote.name })
-    // Every run, so TwakeSpace learns the project even if an earlier event was
-    // lost; it ignores the repeats, which share the event id.
-    await enqueue(tx, await provisioned(tx, ref))
-    await renameSpace(tx, ref, remote.name)
-    await upsertMembers(tx, ref, remote.members)
-    await removeMembers(
-      tx,
-      ref,
-      remote.members.length === 0
-        ? undefined
-        : notInArray(
-            projectMembers.userId,
-            remote.members.map(m => m.uuid)
-          )
-    )
+    await matchSpace(tx, { ...ref, name: remote.name, members: remote.members })
     return undefined
   }
 }

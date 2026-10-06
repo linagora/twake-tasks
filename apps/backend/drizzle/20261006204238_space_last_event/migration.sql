@@ -1,0 +1,2 @@
+ALTER TABLE "spaces" ADD COLUMN "last_event_at" timestamp with time zone;--> statement-breakpoint
+CREATE POLICY "space_lookup" ON "spaces" AS PERMISSIVE FOR SELECT TO public USING (current_setting('app.space_lookup', true) = 'on');

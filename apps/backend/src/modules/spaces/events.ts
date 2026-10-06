@@ -4,6 +4,8 @@ import {
   inArray,
   isNotNull,
   isNull,
+  lte,
+  notInArray,
   or,
   sql,
   type SQL
@@ -12,7 +14,7 @@ import { z } from 'zod'
 import type { OutgoingEvent, PlatformEvent } from '../../events/envelope.ts'
 import { enqueue } from '../../events/outbox.ts'
 import { parseOrDrop, type Handler } from '../../events/router.ts'
-import { asOrganization, type Tx } from '../../infra/db.ts'
+import { asOrganization, type Db, type Tx } from '../../infra/db.ts'
 import {
   schedule,
   type Handler as JobHandler
@@ -28,9 +30,12 @@ import {
 import { addDefaultSections } from '../boards/store.ts'
 import { spaces } from './schema.ts'
 
+const timestamp = z.iso.datetime({ offset: true })
+
 const spaceEvent = z.looseObject({
   organizationId: z.string().min(1),
-  id: z.uuid()
+  id: z.uuid(),
+  timestamp
 })
 
 // People are keyed by entryUUID; one sent without it waits for the nightly
@@ -56,6 +61,12 @@ const person = z
 
 const membersRemoved = spaceEvent.extend({ members: z.array(person).min(1) })
 
+const syncCompleted = z.looseObject({
+  organizationId: z.string().min(1),
+  spaceIds: z.array(z.uuid()),
+  timestamp
+})
+
 const FALLBACK_KEY_PREFIX = 'TASK'
 
 function keyPrefixOf(name: string) {
@@ -67,13 +78,41 @@ function keyPrefixOf(name: string) {
   return letters.slice(0, 3) || FALLBACK_KEY_PREFIX
 }
 
-type SpaceRef = z.infer<typeof spaceEvent>
+type SpaceRef = Pick<z.infer<typeof spaceEvent>, 'organizationId' | 'id'>
+type TimedSpace = SpaceRef & { timestamp: string }
+
+// A late or redelivered event must not undo a newer one; equal timestamps
+// apply in the order they arrive.
+async function isStale(tx: Tx, space: TimedSpace): Promise<boolean> {
+  const [row] = await tx
+    .select({
+      stale: sql<boolean>`${spaces.lastEventAt} > ${space.timestamp}::timestamptz`
+    })
+    .from(spaces)
+    .where(eq(spaces.id, space.id))
+  return row?.stale === true
+}
+
+async function applied(tx: Tx, space: TimedSpace) {
+  await tx
+    .update(spaces)
+    .set({
+      lastEventAt: sql`greatest(${spaces.lastEventAt}, ${space.timestamp}::timestamptz)`
+    })
+    .where(eq(spaces.id, space.id))
+}
+
+/** Whether any organization has a space, deleted or not. */
+export async function knowsAnySpace(db: Db): Promise<boolean> {
+  return db.transaction(async tx => {
+    await tx.execute(sql`select set_config('app.space_lookup', 'on', true)`)
+    const [row] = await tx.select({ id: spaces.id }).from(spaces).limit(1)
+    return row !== undefined
+  })
+}
 
 /** The project kept for the space, deleted or not. */
-export async function projectOf(
-  tx: Tx,
-  space: SpaceRef
-): Promise<string | undefined> {
+async function projectOf(tx: Tx, space: SpaceRef): Promise<string | undefined> {
   const [row] = await tx
     .select({ projectId: spaces.projectId })
     .from(spaces)
@@ -88,7 +127,7 @@ const knownName = (userId: string) =>
     where ${projectMembers.userId} = ${userId} and ${projectMembers.name} is not null
     limit 1)`
 
-export async function upsertMembers(
+async function upsertMembers(
   tx: Tx,
   space: SpaceRef,
   members: z.infer<typeof member>[]
@@ -125,10 +164,7 @@ export async function upsertMembers(
     })
 }
 
-export async function provisioned(
-  tx: Tx,
-  space: SpaceRef
-): Promise<OutgoingEvent> {
+async function provisioned(tx: Tx, space: SpaceRef): Promise<OutgoingEvent> {
   const projectId = await projectOf(tx, space)
   if (!projectId) throw new Error(`space ${space.id} has no project`)
   return {
@@ -141,7 +177,7 @@ export async function provisioned(
   }
 }
 
-export async function provisionSpace(
+async function provisionSpace(
   tx: Tx,
   space: SpaceRef & { name: string }
 ): Promise<void> {
@@ -183,14 +219,14 @@ export async function provisionSpace(
   await addDefaultSections(tx, board)
 }
 
-export async function renameSpace(tx: Tx, space: SpaceRef, name: string) {
+async function renameSpace(tx: Tx, space: SpaceRef, name: string) {
   const projectId = await projectOf(tx, space)
   if (!projectId) return
   await tx.update(projects).set({ name }).where(eq(projects.id, projectId))
 }
 
 /** Takes the space's boards and its tasks away from these people. */
-export async function removeMembers(
+async function removeMembers(
   tx: Tx,
   space: SpaceRef,
   which: SQL | undefined
@@ -238,32 +274,78 @@ export async function deleteSpace(tx: Tx, space: SpaceRef): Promise<void> {
   })
 }
 
+/**
+ * Makes the space's project match the whole space, creating it if missing.
+ * A deleted space stays deleted, since space ids are never reused.
+ */
+export async function matchSpace(
+  tx: Tx,
+  space: SpaceRef & { name: string; members: z.infer<typeof member>[] }
+): Promise<void> {
+  const projectId = await projectOf(tx, space)
+  if (projectId) {
+    const [project] = await tx
+      .select({ deletedAt: projects.deletedAt })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+    if (project?.deletedAt) return
+  }
+  await provisionSpace(tx, space)
+  // Every time, so TwakeSpace learns the project even if an earlier event was
+  // lost; it ignores the repeats, which share the event id.
+  await enqueue(tx, await provisioned(tx, space))
+  await renameSpace(tx, space, space.name)
+  await upsertMembers(tx, space, space.members)
+  const uuids = space.members.flatMap(m => (m.uuid ? [m.uuid] : []))
+  await removeMembers(
+    tx,
+    space,
+    and(
+      notInArray(projectMembers.userId, uuids),
+      notInArray(
+        projectMembers.email,
+        space.members.map(m => m.email)
+      )
+    )
+  )
+}
+
+function inOrder<S extends z.ZodType<TimedSpace>>(
+  schema: S,
+  apply: (tx: Tx, space: z.output<S>) => Promise<void>
+): Handler<PlatformEvent> {
+  return async (event, tx) => {
+    const space = parseOrDrop(schema, event.body, event.routingKey)
+    await asOrganization(tx, space.organizationId)
+    if (await isStale(tx, space)) return
+    await apply(tx, space)
+    await applied(tx, space)
+  }
+}
+
 export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
   // A replay creates nothing, and publishes the same event again.
   const onCreated: Handler<PlatformEvent> = async (event, tx) => {
     const space = parseOrDrop(spaceCreated, event.body, event.routingKey)
     await asOrganization(tx, space.organizationId)
+    const stale = await isStale(tx, space)
     await provisionSpace(tx, space)
-    await upsertMembers(tx, space, space.members)
+    if (!stale) {
+      await upsertMembers(tx, space, space.members)
+      await applied(tx, space)
+    }
     await enqueue(tx, await provisioned(tx, space))
   }
 
-  const onUpdated: Handler<PlatformEvent> = async (event, tx) => {
-    const space = parseOrDrop(spaceUpdated, event.body, event.routingKey)
-    if (space.name === undefined) return
-    await asOrganization(tx, space.organizationId)
-    await renameSpace(tx, space, space.name)
-  }
+  const onUpdated = inOrder(spaceUpdated, async (tx, space) => {
+    if (space.name !== undefined) await renameSpace(tx, space, space.name)
+  })
 
-  const onMembersChanged: Handler<PlatformEvent> = async (event, tx) => {
-    const space = parseOrDrop(membersChanged, event.body, event.routingKey)
-    await asOrganization(tx, space.organizationId)
-    await upsertMembers(tx, space, space.members)
-  }
+  const onMembersChanged = inOrder(membersChanged, (tx, space) =>
+    upsertMembers(tx, space, space.members)
+  )
 
-  const onMembersRemoved: Handler<PlatformEvent> = async (event, tx) => {
-    const space = parseOrDrop(membersRemoved, event.body, event.routingKey)
-    await asOrganization(tx, space.organizationId)
+  const onMembersRemoved = inOrder(membersRemoved, async (tx, space) => {
     const uuids = space.members.flatMap(p => (p.uuid ? [p.uuid] : []))
     const emails = space.members.flatMap(p => (p.email ? [p.email] : []))
     await removeMembers(
@@ -274,12 +356,40 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
         inArray(projectMembers.email, emails)
       )
     )
-  }
+  })
 
+  const onSynced = inOrder(spaceCreated, matchSpace)
+
+  // Applied whatever its timestamp, since a space id is never reused.
   const onDeleted: Handler<PlatformEvent> = async (event, tx) => {
     const space = parseOrDrop(spaceEvent, event.body, event.routingKey)
     await asOrganization(tx, space.organizationId)
     await deleteSpace(tx, space)
+    await applied(tx, space)
+  }
+
+  // A space with an event newer than the snapshot may be missing from it.
+  const onSyncCompleted: Handler<PlatformEvent> = async (event, tx) => {
+    const sync = parseOrDrop(syncCompleted, event.body, event.routingKey)
+    await asOrganization(tx, sync.organizationId)
+    const gone = await tx
+      .select({ id: spaces.id })
+      .from(spaces)
+      .innerJoin(projects, eq(projects.id, spaces.projectId))
+      .where(
+        and(
+          eq(spaces.organizationId, sync.organizationId),
+          isNull(projects.deletedAt),
+          notInArray(spaces.id, sync.spaceIds),
+          or(
+            isNull(spaces.lastEventAt),
+            lte(spaces.lastEventAt, sql`${sync.timestamp}::timestamptz`)
+          )
+        )
+      )
+    for (const { id } of gone) {
+      await deleteSpace(tx, { organizationId: sync.organizationId, id })
+    }
   }
 
   return new Map([
@@ -288,7 +398,9 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
     ['twake.space.deleted', onDeleted],
     ['twake.space.member.added', onMembersChanged],
     ['twake.space.member.role.changed', onMembersChanged],
-    ['twake.space.member.removed', onMembersRemoved]
+    ['twake.space.member.removed', onMembersRemoved],
+    ['twake.space.synced', onSynced],
+    ['twake.space.sync.completed', onSyncCompleted]
   ])
 }
 
