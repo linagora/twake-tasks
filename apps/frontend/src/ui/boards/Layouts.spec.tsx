@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -57,12 +57,21 @@ describe('board layouts', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     await screen.findByRole('heading', { level: 1, name: 'Design' })
+    fireEvent.click(screen.getByRole('button', { name: 'Board options' }))
     expect(
-      screen.queryByRole('button', { name: 'Use as default' })
-    ).not.toBeInTheDocument()
+      within(await screen.findByRole('menu')).queryByRole('menuitem', {
+        name: 'Use as default layout'
+      })
+    ).toBeNull()
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+    await waitFor(() => {
+      expect(screen.queryByRole('menu')).toBeNull()
+    })
     fireEvent.click(layouts().getByRole('button', { name: 'Calendar' }))
+    await screen.findByRole('region', { name: 'No date' })
+    fireEvent.click(screen.getByRole('button', { name: 'Board options' }))
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Use as default' })
+      await screen.findByRole('menuitem', { name: 'Use as default layout' })
     )
 
     await screen.findByRole('region', { name: 'No date' })

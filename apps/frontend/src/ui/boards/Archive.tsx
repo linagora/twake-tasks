@@ -114,22 +114,3 @@ export function ShelfDialog({
     </Dialog>
   )
 }
-
-export function ArchiveBoardButton({ board }: { board: Board }): ReactElement {
-  const { t } = useI18n()
-  const archive = useBoardChange(board.id, (api, archived: boolean) =>
-    api.setBoardArchived(board.id, archived)
-  )
-  return (
-    <Button
-      variant="secondary"
-      className="u-ml-1"
-      disabled={archive.isPending}
-      onClick={() => {
-        archive.mutate(!board.archived)
-      }}
-    >
-      {t(board.archived ? 'archive.unarchiveBoard' : 'archive.archiveBoard')}
-    </Button>
-  )
-}

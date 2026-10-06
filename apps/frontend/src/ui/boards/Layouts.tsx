@@ -1,45 +1,40 @@
-import { Box, Button, Typography } from '@linagora/twake-mui'
+import { Calendar, Icon, List, Mosaic } from '@linagora/twake-icons'
+import { Box, Button, ToggleButton, Typography } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement, type ReactNode } from 'react'
 
 import { DayCell, MonthGrid, Stack } from '@/ds/Calendar'
-import { LAYOUTS, type Board, type Task } from '@/domain/board'
+import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
+import { LAYOUTS, type Board, type Layout, type Task } from '@/domain/board'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
 import { useSetLayout } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
+
+const LAYOUT_ICONS = { board: Mosaic, list: List, calendar: Calendar } as const
 
 export function LayoutSwitch({ board }: { board: Board }): ReactElement {
   const { t } = useI18n()
   const setLayout = useSetLayout(board.id)
   return (
-    <Box className="u-ml-auto u-ml-0-m u-flex u-flex-wrap u-flex-items-center">
-      {board.role === 'admin' && board.layout !== board.defaultLayout && (
-        <Button
-          variant="text"
-          size="small"
-          className="u-mr-1"
-          onClick={() => {
-            setLayout.mutate({ layout: board.layout, everyone: true })
-          }}
+    <HeaderToggleGroup
+      exclusive
+      size="small"
+      value={board.layout}
+      aria-label={t('layout.title')}
+      onChange={(_event, layout: Layout | null) => {
+        if (layout) setLayout.mutate({ layout, everyone: false })
+      }}
+    >
+      {LAYOUTS.map(layout => (
+        <ToggleButton
+          key={layout}
+          value={layout}
+          aria-label={t(`layout.${layout}`)}
         >
-          {t('layout.useAsDefault')}
-        </Button>
-      )}
-      <div role="group" aria-label={t('layout.title')}>
-        {LAYOUTS.map(layout => (
-          <Button
-            key={layout}
-            size="small"
-            variant={board.layout === layout ? 'primary' : 'secondary'}
-            aria-pressed={board.layout === layout}
-            onClick={() => {
-              setLayout.mutate({ layout, everyone: false })
-            }}
-          >
-            {t(`layout.${layout}`)}
-          </Button>
-        ))}
-      </div>
-    </Box>
+          <Icon icon={LAYOUT_ICONS[layout]} />
+          <ToggleLabel>{t(`layout.${layout}`)}</ToggleLabel>
+        </ToggleButton>
+      ))}
+    </HeaderToggleGroup>
   )
 }
 

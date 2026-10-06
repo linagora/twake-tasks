@@ -32,6 +32,8 @@
   },
   "board": {
     "back": "Quay lại danh sách bảng",
+    "menu": "Tùy chọn bảng",
+    "newTask": "Thêm công việc",
     "notFound": "Bảng này không tồn tại, hoặc bạn không thể mở nó.",
     "loadFailed": "Không thể tải bảng.",
     "noSection": "Không có mục",
@@ -238,7 +240,7 @@
     "board": "Bảng",
     "list": "Danh sách",
     "calendar": "Lịch",
-    "useAsDefault": "Đặt làm mặc định",
+    "useAsDefault": "Đặt làm bố cục mặc định",
     "previousMonth": "Tháng trước",
     "nextMonth": "Tháng sau",
     "noDate": "Không có ngày"
