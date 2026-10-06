@@ -29,6 +29,7 @@ async function openQuickAdd() {
 describe('QuickAdd', () => {
   it('adds a task from one line and shows it on its board', async () => {
     const { dialog, add } = await openQuickAdd()
+    expect(dialog.getByRole('textbox', { name: 'Task' })).toHaveFocus()
 
     add('Logo tomorrow p1 #Design')
 

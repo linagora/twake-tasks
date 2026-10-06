@@ -1,6 +1,6 @@
 import { Compass, Icon, Left, Plus, Share } from '@linagora/twake-icons'
 import { Alert, Button, Link, TextField, Typography } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import { useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
 import { ApiError, type Shelf } from '@/application/boards'
@@ -15,6 +15,7 @@ import {
 } from '@/ds/Columns'
 import { EmptyState } from '@/ds/EmptyState'
 import { PageHeader } from '@/ds/PageHeader'
+import { Inline } from '@/ds/SidePanel'
 import { DropColumn, SortableList } from '@/ds/Sortable'
 import type { Board, Section, Task } from '@/domain/board'
 import { ShelfDialog } from '@/ui/boards/Archive'
@@ -25,6 +26,7 @@ import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { ShareDialog } from '@/ui/boards/ShareDialog'
 import { TaskCard } from '@/ui/boards/TaskCard'
+import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -86,6 +88,9 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   const startAdding = (key: string): void => {
     setAdding(keys => new Set(keys).add(key))
   }
+  const stopAdding = (key: string): void => {
+    setAdding(keys => new Set([...keys].filter(each => each !== key)))
+  }
   const topLevel = board.tasks.filter(task => task.parentId === null)
   const loose =
     board.sections.length === 0 ||
@@ -129,6 +134,9 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
         open={adding.has(columnKey(column))}
         onOpen={() => {
           startAdding(columnKey(column))
+        }}
+        onClose={() => {
+          stopAdding(columnKey(column))
         }}
       />
     )
@@ -298,31 +306,41 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   )
 }
 
-// A stable callback ref: an inline one is re-invoked on every render and steals focus.
-const focusOnMount = (input: HTMLInputElement | null): void => {
-  input?.focus()
-}
-
 function AddTask({
   boardId,
   sectionId,
   sectionName,
   open,
-  onOpen
+  onOpen,
+  onClose
 }: {
   boardId: string
   sectionId: string | null
   sectionName: string
   open: boolean
   onOpen: () => void
+  onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
   const create = useCreateTask(boardId)
   const [title, setTitle] = useState('')
+  const refocus = useRef(false)
+  const close = () => {
+    refocus.current = true
+    setTitle('')
+    create.reset()
+    onClose()
+  }
 
   if (!open) {
     return (
       <ColumnAddButton
+        ref={(node: HTMLButtonElement | null) => {
+          if (node && refocus.current) {
+            refocus.current = false
+            node.focus()
+          }
+        }}
         variant="text"
         fullWidth
         startIcon={<Icon icon={Plus} />}
@@ -353,6 +371,9 @@ function AddTask({
         onChange={event => {
           setTitle(event.target.value)
         }}
+        onKeyDown={event => {
+          if (event.key === 'Escape') close()
+        }}
         size="small"
         fullWidth
         inputRef={focusOnMount}
@@ -363,14 +384,19 @@ function AddTask({
           {t('board.addFailed')}
         </Typography>
       )}
-      <Button
-        type="submit"
-        size="small"
-        className="u-mt-1"
-        disabled={create.isPending || !title.trim()}
-      >
-        {t('board.add')}
-      </Button>
+      <Inline>
+        <Button
+          type="submit"
+          size="small"
+          className="u-mt-1"
+          disabled={create.isPending || !title.trim()}
+        >
+          {t('board.add')}
+        </Button>
+        <Button variant="text" size="small" className="u-mt-1" onClick={close}>
+          {t('board.cancel')}
+        </Button>
+      </Inline>
     </form>
   )
 }

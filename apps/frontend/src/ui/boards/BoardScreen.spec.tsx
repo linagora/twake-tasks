@@ -289,6 +289,31 @@ describe('BoardScreen', () => {
     expect(await todo.findByRole('button', { name: 'Banner' })).toBeVisible()
   })
 
+  it('closes the add task form on Escape or Cancel', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+    const todo = within(await screen.findByRole('region', { name: 'To do' }))
+    const opener = () =>
+      todo.getByRole('button', { name: 'Add a task to To do' })
+
+    fireEvent.click(opener())
+    fireEvent.keyDown(todo.getByRole('textbox', { name: 'Task title' }), {
+      key: 'Escape'
+    })
+
+    expect(
+      todo.queryByRole('textbox', { name: 'Task title' })
+    ).not.toBeInTheDocument()
+    expect(opener()).toHaveFocus()
+
+    fireEvent.click(opener())
+    fireEvent.click(todo.getByRole('button', { name: 'Cancel' }))
+
+    expect(
+      todo.queryByRole('textbox', { name: 'Task title' })
+    ).not.toBeInTheDocument()
+  })
+
   it('adds a section at the end', async () => {
     const board = designBoard()
     const boardsApi = fakeBoardsApi([board])

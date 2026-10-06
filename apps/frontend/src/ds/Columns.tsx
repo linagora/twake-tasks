@@ -200,7 +200,11 @@ export function Card({
           borderColor: 'transparent',
           rotate: '2deg'
         }),
-        '& > [data-card-menu]': { opacity: 0, transition: 'opacity 120ms' },
+        '& > [data-card-menu]': {
+          opacity: 0,
+          transition: 'opacity 120ms',
+          zIndex: 1
+        },
         '&:hover > [data-card-menu], &:focus-within > [data-card-menu], & > [data-card-menu]:has([aria-expanded="true"])':
           { opacity: 1 },
         '@media (hover: none)': { '& > [data-card-menu]': { opacity: 1 } }
@@ -234,7 +238,10 @@ export function CardTitle({ children }: { children: ReactNode }): ReactElement {
         WebkitLineClamp: 3,
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden',
-        '& > *': { fontWeight: 'inherit' }
+        '& > *': { fontWeight: 'inherit' },
+        // Stretches the title button over the whole card, so a click anywhere on it opens the task.
+        '& > button': { position: 'static' },
+        '& > button::after': { content: '""', position: 'absolute', inset: 0 }
       }}
     >
       {children}
