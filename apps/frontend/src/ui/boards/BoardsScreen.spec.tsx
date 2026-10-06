@@ -1,7 +1,7 @@
 import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 
@@ -55,6 +55,34 @@ describe('BoardsScreen', () => {
     expect(
       await screen.findByRole('progressbar', { name: 'Loading' })
     ).toBeInTheDocument()
+  })
+
+  it('shows the key, the kind and the open tasks of each board', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    design.tasks = [
+      aTask(null, { key: 'DES-1', title: 'Logo' }),
+      aTask(null, { key: 'DES-2', title: 'Poster' }),
+      aTask(null, {
+        key: 'DES-3',
+        title: 'Flyer',
+        completedAt: '2026-10-01T00:00:00Z'
+      })
+    ]
+    const ops = aBoard({ name: 'Ops', keyPrefix: 'OPS', spaceId: 'space-1' })
+    renderRoute('/', { boardsApi: fakeBoardsApi([design, ops]) })
+
+    const designCard = within(
+      await screen.findByRole('listitem', { name: 'Design' })
+    )
+    const opsCard = within(screen.getByRole('listitem', { name: 'Ops' }))
+
+    expect(designCard.getByText('DES')).toBeVisible()
+    expect(designCard.getByText('2 open tasks')).toBeVisible()
+    expect(
+      designCard.getByRole('img', { name: 'Personal board' })
+    ).toBeVisible()
+    expect(opsCard.getByText('No open tasks')).toBeVisible()
+    expect(opsCard.getByRole('img', { name: 'Space board' })).toBeVisible()
   })
 
   it('pins a starred board first until it is unstarred', async () => {

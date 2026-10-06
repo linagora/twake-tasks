@@ -10,15 +10,17 @@ import {
   Archive,
   Icon,
   Mosaic,
+  People,
   Plus,
   Star,
-  StarOutline
+  StarOutline,
+  Team
 } from '@linagora/twake-icons'
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
-import { TileGrid, Tile } from '@/ds/TileGrid'
+import { CardTile, TileGrid } from '@/ds/TileGrid'
 import type { BoardSummary } from '@/domain/board'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { useBoards, useSetFavorite } from '@/ui/boards/queries'
@@ -44,7 +46,7 @@ function FavoriteButton({ board }: { board: BoardSummary }): ReactElement {
     <IconButton
       ref={button}
       size="small"
-      className="u-ml-auto"
+      color={board.favorite ? 'warning' : 'default'}
       aria-label={t(board.favorite ? 'boards.unstar' : 'boards.star', {
         name: board.name
       })}
@@ -85,6 +87,7 @@ export function BoardsScreen(): ReactElement {
           {t('boards.title')}
         </Typography>
         <Button
+          startIcon={<Icon icon={Plus} />}
           onClick={() => {
             setCreating(true)
           }}
@@ -135,17 +138,26 @@ export function BoardsScreen(): ReactElement {
       {shown.length > 0 && (
         <TileGrid label={t('boards.title')}>
           {shown.map(board => (
-            <Tile key={board.id}>
-              <Link
-                component={RouterLink}
-                to={`/boards/${board.id}`}
-                underline="none"
-                color="textPrimary"
-              >
-                {board.name}
-              </Link>
-              <FavoriteButton board={board} />
-            </Tile>
+            <CardTile
+              key={board.id}
+              label={board.name}
+              icon={board.spaceId === null ? People : Team}
+              iconLabel={t(
+                board.spaceId === null ? 'boards.personal' : 'boards.space'
+              )}
+              title={
+                <Link component={RouterLink} to={`/boards/${board.id}`}>
+                  {board.name}
+                </Link>
+              }
+              tag={board.keyPrefix}
+              meta={
+                board.openTasks === 0
+                  ? t('boards.noOpenTasks')
+                  : t('boards.openTasks', { smart_count: board.openTasks })
+              }
+              action={<FavoriteButton board={board} />}
+            />
           ))}
         </TileGrid>
       )}

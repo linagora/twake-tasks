@@ -22,7 +22,11 @@
     "emptyArchivedHint": "Các bảng đã lưu trữ nằm ở đây, chỉ để xem.",
     "loadFailed": "Không thể tải các bảng.",
     "star": "Thêm %{name} vào mục yêu thích",
-    "unstar": "Bỏ %{name} khỏi mục yêu thích"
+    "unstar": "Bỏ %{name} khỏi mục yêu thích",
+    "personal": "Bảng cá nhân",
+    "space": "Bảng không gian",
+    "openTasks": "%{smart_count} việc đang mở",
+    "noOpenTasks": "Không có việc đang mở"
   },
   "newBoard": {
     "title": "Bảng mới",
