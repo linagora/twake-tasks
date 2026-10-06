@@ -5,32 +5,62 @@ import { aBoard, aProject, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 
+const boardNames = (list: HTMLElement) =>
+  within(list)
+    .getAllByRole('link')
+    .map(link => link.textContent)
+
 describe('BoardsScreen', () => {
   it('lists active boards, and archived ones under their own tab', async () => {
+    const project = aProject({ name: 'Product' })
     const boardsApi = fakeBoardsApi([
-      aBoard({ name: 'Design' }),
-      aBoard({ name: 'Front UI', keyPrefix: 'FUI' }),
-      aBoard({ name: 'Old plans', keyPrefix: 'OLD', archived: true })
+      aBoard({ name: 'Design', project }),
+      aBoard({ name: 'Front UI', keyPrefix: 'FUI', project }),
+      aBoard({ name: 'Old plans', keyPrefix: 'OLD', archived: true, project })
     ])
     renderRoute('/', { boardsApi })
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Boards' })
     ).toBeInTheDocument()
-    const active = await screen.findByRole('list', { name: 'Boards' })
     expect(
-      within(active)
-        .getAllByRole('link')
-        .map(link => link.textContent)
+      boardNames(await screen.findByRole('list', { name: 'Product' }))
     ).toEqual(['Design', 'Front UI'])
 
     fireEvent.click(screen.getByRole('tab', { name: 'Archived' }))
 
+    expect(boardNames(screen.getByRole('list', { name: 'Product' }))).toEqual([
+      'Old plans'
+    ])
+  })
+
+  it('groups boards under their project, the personal one first', async () => {
+    const personal = aProject({ name: 'Personal', personal: true })
+    const acme = aProject({ name: 'Acme', managed: true })
+    const marketing = aProject({ name: 'Marketing' })
+    renderRoute('/', {
+      boardsApi: fakeBoardsApi([
+        aBoard({
+          name: 'Inbox',
+          keyPrefix: 'INB',
+          inbox: true,
+          project: personal
+        }),
+        aBoard({ name: 'Launch', keyPrefix: 'LAU', project: marketing }),
+        aBoard({ name: 'Ops', keyPrefix: 'OPS', project: acme })
+      ])
+    })
+
+    await screen.findByRole('list', { name: 'Personal' })
     expect(
-      within(screen.getByRole('list', { name: 'Boards' }))
-        .getAllByRole('link')
-        .map(link => link.textContent)
-    ).toEqual(['Old plans'])
+      screen
+        .getAllByRole('heading', { level: 2 })
+        .map(heading => heading.textContent)
+    ).toEqual(['Personal', 'Acme', 'Marketing'])
+    expect(boardNames(screen.getByRole('list', { name: 'Personal' }))).toEqual([
+      'Inbox'
+    ])
+    expect(screen.getAllByText('Members come from the space.')).toHaveLength(1)
   })
 
   it('offers to create the first board', async () => {
@@ -89,16 +119,13 @@ describe('BoardsScreen', () => {
     expect(opsCard.getByRole('img', { name: 'Space board' })).toBeVisible()
   })
 
-  it('pins a starred board first until it is unstarred', async () => {
+  it('pins a starred board above the projects until it is unstarred', async () => {
+    const project = aProject({ name: 'Product' })
     const boardsApi = fakeBoardsApi([
-      aBoard({ name: 'Design' }),
-      aBoard({ name: 'Front UI', keyPrefix: 'FUI' })
+      aBoard({ name: 'Design', project }),
+      aBoard({ name: 'Front UI', keyPrefix: 'FUI', project })
     ])
     renderRoute('/', { boardsApi })
-    const names = () =>
-      within(screen.getByRole('list', { name: 'Boards' }))
-        .getAllByRole('link')
-        .map(link => link.textContent)
 
     fireEvent.click(
       await screen.findByRole('button', { name: 'Add Front UI to favorites' })
@@ -106,13 +133,30 @@ describe('BoardsScreen', () => {
     const unstar = await screen.findByRole('button', {
       name: 'Remove Front UI from favorites'
     })
+    const home = within(screen.getByRole('main'))
 
-    expect(names()).toEqual(['Front UI', 'Design'])
+    expect(
+      home
+        .getAllByRole('heading', { level: 2 })
+        .map(heading => heading.textContent)
+    ).toEqual(['Favorites', 'Product'])
+    expect(boardNames(home.getByRole('list', { name: 'Favorites' }))).toEqual([
+      'Front UI'
+    ])
+    expect(boardNames(home.getByRole('list', { name: 'Product' }))).toEqual([
+      'Design'
+    ])
     fireEvent.click(unstar)
     expect(
       await screen.findByRole('button', { name: 'Add Front UI to favorites' })
     ).toBeInTheDocument()
-    expect(names()).toEqual(['Design', 'Front UI'])
+    expect(
+      home.queryByRole('list', { name: 'Favorites' })
+    ).not.toBeInTheDocument()
+    expect(boardNames(screen.getByRole('list', { name: 'Product' }))).toEqual([
+      'Design',
+      'Front UI'
+    ])
   })
 
   it('opens a board from the list', async () => {

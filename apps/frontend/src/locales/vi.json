@@ -40,6 +40,8 @@
     "unstar": "Bỏ %{name} khỏi mục yêu thích",
     "personal": "Bảng cá nhân",
     "space": "Bảng không gian",
+    "personalProject": "Cá nhân",
+    "fromSpace": "Thành viên đến từ không gian.",
     "openTasks": "%{smart_count} việc đang mở",
     "noOpenTasks": "Không có việc đang mở"
   },
