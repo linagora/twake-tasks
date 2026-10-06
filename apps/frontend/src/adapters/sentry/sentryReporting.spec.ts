@@ -1,23 +1,28 @@
+import {
+  attachFeedback,
+  makeFeedbackIntegration
+} from '@linagora/twake-feedback/sentry'
 import * as Sentry from '@sentry/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { FeedbackTexts } from '@/application/reporting'
 import {
   readSentryConfig,
   startSentry
 } from '@/adapters/sentry/sentryReporting'
 
-const widget = { removeFromDom: vi.fn() }
-const integration = { name: 'Feedback', createWidget: vi.fn(() => widget) }
+const integration = { name: 'Feedback', setTheme: vi.fn() }
+const detach = vi.fn()
 const handler = vi.fn()
 
 vi.mock('@sentry/react', () => ({
   init: vi.fn(),
-  feedbackIntegration: vi.fn(() => integration),
   reactErrorHandler: vi.fn(() => handler)
 }))
 
-const TEXTS = { triggerLabel: 'Feedback' } as FeedbackTexts
+vi.mock('@linagora/twake-feedback/sentry', () => ({
+  makeFeedbackIntegration: vi.fn(() => integration),
+  attachFeedback: vi.fn(() => detach)
+}))
 
 describe('readSentryConfig', () => {
   it('is off without a DSN', () => {
@@ -94,7 +99,7 @@ describe('startSentry', () => {
     const options = vi.mocked(Sentry.init).mock.calls[0]?.[0]
     expect(options).not.toHaveProperty('tracesSampleRate')
     expect(options).not.toHaveProperty('replaysSessionSampleRate')
-    expect(Sentry.feedbackIntegration).not.toHaveBeenCalled()
+    expect(makeFeedbackIntegration).not.toHaveBeenCalled()
     expect(reporting.feedback).toBeNull()
 
     const error = new Error('boom')
@@ -104,7 +109,43 @@ describe('startSentry', () => {
     })
   })
 
-  it('adds the bundled feedback form without its own button when turned on', () => {
+  it('adds the shared feedback integration, with its defaults, when turned on', () => {
+    startSentry(
+      {
+        dsn: 'https://key@errors.example.com/1',
+        environment: undefined,
+        feedback: true
+      },
+      '1.2.3'
+    )
+
+    // No id: the package places the form on #sentry-feedback.
+    expect(makeFeedbackIntegration).toHaveBeenCalledExactlyOnceWith()
+    expect(Sentry.init).toHaveBeenCalledWith(
+      expect.objectContaining({ integrations: [integration] })
+    )
+    expect(attachFeedback).not.toHaveBeenCalled()
+  })
+
+  it('attaches the form to the button, and detaches it', () => {
+    const reporting = startSentry(
+      {
+        dsn: 'https://key@errors.example.com/1',
+        environment: undefined,
+        feedback: true
+      },
+      '1.2.3'
+    )
+    const button = document.createElement('button')
+    const labels = { formTitle: 'Send feedback' }
+
+    const detached = reporting.feedback?.attach(button, labels)
+
+    expect(attachFeedback).toHaveBeenCalledWith(integration, button, labels)
+    expect(detached).toBe(detach)
+  })
+
+  it('gives the color scheme of the app to the form', () => {
     const reporting = startSentry(
       {
         dsn: 'https://key@errors.example.com/1',
@@ -114,25 +155,8 @@ describe('startSentry', () => {
       '1.2.3'
     )
 
-    expect(Sentry.feedbackIntegration).toHaveBeenCalledWith(
-      expect.objectContaining({
-        autoInject: false,
-        enableScreenshot: true,
-        showBranding: false,
-        showName: false,
-        showEmail: true,
-        isEmailRequired: false
-      })
-    )
-    expect(Sentry.init).toHaveBeenCalledWith(
-      expect.objectContaining({ integrations: [integration] })
-    )
-    expect(integration.createWidget).not.toHaveBeenCalled()
+    reporting.feedback?.setColorScheme('dark')
 
-    const unmount = reporting.feedback?.mount(TEXTS)
-    expect(integration.createWidget).toHaveBeenCalledWith(TEXTS)
-    expect(widget.removeFromDom).not.toHaveBeenCalled()
-    unmount?.()
-    expect(widget.removeFromDom).toHaveBeenCalledTimes(1)
+    expect(integration.setTheme).toHaveBeenCalledWith('dark')
   })
 })

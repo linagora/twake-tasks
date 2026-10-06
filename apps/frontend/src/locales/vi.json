@@ -399,7 +399,11 @@
     "due": "Hạn",
     "save": "Lưu bộ lọc",
     "saveFailed": "Không thể lưu bộ lọc.",
-    "assignees": { "any": "Bất kỳ", "me": "Tôi", "nobody": "Không ai" },
+    "assignees": {
+      "any": "Bất kỳ",
+      "me": "Tôi",
+      "nobody": "Không ai"
+    },
     "dues": {
       "any": "Bất kỳ",
       "overdue": "Quá hạn",

@@ -1,35 +1,15 @@
-/** Every label of the feedback form and of its button. */
-export interface FeedbackTexts {
-  triggerLabel: string
-  triggerAriaLabel: string
-  formTitle: string
-  messageLabel: string
-  messagePlaceholder: string
-  emailLabel: string
-  emailPlaceholder: string
-  submitButtonLabel: string
-  cancelButtonLabel: string
-  confirmButtonLabel: string
-  successMessageText: string
-  isRequiredLabel: string
-  addScreenshotButtonLabel: string
-  removeScreenshotButtonLabel: string
-  highlightToolText: string
-  hideToolText: string
-  removeHighlightText: string
-  errorEmptyMessageText: string
-  errorNoClientText: string
-  errorTimeoutText: string
-  errorForbiddenText: string
-  errorGenericText: string
-}
-
-/** Id of the element that holds the feedback button, to place it from the page. */
-export const FEEDBACK_HOST_ID = 'twake-tasks-feedback'
-
 export interface FeedbackWidget {
-  /** Shows the feedback button; the returned function removes it. */
-  mount: (texts: FeedbackTexts) => () => void
+  /**
+   * Opens the feedback form when `el` is clicked, with the texts of the form
+   * by Sentry's label name. The returned function detaches it and removes the
+   * form.
+   */
+  attach: (
+    el: HTMLElement,
+    labels: Readonly<Record<string, string>>
+  ) => () => void
+  /** Follows the light or dark theme of the app in the form. */
+  setColorScheme: (scheme: 'light' | 'dark' | 'system') => void
 }
 
 export interface Reporting {

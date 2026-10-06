@@ -50,6 +50,7 @@ import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoards, useUnreadNotifications } from '@/ui/boards/queries'
+import { AppFeedback } from '@/ui/shell/AppFeedback'
 import { PlatformBar } from '@/ui/shell/PlatformBar'
 import { QuickAdd } from '@/ui/shell/QuickAdd'
 import { SidebarLink } from '@/ui/shell/SidebarLink'
@@ -92,6 +93,7 @@ export function AppShell(): ReactElement {
       }
     >
       <Outlet />
+      <AppFeedback />
       {quickAdd && (
         <QuickAdd
           onClose={() => {

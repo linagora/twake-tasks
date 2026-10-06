@@ -399,7 +399,11 @@
     "due": "Échéance",
     "save": "Enregistrer le filtre",
     "saveFailed": "Impossible d’enregistrer le filtre.",
-    "assignees": { "any": "Tous", "me": "Moi", "nobody": "Personne" },
+    "assignees": {
+      "any": "Tous",
+      "me": "Moi",
+      "nobody": "Personne"
+    },
     "dues": {
       "any": "Toutes",
       "overdue": "En retard",
