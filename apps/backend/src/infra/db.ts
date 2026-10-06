@@ -60,8 +60,9 @@ const CONNECTION_ERRORS = new Set([
   'CONNECTION_DESTROYED'
 ])
 
-// Connection exceptions, insufficient resources, server shutting down.
-const TRANSIENT_SQLSTATE = /^(08|53|57P0)/
+// Connection exceptions, insufficient resources, server shutting down,
+// serialization failures and deadlocks, lock and statement timeouts.
+const TRANSIENT_SQLSTATE = /^(08|53|57P0|40001$|40P01$|55P03$|57014$)/
 
 /** Whether the work may succeed if tried again later, unchanged. */
 export function isTransient(error: unknown): boolean {
@@ -69,11 +70,7 @@ export function isTransient(error: unknown): boolean {
     const code = (cause as { code?: unknown }).code
     if (typeof code !== 'string') continue
     if (CONNECTION_ERRORS.has(code)) return true
-    if (cause.name === 'PostgresError') {
-      return (
-        code === '40001' || code === '40P01' || TRANSIENT_SQLSTATE.test(code)
-      )
-    }
+    if (cause.name === 'PostgresError') return TRANSIENT_SQLSTATE.test(code)
   }
   return false
 }

@@ -501,6 +501,25 @@ describe('twake.space.synced', () => {
     ])
   })
 
+  it('keeps a member the snapshot lists without a uuid', async () => {
+    const admin = aUser()
+    const editor = aUser({ organizationId: admin.organizationId })
+    const { space } = await aSpaceWithATask(admin, [editor])
+
+    await deliver('twake.space.synced', {
+      ...space,
+      name: 'Ops',
+      members: [
+        { email: admin.email, role: 'admin' },
+        { email: editor.email, role: 'editor' }
+      ],
+      groups: []
+    })
+
+    expect(await spaceBoards(admin)).toHaveLength(1)
+    expect(await spaceBoards(editor)).toHaveLength(1)
+  })
+
   it('ignores a snapshot older than the last event of the space', async () => {
     const admin = aUser()
     const space = { organizationId: admin.organizationId, id: randomUUID() }

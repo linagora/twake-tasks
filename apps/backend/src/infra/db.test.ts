@@ -287,7 +287,7 @@ describe('isTransient', () => {
     }
   })
 
-  it.each(['40001', '40P01', '57P01', '53300', '08006'])(
+  it.each(['40001', '40P01', '55P03', '57014', '57P01', '53300', '08006'])(
     'holds for SQLSTATE %s',
     async code => {
       expect(isTransient(await raise(code))).toBe(true)

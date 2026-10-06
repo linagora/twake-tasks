@@ -296,11 +296,17 @@ export async function matchSpace(
   await enqueue(tx, await provisioned(tx, space))
   await renameSpace(tx, space, space.name)
   await upsertMembers(tx, space, space.members)
-  const kept = space.members.flatMap(m => (m.uuid ? [m.uuid] : []))
+  const uuids = space.members.flatMap(m => (m.uuid ? [m.uuid] : []))
   await removeMembers(
     tx,
     space,
-    kept.length === 0 ? undefined : notInArray(projectMembers.userId, kept)
+    and(
+      notInArray(projectMembers.userId, uuids),
+      notInArray(
+        projectMembers.email,
+        space.members.map(m => m.email)
+      )
+    )
   )
 }
 
@@ -374,9 +380,7 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
         and(
           eq(spaces.organizationId, sync.organizationId),
           isNull(projects.deletedAt),
-          sync.spaceIds.length === 0
-            ? undefined
-            : notInArray(spaces.id, sync.spaceIds),
+          notInArray(spaces.id, sync.spaceIds),
           or(
             isNull(spaces.lastEventAt),
             lte(spaces.lastEventAt, sql`${sync.timestamp}::timestamptz`)

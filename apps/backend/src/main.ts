@@ -80,15 +80,21 @@ const consumer = await startConsumer(
     logger
   })
 )
-// A sync request fans out to every app and every space, so only a first
-// deployment sends one, once its queue is bound to receive the answers.
+// A sync request fans out to every app and every space, so it is sent only
+// while no space is known, once the queue is bound to receive the answers.
+// The nightly sync repairs what a failed request misses, so it never stops
+// the start.
 if (spaces && !(await knowsAnySpace(db))) {
-  await requestSpaceSync(
-    config.RABBITMQ_URL,
-    config.RABBITMQ_SPACE_EXCHANGE,
-    logger
-  )
-  logger.info('no space known yet, sync of every organization requested')
+  try {
+    await requestSpaceSync(
+      config.RABBITMQ_URL,
+      config.RABBITMQ_SPACE_EXCHANGE,
+      logger
+    )
+    logger.info('no space known yet, sync of every organization requested')
+  } catch (error) {
+    logger.error({ err: error }, 'space sync request failed')
+  }
 }
 const stopScheduler = createScheduler({
   db,

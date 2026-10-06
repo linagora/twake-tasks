@@ -27,10 +27,10 @@ const MAX_ATTEMPTS = 5
 
 // One message at a time on a single active consumer, so the events of a space
 // are handled in the order ldap-rest published them, even with several replicas.
-// An event that keeps failing goes to the dead letter queue so the ones behind
-// it go on; nobody replays it, and the next space sync repairs its space. A
-// failure that is not the event's fault, such as the database being down,
-// retries until it passes.
+// An event that keeps failing is dead lettered so the ones behind it go on.
+// Never replay a space event from there (it could undo newer ones, and the next
+// space sync repairs it); an account deletion can be replayed once fixed.
+// A transient failure, such as the database being down, retries until it passes.
 export async function startConsumer(
   url: string,
   names: ConsumerNames,
@@ -96,7 +96,7 @@ export async function requestSpaceSync(
   spaceExchange: string,
   logger: Logger
 ): Promise<void> {
-  const client = new RabbitMQClient({ url, logger })
+  const client = new RabbitMQClient({ url, logger, publishMaxAttempts: 1 })
   await client.init()
   try {
     await client.publish(
