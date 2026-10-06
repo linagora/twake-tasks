@@ -149,6 +149,25 @@ describe('TaskPanel', () => {
     ).toBeInTheDocument()
   })
 
+  it('assigns from the panel without a save step', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    board.members = [{ userId: 'ann', email: 'ann@example.com' }]
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(panel.getByRole('button', { name: 'Edit assignees' }))
+    fireEvent.click(
+      within(
+        await screen.findByRole('dialog', { name: 'Assign DES-1' })
+      ).getByRole('menuitemcheckbox', { name: 'ann@example.com' })
+    )
+
+    expect(await panel.findByText('ann@example.com')).toBeVisible()
+    expect(boardsApi.setAssignees).toHaveBeenCalledWith(board.id, logo.id, [
+      'ann'
+    ])
+  })
+
   it('lists the sub-tasks and completes one', async () => {
     const { board, logo, boardsApi } = logoBoard()
     const sketch = aTask(null, {

@@ -13,8 +13,8 @@ import { useSearchParams } from 'react-router'
 import { Card, CardTitle, LabelChip, Meta, MetaChip } from '@/ds/Columns'
 import { SortableCard } from '@/ds/Sortable'
 import type { Label, Person, Section, Task } from '@/domain/board'
-import { AssignDialog } from '@/ui/boards/AssignDialog'
-import { LabelsDialog } from '@/ui/boards/LabelsDialog'
+import { AssignPicker } from '@/ui/boards/AssignPicker'
+import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { Subtasks } from '@/ui/boards/Subtasks'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
@@ -41,8 +41,8 @@ export function TaskCard({
 }): ReactElement {
   const { t } = useI18n()
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
-  const [assigning, setAssigning] = useState(false)
-  const [labeling, setLabeling] = useState(false)
+  const [assigning, setAssigning] = useState<HTMLElement | null>(null)
+  const [labeling, setLabeling] = useState<HTMLElement | null>(null)
   const [params] = useSearchParams()
   const [open, setOpen] = useState(params.get('task') === task.key)
   const editable = onMove !== undefined
@@ -165,14 +165,14 @@ export function TaskCard({
       >
         <MenuItem
           onClick={choose(() => {
-            setAssigning(true)
+            setAssigning(menuAnchor)
           })}
         >
           {t('board.assign')}
         </MenuItem>
         <MenuItem
           onClick={choose(() => {
-            setLabeling(true)
+            setLabeling(menuAnchor)
           })}
         >
           {t('board.labels')}
@@ -200,22 +200,24 @@ export function TaskCard({
         />
       )}
       {assigning && (
-        <AssignDialog
+        <AssignPicker
           task={task}
           boardId={boardId}
           members={members}
+          anchor={assigning}
           onClose={() => {
-            setAssigning(false)
+            setAssigning(null)
           }}
         />
       )}
       {labeling && (
-        <LabelsDialog
+        <LabelsPicker
           task={task}
           boardId={boardId}
           labels={labels}
+          anchor={labeling}
           onClose={() => {
-            setLabeling(false)
+            setLabeling(null)
           }}
         />
       )}
