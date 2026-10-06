@@ -1,4 +1,4 @@
-import { and, asc, eq, notInArray, sql } from 'drizzle-orm'
+import { and, asc, eq, notInArray } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { labels, taskLabels } from './schema.ts'
@@ -10,22 +10,11 @@ import {
   writeOrRefuse
 } from './tasks.ts'
 
-interface Scope {
-  spaceId: string | null
-  ownerId: string | null
-}
-
-function inScope(board: Scope) {
-  if (board.spaceId) return eq(labels.spaceId, board.spaceId)
-  if (board.ownerId) return eq(labels.ownerId, board.ownerId)
-  return sql`false`
-}
-
-export function labelsOn(tx: Tx, board: Scope) {
+export function labelsOn(tx: Tx, board: { projectId: string }) {
   return tx
     .select({ id: labels.id, name: labels.name })
     .from(labels)
-    .where(inScope(board))
+    .where(eq(labels.projectId, board.projectId))
     .orderBy(asc(labels.name))
 }
 
@@ -42,8 +31,7 @@ export function createLabelStore(db: Db) {
           .insert(labels)
           .values({
             organizationId: board.organizationId,
-            spaceId: board.spaceId,
-            ownerId: board.spaceId ? null : board.ownerId,
+            projectId: board.projectId,
             name
           })
           .onConflictDoNothing()

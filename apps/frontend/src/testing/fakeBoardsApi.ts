@@ -10,10 +10,16 @@ import {
   type Reminder,
   type SavedFilter,
   type Sharing,
-  type Shelf,
-  type Space
+  type Project,
+  type Shelf
 } from '@/application/boards'
-import type { Board, BoardSummary, Section, Task } from '@/domain/board'
+import type {
+  Board,
+  BoardSummary,
+  ProjectSummary,
+  Section,
+  Task
+} from '@/domain/board'
 
 let counter = 0
 const nextId = () => {
@@ -21,12 +27,24 @@ const nextId = () => {
   return `00000000-0000-7000-8000-${String(counter).padStart(12, '0')}`
 }
 
+export function aProject(
+  overrides: Partial<ProjectSummary> = {}
+): ProjectSummary {
+  return {
+    id: nextId(),
+    name: 'Design',
+    personal: false,
+    managed: false,
+    ...overrides
+  }
+}
+
 export function aBoard(overrides: Partial<Board> = {}): Board {
   return {
     id: nextId(),
     name: 'Design',
     keyPrefix: 'DES',
-    spaceId: null,
+    project: aProject(),
     inbox: false,
     archived: false,
     version: 1,
@@ -73,7 +91,7 @@ function summaryOf(board: Board, favorite = false): BoardSummary {
     id: board.id,
     name: board.name,
     keyPrefix: board.keyPrefix,
-    spaceId: board.spaceId,
+    project: board.project,
     inbox: board.inbox,
     role: board.role,
     archived: board.archived,
@@ -135,7 +153,8 @@ export function fakeBoardsApi(boards: Board[] = []) {
     return sharing
   }
 
-  const spaces: Space[] = []
+  const projects: Project[] = []
+  const spaceProjects = new Map<string, string>()
 
   const hidden = new Map<string, { shelf: Shelf; task: Task; at: string }>()
   const hide = (shelf: Shelf) => (boardId: string, taskId: string) =>
@@ -189,16 +208,25 @@ export function fakeBoardsApi(boards: Board[] = []) {
           find(boardId).archived = archived
         })
     ),
-    listSpaces: vi.fn<BoardsApi['listSpaces']>(() =>
-      Promise.resolve(structuredClone(spaces))
+    listProjects: vi.fn<BoardsApi['listProjects']>(() =>
+      Promise.resolve(structuredClone(projects))
     ),
-    moveToSpace: vi.fn<BoardsApi['moveToSpace']>((boardId, spaceId) =>
+    moveToProject: vi.fn<BoardsApi['moveToProject']>((boardId, projectId) =>
       Promise.resolve().then(() => {
         const board = find(boardId)
-        board.spaceId = spaceId
-        board.role =
-          spaces.find(space => space.id === spaceId)?.role ?? 'viewer'
+        const project = projects.find(({ id }) => id === projectId)
+        if (!project) throw new ApiError(404, 'not_found')
+        const { role, ...summary } = project
+        board.project = summary
+        board.role = role
         sharings.delete(boardId)
+      })
+    ),
+    projectOfSpace: vi.fn<BoardsApi['projectOfSpace']>(spaceId =>
+      Promise.resolve().then(() => {
+        const projectId = spaceProjects.get(spaceId)
+        if (!projectId) throw new ApiError(404, 'not_found')
+        return projectId
       })
     ),
     getSharing: vi.fn<BoardsApi['getSharing']>(boardId =>
@@ -615,6 +643,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
     comments,
     history,
     sharings,
-    spaces
+    projects,
+    spaceProjects
   })
 }

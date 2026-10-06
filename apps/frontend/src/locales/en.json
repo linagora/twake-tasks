@@ -291,11 +291,11 @@
     "close": "Close",
     "failed": "The change could not be saved.",
     "loadFailed": "The members could not be loaded.",
-    "moveTitle": "Move to a space",
-    "space": "Space",
-    "moveHelp": "Its members are removed and the space's roles apply.",
+    "moveTitle": "Move to another project",
+    "project": "Project",
+    "moveHelp": "The project's members and labels apply to the board.",
     "move": "Move",
-    "prefixTaken": "A board of this space already uses %{prefix}.",
+    "prefixTaken": "A board of this project already uses %{prefix}.",
     "moveFailed": "The board could not be moved."
   },
   "layout": {

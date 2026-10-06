@@ -59,13 +59,14 @@ describe('saved filters', () => {
     const design = await aBoardOf(owner, 'DES')
     const home = await aBoardOf(owner, 'HOM')
     const client = await design.label('client')
+    const homeClient = await home.label('Client')
     await design.add('Urgent, labeled', { priority: 1 }, [client])
     await design.add('Urgent, no label', { priority: 1 })
-    await home.add('Labeled, low', { priority: 4 }, [client])
+    await home.add('Labeled, low', { priority: 4 }, [homeClient])
     await home.add(
       'Urgent, labeled, late',
       { priority: 1, dueDate: shift(today, 10, 'days') },
-      [client]
+      [homeClient]
     )
 
     const created = await api.as(owner).post('/filters', {

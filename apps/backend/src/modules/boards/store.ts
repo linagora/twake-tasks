@@ -17,19 +17,21 @@ import { generateNKeysBetween } from 'fractional-indexing'
 import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { accessibleBoards, membersOf, roleOn } from './access.ts'
+import { accessibleBoards, membersOf, roleIn, roleOn } from './access.ts'
 import { shown } from './archive.ts'
 import {
   sections,
   boardFavorites,
   boardLayouts,
-  boardMembers,
   boards,
   comments,
+  projectMembers,
+  projects,
   taskAssignees,
   taskLabels,
   tasks
 } from './schema.ts'
+import { Refused, writeOrRefuse, type Result } from './tasks.ts'
 import { labelsOn } from './labels.ts'
 import { recurrenceOf, shift, todayIn } from './recurrence.ts'
 
@@ -107,7 +109,7 @@ export function createBoardStore(db: Db) {
             id: boards.id,
             name: boards.name,
             keyPrefix: boards.keyPrefix,
-            spaceId: boards.spaceId,
+            project: projectSummary,
             inbox: boards.inbox,
             role: accessible.role,
             archived: sql<boolean>`${boards.archivedAt} is not null`,
@@ -125,6 +127,7 @@ export function createBoardStore(db: Db) {
           })
           .from(boards)
           .innerJoin(accessible, eq(accessible.boardId, boards.id))
+          .innerJoin(projects, eq(projects.id, boards.projectId))
           .leftJoin(
             boardFavorites,
             and(
@@ -172,35 +175,41 @@ export function createBoardStore(db: Db) {
       })
     },
 
-    async createUserBoard(
+    // Without a project, the board starts a project of its own, named after it.
+    async createBoard(
       identity: Identity,
-      input: { name: string; keyPrefix: string }
-    ) {
+      input: { name: string; keyPrefix: string; projectId?: string | undefined }
+    ): Promise<Result<NonNullable<Awaited<ReturnType<typeof loadBoard>>>>> {
       try {
-        return await inTenant(db, identity, async tx => {
+        return await writeOrRefuse(db, identity, async tx => {
+          let projectId = input.projectId
+          if (projectId === undefined) {
+            projectId = await createProject(tx, identity, { name: input.name })
+          } else {
+            const role = await roleIn(tx, identity.userId, projectId)
+            if (!role) throw new Refused('not_found')
+            if (role !== 'admin') throw new Refused('forbidden')
+          }
           const [board] = await tx
             .insert(boards)
             .values({
               organizationId: identity.organizationId,
-              ownerId: identity.userId,
+              projectId,
               name: input.name,
               keyPrefix: input.keyPrefix,
               createdBy: identity.userId
             })
             .returning()
           if (!board) throw new Error('board insert returned nothing')
-          await tx.insert(boardMembers).values({
-            boardId: board.id,
-            organizationId: identity.organizationId,
-            userId: identity.userId,
-            email: identity.email,
-            role: 'admin'
-          })
           await addDefaultSections(tx, board)
-          return loadBoard(tx, board.id, identity.userId)
+          const loaded = await loadBoard(tx, board.id, identity.userId)
+          if (!loaded) throw new Error('new board is not visible')
+          return loaded
         })
       } catch (error) {
-        if (isUniqueViolation(error)) return null
+        if (isUniqueViolation(error)) {
+          return { ok: false, error: 'key_prefix_taken' }
+        }
         throw error
       }
     },
@@ -228,36 +237,79 @@ export async function addDefaultSections(
   )
 }
 
-// The Inbox has no sections: its tasks show under "No section". Its key prefix is
-// reserved, so any unique conflict here means the Inbox already exists.
-async function ensureInbox(tx: Tx, identity: Identity) {
-  const [inbox] = await tx
-    .insert(boards)
+const projectSummary = {
+  id: projects.id,
+  name: projects.name,
+  personal: projects.personal,
+  managed: projects.managed
+}
+
+// The creator of a user's project is its admin.
+export async function createProject(
+  tx: Tx,
+  identity: Identity,
+  input: { name: string }
+): Promise<string> {
+  const [project] = await tx
+    .insert(projects)
     .values({
       organizationId: identity.organizationId,
-      ownerId: identity.userId,
-      name: 'Inbox',
-      keyPrefix: INBOX_KEY_PREFIX,
-      createdBy: identity.userId,
-      inbox: true
+      name: input.name,
+      createdBy: identity.userId
     })
-    .onConflictDoNothing()
-    .returning({ id: boards.id })
-  if (!inbox) return
-  await tx.insert(boardMembers).values({
-    boardId: inbox.id,
+    .returning({ id: projects.id })
+  if (!project) throw new Error('project insert returned nothing')
+  await tx.insert(projectMembers).values({
+    projectId: project.id,
     organizationId: identity.organizationId,
     userId: identity.userId,
     email: identity.email,
     role: 'admin'
+  })
+  return project.id
+}
+
+// The personal project holds the Inbox. The Inbox has no sections: its tasks
+// show under "No section". A unique conflict means both already exist.
+async function ensureInbox(tx: Tx, identity: Identity) {
+  const [personal] = await tx
+    .insert(projects)
+    .values({
+      organizationId: identity.organizationId,
+      name: 'Personal',
+      personal: true,
+      createdBy: identity.userId
+    })
+    .onConflictDoNothing()
+    .returning({ id: projects.id })
+  if (!personal) return
+  await tx.insert(projectMembers).values({
+    projectId: personal.id,
+    organizationId: identity.organizationId,
+    userId: identity.userId,
+    email: identity.email,
+    role: 'admin'
+  })
+  await tx.insert(boards).values({
+    organizationId: identity.organizationId,
+    projectId: personal.id,
+    name: 'Inbox',
+    keyPrefix: INBOX_KEY_PREFIX,
+    createdBy: identity.userId,
+    inbox: true
   })
 }
 
 async function loadBoard(tx: Tx, boardId: string, userId: string) {
   const role = await roleOn(tx, userId, boardId)
   if (!role) return null
-  const [board] = await tx.select().from(boards).where(eq(boards.id, boardId))
-  if (!board) return null
+  const [found] = await tx
+    .select({ board: boards, project: projectSummary })
+    .from(boards)
+    .innerJoin(projects, eq(projects.id, boards.projectId))
+    .where(eq(boards.id, boardId))
+  if (!found) return null
+  const { board, project } = found
   const sectionRows = await tx
     .select({
       id: sections.id,
@@ -286,7 +338,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     id: board.id,
     name: board.name,
     keyPrefix: board.keyPrefix,
-    spaceId: board.spaceId,
+    project,
     inbox: board.inbox,
     archived: board.archivedAt !== null,
     version: board.version,
@@ -368,12 +420,13 @@ export const assignedTo = (tx: Tx, userId: string) =>
   )
 
 // A task is someone's when it is assigned to them, or when it sits unassigned
-// on one of their own boards. Unassigned space tasks belong to nobody yet.
+// in one of their own projects. Unassigned tasks of a managed project belong
+// to nobody yet.
 const mine = (tx: Tx, userId: string) =>
   or(
     assignedTo(tx, userId),
     and(
-      isNull(boards.spaceId),
+      eq(projects.managed, false),
       notExists(
         tx
           .select({ one: sql`1` })
@@ -407,6 +460,7 @@ async function tasksOf(
     .select({ task: tasks, board: boards })
     .from(tasks)
     .innerJoin(boards, eq(boards.id, tasks.boardId))
+    .innerJoin(projects, eq(projects.id, boards.projectId))
     .innerJoin(accessible, eq(accessible.boardId, boards.id))
     .where(and(shown, which))
     .orderBy(

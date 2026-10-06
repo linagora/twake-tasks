@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { aBoard, aProject, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 
@@ -68,7 +68,11 @@ describe('BoardsScreen', () => {
         completedAt: '2026-10-01T00:00:00Z'
       })
     ]
-    const ops = aBoard({ name: 'Ops', keyPrefix: 'OPS', spaceId: 'space-1' })
+    const ops = aBoard({
+      name: 'Ops',
+      keyPrefix: 'OPS',
+      project: aProject({ managed: true })
+    })
     renderRoute('/', { boardsApi: fakeBoardsApi([design, ops]) })
 
     const designCard = within(

@@ -5,14 +5,16 @@ import type { LdapRest } from '../../infra/ldapRest.ts'
 import { schedule, type Handler } from '../../scheduler/scheduler.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { enqueue } from '../../events/outbox.ts'
+import { projectMembers, projects } from '../boards/schema.ts'
 import {
   deleteSpace,
   provisioned,
   provisionSpace,
   removeMembers,
+  renameSpace,
   upsertMembers
 } from './events.ts'
-import { spaceMembers, spaces } from './schema.ts'
+import { spaces } from './schema.ts'
 
 export const RECONCILE_SPACES_JOB = 'reconcile-spaces'
 export const RECONCILE_SPACE_JOB = 'reconcile-space'
@@ -42,7 +44,8 @@ async function localSpaceIds(tx: Tx, organizationId: string) {
   const rows = await tx
     .select({ id: spaces.id })
     .from(spaces)
-    .where(isNull(spaces.deletedAt))
+    .innerJoin(projects, eq(projects.id, spaces.projectId))
+    .where(isNull(projects.deletedAt))
   return rows.map(row => row.id)
 }
 
@@ -86,10 +89,7 @@ export function reconcileSpace(ldapRest: LdapRest): Handler {
     if (await provisionSpace(tx, { ...ref, name: remote.name })) {
       await enqueue(tx, ref.id, provisioned(ref))
     }
-    await tx
-      .update(spaces)
-      .set({ name: remote.name })
-      .where(eq(spaces.id, ref.id))
+    await renameSpace(tx, ref, remote.name)
     await upsertMembers(tx, ref, remote.members)
     await removeMembers(
       tx,
@@ -97,7 +97,7 @@ export function reconcileSpace(ldapRest: LdapRest): Handler {
       remote.members.length === 0
         ? undefined
         : notInArray(
-            spaceMembers.userId,
+            projectMembers.userId,
             remote.members.map(m => m.uuid)
           )
     )

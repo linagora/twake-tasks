@@ -1,44 +1,20 @@
-import {
-  foreignKey,
-  pgEnum,
-  pgTable,
-  primaryKey,
-  text,
-  unique,
-  uuid
-} from 'drizzle-orm/pg-core'
-import { organizationId, tenantPolicy, timestamptz } from '../../infra/db.ts'
+import { foreignKey, pgTable, unique, uuid } from 'drizzle-orm/pg-core'
+import { organizationId, tenantPolicy } from '../../infra/db.ts'
+import { projects } from '../boards/schema.ts'
 
-export const memberRole = pgEnum('member_role', ['viewer', 'editor', 'admin'])
-
+// The space integration's own table: the project it keeps for each space.
 export const spaces = pgTable.withRLS(
   'spaces',
   {
     id: uuid().primaryKey(),
     organizationId: organizationId().notNull(),
-    name: text().notNull(),
-    deletedAt: timestamptz('deleted_at')
+    projectId: uuid('project_id').notNull()
   },
   table => [
-    unique().on(table.organizationId, table.id),
-    tenantPolicy(table.organizationId)
-  ]
-)
-
-export const spaceMembers = pgTable.withRLS(
-  'space_members',
-  {
-    spaceId: uuid('space_id').notNull(),
-    organizationId: organizationId().notNull(),
-    userId: uuid('user_id').notNull(),
-    email: text().notNull(),
-    role: memberRole().notNull()
-  },
-  table => [
-    primaryKey({ columns: [table.spaceId, table.userId] }),
+    unique().on(table.projectId),
     foreignKey({
-      columns: [table.organizationId, table.spaceId],
-      foreignColumns: [spaces.organizationId, spaces.id]
+      columns: [table.organizationId, table.projectId],
+      foreignColumns: [projects.tenant, projects.id]
     }).onDelete('cascade'),
     tenantPolicy(table.organizationId)
   ]

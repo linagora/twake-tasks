@@ -8,7 +8,7 @@ import {
 } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
 import { roleOn } from './access.ts'
-import { boards, tasks } from './schema.ts'
+import { boards, projects, tasks } from './schema.ts'
 import {
   bumpBoard,
   checkRole,
@@ -63,8 +63,8 @@ async function reveal(tx: Tx, task: typeof tasks.$inferSelect) {
     update tasks set ${column} = null where id in (select id from tree)`)
 }
 
-// Runs as the person who trashed the task, or the owner of a user's board, so
-// it still sees the board.
+// Runs as the creator of the board's project, whom the projects policy always
+// lets see it.
 export const purgeTask: Handler = async (raw, tx) => {
   const job = payload.parse(raw)
   await asTenant(tx, job)
@@ -104,13 +104,17 @@ export function createArchiveStore(db: Db) {
       return write(identity, async tx => {
         const { board, task } = await visibleTask(tx, identity, boardId, taskId)
         await hide(tx, taskId, 'deletedAt')
+        const [project] = await tx
+          .select({ createdBy: projects.createdBy })
+          .from(projects)
+          .where(eq(projects.id, board.projectId))
         await schedule(tx, {
           kind: PURGE_JOB,
           key: keyOf(taskId),
           payload: {
             taskId,
             organizationId: task.organizationId,
-            userId: board.ownerId ?? identity.userId,
+            userId: project?.createdBy ?? identity.userId,
             email: identity.email
           },
           runAt: new Date(Date.now() + RETENTION_MS)

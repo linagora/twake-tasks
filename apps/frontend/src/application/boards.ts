@@ -4,6 +4,7 @@ import type {
   Label,
   Layout,
   Person,
+  ProjectSummary,
   Role,
   Section,
   Task
@@ -115,9 +116,7 @@ export interface Sharing {
   invites: { id: string; email: string; role: Role }[]
 }
 
-export interface Space {
-  id: string
-  name: string
+export interface Project extends ProjectSummary {
   role: Role
 }
 
@@ -155,10 +154,15 @@ export interface BoardsApi {
   hiddenTasks: (boardId: string, shelf: Shelf) => Promise<HiddenTask[]>
   /** An archived board is read only. Admins only. */
   setBoardArchived: (boardId: string, archived: boolean) => Promise<void>
-  /** The spaces the signed-in person belongs to, with their role. */
-  listSpaces: () => Promise<Space[]>
-  /** The board's members and invites go, and the space's roles apply. */
-  moveToSpace: (boardId: string, spaceId: string) => Promise<void>
+  /** The projects the signed-in person belongs to, with their role. */
+  listProjects: () => Promise<Project[]>
+  /**
+   * The board takes the project's members and labels: its tasks drop the
+   * labels and assignees the project does not have.
+   */
+  moveToProject: (boardId: string, projectId: string) => Promise<void>
+  /** The project a space's boards live in, for the space embed. */
+  projectOfSpace: (spaceId: string) => Promise<string>
   /** A user's board's members and pending invites. Admins only. */
   getSharing: (boardId: string) => Promise<Sharing>
   /** Resolves whether or not the email has an account. */

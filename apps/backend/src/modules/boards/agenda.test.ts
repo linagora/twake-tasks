@@ -1,10 +1,13 @@
-import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb, inTenant } from '../../infra/db.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { spaceMembers, spaces } from '../spaces/schema.ts'
+import { createDb } from '../../infra/db.ts'
+import {
+  aBoardIn,
+  aManagedProject,
+  aUser,
+  startApp,
+  type TestUser
+} from '../../testing/app.ts'
 import { shift, todayIn } from './recurrence.ts'
-import { boards } from './schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -82,36 +85,16 @@ describe('agenda', () => {
     ])
   })
 
-  it('keeps space tasks to the people they are assigned to', async () => {
+  it('keeps managed project tasks to the people they are assigned to', async () => {
     const alice = aUser()
     const carol = aUser({ organizationId: alice.organizationId })
-    const spaceId = randomUUID()
-    const boardId = await inTenant(db, alice, async tx => {
-      await tx.insert(spaces).values({
-        id: spaceId,
-        organizationId: alice.organizationId ?? '',
-        name: 'Marketing'
-      })
-      await tx.insert(spaceMembers).values(
-        [alice, carol].map(user => ({
-          spaceId,
-          organizationId: alice.organizationId ?? '',
-          userId: user.userId,
-          email: user.email,
-          role: 'editor' as const
-        }))
-      )
-      const [board] = await tx
-        .insert(boards)
-        .values({
-          organizationId: alice.organizationId,
-          spaceId,
-          name: 'Launch',
-          keyPrefix: 'LCH',
-          createdBy: alice.userId
-        })
-        .returning({ id: boards.id })
-      return board?.id ?? ''
+    const projectId = await aManagedProject(db, [
+      [alice, 'editor'],
+      [carol, 'editor']
+    ])
+    const boardId = await aBoardIn(db, alice, projectId, {
+      name: 'Launch',
+      keyPrefix: 'LCH'
     })
     const add = async (title: string, assignee?: TestUser) => {
       const task = (

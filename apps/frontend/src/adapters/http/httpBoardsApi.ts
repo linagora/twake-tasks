@@ -4,7 +4,7 @@ import {
   type HiddenTask,
   type Notification,
   type SavedFilter,
-  type Space,
+  type Project,
   type BoardsApi,
   type Comment,
   type Reminder,
@@ -147,10 +147,12 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
         `/boards/${boardId}/${archived ? 'archive' : 'unarchive'}`,
         {}
       ),
-    listSpaces: async () =>
-      (await call<{ spaces: Space[] }>('GET', '/spaces')).spaces,
-    moveToSpace: (boardId, spaceId) =>
-      call('POST', `/boards/${boardId}/move`, { spaceId }),
+    listProjects: async () =>
+      (await call<{ projects: Project[] }>('GET', '/projects')).projects,
+    moveToProject: (boardId, projectId) =>
+      call('POST', `/boards/${boardId}/move`, { projectId }),
+    projectOfSpace: async spaceId =>
+      (await call<{ id: string }>('GET', `/spaces/${spaceId}/project`)).id,
     getSharing: boardId => call('GET', `/boards/${boardId}/sharing`),
     invite: (boardId, email, role) =>
       call('POST', `/boards/${boardId}/invites`, { email, role }),

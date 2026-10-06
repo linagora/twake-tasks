@@ -3,10 +3,18 @@ import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { RejectedEventError } from '../../events/router.ts'
-import { asTenant, createDb, inTenant } from '../../infra/db.ts'
-import { aB2cUser, aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { asTenant, createDb } from '../../infra/db.ts'
+import {
+  aB2cUser,
+  aBoardIn,
+  aManagedProject,
+  aUser,
+  joinBoard,
+  startApp,
+  type TestUser
+} from '../../testing/app.ts'
 import { accountRoutes } from './accounts.ts'
-import { boardMembers, boards } from './schema.ts'
+import { projects } from './schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -49,15 +57,7 @@ async function aBoard(
     })
   ).json<{ id: string }>()
   for (const [user, role] of members) {
-    await inTenant(db, owner, tx =>
-      tx.insert(boardMembers).values({
-        boardId: board.id,
-        organizationId: owner.organizationId,
-        userId: user.userId,
-        email: user.email,
-        role
-      })
-    )
+    await joinBoard(db, owner, board.id, user, role)
   }
   const task = (
     await api
@@ -74,13 +74,15 @@ async function aBoard(
   return { id: board.id, assignees }
 }
 
-async function inboxesOf(user: TestUser) {
+async function personalProjectsOf(user: TestUser) {
   return db.transaction(async tx => {
     await asTenant(tx, user)
     return tx
-      .select({ id: boards.id })
-      .from(boards)
-      .where(and(eq(boards.inbox, true), eq(boards.ownerId, user.userId)))
+      .select({ id: projects.id })
+      .from(projects)
+      .where(
+        and(eq(projects.personal, true), eq(projects.createdBy, user.userId))
+      )
   })
 }
 
@@ -144,7 +146,30 @@ describe.each([
     expect(await handedOn.assignees(firstEditor)).toEqual(
       expect.not.arrayContaining([gone.userId])
     )
-    expect(await inboxesOf(gone)).toEqual([])
+    expect(await personalProjectsOf(gone)).toEqual([])
+  })
+})
+
+describe('a deleted account in a managed project', () => {
+  it('leaves the project to its integration, even as its only admin', async () => {
+    const gone = aUser()
+    const viewer = aUser({ organizationId: gone.organizationId })
+    const projectId = await aManagedProject(db, [
+      [gone, 'admin'],
+      [viewer, 'viewer']
+    ])
+    await aBoardIn(db, gone, projectId, { name: 'Launch', keyPrefix: 'LCH' })
+
+    await deliver('domain.user.deleted', {
+      organizationId: gone.organizationId,
+      uuid: gone.userId
+    })
+
+    expect(await boardsOf(viewer)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Launch', role: 'viewer' })
+      ])
+    )
   })
 })
 

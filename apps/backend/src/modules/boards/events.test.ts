@@ -1,11 +1,9 @@
-import { randomUUID } from 'node:crypto'
 import { asc, sql as raw } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import type { OutgoingEvent, PlatformEvent } from '../../events/envelope.ts'
+import type { OutgoingEvent } from '../../events/envelope.ts'
 import { outbox } from '../../events/schema.ts'
 import { createDb } from '../../infra/db.ts'
 import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { spaceRoutes } from '../spaces/events.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -27,7 +25,7 @@ interface Section {
 async function aBoardOf(owner: TestUser) {
   return (
     await api.as(owner).post('/boards', { name: 'Design', keyPrefix: 'DES' })
-  ).json<{ id: string; sections: Section[] }>()
+  ).json<{ id: string; project: { id: string }; sections: Section[] }>()
 }
 
 async function aTaskOn(
@@ -58,7 +56,7 @@ const actions = (events: { event: OutgoingEvent }[]) =>
   events.map(({ event }) => event.type.split('.').at(-2))
 
 describe('task events', () => {
-  it('publishes each change to a task, keyed by its board', async () => {
+  it('publishes each change to a task, keyed by its project', async () => {
     const alice = aUser()
     const board = await aBoardOf(alice)
     const [todo, doing] = board.sections
@@ -91,7 +89,7 @@ describe('task events', () => {
       'deleted',
       'restored'
     ])
-    expect(events.every(({ key }) => key === board.id)).toBe(true)
+    expect(events.every(({ key }) => key === board.project.id)).toBe(true)
     expect(events[0]?.event).toMatchObject({
       specversion: '1.0',
       source: 'twake://tasks',
@@ -140,35 +138,15 @@ describe('task events', () => {
     })
   })
 
-  it('keys the events of a space board by the space', async () => {
+  it('names the project that holds the task', async () => {
     const admin = aUser()
-    const spaceId = randomUUID()
-    const created = spaceRoutes().get('twake.space.created')
-    const body = {
-      organizationId: admin.organizationId,
-      id: spaceId,
-      name: 'Ops',
-      members: [{ uuid: admin.userId, email: admin.email, role: 'admin' }]
-    }
-    const event: PlatformEvent = {
-      routingKey: 'twake.space.created',
-      messageId: randomUUID(),
-      body
-    }
-    await db.transaction(tx => created?.(event, tx) ?? Promise.resolve())
-    const board = (await api.as(admin).get('/boards'))
-      .json<{ boards: { id: string; spaceId: string | null }[] }>()
-      .boards.find(candidate => candidate.spaceId === spaceId)
-    const sections = (
-      await api.as(admin).get(`/boards/${board?.id ?? ''}`)
-    ).json<{ sections: Section[] }>().sections
+    const board = await aBoardOf(admin)
 
-    const task = await aTaskOn(admin, board?.id ?? '', sections[0]?.id ?? '')
+    const task = await aTaskOn(admin, board.id, null)
 
     const [first] = await eventsOf(task.id)
-    expect(first?.key).toBe(spaceId)
     expect(first?.event.data).toMatchObject({
-      object: { space_id: spaceId }
+      object: { container: { kind: 'project', id: board.project.id } }
     })
   })
 })

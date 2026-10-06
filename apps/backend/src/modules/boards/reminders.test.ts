@@ -1,10 +1,9 @@
 import { pino } from 'pino'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb, inTenant } from '../../infra/db.ts'
+import { createDb } from '../../infra/db.ts'
 import { createScheduler } from '../../scheduler/scheduler.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 import { REMINDER_JOB, deliverReminder } from './reminderJobs.ts'
-import { boardMembers } from './schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -97,15 +96,7 @@ describe('reminders', () => {
     const owner = aUser()
     const colleague = aUser({ organizationId: owner.organizationId })
     const { boardId, remind, reminders } = await aTaskOf(owner)
-    await inTenant(db, owner, tx =>
-      tx.insert(boardMembers).values({
-        boardId,
-        organizationId: owner.organizationId,
-        userId: colleague.userId,
-        email: colleague.email,
-        role: 'viewer'
-      })
-    )
+    await joinBoard(db, owner, boardId, colleague, 'viewer')
 
     expect(
       (await remind(colleague, { at: '2099-01-01T10:00:00Z' })).statusCode

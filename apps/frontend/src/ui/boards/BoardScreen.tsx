@@ -81,7 +81,8 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   const move = useMoveTask(board.id)
   const editable = board.role !== 'viewer' && !board.archived
   const manageable = board.role === 'admin' && !board.archived
-  const shareable = manageable && board.spaceId === null && !board.inbox
+  const shareable =
+    manageable && !board.project.personal && !board.project.managed
   const [sharing, setSharing] = useState(false)
   const [shelf, setShelf] = useState<Shelf | null>(null)
   const [adding, setAdding] = useState<ReadonlySet<string>>(new Set())

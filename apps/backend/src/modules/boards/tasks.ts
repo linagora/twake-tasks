@@ -161,8 +161,7 @@ export async function bumpBoard(
       number: boards.taskCounter,
       keyPrefix: boards.keyPrefix,
       organizationId: boards.organizationId,
-      spaceId: boards.spaceId,
-      ownerId: boards.ownerId
+      projectId: boards.projectId
     })
   if (!board) throw new Refused('archived')
   return board
@@ -438,7 +437,7 @@ export function createTaskStore(db: Db) {
         await checkRole(tx, identity, boardId, 'editor')
         const board = await bumpBoard(tx, boardId)
         const task = await taskOf(tx, boardId, taskId)
-        const members = await membersOf(tx, { id: boardId, ...board })
+        const members = await membersOf(tx, board)
         if (
           !userIds.every(userId =>
             members.some(member => member.userId === userId)

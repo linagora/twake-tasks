@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb, inTenant } from '../../infra/db.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { boardMembers } from './schema.ts'
+import { createDb } from '../../infra/db.ts'
+import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -139,15 +138,7 @@ describe('task history', () => {
         title: 'Logo'
       })
     ).json<{ id: string }>()
-    await inTenant(db, alice, tx =>
-      tx.insert(boardMembers).values({
-        boardId: board.id,
-        organizationId: alice.organizationId,
-        userId: bob.userId,
-        email: bob.email,
-        role: 'viewer'
-      })
-    )
+    await joinBoard(db, alice, board.id, bob, 'viewer')
     const path = `/boards/${board.id}/tasks/${task.id}/history`
 
     expect((await api.as(bob).get(path)).statusCode).toBe(200)

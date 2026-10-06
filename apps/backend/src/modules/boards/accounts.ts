@@ -8,8 +8,7 @@ import {
   type Handler
 } from '../../events/router.ts'
 import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
-import { spaceMembers } from '../spaces/schema.ts'
-import { boardMembers, boards, taskAssignees } from './schema.ts'
+import { projectMembers, projects, taskAssignees } from './schema.ts'
 
 // ldap-rest names B2B users by email until it sends their entryUUID.
 const b2bDeleted = z.looseObject({
@@ -29,47 +28,40 @@ const b2cDeleted = z.looseObject({
 async function b2cUserIdByEmail(tx: Tx, email: string) {
   await asOrganization(tx, null)
   await tx.execute(sql`select set_config('app.membership_lookup', 'on', true)`)
-  const [member] = await tx
-    .select({ userId: boardMembers.userId })
-    .from(boardMembers)
-    .where(eq(boardMembers.email, email))
-    .limit(1)
+  const userId = await userIdByEmail(tx, email)
   await tx.execute(sql`select set_config('app.membership_lookup', '', true)`)
-  return member?.userId
+  return userId
 }
 
 async function userIdByEmail(tx: Tx, email: string) {
   const [member] = await tx
-    .select({ userId: boardMembers.userId })
-    .from(boardMembers)
-    .where(eq(boardMembers.email, email))
-    .union(
-      tx
-        .select({ userId: spaceMembers.userId })
-        .from(spaceMembers)
-        .where(eq(spaceMembers.email, email))
-    )
+    .select({ userId: projectMembers.userId })
+    .from(projectMembers)
+    .where(eq(projectMembers.email, email))
     .limit(1)
   return member?.userId
 }
 
-// A board whose only admin leaves goes to its oldest editor, or is deleted.
-async function handOnBoards(tx: Tx, userId: string) {
-  const otherAdmin = alias(boardMembers, 'other_admin')
+// A project whose only admin leaves goes to its oldest editor, or is deleted.
+// A managed project's members come from its integration, so it is left alone.
+async function handOnProjects(tx: Tx, userId: string) {
+  const otherAdmin = alias(projectMembers, 'other_admin')
   const orphaned = await tx
-    .select({ boardId: boardMembers.boardId })
-    .from(boardMembers)
+    .select({ projectId: projectMembers.projectId })
+    .from(projectMembers)
+    .innerJoin(projects, eq(projects.id, projectMembers.projectId))
     .where(
       and(
-        eq(boardMembers.userId, userId),
-        eq(boardMembers.role, 'admin'),
+        eq(projectMembers.userId, userId),
+        eq(projectMembers.role, 'admin'),
+        eq(projects.managed, false),
         notExists(
           tx
             .select()
             .from(otherAdmin)
             .where(
               and(
-                eq(otherAdmin.boardId, boardMembers.boardId),
+                eq(otherAdmin.projectId, projectMembers.projectId),
                 eq(otherAdmin.role, 'admin'),
                 ne(otherAdmin.userId, userId)
               )
@@ -77,42 +69,44 @@ async function handOnBoards(tx: Tx, userId: string) {
         )
       )
     )
-  for (const { boardId } of orphaned) {
+  for (const { projectId } of orphaned) {
     const [editor] = await tx
-      .select({ userId: boardMembers.userId })
-      .from(boardMembers)
+      .select({ userId: projectMembers.userId })
+      .from(projectMembers)
       .where(
-        and(eq(boardMembers.boardId, boardId), eq(boardMembers.role, 'editor'))
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.role, 'editor')
+        )
       )
-      .orderBy(asc(boardMembers.joinedAt))
+      .orderBy(asc(projectMembers.joinedAt))
       .limit(1)
     if (editor) {
       await tx
-        .update(boardMembers)
+        .update(projectMembers)
         .set({ role: 'admin' })
         .where(
           and(
-            eq(boardMembers.boardId, boardId),
-            eq(boardMembers.userId, editor.userId)
+            eq(projectMembers.projectId, projectId),
+            eq(projectMembers.userId, editor.userId)
           )
         )
     } else {
-      await tx.delete(boards).where(eq(boards.id, boardId))
+      await tx.delete(projects).where(eq(projects.id, projectId))
     }
   }
 }
 
-// Runs as the user, so a B2C tenant shows the boards they belong to; their
-// memberships go last, since they are what makes those boards visible.
+// Runs as the user, so a B2C tenant shows the projects they belong to; their
+// memberships go last, since they are what makes those projects visible.
 async function forget(tx: Tx, organizationId: string | null, userId: string) {
   await asTenant(tx, { organizationId, userId, email: '' })
-  await tx.delete(spaceMembers).where(eq(spaceMembers.userId, userId))
   await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
   await tx
-    .delete(boards)
-    .where(and(eq(boards.ownerId, userId), eq(boards.inbox, true)))
-  await handOnBoards(tx, userId)
-  await tx.delete(boardMembers).where(eq(boardMembers.userId, userId))
+    .delete(projects)
+    .where(and(eq(projects.createdBy, userId), eq(projects.personal, true)))
+  await handOnProjects(tx, userId)
+  await tx.delete(projectMembers).where(eq(projectMembers.userId, userId))
 }
 
 const onB2bDeleted: Handler<PlatformEvent> = async (event, tx) => {

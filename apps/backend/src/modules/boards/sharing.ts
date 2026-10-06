@@ -1,44 +1,51 @@
-import { and, asc, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, ne, notInArray, sql } from 'drizzle-orm'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { spaceMembers, spaces } from '../spaces/schema.ts'
-import { roleOn, type Role } from './access.ts'
+import { membersOf, roleIn, roleOn, type Role } from './access.ts'
 import {
-  boardInvites,
-  boardMembers,
   boards,
+  projectInvites,
+  projectMembers,
+  projects,
   taskAssignees,
+  taskLabels,
   tasks
 } from './schema.ts'
 import { bumpBoard, checkRole, Refused, writeOrRefuse } from './tasks.ts'
 
-// Only a user's own boards are shared: a space board takes the space's members,
-// and the Inbox stays private.
-async function sharedBoard(tx: Tx, identity: Identity, boardId: string) {
-  await checkRole(tx, identity, boardId, 'admin')
-  const [board] = await tx
+async function projectOfBoard(tx: Tx, boardId: string) {
+  const [project] = await tx
     .select({
-      organizationId: boards.organizationId,
-      keyPrefix: boards.keyPrefix,
-      spaceId: boards.spaceId,
-      inbox: boards.inbox
+      id: projects.id,
+      organizationId: projects.organizationId,
+      personal: projects.personal,
+      managed: projects.managed
     })
     .from(boards)
+    .innerJoin(projects, eq(projects.id, boards.projectId))
     .where(eq(boards.id, boardId))
-  if (!board) throw new Refused('not_found')
-  if (board.spaceId !== null || board.inbox) throw new Refused('forbidden')
-  return board
+  if (!project) throw new Refused('not_found')
+  return project
 }
 
-async function keepAnAdmin(tx: Tx, boardId: string, leaving: string) {
+// Sharing a board shares its project. A personal project stays private, and a
+// managed one takes its members from its integration.
+async function sharedProject(tx: Tx, identity: Identity, boardId: string) {
+  await checkRole(tx, identity, boardId, 'admin')
+  const project = await projectOfBoard(tx, boardId)
+  if (project.personal || project.managed) throw new Refused('forbidden')
+  return project
+}
+
+async function keepAnAdmin(tx: Tx, projectId: string, leaving: string) {
   const [other] = await tx
-    .select({ userId: boardMembers.userId })
-    .from(boardMembers)
+    .select({ userId: projectMembers.userId })
+    .from(projectMembers)
     .where(
       and(
-        eq(boardMembers.boardId, boardId),
-        eq(boardMembers.role, 'admin'),
-        ne(boardMembers.userId, leaving)
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.role, 'admin'),
+        ne(projectMembers.userId, leaving)
       )
     )
     .limit(1)
@@ -49,28 +56,28 @@ export function createSharingStore(db: Db) {
   return {
     invite(identity: Identity, boardId: string, email: string, role: Role) {
       return writeOrRefuse(db, identity, async tx => {
-        const board = await sharedBoard(tx, identity, boardId)
+        const project = await sharedProject(tx, identity, boardId)
         const [member] = await tx
-          .select({ userId: boardMembers.userId })
-          .from(boardMembers)
+          .select({ userId: projectMembers.userId })
+          .from(projectMembers)
           .where(
             and(
-              eq(boardMembers.boardId, boardId),
-              eq(sql`lower(${boardMembers.email})`, email)
+              eq(projectMembers.projectId, project.id),
+              eq(sql`lower(${projectMembers.email})`, email)
             )
           )
         if (member) return
         await tx
-          .insert(boardInvites)
+          .insert(projectInvites)
           .values({
-            boardId,
-            organizationId: board.organizationId,
+            projectId: project.id,
+            organizationId: project.organizationId,
             email,
             role,
             invitedBy: identity.userId
           })
           .onConflictDoUpdate({
-            target: [boardInvites.boardId, boardInvites.email],
+            target: [projectInvites.projectId, projectInvites.email],
             set: { role }
           })
       })
@@ -78,39 +85,39 @@ export function createSharingStore(db: Db) {
 
     sharing(identity: Identity, boardId: string) {
       return writeOrRefuse(db, identity, async tx => {
-        await sharedBoard(tx, identity, boardId)
+        const project = await sharedProject(tx, identity, boardId)
         return {
           members: await tx
             .select({
-              userId: boardMembers.userId,
-              email: boardMembers.email,
-              role: boardMembers.role
+              userId: projectMembers.userId,
+              email: projectMembers.email,
+              role: projectMembers.role
             })
-            .from(boardMembers)
-            .where(eq(boardMembers.boardId, boardId))
-            .orderBy(asc(boardMembers.email)),
+            .from(projectMembers)
+            .where(eq(projectMembers.projectId, project.id))
+            .orderBy(asc(projectMembers.email)),
           invites: await tx
             .select({
-              id: boardInvites.id,
-              email: boardInvites.email,
-              role: boardInvites.role
+              id: projectInvites.id,
+              email: projectInvites.email,
+              role: projectInvites.role
             })
-            .from(boardInvites)
-            .where(eq(boardInvites.boardId, boardId))
-            .orderBy(asc(boardInvites.email))
+            .from(projectInvites)
+            .where(eq(projectInvites.projectId, project.id))
+            .orderBy(asc(projectInvites.email))
         }
       })
     },
 
     cancelInvite(identity: Identity, boardId: string, inviteId: string) {
       return writeOrRefuse(db, identity, async tx => {
-        await sharedBoard(tx, identity, boardId)
+        const project = await sharedProject(tx, identity, boardId)
         await tx
-          .delete(boardInvites)
+          .delete(projectInvites)
           .where(
             and(
-              eq(boardInvites.boardId, boardId),
-              eq(boardInvites.id, inviteId)
+              eq(projectInvites.projectId, project.id),
+              eq(projectInvites.id, inviteId)
             )
           )
       })
@@ -118,108 +125,122 @@ export function createSharingStore(db: Db) {
 
     setRole(identity: Identity, boardId: string, userId: string, role: Role) {
       return writeOrRefuse(db, identity, async tx => {
-        await sharedBoard(tx, identity, boardId)
-        if (role !== 'admin') await keepAnAdmin(tx, boardId, userId)
+        const project = await sharedProject(tx, identity, boardId)
+        if (role !== 'admin') await keepAnAdmin(tx, project.id, userId)
         const updated = await tx
-          .update(boardMembers)
+          .update(projectMembers)
           .set({ role })
           .where(
             and(
-              eq(boardMembers.boardId, boardId),
-              eq(boardMembers.userId, userId)
+              eq(projectMembers.projectId, project.id),
+              eq(projectMembers.userId, userId)
             )
           )
-          .returning({ userId: boardMembers.userId })
+          .returning({ userId: projectMembers.userId })
         if (updated.length === 0) throw new Refused('not_found')
       })
     },
 
-    mySpaces(identity: Identity) {
+    myProjects(identity: Identity) {
       return inTenant(db, identity, tx =>
         tx
           .select({
-            id: spaces.id,
-            name: spaces.name,
-            role: spaceMembers.role
+            id: projects.id,
+            name: projects.name,
+            personal: projects.personal,
+            managed: projects.managed,
+            role: projectMembers.role
           })
-          .from(spaceMembers)
+          .from(projectMembers)
           .innerJoin(
-            spaces,
-            and(eq(spaces.id, spaceMembers.spaceId), isNull(spaces.deletedAt))
+            projects,
+            and(
+              eq(projects.id, projectMembers.projectId),
+              isNull(projects.deletedAt)
+            )
           )
-          .where(eq(spaceMembers.userId, identity.userId))
-          .orderBy(asc(spaces.name))
+          .where(eq(projectMembers.userId, identity.userId))
+          .orderBy(asc(projects.name))
       )
     },
 
-    // The board's members and invites go: the space's roles apply instead.
-    moveToSpace(identity: Identity, boardId: string, spaceId: string) {
+    // The board takes the target project's members and labels: its tasks
+    // drop the labels and assignees the target does not have.
+    moveToProject(identity: Identity, boardId: string, projectId: string) {
       return writeOrRefuse(db, identity, async tx => {
-        const board = await sharedBoard(tx, identity, boardId)
-        const [member] = await tx
-          .select({ role: spaceMembers.role })
-          .from(spaceMembers)
-          .innerJoin(
-            spaces,
-            and(eq(spaces.id, spaceMembers.spaceId), isNull(spaces.deletedAt))
-          )
-          .where(
-            and(
-              eq(spaceMembers.spaceId, spaceId),
-              eq(spaceMembers.userId, identity.userId)
-            )
-          )
-        if (!member || board.organizationId === null) {
-          throw new Refused('not_found')
-        }
-        if (member.role === 'viewer') throw new Refused('forbidden')
+        await checkRole(tx, identity, boardId, 'admin')
+        const [board] = await tx
+          .select({
+            projectId: boards.projectId,
+            keyPrefix: boards.keyPrefix,
+            inbox: boards.inbox
+          })
+          .from(boards)
+          .where(eq(boards.id, boardId))
+        if (!board) throw new Refused('not_found')
+        if (board.inbox) throw new Refused('forbidden')
+        if (board.projectId === projectId) return
+        const role = await roleIn(tx, identity.userId, projectId)
+        if (!role) throw new Refused('not_found')
+        if (role === 'viewer') throw new Refused('forbidden')
         const [taken] = await tx
           .select({ id: boards.id })
           .from(boards)
           .where(
             and(
-              eq(boards.spaceId, spaceId),
+              eq(boards.projectId, projectId),
               eq(boards.keyPrefix, board.keyPrefix)
             )
           )
         if (taken) throw new Refused('key_prefix_taken')
         await bumpBoard(tx, boardId)
+        await tx.update(boards).set({ projectId }).where(eq(boards.id, boardId))
+        const boardTasks = tx
+          .select({ id: tasks.id })
+          .from(tasks)
+          .where(eq(tasks.boardId, boardId))
         await tx
-          .update(boards)
-          .set({ spaceId, ownerId: null })
-          .where(eq(boards.id, boardId))
-        await tx.delete(boardMembers).where(eq(boardMembers.boardId, boardId))
-        await tx.delete(boardInvites).where(eq(boardInvites.boardId, boardId))
+          .delete(taskLabels)
+          .where(inArray(taskLabels.taskId, boardTasks))
+        const members = await membersOf(tx, { projectId })
+        await tx.delete(taskAssignees).where(
+          and(
+            inArray(taskAssignees.taskId, boardTasks),
+            notInArray(
+              taskAssignees.userId,
+              members.map(member => member.userId)
+            )
+          )
+        )
       })
     },
 
-    // Anyone may leave; only an admin removes someone else.
+    // Anyone may leave; only an admin removes someone else. Leaving a project
+    // takes its tasks off the person.
     removeMember(identity: Identity, boardId: string, userId: string) {
       return writeOrRefuse(db, identity, async tx => {
+        let project
         if (userId === identity.userId) {
           if (!(await roleOn(tx, identity.userId, boardId))) {
             throw new Refused('not_found')
           }
-          const [board] = await tx
-            .select({ spaceId: boards.spaceId, inbox: boards.inbox })
-            .from(boards)
-            .where(eq(boards.id, boardId))
-          if (!board || board.spaceId !== null || board.inbox) {
+          project = await projectOfBoard(tx, boardId)
+          if (project.personal || project.managed) {
             throw new Refused('forbidden')
           }
         } else {
-          await sharedBoard(tx, identity, boardId)
+          project = await sharedProject(tx, identity, boardId)
         }
-        await keepAnAdmin(tx, boardId, userId)
+        await keepAnAdmin(tx, project.id, userId)
         const removed = await tx
-          .delete(boardMembers)
+          .delete(projectMembers)
           .where(
             and(
-              eq(boardMembers.boardId, boardId),
-              eq(boardMembers.userId, userId)
+              eq(projectMembers.projectId, project.id),
+              eq(projectMembers.userId, userId)
             )
           )
-          .returning({ userId: boardMembers.userId })
+          .returning({ userId: projectMembers.userId })
         if (removed.length === 0) throw new Refused('not_found')
         await tx
           .delete(taskAssignees)
@@ -231,7 +252,8 @@ export function createSharingStore(db: Db) {
                 tx
                   .select({ id: tasks.id })
                   .from(tasks)
-                  .where(eq(tasks.boardId, boardId))
+                  .innerJoin(boards, eq(boards.id, tasks.boardId))
+                  .where(eq(boards.projectId, project.id))
               )
             )
           )

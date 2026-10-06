@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb, inTenant } from '../../infra/db.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { boardMembers } from './schema.ts'
+import { createDb } from '../../infra/db.ts'
+import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 
 interface Board {
   id: string
@@ -151,15 +150,7 @@ describe('sections', () => {
     const alice = aUser()
     const bob = aUser({ organizationId: alice.organizationId })
     const { board, todo } = await aBoard(alice)
-    await inTenant(db, alice, tx =>
-      tx.insert(boardMembers).values({
-        boardId: board.id,
-        organizationId: alice.organizationId,
-        userId: bob.userId,
-        email: bob.email,
-        role: 'editor'
-      })
-    )
+    await joinBoard(db, alice, board.id, bob, 'editor')
     const outsider = aUser({ organizationId: alice.organizationId })
     const rename = (user: TestUser) =>
       api

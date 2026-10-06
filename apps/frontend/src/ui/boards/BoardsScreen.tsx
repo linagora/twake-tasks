@@ -141,9 +141,9 @@ export function BoardsScreen(): ReactElement {
             <CardTile
               key={board.id}
               label={board.name}
-              icon={board.spaceId === null ? People : Team}
+              icon={board.project.managed ? Team : People}
               iconLabel={t(
-                board.spaceId === null ? 'boards.personal' : 'boards.space'
+                board.project.managed ? 'boards.space' : 'boards.personal'
               )}
               title={
                 <Link component={RouterLink} to={`/boards/${board.id}`}>

@@ -10,11 +10,11 @@ import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
 import { createSharingStore } from './sharing.ts'
-import { memberRole } from '../spaces/schema.ts'
 import { createReminderStore } from './reminders.ts'
 import {
   durationUnit,
   LAYOUTS,
+  memberRole,
   recurrenceUnit,
   sectionCategory
 } from './schema.ts'
@@ -25,7 +25,8 @@ import { createTransferStore } from './transfer.ts'
 
 const newBoard = z.object({
   name: z.string().trim().min(1).max(100),
-  keyPrefix: z.string().regex(/^[A-Z][A-Z0-9]{0,9}$/)
+  keyPrefix: z.string().regex(/^[A-Z][A-Z0-9]{0,9}$/),
+  projectId: z.uuid().optional()
 })
 
 const boardParams = z.object({ boardId: z.uuid() })
@@ -264,12 +265,12 @@ export function registerBoards(
   )
 
   app.get(
-    '/spaces',
+    '/projects',
     { preHandler: deps.requireIdentity },
     async (request, reply) => {
       const identity = request.identity
       if (!identity) return reply.code(401).send()
-      return { spaces: await sharingStore.mySpaces(identity) }
+      return { projects: await sharingStore.myProjects(identity) }
     }
   )
 
@@ -281,14 +282,14 @@ export function registerBoards(
       if (!identity) return reply.code(401).send()
       const params = boardParams.safeParse(request.params)
       if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = z.object({ spaceId: z.uuid() }).safeParse(request.body)
+      const body = z.object({ projectId: z.uuid() }).safeParse(request.body)
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
-      const result = await sharingStore.moveToSpace(
+      const result = await sharingStore.moveToProject(
         identity,
         params.data.boardId,
-        body.data.spaceId
+        body.data.projectId
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()
@@ -704,11 +705,12 @@ export function registerBoards(
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
-      const board =
-        body.data.keyPrefix !== INBOX_KEY_PREFIX &&
-        (await store.createUserBoard(identity, body.data))
-      if (!board) return reply.code(409).send({ error: 'key_prefix_taken' })
-      return reply.code(201).send(board)
+      if (body.data.keyPrefix === INBOX_KEY_PREFIX) {
+        return refuse(reply, 'key_prefix_taken')
+      }
+      const result = await store.createBoard(identity, body.data)
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(201).send(result.value)
     }
   )
 

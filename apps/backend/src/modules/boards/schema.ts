@@ -28,7 +28,8 @@ import {
   tenantPolicy,
   timestamptz
 } from '../../infra/db.ts'
-import { memberRole, spaces } from '../spaces/schema.ts'
+
+export const memberRole = pgEnum('member_role', ['viewer', 'editor', 'admin'])
 
 export const sectionCategory = pgEnum('section_category', [
   'backlog',
@@ -56,13 +57,113 @@ const id = () =>
     .primaryKey()
     .default(sql`uuidv7()`)
 
+export const projects = pgTable.withRLS(
+  'projects',
+  {
+    id: id(),
+    organizationId: organizationId(),
+    name: text().notNull(),
+    // Holds the person's Inbox, and is never shared.
+    personal: boolean().notNull().default(false),
+    // Its members come from an integration, such as a space, and are not edited here.
+    managed: boolean().notNull().default(false),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+    // A deleted project is out of reach until it is purged.
+    deletedAt: timestamptz('deleted_at'),
+    tenant: tenant()
+  },
+  table => [
+    unique().on(table.tenant, table.id),
+    // Row level security splits a person's projects by organization, B2C included.
+    uniqueIndex('projects_one_personal_per_user')
+      .on(sql`coalesce(${table.organizationId}, '')`, table.createdBy)
+      .where(sql`${table.personal}`),
+    check(
+      'projects_personal_not_managed',
+      sql`not (${table.personal} and ${table.managed})`
+    ),
+    tenantPolicy(
+      table.organizationId,
+      sql`${table.createdBy} = ${currentUser} or ${table.id} = any((select app_member_project_ids())::uuid[])`
+    )
+  ]
+)
+
+// The projects policy applies inside the subquery: a B2C row is visible when its project is.
+const visibleProject = (projectId: AnyPgColumn): SQL =>
+  sql`exists (select 1 from ${projects} where ${projects.id} = ${projectId})`
+
+export const projectMembers = pgTable.withRLS(
+  'project_members',
+  {
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    userId: uuid('user_id').notNull(),
+    email: text().notNull(),
+    role: memberRole().notNull(),
+    joinedAt: timestamptz('joined_at').notNull().defaultNow(),
+    tenant: tenant()
+  },
+  table => [
+    primaryKey({ columns: [table.projectId, table.userId] }),
+    index().on(table.userId),
+    foreignKey({
+      columns: [table.tenant, table.projectId],
+      foreignColumns: [projects.tenant, projects.id]
+    }),
+    // The flag is on while app_member_project_ids reads this table (see its migration).
+    tenantPolicy(
+      table.organizationId,
+      sql`current_setting('app.membership_lookup', true) = 'on' or ${visibleProject(table.projectId)}`
+    )
+  ]
+)
+
+// An invite waits for its email to sign in, then app_claim_invites turns it
+// into a membership. The organization keeps it inside its tenant.
+export const projectInvites = pgTable.withRLS(
+  'project_invites',
+  {
+    id: id(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    email: text().notNull(),
+    role: memberRole().notNull(),
+    invitedBy: uuid('invited_by').notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+    tenant: tenant()
+  },
+  table => [
+    unique().on(table.projectId, table.email),
+    index().on(table.email),
+    foreignKey({
+      columns: [table.tenant, table.projectId],
+      foreignColumns: [projects.tenant, projects.id]
+    }),
+    check(
+      'project_invites_email_lower',
+      sql`${table.email} = lower(${table.email})`
+    ),
+    tenantPolicy(
+      table.organizationId,
+      sql`${visibleProject(table.projectId)} or ${table.email} = lower(current_setting('app.user_email', true))`
+    )
+  ]
+)
+
 export const boards = pgTable.withRLS(
   'boards',
   {
     id: id(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
     organizationId: organizationId(),
-    spaceId: uuid('space_id'),
-    ownerId: uuid('owner_id'),
     name: text().notNull(),
     keyPrefix: text('key_prefix').notNull(),
     taskCounter: integer('task_counter').notNull().default(0),
@@ -76,105 +177,26 @@ export const boards = pgTable.withRLS(
   },
   table => [
     unique().on(table.tenant, table.id),
-    unique().on(table.spaceId, table.keyPrefix),
-    // Row level security splits a person's boards by organization, B2C included.
-    uniqueIndex('boards_owner_key_prefix')
-      .on(
-        sql`coalesce(${table.organizationId}, '')`,
-        table.ownerId,
-        table.keyPrefix
-      )
-      .where(sql`${table.ownerId} is not null`),
-    uniqueIndex('boards_one_inbox_per_owner')
-      .on(sql`coalesce(${table.organizationId}, '')`, table.ownerId)
+    unique().on(table.projectId, table.keyPrefix),
+    index().on(table.projectId),
+    uniqueIndex('boards_one_inbox_per_project')
+      .on(table.projectId)
       .where(sql`${table.inbox}`),
     foreignKey({
-      columns: [table.organizationId, table.spaceId],
-      foreignColumns: [spaces.organizationId, spaces.id]
+      columns: [table.tenant, table.projectId],
+      foreignColumns: [projects.tenant, projects.id]
     }),
-    check(
-      'boards_space_or_owner',
-      sql`(${table.spaceId} is null) <> (${table.ownerId} is null)`
-    ),
-    check(
-      'boards_space_has_organization',
-      sql`${table.spaceId} is null or ${table.organizationId} is not null`
-    ),
     check(
       'boards_key_prefix',
       sql`${table.keyPrefix} ~ '^[A-Z][A-Z0-9]{0,9}$'`
     ),
-    tenantPolicy(
-      table.organizationId,
-      sql`${table.ownerId} = ${currentUser} or ${table.id} = any((select app_member_board_ids())::uuid[])`
-    )
+    tenantPolicy(table.organizationId, visibleProject(table.projectId))
   ]
 )
 
 // The boards policy applies inside the subquery: a B2C row is visible when its board is.
 const visibleBoard = (boardId: AnyPgColumn): SQL =>
   sql`exists (select 1 from ${boards} where ${boards.id} = ${boardId})`
-
-export const boardMembers = pgTable.withRLS(
-  'board_members',
-  {
-    boardId: uuid('board_id')
-      .notNull()
-      .references(() => boards.id, { onDelete: 'cascade' }),
-    organizationId: organizationId(),
-    userId: uuid('user_id').notNull(),
-    email: text().notNull(),
-    role: memberRole().notNull(),
-    joinedAt: timestamptz('joined_at').notNull().defaultNow(),
-    tenant: tenant()
-  },
-  table => [
-    primaryKey({ columns: [table.boardId, table.userId] }),
-    foreignKey({
-      columns: [table.tenant, table.boardId],
-      foreignColumns: [boards.tenant, boards.id]
-    }),
-    // The flag is on while app_member_board_ids reads this table (see its migration).
-    tenantPolicy(
-      table.organizationId,
-      sql`current_setting('app.membership_lookup', true) = 'on' or ${visibleBoard(table.boardId)}`
-    )
-  ]
-)
-
-// An invite waits for its email to sign in, then app_claim_invites turns it
-// into a membership. The organization keeps it inside its tenant.
-export const boardInvites = pgTable.withRLS(
-  'board_invites',
-  {
-    id: id(),
-    boardId: uuid('board_id')
-      .notNull()
-      .references(() => boards.id, { onDelete: 'cascade' }),
-    organizationId: organizationId(),
-    email: text().notNull(),
-    role: memberRole().notNull(),
-    invitedBy: uuid('invited_by').notNull(),
-    createdAt: timestamptz('created_at').notNull().defaultNow(),
-    tenant: tenant()
-  },
-  table => [
-    unique().on(table.boardId, table.email),
-    index().on(table.email),
-    foreignKey({
-      columns: [table.tenant, table.boardId],
-      foreignColumns: [boards.tenant, boards.id]
-    }),
-    check(
-      'board_invites_email_lower',
-      sql`${table.email} = lower(${table.email})`
-    ),
-    tenantPolicy(
-      table.organizationId,
-      sql`${visibleBoard(table.boardId)} or ${table.email} = lower(current_setting('app.user_email', true))`
-    )
-  ]
-)
 
 export const sections = pgTable.withRLS(
   'sections',
@@ -313,37 +335,25 @@ export const taskAssignees = pgTable.withRLS(
   ]
 )
 
-// A label belongs to a space, or to the owner of personal boards.
 export const labels = pgTable.withRLS(
   'labels',
   {
     id: id(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
     organizationId: organizationId(),
-    spaceId: uuid('space_id'),
-    ownerId: uuid('owner_id'),
     name: text().notNull(),
     tenant: tenant()
   },
   table => [
     unique().on(table.tenant, table.id),
-    unique().on(table.spaceId, table.name),
-    unique()
-      .on(table.organizationId, table.ownerId, table.name)
-      .nullsNotDistinct(),
+    unique().on(table.projectId, table.name),
     foreignKey({
-      columns: [table.organizationId, table.spaceId],
-      foreignColumns: [spaces.organizationId, spaces.id]
-    }).onDelete('cascade'),
-    check(
-      'labels_space_or_owner',
-      sql`(${table.spaceId} is null) <> (${table.ownerId} is null)`
-    ),
-    // The boards policy applies inside the subquery: a B2C label is visible
-    // with any board of its owner.
-    tenantPolicy(
-      table.organizationId,
-      sql`exists (select 1 from ${boards} where ${boards.ownerId} = ${table.ownerId})`
-    )
+      columns: [table.tenant, table.projectId],
+      foreignColumns: [projects.tenant, projects.id]
+    }),
+    tenantPolicy(table.organizationId, visibleProject(table.projectId))
   ]
 )
 

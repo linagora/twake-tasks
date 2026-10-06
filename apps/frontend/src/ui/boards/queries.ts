@@ -19,11 +19,11 @@ import type {
   NewReminder,
   NewTask,
   Notification,
+  Project,
   Reminder,
   SavedFilter,
   Sharing,
   Shelf,
-  Space,
   TaskMove
 } from '@/application/boards'
 import type { Board, BoardSummary, Layout } from '@/domain/board'
@@ -114,9 +114,20 @@ export function useHiddenTasks(
   })
 }
 
-export function useSpaces(): UseQueryResult<Space[]> {
+export function useProjects(): UseQueryResult<Project[]> {
   const api = useBoardsApi()
-  return useQuery({ queryKey: ['spaces'], queryFn: () => api.listSpaces() })
+  return useQuery({
+    queryKey: ['projects'],
+    queryFn: () => api.listProjects()
+  })
+}
+
+export function useProjectOfSpace(spaceId: string): UseQueryResult<string> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: ['spaces', spaceId, 'project'],
+    queryFn: () => api.projectOfSpace(spaceId)
+  })
 }
 
 export function useBoards(): UseQueryResult<BoardSummary[]> {

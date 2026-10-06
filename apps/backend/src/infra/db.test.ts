@@ -2,8 +2,9 @@ import { eq, sql as statement, type SQL } from 'drizzle-orm'
 import { afterAll, describe, expect, inject, it } from 'vitest'
 import {
   boardFavorites,
-  boardMembers,
   boards,
+  projectMembers,
+  projects,
   sections,
   tasks
 } from '../modules/boards/schema.ts'
@@ -16,27 +17,39 @@ afterAll(async () => {
   await sql.end()
 })
 
-function aBoardRow(owner: TestUser) {
+function aProjectRow(owner: TestUser) {
   return {
     organizationId: owner.organizationId,
-    ownerId: owner.userId,
     name: 'Secret',
-    keyPrefix: 'SEC',
     createdBy: owner.userId
   }
 }
 
-async function aBoardOf(owner: TestUser) {
+async function aProjectOf(owner: TestUser) {
   return inTenant(db, owner, async tx => {
-    const [board] = await tx.insert(boards).values(aBoardRow(owner)).returning()
-    if (!board) throw new Error('no board')
-    await tx.insert(boardMembers).values({
-      boardId: board.id,
+    const [project] = await tx
+      .insert(projects)
+      .values(aProjectRow(owner))
+      .returning()
+    if (!project) throw new Error('no project')
+    await tx.insert(projectMembers).values({
+      projectId: project.id,
       organizationId: owner.organizationId,
       userId: owner.userId,
       email: owner.email,
       role: 'admin'
     })
+    const [board] = await tx
+      .insert(boards)
+      .values({
+        projectId: project.id,
+        organizationId: owner.organizationId,
+        name: 'Secret',
+        keyPrefix: 'SEC',
+        createdBy: owner.userId
+      })
+      .returning()
+    if (!board) throw new Error('no board')
     await tx.insert(sections).values({
       boardId: board.id,
       organizationId: owner.organizationId,
@@ -44,7 +57,7 @@ async function aBoardOf(owner: TestUser) {
       category: 'unstarted',
       position: 'a0'
     })
-    return board.id
+    return { projectId: project.id, boardId: board.id }
   })
 }
 
@@ -53,12 +66,25 @@ const boardsSeenBy = (user: TestUser) =>
     tx.select({ organizationId: boards.organizationId }).from(boards)
   )
 
+const join = (
+  projectId: string,
+  user: TestUser,
+  organizationId: string | null
+) =>
+  ({
+    projectId,
+    organizationId,
+    userId: user.userId,
+    email: user.email,
+    role: 'viewer'
+  }) as const
+
 describe('inTenant', () => {
   it('only shows the rows of the current organization', async () => {
     const acme = aUser()
     const globex = aUser()
-    await aBoardOf(acme)
-    await aBoardOf(aB2cUser())
+    await aProjectOf(acme)
+    await aProjectOf(aB2cUser())
 
     expect(await boardsSeenBy(globex)).toEqual([])
     expect(await boardsSeenBy(acme)).toEqual([
@@ -71,20 +97,25 @@ describe('inTenant', () => {
     const globex = aUser()
 
     await expect(
-      inTenant(db, acme, tx => tx.insert(boards).values(aBoardRow(globex)))
+      inTenant(db, acme, tx => tx.insert(projects).values(aProjectRow(globex)))
     ).rejects.toThrow()
     await expect(
-      inTenant(db, aB2cUser(), tx => tx.insert(boards).values(aBoardRow(acme)))
+      inTenant(db, aB2cUser(), tx =>
+        tx.insert(projects).values(aProjectRow(acme))
+      )
     ).rejects.toThrow()
   })
 
-  it('keeps B2C users to the boards they belong to', async () => {
+  it('keeps B2C users to the projects they belong to', async () => {
     const alice = aB2cUser()
     const bob = aB2cUser()
-    const boardId = await aBoardOf(alice)
+    const { projectId, boardId } = await aProjectOf(alice)
 
     expect(await boardsSeenBy(alice)).toEqual([{ organizationId: null }])
     expect(await boardsSeenBy(bob)).toEqual([])
+    expect(await inTenant(db, bob, tx => tx.select().from(projects))).toEqual(
+      []
+    )
     expect(
       await inTenant(db, bob, tx =>
         tx.select().from(sections).where(eq(sections.boardId, boardId))
@@ -92,38 +123,26 @@ describe('inTenant', () => {
     ).toEqual([])
     await expect(
       inTenant(db, bob, tx =>
-        tx.insert(boardMembers).values({
-          boardId,
-          organizationId: null,
-          userId: bob.userId,
-          email: bob.email,
-          role: 'admin'
-        })
+        tx.insert(projectMembers).values(join(projectId, bob, null))
       )
     ).rejects.toThrow()
   })
 
-  it('shows a shared B2C board to its members', async () => {
+  it('shows a shared B2C project to its members', async () => {
     const alice = aB2cUser()
     const bob = aB2cUser()
-    const boardId = await aBoardOf(alice)
+    const { projectId } = await aProjectOf(alice)
     await inTenant(db, alice, tx =>
-      tx.insert(boardMembers).values({
-        boardId,
-        organizationId: null,
-        userId: bob.userId,
-        email: bob.email,
-        role: 'viewer'
-      })
+      tx.insert(projectMembers).values(join(projectId, bob, null))
     )
 
     expect(await boardsSeenBy(bob)).toEqual([{ organizationId: null }])
     expect(
       await inTenant(db, bob, tx =>
         tx
-          .select({ email: boardMembers.email })
-          .from(boardMembers)
-          .where(eq(boardMembers.boardId, boardId))
+          .select({ email: projectMembers.email })
+          .from(projectMembers)
+          .where(eq(projectMembers.projectId, projectId))
       )
     ).toHaveLength(2)
   })
@@ -131,20 +150,16 @@ describe('inTenant', () => {
   it('keeps each person’s favorites to themselves', async () => {
     const alice = aUser()
     const bob = aUser({ organizationId: alice.organizationId })
-    const boardId = await aBoardOf(alice)
+    const { projectId, boardId } = await aProjectOf(alice)
     const favorite = (user: TestUser) => ({
       boardId,
       organizationId: alice.organizationId,
       userId: user.userId
     })
     await inTenant(db, alice, async tx => {
-      await tx.insert(boardMembers).values({
-        boardId,
-        organizationId: alice.organizationId,
-        userId: bob.userId,
-        email: bob.email,
-        role: 'viewer'
-      })
+      await tx
+        .insert(projectMembers)
+        .values(join(projectId, bob, alice.organizationId))
       await tx.insert(boardFavorites).values(favorite(alice))
     })
 
@@ -159,30 +174,39 @@ describe('inTenant', () => {
 
 describe('tenant foreign keys', () => {
   const FOREIGN_KEY_VIOLATION = '23503'
-  const stray: Record<string, (boardId: string, taskId: string) => SQL> = {
-    board_members: boardId =>
-      statement`insert into board_members (board_id, org_id, user_id, email, role)
-         values (${boardId}, null, uuidv7(), 'stray@example.com', 'viewer')`,
-    sections: boardId =>
+  const stray: Record<
+    string,
+    (ids: { projectId: string; boardId: string; taskId: string }) => SQL
+  > = {
+    project_members: ({ projectId }) =>
+      statement`insert into project_members (project_id, org_id, user_id, email, role)
+         values (${projectId}, null, uuidv7(), 'stray@example.com', 'viewer')`,
+    boards: ({ projectId }) =>
+      statement`insert into boards (project_id, org_id, name, key_prefix, created_by)
+         values (${projectId}, null, 'Stray', 'STRAY', uuidv7())`,
+    labels: ({ projectId }) =>
+      statement`insert into labels (project_id, org_id, name)
+         values (${projectId}, null, 'Stray')`,
+    sections: ({ boardId }) =>
       statement`insert into sections (board_id, org_id, name, category, position)
          values (${boardId}, null, 'Stray', 'unstarted', 'z0')`,
-    tasks: boardId =>
+    tasks: ({ boardId }) =>
       statement`insert into tasks (board_id, org_id, number, title, position, created_by)
          values (${boardId}, null, 99, 'Stray', 'z0', uuidv7())`,
-    board_favorites: boardId =>
+    board_favorites: ({ boardId }) =>
       statement`insert into board_favorites (board_id, org_id, user_id)
          values (${boardId}, null, uuidv7())`,
-    task_assignees: (_, taskId) =>
+    task_assignees: ({ taskId }) =>
       statement`insert into task_assignees (task_id, org_id, user_id)
          values (${taskId}, null, uuidv7())`
   }
 
   // Row level security already refuses these, so it is lifted to reach the keys.
   it.each(Object.entries(stray))(
-    'refuses a B2C row in %s on an organization board',
+    'refuses a B2C row in %s on an organization project',
     async (table, insert) => {
       const owner = aUser()
-      const boardId = await aBoardOf(owner)
+      const { projectId, boardId } = await aProjectOf(owner)
       const [task] = await inTenant(db, owner, tx =>
         tx
           .insert(tasks)
@@ -202,7 +226,9 @@ describe('tenant foreign keys', () => {
           await tx.execute(
             statement`alter table ${statement.identifier(table)} no force row level security`
           )
-          await tx.execute(insert(boardId, task?.id ?? ''))
+          await tx.execute(
+            insert({ projectId, boardId, taskId: task?.id ?? '' })
+          )
           tx.rollback()
         })
       ).rejects.toHaveProperty('cause.code', FOREIGN_KEY_VIOLATION)

@@ -6,11 +6,23 @@ export type SectionCategory =
 
 export type Priority = 1 | 2 | 3 | 4
 
+/**
+ * A project holds boards and gives them their members, labels and key
+ * prefixes. A personal project is never shared; a managed one takes its
+ * members from an integration, such as a space.
+ */
+export interface ProjectSummary {
+  id: string
+  name: string
+  personal: boolean
+  managed: boolean
+}
+
 export interface BoardSummary {
   id: string
   name: string
   keyPrefix: string
-  spaceId: string | null
+  project: ProjectSummary
   inbox: boolean
   role: Role
   archived: boolean
@@ -77,7 +89,7 @@ export interface Board {
   id: string
   name: string
   keyPrefix: string
-  spaceId: string | null
+  project: ProjectSummary
   inbox: boolean
   archived: boolean
   version: number

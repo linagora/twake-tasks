@@ -147,19 +147,23 @@ describe('user boards', () => {
     expect(malformed.statusCode).toBe(404)
   })
 
-  it('refuses a key prefix already used by the same owner', async () => {
+  it('refuses a key prefix already used in the project', async () => {
     const alice = aUser()
-    await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
+    const { project } = (
+      await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
+    ).json<{ project: { id: string } }>()
 
-    const again = await api
+    const again = await api.as(alice).post('/boards', {
+      name: 'Desk',
+      keyPrefix: 'DES',
+      projectId: project.id
+    })
+    const otherProject = await api
       .as(alice)
       .post('/boards', { name: 'Desk', keyPrefix: 'DES' })
-    const otherOwner = await api
-      .as(aUser())
-      .post('/boards', { name: 'Design', keyPrefix: 'DES' })
 
     expect(again.statusCode).toBe(409)
-    expect(otherOwner.statusCode).toBe(201)
+    expect(otherProject.statusCode).toBe(201)
   })
 
   it('keeps the INBOX key prefix for the Inbox', async () => {

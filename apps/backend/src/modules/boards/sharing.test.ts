@@ -1,7 +1,16 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { aB2cUser, aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
+import { createDb } from '../../infra/db.ts'
+import {
+  aB2cUser,
+  aBoardIn,
+  aManagedProject,
+  aUser,
+  startApp,
+  type TestUser
+} from '../../testing/app.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
+const { sql, db } = createDb(inject('databaseUrl'))
 
 beforeAll(async () => {
   api = await startApp()
@@ -9,6 +18,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await api.close()
+  await sql.end()
 })
 
 async function aBoardOf(owner: TestUser) {
@@ -107,6 +117,43 @@ describe('sharing a board', () => {
       (await invite(owner, inbox?.id ?? '', 'x@example.com', 'viewer'))
         .statusCode
     ).toBe(403)
+  })
+
+  it('leaves the members of a managed project to its integration', async () => {
+    const admin = aUser()
+    const projectId = await aManagedProject(db, [[admin, 'admin']])
+    const boardId = await aBoardIn(db, admin, projectId, {
+      name: 'Launch',
+      keyPrefix: 'LCH'
+    })
+
+    expect(
+      (await invite(admin, boardId, 'x@example.com', 'viewer')).statusCode
+    ).toBe(403)
+  })
+
+  it('shares every board of the project', async () => {
+    const owner = aUser()
+    const guest = aUser({ organizationId: owner.organizationId })
+    const { id: boardId, project } = (
+      await api.as(owner).post('/boards', { name: 'Design', keyPrefix: 'DES' })
+    ).json<{ id: string; project: { id: string } }>()
+    const sibling = (
+      await api.as(owner).post('/boards', {
+        name: 'Ops',
+        keyPrefix: 'OPS',
+        projectId: project.id
+      })
+    ).json<{ id: string }>().id
+
+    await invite(owner, boardId, guest.email, 'editor')
+
+    expect(await boardIdsOf(guest)).toEqual(
+      expect.arrayContaining([
+        { id: boardId, role: 'editor' },
+        { id: sibling, role: 'editor' }
+      ])
+    )
   })
 
   it('changes a role and removes a member, keeping an admin', async () => {

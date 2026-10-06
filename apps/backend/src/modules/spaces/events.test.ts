@@ -45,11 +45,11 @@ async function spaceBoards(user: TestUser) {
         id: string
         name: string
         keyPrefix: string
-        spaceId: string
+        project: { name: string; managed: boolean }
         role: string
       }[]
     }>()
-    .boards.filter(board => board.spaceId)
+    .boards.filter(board => board.project.managed)
 }
 
 describe('twake.space.created', () => {
@@ -69,12 +69,12 @@ describe('twake.space.created', () => {
       expect.objectContaining({
         name: 'Équipe design',
         keyPrefix: 'EQU',
-        spaceId,
+        project: expect.objectContaining({ name: 'Équipe design' }) as object,
         role: 'admin'
       })
     ])
     expect(await spaceBoards(viewer)).toEqual([
-      expect.objectContaining({ spaceId, role: 'viewer' })
+      expect.objectContaining({ name: 'Équipe design', role: 'viewer' })
     ])
     expect(
       await spaceBoards(aUser({ organizationId: admin.organizationId }))
@@ -185,10 +185,10 @@ describe('space members and name', () => {
 
     await deliver('twake.space.updated', { ...space, name: 'Operations' })
     expect(
-      (await api.as(admin).get('/spaces')).json<{
-        spaces: { name: string }[]
-      }>().spaces
-    ).toEqual([expect.objectContaining({ name: 'Operations' })])
+      (await api.as(admin).get('/projects')).json<{
+        projects: { name: string; managed: boolean }[]
+      }>().projects
+    ).toEqual([expect.objectContaining({ name: 'Operations', managed: true })])
   })
 })
 
@@ -259,7 +259,7 @@ describe('twake.space.deleted', () => {
 
     const remaining = await db.transaction(async tx => {
       await asOrganization(tx, space.organizationId)
-      return tx.select().from(boards).where(eq(boards.spaceId, space.id))
+      return tx.select().from(boards).where(eq(boards.id, boardId))
     })
     expect(remaining).toEqual([])
   })

@@ -295,11 +295,11 @@
     "close": "Fermer",
     "failed": "La modification n'a pas pu être enregistrée.",
     "loadFailed": "Les membres n'ont pas pu être chargés.",
-    "moveTitle": "Déplacer vers un espace",
-    "space": "Espace",
-    "moveHelp": "Ses membres sont retirés et les rôles de l'espace s'appliquent.",
+    "moveTitle": "Déplacer vers un autre projet",
+    "project": "Projet",
+    "moveHelp": "Les membres et les étiquettes du projet s'appliquent au tableau.",
     "move": "Déplacer",
-    "prefixTaken": "Un tableau de cet espace utilise déjà %{prefix}.",
+    "prefixTaken": "Un tableau de ce projet utilise déjà %{prefix}.",
     "moveFailed": "Le tableau n'a pas pu être déplacé."
   },
   "layout": {
