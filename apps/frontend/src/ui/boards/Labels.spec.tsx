@@ -41,6 +41,19 @@ const logoCard = async () =>
   )
 
 describe('Labels', () => {
+  it('highlights the searched part of each label', async () => {
+    const { board, boardsApi } = labeledBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    const picker = await openLabels()
+
+    search(picker, 'gen')
+
+    const option = picker.getByRole('menuitemcheckbox', { name: 'Urgent' })
+    expect(
+      [...option.querySelectorAll('mark')].map(mark => mark.textContent)
+    ).toEqual(['gen'])
+  })
+
   it('shows a task’s labels on its card', async () => {
     const { board, boardsApi } = labeledBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })

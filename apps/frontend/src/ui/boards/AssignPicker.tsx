@@ -7,6 +7,7 @@ import {
   PickerOption,
   PickerPopover
 } from '@/ds/Picker'
+import { Highlight } from '@/ds/Highlight'
 import type { Person, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { matchScore } from '@/ui/boards/people'
@@ -119,7 +120,7 @@ export function AssignPicker({
           start={<PersonAvatar email={person.email} name={person.name} />}
         >
           <Typography variant="body2" className="u-ellipsis">
-            {displayName(person)}
+            <Highlight text={displayName(person)} query={query} />
           </Typography>
           {displayName(person) !== person.email && (
             <Typography
@@ -128,7 +129,7 @@ export function AssignPicker({
               component="div"
               className="u-ellipsis"
             >
-              {person.email}
+              <Highlight text={person.email} query={query} />
             </Typography>
           )}
         </PickerOption>

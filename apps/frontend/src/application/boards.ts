@@ -93,6 +93,9 @@ export interface SectionMove {
 
 export type AgendaTask = Task & { boardId: string; boardName: string }
 
+/** `excerpt` quotes the description around the match when the title does not match. */
+export type SearchResult = AgendaTask & { excerpt: string | null }
+
 export interface Agenda {
   today: string
   tasks: AgendaTask[]
@@ -178,7 +181,7 @@ export interface BoardsApi {
   /** Overdue tasks, then those due within `days` days of today in `zone`. */
   agenda: (zone: string, days: number) => Promise<Agenda>
   /** Tasks whose key starts with, or whose title or description contains, `text`. */
-  search: (text: string) => Promise<AgendaTask[]>
+  search: (text: string) => Promise<SearchResult[]>
   /** Open tasks assigned to the signed-in person, dated ones first. */
   myTasks: () => Promise<AgendaTask[]>
   listBoards: () => Promise<BoardSummary[]>

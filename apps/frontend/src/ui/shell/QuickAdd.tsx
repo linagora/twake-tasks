@@ -400,6 +400,8 @@ export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
                   }}
                   primary={suggestion.label ?? suggestion.name}
                   secondary={suggestion.hint}
+                  // Names are typed with dashes for spaces.
+                  highlight={mention?.typed.replaceAll('-', ' ') ?? ''}
                 />
               ))}
             </SuggestionList>

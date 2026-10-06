@@ -90,7 +90,7 @@ export function LabelsPicker({
             toggle(label.id)
           }}
         >
-          <LabelChip name={label.name} />
+          <LabelChip name={label.name} highlight={name} />
         </PickerOption>
       ))}
       {creatable && (

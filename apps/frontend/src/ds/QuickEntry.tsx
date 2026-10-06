@@ -1,6 +1,8 @@
 import { Box, Paper, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
+import { Highlight } from '@/ds/Highlight'
+
 export function ParsedParts({
   label,
   children
@@ -89,13 +91,15 @@ export function SuggestionOption({
   selected,
   onPick,
   primary,
-  secondary
+  secondary,
+  highlight
 }: {
   id: string
   selected: boolean
   onPick: () => void
   primary: string
   secondary?: string | undefined
+  highlight: string
 }): ReactElement {
   return (
     <Box
@@ -121,11 +125,11 @@ export function SuggestionOption({
       }}
     >
       <Typography variant="body2" noWrap>
-        {primary}
+        <Highlight text={primary} query={highlight} />
       </Typography>
       {secondary && (
         <Typography variant="caption" color="textSecondary" noWrap>
-          {secondary}
+          <Highlight text={secondary} query={highlight} />
         </Typography>
       )}
     </Box>

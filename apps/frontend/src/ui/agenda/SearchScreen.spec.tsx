@@ -40,6 +40,34 @@ describe('SearchScreen', () => {
     expect(boardsApi.search).toHaveBeenCalledWith('logo')
   })
 
+  it('highlights the part of each title that matches, inside a word too', async () => {
+    renderRoute('/search?q=LOG', { boardsApi: boards().boardsApi })
+
+    const link = await screen.findByRole('link', { name: /New logo/ })
+    expect(
+      [...link.querySelectorAll('mark')].map(mark => mark.textContent)
+    ).toEqual(['log'])
+  })
+
+  it('quotes the matching part of the description, highlighted', async () => {
+    const { design, boardsApi } = boards()
+    boardsApi.search.mockResolvedValue([
+      {
+        ...aTask(null, { key: 'DES-2', title: 'Poster' }),
+        boardId: design.id,
+        boardName: design.name,
+        excerpt: '…for the spring fair in Lyon'
+      }
+    ])
+    renderRoute('/search?q=fair', { boardsApi })
+
+    const row = await screen.findByRole('listitem', { name: /Poster/ })
+    expect(row).toHaveTextContent('…for the spring fair in Lyon')
+    expect(
+      [...row.querySelectorAll('mark')].map(mark => mark.textContent)
+    ).toEqual(['fair'])
+  })
+
   it('keeps the searched words in the search field', async () => {
     renderRoute('/search?q=logo', { boardsApi: boards().boardsApi })
 

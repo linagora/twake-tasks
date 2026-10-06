@@ -103,6 +103,19 @@ describe('QuickAdd', () => {
     expect(screen.getByRole('dialog', { name: 'Quick add' })).toBeVisible()
   })
 
+  it('highlights what was typed in each suggestion', async () => {
+    const { dialog, type } = await openQuickAdd()
+
+    type('Logo #Product-de')
+
+    const option = within(
+      dialog.getByRole('listbox', { name: 'Suggestions' })
+    ).getByRole('option', { name: /Product Design/ })
+    expect(
+      [...option.querySelectorAll('mark')].map(mark => mark.textContent)
+    ).toEqual(['Product', 'De', 'DE'])
+  })
+
   it('keeps the syntax help behind a button', async () => {
     const { dialog } = await openQuickAdd()
 

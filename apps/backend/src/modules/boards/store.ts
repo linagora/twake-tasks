@@ -53,6 +53,21 @@ const UNIQUE_VIOLATION = '23505'
 
 const SEARCH_LIMIT = 50
 
+const WORDS_BEFORE = 5
+const WORDS_AFTER = 8
+
+function excerptOf(description: string, text: string): string | null {
+  const words = description.split(/\s+/).filter(Boolean)
+  const joined = words.join(' ')
+  const at = joined.toLowerCase().indexOf(text.toLowerCase())
+  if (at === -1) return null
+  const wordAt = (offset: number) =>
+    joined.slice(0, offset).split(' ').length - 1
+  const from = Math.max(0, wordAt(at) - WORDS_BEFORE)
+  const to = Math.min(words.length, wordAt(at + text.length) + 1 + WORDS_AFTER)
+  return `${from > 0 ? '…' : ''}${words.slice(from, to).join(' ')}${to < words.length ? '…' : ''}`
+}
+
 function isUniqueViolation(error: unknown): boolean {
   const cause = error instanceof Error ? error.cause : undefined
   return (
@@ -90,8 +105,8 @@ export function createBoardStore(db: Db) {
     /** Tasks whose key starts with, or whose title or description contains, `text`. */
     search(identity: Identity, text: string) {
       const pattern = text.replace(/[\\%_]/g, '\\$&')
-      return inTenant(db, identity, tx =>
-        tasksOf(
+      return inTenant(db, identity, async tx => {
+        const found = await tasksOf(
           tx,
           identity.userId,
           or(
@@ -102,7 +117,26 @@ export function createBoardStore(db: Db) {
           ),
           SEARCH_LIMIT
         )
-      )
+        const quoted = found.flatMap(task =>
+          task.id && !task.title?.toLowerCase().includes(text.toLowerCase())
+            ? [task.id]
+            : []
+        )
+        const descriptions = new Map(
+          quoted.length === 0
+            ? []
+            : (
+                await tx
+                  .select({ id: tasks.id, text: tasks.descriptionText })
+                  .from(tasks)
+                  .where(inArray(tasks.id, quoted))
+              ).map(row => [row.id, row.text])
+        )
+        return found.map(task => ({
+          ...task,
+          excerpt: excerptOf(descriptions.get(task.id ?? '') ?? '', text)
+        }))
+      })
     },
 
     listBoards(identity: Identity) {
