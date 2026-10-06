@@ -116,11 +116,9 @@ export function Shelves({ children }: { children: ReactNode }): ReactElement {
 
 export function TileShelf({
   name,
-  hint,
   children
 }: {
   name: string
-  hint?: string | undefined
   children: ReactNode
 }): ReactElement {
   return (
@@ -131,11 +129,6 @@ export function TileShelf({
       <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 600 }}>
         {name}
       </Typography>
-      {hint && (
-        <Typography variant="caption" color="textSecondary" component="p">
-          {hint}
-        </Typography>
-      )}
       <Box
         component="ul"
         aria-label={name}

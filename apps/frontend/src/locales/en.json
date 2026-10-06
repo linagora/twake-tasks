@@ -54,7 +54,6 @@
     "personal": "Personal board",
     "space": "Space board",
     "personalProject": "Personal",
-    "fromSpace": "Members come from the space.",
     "openTasks": "%{smart_count} open task |||| %{smart_count} open tasks",
     "noOpenTasks": "No open tasks"
   },
