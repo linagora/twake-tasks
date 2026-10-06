@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -56,12 +56,13 @@ describe('the embedded view', () => {
       boardsApi: fakeBoardsApi([board])
     })
 
-    await screen.findByRole('link', { name: 'Back to boards' })
     const message = {
       type: 'twake-tasks:path',
       path: `/embed/spaces/s1/boards/${board.id}?task=DES-1`
     }
-    expect(post).toHaveBeenCalledWith(message, SPACE)
+    await waitFor(() => {
+      expect(post).toHaveBeenCalledWith(message, SPACE)
+    })
     expect(post).toHaveBeenCalledWith(message, 'http://localhost:3000')
   })
 
