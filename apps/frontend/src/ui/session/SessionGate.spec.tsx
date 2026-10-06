@@ -34,7 +34,7 @@ describe('SessionGate', () => {
 
     expect(document.getElementById('splash')).toBeNull()
     expect(screen.getByRole('status')).toHaveTextContent('Connexion en cours…')
-    expect(screen.getByText('Twake Tasks')).toBeInTheDocument()
+    expect(screen.getByText('Twake Project')).toBeInTheDocument()
     expect(screen.queryByText('app')).not.toBeInTheDocument()
   })
 
@@ -137,12 +137,12 @@ describe('SessionGate', () => {
     await act(() => Promise.resolve())
 
     expect(screen.getByText('app')).toBeInTheDocument()
-    expect(screen.getByText('Twake Tasks')).toBeInTheDocument()
+    expect(screen.getByText('Twake Project')).toBeInTheDocument()
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(300)
     })
-    expect(screen.queryByText('Twake Tasks')).not.toBeInTheDocument()
+    expect(screen.queryByText('Twake Project')).not.toBeInTheDocument()
   })
 
   it('explains a failed sign-in and offers to sign in again', async () => {

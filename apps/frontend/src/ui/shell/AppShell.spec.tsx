@@ -63,7 +63,7 @@ describe('AppShell', () => {
 
     expect(
       within(await screen.findByRole('banner')).getByRole('link', {
-        name: 'Twake Tasks'
+        name: 'Twake Project'
       })
     ).toHaveAttribute('href', '/')
   })
@@ -158,7 +158,7 @@ describe('AppShell', () => {
     ).toBeInTheDocument()
     expect(document.documentElement.lang).toBe('fr')
     await waitFor(() => {
-      expect(document.title).toBe('Tableaux - Twake Tasks')
+      expect(document.title).toBe('Tableaux - Twake Project')
     })
   })
 })

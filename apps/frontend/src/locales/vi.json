@@ -15,7 +15,7 @@
     "canceled": "Đã hủy di chuyển %{task}."
   },
   "app": {
-    "name": "Twake Tasks",
+    "name": "Twake Project",
     "loading": "Đang tải"
   },
   "session": {

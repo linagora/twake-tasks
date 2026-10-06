@@ -15,7 +15,7 @@
     "canceled": "Moving %{task} was canceled."
   },
   "app": {
-    "name": "Twake Tasks",
+    "name": "Twake Project",
     "loading": "Loading"
   },
   "session": {
