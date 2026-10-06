@@ -9,7 +9,9 @@ import {
   tasks
 } from '../modules/boards/schema.ts'
 import { aB2cUser, aUser, type TestUser } from '../testing/app.ts'
-import { assertRowLevelSecurity, createDb, inTenant } from './db.ts'
+import { PostgreSqlContainer } from '@testcontainers/postgresql'
+import postgres from 'postgres'
+import { assertRowLevelSecurity, createDb, inTenant, migrateDb } from './db.ts'
 
 const { sql, db } = createDb(inject('databaseUrl'))
 
@@ -249,4 +251,37 @@ describe('assertRowLevelSecurity', () => {
 
     expect(unforced).toEqual([])
   })
+})
+
+describe('migrateDb', () => {
+  it('migrates a Postgres 16 database, whose rows still get v7 ids', async () => {
+    const container = await new PostgreSqlContainer('postgres:16').start()
+    const admin = postgres(container.getConnectionUri(), {
+      onnotice: () => undefined
+    })
+    await admin.unsafe(`create role app login password 'app'`)
+    await admin.unsafe(`create database tasks owner app`)
+    await admin.end()
+    const url = new URL(container.getConnectionUri())
+    url.username = 'app'
+    url.password = 'app'
+    url.pathname = '/tasks'
+    const old = createDb(url.toString())
+    try {
+      await migrateDb(old.db)
+      const owner = aUser()
+      const [first, second] = await inTenant(old.db, owner, tx =>
+        tx
+          .insert(projects)
+          .values([aProjectRow(owner), aProjectRow(owner)])
+          .returning({ id: projects.id })
+      )
+
+      expect(first?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/)
+      expect(second?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/)
+    } finally {
+      await old.sql.end()
+      await container.stop()
+    }
+  }, 120_000)
 })
