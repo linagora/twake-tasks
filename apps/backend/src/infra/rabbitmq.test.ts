@@ -16,14 +16,23 @@ import {
 import type { OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 import {
-  ACTIVITY_EXCHANGE,
-  DEAD_LETTER_QUEUE,
-  QUEUE,
   startConsumer,
   startPublisher,
   type Consumer,
+  type ConsumerNames,
   type Delivery
 } from './rabbitmq.ts'
+
+const names: ConsumerNames = {
+  spaceExchange: 'space',
+  b2bExchange: 'b2b',
+  authExchange: 'auth',
+  queue: 'platform.all.twake-tasks',
+  deadLetterExchange: 'twake-tasks.dlx'
+}
+const QUEUE = names.queue
+const DEAD_LETTER_QUEUE = `${QUEUE}.dlq`
+const ACTIVITY_EXCHANGE = 'activity'
 
 let container: StartedRabbitMQContainer
 let broker: ChannelModel
@@ -49,10 +58,12 @@ afterAll(async () => {
 })
 
 async function consume(
-  handle: (delivery: Delivery) => Promise<Outcome>
+  handle: (delivery: Delivery) => Promise<Outcome>,
+  under = names
 ): Promise<void> {
   consumer = await startConsumer(
     container.getAmqpUrl(),
+    under,
     pino({ level: 'silent' }),
     handle
   )
@@ -122,6 +133,7 @@ describe('startConsumer', () => {
     await consume(first)
     const other = await startConsumer(
       container.getAmqpUrl(),
+      names,
       pino({ level: 'silent' }),
       second
     )
@@ -184,6 +196,33 @@ describe('startConsumer', () => {
     expect(await ready(QUEUE)).toBe(0)
     expect(await ready(DEAD_LETTER_QUEUE)).toBe(0)
   })
+
+  it('follows the exchange and queue names it is given', async () => {
+    const renamed: ConsumerNames = {
+      spaceExchange: 'staging.space',
+      b2bExchange: 'staging.b2b',
+      authExchange: 'staging.auth',
+      queue: 'staging.twake-tasks',
+      deadLetterExchange: 'staging.twake-tasks.dlx'
+    }
+    const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    handle.mockResolvedValue('rejected')
+    await consume(handle, renamed)
+
+    publish('space', 'twake.space.created', 'm-1')
+    publish('staging.space', 'twake.space.created', 'm-2')
+    publish('staging.b2b', 'domain.user.deleted', 'm-3')
+    publish('staging.auth', 'user.deleted', 'm-4')
+
+    await vi.waitFor(async () => {
+      expect(await ready('staging.twake-tasks.dlq')).toBe(3)
+    })
+    expect(handle.mock.calls.map(([delivery]) => delivery.messageId)).toEqual([
+      'm-2',
+      'm-3',
+      'm-4'
+    ])
+  })
 })
 
 describe('startPublisher', () => {
@@ -196,34 +235,39 @@ describe('startPublisher', () => {
     data: { object: { id: 'task-1' } }
   }
 
-  it('publishes an event on the activity exchange, routed by its type', async () => {
-    const publisher = await startPublisher(
-      container.getAmqpUrl(),
-      pino({ level: 'silent' })
-    )
-    await channel.assertExchange(ACTIVITY_EXCHANGE, 'topic', { durable: true })
-    const { queue } = await channel.assertQueue('', { exclusive: true })
-    await channel.bindQueue(queue, ACTIVITY_EXCHANGE, 'com.twake.tasks.#')
+  it.each([ACTIVITY_EXCHANGE, 'staging.activity'])(
+    'publishes an event on the %s exchange, routed by its type',
+    async exchange => {
+      const publisher = await startPublisher(
+        container.getAmqpUrl(),
+        exchange,
+        pino({ level: 'silent' })
+      )
+      await channel.assertExchange(exchange, 'topic', { durable: true })
+      const { queue } = await channel.assertQueue('', { exclusive: true })
+      await channel.bindQueue(queue, exchange, 'com.twake.tasks.#')
 
-    try {
-      await publisher.publish(event)
+      try {
+        await publisher.publish(event)
 
-      const message = await vi.waitFor(async () => {
-        const got = await channel.get(queue, { noAck: true })
-        if (!got) throw new Error('nothing yet')
-        return got
-      })
-      expect(message.fields.routingKey).toBe(event.type)
-      expect(message.properties.messageId).toBe(event.id)
-      expect(JSON.parse(message.content.toString())).toEqual(event)
-    } finally {
-      await publisher.close()
+        const message = await vi.waitFor(async () => {
+          const got = await channel.get(queue, { noAck: true })
+          if (!got) throw new Error('nothing yet')
+          return got
+        })
+        expect(message.fields.routingKey).toBe(event.type)
+        expect(message.properties.messageId).toBe(event.id)
+        expect(JSON.parse(message.content.toString())).toEqual(event)
+      } finally {
+        await publisher.close()
+      }
     }
-  })
+  )
 
   it('confirms an event no one listens to', async () => {
     const publisher = await startPublisher(
       container.getAmqpUrl(),
+      ACTIVITY_EXCHANGE,
       pino({ level: 'silent' })
     )
 

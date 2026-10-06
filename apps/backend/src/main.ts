@@ -53,9 +53,20 @@ const server = await buildApp({
 })
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })
 
-const publisher = await startPublisher(config.RABBITMQ_URL, logger)
+const publisher = await startPublisher(
+  config.RABBITMQ_URL,
+  config.RABBITMQ_ACTIVITY_EXCHANGE,
+  logger
+)
 const consumer = await startConsumer(
   config.RABBITMQ_URL,
+  {
+    spaceExchange: config.RABBITMQ_SPACE_EXCHANGE,
+    b2bExchange: config.RABBITMQ_B2B_EXCHANGE,
+    authExchange: config.RABBITMQ_AUTH_EXCHANGE,
+    queue: config.RABBITMQ_QUEUE,
+    deadLetterExchange: config.RABBITMQ_DEAD_LETTER_EXCHANGE
+  },
   logger,
   // The queue stays bound to space events either way, since its first binding
   // fixes its dead letter key; without the integration they find no route.
