@@ -1,13 +1,13 @@
-import { randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
-import { expect, test, type Page } from '@playwright/test'
-import { unique } from './board.ts'
-import { projectOfSpace, publishPlatformEvent } from './platform.ts'
-import { signIn } from './signIn.ts'
+import { expect, test } from '@playwright/test'
+import { aliceSpace } from './space.ts'
 
 // The SSO lets TwakeSpace frame it on the first port, not on the second
 const TRUSTED_PORT = 3301
 const UNTRUSTED_PORT = 3302
+
+// The stand-ins for TwakeSpace listen on the same trusted port: one at a time.
+test.describe.configure({ mode: 'default' })
 
 // A stand-in for TwakeSpace that frames the embed and records what it says.
 // A real server: Chrome keeps pages it did not load off the network from
@@ -32,31 +32,6 @@ function twakeSpace(projectId: string, port: number) {
       })
     })
   )
-}
-
-async function aliceSpace(page: Page) {
-  const spaceId = randomUUID()
-  const name = `Roadmap ${unique()}`
-  publishPlatformEvent('twake.space.created', {
-    organizationId: 'acme.e2e.test',
-    id: spaceId,
-    name,
-    members: [
-      {
-        uuid: '0a11ce00-0000-4000-8000-000000000001',
-        email: 'alice@acme.e2e.test',
-        role: 'admin'
-      }
-    ]
-  })
-  await signIn(page, 'alice')
-  await expect(async () => {
-    await page.goto('/')
-    await expect(page.getByRole('link', { name })).toBeVisible({
-      timeout: 1000
-    })
-  }).toPass()
-  return { projectId: projectOfSpace(spaceId), name }
 }
 
 test("shows a space's boards inside TwakeSpace, signed in without a prompt", async ({
@@ -103,6 +78,93 @@ test('signs in through a popup when the SSO refuses to be framed by TwakeSpace',
     await (await popup).waitForEvent('close')
 
     await expect(frame.getByRole('link', { name })).toBeVisible()
+  } finally {
+    host.close()
+  }
+})
+
+const FRAME = 'twake-embed-tasks'
+
+// A stand-in for TwakeSpace that frames the embed as it does: a named frame,
+// and over the whole page an overlay frame on the app's origin, clipped to
+// the region the app reports.
+function twakeSpaceWithOverlay(projectId: string) {
+  const server = createServer((_request, response) => {
+    response.setHeader('content-type', 'text/html')
+    response.end(`<!doctype html>
+      <style>
+        body { margin: 0 }
+        #tasks { position: fixed; top: 80px; left: 200px; width: 900px; height: 600px; border: 0 }
+        #overlay { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; color-scheme: normal; clip-path: inset(0 0 100% 0) }
+      </style>
+      <iframe id="tasks" name="${FRAME}" title="Tasks" src="http://localhost:3300/embed/projects/${projectId}"></iframe>
+      <iframe id="overlay" name="${FRAME}:overlay" title="Tasks windows" src="http://localhost:3300/embed/overlay.html"></iframe>
+      <script>
+        const tasks = document.getElementById('tasks')
+        const overlay = document.getElementById('overlay')
+        addEventListener('message', event => {
+          if (event.origin !== 'http://localhost:3300' || event.source !== tasks.contentWindow) return
+          if (event.data?.type !== 'twake-embed:overlay-region') return
+          const region = event.data.region
+          overlay.style.clipPath = region === 'full' ? 'none' : region.length === 0 ? 'inset(0 0 100% 0)'
+            : "path('" + region.map(b => 'M' + b.x + ' ' + b.y + 'h' + b.width + 'v' + b.height + 'h' + -b.width + 'Z').join(' ') + "')"
+        })
+      </script>`)
+  })
+  return new Promise<{ url: string; close: () => void }>(resolve =>
+    server.listen(TRUSTED_PORT, 'localhost', () => {
+      resolve({
+        url: `http://localhost:${String(TRUSTED_PORT)}`,
+        close: () => server.close()
+      })
+    })
+  )
+}
+
+test("opens a task's panel on the page of TwakeSpace, not in its frame", async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const { projectId, name } = await aliceSpace(page)
+  const host = await twakeSpaceWithOverlay(projectId)
+  try {
+    await page.goto(host.url)
+    const frame = page.frameLocator(`iframe[name="${FRAME}"]`)
+    const overlay = page.frameLocator(`iframe[name="${FRAME}:overlay"]`)
+    const clipPath = () =>
+      page.locator('#overlay').evaluate(element => element.style.clipPath)
+    await frame.getByRole('link', { name }).click()
+    await expect(
+      frame.getByRole('link', { name: 'Back to boards' })
+    ).toBeVisible()
+    await frame
+      .getByRole('button', { name: /^Add a task to / })
+      .first()
+      .click()
+    await frame.getByLabel('Task title').fill('Plan the launch')
+    await frame.getByRole('button', { name: 'Add', exact: true }).click()
+
+    const card = frame.getByRole('button', { name: 'Plan the launch' })
+    await card.click()
+    const panel = overlay.getByRole('dialog', { name: /Plan the launch$/ })
+    await expect(panel).toBeVisible()
+    await expect(frame.getByRole('dialog')).toHaveCount(0)
+    await expect.poll(clipPath).toBe('none')
+    // Against the right end of TwakeSpace's window, its whole height
+    const box = await panel.boundingBox()
+    if (box === null) throw new Error('The panel is not laid out')
+    expect(Math.round(box.x + box.width)).toBe(1440)
+    expect(Math.round(box.height)).toBe(900)
+
+    await panel.getByRole('textbox', { name: 'Comment' }).fill('On the page')
+    await expect(panel.getByRole('textbox', { name: 'Comment' })).toContainText(
+      'On the page'
+    )
+
+    await page.keyboard.press('Escape')
+    await expect(panel).toBeHidden()
+    await expect.poll(clipPath).toMatch(/^inset/)
+    await expect(card).toBeFocused()
   } finally {
     host.close()
   }
