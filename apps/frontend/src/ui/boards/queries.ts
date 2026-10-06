@@ -27,6 +27,7 @@ import type {
   TaskMove
 } from '@/application/boards'
 import type { Board, BoardSummary, Layout } from '@/domain/board'
+import { applyMove } from '@/application/moveTask'
 import { quickAdd } from '@/application/quickAdd'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
@@ -163,6 +164,22 @@ export function useMoveTask(
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ taskId, move }) => api.moveTask(boardId, taskId, move),
+    onMutate: async ({ taskId, move }) => {
+      await queryClient.cancelQueries({ queryKey: boardKey(boardId) })
+      const shown = queryClient.getQueryData<Board>(boardKey(boardId))
+      if (shown) {
+        queryClient.setQueryData<Board>(boardKey(boardId), {
+          ...shown,
+          tasks: applyMove(shown.tasks, taskId, move)
+        })
+      }
+      return { shown }
+    },
+    onError: (_error, _input, context) => {
+      if (context?.shown) {
+        queryClient.setQueryData(boardKey(boardId), context.shown)
+      }
+    },
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
   })
