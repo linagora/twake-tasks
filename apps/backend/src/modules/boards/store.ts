@@ -111,7 +111,17 @@ export function createBoardStore(db: Db) {
             inbox: boards.inbox,
             role: accessible.role,
             archived: sql<boolean>`${boards.archivedAt} is not null`,
-            favorite: sql<boolean>`${boardFavorites.userId} is not null`
+            favorite: sql<boolean>`${boardFavorites.userId} is not null`,
+            openTasks: tx.$count(
+              tasks,
+              and(
+                eq(tasks.boardId, boards.id),
+                isNull(tasks.parentId),
+                isNull(tasks.completedAt),
+                isNull(tasks.canceledAt),
+                shown
+              )
+            )
           })
           .from(boards)
           .innerJoin(accessible, eq(accessible.boardId, boards.id))

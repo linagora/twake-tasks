@@ -77,7 +77,13 @@ function summaryOf(board: Board, favorite = false): BoardSummary {
     inbox: board.inbox,
     role: board.role,
     archived: board.archived,
-    favorite
+    favorite,
+    openTasks: board.tasks.filter(
+      task =>
+        task.parentId === null &&
+        task.completedAt === null &&
+        task.canceledAt === null
+    ).length
   }
 }
 

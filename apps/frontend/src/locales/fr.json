@@ -22,7 +22,11 @@
     "emptyArchivedHint": "Les tableaux archivés restent ici, en lecture seule.",
     "loadFailed": "Les tableaux n'ont pas pu être chargés.",
     "star": "Ajouter %{name} aux favoris",
-    "unstar": "Retirer %{name} des favoris"
+    "unstar": "Retirer %{name} des favoris",
+    "personal": "Tableau personnel",
+    "space": "Tableau d'espace",
+    "openTasks": "%{smart_count} tâche ouverte |||| %{smart_count} tâches ouvertes",
+    "noOpenTasks": "Aucune tâche ouverte"
   },
   "newBoard": {
     "title": "Nouveau tableau",

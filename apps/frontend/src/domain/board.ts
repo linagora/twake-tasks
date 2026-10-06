@@ -15,6 +15,7 @@ export interface BoardSummary {
   role: Role
   archived: boolean
   favorite: boolean
+  openTasks: number
 }
 
 export interface Section {

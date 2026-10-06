@@ -22,7 +22,11 @@
     "emptyArchivedHint": "Boards you archive stay here, read only.",
     "loadFailed": "The boards could not be loaded.",
     "star": "Add %{name} to favorites",
-    "unstar": "Remove %{name} from favorites"
+    "unstar": "Remove %{name} from favorites",
+    "personal": "Personal board",
+    "space": "Space board",
+    "openTasks": "%{smart_count} open task |||| %{smart_count} open tasks",
+    "noOpenTasks": "No open tasks"
   },
   "newBoard": {
     "title": "New board",
