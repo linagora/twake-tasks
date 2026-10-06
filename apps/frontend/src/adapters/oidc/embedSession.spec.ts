@@ -1,14 +1,14 @@
 import { setTokenSet } from '@linagora/twake-oidc'
 import * as client from 'openid-client'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   embedSession,
   POPUP_NAME,
-  signInInPopup
+  relayCallback,
+  SILENT_NAME
 } from '@/adapters/oidc/embedSession'
 import { readSsoConfig } from '@/adapters/oidc/oidcSession'
-import { fakeSession } from '@/testing/fakeSession'
 
 vi.mock('@linagora/twake-oidc', () => ({
   addAuthorization: vi.fn(),
@@ -46,80 +46,159 @@ const config = readSsoConfig(
   'http://localhost:3000'
 )
 
-const assign = vi.fn<(url: URL) => void>()
-const session = () => embedSession(config, assign)
+const ALICE = { name: 'Alice', email: 'alice@test' }
+
+const silentFrame = () =>
+  document.querySelector<HTMLIFrameElement>(`iframe[name="${SILENT_NAME}"]`)
+
+async function frameOpened() {
+  await vi.waitFor(() => {
+    expect(silentFrame()).not.toBeNull()
+  })
+  const frame = silentFrame()
+  if (!frame?.contentWindow) throw new Error('no silent frame')
+  return { url: new URL(frame.src), window: frame.contentWindow }
+}
+
+function relay(
+  source: Window,
+  search: string,
+  origin = window.location.origin
+) {
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      origin,
+      source,
+      data: {
+        type: 'twake-tasks:sso-callback',
+        url: `http://localhost:3000/auth/callback${search}`
+      }
+    })
+  )
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
-  sessionStorage.clear()
+  window.history.replaceState(null, '', '/embed/spaces/s1')
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+  silentFrame()?.remove()
 })
 
 describe('embedSession', () => {
-  it('signs in without showing the SSO, coming back to the embedded page', async () => {
-    window.history.replaceState(null, '', '/embed/spaces/s1')
+  it('signs in without showing the SSO, in a hidden frame, staying on the page', async () => {
+    const starting = embedSession(config).start()
 
-    await expect(session().start()).resolves.toBeNull()
-
-    const url = new URL(String(assign.mock.calls[0]?.[0]))
-    expect(url.searchParams.get('prompt')).toBe('none')
-    expect(url.searchParams.get('redirect_uri')).toBe(
+    const frame = await frameOpened()
+    expect(frame.url.searchParams.get('prompt')).toBe('none')
+    expect(frame.url.searchParams.get('redirect_uri')).toBe(
       'http://localhost:3000/auth/callback'
     )
+    relay(frame.window, '?code=c&state=state')
 
-    window.history.replaceState(null, '', '/auth/callback?code=c&state=state')
-    const user = await session().start()
-
-    expect(user).toEqual({ name: 'Alice', email: 'alice@test' })
+    await expect(starting).resolves.toEqual(ALICE)
     expect(setTokenSet).toHaveBeenCalled()
     expect(vi.mocked(client.authorizationCodeGrant).mock.calls[0]?.[2]).toEqual(
       { pkceCodeVerifier: 'verifier', expectedState: 'state' }
     )
+    expect(silentFrame()).toBeNull()
     expect(window.location.pathname).toBe('/embed/spaces/s1')
   })
 
-  it('fails, back on the embedded page, when the SSO wants the user to sign in', async () => {
-    window.history.replaceState(null, '', '/embed/spaces/s1')
-    await session().start()
+  it('fails when the SSO wants the user to sign in', async () => {
+    const starting = embedSession(config).start()
 
-    window.history.replaceState(
-      null,
-      '',
-      '/auth/callback?error=login_required&state=state'
-    )
+    relay((await frameOpened()).window, '?error=login_required&state=state')
 
-    await expect(session().start()).rejects.toThrow('login_required')
-    expect(window.location.pathname).toBe('/embed/spaces/s1')
+    await expect(starting).rejects.toThrow('login_required')
     expect(client.authorizationCodeGrant).not.toHaveBeenCalled()
   })
 
-  it('signs in through a popup, then silently again', async () => {
-    window.history.replaceState(null, '', '/embed/spaces/s1')
-    const open = vi.spyOn(window, 'open').mockReturnValue(null)
-    const close = vi.spyOn(window, 'close').mockReturnValue()
+  it('gives up when the SSO never answers, as when it refuses to be framed', async () => {
+    vi.useFakeTimers()
+    const starting = embedSession(config).start()
+    starting.catch(() => undefined)
 
-    const signingIn = session().signIn()
-    expect(open).toHaveBeenCalledWith('/', POPUP_NAME, expect.any(String))
-    expect(assign).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(10_000)
 
-    await signInInPopup(fakeSession())
-    await signingIn
-
-    expect(close).toHaveBeenCalled()
-    expect(assign).toHaveBeenCalledOnce()
+    await expect(starting).rejects.toThrow('no answer from the SSO')
+    expect(silentFrame()).toBeNull()
   })
 
-  it('signs in again silently when the backend refuses the token', async () => {
-    window.history.replaceState(null, '', '/embed/spaces/s1')
-    vi.spyOn(window, 'fetch').mockResolvedValue(
-      new Response(null, { status: 401 })
+  it('takes the answer only from its own frame, on its own origin', async () => {
+    const starting = embedSession(config).start()
+    const frame = await frameOpened()
+
+    relay(frame.window, '?code=forged&state=state', 'https://evil.test')
+    relay(window, '?code=forged&state=state')
+    relay(frame.window, '?code=c&state=state')
+
+    await expect(starting).resolves.toEqual(ALICE)
+    expect(client.authorizationCodeGrant).toHaveBeenCalledExactlyOnceWith(
+      expect.anything(),
+      new URL('http://localhost:3000/auth/callback?code=c&state=state'),
+      expect.anything()
     )
+  })
+
+  it('signs in through a popup, where the SSO may show its portal', async () => {
+    const popup = document.createElement('iframe')
+    document.body.append(popup)
+    const popupWindow = popup.contentWindow
+    if (!popupWindow) throw new Error('no popup window')
+    const open = vi.spyOn(window, 'open').mockReturnValue(popupWindow)
+    const close = vi.spyOn(popupWindow, 'close').mockReturnValue()
+
+    const signingIn = embedSession(config).signIn()
+
+    expect(open).toHaveBeenCalledWith('', POPUP_NAME, expect.any(String))
+    await vi.waitFor(() => {
+      expect(client.buildAuthorizationUrl).toHaveBeenCalled()
+    })
+    expect(
+      vi.mocked(client.buildAuthorizationUrl).mock.calls[0]?.[1]
+    ).not.toHaveProperty('prompt')
+    relay(popupWindow, '?code=c&state=state')
+
+    await expect(signingIn).resolves.toEqual(ALICE)
+    expect(close).toHaveBeenCalled()
+    popup.remove()
+  })
+
+  it('signs in again silently when the backend refuses the token, then retries', async () => {
+    const fetch = vi
+      .spyOn(window, 'fetch')
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response('ok'))
     const request = new Request('http://localhost:3000/api/boards', {
       headers: { Authorization: 'Bearer old' }
     })
 
-    const response = await session().send(request)
+    const sending = embedSession(config).send(request)
+    relay((await frameOpened()).window, '?code=c&state=state')
 
-    expect(response.status).toBe(401)
-    expect(assign).toHaveBeenCalledOnce()
+    expect(await (await sending).text()).toBe('ok')
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('relayCallback', () => {
+  it('hands the SSO answer to the embed that opened the frame', () => {
+    const post = vi.spyOn(window.parent, 'postMessage')
+
+    expect(
+      relayCallback({ name: SILENT_NAME, href: 'http://x/cb?code=c' })
+    ).toBe(true)
+    expect(post).toHaveBeenCalledWith(
+      { type: 'twake-tasks:sso-callback', url: 'http://x/cb?code=c' },
+      window.location.origin
+    )
+  })
+
+  it('leaves any other window alone', () => {
+    expect(relayCallback({ name: '', href: 'http://x/cb?code=c' })).toBe(false)
   })
 })

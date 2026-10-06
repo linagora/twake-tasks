@@ -9,7 +9,7 @@ export function fakeSession(
   let onEnded: (() => void) | null = null
   return {
     start: vi.fn(start),
-    signIn: vi.fn(() => Promise.resolve()),
+    signIn: vi.fn(() => Promise.resolve<User | null>(null)),
     signOut: vi.fn(() => Promise.resolve()),
     onEndedElsewhere: callback => {
       onEnded = callback

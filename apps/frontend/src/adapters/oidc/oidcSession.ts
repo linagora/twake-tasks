@@ -72,7 +72,10 @@ export function oidcSession(config: AuthConfig): SessionService {
       await startLogin()
       return null
     },
-    signIn: startLogin,
+    async signIn() {
+      await startLogin()
+      return null
+    },
     signOut: logOut,
     onEndedElsewhere: onSessionEndedElsewhere
   }

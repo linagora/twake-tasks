@@ -44,6 +44,20 @@ describe('SessionGate', () => {
     expect(session.signIn).toHaveBeenCalled()
   })
 
+  it('shows the app when signing in again succeeds without leaving the page', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const session = fakeSession(() => Promise.reject(new Error('timeout')))
+    vi.mocked(session.signIn).mockResolvedValue({
+      name: 'Alice Martin',
+      email: 'alice@example.com'
+    })
+    renderWithProviders(<p>app</p>, { session })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByText('app')).toBeInTheDocument()
+  })
+
   it('signs in again when another tab signs out', async () => {
     const session = fakeSession()
     renderWithProviders(<p>app</p>, { session })
