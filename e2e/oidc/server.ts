@@ -15,6 +15,7 @@ const ISSUER = process.env.ISSUER ?? 'https://oidc:8443'
 const BACKEND = { id: 'twaketasks-backend', secret: 'e2e-backend-secret' }
 const AUDIENCE = 'twaketasks'
 const TOKEN_TTL_S = 3600
+const FRAME_ANCESTORS = process.env.FRAME_ANCESTORS ?? "'self'"
 
 const PEOPLE = {
   alice: {
@@ -93,6 +94,24 @@ function redirect(
   return res.end()
 }
 
+// LemonLDAP answers /authorize with a page, which the browser shows only in
+// the frames its frame-ancestors lists; a bare 302 would never be checked.
+function portalRedirect(
+  res: ServerResponse,
+  to: URL,
+  headers: Record<string, string> = {}
+) {
+  res.writeHead(200, {
+    'content-type': 'text/html',
+    'content-security-policy': `frame-ancestors ${FRAME_ANCESTORS}`,
+    ...headers
+  })
+  const target = to.href.replace(/"/g, '&quot;')
+  return res.end(
+    `<!doctype html><meta http-equiv="refresh" content="0;url=${target}">`
+  )
+}
+
 function cookieSession(header: string | undefined) {
   const sid = /(?:^|;\s*)e2e_sid=([^;]+)/.exec(header ?? '')?.[1]
   const username = sid ? sessions.get(sid) : undefined
@@ -120,7 +139,7 @@ function issueCode(
   const state = query.get('state')
   if (state) back.searchParams.set('state', state)
   back.searchParams.set('iss', ISSUER)
-  return redirect(res, back, {
+  return portalRedirect(res, back, {
     'set-cookie': `e2e_sid=${sid}; Path=/; Secure; HttpOnly; SameSite=None`
   })
 }
@@ -227,10 +246,13 @@ const server = createServer(
             back.searchParams.set('error', 'login_required')
             const state = query.get('state')
             if (state) back.searchParams.set('state', state)
-            redirect(res, back)
+            portalRedirect(res, back)
             return
           }
-          res.writeHead(200, { 'content-type': 'text/html' })
+          res.writeHead(200, {
+            'content-type': 'text/html',
+            'content-security-policy': `frame-ancestors ${FRAME_ANCESTORS}`
+          })
           return res.end(loginPage(query))
         }
 
