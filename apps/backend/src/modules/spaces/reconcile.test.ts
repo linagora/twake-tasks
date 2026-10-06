@@ -43,8 +43,10 @@ const member = (user: TestUser, role: 'viewer' | 'editor' | 'admin') => ({
 
 async function spaceBoards(user: TestUser) {
   return (await api.as(user).get('/boards'))
-    .json<{ boards: { name: string; spaceId: string; role: string }[] }>()
-    .boards.filter(board => board.spaceId)
+    .json<{
+      boards: { name: string; project: { managed: boolean }; role: string }[]
+    }>()
+    .boards.filter(board => board.project.managed)
 }
 
 const run = (ldapRest: LdapRest, spaceId: string, organizationId: string) =>
@@ -114,10 +116,12 @@ describe('reconciling a space', () => {
       expect.objectContaining({ role: 'editor' })
     ])
     expect(
-      (await api.as(admin).get('/spaces')).json<{
-        spaces: { id: string; name: string }[]
-      }>().spaces
-    ).toContainEqual(expect.objectContaining({ id, name: 'Operations' }))
+      (await api.as(admin).get('/projects')).json<{
+        projects: { name: string; managed: boolean }[]
+      }>().projects
+    ).toContainEqual(
+      expect.objectContaining({ name: 'Operations', managed: true })
+    )
   })
 
   it('deletes a space ldap-rest no longer has', async () => {

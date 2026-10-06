@@ -1,9 +1,6 @@
-import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb, inTenant } from '../../infra/db.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { spaceMembers, spaces } from '../spaces/schema.ts'
-import { boardMembers, boards } from './schema.ts'
+import { createDb } from '../../infra/db.ts'
+import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 
 interface Label {
   id: string
@@ -45,37 +42,17 @@ function on(user: TestUser, boardId: string) {
   }
 }
 
-async function aPersonalBoard(user: TestUser, keyPrefix = 'DES') {
+async function aBoard(user: TestUser, keyPrefix = 'DES', projectId?: string) {
   const board = (
-    await api.as(user).post('/boards', { name: 'Design', keyPrefix })
-  ).json<{ id: string }>()
-  return on(user, board.id)
-}
-
-async function aSpaceBoard(
-  user: TestUser,
-  spaceId: string,
-  keyPrefix: string
-): Promise<string> {
-  return inTenant(db, user, async tx => {
-    const [board] = await tx
-      .insert(boards)
-      .values({
-        organizationId: user.organizationId,
-        spaceId,
-        name: keyPrefix,
-        keyPrefix,
-        createdBy: user.userId
-      })
-      .returning({ id: boards.id })
-    return board?.id ?? ''
-  })
+    await api.as(user).post('/boards', { name: 'Design', keyPrefix, projectId })
+  ).json<{ id: string; project: { id: string } }>()
+  return { ...on(user, board.id), projectId: board.project.id }
 }
 
 describe('labels', () => {
   it('puts a new label on a task', async () => {
     const alice = aUser()
-    const board = await aPersonalBoard(alice)
+    const board = await aBoard(alice)
     const task = await board.addTask()
 
     const created = await board.addLabel('Urgent')
@@ -89,52 +66,27 @@ describe('labels', () => {
     expect(loaded.tasks[0]?.labels).toEqual([{ id: label.id, name: 'Urgent' }])
   })
 
-  it("shares a user's labels across their personal boards", async () => {
+  it("shares a project's labels across its boards, not with other projects", async () => {
     const alice = aUser()
-    const design = await aPersonalBoard(alice, 'DES')
-    const ops = await aPersonalBoard(alice, 'OPS')
+    const design = await aBoard(alice, 'DES')
+    const ops = await aBoard(alice, 'OPS', design.projectId)
+    const elsewhere = await aBoard(alice, 'ELS')
 
     const label = (await design.addLabel('Urgent')).json<Label>()
     const task = await ops.addTask()
 
     expect((await ops.label(task.id, [label.id])).statusCode).toBe(204)
     expect((await ops.load()).labels).toEqual([label])
-  })
-
-  it("shares a space's labels across its boards, not with personal ones", async () => {
-    const alice = aUser()
-    const spaceId = randomUUID()
-    await inTenant(db, alice, async tx => {
-      await tx.insert(spaces).values({
-        id: spaceId,
-        organizationId: alice.organizationId ?? '',
-        name: 'Marketing'
-      })
-      await tx.insert(spaceMembers).values({
-        spaceId,
-        organizationId: alice.organizationId ?? '',
-        userId: alice.userId,
-        email: alice.email,
-        role: 'editor'
-      })
-    })
-    const launch = on(alice, await aSpaceBoard(alice, spaceId, 'LCH'))
-    const press = on(alice, await aSpaceBoard(alice, spaceId, 'PRS'))
-    const personal = await aPersonalBoard(alice)
-
-    const label = (await launch.addLabel('Urgent')).json<Label>()
-
-    expect((await press.load()).labels).toEqual([label])
-    expect((await personal.load()).labels).toEqual([])
-    const task = await personal.addTask()
-    const refused = await personal.label(task.id, [label.id])
+    expect((await elsewhere.load()).labels).toEqual([])
+    const other = await elsewhere.addTask()
+    const refused = await elsewhere.label(other.id, [label.id])
     expect(refused.statusCode).toBe(400)
     expect(refused.json()).toEqual({ error: 'invalid_label' })
   })
 
   it('refuses a name already used in the scope', async () => {
     const alice = aUser()
-    const board = await aPersonalBoard(alice)
+    const board = await aBoard(alice)
     await board.addLabel('Urgent')
 
     const again = await board.addLabel('Urgent')
@@ -146,19 +98,11 @@ describe('labels', () => {
   it('keeps viewers from labeling', async () => {
     const alice = aUser()
     const bob = aUser({ organizationId: alice.organizationId })
-    const board = await aPersonalBoard(alice)
+    const board = await aBoard(alice)
     const task = await board.addTask()
     const label = (await board.addLabel('Urgent')).json<Label>()
     const { id: boardId } = await board.load()
-    await inTenant(db, alice, tx =>
-      tx.insert(boardMembers).values({
-        boardId,
-        organizationId: alice.organizationId,
-        userId: bob.userId,
-        email: bob.email,
-        role: 'viewer'
-      })
-    )
+    await joinBoard(db, alice, boardId, bob, 'viewer')
     const asBob = on(bob, boardId)
 
     expect((await asBob.addLabel('Later')).statusCode).toBe(403)

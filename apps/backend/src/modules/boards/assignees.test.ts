@@ -1,10 +1,15 @@
-import { randomUUID } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb, inTenant } from '../../infra/db.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { spaceMembers, spaces } from '../spaces/schema.ts'
-import { boardMembers, boards } from './schema.ts'
+import {
+  aBoardIn,
+  aManagedProject,
+  aUser,
+  joinBoard,
+  startApp,
+  type TestUser
+} from '../../testing/app.ts'
+import { projectMembers } from './schema.ts'
 
 interface Person {
   userId: string
@@ -43,15 +48,7 @@ async function aSharedTask(
   const board = (
     await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
   ).json<Board>()
-  await inTenant(db, alice, tx =>
-    tx.insert(boardMembers).values({
-      boardId: board.id,
-      organizationId: alice.organizationId,
-      userId: bob.userId,
-      email: bob.email,
-      role
-    })
-  )
+  await joinBoard(db, alice, board.id, bob, role)
   const task = (
     await api.as(alice).post(`/boards/${board.id}/tasks`, {
       sectionId: board.sections[0]?.id,
@@ -110,7 +107,7 @@ describe('assignees', () => {
     const repeated = await assign(alice, [bob.userId, bob.userId])
     const assigned = (await load()).tasks[0]?.assignees
     await inTenant(db, alice, tx =>
-      tx.delete(boardMembers).where(eq(boardMembers.userId, bob.userId))
+      tx.delete(projectMembers).where(eq(projectMembers.userId, bob.userId))
     )
     const board = await load()
 
@@ -120,40 +117,20 @@ describe('assignees', () => {
     expect(board.tasks[0]?.assignees).toEqual([])
   })
 
-  it('assigns the members of a space board', async () => {
+  it('assigns the members of a managed project', async () => {
     const alice = aUser({ email: 'alice@example.com' })
     const carol = aUser({
       organizationId: alice.organizationId,
       email: 'carol@example.com'
     })
     const bob = aUser({ organizationId: alice.organizationId })
-    const spaceId = randomUUID()
-    const boardId = await inTenant(db, alice, async tx => {
-      await tx.insert(spaces).values({
-        id: spaceId,
-        organizationId: alice.organizationId ?? '',
-        name: 'Marketing'
-      })
-      await tx.insert(spaceMembers).values(
-        [alice, carol].map(user => ({
-          spaceId,
-          organizationId: alice.organizationId ?? '',
-          userId: user.userId,
-          email: user.email,
-          role: user === alice ? ('editor' as const) : ('viewer' as const)
-        }))
-      )
-      const [board] = await tx
-        .insert(boards)
-        .values({
-          organizationId: alice.organizationId,
-          spaceId,
-          name: 'Launch',
-          keyPrefix: 'LCH',
-          createdBy: alice.userId
-        })
-        .returning({ id: boards.id })
-      return board?.id ?? ''
+    const projectId = await aManagedProject(db, [
+      [alice, 'editor'],
+      [carol, 'viewer']
+    ])
+    const boardId = await aBoardIn(db, alice, projectId, {
+      name: 'Launch',
+      keyPrefix: 'LCH'
     })
     const task = (
       await api
@@ -170,11 +147,11 @@ describe('assignees', () => {
     const board = (await api.as(alice).get(`/boards/${boardId}`)).json<Board>()
     await inTenant(db, alice, tx =>
       tx
-        .delete(spaceMembers)
+        .delete(projectMembers)
         .where(
           and(
-            eq(spaceMembers.spaceId, spaceId),
-            eq(spaceMembers.userId, carol.userId)
+            eq(projectMembers.projectId, projectId),
+            eq(projectMembers.userId, carol.userId)
           )
         )
     )
