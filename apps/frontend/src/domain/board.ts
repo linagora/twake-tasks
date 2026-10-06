@@ -41,6 +41,8 @@ export interface Person {
   email: string
   /** Null until the person signs in to Tasks. */
   name: string | null
+  /** The picture from the person's Twake Workplace settings, if any. */
+  avatar?: string | null
 }
 
 export interface Task {

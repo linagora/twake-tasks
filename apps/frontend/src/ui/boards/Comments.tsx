@@ -53,6 +53,7 @@ export function Comments({
               <PersonAvatar
                 email={comment.author.email}
                 name={comment.author.name}
+                avatar={comment.author.avatar}
                 size={28}
               />
             }

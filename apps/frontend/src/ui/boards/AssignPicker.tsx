@@ -117,7 +117,13 @@ export function AssignPicker({
           onToggle={() => {
             toggle(person.userId)
           }}
-          start={<PersonAvatar email={person.email} name={person.name} />}
+          start={
+            <PersonAvatar
+              email={person.email}
+              name={person.name}
+              avatar={person.avatar}
+            />
+          }
         >
           <Typography variant="body2" className="u-ellipsis">
             <Highlight text={displayName(person)} query={query} />

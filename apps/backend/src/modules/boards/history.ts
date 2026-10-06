@@ -1,7 +1,7 @@
 import { desc, eq } from 'drizzle-orm'
 import type { Db } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { namesOn, roleOn } from './access.ts'
+import { looksOn, roleOn } from './access.ts'
 import { taskHistory } from './schema.ts'
 import { Refused, taskOf, writeOrRefuse } from './tasks.ts'
 
@@ -21,12 +21,12 @@ export function historyOf(
       .from(taskHistory)
       .where(eq(taskHistory.taskId, taskId))
       .orderBy(desc(taskHistory.at), desc(taskHistory.id))
-    const nameOf = await namesOn(tx, boardId)
+    const looksOf = await looksOn(tx, boardId)
     return rows.map(row => ({
       actor: {
         userId: row.actorId,
         email: row.actorEmail,
-        name: row.actorId === null ? null : nameOf(row.actorId)
+        ...looksOf(row.actorId)
       },
       field: row.field,
       from: row.from,

@@ -64,6 +64,7 @@ export function Assignees({ people }: { people: Person[] }): ReactElement {
           key={person.userId}
           email={person.email}
           name={person.name}
+          avatar={person.avatar}
           label={t('board.assignee', { name: displayName(person) })}
         />
       ))}

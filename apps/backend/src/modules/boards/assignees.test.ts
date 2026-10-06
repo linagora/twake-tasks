@@ -15,6 +15,7 @@ interface Person {
   userId: string
   email: string
   name: string | null
+  avatar: string | null
 }
 
 interface Board {
@@ -39,7 +40,8 @@ afterAll(async () => {
 const person = (user: TestUser): Person => ({
   userId: user.userId,
   email: user.email,
-  name: null
+  name: null,
+  avatar: null
 })
 
 async function aSharedTask(
