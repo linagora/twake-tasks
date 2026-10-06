@@ -98,16 +98,16 @@ describe('task events', () => {
       type: 'com.twake.tasks.task.created.v1',
       twakeorg: alice.organizationId,
       twakeactorid: alice.userId,
-      twakeactor: alice.email,
-      data: {
-        object: {
-          type: 'task',
-          id: task.id,
-          key: 'DES-1',
-          title: 'Logo',
-          url: `https://tasks.example.com/boards/${board.id}?task=DES-1`,
-          board: { id: board.id, name: 'Design' }
-        }
+      twakeactor: alice.email
+    })
+    expect(events[0]?.event.data).toEqual({
+      object: {
+        type: 'task',
+        id: task.id,
+        key: 'DES-1',
+        title: 'Logo',
+        board: { id: board.id, name: 'Design' },
+        container: { kind: 'project', id: board.project.id }
       }
     })
     expect(events[1]?.event.data).toMatchObject({

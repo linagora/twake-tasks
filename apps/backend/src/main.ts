@@ -29,7 +29,7 @@ const config = loadConfig()
 const logger = pino({ level: config.LOG_LEVEL })
 const spaces = config.SPACE_INTEGRATION === 'true'
 
-const { sql, db } = createDb(config.DATABASE_URL, config.APP_URL)
+const { sql, db } = createDb(config.DATABASE_URL)
 await assertRowLevelSecurity(sql)
 await migrateDb(db)
 
