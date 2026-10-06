@@ -13,11 +13,14 @@ import {
   it,
   vi
 } from 'vitest'
+import type { OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 import {
+  ACTIVITY_EXCHANGE,
   DEAD_LETTER_QUEUE,
   QUEUE,
   startConsumer,
+  startPublisher,
   type Consumer,
   type Delivery
 } from './rabbitmq.ts'
@@ -180,5 +183,56 @@ describe('startConsumer', () => {
     consumer = undefined
     expect(await ready(QUEUE)).toBe(0)
     expect(await ready(DEAD_LETTER_QUEUE)).toBe(0)
+  })
+})
+
+describe('startPublisher', () => {
+  const event: OutgoingEvent = {
+    specversion: '1.0',
+    id: 'evt-1',
+    source: 'twake://tasks',
+    type: 'com.twake.tasks.task.completed.v1',
+    twakeorg: 'org-1',
+    data: { object: { id: 'task-1' } }
+  }
+
+  it('publishes an event on the activity exchange, routed by its type', async () => {
+    const publisher = await startPublisher(
+      container.getAmqpUrl(),
+      pino({ level: 'silent' })
+    )
+    await channel.assertExchange(ACTIVITY_EXCHANGE, 'topic', { durable: true })
+    const { queue } = await channel.assertQueue('', { exclusive: true })
+    await channel.bindQueue(queue, ACTIVITY_EXCHANGE, 'com.twake.tasks.#')
+
+    try {
+      await publisher.publish(event)
+
+      const message = await vi.waitFor(async () => {
+        const got = await channel.get(queue, { noAck: true })
+        if (!got) throw new Error('nothing yet')
+        return got
+      })
+      expect(message.fields.routingKey).toBe(event.type)
+      expect(message.properties.messageId).toBe(event.id)
+      expect(JSON.parse(message.content.toString())).toEqual(event)
+    } finally {
+      await publisher.close()
+    }
+  })
+
+  it('confirms an event no one listens to', async () => {
+    const publisher = await startPublisher(
+      container.getAmqpUrl(),
+      pino({ level: 'silent' })
+    )
+
+    try {
+      await expect(
+        publisher.publish({ ...event, type: 'com.twake.tasks.unheard.v1' })
+      ).resolves.toBeUndefined()
+    } finally {
+      await publisher.close()
+    }
   })
 })
