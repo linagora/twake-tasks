@@ -11,7 +11,7 @@ export function LayoutSwitch({ board }: { board: Board }): ReactElement {
   const { t } = useI18n()
   const setLayout = useSetLayout(board.id)
   return (
-    <Box className="u-ml-auto u-flex u-flex-items-center">
+    <Box className="u-ml-auto u-ml-0-m u-flex u-flex-wrap u-flex-items-center">
       {board.role === 'admin' && board.layout !== board.defaultLayout && (
         <Button
           variant="text"
