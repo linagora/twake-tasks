@@ -13,6 +13,15 @@ import type { Board } from '@/domain/board'
 import { useCreateBoard } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
+function suggestedPrefix(name: string): string {
+  return name
+    .normalize('NFD')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .replace(/^[0-9]+/, '')
+    .slice(0, 3)
+}
+
 export function NewBoardDialog({
   onClose,
   onCreated
@@ -23,7 +32,8 @@ export function NewBoardDialog({
   const { t } = useI18n()
   const titleId = useId()
   const [name, setName] = useState('')
-  const [keyPrefix, setKeyPrefix] = useState('')
+  const [typedPrefix, setTypedPrefix] = useState<string | null>(null)
+  const keyPrefix = typedPrefix ?? suggestedPrefix(name)
   const create = useCreateBoard()
 
   const error = create.error
@@ -58,7 +68,7 @@ export function NewBoardDialog({
             label={t('newBoard.keyPrefix')}
             value={keyPrefix}
             onChange={event => {
-              setKeyPrefix(event.target.value.toUpperCase())
+              setTypedPrefix(event.target.value.toUpperCase())
               create.reset()
             }}
             required
