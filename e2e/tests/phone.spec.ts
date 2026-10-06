@@ -32,3 +32,32 @@ test('fits a board on a phone screen', async ({ page }) => {
   ).toBeVisible()
   expect(await overflow(page)).toBe(0)
 })
+
+test('shows the whole role in the share dialog on a phone', async ({
+  page
+}) => {
+  await signIn(page, 'alice')
+  const { name } = await newBoard(page)
+
+  await page.getByRole('button', { name: 'Share' }).click()
+  const share = page.getByRole('dialog', { name: `Share ${name}` })
+  const roles = share.getByRole('combobox', { name: 'Role' })
+  await expect(roles).toHaveCount(2)
+  for (const role of await roles.all()) {
+    const clipped = await role.evaluate((select: HTMLSelectElement) => {
+      const style = getComputedStyle(select)
+      const text = document.createElement('span')
+      text.style.font = style.font
+      text.textContent = select.selectedOptions[0]?.text ?? ''
+      document.body.append(text)
+      const needed = text.offsetWidth
+      text.remove()
+      const room =
+        select.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight)
+      return needed > room
+    })
+    expect(clipped).toBe(false)
+  }
+})

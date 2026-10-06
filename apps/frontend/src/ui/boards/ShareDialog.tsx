@@ -26,6 +26,7 @@ function RoleSelect({
     <TextField
       select
       size="small"
+      className="u-flex-shrink-0"
       label={t('sharing.role')}
       value={value}
       onChange={event => {
@@ -136,7 +137,7 @@ export function ShareDialog({
       <DialogContent>
         <form
           aria-label={t('sharing.invite')}
-          className="u-flex u-flex-items-center u-mt-half"
+          className="u-flex u-flex-wrap u-flex-items-center u-mt-half"
           onSubmit={event => {
             event.preventDefault()
             const to = email.trim().toLowerCase()
@@ -152,7 +153,7 @@ export function ShareDialog({
             label={t('sharing.email')}
             type="email"
             size="small"
-            className="u-mr-1"
+            className="u-mr-1 u-mb-half-m"
             value={email}
             onChange={event => {
               setEmail(event.target.value)
@@ -188,7 +189,7 @@ export function ShareDialog({
             <li
               key={member.userId}
               aria-label={member.email}
-              className="u-flex u-flex-items-center u-mb-half"
+              className="u-flex u-flex-wrap u-flex-items-center u-mb-half"
             >
               <Typography className="u-mr-auto">{member.email}</Typography>
               <RoleSelect
@@ -211,7 +212,7 @@ export function ShareDialog({
             <li
               key={pending.id}
               aria-label={pending.email}
-              className="u-flex u-flex-items-center u-mb-half"
+              className="u-flex u-flex-wrap u-flex-items-center u-mb-half"
             >
               <Typography className="u-mr-auto">{pending.email}</Typography>
               <Typography variant="caption" className="u-mr-1">
