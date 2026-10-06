@@ -43,7 +43,10 @@ export function EmptyState({
         title: { variant: compact ? 'body2' : 'h5', component: 'p' },
         text: { variant: compact ? 'caption' : 'body2', component: 'p' }
       }}
+      // Empty sizes itself for its own padding, so ours must not add to it.
       sx={{
+        boxSizing: 'border-box',
+        width: '100%',
         p: compact ? 2 : 6,
         '& .Empty-icon': {
           display: 'flex',

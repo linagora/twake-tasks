@@ -27,6 +27,12 @@ const FrameLayout = styled(Layout)(({ theme }) => ({
   }
 }))
 
+// Content is `height: 100%` plus a 16px margin on wide screens, which
+// overflows the window; stretching it in the flex row keeps the margin inside.
+const FrameContent = styled(Content)(({ theme }) => ({
+  [theme.breakpoints.up('lg')]: { height: 'auto' }
+}))
+
 export function AppFrame({
   topBar,
   sidebar,
@@ -41,7 +47,7 @@ export function AppFrame({
       {topBar}
       <FrameLayout withTopBar={false}>
         <Sidebar>{sidebar}</Sidebar>
-        <Content role={undefined}>{children}</Content>
+        <FrameContent role={undefined}>{children}</FrameContent>
       </FrameLayout>
     </Box>
   )
