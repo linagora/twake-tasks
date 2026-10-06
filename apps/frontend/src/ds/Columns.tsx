@@ -142,7 +142,7 @@ export const ColumnAddButton = styled(Button)(({ theme }) => ({
 }))
 
 export const NewColumnButton = styled(ColumnAddButton)(({ theme }) => ({
-  flex: '0 0 18rem',
+  flex: '0 0 12rem',
   height: 48,
   border: `1px dashed ${theme.palette.divider}`,
   borderRadius: theme.spacing(1)
