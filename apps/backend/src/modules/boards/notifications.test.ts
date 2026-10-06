@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb, inTenant } from '../../infra/db.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { boardMembers } from './schema.ts'
+import { createDb } from '../../infra/db.ts'
+import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 
 interface Notification {
   id: string
@@ -35,17 +34,9 @@ async function aTeam() {
   const board = (
     await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
   ).json<{ id: string }>()
-  await inTenant(db, alice, tx =>
-    tx.insert(boardMembers).values(
-      [bob, carol].map(user => ({
-        boardId: board.id,
-        organizationId: alice.organizationId,
-        userId: user.userId,
-        email: user.email,
-        role: 'editor' as const
-      }))
-    )
-  )
+  for (const user of [bob, carol]) {
+    await joinBoard(db, alice, board.id, user, 'editor')
+  }
   const task = (
     await api
       .as(alice)

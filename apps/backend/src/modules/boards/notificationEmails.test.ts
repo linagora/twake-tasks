@@ -1,14 +1,13 @@
 import { pino } from 'pino'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb, inTenant } from '../../infra/db.ts'
+import { createDb } from '../../infra/db.ts'
 import { createScheduler } from '../../scheduler/scheduler.ts'
-import { aUser, startApp } from '../../testing/app.ts'
+import { aUser, joinBoard, startApp } from '../../testing/app.ts'
 import {
   emailNotification,
   NOTIFICATION_EMAIL_JOB,
   type Mail
 } from './notificationEmails.ts'
-import { boardMembers } from './schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -50,15 +49,7 @@ describe('notification emails', () => {
     const board = (
       await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
     ).json<{ id: string }>()
-    await inTenant(db, alice, tx =>
-      tx.insert(boardMembers).values({
-        boardId: board.id,
-        organizationId: alice.organizationId,
-        userId: bob.userId,
-        email: bob.email,
-        role: 'editor'
-      })
-    )
+    await joinBoard(db, alice, board.id, bob, 'editor')
     const task = (
       await api
         .as(alice)

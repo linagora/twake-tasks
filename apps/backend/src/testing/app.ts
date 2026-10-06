@@ -2,10 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { pino } from 'pino'
 import { inject } from 'vitest'
 import { buildApp } from '../app.ts'
-import { createDb } from '../infra/db.ts'
+import { eq } from 'drizzle-orm'
+import { createDb, inTenant, type Db } from '../infra/db.ts'
 import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
+import type { Role } from '../modules/boards/access.ts'
 import { listenToBoards } from '../modules/boards/live.ts'
+import { boards, projectMembers, projects } from '../modules/boards/schema.ts'
 
 export interface TestUser {
   userId: string
@@ -26,6 +29,83 @@ export function aUser(overrides: Partial<TestUser> = {}): TestUser {
 
 export function aB2cUser(): TestUser {
   return aUser({ organizationId: null })
+}
+
+/** Adds the person to the project of the owner's board. */
+export async function joinBoard(
+  db: Db,
+  owner: TestUser,
+  boardId: string,
+  user: TestUser,
+  role: Role
+) {
+  await inTenant(db, owner, async tx => {
+    const [board] = await tx
+      .select({ projectId: boards.projectId })
+      .from(boards)
+      .where(eq(boards.id, boardId))
+    if (!board) throw new Error('no board')
+    await tx.insert(projectMembers).values({
+      projectId: board.projectId,
+      organizationId: owner.organizationId,
+      userId: user.userId,
+      email: user.email,
+      role
+    })
+  })
+}
+
+/** A project whose members come from an integration, such as a space. */
+export async function aManagedProject(
+  db: Db,
+  members: [TestUser, Role][]
+): Promise<string> {
+  const [first] = members
+  if (!first) throw new Error('a managed project needs members')
+  const organizationId = first[0].organizationId
+  return inTenant(db, first[0], async tx => {
+    const [project] = await tx
+      .insert(projects)
+      .values({
+        organizationId,
+        name: 'Marketing',
+        managed: true,
+        createdBy: randomUUID()
+      })
+      .returning({ id: projects.id })
+    if (!project) throw new Error('no project')
+    await tx.insert(projectMembers).values(
+      members.map(([user, role]) => ({
+        projectId: project.id,
+        organizationId,
+        userId: user.userId,
+        email: user.email,
+        role
+      }))
+    )
+    return project.id
+  })
+}
+
+export async function aBoardIn(
+  db: Db,
+  user: TestUser,
+  projectId: string,
+  board: { name: string; keyPrefix: string }
+): Promise<string> {
+  return inTenant(db, user, async tx => {
+    const [row] = await tx
+      .insert(boards)
+      .values({
+        ...board,
+        organizationId: user.organizationId,
+        projectId,
+        createdBy: user.userId
+      })
+      .returning({ id: boards.id })
+    if (!row) throw new Error('no board')
+    return row.id
+  })
 }
 
 export async function startApp() {
