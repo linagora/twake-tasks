@@ -1,4 +1,11 @@
-import { alpha, Box, Button, styled, Typography } from '@linagora/twake-mui'
+import {
+  alpha,
+  Box,
+  Button,
+  Skeleton,
+  styled,
+  Typography
+} from '@linagora/twake-mui'
 import { useId, type ReactElement, type ReactNode } from 'react'
 
 export function Columns({ children }: { children: ReactNode }): ReactElement {
@@ -13,6 +20,59 @@ export function Columns({ children }: { children: ReactNode }): ReactElement {
       }}
     >
       {children}
+    </Box>
+  )
+}
+
+export function EmptyColumn({ label }: { label: string }): ReactElement {
+  return (
+    <Typography
+      role="status"
+      variant="body2"
+      color="textSecondary"
+      sx={{
+        py: 3,
+        textAlign: 'center',
+        border: '1px dashed',
+        borderColor: 'divider',
+        borderRadius: 1.5
+      }}
+    >
+      {label}
+    </Typography>
+  )
+}
+
+export function ColumnsSkeleton({ label }: { label: string }): ReactElement {
+  return (
+    <Box role="progressbar" aria-label={label}>
+      <Skeleton variant="text" width={240} height={48} sx={{ mb: 2 }} />
+      <Columns>
+        {[3, 2, 1].map(cards => (
+          <Box
+            key={cards}
+            sx={{
+              flex: '0 0 18rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+              p: 1.5,
+              borderRadius: 2,
+              bgcolor: 'action.hover'
+            }}
+          >
+            <Skeleton variant="text" width="40%" />
+            {Array.from({ length: cards }, (_, index) => (
+              <Skeleton
+                key={index}
+                variant="rounded"
+                height={88}
+                sx={{ bgcolor: 'background.paper' }}
+              />
+            ))}
+          </Box>
+        ))}
+      </Columns>
     </Box>
   )
 }
