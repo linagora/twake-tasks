@@ -60,7 +60,9 @@ describe('BoardsScreen', () => {
     expect(boardNames(screen.getByRole('list', { name: 'Personal' }))).toEqual([
       'Inbox'
     ])
-    expect(screen.getAllByText('Members come from the space.')).toHaveLength(1)
+    expect(
+      screen.queryByText('Members come from the space.')
+    ).not.toBeInTheDocument()
   })
 
   it('offers to create the first board', async () => {

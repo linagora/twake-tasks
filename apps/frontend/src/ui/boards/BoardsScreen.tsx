@@ -68,12 +68,10 @@ function useProjectName(): (project: ProjectSummary) => string {
 
 function BoardShelf({
   name,
-  hint,
   boards,
   withProject = false
 }: {
   name: string
-  hint?: string | undefined
   boards: BoardSummary[]
   withProject?: boolean
 }): ReactElement {
@@ -84,7 +82,7 @@ function BoardShelf({
       ? t('boards.noOpenTasks')
       : t('boards.openTasks', { smart_count: board.openTasks })
   return (
-    <TileShelf name={name} hint={hint}>
+    <TileShelf name={name}>
       {boards.map(board => (
         <CardTile
           key={board.id}
@@ -192,7 +190,6 @@ export function BoardsScreen(): ReactElement {
           <BoardShelf
             key={project.id}
             name={projectName(project)}
-            hint={project.managed ? t('boards.fromSpace') : undefined}
             boards={boards}
           />
         ))}
