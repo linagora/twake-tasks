@@ -324,15 +324,31 @@ export function useSetFollowing(
 // Opening the list reads them all.
 export function useNotifications(): UseQueryResult<Notification[]> {
   const api = useBoardsApi()
+  const queryClient = useQueryClient()
   return useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
       const notifications = await api.listNotifications()
       if (notifications.some(notification => notification.readAt === null)) {
         await api.markNotificationsRead()
+        queryClient.setQueryData(unreadKey, 0)
       }
       return notifications
     }
+  })
+}
+
+const unreadKey = ['unreadNotifications'] as const
+
+export function useUnreadNotifications(): UseQueryResult<number> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: unreadKey,
+    queryFn: async () =>
+      (await api.listNotifications()).filter(
+        notification => notification.readAt === null
+      ).length,
+    refetchInterval: 60_000
   })
 }
 

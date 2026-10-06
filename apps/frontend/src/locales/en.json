@@ -10,6 +10,7 @@
   },
   "boards": {
     "title": "Boards",
+    "favorites": "Favorites",
     "active": "Active",
     "archived": "Archived",
     "new": "New",
@@ -246,6 +247,7 @@
   },
   "notifications": {
     "title": "Notifications",
+    "unread": "Notifications, %{count} unread",
     "empty": "No notifications.",
     "loadFailed": "Couldn’t load notifications.",
     "follow": "Follow",
