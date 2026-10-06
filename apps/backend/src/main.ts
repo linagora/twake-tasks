@@ -28,6 +28,7 @@ import {
   spaceRoutes
 } from './modules/spaces/events.ts'
 import { planReconcile, reconcileJobs } from './modules/spaces/reconcile.ts'
+import { settingsRoutes } from './modules/settings/events.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
@@ -68,6 +69,7 @@ const consumer = await startConsumer(
     spaceExchange: config.RABBITMQ_SPACE_EXCHANGE,
     b2bExchange: config.RABBITMQ_B2B_EXCHANGE,
     authExchange: config.RABBITMQ_AUTH_EXCHANGE,
+    settingsExchange: config.RABBITMQ_SETTINGS_EXCHANGE,
     queue: config.RABBITMQ_QUEUE,
     deadLetterExchange: config.RABBITMQ_DEAD_LETTER_EXCHANGE
   },
@@ -75,7 +77,11 @@ const consumer = await startConsumer(
   // The queue stays bound to space events either way, since its first binding
   // fixes its dead letter key; without the integration they find no route.
   createMessageHandler({
-    routes: new Map([...(spaces ? spaceRoutes() : []), ...accountRoutes]),
+    routes: new Map([
+      ...(spaces ? spaceRoutes() : []),
+      ...accountRoutes,
+      ...settingsRoutes
+    ]),
     dedupe: postgresDeduplicator(db, 'twake-tasks'),
     logger
   })

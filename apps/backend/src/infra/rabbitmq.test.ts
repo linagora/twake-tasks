@@ -28,6 +28,7 @@ const names: ConsumerNames = {
   spaceExchange: 'space',
   b2bExchange: 'b2b',
   authExchange: 'auth',
+  settingsExchange: 'settings',
   queue: 'platform.all.twake-tasks',
   deadLetterExchange: 'twake-tasks.dlx'
 }
@@ -128,6 +129,40 @@ describe('startConsumer', () => {
       'user.deleted',
       'domain.organization.deleted'
     ])
+  })
+
+  it('receives settings updates, and not the requests to change them', async () => {
+    const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    handle.mockResolvedValue('processed')
+    await consume(handle)
+
+    publish('settings', 'user.settings.update', 'm-1')
+    publish('settings', 'user.settings.updated', 'm-2')
+
+    await vi.waitFor(() => {
+      expect(handle).toHaveBeenCalledTimes(1)
+    })
+    expect(handle).toHaveBeenCalledWith(
+      expect.objectContaining({ routingKey: 'user.settings.updated' })
+    )
+  })
+
+  it('names a settings update sent without an id by its content', async () => {
+    const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    handle.mockResolvedValue('processed')
+    await consume(handle)
+
+    publish('settings', 'user.settings.updated')
+    publish('settings', 'user.settings.updated')
+    publish('space', 'twake.space.updated')
+
+    await vi.waitFor(() => {
+      expect(handle).toHaveBeenCalledTimes(3)
+    })
+    const [first, second, space] = handle.mock.calls.map(([d]) => d.messageId)
+    expect(first).toMatch(/^sha256:/)
+    expect(second).toBe(first)
+    expect(space).toBeUndefined()
   })
 
   it('delivers to one instance at a time, so events stay in order', async () => {
@@ -252,6 +287,7 @@ describe('startConsumer', () => {
       spaceExchange: 'staging.space',
       b2bExchange: 'staging.b2b',
       authExchange: 'staging.auth',
+      settingsExchange: 'staging.settings',
       queue: 'staging.twake-tasks',
       deadLetterExchange: 'staging.twake-tasks.dlx'
     }
@@ -263,14 +299,16 @@ describe('startConsumer', () => {
     publish('staging.space', 'twake.space.created', 'm-2')
     publish('staging.b2b', 'domain.user.deleted', 'm-3')
     publish('staging.auth', 'user.deleted', 'm-4')
+    publish('staging.settings', 'user.settings.updated', 'm-5')
 
     await vi.waitFor(async () => {
-      expect(await ready('staging.twake-tasks.dlq')).toBe(3)
+      expect(await ready('staging.twake-tasks.dlq')).toBe(4)
     })
     expect(handle.mock.calls.map(([delivery]) => delivery.messageId)).toEqual([
       'm-2',
       'm-3',
-      'm-4'
+      'm-4',
+      'm-5'
     ])
   })
 })

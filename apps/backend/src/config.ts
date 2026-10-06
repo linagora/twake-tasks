@@ -17,6 +17,7 @@ const configSchema = z
     RABBITMQ_SPACE_EXCHANGE: z.string().min(1).default('space'),
     RABBITMQ_B2B_EXCHANGE: z.string().min(1).default('b2b'),
     RABBITMQ_AUTH_EXCHANGE: z.string().min(1).default('auth'),
+    RABBITMQ_SETTINGS_EXCHANGE: z.string().min(1).default('settings'),
     RABBITMQ_ACTIVITY_EXCHANGE: z.string().min(1).default('activity'),
     RABBITMQ_QUEUE: z.string().min(1).default('platform.all.twake-tasks'),
     RABBITMQ_DEAD_LETTER_EXCHANGE: z.string().min(1).default('twake-tasks.dlx'),

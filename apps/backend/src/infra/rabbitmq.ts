@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { DeadLetterError, RabbitMQClient } from '@linagora/rabbitmq-client'
 import type { Logger } from 'pino'
 import { isTransient } from './db.ts'
@@ -9,6 +9,7 @@ export interface ConsumerNames {
   spaceExchange: string
   b2bExchange: string
   authExchange: string
+  settingsExchange: string
   queue: string
   deadLetterExchange: string
 }
@@ -24,6 +25,11 @@ export interface Consumer {
 }
 
 const MAX_ATTEMPTS = 5
+
+// Common settings sends no message id. A redelivery has the same content, and
+// two updates never do, since each carries its own request id and version.
+const contentId = (body: unknown) =>
+  `sha256:${createHash('sha256').update(JSON.stringify(body)).digest('base64url')}`
 
 // One message at a time on a single active consumer, so the events of a space
 // are handled in the order ldap-rest published them, even with several replicas.
@@ -51,7 +57,10 @@ export async function startConsumer(
     names.spaceExchange,
     'twake.space.#',
     names.queue,
-    async (body, { routingKey, messageId }) => {
+    async (body, { routingKey, messageId: sentId }) => {
+      const messageId =
+        sentId ??
+        (routingKey === 'user.settings.updated' ? contentId(body) : undefined)
       let outcome: Outcome
       try {
         outcome = await handle({ routingKey, messageId, body })
@@ -78,6 +87,10 @@ export async function startConsumer(
         {
           exchange: names.b2bExchange,
           routingKey: 'domain.organization.deleted'
+        },
+        {
+          exchange: names.settingsExchange,
+          routingKey: 'user.settings.updated'
         }
       ],
       deadLetterExchange: names.deadLetterExchange,
