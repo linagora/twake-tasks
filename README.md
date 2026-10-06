@@ -33,4 +33,16 @@ npm run dev -w @twake-tasks/frontend
 
 The backend refuses to connect to the database as a superuser, because a superuser skips the row level security that keeps organizations apart. Compose creates a `twake_tasks` role for it on a fresh volume. If your volume predates that, recreate it with `docker compose down -v`.
 
+## Error reporting and feedback
+
+The frontend reports errors to Sentry, and can offer a feedback button, from the runtime configuration (`/.env.js`, written from the container's environment):
+
+| Variable                  | Effect                                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `SENTRY_DSN`              | Turns Sentry on. Without it the app runs without Sentry. The image adds the DSN's origin (not its key) to the `connect-src` of the CSP. |
+| `SENTRY_ENVIRONMENT`      | The environment of the events.                                                                                                           |
+| `SENTRY_FEEDBACK_ENABLED` | `true` shows the feedback button in the app shell, once `SENTRY_DSN` is set. Off by default. Never shown on the embedded views.          |
+
+Events carry the tag `app: twake-tasks` and the version of the frontend as release. They hold no user name or email: the feedback form has an optional email field, empty. Feedback needs a Sentry of 24.4.2 or later. See ADR 011.
+
 Run `npm run check` before you push. It's what CI runs.
