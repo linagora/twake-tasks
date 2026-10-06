@@ -328,7 +328,9 @@
     "noDate": "Без даты",
     "task": "Задача",
     "due": "Срок",
-    "complete": "Завершить %{title}"
+    "complete": "Завершить %{title}",
+    "today": "Сегодня",
+    "nothingDue": "На этот день задач нет."
   },
   "search": {
     "label": "Поиск",

@@ -324,7 +324,9 @@
     "noDate": "No date",
     "task": "Task",
     "due": "Due",
-    "complete": "Complete %{title}"
+    "complete": "Complete %{title}",
+    "today": "Today",
+    "nothingDue": "Nothing due this day."
   },
   "search": {
     "label": "Search",

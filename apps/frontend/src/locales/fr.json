@@ -328,7 +328,9 @@
     "noDate": "Sans date",
     "task": "Tâche",
     "due": "Échéance",
-    "complete": "Terminer %{title}"
+    "complete": "Terminer %{title}",
+    "today": "Aujourd’hui",
+    "nothingDue": "Rien à rendre ce jour-là."
   },
   "search": {
     "label": "Rechercher",

@@ -132,10 +132,68 @@ describe('board layouts', () => {
     })
     expect(within(today).getByText('Logo')).toBeVisible()
     expect(
-      within(screen.getByRole('region', { name: 'No date' })).getByText(
-        'Palette'
-      )
+      within(screen.getByRole('list', { name: 'No date' })).getByText('Palette')
     ).toBeVisible()
+  })
+
+  it('names the weekdays, marks today and comes back to it', async () => {
+    const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const today = await screen.findByRole('region', {
+      name: formatDay(localToday(), 'en')
+    })
+    expect(today).toHaveAttribute('aria-current', 'date')
+    expect(screen.getByText('Mon')).toBeVisible()
+    const month = new Intl.DateTimeFormat('en', {
+      month: 'long',
+      year: 'numeric'
+    }).format(new Date())
+    expect(screen.getByRole('heading', { name: month })).toBeVisible()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next month' }))
+    expect(screen.queryByRole('heading', { name: month })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Today' }))
+    expect(screen.getByRole('heading', { name: month })).toBeVisible()
+  })
+
+  it('opens a task from its day', async () => {
+    const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const today = await screen.findByRole('region', {
+      name: formatDay(localToday(), 'en')
+    })
+    fireEvent.click(within(today).getByRole('button', { name: 'Logo' }))
+
+    expect(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    ).toBeVisible()
+  })
+
+  it('adds a task due on a day from the header', async () => {
+    const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add task' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Task title' }), {
+      target: { value: 'Moodboard' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Add' }))
+
+    await waitFor(() => {
+      expect(boardsApi.editTask).toHaveBeenCalledWith(
+        board.id,
+        expect.any(String),
+        { dueDate: localToday() }
+      )
+    })
+    expect(boardsApi.createTask).toHaveBeenCalledWith(board.id, {
+      sectionId: board.sections[0]?.id,
+      title: 'Moodboard'
+    })
   })
 
   it('lets an admin make the current layout the board default', async () => {
@@ -155,13 +213,13 @@ describe('board layouts', () => {
       expect(screen.queryByRole('menu')).toBeNull()
     })
     fireEvent.click(layouts().getByRole('button', { name: 'Calendar' }))
-    await screen.findByRole('region', { name: 'No date' })
+    await screen.findByRole('list', { name: 'No date' })
     fireEvent.click(screen.getByRole('button', { name: 'Board options' }))
     fireEvent.click(
       await screen.findByRole('menuitem', { name: 'Use as default layout' })
     )
 
-    await screen.findByRole('region', { name: 'No date' })
+    await screen.findByRole('list', { name: 'No date' })
     expect(boardsApi.setDefaultLayout).toHaveBeenCalledWith(
       board.id,
       'calendar'
