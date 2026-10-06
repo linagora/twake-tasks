@@ -191,6 +191,33 @@ describe('space members and name', () => {
       }>().projects
     ).toEqual([expect.objectContaining({ name: 'Operations', managed: true })])
   })
+
+  it('shows a member added to a space by the name they already signed in with', async () => {
+    const admin = aUser()
+    const newcomer = aUser({ organizationId: admin.organizationId })
+    await api.as({ ...newcomer, name: 'Nina Dupont' }).get('/boards')
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+    await deliver('twake.space.created', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')]
+    })
+
+    await deliver('twake.space.member.added', {
+      ...space,
+      members: [member(newcomer, 'editor')]
+    })
+
+    const [board] = await spaceBoards(admin)
+    const members = (
+      await api.as(admin).get(`/boards/${board?.id ?? ''}`)
+    ).json<{
+      members: { userId: string; name: string | null }[]
+    }>().members
+    expect(members).toContainEqual(
+      expect.objectContaining({ userId: newcomer.userId, name: 'Nina Dupont' })
+    )
+  })
 })
 
 async function aSpaceWithATask(admin: TestUser, members: TestUser[]) {
