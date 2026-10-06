@@ -23,6 +23,16 @@ function boards() {
 }
 
 describe('FiltersScreen', () => {
+  it('keeps each select label clear of its value', async () => {
+    renderRoute('/filters', { boardsApi: boards() })
+
+    for (const name of ['Assignee', 'Priority', 'Due']) {
+      expect(
+        await screen.findByText(name, { selector: 'label' })
+      ).toHaveAttribute('data-shrink', 'true')
+    }
+  })
+
   it('saves a filter and opens its tasks', async () => {
     const boardsApi = boards()
     renderRoute('/filters', { boardsApi })
