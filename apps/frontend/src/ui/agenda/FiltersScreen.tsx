@@ -1,10 +1,11 @@
-import { Filter } from '@linagora/twake-icons'
+import { Filter, Icon, Plus } from '@linagora/twake-icons'
 import { Button, Link, TextField, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
 import type { FilterCriteria } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
+import { FormPanel } from '@/ds/FormPanel'
 import {
   useCreateFilter,
   useDeleteFilter,
@@ -16,6 +17,12 @@ import { useDocumentTitle } from '@/ui/useDocumentTitle'
 const ASSIGNEES = ['', 'me', 'nobody'] as const
 const PRIORITIES = ['', '1', '2', '3', '4'] as const
 const DUES = ['', 'overdue', 'today', 'week', 'none'] as const
+
+// "Any" is an empty value, which MUI would otherwise draw the label over.
+const SELECT_SLOTS = {
+  select: { native: true },
+  inputLabel: { shrink: true }
+} as const
 
 export function FiltersScreen(): ReactElement {
   const { t } = useI18n()
@@ -81,8 +88,8 @@ function NewFilter(): ReactElement {
   }
 
   return (
-    <form
-      className="u-mt-2"
+    <FormPanel
+      title={t('filters.new')}
       onSubmit={event => {
         event.preventDefault()
         create.mutate(
@@ -94,17 +101,29 @@ function NewFilter(): ReactElement {
           }
         )
       }}
+      actions={
+        <>
+          {create.isError && (
+            <Typography role="alert" variant="caption" color="error">
+              {t('filters.saveFailed')}
+            </Typography>
+          )}
+          <Button
+            type="submit"
+            startIcon={<Icon icon={Plus} />}
+            disabled={create.isPending || !name.trim()}
+          >
+            {t('filters.save')}
+          </Button>
+        </>
+      }
     >
-      <Typography variant="h5" component="h2">
-        {t('filters.new')}
-      </Typography>
       <TextField
         label={t('filters.name')}
         value={name}
         onChange={event => {
           setName(event.target.value)
         }}
-        margin="dense"
         slotProps={{ htmlInput: { maxLength: 100 } }}
       />
       <TextField
@@ -114,8 +133,7 @@ function NewFilter(): ReactElement {
         onChange={event => {
           setAssignee(event.target.value as typeof assignee)
         }}
-        margin="dense"
-        slotProps={{ select: { native: true } }}
+        slotProps={SELECT_SLOTS}
       >
         {ASSIGNEES.map(value => (
           <option key={value} value={value}>
@@ -130,8 +148,7 @@ function NewFilter(): ReactElement {
         onChange={event => {
           setPriority(event.target.value as typeof priority)
         }}
-        margin="dense"
-        slotProps={{ select: { native: true } }}
+        slotProps={SELECT_SLOTS}
       >
         {PRIORITIES.map(value => (
           <option key={value} value={value}>
@@ -147,7 +164,6 @@ function NewFilter(): ReactElement {
         onChange={event => {
           setLabel(event.target.value)
         }}
-        margin="dense"
         slotProps={{ htmlInput: { maxLength: 50 } }}
       />
       <TextField
@@ -157,8 +173,7 @@ function NewFilter(): ReactElement {
         onChange={event => {
           setDue(event.target.value as typeof due)
         }}
-        margin="dense"
-        slotProps={{ select: { native: true } }}
+        slotProps={SELECT_SLOTS}
       >
         {DUES.map(value => (
           <option key={value} value={value}>
@@ -166,18 +181,6 @@ function NewFilter(): ReactElement {
           </option>
         ))}
       </TextField>
-      {create.isError && (
-        <Typography role="alert" variant="caption">
-          {t('filters.saveFailed')}
-        </Typography>
-      )}
-      <Button
-        type="submit"
-        className="u-mt-1"
-        disabled={create.isPending || !name.trim()}
-      >
-        {t('filters.save')}
-      </Button>
-    </form>
+    </FormPanel>
   )
 }
