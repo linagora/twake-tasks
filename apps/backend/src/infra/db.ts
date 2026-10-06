@@ -99,7 +99,24 @@ export async function assertRowLevelSecurity(
   }
 }
 
+// Postgres has uuidv7() built in only from 18. Older servers get the same ids
+// from this function: the millisecond time, then the random bits of a v4, with
+// the version set to 7.
+const uuidv7 = sql`
+  create or replace function uuidv7() returns uuid language sql volatile as $$
+    select encode(
+      set_bit(set_bit(
+        overlay(uuid_send(gen_random_uuid())
+          placing substring(int8send((extract(epoch from clock_timestamp()) * 1000)::bigint) from 3)
+          from 1 for 6),
+        52, 1), 53, 1), 'hex')::uuid
+  $$`
+
 export async function migrateDb(db: Db): Promise<void> {
+  const [server] = await db.execute<{ version: number }>(
+    sql`select current_setting('server_version_num')::int as version`
+  )
+  if (!server || server.version < 180000) await db.execute(uuidv7)
   await migrate(db, {
     migrationsFolder: fileURLToPath(new URL('../../drizzle', import.meta.url))
   })
