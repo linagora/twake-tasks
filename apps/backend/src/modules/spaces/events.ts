@@ -17,9 +17,16 @@ import {
   schedule,
   type Handler as JobHandler
 } from '../../scheduler/scheduler.ts'
-import { boards, taskAssignees, tasks } from '../boards/schema.ts'
+import {
+  boards,
+  memberRole,
+  projectMembers,
+  projects,
+  taskAssignees,
+  tasks
+} from '../boards/schema.ts'
 import { addDefaultSections } from '../boards/store.ts'
-import { memberRole, spaceMembers, spaces } from './schema.ts'
+import { spaces } from './schema.ts'
 
 const spaceEvent = z.looseObject({
   organizationId: z.string().min(1),
@@ -62,11 +69,25 @@ function keyPrefixOf(name: string) {
 
 type SpaceRef = z.infer<typeof spaceEvent>
 
+/** The project kept for the space, deleted or not. */
+export async function projectOf(
+  tx: Tx,
+  space: SpaceRef
+): Promise<string | undefined> {
+  const [row] = await tx
+    .select({ projectId: spaces.projectId })
+    .from(spaces)
+    .where(eq(spaces.id, space.id))
+  return row?.projectId
+}
+
 export async function upsertMembers(
   tx: Tx,
   space: SpaceRef,
   members: z.infer<typeof member>[]
 ) {
+  const projectId = await projectOf(tx, space)
+  if (!projectId) return
   // One upsert cannot touch a row twice, so a member listed twice keeps its last entry.
   const byUser = new Map(
     members.flatMap(({ uuid, email, role }) =>
@@ -75,7 +96,7 @@ export async function upsertMembers(
             [
               uuid,
               {
-                spaceId: space.id,
+                projectId,
                 organizationId: space.organizationId,
                 userId: uuid,
                 email,
@@ -88,10 +109,10 @@ export async function upsertMembers(
   )
   if (byUser.size === 0) return
   await tx
-    .insert(spaceMembers)
+    .insert(projectMembers)
     .values([...byUser.values()])
     .onConflictDoUpdate({
-      target: [spaceMembers.spaceId, spaceMembers.userId],
+      target: [projectMembers.projectId, projectMembers.userId],
       set: { email: sql`excluded.email`, role: sql`excluded.role` }
     })
 }
@@ -112,30 +133,49 @@ export async function provisionSpace(
   tx: Tx,
   space: SpaceRef & { name: string }
 ): Promise<boolean> {
+  if (await projectOf(tx, space)) return false
+  const [project] = await tx
+    .insert(projects)
+    .values({
+      organizationId: space.organizationId,
+      name: space.name,
+      managed: true,
+      createdBy: space.id
+    })
+    .returning({ id: projects.id })
+  if (!project) throw new Error('project insert returned nothing')
   const [created] = await tx
     .insert(spaces)
     .values({
       id: space.id,
       organizationId: space.organizationId,
-      name: space.name
+      projectId: project.id
     })
     .onConflictDoNothing()
     .returning({ id: spaces.id })
-  if (created) {
-    const [board] = await tx
-      .insert(boards)
-      .values({
-        organizationId: space.organizationId,
-        spaceId: space.id,
-        name: space.name,
-        keyPrefix: keyPrefixOf(space.name),
-        createdBy: space.id
-      })
-      .returning({ id: boards.id, organizationId: boards.organizationId })
-    if (!board) throw new Error('board insert returned nothing')
-    await addDefaultSections(tx, board)
+  if (!created) {
+    await tx.delete(projects).where(eq(projects.id, project.id))
+    return false
   }
-  return created !== undefined
+  const [board] = await tx
+    .insert(boards)
+    .values({
+      organizationId: space.organizationId,
+      projectId: project.id,
+      name: space.name,
+      keyPrefix: keyPrefixOf(space.name),
+      createdBy: space.id
+    })
+    .returning({ id: boards.id, organizationId: boards.organizationId })
+  if (!board) throw new Error('board insert returned nothing')
+  await addDefaultSections(tx, board)
+  return true
+}
+
+export async function renameSpace(tx: Tx, space: SpaceRef, name: string) {
+  const projectId = await projectOf(tx, space)
+  if (!projectId) return
+  await tx.update(projects).set({ name }).where(eq(projects.id, projectId))
 }
 
 /** Takes the space's boards and its tasks away from these people. */
@@ -144,10 +184,12 @@ export async function removeMembers(
   space: SpaceRef,
   which: SQL | undefined
 ): Promise<void> {
+  const projectId = await projectOf(tx, space)
+  if (!projectId) return
   const removed = await tx
-    .delete(spaceMembers)
-    .where(and(eq(spaceMembers.spaceId, space.id), which))
-    .returning({ userId: spaceMembers.userId })
+    .delete(projectMembers)
+    .where(and(eq(projectMembers.projectId, projectId), which))
+    .returning({ userId: projectMembers.userId })
   if (removed.length === 0) return
   await tx.delete(taskAssignees).where(
     and(
@@ -161,24 +203,26 @@ export async function removeMembers(
           .select({ id: tasks.id })
           .from(tasks)
           .innerJoin(boards, eq(boards.id, tasks.boardId))
-          .where(eq(boards.spaceId, space.id))
+          .where(eq(boards.projectId, projectId))
       )
     )
   )
 }
 
-/** Hides the space's boards now, and purges them after 30 days. */
+/** Hides the space's project now, and purges it after 30 days. */
 export async function deleteSpace(tx: Tx, space: SpaceRef): Promise<void> {
+  const projectId = await projectOf(tx, space)
+  if (!projectId) return
   const [deleted] = await tx
-    .update(spaces)
+    .update(projects)
     .set({ deletedAt: sql`now()` })
-    .where(and(eq(spaces.id, space.id), isNull(spaces.deletedAt)))
-    .returning({ id: spaces.id })
+    .where(and(eq(projects.id, projectId), isNull(projects.deletedAt)))
+    .returning({ id: projects.id })
   if (!deleted) return
   await schedule(tx, {
     kind: PURGE_SPACE_JOB,
     key: `${PURGE_SPACE_JOB}:${space.id}`,
-    payload: { spaceId: space.id, organizationId: space.organizationId },
+    payload: { projectId, organizationId: space.organizationId },
     runAt: new Date(Date.now() + PURGE_AFTER_MS)
   })
 }
@@ -197,10 +241,7 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
     const space = parseOrDrop(spaceUpdated, event.body, event.routingKey)
     if (space.name === undefined) return
     await asOrganization(tx, space.organizationId)
-    await tx
-      .update(spaces)
-      .set({ name: space.name })
-      .where(eq(spaces.id, space.id))
+    await renameSpace(tx, space, space.name)
   }
 
   const onMembersChanged: Handler<PlatformEvent> = async (event, tx) => {
@@ -218,8 +259,8 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
       tx,
       space,
       or(
-        inArray(spaceMembers.userId, uuids),
-        inArray(spaceMembers.email, emails)
+        inArray(projectMembers.userId, uuids),
+        inArray(projectMembers.email, emails)
       )
     )
   }
@@ -245,16 +286,16 @@ export const PURGE_SPACE_JOB = 'purge-space'
 const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000
 
 const purgePayload = z.object({
-  spaceId: z.uuid(),
+  projectId: z.uuid(),
   organizationId: z.string().min(1)
 })
 
+// The space's mapping row goes with its project.
 export const purgeSpace: JobHandler = async (raw, tx) => {
   const job = purgePayload.parse(raw)
   await asOrganization(tx, job.organizationId)
-  await tx.delete(boards).where(eq(boards.spaceId, job.spaceId))
   await tx
-    .delete(spaces)
-    .where(and(eq(spaces.id, job.spaceId), isNotNull(spaces.deletedAt)))
+    .delete(projects)
+    .where(and(eq(projects.id, job.projectId), isNotNull(projects.deletedAt)))
   return undefined
 }
