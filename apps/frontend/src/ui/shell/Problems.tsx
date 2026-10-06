@@ -1,10 +1,11 @@
 import { Compass, Icon, Left, WarningCircle } from '@linagora/twake-icons'
 import { Button } from '@linagora/twake-mui'
-import type { ReactElement } from 'react'
-import { Link as RouterLink } from 'react-router'
+import { useEffect, type ReactElement } from 'react'
+import { Link as RouterLink, useRouteError } from 'react-router'
 
 import { EmptyState } from '@/ds/EmptyState'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useReporting } from '@/ui/reporting/ReportingProvider'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 function BackToBoards(): ReactElement {
@@ -39,6 +40,11 @@ export function NotFoundScreen(): ReactElement {
 // Rendered by the router in place of a screen that threw while rendering.
 export function CrashScreen(): ReactElement {
   const { t } = useI18n()
+  const { reportCrash } = useReporting()
+  const error = useRouteError()
+  useEffect(() => {
+    reportCrash(error, null)
+  }, [reportCrash, error])
   return (
     <main className="u-p-2">
       <EmptyState

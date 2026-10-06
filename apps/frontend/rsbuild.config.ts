@@ -1,5 +1,11 @@
+import { readFileSync } from 'node:fs'
+
 import { defineConfig } from '@rsbuild/core'
 import { pluginReact } from '@rsbuild/plugin-react'
+
+const { version } = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
+) as { version: string }
 
 export default defineConfig({
   plugins: [pluginReact()],
@@ -7,7 +13,8 @@ export default defineConfig({
     template: './index.html'
   },
   source: {
-    entry: { index: './src/index.tsx' }
+    entry: { index: './src/index.tsx' },
+    define: { __APP_VERSION__: JSON.stringify(version) }
   },
   resolve: {
     alias: { '@': './src' }

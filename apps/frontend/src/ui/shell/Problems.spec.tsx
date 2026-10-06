@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { fakeReporting } from '@/testing/fakeReporting'
 import { renderRoute, renderWithProviders } from '@/testing/renderWithProviders'
 import { CrashScreen } from '@/ui/shell/Problems'
 
@@ -36,5 +37,22 @@ describe('problem pages', () => {
       'Something went wrong'
     )
     expect(screen.getByRole('button', { name: 'Reload' })).toBeVisible()
+  })
+
+  it('reports the error that broke a screen', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const error = new Error('boom')
+    const Broken = () => {
+      throw error
+    }
+    const reporting = fakeReporting()
+    const router = createMemoryRouter([
+      { path: '/', element: <Broken />, errorElement: <CrashScreen /> }
+    ])
+    renderWithProviders(<RouterProvider router={router} />, { reporting })
+
+    await screen.findByRole('alert')
+
+    expect(reporting.reportCrash).toHaveBeenCalledWith(error, null)
   })
 })
