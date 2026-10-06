@@ -226,6 +226,19 @@ describe('BoardScreen', () => {
     ).toBeInTheDocument()
   })
 
+  it('opens the assignee picker with the a key on a focused card', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const card = await screen.findByRole('article', { name: 'DES-2 Palette' })
+    card.focus()
+    fireEvent.keyDown(card, { key: 'a' })
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Assign DES-2' })
+    ).toBeInTheDocument()
+  })
+
   it('assigns board members to a task', async () => {
     const board = designBoard()
     const palette = board.tasks[1]
@@ -276,7 +289,7 @@ describe('BoardScreen', () => {
       await screen.findByRole('dialog', { name: 'Assign DES-1' })
     )
     const aliceItem = picker.getByRole('menuitemcheckbox', {
-      name: alice.email
+      name: `Alice Martin ${alice.email}`
     })
     expect(aliceItem).toBeChecked()
     fireEvent.click(aliceItem)

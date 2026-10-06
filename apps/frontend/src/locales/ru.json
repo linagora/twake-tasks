@@ -94,6 +94,8 @@
     "save": "Сохранить",
     "cancel": "Отмена",
     "assignFailed": "Не удалось сохранить исполнителей.",
+    "retryAssign": "Повторить",
+    "noPeopleMatch": "Никто не найден по запросу «%{search}»",
     "labels": "Метки",
     "labelsTitle": "Метки %{key}",
     "searchPeople": "Поиск людей",

@@ -115,6 +115,7 @@ export function TaskProperties({
           task={task}
           boardId={boardId}
           members={board.members}
+          tasks={board.tasks}
           anchor={assigning}
           onClose={() => {
             setAssigning(null)
