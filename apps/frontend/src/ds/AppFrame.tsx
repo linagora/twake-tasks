@@ -6,7 +6,6 @@ import {
   Layout,
   List,
   ListSubheader,
-  MenuItem,
   NavItem,
   Sidebar,
   styled,
@@ -155,11 +154,6 @@ export function CountBadge({
 export const WideScreenNavItem = styled(NavItem)(({ theme }) => ({
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
-
-// The cast keeps MenuItem's `component` generic, for router links.
-export const PhoneMenuItem = styled(MenuItem)(({ theme }) => ({
-  [theme.breakpoints.up('lg')]: { display: 'none' }
-})) as typeof MenuItem
 
 export function AccountCard({
   avatar,
