@@ -20,8 +20,21 @@
   },
   "session": {
     "signingIn": "Đang đăng nhập…",
-    "failed": "Đăng nhập không thành công.",
+    "opening": {
+      "task": "Đang mở %{key}…",
+      "board": "Đang mở bảng của bạn…"
+    },
+    "slow": "Vẫn đang kết nối với tài khoản của bạn…",
+    "failed": {
+      "title": "Không thể đăng nhập",
+      "hint": "Đã xảy ra lỗi khi kết nối với tài khoản của bạn."
+    },
+    "timeout": {
+      "title": "Việc này mất nhiều thời gian hơn bình thường",
+      "hint": "Dịch vụ đăng nhập phản hồi chậm."
+    },
     "retry": "Thử lại",
+    "backToSignIn": "Quay lại đăng nhập",
     "signOut": "Đăng xuất"
   },
   "boards": {
