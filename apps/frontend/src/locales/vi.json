@@ -10,6 +10,7 @@
   },
   "boards": {
     "title": "Bảng",
+    "favorites": "Yêu thích",
     "active": "Đang hoạt động",
     "archived": "Đã lưu trữ",
     "new": "Tạo mới",
@@ -250,6 +251,7 @@
   },
   "notifications": {
     "title": "Thông báo",
+    "unread": "Thông báo, %{count} chưa đọc",
     "empty": "Không có thông báo.",
     "loadFailed": "Không thể tải thông báo.",
     "follow": "Theo dõi",

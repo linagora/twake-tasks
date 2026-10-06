@@ -10,6 +10,7 @@
   },
   "boards": {
     "title": "Tableaux",
+    "favorites": "Favoris",
     "active": "Actif",
     "archived": "Archivé",
     "new": "Nouveau",
@@ -250,6 +251,7 @@
   },
   "notifications": {
     "title": "Notifications",
+    "unread": "Notifications, %{count} non lues",
     "empty": "Aucune notification.",
     "loadFailed": "Impossible de charger les notifications.",
     "follow": "Suivre",
