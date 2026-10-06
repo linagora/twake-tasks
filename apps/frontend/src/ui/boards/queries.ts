@@ -122,14 +122,6 @@ export function useProjects(): UseQueryResult<Project[]> {
   })
 }
 
-export function useProjectOfSpace(spaceId: string): UseQueryResult<string> {
-  const api = useBoardsApi()
-  return useQuery({
-    queryKey: ['spaces', spaceId, 'project'],
-    queryFn: () => api.projectOfSpace(spaceId)
-  })
-}
-
 export function useBoards(): UseQueryResult<BoardSummary[]> {
   const api = useBoardsApi()
   return useQuery({ queryKey: boardsKey, queryFn: () => api.listBoards() })

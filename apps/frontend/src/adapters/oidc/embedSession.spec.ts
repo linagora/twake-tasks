@@ -79,7 +79,7 @@ function relay(
 
 beforeEach(() => {
   vi.clearAllMocks()
-  window.history.replaceState(null, '', '/embed/spaces/s1')
+  window.history.replaceState(null, '', '/embed/projects/p1')
 })
 
 afterEach(() => {
@@ -105,7 +105,7 @@ describe('embedSession', () => {
       { pkceCodeVerifier: 'verifier', expectedState: 'state' }
     )
     expect(silentFrame()).toBeNull()
-    expect(window.location.pathname).toBe('/embed/spaces/s1')
+    expect(window.location.pathname).toBe('/embed/projects/p1')
   })
 
   it('fails when the SSO wants the user to sign in', async () => {

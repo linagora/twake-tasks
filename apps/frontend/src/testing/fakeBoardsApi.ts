@@ -154,7 +154,6 @@ export function fakeBoardsApi(boards: Board[] = []) {
   }
 
   const projects: Project[] = []
-  const spaceProjects = new Map<string, string>()
 
   const hidden = new Map<string, { shelf: Shelf; task: Task; at: string }>()
   const hide = (shelf: Shelf) => (boardId: string, taskId: string) =>
@@ -220,13 +219,6 @@ export function fakeBoardsApi(boards: Board[] = []) {
         board.project = summary
         board.role = role
         sharings.delete(boardId)
-      })
-    ),
-    projectOfSpace: vi.fn<BoardsApi['projectOfSpace']>(spaceId =>
-      Promise.resolve().then(() => {
-        const projectId = spaceProjects.get(spaceId)
-        if (!projectId) throw new ApiError(404, 'not_found')
-        return projectId
       })
     ),
     getSharing: vi.fn<BoardsApi['getSharing']>(boardId =>
@@ -643,7 +635,6 @@ export function fakeBoardsApi(boards: Board[] = []) {
     comments,
     history,
     sharings,
-    projects,
-    spaceProjects
+    projects
   })
 }

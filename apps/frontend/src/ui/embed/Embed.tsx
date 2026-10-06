@@ -8,7 +8,7 @@ import {
 } from 'react-router'
 
 import { TileGrid, Tile } from '@/ds/TileGrid'
-import { useBoards, useProjectOfSpace, useProjects } from '@/ui/boards/queries'
+import { useBoards, useProjects } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const spaceOrigins = (): string[] =>
@@ -48,51 +48,20 @@ export function EmbedLayout(): ReactElement {
 }
 
 export function EmbedProjectScreen(): ReactElement {
+  const { t } = useI18n()
   const { projectId = '' } = useParams()
   const projects = useProjects()
-  const known = projects.data?.some(project => project.id === projectId)
-  return (
-    <ProjectBoards
-      projectId={projectId}
-      failed={projects.isError || known === false}
-      resolved={projects.isSuccess}
-    />
-  )
-}
-
-export function EmbedSpaceScreen(): ReactElement {
-  const { spaceId = '' } = useParams()
-  const project = useProjectOfSpace(spaceId)
-  return (
-    <ProjectBoards
-      projectId={project.data}
-      failed={project.isError}
-      resolved={project.isSuccess}
-    />
-  )
-}
-
-function ProjectBoards({
-  projectId,
-  failed,
-  resolved
-}: {
-  projectId: string | undefined
-  failed: boolean
-  resolved: boolean
-}): ReactElement {
-  const { t } = useI18n()
   const boards = useBoards()
+  const known = projects.data?.some(project => project.id === projectId)
+  const failed = boards.isError || projects.isError || known === false
   const shown = (boards.data ?? []).filter(
     board => board.project.id === projectId && !board.archived
   )
 
   return (
     <main className="u-p-2">
-      {(boards.isError || failed) && (
-        <Typography role="alert">{t('boards.loadFailed')}</Typography>
-      )}
-      {boards.isSuccess && resolved && !failed && shown.length === 0 && (
+      {failed && <Typography role="alert">{t('boards.loadFailed')}</Typography>}
+      {boards.isSuccess && known && shown.length === 0 && (
         <Typography>{t('boards.empty')}</Typography>
       )}
       {shown.length > 0 && (

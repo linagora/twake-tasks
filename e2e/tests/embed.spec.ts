@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
 import { expect, test, type Page } from '@playwright/test'
 import { unique } from './board.ts'
-import { publishPlatformEvent } from './platform.ts'
+import { projectOfSpace, publishPlatformEvent } from './platform.ts'
 import { signIn } from './signIn.ts'
 
 // The SSO lets TwakeSpace frame it on the first port, not on the second
@@ -12,7 +12,7 @@ const UNTRUSTED_PORT = 3302
 // A stand-in for TwakeSpace that frames the embed and records what it says.
 // A real server: Chrome keeps pages it did not load off the network from
 // framing localhost.
-function twakeSpace(spaceId: string, port: number) {
+function twakeSpace(projectId: string, port: number) {
   const server = createServer((_request, response) => {
     response.setHeader('content-type', 'text/html')
     response.end(`<!doctype html>
@@ -22,7 +22,7 @@ function twakeSpace(spaceId: string, port: number) {
           if (event.origin === 'http://localhost:3300') window.paths.push(event.data.path)
         })
       </script>
-      <iframe title="Tasks" src="http://localhost:3300/embed/spaces/${spaceId}"></iframe>`)
+      <iframe title="Tasks" src="http://localhost:3300/embed/projects/${projectId}"></iframe>`)
   })
   return new Promise<{ url: string; close: () => void }>(resolve =>
     server.listen(port, 'localhost', () => {
@@ -56,15 +56,15 @@ async function aliceSpace(page: Page) {
       timeout: 1000
     })
   }).toPass()
-  return { spaceId, name }
+  return { projectId: projectOfSpace(spaceId), name }
 }
 
 test("shows a space's boards inside TwakeSpace, signed in without a prompt", async ({
   page
 }) => {
-  const { spaceId, name } = await aliceSpace(page)
+  const { projectId, name } = await aliceSpace(page)
 
-  const host = await twakeSpace(spaceId, TRUSTED_PORT)
+  const host = await twakeSpace(projectId, TRUSTED_PORT)
   try {
     await page.goto(host.url)
     const frame = page.frameLocator('iframe[title="Tasks"]')
@@ -81,7 +81,7 @@ test("shows a space's boards inside TwakeSpace, signed in without a prompt", asy
           (window as unknown as { paths: string[] }).paths.at(-1)
         )
       )
-      .toMatch(new RegExp(`^/embed/spaces/${spaceId}/boards/`))
+      .toMatch(new RegExp(`^/embed/projects/${projectId}/boards/`))
   } finally {
     host.close()
   }
@@ -91,9 +91,9 @@ test('signs in through a popup when the SSO refuses to be framed by TwakeSpace',
   page
 }) => {
   test.slow()
-  const { spaceId, name } = await aliceSpace(page)
+  const { projectId, name } = await aliceSpace(page)
 
-  const host = await twakeSpace(spaceId, UNTRUSTED_PORT)
+  const host = await twakeSpace(projectId, UNTRUSTED_PORT)
   try {
     await page.goto(host.url)
     const frame = page.frameLocator('iframe[title="Tasks"]')
