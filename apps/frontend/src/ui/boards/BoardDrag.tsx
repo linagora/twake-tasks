@@ -39,11 +39,16 @@ type Drag =
   | { phase: 'dragging'; id: string; start: Lanes; lanes: Lanes }
   | { phase: 'landed'; lanes: Lanes; shownOver: string }
 
-// Selecting text in a field on the card must not pick the card up.
-const fromField = (event: Event): boolean =>
-  event.target instanceof Element &&
-  event.target.closest('input, textarea, select, [contenteditable="true"]') !==
-    null
+// Selecting text in a field on the card must not pick the card up. Not
+// `instanceof`: a panel opened from the card may be rendered in another
+// document (the overlay of TwakeSpace), whose nodes are of another window.
+const fromField = (event: Event): boolean => {
+  const target = event.target as Element | null
+  return (
+    target?.nodeType === Node.ELEMENT_NODE &&
+    target.closest('input, textarea, select, [contenteditable="true"]') !== null
+  )
+}
 
 class CardMouseSensor extends MouseSensor {
   static override activators = [
