@@ -34,7 +34,7 @@ export function SearchField({
         )
       }}
       componentsProps={{
-        inputBase: { inputRef, inputProps: { maxLength: 200 } }
+        inputBase: { inputRef, inputProps: { type: 'search', maxLength: 200 } }
       }}
     />
   )
