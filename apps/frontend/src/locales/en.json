@@ -308,6 +308,8 @@
   },
   "notifications": {
     "title": "Notifications",
+    "new": "New",
+    "earlier": "Earlier",
     "unread": "Notifications, %{count} unread",
     "empty": "No notifications",
     "emptyHint": "Follow a task to hear about its changes here.",

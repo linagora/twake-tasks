@@ -1,4 +1,4 @@
-import { Box, Typography } from '@linagora/twake-mui'
+import { alpha, Box, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
 export function TaskGroup({
@@ -51,12 +51,16 @@ export function TaskRow({
   label,
   title,
   context,
-  facts
+  facts,
+  leading,
+  unread = false
 }: {
   label: string
   title: ReactNode
   context: string
   facts: ReactNode
+  leading?: ReactNode
+  unread?: boolean
 }): ReactElement {
   return (
     <Box
@@ -65,10 +69,8 @@ export function TaskRow({
       sx={{
         position: 'relative',
         display: 'flex',
-        flexWrap: 'wrap',
         alignItems: 'center',
-        columnGap: 2,
-        rowGap: 0.5,
+        gap: 2,
         minHeight: 56,
         px: 2,
         py: 1,
@@ -80,23 +82,58 @@ export function TaskRow({
         '& a:focus-visible': { outline: 'none' }
       }}
     >
-      <Box sx={{ flex: '1 1 16rem', minWidth: 0 }}>
-        <Typography variant="body1" noWrap>
-          {title}
-        </Typography>
-        <Typography
-          variant="caption"
-          component="p"
-          color="textSecondary"
-          noWrap
+      {leading && (
+        <Box
+          aria-hidden
+          sx={theme => ({
+            display: 'grid',
+            placeItems: 'center',
+            width: 32,
+            height: 32,
+            flexShrink: 0,
+            borderRadius: '50%',
+            color: unread ? 'primary.main' : 'text.secondary',
+            bgcolor: unread
+              ? alpha(theme.palette.primary.main, 0.12)
+              : 'action.hover'
+          })}
         >
-          {context}
-        </Typography>
-      </Box>
+          {leading}
+        </Box>
+      )}
       <Box
-        sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          columnGap: 2,
+          rowGap: 0.5
+        }}
       >
-        {facts}
+        <Box sx={{ flex: '1 1 14rem', minWidth: 0 }}>
+          <Typography
+            variant="body1"
+            noWrap
+            sx={{ fontWeight: unread ? 600 : undefined }}
+          >
+            {title}
+          </Typography>
+          <Typography
+            variant="caption"
+            component="p"
+            color="textSecondary"
+            noWrap
+          >
+            {context}
+          </Typography>
+        </Box>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}
+        >
+          {facts}
+        </Box>
       </Box>
     </Box>
   )

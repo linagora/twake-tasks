@@ -312,6 +312,8 @@
   },
   "notifications": {
     "title": "Thông báo",
+    "new": "Mới",
+    "earlier": "Trước đó",
     "unread": "Thông báo, %{count} chưa đọc",
     "empty": "Không có thông báo",
     "emptyHint": "Theo dõi một công việc để nhận thông báo về thay đổi tại đây.",
