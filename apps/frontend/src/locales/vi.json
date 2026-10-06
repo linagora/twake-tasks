@@ -325,7 +325,10 @@
     "useAsDefault": "Đặt làm bố cục mặc định",
     "previousMonth": "Tháng trước",
     "nextMonth": "Tháng sau",
-    "noDate": "Không có ngày"
+    "noDate": "Không có ngày",
+    "task": "Công việc",
+    "due": "Hạn",
+    "complete": "Hoàn thành %{title}"
   },
   "search": {
     "label": "Tìm kiếm",

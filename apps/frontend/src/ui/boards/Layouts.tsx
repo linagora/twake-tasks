@@ -3,6 +3,7 @@ import { Box, Button, ToggleButton, Typography } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement, type ReactNode } from 'react'
 
 import { DayCell, MonthGrid, Stack } from '@/ds/Calendar'
+import { ListHeader, ListSection } from '@/ds/ListView'
 import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
 import { LAYOUTS, type Board, type Layout, type Task } from '@/domain/board'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
@@ -58,22 +59,45 @@ function Titled({
 
 export function ListLayout({
   columns,
-  card
+  row
 }: {
   columns: { key: string; name: string; tasks: Task[]; footer: ReactNode }[]
-  card: (task: Task) => ReactElement
+  row: (task: Task) => ReactElement
 }): ReactElement {
+  const { t } = useI18n()
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
+  const toggle = (key: string) => {
+    setCollapsed(keys => {
+      const next = new Set(keys)
+      if (!next.delete(key)) next.add(key)
+      return next
+    })
+  }
+
   return (
     <>
+      <ListHeader
+        columns={[
+          t('layout.task'),
+          t('task.assignees'),
+          t('layout.due'),
+          t('task.priority'),
+          t('task.labels')
+        ]}
+      />
       {columns.map(column => (
-        <Titled key={column.key} title={column.name}>
-          <Stack label={column.name}>
-            {column.tasks.map(task => (
-              <li key={task.id}>{card(task)}</li>
-            ))}
-          </Stack>
-          {column.footer}
-        </Titled>
+        <ListSection
+          key={column.key}
+          label={column.name}
+          count={column.tasks.length}
+          expanded={!collapsed.has(column.key)}
+          onToggle={() => {
+            toggle(column.key)
+          }}
+          footer={column.footer}
+        >
+          {column.tasks.map(row)}
+        </ListSection>
       ))}
     </>
   )

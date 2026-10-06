@@ -36,6 +36,93 @@ describe('board layouts', () => {
     expect(boardsApi.setLayout).toHaveBeenCalledWith(board.id, 'list')
   })
 
+  it('lists each task on one row with its facts', async () => {
+    const board = designBoard({ layout: 'list', defaultLayout: 'list' })
+    const ann = { userId: 'ann', email: 'ann@example.com' }
+    board.members = [ann]
+    Object.assign(board.tasks[0] ?? {}, {
+      priority: 1,
+      assignees: [ann],
+      labels: [{ id: 'urgent', name: 'Urgent' }]
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const row = within(
+      await screen.findByRole('listitem', { name: 'DES-1 Logo' })
+    )
+    expect(row.getByText('DES-1')).toBeVisible()
+    expect(row.getByRole('button', { name: 'Logo' })).toBeVisible()
+    expect(
+      row.getByRole('img', { name: 'Assigned to ann@example.com' })
+    ).toBeVisible()
+    expect(row.getByLabelText(/^Due /)).toBeVisible()
+    expect(row.getByLabelText('Priority 1')).toBeVisible()
+    expect(row.getByText('Urgent')).toBeVisible()
+  })
+
+  it('completes a task outside sections in place', async () => {
+    const board = designBoard({ layout: 'list', defaultLayout: 'list' })
+    Object.assign(board.tasks[0] ?? {}, { sectionId: null })
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('checkbox', { name: 'Complete Logo' })
+    )
+
+    await waitFor(() => {
+      expect(boardsApi.completeTask).toHaveBeenCalledWith(
+        board.id,
+        board.tasks[0]?.id,
+        'completed'
+      )
+    })
+  })
+
+  it('collapses a section and shows its count', async () => {
+    const board = designBoard({ layout: 'list', defaultLayout: 'list' })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const header = await screen.findByRole('button', { name: 'In progress 1' })
+    expect(header).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(header)
+
+    expect(header).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('list', { name: 'In progress' })).toBeNull()
+    expect(screen.getByRole('list', { name: 'To do' })).toBeVisible()
+  })
+
+  it('opens a task from its row and completes one from its checkbox', async () => {
+    const board = designBoard({ layout: 'list', defaultLayout: 'list' })
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const row = within(
+      await screen.findByRole('listitem', { name: 'DES-2 Palette' })
+    )
+    fireEvent.click(row.getByRole('checkbox', { name: 'Complete Palette' }))
+    await waitFor(() => {
+      expect(boardsApi.moveTask).toHaveBeenCalledWith(
+        board.id,
+        board.tasks[1]?.id,
+        { sectionId: board.sections[2]?.id }
+      )
+    })
+    const done = within(
+      within(screen.getByRole('list', { name: 'Done' })).getByRole('listitem', {
+        name: 'DES-2 Palette'
+      })
+    )
+    expect(
+      done.getByRole('checkbox', { name: 'Complete Palette' })
+    ).toBeChecked()
+
+    fireEvent.click(done.getByRole('button', { name: 'Palette' }))
+    expect(
+      await screen.findByRole('dialog', { name: 'DES-2 Palette' })
+    ).toBeVisible()
+  })
+
   it('places dated tasks on a month calendar, undated ones aside', async () => {
     const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
