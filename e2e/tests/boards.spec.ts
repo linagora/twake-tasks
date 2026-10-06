@@ -45,6 +45,36 @@ test('shares a board: the invitee works on it, and the owner sees it live', asyn
   ).toBeVisible()
 })
 
+test('drags a card to another section and it stays there', async ({ page }) => {
+  await signIn(page, 'alice')
+  const { prefix } = await newBoard(page)
+  await addTask(page, 'Print the posters')
+  const card = page.getByRole('article', {
+    name: `${prefix}-1 Print the posters`
+  })
+  const column = (name: string) =>
+    page.locator('section').filter({
+      has: page.getByRole('heading', { name, exact: true })
+    })
+
+  const from = await card.boundingBox()
+  const to = await column('In progress').boundingBox()
+  if (!from || !to) throw new Error('The board is not laid out')
+  await page.mouse.move(from.x + 40, from.y + 20)
+  await page.mouse.down()
+  await page.mouse.move(from.x + 60, from.y + 30, { steps: 4 })
+  await page.mouse.move(to.x + to.width / 2, to.y + 60, { steps: 15 })
+  await page.mouse.up()
+  await expect(column('In progress').getByRole('article')).toHaveAccessibleName(
+    `${prefix}-1 Print the posters`
+  )
+
+  await page.reload()
+  await expect(column('In progress').getByRole('article')).toHaveAccessibleName(
+    `${prefix}-1 Print the posters`
+  )
+})
+
 test('notifies the person a task is assigned to', async ({ page, browser }) => {
   const bob = await asPerson(browser, 'bob')
   await signIn(page, 'alice')
