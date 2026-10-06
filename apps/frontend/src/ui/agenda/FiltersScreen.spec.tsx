@@ -64,6 +64,23 @@ describe('FiltersScreen', () => {
     )
   })
 
+  it('sums up what each saved filter looks for', async () => {
+    const boardsApi = boards()
+    await boardsApi.createFilter({
+      name: 'Client fires',
+      criteria: { priority: 1, label: 'client' }
+    })
+    await boardsApi.createFilter({ name: 'Everything', criteria: {} })
+    renderRoute('/filters', { boardsApi })
+
+    expect(
+      await screen.findByRole('listitem', { name: 'Client fires' })
+    ).toHaveTextContent('Priority: P1 · Label: client')
+    expect(
+      screen.getByRole('listitem', { name: 'Everything' })
+    ).toHaveTextContent('All tasks')
+  })
+
   it('deletes a filter', async () => {
     const boardsApi = boards()
     await boardsApi.createFilter({ name: 'Urgent', criteria: { priority: 1 } })
