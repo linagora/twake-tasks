@@ -402,6 +402,9 @@
     "overdue": "En retard",
     "empty": "Rien à faire",
     "emptyHint": "Vous êtes à jour.",
-    "loadFailed": "Vos tâches n'ont pas pu être chargées."
+    "loadFailed": "Vos tâches n'ont pas pu être chargées.",
+    "mineEmpty": "Rien ne vous est assigné",
+    "mineEmptyHint": "Les tâches qui vous sont assignées, sur tous les tableaux, apparaissent ici.",
+    "completeFailed": "Impossible de terminer la tâche."
   }
 }

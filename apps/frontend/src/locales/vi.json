@@ -402,6 +402,9 @@
     "overdue": "Quá hạn",
     "empty": "Không có việc đến hạn",
     "emptyHint": "Bạn đã xong hết mọi việc.",
-    "loadFailed": "Không thể tải công việc."
+    "loadFailed": "Không thể tải công việc.",
+    "mineEmpty": "Chưa có việc nào giao cho bạn",
+    "mineEmptyHint": "Công việc được giao cho bạn trên mọi bảng sẽ hiện ở đây.",
+    "completeFailed": "Không thể hoàn thành công việc."
   }
 }

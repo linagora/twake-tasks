@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -26,7 +26,8 @@ describe('FiltersScreen', () => {
   it('keeps each select label clear of its value', async () => {
     renderRoute('/filters', { boardsApi: boards() })
 
-    for (const name of ['Assignee', 'Priority', 'Due']) {
+    fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
+    for (const name of ['Assignee', 'Priority', 'Label', 'Due']) {
       expect(
         await screen.findByText(name, { selector: 'label' })
       ).toHaveAttribute('data-shrink', 'true')
@@ -37,15 +38,17 @@ describe('FiltersScreen', () => {
     const boardsApi = boards()
     renderRoute('/filters', { boardsApi })
 
+    expect(screen.queryByLabelText('Name')).toBeNull()
+    fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
     fireEvent.change(await screen.findByLabelText('Name'), {
       target: { value: 'Client fires' }
     })
     fireEvent.change(screen.getByRole('combobox', { name: 'Priority' }), {
       target: { value: '1' }
     })
-    fireEvent.change(screen.getByLabelText('Label'), {
-      target: { value: 'Client' }
-    })
+    const label = screen.getByRole('combobox', { name: 'Label' })
+    await within(label).findByRole('option', { name: 'client' })
+    fireEvent.change(label, { target: { value: 'client' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
     fireEvent.click(await screen.findByRole('link', { name: 'Client fires' }))
 
@@ -56,7 +59,7 @@ describe('FiltersScreen', () => {
     expect(screen.queryByText('Poster')).not.toBeInTheDocument()
     expect(boardsApi.createFilter).toHaveBeenCalledWith({
       name: 'Client fires',
-      criteria: { priority: 1, label: 'Client' }
+      criteria: { priority: 1, label: 'client' }
     })
     expect(boardsApi.filteredTasks).toHaveBeenCalledWith(
       expect.any(String),

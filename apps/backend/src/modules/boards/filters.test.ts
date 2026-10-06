@@ -139,4 +139,18 @@ describe('saved filters', () => {
 
     expect(response.statusCode).toBe(400)
   })
+
+  it('lists the label names on my boards to filter by', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    const home = await aBoardOf(owner, 'HOM')
+    await design.label('urgent')
+    await design.label('client')
+    await home.label('Client')
+    await (await aBoardOf(aUser(), 'OTH')).label('secret')
+
+    const response = await api.as(owner).get('/labels')
+
+    expect(response.json()).toEqual({ labels: ['client', 'urgent'] })
+  })
 })

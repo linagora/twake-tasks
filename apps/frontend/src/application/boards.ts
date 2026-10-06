@@ -171,6 +171,8 @@ export interface BoardsApi {
   listFilters: () => Promise<SavedFilter[]>
   createFilter: (filter: Omit<SavedFilter, 'id'>) => Promise<{ id: string }>
   deleteFilter: (filterId: string) => Promise<void>
+  /** The label names on the person's boards, one per spelling regardless of case. */
+  labelNames: () => Promise<string[]>
   /** Open tasks matching a saved filter, across the person's boards. */
   filteredTasks: (filterId: string, zone: string) => Promise<AgendaTask[]>
   /** Overdue tasks, then those due within `days` days of today in `zone`. */

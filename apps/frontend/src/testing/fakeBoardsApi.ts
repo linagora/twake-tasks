@@ -267,6 +267,17 @@ export function fakeBoardsApi(boards: Board[] = []) {
         filters.splice(index, 1)
       })
     ),
+    labelNames: vi.fn<BoardsApi['labelNames']>(() =>
+      Promise.resolve(
+        [
+          ...new Set(
+            [...store.values()].flatMap(board =>
+              board.labels.map(label => label.name.toLowerCase())
+            )
+          )
+        ].sort()
+      )
+    ),
     filteredTasks: vi.fn<BoardsApi['filteredTasks']>(filterId =>
       Promise.resolve().then(() => {
         const filter = filters.find(candidate => candidate.id === filterId)
