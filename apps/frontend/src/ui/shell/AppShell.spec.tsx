@@ -21,6 +21,28 @@ describe('AppShell', () => {
     }
   )
 
+  it('shows the name and picture the person chose in Twake Workplace', async () => {
+    const boardsApi = fakeBoardsApi()
+    boardsApi.settings.mockResolvedValue({
+      language: null,
+      timezone: null,
+      theme: 'auto',
+      avatar: 'https://avatars.test/alice.png',
+      name: 'Alice M.'
+    })
+    renderRoute('/', { boardsApi })
+
+    const account = await within(await screen.findByRole('banner')).findByRole(
+      'button',
+      { name: 'Alice M.' }
+    )
+
+    expect(account.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://avatars.test/alice.png'
+    )
+  })
+
   it('moves focus into the account menu so Escape closes it', async () => {
     renderRoute('/', { boardsApi: fakeBoardsApi() })
 

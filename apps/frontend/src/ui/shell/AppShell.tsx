@@ -11,17 +11,14 @@ import {
   Star
 } from '@linagora/twake-icons'
 import {
-  Avatar,
   Button,
   Divider,
-  getInitials,
   IconButton,
   Link,
   ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
-  nameToColor,
   Nav,
   NavIcon,
   NavItem,
@@ -55,12 +52,15 @@ import {
   TopBarSpacer,
   WideScreenNavItem
 } from '@/ds/AppFrame'
+import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
+import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoards, useUnreadNotifications } from '@/ui/boards/queries'
 import { QuickAdd } from '@/ui/shell/QuickAdd'
 import { ShortcutsHelp, useShortcuts } from '@/ui/shell/Shortcuts'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
+import { useSettings } from '@/ui/settings/useSettings'
 
 export function AppShell(): ReactElement {
   const [quickAdd, setQuickAdd] = useState(false)
@@ -160,8 +160,9 @@ function Header({
 function AccountMenu(): ReactElement {
   const { t } = useI18n()
   const { user, signOut } = useSession()
+  const { data: settings } = useSettings()
   const email = user.email ?? ''
-  const name = user.name ?? email
+  const name = displayName({ email, name: settings?.name ?? user.name ?? null })
   const theme = useTheme()
   // The menu focuses its first item on open, so an item hidden with CSS
   // would keep the focus, and Escape, outside the menu.
@@ -174,9 +175,12 @@ function AccountMenu(): ReactElement {
     setAnchor(null)
   }
   const avatar = (size: 's' | 'l'): ReactElement => (
-    <Avatar size={size} color={nameToColor(name) ?? 'sunrise'} aria-hidden>
-      {getInitials(name, email)}
-    </Avatar>
+    <PersonAvatar
+      email={email}
+      name={name}
+      avatar={settings?.avatar}
+      size={size}
+    />
   )
 
   return (

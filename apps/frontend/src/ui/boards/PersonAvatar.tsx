@@ -1,5 +1,5 @@
 import { Avatar, getInitials, nameToColor } from '@linagora/twake-mui'
-import type { ReactElement } from 'react'
+import type { ComponentProps, ReactElement } from 'react'
 
 import { displayName } from '@/domain/person'
 
@@ -14,7 +14,7 @@ export function PersonAvatar({
   name?: string | null
   avatar?: string | null | undefined
   label?: string
-  size?: number
+  size?: ComponentProps<typeof Avatar>['size']
 }): ReactElement {
   return (
     <Avatar

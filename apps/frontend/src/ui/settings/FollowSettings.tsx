@@ -1,13 +1,12 @@
 import { useColorScheme } from '@linagora/twake-mui'
-import { useQuery } from '@tanstack/react-query'
 import { useEffect, type ReactElement, type ReactNode } from 'react'
 
 import { PickersProvider } from '@/ds/Pickers'
-import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { followZone } from '@/ui/boards/dueLabel'
 import { I18nProvider } from '@/ui/i18n/I18nProvider'
 import { resolveLanguage } from '@/ui/i18n/languages'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useSettings } from '@/ui/settings/useSettings'
 
 /**
  * Shows the app in the person's Twake Workplace language, theme and timezone,
@@ -18,15 +17,9 @@ export function FollowSettings({
 }: {
   children: ReactNode
 }): ReactElement | null {
-  const api = useBoardsApi()
   const { lang: browserLang } = useI18n()
   const { setMode } = useColorScheme()
-  const { data, isPending } = useQuery({
-    queryKey: ['settings'],
-    queryFn: api.settings,
-    retry: false,
-    staleTime: Infinity
-  })
+  const { data, isPending } = useSettings()
 
   const theme = data?.theme
   useEffect(() => {

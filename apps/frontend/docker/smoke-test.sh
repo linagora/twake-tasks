@@ -16,6 +16,7 @@ docker run -d --name "$NAME" \
   -e SSO_CLIENT_ID='twake-tasks' \
   -e POSTHOG_HOST='https://posthog.example.com' \
   -e CSP_FRAME_ANCESTORS='https://workplace.example.com' \
+  -e CSP_IMG_SRC='https://avatars.example.com' \
   -e API_UPSTREAM='http://127.0.0.1:9' \
   "$IMAGE" >/dev/null
 BASE="http://$(docker port "$NAME" 8080/tcp | head -1)"
@@ -56,6 +57,7 @@ csp="$(header / Content-Security-Policy)"
 expect 'CSP sent' "$csp" "default-src 'self'; script-src 'self';*"
 expect 'CSP: SSO and PostHog origins in connect-src' "$csp" "*connect-src 'self' https://sso.example.com https://posthog.example.com;*"
 expect 'CSP: the SSO may be framed, for the silent sign-in' "$csp" "*frame-src 'self' https://sso.example.com;*"
+expect 'CSP: pictures from the hosts in CSP_IMG_SRC' "$csp" "*img-src 'self' data: blob: https://avatars.example.com;*"
 expect 'CSP: pages refuse to be framed' "$csp" "*frame-ancestors 'none'"
 expect 'CSP: the embedded view may be framed by Tasks and the host' \
   "$(header /embed/projects/p1 Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"
