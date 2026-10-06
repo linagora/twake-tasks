@@ -53,13 +53,15 @@ export function TaskRow({
   context,
   facts,
   leading,
+  trailing,
   unread = false
 }: {
   label: string
   title: ReactNode
   context: string
-  facts: ReactNode
+  facts?: ReactNode
   leading?: ReactNode
+  trailing?: ReactNode
   unread?: boolean
 }): ReactElement {
   return (
@@ -79,6 +81,7 @@ export function TaskRow({
         '&:hover, &:focus-within': { bgcolor: 'action.hover' },
         '& a': { color: 'text.primary', textDecoration: 'none' },
         '& a::after': { content: '""', position: 'absolute', inset: 0 },
+        '& button': { position: 'relative', zIndex: 1 },
         '& a:focus-visible': { outline: 'none' }
       }}
     >
@@ -129,12 +132,20 @@ export function TaskRow({
             {context}
           </Typography>
         </Box>
-        <Box
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}
-        >
-          {facts}
-        </Box>
+        {facts && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              flexShrink: 0
+            }}
+          >
+            {facts}
+          </Box>
+        )}
       </Box>
+      {trailing}
     </Box>
   )
 }

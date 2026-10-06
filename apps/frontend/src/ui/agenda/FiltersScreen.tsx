@@ -1,11 +1,18 @@
-import { Filter, Icon, Plus } from '@linagora/twake-icons'
-import { Button, Link, TextField, Typography } from '@linagora/twake-mui'
+import { Filter, Icon, Plus, Trash } from '@linagora/twake-icons'
+import {
+  Button,
+  IconButton,
+  Link,
+  TextField,
+  Typography
+} from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
 import type { FilterCriteria } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { FormPanel } from '@/ds/FormPanel'
+import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import {
   useCreateFilter,
   useDeleteFilter,
@@ -29,6 +36,24 @@ export function FiltersScreen(): ReactElement {
   const filters = useFilters()
   const remove = useDeleteFilter()
   useDocumentTitle(t('filters.title'))
+  const summary = (criteria: FilterCriteria) => {
+    const parts = [
+      criteria.assignee && {
+        name: t('filters.assignee'),
+        value: t(`filters.assignees.${criteria.assignee}`)
+      },
+      criteria.priority !== undefined && {
+        name: t('filters.priority'),
+        value: t('board.priority', { level: criteria.priority })
+      },
+      criteria.label && { name: t('filters.label'), value: criteria.label },
+      criteria.due && {
+        name: t('filters.due'),
+        value: t(`filters.dues.${criteria.due}`)
+      }
+    ].flatMap(part => (part ? [t('filters.criterion', part)] : []))
+    return parts.length > 0 ? parts.join(' · ') : t('filters.everything')
+  }
 
   return (
     <main className="u-p-2">
@@ -46,26 +71,35 @@ export function FiltersScreen(): ReactElement {
           text={t('filters.emptyHint')}
         />
       )}
-      <ul>
-        {filters.data?.map(filter => (
-          <li key={filter.id}>
-            <Link component={RouterLink} to={`/filters/${filter.id}`}>
-              {filter.name}
-            </Link>
-            <Button
-              variant="text"
-              size="small"
-              disabled={remove.isPending}
-              onClick={() => {
-                remove.mutate(filter.id)
-              }}
-              aria-label={t('filters.delete', { name: filter.name })}
-            >
-              ×
-            </Button>
-          </li>
-        ))}
-      </ul>
+      {filters.data && filters.data.length > 0 && (
+        <TaskGroup label={t('filters.saved')} count={filters.data.length}>
+          {filters.data.map(filter => (
+            <TaskRow
+              key={filter.id}
+              label={filter.name}
+              leading={<Icon icon={Filter} size={16} />}
+              title={
+                <Link component={RouterLink} to={`/filters/${filter.id}`}>
+                  {filter.name}
+                </Link>
+              }
+              context={summary(filter.criteria)}
+              trailing={
+                <IconButton
+                  size="small"
+                  disabled={remove.isPending}
+                  onClick={() => {
+                    remove.mutate(filter.id)
+                  }}
+                  aria-label={t('filters.delete', { name: filter.name })}
+                >
+                  <Icon icon={Trash} size={16} />
+                </IconButton>
+              }
+            />
+          ))}
+        </TaskGroup>
+      )}
       <NewFilter />
     </main>
   )
