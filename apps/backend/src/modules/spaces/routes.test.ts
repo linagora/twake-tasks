@@ -60,4 +60,17 @@ describe('the project of a space', () => {
       (await api.as(admin).get(`/spaces/${randomUUID()}/project`)).statusCode
     ).toBe(404)
   })
+
+  it('is not served without the space integration', async () => {
+    const admin = aUser()
+    const spaceId = await aSpace(admin)
+    const standalone = await startApp({ spaces: false })
+
+    const response = await standalone
+      .as(admin)
+      .get(`/spaces/${spaceId}/project`)
+    await standalone.close()
+
+    expect(response.statusCode).toBe(404)
+  })
 })
