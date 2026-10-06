@@ -13,6 +13,7 @@ import {
 } from '@/adapters/oidc/oidcSession'
 import { relayCallback } from '@/adapters/oidc/ssoFrame'
 import { App } from '@/app/App'
+import { installSpaceHistory } from '@/ui/embed/spaceHistory'
 
 const container = document.getElementById('root')
 if (!container) throw new Error('Root element #root not found')
@@ -21,6 +22,7 @@ const apiUrl = window.location.origin
 const config = readSsoConfig(window, apiUrl)
 
 if (!relayCallback()) {
+  installSpaceHistory()
   const embed = isEmbedded() ? embedSession(config) : null
   const session = embed ?? oidcSession(config)
   const boardsApi = httpBoardsApi(apiUrl, embed?.send ?? sendSignedIn)
