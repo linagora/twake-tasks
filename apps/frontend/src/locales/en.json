@@ -1,4 +1,11 @@
 {
+  "problems": {
+    "notFound": "Page not found",
+    "notFoundHint": "The link may be broken, or the page was moved.",
+    "crash": "Something went wrong",
+    "crashHint": "This screen ran into a problem. Reloading usually fixes it.",
+    "reload": "Reload"
+  },
   "drag": {
     "card": "draggable task",
     "instructions": "To move a task, press space or enter. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.",

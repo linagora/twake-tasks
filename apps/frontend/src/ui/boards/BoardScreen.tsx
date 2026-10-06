@@ -1,4 +1,4 @@
-import { Icon, Left, Plus, Share } from '@linagora/twake-icons'
+import { Compass, Icon, Left, Plus, Share } from '@linagora/twake-icons'
 import { Alert, Button, Link, TextField, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
@@ -13,6 +13,7 @@ import {
   ColumnsSkeleton,
   EmptyColumn
 } from '@/ds/Columns'
+import { EmptyState } from '@/ds/EmptyState'
 import { PageHeader } from '@/ds/PageHeader'
 import { DropColumn, SortableList } from '@/ds/Sortable'
 import type { Board, Section, Task } from '@/domain/board'
@@ -32,15 +33,21 @@ export function BoardScreen(): ReactElement {
   const { boardId = '' } = useParams()
   const board = useBoard(boardId)
   useDocumentTitle(board.data?.name ?? null)
+  const missing = board.error instanceof ApiError && board.error.status === 404
 
   return (
     <main className="u-p-2">
       {!board.data && <BackLink />}
-      {board.isError && (
+      {missing && (
+        <EmptyState
+          icon={Compass}
+          title={t('board.notFound')}
+          text={t('problems.notFoundHint')}
+        />
+      )}
+      {board.isError && !missing && (
         <Typography role="alert" className="u-mt-2">
-          {board.error instanceof ApiError && board.error.status === 404
-            ? t('board.notFound')
-            : t('board.loadFailed')}
+          {t('board.loadFailed')}
         </Typography>
       )}
       {board.isPending && <ColumnsSkeleton label={t('app.loading')} />}
