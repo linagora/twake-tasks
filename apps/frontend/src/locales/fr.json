@@ -97,6 +97,22 @@
     "changeFailed": "La modification n'a pas pu être enregistrée.",
     "edit": "Modifier"
   },
+  "editor": {
+    "toolbar": "Mise en forme",
+    "bold": "Gras",
+    "italic": "Italique",
+    "strike": "Barré",
+    "code": "Code",
+    "bulletList": "Liste à puces",
+    "orderedList": "Liste numérotée",
+    "taskList": "Liste de cases à cocher",
+    "link": "Lien",
+    "linkUrl": "Adresse du lien",
+    "apply": "Appliquer",
+    "commentPlaceholder": "Écrire un commentaire…",
+    "descriptionPlaceholder": "Ajoutez des détails, des étapes ou des liens…",
+    "sendHint": "Ctrl+Entrée pour envoyer"
+  },
   "history": {
     "heading": "Historique",
     "loadFailed": "L'historique n'a pas pu être chargé.",

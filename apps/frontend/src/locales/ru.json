@@ -97,6 +97,22 @@
     "changeFailed": "Не удалось сохранить изменение.",
     "edit": "Изменить"
   },
+  "editor": {
+    "toolbar": "Форматирование",
+    "bold": "Жирный",
+    "italic": "Курсив",
+    "strike": "Зачёркнутый",
+    "code": "Код",
+    "bulletList": "Маркированный список",
+    "orderedList": "Нумерованный список",
+    "taskList": "Чек-лист",
+    "link": "Ссылка",
+    "linkUrl": "Адрес ссылки",
+    "apply": "Применить",
+    "commentPlaceholder": "Напишите комментарий…",
+    "descriptionPlaceholder": "Добавьте подробности, шаги или ссылки…",
+    "sendHint": "Ctrl+Enter, чтобы отправить"
+  },
   "history": {
     "heading": "История",
     "loadFailed": "Не удалось загрузить историю.",

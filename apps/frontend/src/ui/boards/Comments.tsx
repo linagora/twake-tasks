@@ -1,10 +1,15 @@
-import { Button, TextField, Typography } from '@linagora/twake-mui'
+import { Button, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
-import Markdown from 'react-markdown'
 
+import { RichText, RichTextEditor } from '@/ds/RichText'
+import { Feed, FeedItem } from '@/ds/SidePanel'
 import type { Task } from '@/domain/board'
+import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useAddComment, useComments } from '@/ui/boards/queries'
+import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { useI18n } from '@/ui/i18n/useI18n'
+
+const MAX_COMMENT = 10_000
 
 export function Comments({
   task,
@@ -14,60 +19,89 @@ export function Comments({
   boardId: string
 }): ReactElement {
   const { t, lang } = useI18n()
+  const labels = useRichTextLabels()
   const comments = useComments(boardId, task.id)
   const add = useAddComment(boardId, task.id)
   const [body, setBody] = useState('')
+  const [draft, setDraft] = useState(0)
   const format = new Intl.DateTimeFormat(lang, {
     dateStyle: 'medium',
     timeStyle: 'short'
   })
+  const sendable = !add.isPending && body !== '' && body.length <= MAX_COMMENT
+  const send = () => {
+    if (!sendable) return
+    add.mutate(body, {
+      onSuccess: () => {
+        setBody('')
+        setDraft(previous => previous + 1)
+      }
+    })
+  }
 
   return (
     <section aria-label={t('task.comments')}>
       {comments.isError && (
         <Typography role="alert">{t('task.commentsFailed')}</Typography>
       )}
-      {comments.data?.map(comment => (
-        <article key={comment.id} aria-label={comment.author.email}>
-          <Typography variant="caption" color="textSecondary">
-            {`${comment.author.email} · ${format.format(new Date(comment.createdAt))}`}
-          </Typography>
-          <Markdown>{comment.body}</Markdown>
-        </article>
-      ))}
+      <Feed label={t('task.comments')}>
+        {comments.data?.map(comment => (
+          <FeedItem
+            key={comment.id}
+            avatar={<PersonAvatar email={comment.author.email} size={28} />}
+          >
+            <article aria-label={comment.author.email}>
+              <Typography variant="body2" component="div">
+                <strong>{comment.author.email}</strong>
+                <Typography
+                  component="span"
+                  variant="caption"
+                  color="textSecondary"
+                >
+                  {` · ${format.format(new Date(comment.createdAt))}`}
+                </Typography>
+              </Typography>
+              <RichText markdown={comment.body} />
+            </article>
+          </FeedItem>
+        ))}
+      </Feed>
       <form
+        className="u-mt-1"
         onSubmit={event => {
           event.preventDefault()
-          add.mutate(body.trim(), {
-            onSuccess: () => {
-              setBody('')
-            }
-          })
+          send()
         }}
       >
-        <TextField
+        <RichTextEditor
+          key={draft}
           label={t('task.comment')}
-          value={body}
-          onChange={event => {
-            setBody(event.target.value)
-          }}
-          multiline
-          fullWidth
-          margin="dense"
-          slotProps={{ htmlInput: { maxLength: 10_000 } }}
+          initial=""
+          placeholder={t('editor.commentPlaceholder')}
+          labels={labels}
+          minHeight={48}
+          onChange={setBody}
+          onSubmit={send}
+          footer={
+            <>
+              <Typography
+                variant="caption"
+                color="textSecondary"
+                className="u-mr-auto u-ml-half"
+              >
+                {t('editor.sendHint')}
+              </Typography>
+              <Button type="submit" size="small" disabled={!sendable}>
+                {t('task.send')}
+              </Button>
+            </>
+          }
         />
         {add.isError && (
           <Typography role="alert" variant="caption">
             {t('task.commentFailed')}
           </Typography>
         )}
-        <Button
-          type="submit"
-          size="small"
-          disabled={add.isPending || !body.trim()}
-        >
-          {t('task.send')}
-        </Button>
       </form>
     </section>
   )

@@ -97,6 +97,22 @@
     "changeFailed": "Không thể lưu thay đổi.",
     "edit": "Sửa"
   },
+  "editor": {
+    "toolbar": "Định dạng",
+    "bold": "In đậm",
+    "italic": "In nghiêng",
+    "strike": "Gạch ngang",
+    "code": "Mã",
+    "bulletList": "Danh sách dấu đầu dòng",
+    "orderedList": "Danh sách đánh số",
+    "taskList": "Danh sách kiểm tra",
+    "link": "Liên kết",
+    "linkUrl": "Địa chỉ liên kết",
+    "apply": "Áp dụng",
+    "commentPlaceholder": "Viết bình luận…",
+    "descriptionPlaceholder": "Thêm chi tiết, các bước hoặc liên kết…",
+    "sendHint": "Ctrl+Enter để gửi"
+  },
   "history": {
     "heading": "Lịch sử",
     "loadFailed": "Không thể tải lịch sử.",
