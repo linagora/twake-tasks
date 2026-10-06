@@ -7,7 +7,11 @@ import { createMessageHandler } from './events/router.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
-import { startConsumer, startPublisher } from './infra/rabbitmq.ts'
+import {
+  requestSpaceSync,
+  startConsumer,
+  startPublisher
+} from './infra/rabbitmq.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { accountRoutes } from './modules/boards/accounts.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
@@ -18,6 +22,7 @@ import {
 } from './modules/boards/notificationEmails.ts'
 import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
 import {
+  knowsAnySpace,
   PURGE_SPACE_JOB,
   purgeSpace,
   spaceRoutes
@@ -75,6 +80,16 @@ const consumer = await startConsumer(
     logger
   })
 )
+// A sync request fans out to every app and every space, so only a first
+// deployment sends one, once its queue is bound to receive the answers.
+if (spaces && !(await knowsAnySpace(db))) {
+  await requestSpaceSync(
+    config.RABBITMQ_URL,
+    config.RABBITMQ_SPACE_EXCHANGE,
+    logger
+  )
+  logger.info('no space known yet, sync of every organization requested')
+}
 const stopScheduler = createScheduler({
   db,
   logger,

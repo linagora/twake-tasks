@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { DeadLetterError, RabbitMQClient } from '@linagora/rabbitmq-client'
 import type { Logger } from 'pino'
 import type { OutgoingEvent } from '../events/envelope.ts'
@@ -59,6 +60,27 @@ export async function startConsumer(
     }
   )
   return { close: () => client.close() }
+}
+
+// With no organizationId, ldap-rest answers with a twake.space.synced for every
+// space of every organization.
+export async function requestSpaceSync(
+  url: string,
+  spaceExchange: string,
+  logger: Logger
+): Promise<void> {
+  const client = new RabbitMQClient({ url, logger })
+  await client.init()
+  try {
+    await client.publish(
+      spaceExchange,
+      'twake.space.sync.requested',
+      { timestamp: new Date().toISOString() },
+      { messageId: randomUUID() }
+    )
+  } finally {
+    await client.close()
+  }
 }
 
 export interface Publisher {

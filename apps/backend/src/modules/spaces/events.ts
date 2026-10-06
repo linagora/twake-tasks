@@ -14,7 +14,7 @@ import { z } from 'zod'
 import type { OutgoingEvent, PlatformEvent } from '../../events/envelope.ts'
 import { enqueue } from '../../events/outbox.ts'
 import { parseOrDrop, type Handler } from '../../events/router.ts'
-import { asOrganization, type Tx } from '../../infra/db.ts'
+import { asOrganization, type Db, type Tx } from '../../infra/db.ts'
 import {
   schedule,
   type Handler as JobHandler
@@ -100,6 +100,15 @@ async function applied(tx: Tx, space: TimedSpace) {
       lastEventAt: sql`greatest(${spaces.lastEventAt}, ${space.timestamp}::timestamptz)`
     })
     .where(eq(spaces.id, space.id))
+}
+
+/** Whether any organization has a space, deleted or not. */
+export async function knowsAnySpace(db: Db): Promise<boolean> {
+  return db.transaction(async tx => {
+    await tx.execute(sql`select set_config('app.space_lookup', 'on', true)`)
+    const [row] = await tx.select({ id: spaces.id }).from(spaces).limit(1)
+    return row !== undefined
+  })
 }
 
 /** The project kept for the space, deleted or not. */

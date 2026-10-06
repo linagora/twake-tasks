@@ -16,6 +16,7 @@ import {
 import type { OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 import {
+  requestSpaceSync,
   startConsumer,
   startPublisher,
   type Consumer,
@@ -278,5 +279,28 @@ describe('startPublisher', () => {
     } finally {
       await publisher.close()
     }
+  })
+})
+
+describe('requestSpaceSync', () => {
+  it('asks for a sync of every organization on the space exchange', async () => {
+    await channel.assertExchange('space', 'topic', { durable: true })
+    const { queue } = await channel.assertQueue('', { exclusive: true })
+    await channel.bindQueue(queue, 'space', 'twake.space.sync.requested')
+
+    await requestSpaceSync(
+      container.getAmqpUrl(),
+      'space',
+      pino({ level: 'silent' })
+    )
+
+    const message = await vi.waitFor(async () => {
+      const got = await channel.get(queue, { noAck: true })
+      if (!got) throw new Error('nothing yet')
+      return got
+    })
+    expect(message.properties.messageId).toEqual(expect.any(String))
+    const body = JSON.parse(message.content.toString()) as object
+    expect(body).toEqual({ timestamp: expect.any(String) as string })
   })
 })

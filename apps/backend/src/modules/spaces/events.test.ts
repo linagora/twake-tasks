@@ -9,7 +9,12 @@ import { boards } from '../boards/schema.ts'
 import { aUser, startApp, type TestUser } from '../../testing/app.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { outbox } from '../../events/schema.ts'
-import { PURGE_SPACE_JOB, purgeSpace, spaceRoutes } from './events.ts'
+import {
+  knowsAnySpace,
+  PURGE_SPACE_JOB,
+  purgeSpace,
+  spaceRoutes
+} from './events.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -577,5 +582,14 @@ describe('twake.space.sync.completed', () => {
     })
 
     expect(await spaceBoards(admin)).toEqual([])
+  })
+})
+
+describe('knowsAnySpace', () => {
+  it('sees spaces of any organization', async () => {
+    const admin = aUser()
+    await aSpaceWithATask(admin, [])
+
+    expect(await knowsAnySpace(db)).toBe(true)
   })
 })
