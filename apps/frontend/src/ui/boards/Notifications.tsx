@@ -1,9 +1,11 @@
-import { Bell, Icon } from '@linagora/twake-icons'
+import { Bell, Clock, Comment, Icon, People } from '@linagora/twake-icons'
 import { Button, Link, Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
+import type { Notification } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
+import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import type { Task } from '@/domain/board'
 import {
   useFollowing,
@@ -12,6 +14,13 @@ import {
 } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
+
+const REASON_ICONS = {
+  assigned: People,
+  mentioned: Comment,
+  following: Bell,
+  reminder: Clock
+} as const satisfies Record<Notification['reason'], unknown>
 
 export function FollowButton({
   task,
@@ -49,6 +58,17 @@ export function NotificationsScreen(): ReactElement {
     dateStyle: 'medium',
     timeStyle: 'short'
   })
+  const all = notifications.data ?? []
+  const groups = [
+    {
+      label: t('notifications.new'),
+      items: all.filter(each => each.readAt === null)
+    },
+    {
+      label: t('notifications.earlier'),
+      items: all.filter(each => each.readAt !== null)
+    }
+  ]
 
   return (
     <main className="u-p-2">
@@ -66,28 +86,47 @@ export function NotificationsScreen(): ReactElement {
           text={t('notifications.emptyHint')}
         />
       )}
-      <ul>
-        {notifications.data?.map(notification => (
-          <li key={notification.id}>
-            <Link
-              component={RouterLink}
-              to={`/boards/${notification.boardId}?task=${notification.key}`}
+      {groups.map(
+        group =>
+          group.items.length > 0 && (
+            <TaskGroup
+              key={group.label}
+              label={group.label}
+              count={group.items.length}
             >
-              {notification.readAt === null ? (
-                <strong>{`${notification.key} ${notification.title}`}</strong>
-              ) : (
-                `${notification.key} ${notification.title}`
-              )}
-            </Link>
-            <Typography variant="body2">
-              {t(`notifications.reason.${notification.reason}`)}
-            </Typography>
-            <Typography variant="caption" color="textSecondary">
-              {format.format(new Date(notification.createdAt))}
-            </Typography>
-          </li>
-        ))}
-      </ul>
+              {group.items.map(notification => {
+                const name = `${notification.key} ${notification.title}`
+                return (
+                  <TaskRow
+                    key={notification.id}
+                    label={name}
+                    unread={notification.readAt === null}
+                    leading={
+                      <Icon
+                        icon={REASON_ICONS[notification.reason]}
+                        size={16}
+                      />
+                    }
+                    title={
+                      <Link
+                        component={RouterLink}
+                        to={`/boards/${notification.boardId}?task=${notification.key}`}
+                      >
+                        {name}
+                      </Link>
+                    }
+                    context={t(`notifications.reason.${notification.reason}`)}
+                    facts={
+                      <Typography variant="caption" color="textSecondary">
+                        {format.format(new Date(notification.createdAt))}
+                      </Typography>
+                    }
+                  />
+                )
+              })}
+            </TaskGroup>
+          )
+      )}
     </main>
   )
 }

@@ -304,6 +304,8 @@
   },
   "notifications": {
     "title": "Notifications",
+    "new": "Nouvelles",
+    "earlier": "Plus anciennes",
     "unread": "Notifications, %{count} non lues",
     "empty": "Aucune notification",
     "emptyHint": "Suivez une tâche pour être informé ici de ses changements.",

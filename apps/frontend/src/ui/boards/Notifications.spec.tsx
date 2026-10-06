@@ -53,6 +53,42 @@ describe('notifications', () => {
     expect(boardsApi.markNotificationsRead).toHaveBeenCalled()
   })
 
+  it('puts unread notifications apart from the ones already seen', async () => {
+    const { board, logo, boardsApi } = aBoardWithLogo()
+    const about = {
+      boardId: board.id,
+      taskId: logo.id,
+      key: 'DES-1',
+      title: 'Logo'
+    }
+    boardsApi.notifications.push(
+      {
+        ...about,
+        id: 'n1',
+        reason: 'mentioned',
+        createdAt: '2026-10-05T10:00:00Z',
+        readAt: null
+      },
+      {
+        ...about,
+        id: 'n2',
+        reason: 'assigned',
+        createdAt: '2026-10-01T10:00:00Z',
+        readAt: '2026-10-02T10:00:00Z'
+      }
+    )
+    renderRoute('/notifications', { boardsApi })
+
+    const fresh = await screen.findByRole('region', { name: 'New' })
+    expect(within(fresh).getByRole('listitem')).toHaveTextContent(
+      'You were mentioned'
+    )
+    const seen = screen.getByRole('region', { name: 'Earlier' })
+    expect(within(seen).getByRole('listitem')).toHaveTextContent(
+      'You were assigned'
+    )
+  })
+
   it('says when there are none', async () => {
     renderRoute('/notifications', { boardsApi: fakeBoardsApi() })
 
