@@ -29,7 +29,7 @@ test('fits a board on a phone screen', async ({ page }) => {
   await newBoard(page)
 
   await expect(
-    page.getByRole('button', { name: 'Archive board' })
+    page.getByRole('button', { name: 'Board options' })
   ).toBeVisible()
   expect(await overflow(page)).toBe(0)
 })

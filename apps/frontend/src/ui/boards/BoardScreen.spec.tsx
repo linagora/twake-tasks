@@ -216,6 +216,21 @@ describe('BoardScreen', () => {
     )
   })
 
+  it('adds a task to the first column from the header', async () => {
+    const board = designBoard()
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add task' }))
+    const todo = within(screen.getByRole('region', { name: 'To do' }))
+    const title = todo.getByRole('textbox', { name: 'Task title' })
+    expect(title).toHaveFocus()
+    fireEvent.change(title, { target: { value: 'Banner' } })
+    fireEvent.submit(title)
+
+    expect(await todo.findByRole('button', { name: 'Banner' })).toBeVisible()
+  })
+
   it('adds a section at the end', async () => {
     const board = designBoard()
     const boardsApi = fakeBoardsApi([board])

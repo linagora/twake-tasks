@@ -25,8 +25,13 @@ async function removeLogo(action: 'Archive' | 'Delete') {
   })
 }
 
+async function boardMenu() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Board options' }))
+  return within(await screen.findByRole('menu'))
+}
+
 async function openShelf(name: 'Archived tasks' | 'Trash') {
-  fireEvent.click(await screen.findByRole('button', { name }))
+  fireEvent.click((await boardMenu()).getByRole('menuitem', { name }))
   return within(await screen.findByRole('dialog', { name }))
 }
 
@@ -67,7 +72,7 @@ describe('archive and trash', () => {
     const { board, boardsApi } = logoBoard()
 
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Archive board' })
+      (await boardMenu()).getByRole('menuitem', { name: 'Archive board' })
     )
 
     expect(
@@ -77,21 +82,31 @@ describe('archive and trash', () => {
     expect(
       screen.queryByRole('button', { name: 'Add a task to To do' })
     ).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Unarchive board' }))
+    expect(screen.queryByRole('button', { name: 'Add task' })).toBeNull()
+    fireEvent.click(
+      (await boardMenu()).getByRole('menuitem', { name: 'Unarchive board' })
+    )
     expect(
-      await screen.findByRole('button', { name: 'Archive board' })
+      await (
+        await boardMenu()
+      ).findByRole('menuitem', {
+        name: 'Archive board'
+      })
     ).toBeVisible()
   })
 
   it('lets viewers see the shelves but not change them', async () => {
     logoBoard({ role: 'viewer' })
 
+    const menu = await boardMenu()
+    expect(menu.getByRole('menuitem', { name: 'Trash' })).toBeVisible()
+    expect(menu.queryByRole('menuitem', { name: 'Archive board' })).toBeNull()
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+
     fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
     const panel = within(
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     )
-
     expect(panel.queryByRole('button', { name: 'Archive' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Archive board' })).toBeNull()
   })
 })

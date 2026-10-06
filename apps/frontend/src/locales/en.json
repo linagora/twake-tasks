@@ -32,6 +32,8 @@
   },
   "board": {
     "back": "Back to boards",
+    "menu": "Board options",
+    "newTask": "Add task",
     "notFound": "This board doesn't exist, or you can't open it.",
     "loadFailed": "The board could not be loaded.",
     "noSection": "No section",
@@ -234,7 +236,7 @@
     "board": "Board",
     "list": "List",
     "calendar": "Calendar",
-    "useAsDefault": "Use as default",
+    "useAsDefault": "Use as default layout",
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
     "noDate": "No date"

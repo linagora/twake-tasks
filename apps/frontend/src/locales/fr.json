@@ -32,6 +32,8 @@
   },
   "board": {
     "back": "Retour aux tableaux",
+    "menu": "Options du tableau",
+    "newTask": "Ajouter une tâche",
     "notFound": "Ce tableau n'existe pas, ou vous ne pouvez pas l'ouvrir.",
     "loadFailed": "Le tableau n'a pas pu être chargé.",
     "noSection": "Sans section",
@@ -238,7 +240,7 @@
     "board": "Tableau",
     "list": "Liste",
     "calendar": "Calendrier",
-    "useAsDefault": "Utiliser par défaut",
+    "useAsDefault": "Utiliser comme vue par défaut",
     "previousMonth": "Mois précédent",
     "nextMonth": "Mois suivant",
     "noDate": "Sans date"

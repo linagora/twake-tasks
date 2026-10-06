@@ -1,11 +1,14 @@
-import { Button, Link, TextField, Typography } from '@linagora/twake-mui'
+import { Icon, Left, Plus, Share } from '@linagora/twake-icons'
+import { Alert, Button, Link, TextField, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
 import { ApiError, type Shelf } from '@/application/boards'
 import { Column, Columns } from '@/ds/Columns'
+import { PageHeader } from '@/ds/PageHeader'
 import type { Board, Section, Task } from '@/domain/board'
-import { ArchiveBoardButton, ShelfDialog } from '@/ui/boards/Archive'
+import { ShelfDialog } from '@/ui/boards/Archive'
+import { BoardMenu } from '@/ui/boards/BoardMenu'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
@@ -22,9 +25,7 @@ export function BoardScreen(): ReactElement {
 
   return (
     <main className="u-p-2">
-      <Link component={RouterLink} to="../.." relative="path">
-        {t('board.back')}
-      </Link>
+      {!board.data && <BackLink />}
       {board.isError && (
         <Typography role="alert" className="u-mt-2">
           {board.error instanceof ApiError && board.error.status === 404
@@ -37,6 +38,24 @@ export function BoardScreen(): ReactElement {
   )
 }
 
+function BackLink(): ReactElement {
+  const { t } = useI18n()
+  return (
+    <Link
+      component={RouterLink}
+      to="../.."
+      relative="path"
+      variant="body2"
+      color="textSecondary"
+      underline="hover"
+      className="u-flex u-flex-items-center"
+    >
+      <Icon icon={Left} size={12} className="u-mr-half" />
+      {t('board.back')}
+    </Link>
+  )
+}
+
 function BoardColumns({ board }: { board: Board }): ReactElement {
   const { t } = useI18n()
   const move = useMoveTask(board.id)
@@ -45,6 +64,10 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   const shareable = manageable && board.spaceId === null && !board.inbox
   const [sharing, setSharing] = useState(false)
   const [shelf, setShelf] = useState<Shelf | null>(null)
+  const [adding, setAdding] = useState<ReadonlySet<string>>(new Set())
+  const startAdding = (key: string): void => {
+    setAdding(keys => new Set(keys).add(key))
+  }
   const topLevel = board.tasks.filter(task => task.parentId === null)
   const loose =
     board.sections.length === 0 ||
@@ -74,57 +97,64 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
       }
     />
   )
+  const columnKey = (column: (typeof columns)[number]) => column.id ?? 'none'
   const addTask = (column: (typeof columns)[number]) =>
     editable && (
       <AddTask
         boardId={board.id}
         sectionId={column.id}
         sectionName={column.name}
+        open={adding.has(columnKey(column))}
+        onOpen={() => {
+          startAdding(columnKey(column))
+        }}
       />
     )
+  const first = columns[0]
   const tasksIn = (column: (typeof columns)[number]) =>
     topLevel.filter(task => task.sectionId === column.id)
 
   return (
     <>
-      <div className="u-flex u-flex-wrap u-flex-items-center u-mt-1 u-mb-2">
-        <Typography
-          variant="h3"
-          component="h1"
-          className="u-w-100-m u-mb-half-m"
-        >
-          {board.name}
-        </Typography>
-        <LayoutSwitch board={board} />
-        {shareable && (
-          <Button
-            variant="secondary"
-            className="u-ml-1"
-            onClick={() => {
-              setSharing(true)
-            }}
-          >
-            {t('sharing.share')}
-          </Button>
-        )}
-        {(['archived', 'trash'] as const).map(each => (
-          <Button
-            key={each}
-            variant="text"
-            className="u-ml-1"
-            onClick={() => {
-              setShelf(each)
-            }}
-          >
-            {t(each === 'archived' ? 'archive.archivedTasks' : 'archive.trash')}
-          </Button>
-        ))}
-        {board.role === 'admin' && !board.inbox && (
-          <ArchiveBoardButton board={board} />
-        )}
-      </div>
+      <PageHeader
+        back={<BackLink />}
+        title={
+          <Typography variant="h3" component="h1" noWrap>
+            {board.name}
+          </Typography>
+        }
+        actions={
+          <>
+            <LayoutSwitch board={board} />
+            {shareable && (
+              <Button
+                variant="secondary"
+                startIcon={<Icon icon={Share} />}
+                onClick={() => {
+                  setSharing(true)
+                }}
+              >
+                {t('sharing.share')}
+              </Button>
+            )}
+            {editable && first && board.layout !== 'calendar' && (
+              <Button
+                startIcon={<Icon icon={Plus} />}
+                onClick={() => {
+                  startAdding(columnKey(first))
+                }}
+              >
+                {t('board.newTask')}
+              </Button>
+            )}
+            <BoardMenu board={board} onOpenShelf={setShelf} />
+          </>
+        }
+      />
       {board.archived && (
-        <Typography className="u-mb-1">{t('archive.boardArchived')}</Typography>
+        <Alert severity="info" className="u-mb-1">
+          {t('archive.boardArchived')}
+        </Alert>
       )}
       {shelf && (
         <ShelfDialog
@@ -195,23 +225,25 @@ const focusOnMount = (input: HTMLInputElement | null): void => {
 function AddTask({
   boardId,
   sectionId,
-  sectionName
+  sectionName,
+  open,
+  onOpen
 }: {
   boardId: string
   sectionId: string | null
   sectionName: string
+  open: boolean
+  onOpen: () => void
 }): ReactElement {
   const { t } = useI18n()
   const create = useCreateTask(boardId)
-  const [title, setTitle] = useState<string | null>(null)
+  const [title, setTitle] = useState('')
 
-  if (title === null) {
+  if (!open) {
     return (
       <Button
         variant="text"
-        onClick={() => {
-          setTitle('')
-        }}
+        onClick={onOpen}
         aria-label={t('board.addTask', { section: sectionName })}
       >
         +
