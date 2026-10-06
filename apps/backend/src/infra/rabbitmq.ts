@@ -44,6 +44,7 @@ async function declare(channel: Channel): Promise<void> {
     durable: true,
     arguments: {
       'x-queue-type': 'quorum',
+      'x-single-active-consumer': true,
       'x-dead-letter-exchange': DEAD_LETTER_EXCHANGE,
       'x-delivery-limit': DELIVERY_LIMIT
     }
@@ -53,8 +54,8 @@ async function declare(channel: Channel): Promise<void> {
   }
 }
 
-// One message at a time, so the events of a space are handled in the order
-// ldap-rest published them.
+// One message at a time on a single active consumer, so the events of a space
+// are handled in the order ldap-rest published them, even with several replicas.
 export async function startConsumer(
   url: string,
   logger: Logger,

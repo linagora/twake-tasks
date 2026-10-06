@@ -104,6 +104,32 @@ describe('startConsumer', () => {
     ])
   })
 
+  it('delivers to one instance at a time, so events stay in order', async () => {
+    const first = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    first.mockResolvedValue('processed')
+    const second = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    second.mockResolvedValue('processed')
+    await consume(first)
+    const other = await startConsumer(
+      container.getAmqpUrl(),
+      pino({ level: 'silent' }),
+      second
+    )
+
+    try {
+      for (const id of ['m-1', 'm-2', 'm-3', 'm-4']) {
+        publish('space', 'twake.space.updated', id)
+      }
+
+      await vi.waitFor(() => {
+        expect(first).toHaveBeenCalledTimes(4)
+      })
+      expect(second).not.toHaveBeenCalled()
+    } finally {
+      await other.close()
+    }
+  })
+
   it('dead letters an event the router rejects', async () => {
     await consume(() => Promise.resolve('rejected'))
 
