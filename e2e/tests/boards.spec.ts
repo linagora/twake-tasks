@@ -13,7 +13,7 @@ test('plans a board: a task and its comment survive a reload', async ({
   const comment = () =>
     page
       .getByRole('dialog', { name: task })
-      .getByRole('article', { name: 'alice@acme.e2e.test' })
+      .getByRole('article', { name: 'Alice Martin' })
   await page.getByRole('button', { name: 'Write the press release' }).click()
   const panel = page.getByRole('dialog', { name: task })
   await panel
@@ -88,8 +88,12 @@ test('notifies the person a task is assigned to', async ({ page, browser }) => {
   await page.getByRole('button', { name: `Options for ${prefix}-1` }).click()
   await page.getByRole('menuitem', { name: 'Assign' }).click()
   const assign = page.getByRole('dialog', { name: `Assign ${prefix}-1` })
-  await assign.getByLabel('bob@acme.e2e.test').check()
-  await assign.getByRole('button', { name: 'Save' }).click()
+  const bobOption = assign.getByRole('menuitemcheckbox', {
+    name: 'Bob Durand bob@acme.e2e.test'
+  })
+  await bobOption.click()
+  await expect(bobOption).toBeChecked()
+  await page.keyboard.press('Escape')
 
   await bob.getByRole('link', { name: /^Notifications/ }).click()
   const notification = bob.getByRole('listitem').filter({

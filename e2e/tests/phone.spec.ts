@@ -42,23 +42,14 @@ test('shows the whole role in the share dialog on a phone', async ({
 
   await page.getByRole('button', { name: 'Share' }).click()
   const share = page.getByRole('dialog', { name: `Share ${name}` })
-  const roles = share.getByRole('combobox', { name: 'Role' })
+  const roles = share.getByRole('button', { name: /^Role: / })
   await expect(roles).toHaveCount(2)
   for (const role of await roles.all()) {
-    const clipped = await role.evaluate((select: HTMLSelectElement) => {
-      const style = getComputedStyle(select)
-      const text = document.createElement('span')
-      text.style.font = style.font
-      text.textContent = select.selectedOptions[0]?.text ?? ''
-      document.body.append(text)
-      const needed = text.offsetWidth
-      text.remove()
-      const room =
-        select.clientWidth -
-        parseFloat(style.paddingLeft) -
-        parseFloat(style.paddingRight)
-      return needed > room
-    })
+    const clipped = await role.evaluate((button: HTMLElement) =>
+      [button, ...button.querySelectorAll<HTMLElement>('*')].some(
+        element => element.scrollWidth > element.clientWidth
+      )
+    )
     expect(clipped).toBe(false)
   }
 })

@@ -74,7 +74,7 @@ test('signs in through a popup when the SSO refuses to be framed by TwakeSpace',
     const frame = page.frameLocator('iframe[title="Tasks"]')
 
     const popup = page.waitForEvent('popup')
-    await frame.getByRole('button', { name: 'Try again' }).click()
+    await frame.getByRole('button', { name: 'Back to sign-in' }).click()
     await (await popup).waitForEvent('close')
 
     await expect(frame.getByRole('link', { name })).toBeVisible()
