@@ -83,6 +83,22 @@ describe('task comments', () => {
     )
   })
 
+  it('counts the comments of each task on the board', async () => {
+    const alice = aUser()
+    const { boardId, taskId } = await aTaskOf(alice)
+    const path = `/boards/${boardId}/tasks/${taskId}/comments`
+    await api.as(alice).post(path, { body: 'One' })
+    await api.as(alice).post(path, { body: 'Two' })
+
+    const board = (await api.as(alice).get(`/boards/${boardId}`)).json<{
+      tasks: { id: string; commentCount: number }[]
+    }>()
+
+    expect(board.tasks).toEqual([
+      expect.objectContaining({ id: taskId, commentCount: 2 })
+    ])
+  })
+
   it('refuses an empty comment', async () => {
     const alice = aUser()
     const { boardId, taskId } = await aTaskOf(alice)

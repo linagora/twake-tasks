@@ -25,6 +25,7 @@ import {
   boardLayouts,
   boardMembers,
   boards,
+  comments,
   taskAssignees,
   taskLabels,
   tasks
@@ -304,6 +305,11 @@ async function describeTasks(
     .select({ taskId: taskLabels.taskId, labelId: taskLabels.labelId })
     .from(taskLabels)
     .where(inArray(taskLabels.taskId, ids))
+  const commented = await tx
+    .select({ taskId: comments.taskId, count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(inArray(comments.taskId, ids))
+    .groupBy(comments.taskId)
   return rows.map(task => ({
     id: task.id,
     key: `${board.keyPrefix}-${String(task.number)}`,
@@ -333,7 +339,8 @@ async function describeTasks(
       labeled.some(
         entry => entry.taskId === task.id && entry.labelId === label.id
       )
-    )
+    ),
+    commentCount: commented.find(entry => entry.taskId === task.id)?.count ?? 0
   }))
 }
 
