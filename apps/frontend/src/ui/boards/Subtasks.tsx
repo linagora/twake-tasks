@@ -11,18 +11,20 @@ export function Subtasks({
   tasks,
   boardId,
   editable,
-  depth
+  depth,
+  label
 }: {
   parentId: string
   tasks: Task[]
   boardId: string
   editable: boolean
   depth: number
+  label?: string
 }): ReactElement | null {
   const children = tasks.filter(task => task.parentId === parentId)
   if (children.length === 0) return null
   return (
-    <Checklist>
+    <Checklist {...(label ? { label } : {})}>
       {children.map(task => (
         <Subtask
           key={task.id}

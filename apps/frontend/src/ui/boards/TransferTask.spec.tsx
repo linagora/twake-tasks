@@ -21,8 +21,12 @@ describe('moving a task to another board', () => {
     const panel = within(
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     )
+    fireEvent.click(panel.getByRole('button', { name: 'Task options' }))
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: 'Move to another board' })
+    )
     const form = within(
-      await panel.findByRole('form', { name: 'Move to another board' })
+      await screen.findByRole('form', { name: 'Move to another board' })
     )
     const board = form.getByRole('combobox', { name: 'Board' })
     expect(within(board).queryByRole('option', { name: 'HR' })).toBeNull()

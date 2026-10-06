@@ -13,41 +13,11 @@ import type { Board, Task } from '@/domain/board'
 import { useBoardChange, useHiddenTasks } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-export function RemoveTask({
-  task,
-  boardId,
-  onRemoved
-}: {
-  task: Task
-  boardId: string
-  onRemoved: () => void
-}): ReactElement {
-  const { t } = useI18n()
-  const remove = useBoardChange(boardId, (api, shelf: Shelf) =>
+export function useRemoveTask(boardId: string, task: Task) {
+  return useBoardChange(boardId, (api, shelf: Shelf) =>
     shelf === 'archived'
       ? api.archiveTask(boardId, task.id)
       : api.trashTask(boardId, task.id)
-  )
-  return (
-    <>
-      {remove.isError && (
-        <Typography role="alert" className="u-mr-auto">
-          {t('archive.failed')}
-        </Typography>
-      )}
-      {(['archived', 'trash'] as const).map(shelf => (
-        <Button
-          key={shelf}
-          variant="text"
-          disabled={remove.isPending}
-          onClick={() => {
-            remove.mutate(shelf, { onSuccess: onRemoved })
-          }}
-        >
-          {t(shelf === 'archived' ? 'archive.archive' : 'archive.delete')}
-        </Button>
-      ))}
-    </>
   )
 }
 
