@@ -262,7 +262,20 @@
   "quickAdd": {
     "title": "Thêm nhanh",
     "task": "Công việc",
-    "help": "Tomorrow 3pm, every monday, p1, #bảng, /mục, %nhãn, +người, {hạn chót}, !30m",
+    "syntaxHelp": "Trợ giúp cú pháp",
+    "syntax": {
+      "dates": "Ngày và giờ: today, tomorrow, friday, 12 oct, in 3 days, 3pm, 15h30",
+      "repeat": "Lặp lại: every monday, every 2 weeks, daily",
+      "priority": "Mức ưu tiên: p1 đến p4",
+      "names": "#bảng, /mục, %nhãn, +người",
+      "more": "{friday} đặt hạn chót, !30m đặt thời lượng. Phân tách bằng dấu cách hoặc dấu phẩy."
+    },
+    "understood": "Đã hiểu",
+    "suggestions": "Gợi ý",
+    "at": "Đến hạn lúc %{time}",
+    "board": "Bảng %{name}",
+    "section": "Mục %{name}",
+    "person": "Giao cho %{name}",
     "add": "Thêm",
     "close": "Đóng",
     "added": "Đã thêm %{key}.",

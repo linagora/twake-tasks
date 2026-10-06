@@ -262,7 +262,20 @@
   "quickAdd": {
     "title": "Ajout rapide",
     "task": "Tâche",
-    "help": "Demain 15h, tous les lundis, p1, #tableau, /section, %étiquette, +personne, {échéance}, !30m",
+    "syntaxHelp": "Aide sur la syntaxe",
+    "syntax": {
+      "dates": "Dates et heures : aujourd'hui, demain, vendredi, 12 oct, dans 3 jours, 15h, 15h30",
+      "repeat": "Répétition : tous les lundis, chaque 2 semaines, weekly",
+      "priority": "Priorité : p1 à p4",
+      "names": "#tableau, /section, %étiquette, +personne",
+      "more": "{vendredi} fixe une échéance, !30m une durée. Séparez par des espaces ou des virgules."
+    },
+    "understood": "Compris",
+    "suggestions": "Suggestions",
+    "at": "Échéance à %{time}",
+    "board": "Tableau %{name}",
+    "section": "Section %{name}",
+    "person": "Assigner à %{name}",
     "add": "Ajouter",
     "close": "Fermer",
     "added": "%{key} ajoutée.",

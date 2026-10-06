@@ -262,7 +262,20 @@
   "quickAdd": {
     "title": "Quick add",
     "task": "Task",
-    "help": "Tomorrow 3pm, every monday, p1, #board, /section, %label, +person, {deadline}, !30m",
+    "syntaxHelp": "Syntax help",
+    "syntax": {
+      "dates": "Dates and times: today, tomorrow, friday, 12 oct, in 3 days, 3pm, 15h30",
+      "repeat": "Repeat: every monday, every 2 weeks, daily",
+      "priority": "Priority: p1 to p4",
+      "names": "#board, /section, %label, +person",
+      "more": "{friday} sets a deadline, !30m a duration. Separate with spaces or commas."
+    },
+    "understood": "Understood",
+    "suggestions": "Suggestions",
+    "at": "Due at %{time}",
+    "board": "Board %{name}",
+    "section": "Section %{name}",
+    "person": "Assign %{name}",
     "add": "Add",
     "close": "Close",
     "added": "%{key} added.",

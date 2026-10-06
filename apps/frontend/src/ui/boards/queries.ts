@@ -1,4 +1,5 @@
 import {
+  skipToken,
   useMutation,
   useQuery,
   useQueryClient,
@@ -28,7 +29,7 @@ import type {
 } from '@/application/boards'
 import type { Board, BoardSummary, Layout } from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
-import { quickAdd } from '@/application/quickAdd'
+import { findBoard, quickAdd } from '@/application/quickAdd'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
 
@@ -431,6 +432,26 @@ export function useQuickAdd(): UseMutationResult<
     onSuccess: ({ boardId }) =>
       queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
   })
+}
+
+/** The boards quick add can name, and the one the line names so far. */
+export function useQuickAddBoard(name: string | undefined): {
+  boards: BoardSummary[] | undefined
+  summary: BoardSummary | undefined
+  board: Board | undefined
+} {
+  const api = useBoardsApi()
+  const boards = useBoards().data
+  const summary = boards && findBoard(boards, name)
+  const named = useQuery({
+    queryKey: boardKey(summary?.id ?? ''),
+    queryFn: summary ? () => api.getBoard(summary.id) : skipToken
+  })
+  return {
+    boards: boards?.filter(each => !each.archived),
+    summary,
+    board: named.data
+  }
 }
 
 export function useSetLayout(
