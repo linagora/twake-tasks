@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -145,6 +145,32 @@ describe('BoardsScreen', () => {
       keyPrefix: 'DES'
     })
     expect(router.state.location.pathname).toMatch(/^\/boards\//)
+  })
+
+  it('suggests a key prefix from the name until one is typed', async () => {
+    const boardsApi = fakeBoardsApi()
+    renderRoute('/', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'New' }))
+    const dialog = screen.getByRole('dialog', { name: 'New board' })
+    const prefix = within(dialog).getByRole('textbox', { name: 'Key prefix' })
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), {
+      target: { value: 'Équipe marketing' }
+    })
+    expect(prefix).toHaveValue('EQU')
+
+    fireEvent.change(prefix, { target: { value: 'mkt' } })
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), {
+      target: { value: 'Marketing' }
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createBoard).toHaveBeenCalledWith({
+        name: 'Marketing',
+        keyPrefix: 'MKT'
+      })
+    })
   })
 
   it('says when the key prefix is taken', async () => {
