@@ -51,6 +51,9 @@ export function SearchScreen(): ReactElement {
 
   return (
     <main className="u-p-2">
+      <Typography variant="h3" component="h1" className="u-mb-2">
+        {t('search.label')}
+      </Typography>
       {results.isError && (
         <Typography role="alert">{t('search.failed')}</Typography>
       )}

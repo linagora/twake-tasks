@@ -5,38 +5,51 @@ import { Link as RouterLink, useParams } from 'react-router'
 
 import type { AgendaTask } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
-import { dueLabel, formatDay } from '@/ui/boards/dueLabel'
+import { TaskGroup, TaskRow } from '@/ds/TaskList'
+import { formatDay } from '@/ui/boards/dueLabel'
+import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useAgenda, useFilters, type AgendaView } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 export function Group({
   label,
-  tasks
+  tasks,
+  tone
 }: {
   label: string
   tasks: AgendaTask[]
+  tone?: 'error'
 }): ReactElement {
-  const { lang } = useI18n()
   return (
-    <section aria-label={label} className="u-mb-2">
-      <Typography variant="h5" component="h2">
-        {label}
-      </Typography>
-      <ul>
-        {tasks.map(task => (
-          <li key={task.id}>
-            <Link component={RouterLink} to={`/boards/${task.boardId}`}>
+    <TaskGroup label={label} count={tasks.length} tone={tone}>
+      {tasks.map(task => (
+        <TaskRow
+          key={task.id}
+          label={`${task.key} ${task.title}`}
+          title={
+            <Link
+              component={RouterLink}
+              to={`/boards/${task.boardId}?task=${task.key}`}
+            >
               {task.title}
             </Link>
-            <Typography variant="caption" color="textSecondary">
-              {` ${task.key} · ${task.boardName}`}
-              {task.dueTime ? ` · ${dueLabel(task, lang) ?? ''}` : ''}
-            </Typography>
-          </li>
-        ))}
-      </ul>
-    </section>
+          }
+          context={`${task.key} · ${task.boardName}`}
+          facts={
+            <>
+              {task.priority !== null && (
+                <PriorityChip priority={task.priority} />
+              )}
+              <DueChip task={task} />
+              {task.assignees.length > 0 && (
+                <Assignees people={task.assignees} />
+              )}
+            </>
+          }
+        />
+      ))}
+    </TaskGroup>
   )
 }
 
@@ -93,7 +106,7 @@ export function AgendaScreen(
         />
       )}
       {overdue.length > 0 && (
-        <Group label={t('agenda.overdue')} tasks={overdue} />
+        <Group label={t('agenda.overdue')} tasks={overdue} tone="error" />
       )}
       {days.map(day => (
         <Group

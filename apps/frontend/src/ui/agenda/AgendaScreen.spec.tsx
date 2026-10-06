@@ -23,7 +23,7 @@ function boards() {
 }
 
 describe('AgendaScreen', () => {
-  it('shows overdue and today’s tasks, each linked to its board', async () => {
+  it('shows overdue and today’s tasks, each opening in its board', async () => {
     const { design, boardsApi } = boards()
     renderRoute('/today', { boardsApi })
 
@@ -32,12 +32,32 @@ describe('AgendaScreen', () => {
     )
     expect(overdue.getByRole('link', { name: /Poster/ })).toHaveAttribute(
       'href',
-      `/boards/${design.id}`
+      `/boards/${design.id}?task=DES-2`
     )
     const today = within(screen.getByRole('region', { name: 'Today' }))
     expect(today.getByText('Logo')).toBeVisible()
     expect(screen.queryByText('Flyer')).not.toBeInTheDocument()
     expect(boardsApi.agenda).toHaveBeenCalledWith(localZone(), 1)
+  })
+
+  it('shows the key, board, priority and assignees of each task', async () => {
+    const { design, boardsApi } = boards()
+    design.tasks[0] = aTask(null, {
+      key: 'DES-1',
+      title: 'Logo',
+      dueDate: day(0),
+      priority: 1,
+      assignees: [{ userId: 'u1', email: 'ana@example.com' }]
+    })
+    renderRoute('/today', { boardsApi })
+
+    const row = within(await screen.findByRole('listitem', { name: /Logo/ }))
+
+    expect(row.getByText('DES-1 · Design')).toBeVisible()
+    expect(row.getByRole('img', { name: 'Priority 1' })).toBeVisible()
+    expect(
+      row.getByRole('img', { name: 'Assigned to ana@example.com' })
+    ).toBeVisible()
   })
 
   it('shows the next seven days on Upcoming', async () => {

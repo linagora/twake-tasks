@@ -28,9 +28,12 @@ describe('SearchScreen', () => {
     const results = within(
       await screen.findByRole('region', { name: 'Results for “logo”' })
     )
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Search' })
+    ).toBeVisible()
     expect(results.getByRole('link', { name: /New logo/ })).toHaveAttribute(
       'href',
-      `/boards/${design.id}`
+      `/boards/${design.id}?task=DES-1`
     )
     expect(screen.queryByText('Poster')).not.toBeInTheDocument()
     expect(boardsApi.search).toHaveBeenCalledWith('logo')
