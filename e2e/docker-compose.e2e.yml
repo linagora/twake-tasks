@@ -4,6 +4,9 @@ services:
   kafka:
     ports: !reset []
 
+  rabbitmq:
+    ports: !reset []
+
   postgres:
     ports: !reset []
     volumes: !override

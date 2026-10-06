@@ -1,15 +1,9 @@
 import { KafkaJS } from '@confluentinc/kafka-javascript'
 import type { Logger } from 'pino'
 import type { Config } from '../config.ts'
-import {
-  PLATFORM_TOPIC,
-  TASKS_TOPIC,
-  type OutgoingEvent
-} from '../events/envelope.ts'
-import type { DeadLetter, IncomingMessage, Outcome } from '../events/router.ts'
+import { TASKS_TOPIC, type OutgoingEvent } from '../events/envelope.ts'
 
-type GlobalConfig = KafkaJS.ProducerConstructorConfig &
-  KafkaJS.ConsumerConstructorConfig
+type GlobalConfig = KafkaJS.ProducerConstructorConfig
 
 export function connectionConfig(config: Config): GlobalConfig {
   const common = {
@@ -58,70 +52,6 @@ function kafkaLogger(logger: Logger): KafkaJS.Logger {
     setLogLevel: () => undefined
   }
   return adapter
-}
-
-export async function startConsumer(
-  config: Config,
-  logger: Logger,
-  handle: (topic: string, message: IncomingMessage) => Promise<Outcome>
-): Promise<KafkaJS.Consumer> {
-  const consumer = new KafkaJS.Kafka().consumer({
-    ...connectionConfig(config),
-    kafkaJS: {
-      groupId: config.KAFKA_GROUP_ID,
-      autoCommit: false,
-      fromBeginning: true,
-      logger: kafkaLogger(logger)
-    }
-  })
-  await consumer.connect()
-  await consumer.subscribe({ topics: [PLATFORM_TOPIC] })
-  await consumer.run({
-    eachMessage: async ({ topic, partition, message }) => {
-      await handle(topic, message)
-      await consumer.commitOffsets([
-        { topic, partition, offset: (BigInt(message.offset) + 1n).toString() }
-      ])
-    }
-  })
-  return consumer
-}
-
-export interface DeadLetterProducer {
-  send: DeadLetter
-  disconnect(): Promise<void>
-}
-
-// Keeps the original key and headers, so the message can be replayed as is.
-export async function startDeadLetterProducer(
-  config: Config,
-  logger: Logger
-): Promise<DeadLetterProducer> {
-  const producer = new KafkaJS.Kafka().producer({
-    ...connectionConfig(config),
-    'enable.idempotence': true,
-    acks: -1,
-    kafkaJS: { logger: kafkaLogger(logger) }
-  })
-  await producer.connect()
-  return {
-    async send(topic, message, reason) {
-      await producer.send({
-        topic,
-        messages: [
-          {
-            key: message.key ?? null,
-            value: message.value,
-            headers: {
-              ...(message.headers as KafkaJS.IHeaders | undefined),
-              'twake-tasks-reason': reason
-            }
-          }
-        ]
-      })
-    },
-    disconnect: () => producer.disconnect()
-  }
 }
 
 export interface EventProducer {

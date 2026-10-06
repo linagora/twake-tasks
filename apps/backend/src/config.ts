@@ -19,7 +19,7 @@ const kafkaSecurity = z.discriminatedUnion('KAFKA_SECURITY', [
 const configSchema = z
   .object({
     KAFKA_BOOTSTRAP: z.string().min(1),
-    KAFKA_GROUP_ID: z.string().min(1).default('twake-tasks'),
+    RABBITMQ_URL: z.url({ protocol: /^amqps?$/ }),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     APP_URL: z.url({ protocol: /^https?$/ }),
     OIDC_ISSUER: z.url({ protocol: /^https$/ }),

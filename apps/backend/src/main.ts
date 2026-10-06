@@ -5,13 +5,10 @@ import { postgresDeduplicator } from './events/dedupe.ts'
 import { createRelay } from './events/outbox.ts'
 import { createMessageHandler } from './events/router.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
-import {
-  startConsumer,
-  startDeadLetterProducer,
-  startProducer
-} from './infra/kafka.ts'
+import { startProducer } from './infra/kafka.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
+import { startConsumer } from './infra/rabbitmq.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { accountRoutes } from './modules/boards/accounts.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
@@ -56,17 +53,12 @@ const server = await buildApp({
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })
 
 const producer = await startProducer(config, logger)
-const deadLetters = await startDeadLetterProducer(config, logger)
 const consumer = await startConsumer(
-  config,
+  config.RABBITMQ_URL,
   logger,
   createMessageHandler({
-    routes: {
-      activity: new Map(),
-      platform: new Map([...spaceRoutes(), ...accountRoutes])
-    },
-    dedupe: postgresDeduplicator(db, config.KAFKA_GROUP_ID),
-    deadLetter: deadLetters.send,
+    routes: new Map([...spaceRoutes(), ...accountRoutes]),
+    dedupe: postgresDeduplicator(db, 'twake-tasks'),
     logger
   })
 )
@@ -107,10 +99,9 @@ async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, 'shutting down')
   try {
     await stopScheduler()
-    await consumer.disconnect()
+    await consumer.close()
     await stopRelay()
     await producer.disconnect()
-    await deadLetters.disconnect()
     await server.close()
     await boardChanges.close()
     await sql.end({ timeout: 5 })

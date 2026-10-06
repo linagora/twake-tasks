@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@confluentinc/kafka-javascript": "^1.10.1",
+    "@linagora/rabbitmq-client": "^0.6.0",
     "drizzle-orm": "1.0.0-rc.4",
     "fastify": "^5.12.5",
     "fractional-indexing": "^4.0.0",
@@ -31,7 +32,9 @@
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^12.2.0",
+    "@testcontainers/rabbitmq": "^12.2.0",
     "@types/nodemailer": "^8.0.2",
+    "amqplib": "^2.2.0",
     "drizzle-kit": "1.0.0-rc.4"
   }
 }
