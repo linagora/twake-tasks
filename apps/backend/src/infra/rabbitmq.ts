@@ -39,7 +39,8 @@ export async function startConsumer(
     {
       bindings: [
         { exchange: 'b2b', routingKey: 'domain.user.deleted' },
-        { exchange: 'auth', routingKey: 'user.deleted' }
+        { exchange: 'auth', routingKey: 'user.deleted' },
+        { exchange: 'b2b', routingKey: 'domain.organization.deleted' }
       ],
       deadLetterExchange: 'twake-tasks.dlx',
       queueArguments: { 'x-single-active-consumer': true },

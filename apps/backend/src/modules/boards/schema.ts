@@ -477,7 +477,13 @@ export const savedFilters = pgTable.withRLS(
   table => [
     index().on(table.userId),
     tenantPolicy(table.organizationId, sql`${table.userId} = ${currentUser}`),
-    ownRows(table.userId)
+    // No board cascades to saved filters, so the erase of an organization
+    // reaches every person's through this flag; the tenant policy still keeps
+    // it to that organization.
+    ownRows(
+      table.userId,
+      sql`current_setting('app.erasing_organization', true) = 'on'`
+    )
   ]
 )
 
@@ -503,11 +509,12 @@ export const boardLayouts = pgTable.withRLS(
   ]
 )
 
-function ownRows(userId: AnyPgColumn) {
+function ownRows(userId: AnyPgColumn, orReach?: SQL) {
+  const own = sql`${userId} = ${currentUser}`
   return pgPolicy('own', {
     as: 'restrictive',
-    using: sql`${userId} = ${currentUser}`,
-    withCheck: sql`${userId} = ${currentUser}`
+    using: orReach ? sql`${own} or ${orReach}` : own,
+    withCheck: own
   })
 }
 

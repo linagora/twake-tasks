@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql as raw } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { RejectedEventError } from '../../events/router.ts'
-import { asTenant, createDb } from '../../infra/db.ts'
+import { asOrganization, asTenant, createDb } from '../../infra/db.ts'
+import { jobs } from '../../scheduler/schema.ts'
 import {
   aB2cUser,
   aBoardIn,
@@ -73,6 +74,9 @@ async function aBoard(
       .tasks[0]?.assignees.map(person => person.userId)
   return { id: board.id, assignees }
 }
+
+const filtersOf = async (user: TestUser) =>
+  (await api.as(user).get('/filters')).json<{ filters: object[] }>().filters
 
 async function personalProjectsOf(user: TestUser) {
   return db.transaction(async tx => {
@@ -148,6 +152,18 @@ describe.each([
     )
     expect(await personalProjectsOf(gone)).toEqual([])
   })
+
+  it('loses its saved filters', async () => {
+    const gone = makeUser()
+    await boardsOf(gone)
+    await api
+      .as(gone)
+      .post('/filters', { name: 'Mine', criteria: { priority: 1 } })
+
+    await deliver(routingKey, body(gone))
+
+    expect(await filtersOf(gone)).toEqual([])
+  })
 })
 
 describe('a deleted account in a managed project', () => {
@@ -184,5 +200,79 @@ describe('deleted accounts that cannot be applied', () => {
     await expect(deliver('user.deleted', { userId: 'alice' })).rejects.toThrow(
       RejectedEventError
     )
+  })
+})
+
+describe('a deleted organization', () => {
+  async function projectsOf(organizationId: string | null) {
+    return db.transaction(async tx => {
+      await asOrganization(tx, organizationId)
+      return tx.select({ id: projects.id }).from(projects)
+    })
+  }
+
+  const jobsOf = (organizationId: string | null) =>
+    db
+      .select({ id: jobs.id })
+      .from(jobs)
+      .where(raw`${jobs.payload}->>'organizationId' = ${organizationId}`)
+
+  async function aBoardWithReminder(owner: TestUser, filterer: TestUser) {
+    const board = await aBoard(owner, 'Launch', [])
+    const [task] = (await api.as(owner).get(`/boards/${board.id}`)).json<{
+      tasks: { id: string }[]
+    }>().tasks
+    if (!task) throw new Error('no task')
+    const path = `/boards/${board.id}/tasks/${task.id}`
+    await api.as(owner).patch(path, { dueDate: '2099-03-10' })
+    await api
+      .as(owner)
+      .post(`${path}/reminders`, { beforeMinutes: 30, zone: 'Europe/Paris' })
+    await api
+      .as(filterer)
+      .post('/filters', { name: 'Mine', criteria: { priority: 1 } })
+  }
+
+  it('erases everything the organization holds, and nothing of another', async () => {
+    const owner = aUser()
+    const organizationId = owner.organizationId
+    const colleague = aUser({ organizationId })
+    const outsider = aUser()
+    await aBoardWithReminder(owner, colleague)
+    await aManagedProject(db, [[colleague, 'admin']])
+    await aBoardWithReminder(outsider, outsider)
+    expect(await jobsOf(organizationId)).not.toEqual([])
+
+    await deliver('domain.organization.deleted', {
+      emitter: 'twake-ldap-rest',
+      type: 'organization.deleted',
+      organizationId,
+      domain: 'example.com',
+      reason: 'closed'
+    })
+
+    expect(await projectsOf(organizationId)).toEqual([])
+    expect(await jobsOf(organizationId)).toEqual([])
+    expect(await filtersOf(colleague)).toEqual([])
+    expect(await projectsOf(outsider.organizationId)).not.toEqual([])
+    expect(await jobsOf(outsider.organizationId)).not.toEqual([])
+    expect(await filtersOf(outsider)).not.toEqual([])
+  })
+
+  it('changes nothing when replayed', async () => {
+    const owner = aUser()
+    await aBoard(owner, 'Launch', [])
+    const body = { organizationId: owner.organizationId }
+
+    await deliver('domain.organization.deleted', body)
+    await deliver('domain.organization.deleted', body)
+
+    expect(await projectsOf(owner.organizationId)).toEqual([])
+  })
+
+  it('rejects a deletion without an organization', async () => {
+    await expect(
+      deliver('domain.organization.deleted', { domain: 'example.com' })
+    ).rejects.toThrow(RejectedEventError)
   })
 })
