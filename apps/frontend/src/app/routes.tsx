@@ -6,7 +6,11 @@ import { SearchScreen } from '@/ui/agenda/SearchScreen'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { BoardsScreen } from '@/ui/boards/BoardsScreen'
 import { NotificationsScreen } from '@/ui/boards/Notifications'
-import { EmbedLayout, EmbedProjectScreen } from '@/ui/embed/Embed'
+import {
+  EmbedBoardScreen,
+  EmbedLayout,
+  EmbedProjectScreen
+} from '@/ui/embed/Embed'
 import { AppShell } from '@/ui/shell/AppShell'
 import { CrashScreen, NotFoundScreen } from '@/ui/shell/Problems'
 
@@ -39,7 +43,7 @@ export const routes: RouteObject[] = [
         errorElement: <CrashScreen />,
         children: [
           { index: true, element: <EmbedProjectScreen /> },
-          { path: 'boards/:boardId', element: <BoardScreen /> }
+          { path: 'boards/:boardId', element: <EmbedBoardScreen /> }
         ]
       }
     ]

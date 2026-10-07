@@ -42,7 +42,7 @@ import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
-export function BoardScreen(): ReactElement {
+export function BoardScreen({ back = true }: { back?: boolean }): ReactElement {
   const { t } = useI18n()
   const { boardId = '' } = useParams()
   const board = useBoard(boardId)
@@ -65,7 +65,7 @@ export function BoardScreen(): ReactElement {
         </Typography>
       )}
       {board.isPending && <ColumnsSkeleton label={t('app.loading')} />}
-      {board.data && <BoardColumns board={board.data} />}
+      {board.data && <BoardColumns board={board.data} back={back} />}
     </main>
   )
 }
@@ -88,7 +88,13 @@ function BackLink(): ReactElement {
   )
 }
 
-function BoardColumns({ board }: { board: Board }): ReactElement {
+function BoardColumns({
+  board,
+  back
+}: {
+  board: Board
+  back: boolean
+}): ReactElement {
   const { t } = useI18n()
   const move = useMoveTask(board.id)
   const editable = board.role !== 'viewer' && !board.archived
@@ -160,7 +166,7 @@ function BoardColumns({ board }: { board: Board }): ReactElement {
   return (
     <>
       <PageHeader
-        back={<BackLink />}
+        back={back && <BackLink />}
         title={
           <Typography variant="h3" component="h1" noWrap>
             {board.name}

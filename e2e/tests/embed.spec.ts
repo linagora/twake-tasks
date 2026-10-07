@@ -34,7 +34,7 @@ function twakeSpace(projectId: string, port: number) {
   )
 }
 
-test("shows a space's boards inside TwakeSpace, signed in without a prompt", async ({
+test("opens a space's only board inside TwakeSpace, signed in without a prompt", async ({
   page
 }) => {
   const { projectId, name } = await aliceSpace(page)
@@ -44,11 +44,10 @@ test("shows a space's boards inside TwakeSpace, signed in without a prompt", asy
     await page.goto(host.url)
     const frame = page.frameLocator('iframe[title="Tasks"]')
 
-    await frame.getByRole('link', { name }).click()
-
+    await expect(frame.getByRole('heading', { name })).toBeVisible()
     await expect(
       frame.getByRole('link', { name: 'Back to boards' })
-    ).toBeVisible()
+    ).toHaveCount(0)
     await expect(frame.getByRole('navigation')).toHaveCount(0)
     await expect
       .poll(() =>
@@ -77,7 +76,7 @@ test('signs in through a popup when the SSO refuses to be framed by TwakeSpace',
     await frame.getByRole('button', { name: 'Back to sign-in' }).click()
     await (await popup).waitForEvent('close')
 
-    await expect(frame.getByRole('link', { name })).toBeVisible()
+    await expect(frame.getByRole('heading', { name })).toBeVisible()
   } finally {
     host.close()
   }
@@ -133,10 +132,7 @@ test("opens a task's panel on the page of TwakeSpace, not in its frame", async (
     const overlay = page.frameLocator(`iframe[name="${FRAME}:overlay"]`)
     const clipPath = () =>
       page.locator('#overlay').evaluate(element => element.style.clipPath)
-    await frame.getByRole('link', { name }).click()
-    await expect(
-      frame.getByRole('link', { name: 'Back to boards' })
-    ).toBeVisible()
+    await expect(frame.getByRole('heading', { name })).toBeVisible()
     await frame
       .getByRole('button', { name: /^Add a task to / })
       .first()
