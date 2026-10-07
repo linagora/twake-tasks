@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { act, fireEvent, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fakeSession } from '@/testing/fakeSession'
+import { fakeSession, fakeUser } from '@/testing/fakeSession'
 import { renderWithProviders } from '@/testing/renderWithProviders'
 
 const page = new DOMParser().parseFromString(
@@ -163,10 +163,7 @@ describe('SessionGate', () => {
 
   it('shows the app when signing in again succeeds without leaving the page', async () => {
     const session = failing()
-    vi.mocked(session.signIn).mockResolvedValue({
-      name: 'Alice Martin',
-      email: 'alice@example.com'
-    })
+    vi.mocked(session.signIn).mockResolvedValue(fakeUser())
     renderWithProviders(<p>app</p>, { session })
 
     fireEvent.click(

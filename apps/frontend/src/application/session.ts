@@ -1,6 +1,10 @@
 export interface User {
   name: string | null
   email: string | null
+  /** The address of the person's Twake Workplace instance, like `alice.twake.app`. */
+  workplaceFqdn: string | null
+  /** OIDC id token, exchanged on the platform for a token of its own. */
+  idToken: string | null
 }
 
 export interface SessionService {

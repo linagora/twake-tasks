@@ -10,6 +10,7 @@ import {
 } from '@linagora/twake-oidc'
 
 import { signInSilently } from '@/adapters/oidc/ssoFrame'
+import { userOf } from '@/adapters/oidc/user'
 import type { SessionService } from '@/application/session'
 
 export type SsoSettings = Pick<
@@ -64,10 +65,7 @@ export function oidcSession(config: AuthConfig): SessionService {
         const login = await completeLogin()
         if (login) {
           window.history.replaceState(null, '', login.returnTo)
-          return {
-            name: login.userinfo.name ?? null,
-            email: login.userinfo.email ?? null
-          }
+          return userOf(login.userinfo, login.tokenSet.id_token)
         }
       } else {
         try {

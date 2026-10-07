@@ -1,3 +1,4 @@
+import { createSdk, type Sdk } from '@linagora/twake-sdk'
 import {
   createContext,
   use,
@@ -15,6 +16,8 @@ import { SignInScreen } from '@/ui/session/SignInScreen'
 
 export interface Session {
   user: User
+  /** Client of the user's platform, null when the SSO did not name it */
+  sdk: Sdk | null
   signOut: () => Promise<void>
 }
 
@@ -29,7 +32,7 @@ export function useSession(): Session {
 type GateState =
   | { status: 'pending' }
   | { status: 'failed' }
-  | { status: 'signedIn'; user: User }
+  | { status: 'signedIn'; user: User; sdk: Sdk | null }
 
 type Wait = 'short' | 'slow' | 'timeout'
 
@@ -47,6 +50,16 @@ const sinceNavigation = (): number =>
   performance.getEntriesByType('navigation').length > 0
     ? performance.now()
     : 0
+
+// The platform exchanges the id token for a token of its own, once per sign-in
+const signedInWith = (user: User): GateState => {
+  const { workplaceFqdn, idToken } = user
+  const sdk =
+    workplaceFqdn && idToken
+      ? createSdk({ platformURL: `https://${workplaceFqdn}`, idToken })
+      : null
+  return { status: 'signedIn', user, sdk }
+}
 
 export interface SessionGateProps {
   session: SessionService
@@ -70,7 +83,7 @@ export function SessionGate({
     started.current = true
     session.start().then(
       user => {
-        if (user) setState({ status: 'signedIn', user })
+        if (user) setState(signedInWith(user))
       },
       (error: unknown) => {
         console.error('Sign-in failed:', error)
@@ -115,7 +128,7 @@ export function SessionGate({
   const signIn = () => {
     session.signIn().then(
       user => {
-        if (user) setState({ status: 'signedIn', user })
+        if (user) setState(signedInWith(user))
       },
       (error: unknown) => {
         console.error('Sign-in failed:', error)
@@ -135,7 +148,9 @@ export function SessionGate({
   return (
     <>
       {state.status === 'signedIn' && (
-        <SessionContext value={{ user: state.user, signOut: session.signOut }}>
+        <SessionContext
+          value={{ user: state.user, sdk: state.sdk, signOut: session.signOut }}
+        >
           {children}
         </SessionContext>
       )}

@@ -28,10 +28,19 @@ vi.mock('openid-client', () => ({
       new URL(`https://sso.test/authorize?${new URLSearchParams(params)}`)
   ),
   authorizationCodeGrant: vi.fn(() =>
-    Promise.resolve({ access_token: 'at', claims: () => ({ sub: 'alice' }) })
+    Promise.resolve({
+      access_token: 'at',
+      id_token: 'id-token',
+      claims: () => ({ sub: 'alice' })
+    })
   ),
   fetchUserInfo: vi.fn(() =>
-    Promise.resolve({ sub: 'alice', name: 'Alice', email: 'alice@test' })
+    Promise.resolve({
+      sub: 'alice',
+      name: 'Alice',
+      email: 'alice@test',
+      workplaceFqdn: 'alice.twake.test'
+    })
   )
 }))
 
@@ -46,7 +55,12 @@ const config = readSsoConfig(
   'http://localhost:3000'
 )
 
-const ALICE = { name: 'Alice', email: 'alice@test' }
+const ALICE = {
+  name: 'Alice',
+  email: 'alice@test',
+  workplaceFqdn: 'alice.twake.test',
+  idToken: 'id-token'
+}
 
 const silentFrame = () =>
   document.querySelector<HTMLIFrameElement>(`iframe[name="${SILENT_NAME}"]`)
