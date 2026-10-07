@@ -2,9 +2,15 @@ import { vi } from 'vitest'
 
 import type { SessionService, User } from '@/application/session'
 
+export const fakeUser = (idToken: string | null = null): User => ({
+  name: 'Alice Martin',
+  email: 'alice@example.com',
+  workplaceFqdn: 'alice.twake.test',
+  idToken
+})
+
 export function fakeSession(
-  start: () => Promise<User | null> = () =>
-    Promise.resolve({ name: 'Alice Martin', email: 'alice@example.com' })
+  start: () => Promise<User | null> = () => Promise.resolve(fakeUser())
 ): SessionService & { endElsewhere: () => void } {
   let onEnded: (() => void) | null = null
   return {

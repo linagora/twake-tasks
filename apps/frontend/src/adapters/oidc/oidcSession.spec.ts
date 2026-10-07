@@ -28,10 +28,22 @@ const settings = {
 
 const config = readSsoConfig(settings, 'http://localhost:3000')
 
-const ALICE = { name: 'Alice Martin', email: 'alice@test' }
+const ALICE = {
+  name: 'Alice Martin',
+  email: 'alice@test',
+  workplaceFqdn: null,
+  idToken: null
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+// Enough of a token set for the cast of the login result to type check
+const tokenSet = (idToken: string): Partial<LoginResult['tokenSet']> => ({
+  access_token: 'access-token',
+  token_type: 'bearer',
+  id_token: idToken
 })
 
 describe('readSsoConfig', () => {
@@ -46,13 +58,23 @@ describe('oidcSession', () => {
   it('finishes the sign-in on the redirect URI and goes back', async () => {
     window.history.replaceState(null, '', '/auth/callback?code=c&state=s')
     vi.mocked(completeLogin).mockResolvedValue({
-      userinfo: { sub: 'alice', name: 'Alice Martin' },
+      userinfo: {
+        sub: 'alice',
+        name: 'Alice Martin',
+        workplaceFqdn: 'alice.twake.test'
+      },
+      tokenSet: tokenSet('id-token'),
       returnTo: '/tasks?tab=2'
     } as LoginResult)
 
     const user = await oidcSession(config).start()
 
-    expect(user).toEqual({ name: 'Alice Martin', email: null })
+    expect(user).toEqual({
+      name: 'Alice Martin',
+      email: null,
+      workplaceFqdn: 'alice.twake.test',
+      idToken: 'id-token'
+    })
     expect(window.location.pathname + window.location.search).toBe(
       '/tasks?tab=2'
     )

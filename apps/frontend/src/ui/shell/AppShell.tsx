@@ -50,6 +50,7 @@ import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoards, useUnreadNotifications } from '@/ui/boards/queries'
+import { PlatformBar } from '@/ui/shell/PlatformBar'
 import { QuickAdd } from '@/ui/shell/QuickAdd'
 import { SidebarLink } from '@/ui/shell/SidebarLink'
 import { ShortcutsHelp, useShortcuts } from '@/ui/shell/Shortcuts'
@@ -117,8 +118,56 @@ function Header({
   onQuickAdd: () => void
 }): ReactElement {
   const { t } = useI18n()
+  const { sdk } = useSession()
   const theme = useTheme()
   const compact = useMediaQuery(theme.breakpoints.down('md'))
+  const phone = useMediaQuery(theme.breakpoints.down('lg'))
+
+  const search = (
+    <TopBarSearch>
+      <SearchField inputRef={searchRef} />
+    </TopBarSearch>
+  )
+  const quickAdd = compact ? (
+    <IconButton
+      color="primary"
+      aria-label={t('quickAdd.title')}
+      onClick={onQuickAdd}
+    >
+      <Icon icon={Plus} />
+    </IconButton>
+  ) : (
+    <Button startIcon={<Icon icon={Plus} />} onClick={onQuickAdd}>
+      {t('quickAdd.title')}
+    </Button>
+  )
+
+  // The platform bar holds the account; the phone bottom bar has no room for
+  // the filters, which the account menu offered.
+  if (sdk) {
+    return (
+      <PlatformBar
+        sdk={sdk}
+        slots={{
+          search: <div className="u-mh-1">{search}</div>,
+          right: (
+            <>
+              {phone && (
+                <IconButton
+                  component={RouterLink}
+                  to="/filters"
+                  aria-label={t('filters.title')}
+                >
+                  <Icon icon={Filter} />
+                </IconButton>
+              )}
+              {quickAdd}
+            </>
+          )
+        }}
+      />
+    )
+  }
 
   return (
     <TopBar>
@@ -130,23 +179,9 @@ function Header({
       >
         <BrandMark name={t('app.name')} />
       </Link>
-      <TopBarSearch>
-        <SearchField inputRef={searchRef} />
-      </TopBarSearch>
+      {search}
       <TopBarSpacer />
-      {compact ? (
-        <IconButton
-          color="primary"
-          aria-label={t('quickAdd.title')}
-          onClick={onQuickAdd}
-        >
-          <Icon icon={Plus} />
-        </IconButton>
-      ) : (
-        <Button startIcon={<Icon icon={Plus} />} onClick={onQuickAdd}>
-          {t('quickAdd.title')}
-        </Button>
-      )}
+      {quickAdd}
       <AccountMenu />
     </TopBar>
   )

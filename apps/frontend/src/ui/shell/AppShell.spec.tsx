@@ -1,13 +1,56 @@
+import type { TwakeBarProps } from '@linagora/twake-bar'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import type { ReactElement, ReactNode } from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
-import { fakeSession } from '@/testing/fakeSession'
+import { fakeSession, fakeUser } from '@/testing/fakeSession'
 import { renderRoute } from '@/testing/renderWithProviders'
 
+const createSdk = vi.hoisted(() => vi.fn(() => ({ status: 'ready' })))
+vi.mock('@linagora/twake-sdk', () => ({ createSdk }))
+
+// The bar is tested in its own package: only its wiring matters here
+vi.mock('@linagora/twake-bar', () => ({
+  SdkProvider: ({ children }: { children: ReactNode }): ReactNode => children,
+  TwakeBar: ({ app, slots, onLogOut }: TwakeBarProps): ReactElement => (
+    <header role="banner">
+      {app.name}
+      {slots?.search}
+      {slots?.right}
+      <button onClick={onLogOut}>Log out</button>
+    </header>
+  )
+}))
+
 describe('AppShell', () => {
+  beforeEach(() => {
+    createSdk.mockClear()
+  })
+
   it.each(['/', '/boards/board-1'])(
-    'names the signed-in user and signs out from the account menu on %s',
+    'shows the platform bar, with the search and quick add, and signs out from it on %s',
+    async path => {
+      const session = fakeSession(() => Promise.resolve(fakeUser('id-token')))
+      const board = { ...aBoard(), id: 'board-1' }
+      renderRoute(path, { session, boardsApi: fakeBoardsApi([board]) })
+
+      const bar = within(await screen.findByRole('banner'))
+      expect(bar.getByText('Twake Project')).toBeInTheDocument()
+      expect(bar.getByRole('searchbox', { name: 'Search' })).toBeInTheDocument()
+      expect(bar.getByRole('button', { name: 'Quick add' })).toBeInTheDocument()
+      expect(createSdk).toHaveBeenCalledWith({
+        platformURL: 'https://alice.twake.test',
+        idToken: 'id-token'
+      })
+      fireEvent.click(bar.getByRole('button', { name: 'Log out' }))
+
+      expect(session.signOut).toHaveBeenCalled()
+    }
+  )
+
+  it.each(['/', '/boards/board-1'])(
+    'keeps its own header, with the account menu, when the SSO did not name the platform, on %s',
     async path => {
       const session = fakeSession()
       const board = { ...aBoard(), id: 'board-1' }
@@ -18,6 +61,7 @@ describe('AppShell', () => {
       fireEvent.click(await screen.findByRole('menuitem', { name: 'Sign out' }))
 
       expect(session.signOut).toHaveBeenCalled()
+      expect(createSdk).not.toHaveBeenCalled()
     }
   )
 

@@ -1,6 +1,7 @@
 import { setTokenSet, type AuthConfig } from '@linagora/twake-oidc'
 import * as client from 'openid-client'
 
+import { userOf } from '@/adapters/oidc/user'
 import type { User } from '@/application/session'
 
 export const SILENT_NAME = 'twake-tasks-silent-sign-in'
@@ -92,7 +93,7 @@ export async function signInAt(
     sub
   )
   setTokenSet(tokens)
-  return { name: userinfo.name ?? null, email: userinfo.email ?? null }
+  return userOf(userinfo, tokens.id_token)
 }
 
 export async function signInSilently(config: AuthConfig): Promise<User> {
