@@ -119,4 +119,29 @@ describe('FollowSettings', () => {
       await screen.findByText(`Signing you in… ${browserZone}`)
     ).toBeInTheDocument()
   })
+
+  it('reads the settings again when the stream answers after a failed read', async () => {
+    const boardsApi = fakeBoardsApi()
+    boardsApi.settings = vi
+      .fn<typeof boardsApi.settings>()
+      .mockRejectedValueOnce(new Error('down'))
+      .mockResolvedValue({ ...NONE, version: 1, language: 'fr' })
+    let push: (version: number) => void = () => undefined
+    boardsApi.watchSettings = vi.fn(onVersion => {
+      push = onVersion
+      return () => undefined
+    })
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    renderWithProviders(
+      <FollowSettings>
+        <Probe />
+      </FollowSettings>,
+      { boardsApi }
+    )
+    await screen.findByText(`Signing you in… ${browserZone}`)
+
+    push(1)
+
+    expect(await screen.findByText(/^Connexion en cours…/)).toBeInTheDocument()
+  })
 })

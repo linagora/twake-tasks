@@ -19,8 +19,10 @@ export async function listenToChanges(
 ): Promise<Changes> {
   const listeners = new Map<string, Set<Listener>>()
   const subscription = await client.listen(channel, payload => {
-    const [key = '', version] = payload.split(' ')
-    for (const listener of listeners.get(key) ?? []) listener(Number(version))
+    const space = payload.lastIndexOf(' ')
+    const key = payload.slice(0, space)
+    const version = Number(payload.slice(space + 1))
+    for (const listener of listeners.get(key) ?? []) listener(version)
   })
   return {
     subscribe(key, listener) {
@@ -38,8 +40,8 @@ export async function listenToChanges(
 export type StreamVersions = (
   request: FastifyRequest,
   reply: FastifyReply,
-  stream: { changes: Changes; key: string; version: number }
-) => void
+  stream: { changes: Changes; key: string; current: () => Promise<number> }
+) => Promise<void>
 
 /** Streams a version as server-sent events: the current one, then each new one. */
 export function versionStreams(app: HttpServer): StreamVersions {
@@ -50,7 +52,7 @@ export function versionStreams(app: HttpServer): StreamVersions {
     done()
   })
 
-  return (request, reply, { changes, key, version }) => {
+  return async (request, reply, { changes, key, current }) => {
     reply.hijack()
     const stream = reply.raw
     stream.writeHead(200, {
@@ -63,8 +65,8 @@ export function versionStreams(app: HttpServer): StreamVersions {
         `id: ${String(version)}\ndata: ${JSON.stringify({ version })}\n\n`
       )
     }
+    // Subscribed before reading, so a change committed in between still arrives.
     const unsubscribe = changes.subscribe(key, send)
-    send(version)
     const heartbeat = setInterval(() => stream.write(':\n\n'), HEARTBEAT_MS)
     const end = () => stream.end()
     open.add(end)
@@ -73,5 +75,11 @@ export function versionStreams(app: HttpServer): StreamVersions {
       unsubscribe()
       open.delete(end)
     })
+    try {
+      send(await current())
+    } catch (error) {
+      request.log.error({ err: error }, 'stream version unreadable')
+      end()
+    }
   }
 }

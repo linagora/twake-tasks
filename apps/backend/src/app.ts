@@ -1,5 +1,5 @@
 import type { Logger } from 'pino'
-import { versionStreams } from './infra/changes.ts'
+import { versionStreams, type Changes } from './infra/changes.ts'
 import type { Db } from './infra/db.ts'
 import { createServer } from './infra/http.ts'
 import {
@@ -8,16 +8,15 @@ import {
   type Authenticate,
   type IdentityProvider
 } from './modules/auth/index.ts'
-import { registerLive, type BoardChanges } from './modules/boards/live.ts'
+import { registerLive } from './modules/boards/live.ts'
 import { registerBoards } from './modules/boards/routes.ts'
-import type { SettingsChanges } from './modules/settings/live.ts'
 import { registerSettings } from './modules/settings/routes.ts'
 
 export async function buildApp(deps: {
   logger: Logger
   db: Db
-  boardChanges: BoardChanges
-  settingsChanges: SettingsChanges
+  boardChanges: Changes
+  settingsChanges: Changes
   provider: IdentityProvider
   authenticate: Authenticate
   isReady: () => Promise<boolean>

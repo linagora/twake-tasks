@@ -44,7 +44,7 @@ describe('GET /settings', () => {
 
   it('follows the system theme for someone who never chose one', async () => {
     expect(await settingsOf(aUser())).toEqual({
-      version: 0,
+      version: -1,
       language: null,
       timezone: null,
       theme: 'auto',

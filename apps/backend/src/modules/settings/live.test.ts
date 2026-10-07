@@ -46,13 +46,13 @@ describe('live settings updates', () => {
     expect(second?.id).toBe('3')
   })
 
-  it('starts at zero for someone with no settings yet', async () => {
+  it('starts below any version for someone with no settings yet', async () => {
     const stream = openStream(
       `${baseUrl}/api/settings/events`,
       api.tokenOf(aUser())
     )
 
-    expect((await stream.messages.next()).value?.id).toBe('0')
+    expect((await stream.messages.next()).value?.id).toBe('-1')
     stream.close()
   })
 })

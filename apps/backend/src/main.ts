@@ -4,6 +4,7 @@ import { loadConfig } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
 import { createRelay } from './events/outbox.ts'
 import { createMessageHandler } from './events/router.ts'
+import { listenToChanges } from './infra/changes.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
@@ -15,7 +16,7 @@ import {
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { accountRoutes } from './modules/boards/accounts.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
-import { listenToBoards } from './modules/boards/live.ts'
+import { BOARD_CHANNEL } from './modules/boards/live.ts'
 import {
   emailNotification,
   NOTIFICATION_EMAIL_JOB
@@ -29,7 +30,7 @@ import {
 } from './modules/spaces/events.ts'
 import { planReconcile, reconcileJobs } from './modules/spaces/reconcile.ts'
 import { settingsRoutes } from './modules/settings/events.ts'
-import { listenToSettings } from './modules/settings/live.ts'
+import { SETTINGS_CHANNEL } from './modules/settings/routes.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
@@ -41,8 +42,8 @@ await assertRowLevelSecurity(sql)
 await migrateDb(db)
 
 let accepting = false
-const boardChanges = await listenToBoards(sql)
-const settingsChanges = await listenToSettings(sql)
+const boardChanges = await listenToChanges(sql, BOARD_CHANNEL)
+const settingsChanges = await listenToChanges(sql, SETTINGS_CHANNEL)
 const server = await buildApp({
   logger,
   db,

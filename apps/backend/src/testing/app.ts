@@ -3,13 +3,14 @@ import { pino } from 'pino'
 import { inject } from 'vitest'
 import { buildApp } from '../app.ts'
 import { eq } from 'drizzle-orm'
+import { listenToChanges } from '../infra/changes.ts'
 import { createDb, inTenant, type Db } from '../infra/db.ts'
 import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
 import type { Role } from '../modules/boards/access.ts'
-import { listenToBoards } from '../modules/boards/live.ts'
+import { BOARD_CHANNEL } from '../modules/boards/live.ts'
 import { boards, projectMembers, projects } from '../modules/boards/schema.ts'
-import { listenToSettings } from '../modules/settings/live.ts'
+import { SETTINGS_CHANNEL } from '../modules/settings/routes.ts'
 
 export interface TestUser {
   userId: string
@@ -112,8 +113,8 @@ export async function aBoardIn(
 
 export async function startApp() {
   const { sql, db } = createDb(inject('databaseUrl'))
-  const boardChanges = await listenToBoards(sql)
-  const settingsChanges = await listenToSettings(sql)
+  const boardChanges = await listenToChanges(sql, BOARD_CHANNEL)
+  const settingsChanges = await listenToChanges(sql, SETTINGS_CHANNEL)
   const app = await buildApp({
     logger: pino({ level: 'silent' }),
     db,

@@ -1,17 +1,22 @@
 import { eq } from 'drizzle-orm'
-import type { StreamVersions } from '../../infra/changes.ts'
+import type { Changes, StreamVersions } from '../../infra/changes.ts'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
-import type { SettingsChanges } from './live.ts'
 import { userSettings } from './schema.ts'
+
+// Sent by the user_settings_notify_change trigger.
+export const SETTINGS_CHANNEL = 'settings_changes'
+
+// Below any version an event carries, so the first settings kept are newer.
+const NEVER_KEPT = -1
 
 export function registerSettings(
   app: HttpServer,
   deps: {
     db: Db
     requireIdentity: RequireIdentity
-    changes: SettingsChanges
+    changes: Changes
     streamVersions: StreamVersions
   }
 ) {
@@ -22,14 +27,16 @@ export function registerSettings(
       const identity = request.identity
       if (!identity) return reply.code(401).send()
       const email = identity.email.toLowerCase()
-      const [kept] = await deps.db
-        .select({ version: userSettings.version })
-        .from(userSettings)
-        .where(eq(userSettings.email, email))
-      deps.streamVersions(request, reply, {
+      await deps.streamVersions(request, reply, {
         changes: deps.changes,
         key: email,
-        version: kept?.version ?? 0
+        current: async () => {
+          const [kept] = await deps.db
+            .select({ version: userSettings.version })
+            .from(userSettings)
+            .where(eq(userSettings.email, email))
+          return kept?.version ?? NEVER_KEPT
+        }
       })
     }
   )
@@ -52,7 +59,7 @@ export function registerSettings(
         .from(userSettings)
         .where(eq(userSettings.email, identity.email.toLowerCase()))
       return {
-        version: kept?.version ?? 0,
+        version: kept?.version ?? NEVER_KEPT,
         language: kept?.language ?? null,
         timezone: kept?.timezone ?? null,
         theme: kept?.theme ?? 'auto',

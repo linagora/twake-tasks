@@ -26,11 +26,13 @@ export function FollowSettings({
   const api = useBoardsApi()
   const queryClient = useQueryClient()
 
+  // Without settings held, the first read failed or is still under way and may
+  // predate this version: read again.
   useEffect(
     () =>
       api.watchSettings(version => {
         const shown = queryClient.getQueryData<UserSettings>(settingsKey)
-        if (shown && version > shown.version) {
+        if (!shown || version > shown.version) {
           void queryClient.invalidateQueries({ queryKey: settingsKey })
         }
       }),
