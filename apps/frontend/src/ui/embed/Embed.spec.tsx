@@ -12,7 +12,11 @@ import {
 import type { Board } from '@/domain/board'
 import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderBrowserRoute, renderRoute } from '@/testing/renderWithProviders'
-import { connectTwakeSpace, disconnectTwakeSpace } from '@/ui/embed/twakeSpace'
+import {
+  connectTwakeSpace,
+  disconnectTwakeSpace,
+  getTwakeSpace
+} from '@/ui/embed/twakeSpace'
 
 const SPACE = 'https://space.example.com'
 const roadmap = aProject({ name: 'Roadmap', managed: true })
@@ -23,12 +27,7 @@ function projectBoardsApi(boards: Board[]) {
   return boardsApi
 }
 
-beforeEach(() => {
-  window.TWAKE_SPACE_ORIGIN = `${SPACE} http://localhost:3000`
-})
-
 afterEach(() => {
-  delete window.TWAKE_SPACE_ORIGIN
   vi.restoreAllMocks()
 })
 
@@ -124,7 +123,6 @@ describe('the embedded view', () => {
 })
 
 describe('the history of the embedded view', () => {
-  const OTHER = 'http://localhost:3000'
   const board = aBoard({ name: 'Roadmap', project: roadmap })
   const other = aProject({ name: 'Other', managed: true })
   const otherBoard = aBoard({ name: 'Other board', project: other })
@@ -148,7 +146,11 @@ describe('the history of the embedded view', () => {
     })
   }
 
-  function renderEmbed(path: string) {
+  const greet = (origin = SPACE) => {
+    tell({ type: 'twake-embed:hello' }, origin)
+  }
+
+  function renderEmbed(path: string, { greeted = true } = {}) {
     window.history.replaceState(null, '', path)
     connectTwakeSpace(space)
     const boardsApi = projectBoardsApi([
@@ -157,7 +159,9 @@ describe('the history of the embedded view', () => {
       otherBoard
     ])
     boardsApi.projects.push({ ...other, role: 'editor' })
-    return renderBrowserRoute({ boardsApi }).router
+    const { router } = renderBrowserRoute({ boardsApi })
+    if (greeted) greet()
+    return router
   }
 
   beforeEach(() => {
@@ -175,7 +179,17 @@ describe('the history of the embedded view', () => {
     window.history.replaceState(null, '', '/')
   })
 
-  it('reports the first path as a replace', async () => {
+  it('posts nothing until TwakeSpace greets the frame', async () => {
+    renderEmbed(`/embed/projects/${roadmap.id}/boards/${board.id}`, {
+      greeted: false
+    })
+    await screen.findByRole('heading', { name: 'Roadmap' })
+
+    expect(post).not.toHaveBeenCalled()
+    expect(getTwakeSpace()?.hostOrigin()).toBeNull()
+  })
+
+  it('reports the first path as a replace, to the origin that greeted', async () => {
     renderEmbed(`/embed/projects/${roadmap.id}/boards/${board.id}?task=DES-1`)
 
     await waitFor(() => {
@@ -189,9 +203,9 @@ describe('the history of the embedded view', () => {
         SPACE
       )
     })
-    expect(post).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'twake-embed:path' }),
-      OTHER
+    expect(getTwakeSpace()?.hostOrigin()).toBe(SPACE)
+    expect(new Set(post.mock.calls.map(([, target]) => target))).toEqual(
+      new Set([SPACE])
     )
   })
 
@@ -267,14 +281,10 @@ describe('the history of the embedded view', () => {
     expect(router.state.location.pathname).toBe(`/embed/projects/${roadmap.id}`)
   })
 
-  it('ignores other origins and windows, and paths that leave the embed route', async () => {
+  it('ignores other windows, and paths that leave the embed route', async () => {
     const router = renderEmbed(`/embed/projects/${roadmap.id}`)
     await screen.findByRole('link', { name: 'Roadmap' })
 
-    tell(
-      { type: 'twake-embed:load', resourceId: other.id, path: '' },
-      'https://evil.example.com'
-    )
     for (const path of ['//evil.test', '/../../boards', 'boards', 3]) {
       tell({ type: 'twake-embed:load', resourceId: roadmap.id, path })
     }

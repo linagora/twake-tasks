@@ -10,6 +10,8 @@ const UNTRUSTED_PORT = 3302
 test.describe.configure({ mode: 'default' })
 
 // A stand-in for TwakeSpace that frames the embed and records what it says.
+// It greets the frame on each of its loads, as TwakeSpace does: the app posts
+// nothing before.
 // A real server: Chrome keeps pages it did not load off the network from
 // framing localhost.
 function twakeSpace(projectId: string, port: number) {
@@ -18,6 +20,9 @@ function twakeSpace(projectId: string, port: number) {
     response.end(`<!doctype html>
       <script>
         window.paths = []
+        addEventListener('load', event => {
+          if (event.target.tagName === 'IFRAME') event.target.contentWindow.postMessage({ type: 'twake-embed:hello' }, 'http://localhost:3300')
+        }, true)
         addEventListener('message', event => {
           if (event.origin === 'http://localhost:3300' && event.data.type === 'twake-embed:path') window.paths.push(event.data.path)
         })
@@ -86,7 +91,7 @@ const FRAME = 'twake-embed-tasks'
 
 // A stand-in for TwakeSpace that frames the embed as it does: a named frame,
 // and over the whole page an overlay frame on the app's origin, clipped to
-// the region the app reports.
+// the region the app reports. It greets the tasks frame on each of its loads.
 function twakeSpaceWithOverlay(projectId: string) {
   const server = createServer((_request, response) => {
     response.setHeader('content-type', 'text/html')
@@ -101,6 +106,9 @@ function twakeSpaceWithOverlay(projectId: string) {
       <script>
         const tasks = document.getElementById('tasks')
         const overlay = document.getElementById('overlay')
+        tasks.addEventListener('load', () => {
+          tasks.contentWindow.postMessage({ type: 'twake-embed:hello' }, 'http://localhost:3300')
+        })
         addEventListener('message', event => {
           if (event.origin !== 'http://localhost:3300' || event.source !== tasks.contentWindow) return
           if (event.data?.type !== 'twake-embed:overlay-region') return
