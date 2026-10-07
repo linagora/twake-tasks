@@ -1,11 +1,4 @@
-import {
-  alpha,
-  Box,
-  Button,
-  Skeleton,
-  styled,
-  Typography
-} from '@linagora/twake-mui'
+import { Box, Button, Skeleton, styled, Typography } from '@linagora/twake-mui'
 import {
   useId,
   type HTMLAttributes,
@@ -118,7 +111,7 @@ export function Column({
         p: 1.5,
         borderRadius: 2,
         bgcolor: highlighted
-          ? alpha(theme.palette.primary.main, 0.08)
+          ? theme.alpha(theme.vars.palette.primary.main, 0.08)
           : 'action.hover',
         transition: 'background-color 120ms'
       })}
@@ -140,14 +133,14 @@ export function Column({
 export const ColumnAddButton = styled(Button)(({ theme }) => ({
   justifyContent: 'flex-start',
   fontSize: theme.typography.body2.fontSize,
-  color: theme.palette.text.secondary,
-  '&:hover': { color: theme.palette.text.primary }
+  color: theme.vars.palette.text.secondary,
+  '&:hover': { color: theme.vars.palette.text.primary }
 }))
 
 export const NewColumnButton = styled(ColumnAddButton)(({ theme }) => ({
   flex: '0 0 12rem',
   height: 48,
-  border: `1px dashed ${theme.palette.divider}`,
+  border: `1px dashed ${theme.vars.palette.divider}`,
   borderRadius: theme.spacing(1)
 }))
 
@@ -192,7 +185,7 @@ export function Card({
         transition: 'box-shadow 120ms, border-color 120ms',
         '&:hover': { boxShadow: 2, borderColor: 'transparent' },
         '&:focus-visible': {
-          outline: `2px solid ${theme.palette.primary.main}`,
+          outline: `2px solid ${theme.vars.palette.primary.main}`,
           outlineOffset: 2
         },
         ...(drag === 'placeholder' && {
@@ -301,12 +294,12 @@ export function MetaChip({
         whiteSpace: 'nowrap',
         color:
           tone === 'neutral'
-            ? theme.palette.text.secondary
-            : theme.palette[tone].main,
+            ? theme.vars.palette.text.secondary
+            : theme.vars.palette[tone].main,
         bgcolor:
           tone === 'neutral'
             ? 'transparent'
-            : alpha(theme.palette[tone].main, 0.12),
+            : theme.alpha(theme.vars.palette[tone].main, 0.12),
         '& svg': { width: 12, height: 12, flexShrink: 0 }
       })}
     >
@@ -349,14 +342,12 @@ export function LabelChip({
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
-        color:
-          theme.palette.mode === 'dark'
-            ? `hsl(${String(hue)} 70% 78%)`
-            : `hsl(${String(hue)} 60% 32%)`,
-        bgcolor:
-          theme.palette.mode === 'dark'
-            ? `hsl(${String(hue)} 40% 24%)`
-            : `hsl(${String(hue)} 75% 93%)`
+        color: `hsl(${String(hue)} 60% 32%)`,
+        bgcolor: `hsl(${String(hue)} 75% 93%)`,
+        ...theme.applyStyles('dark', {
+          color: `hsl(${String(hue)} 70% 78%)`,
+          bgcolor: `hsl(${String(hue)} 40% 24%)`
+        })
       })}
     >
       <Highlight text={name} query={highlight} />

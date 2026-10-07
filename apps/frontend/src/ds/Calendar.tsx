@@ -1,6 +1,5 @@
 import { Bottom, Icon, Left, Right } from '@linagora/twake-icons'
 import {
-  alpha,
   Box,
   Button,
   ButtonBase,
@@ -252,12 +251,14 @@ export function CalendarChip({
         borderColor: done ? 'divider' : 'primary.main',
         bgcolor: done
           ? 'action.hover'
-          : alpha(theme.palette.primary.main, 0.08),
+          : theme.alpha(theme.vars.palette.primary.main, 0.08),
         color: done ? 'text.secondary' : 'text.primary',
         textDecoration: done ? 'line-through' : 'none',
         typography: 'caption',
         fontWeight: 500,
-        '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.16) }
+        '&:hover': {
+          bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.16)
+        }
       })}
     >
       <Box

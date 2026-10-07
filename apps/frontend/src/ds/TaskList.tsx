@@ -1,4 +1,4 @@
-import { alpha, Box, Typography } from '@linagora/twake-mui'
+import { Box, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
 export function TaskGroup({
@@ -107,7 +107,7 @@ export function TaskRow({
             borderRadius: '50%',
             color: unread ? 'primary.main' : 'text.secondary',
             bgcolor: unread
-              ? alpha(theme.palette.primary.main, 0.12)
+              ? theme.alpha(theme.vars.palette.primary.main, 0.12)
               : 'action.hover'
           })}
         >
