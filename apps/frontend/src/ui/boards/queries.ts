@@ -21,6 +21,7 @@ import type {
   NewTask,
   Notification,
   Project,
+  ProjectUnread,
   Reminder,
   SavedFilter,
   Sharing,
@@ -32,6 +33,8 @@ import { applyMove } from '@/application/moveTask'
 import { findBoard, quickAdd } from '@/application/quickAdd'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
+
+const POLL_MS = 60_000
 
 const boardsKey = ['boards'] as const
 const boardKey = (boardId: string) => ['boards', boardId] as const
@@ -154,11 +157,15 @@ export function useHiddenTasks(
   })
 }
 
-export function useProjects(): UseQueryResult<Project[]> {
+// `poll` follows the projects joined or left elsewhere.
+export function useProjects({
+  poll = false
+}: { poll?: boolean } = {}): UseQueryResult<Project[]> {
   const api = useBoardsApi()
   return useQuery({
     queryKey: ['projects'],
-    queryFn: () => api.listProjects()
+    queryFn: () => api.listProjects(),
+    refetchInterval: poll ? POLL_MS : false
   })
 }
 
@@ -400,6 +407,7 @@ export function useNotifications(): UseQueryResult<Notification[]> {
       if (notifications.some(notification => notification.readAt === null)) {
         await api.markNotificationsRead()
         queryClient.setQueryData(unreadKey, 0)
+        queryClient.setQueryData(unreadByProjectKey, [])
       }
       return notifications
     }
@@ -416,7 +424,18 @@ export function useUnreadNotifications(): UseQueryResult<number> {
       (await api.listNotifications()).filter(
         notification => notification.readAt === null
       ).length,
-    refetchInterval: 60_000
+    refetchInterval: POLL_MS
+  })
+}
+
+const unreadByProjectKey = ['unreadByProject'] as const
+
+export function useUnreadByProject(): UseQueryResult<ProjectUnread[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: unreadByProjectKey,
+    queryFn: () => api.unreadByProject(),
+    refetchInterval: POLL_MS
   })
 }
 

@@ -1,4 +1,4 @@
-import { embedRoute } from '@linagora/twake-embed'
+import { embedRoute, type TwakeSpaceConnection } from '@linagora/twake-embed'
 import { Link, Typography } from '@linagora/twake-mui'
 import { useEffect, type ReactElement } from 'react'
 import {
@@ -14,10 +14,17 @@ import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { useBoards, useProjects } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
+import { useReportBadges } from '@/ui/embed/badges'
 import { EMBED_PREFIX, getTwakeSpace } from '@/ui/embed/twakeSpace'
+
+function BadgeReporter({ space }: { space: TwakeSpaceConnection }): null {
+  useReportBadges(space)
+  return null
+}
 
 export function EmbedLayout(): ReactElement {
   const navigate = useNavigate()
+  const space = getTwakeSpace()
 
   useEffect(() => {
     const show = (resourceId: string, path: string): Promise<void> =>
@@ -27,7 +34,12 @@ export function EmbedLayout(): ReactElement {
     return getTwakeSpace()?.syncHistory({ onLoad: show, onNavigate: show })
   }, [navigate])
 
-  return <Outlet />
+  return (
+    <>
+      {space && <BadgeReporter space={space} />}
+      <Outlet />
+    </>
+  )
 }
 
 function useProjectBoards(projectId: string) {

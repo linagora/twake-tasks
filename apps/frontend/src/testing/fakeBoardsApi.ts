@@ -536,6 +536,17 @@ export function fakeBoardsApi(boards: Board[] = []) {
     listNotifications: vi.fn<BoardsApi['listNotifications']>(() =>
       Promise.resolve(structuredClone(notifications))
     ),
+    unreadByProject: vi.fn<BoardsApi['unreadByProject']>(() =>
+      Promise.resolve().then(() => {
+        const counts = new Map<string, number>()
+        for (const notification of notifications) {
+          if (notification.readAt !== null) continue
+          const { id } = find(notification.boardId).project
+          counts.set(id, (counts.get(id) ?? 0) + 1)
+        }
+        return [...counts].map(([projectId, count]) => ({ projectId, count }))
+      })
+    ),
     markNotificationsRead: vi.fn<BoardsApi['markNotificationsRead']>(() =>
       Promise.resolve().then(() => {
         for (const notification of notifications) {
