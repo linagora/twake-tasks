@@ -156,6 +156,13 @@ export const WideScreenNavItem = styled(NavItem)(({ theme }) => ({
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
 
+// twake-bar draws the app text logo 22px tall like the Twake wordmark, whose
+// box is all capitals. Ours also holds the j's dot and descender: scaled up
+// and moved down, its capitals and baseline meet the wordmark's.
+export const PlatformBarFrame = styled('div')({
+  '& img[src*="project-text"]': { height: 26, transform: 'translateY(3px)' }
+})
+
 // The main action above the nav, as wide as its entries. The sidebar is a
 // bottom bar on phones, which has no room for it.
 export const SidebarButton = styled(Button)(({ theme }) => ({
