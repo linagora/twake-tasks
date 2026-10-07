@@ -135,6 +135,91 @@ describe('following and notifications', () => {
     expect(notification?.readAt).not.toBeNull()
   })
 
+  describe('unread counts by project', () => {
+    const unread = async (user: TestUser) =>
+      (await api.as(user).get('/notifications/unread')).json<{
+        projects: { projectId: string; count: number }[]
+      }>().projects
+
+    async function projectOf(user: TestUser, boardId: string) {
+      const { boards } = (await api.as(user).get('/boards')).json<{
+        boards: { id: string; project: { id: string } }[]
+      }>()
+      const board = boards.find(candidate => candidate.id === boardId)
+      if (!board) throw new Error(`board ${boardId} is not listed`)
+      return board.project.id
+    }
+
+    async function aTask(user: TestUser, boardId: string, title: string) {
+      const task = (
+        await api
+          .as(user)
+          .post(`/boards/${boardId}/tasks`, { sectionId: null, title })
+      ).json<{ id: string }>()
+      return `/boards/${boardId}/tasks/${task.id}`
+    }
+
+    async function aSharedBoard(owner: TestUser, member: TestUser) {
+      const board = (
+        await api.as(owner).post('/boards', { name: 'Ops', keyPrefix: 'OPS' })
+      ).json<{ id: string }>()
+      await joinBoard(db, owner, board.id, member, 'editor')
+      return board.id
+    }
+
+    it('counts the unread notifications of each project in one row', async () => {
+      const { alice, bob, path } = await aTeam()
+      const designId = await projectOf(alice, path.split('/')[2] ?? '')
+      const opsBoard = await aSharedBoard(alice, bob)
+      const opsId = await projectOf(alice, opsBoard)
+      const alerts = await aTask(alice, opsBoard, 'Alerts')
+      const backups = await aTask(alice, opsBoard, 'Backups')
+
+      await api.as(bob).patch(path, { title: 'New logo' })
+      await api.as(bob).patch(alerts, { title: 'New alerts' })
+      await api.as(bob).patch(backups, { title: 'New backups' })
+
+      const rows = await unread(alice)
+      expect(rows).toHaveLength(2)
+      expect(rows).toEqual(
+        expect.arrayContaining([
+          { projectId: designId, count: 1 },
+          { projectId: opsId, count: 2 }
+        ])
+      )
+    })
+
+    it('counts past the 50 notifications of the list', async () => {
+      const { alice, bob, path } = await aTeam()
+      const boardId = path.split('/')[2] ?? ''
+      for (let index = 0; index < 51; index++) {
+        const task = await aTask(alice, boardId, `Task ${String(index)}`)
+        await api.as(bob).patch(task, { title: `Renamed ${String(index)}` })
+      }
+
+      const [row] = await unread(alice)
+      expect(row?.count).toBe(51)
+    })
+
+    it('leaves out a project once its notifications are read', async () => {
+      const { alice, bob, path } = await aTeam()
+      await api.as(bob).patch(path, { title: 'New logo' })
+      expect(await unread(alice)).toHaveLength(1)
+
+      await api.as(alice).post('/notifications/read', {})
+
+      expect(await unread(alice)).toEqual([])
+    })
+
+    it('counts only the notifications of the person asking', async () => {
+      const { bob, path } = await aTeam()
+      await api.as(bob).patch(path, { title: 'New logo' })
+
+      expect(await unread(bob)).toEqual([])
+      expect(await unread(aUser())).toEqual([])
+    })
+  })
+
   it('hides a task from people outside its board', async () => {
     const { path } = await aTeam()
     const stranger = aUser()
