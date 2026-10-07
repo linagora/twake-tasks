@@ -36,7 +36,15 @@ function aMailbox() {
       })
     }
   })
-  return { sent, deliver: () => scheduler.runDue() }
+  // The job queue is shared with the other test files, which may have filled
+  // it with more than one batch: deliver until nothing is due
+  const deliver = async (): Promise<void> => {
+    for (let batch = 0; batch < 20; batch++) {
+      if ((await scheduler.runDue()) === 0) return
+    }
+    throw new Error('The job queue was not drained after 20 batches')
+  }
+  return { sent, deliver }
 }
 
 describe('notification emails', () => {
