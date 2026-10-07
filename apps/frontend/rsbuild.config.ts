@@ -7,10 +7,18 @@ const { version } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8')
 ) as { version: string }
 
+const svg = (name: string): string =>
+  readFileSync(new URL(`./src/assets/${name}.svg`, import.meta.url), 'utf8')
+
 export default defineConfig({
   plugins: [pluginReact()],
   html: {
-    template: './index.html'
+    template: './index.html',
+    // The splash draws them before any script runs, SignInScreen after.
+    templateParameters: {
+      projectIcon: svg('project'),
+      workplaceLogo: svg('twake-workplace')
+    }
   },
   source: {
     entry: { index: './src/index.tsx' },

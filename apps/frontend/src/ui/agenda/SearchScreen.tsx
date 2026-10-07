@@ -12,10 +12,12 @@ import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 export function SearchField({
   inputRef,
-  className
+  className,
+  size = 'medium'
 }: {
   inputRef: RefObject<HTMLInputElement | null>
   className?: string
+  size?: 'small' | 'medium'
 }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -30,7 +32,7 @@ export function SearchField({
   return (
     <SearchBar
       role="search"
-      size="medium"
+      size={size}
       className={className}
       placeholder={t('search.label')}
       value={text}

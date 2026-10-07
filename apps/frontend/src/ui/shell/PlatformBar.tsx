@@ -2,7 +2,9 @@ import { SdkProvider, TwakeBar, type TwakeBarSlots } from '@linagora/twake-bar'
 import type { Sdk } from '@linagora/twake-sdk'
 import type { ReactElement } from 'react'
 
+import projectTextIcon from '@/assets/project-text.svg?url'
 import projectIcon from '@/assets/project.svg'
+import { PlatformBarFrame } from '@/ds/AppFrame'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 
@@ -22,15 +24,18 @@ export function PlatformBar({
 
   return (
     <SdkProvider client={sdk}>
-      <TwakeBar
-        app={{
-          slug: 'project',
-          name: t('app.name'),
-          icon: new URL(projectIcon, window.location.origin).href
-        }}
-        slots={slots}
-        onLogOut={() => void signOut()}
-      />
+      <PlatformBarFrame>
+        <TwakeBar
+          app={{
+            slug: 'project',
+            name: t('app.name'),
+            icon: new URL(projectIcon, window.location.origin).href,
+            textIcon: new URL(projectTextIcon, window.location.origin).href
+          }}
+          slots={slots}
+          onLogOut={() => void signOut()}
+        />
+      </PlatformBarFrame>
     </SdkProvider>
   )
 }
