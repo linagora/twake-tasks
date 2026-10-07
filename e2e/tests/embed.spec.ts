@@ -19,7 +19,7 @@ function twakeSpace(projectId: string, port: number) {
       <script>
         window.paths = []
         addEventListener('message', event => {
-          if (event.origin === 'http://localhost:3300') window.paths.push(event.data.path)
+          if (event.origin === 'http://localhost:3300' && event.data.type === 'twake-embed:path') window.paths.push(event.data.path)
         })
       </script>
       <iframe title="Tasks" src="http://localhost:3300/embed/projects/${projectId}"></iframe>`)
@@ -55,7 +55,7 @@ test("opens a space's only board inside TwakeSpace, signed in without a prompt",
           (window as unknown as { paths: string[] }).paths.at(-1)
         )
       )
-      .toMatch(new RegExp(`^/embed/projects/${projectId}/boards/`))
+      .toMatch(/^\/boards\//)
   } finally {
     host.close()
   }

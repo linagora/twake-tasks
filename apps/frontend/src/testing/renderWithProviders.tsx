@@ -1,6 +1,10 @@
 import { render, type RenderResult } from '@testing-library/react'
 import type { ReactElement } from 'react'
-import { createMemoryRouter, RouterProvider } from 'react-router'
+import {
+  createBrowserRouter,
+  createMemoryRouter,
+  RouterProvider
+} from 'react-router'
 
 import type { BoardsApi } from '@/application/boards'
 import type { SessionService } from '@/application/session'
@@ -41,6 +45,17 @@ export function renderRoute(
   options: Options = {}
 ): RenderResult & { router: ReturnType<typeof createMemoryRouter> } {
   const router = createMemoryRouter(routes, { initialEntries: [path] })
+  return {
+    ...renderWithProviders(<RouterProvider router={router} />, options),
+    router
+  }
+}
+
+/** Routes the real browser history: the URL of the page is the route. */
+export function renderBrowserRoute(
+  options: Options = {}
+): RenderResult & { router: ReturnType<typeof createBrowserRouter> } {
+  const router = createBrowserRouter(routes)
   return {
     ...renderWithProviders(<RouterProvider router={router} />, options),
     router

@@ -1,10 +1,11 @@
+import { embedRoute } from '@linagora/twake-embed'
 import { Link, Typography } from '@linagora/twake-mui'
 import { useEffect, type ReactElement } from 'react'
 import {
   Navigate,
   Outlet,
   Link as RouterLink,
-  useLocation,
+  useNavigate,
   useParams
 } from 'react-router'
 
@@ -13,20 +14,18 @@ import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { useBoards, useProjects } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-const spaceOrigins = (): string[] =>
-  (window.TWAKE_SPACE_ORIGIN ?? '').split(' ').filter(Boolean)
+import { EMBED_PREFIX, getTwakeSpace } from '@/ui/embed/twakeSpace'
 
 export function EmbedLayout(): ReactElement {
-  const { pathname, search } = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
-    for (const origin of spaceOrigins()) {
-      window.parent.postMessage(
-        { type: 'twake-tasks:path', path: pathname + search },
-        origin
+    const show = (resourceId: string, path: string): Promise<void> =>
+      Promise.resolve(
+        navigate(embedRoute(EMBED_PREFIX, resourceId) + path, { replace: true })
       )
-    }
-  }, [pathname, search])
+    return getTwakeSpace()?.syncHistory({ onLoad: show, onNavigate: show })
+  }, [navigate])
 
   return <Outlet />
 }
