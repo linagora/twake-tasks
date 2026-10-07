@@ -10,7 +10,6 @@ import { anIdentity } from '../modules/auth/testing.ts'
 import type { Role } from '../modules/boards/access.ts'
 import { BOARD_CHANNEL } from '../modules/boards/live.ts'
 import { boards, projectMembers, projects } from '../modules/boards/schema.ts'
-import { SETTINGS_CHANNEL } from '../modules/settings/routes.ts'
 
 export interface TestUser {
   userId: string
@@ -114,12 +113,10 @@ export async function aBoardIn(
 export async function startApp() {
   const { sql, db } = createDb(inject('databaseUrl'))
   const boardChanges = await listenToChanges(sql, BOARD_CHANNEL)
-  const settingsChanges = await listenToChanges(sql, SETTINGS_CHANNEL)
   const app = await buildApp({
     logger: pino({ level: 'silent' }),
     db,
     boardChanges,
-    settingsChanges,
     provider: {
       identify: () => Promise.resolve(null),
       verifyLogoutToken: () => Promise.reject(new Error('not in tests'))
@@ -169,7 +166,6 @@ export async function startApp() {
     close: async () => {
       await app.close()
       await boardChanges.close()
-      await settingsChanges.close()
       await sql.end()
     }
   }

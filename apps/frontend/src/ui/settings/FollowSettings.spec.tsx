@@ -9,7 +9,6 @@ import { useI18n } from '@/ui/i18n/useI18n'
 import { FollowSettings } from '@/ui/settings/FollowSettings'
 
 const NONE: UserSettings = {
-  version: 0,
   language: null,
   timezone: null,
   theme: 'auto',
@@ -79,15 +78,10 @@ describe('FollowSettings', () => {
     ).toBeInTheDocument()
   })
 
-  it('follows a change made in Twake Workplace while the app is open', async () => {
+  it('follows a change made in Twake Workplace once the person comes back to the tab', async () => {
     const boardsApi = fakeBoardsApi()
-    let held: UserSettings = { ...NONE, version: 1, language: 'fr' }
+    let held: UserSettings = { ...NONE, language: 'fr' }
     boardsApi.settings = vi.fn(() => Promise.resolve(held))
-    let push: (version: number) => void = () => undefined
-    boardsApi.watchSettings = vi.fn(onVersion => {
-      push = onVersion
-      return () => undefined
-    })
     renderWithProviders(
       <FollowSettings>
         <Probe />
@@ -96,11 +90,12 @@ describe('FollowSettings', () => {
     )
     await screen.findByText(/^Connexion en cours…/)
 
-    held = { ...held, version: 2, language: 'en' }
-    push(1)
-    push(2)
+    held = { ...held, language: 'en' }
+    window.dispatchEvent(new Event('visibilitychange'))
 
-    expect(await screen.findByText(/^Signing you in…/)).toBeInTheDocument()
+    expect(
+      await screen.findByText(`Signing you in… ${browserZone}`)
+    ).toBeInTheDocument()
     expect(boardsApi.settings).toHaveBeenCalledTimes(2)
   })
 
@@ -120,17 +115,12 @@ describe('FollowSettings', () => {
     ).toBeInTheDocument()
   })
 
-  it('reads the settings again when the stream answers after a failed read', async () => {
+  it('reads the settings again on coming back to the tab after a failed read', async () => {
     const boardsApi = fakeBoardsApi()
     boardsApi.settings = vi
       .fn<typeof boardsApi.settings>()
       .mockRejectedValueOnce(new Error('down'))
-      .mockResolvedValue({ ...NONE, version: 1, language: 'fr' })
-    let push: (version: number) => void = () => undefined
-    boardsApi.watchSettings = vi.fn(onVersion => {
-      push = onVersion
-      return () => undefined
-    })
+      .mockResolvedValue({ ...NONE, language: 'fr' })
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     renderWithProviders(
       <FollowSettings>
@@ -140,7 +130,7 @@ describe('FollowSettings', () => {
     )
     await screen.findByText(`Signing you in… ${browserZone}`)
 
-    push(1)
+    window.dispatchEvent(new Event('visibilitychange'))
 
     expect(await screen.findByText(/^Connexion en cours…/)).toBeInTheDocument()
   })

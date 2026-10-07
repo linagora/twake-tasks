@@ -16,7 +16,6 @@ export async function buildApp(deps: {
   logger: Logger
   db: Db
   boardChanges: Changes
-  settingsChanges: Changes
   provider: IdentityProvider
   authenticate: Authenticate
   isReady: () => Promise<boolean>
@@ -38,12 +37,7 @@ export async function buildApp(deps: {
         changes: deps.boardChanges,
         streamVersions
       })
-      registerSettings(api, {
-        db: deps.db,
-        requireIdentity,
-        changes: deps.settingsChanges,
-        streamVersions
-      })
+      registerSettings(api, { db: deps.db, requireIdentity })
       return Promise.resolve()
     },
     { prefix: '/api' }
