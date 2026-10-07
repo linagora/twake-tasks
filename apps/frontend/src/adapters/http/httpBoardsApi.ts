@@ -3,6 +3,7 @@ import {
   type AgendaTask,
   type HiddenTask,
   type Notification,
+  type ProjectUnread,
   type SavedFilter,
   type Project,
   type BoardsApi,
@@ -238,6 +239,13 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     listNotifications: async () =>
       (await call<{ notifications: Notification[] }>('GET', '/notifications'))
         .notifications,
+    unreadByProject: async () =>
+      (
+        await call<{ projects: ProjectUnread[] }>(
+          'GET',
+          '/notifications/unread'
+        )
+      ).projects,
     markNotificationsRead: () => call('POST', '/notifications/read', {}),
     setAssignees: (boardId, taskId, userIds) =>
       call('PUT', `/boards/${boardId}/tasks/${taskId}/assignees`, { userIds }),

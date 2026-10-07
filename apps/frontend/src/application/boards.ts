@@ -64,6 +64,12 @@ export interface Notification {
   readAt: string | null
 }
 
+/** The unread notifications of a project; a project without any is absent. */
+export interface ProjectUnread {
+  projectId: string
+  count: number
+}
+
 /** `firesAt` is null while a relative reminder has no due date to follow. */
 export interface Reminder {
   id: string
@@ -250,6 +256,7 @@ export interface BoardsApi {
     following: boolean
   ) => Promise<void>
   listNotifications: () => Promise<Notification[]>
+  unreadByProject: () => Promise<ProjectUnread[]>
   markNotificationsRead: () => Promise<void>
   setAssignees: (
     boardId: string,
