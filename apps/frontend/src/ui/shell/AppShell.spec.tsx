@@ -24,6 +24,7 @@ describe('AppShell', () => {
   it('shows the name and picture the person chose in Twake Workplace', async () => {
     const boardsApi = fakeBoardsApi()
     boardsApi.settings.mockResolvedValue({
+      version: 1,
       language: null,
       timezone: null,
       theme: 'auto',

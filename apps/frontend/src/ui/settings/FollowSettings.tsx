@@ -1,12 +1,15 @@
 import { useColorScheme } from '@linagora/twake-mui'
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, type ReactElement, type ReactNode } from 'react'
 
+import type { UserSettings } from '@/application/boards'
 import { PickersProvider } from '@/ds/Pickers'
+import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { followZone } from '@/ui/boards/dueLabel'
 import { I18nProvider } from '@/ui/i18n/I18nProvider'
 import { resolveLanguage } from '@/ui/i18n/languages'
 import { useI18n } from '@/ui/i18n/useI18n'
-import { useSettings } from '@/ui/settings/useSettings'
+import { settingsKey, useSettings } from '@/ui/settings/useSettings'
 
 /**
  * Shows the app in the person's Twake Workplace language, theme and timezone,
@@ -20,6 +23,21 @@ export function FollowSettings({
   const { lang: browserLang } = useI18n()
   const { setMode } = useColorScheme()
   const { data, isPending } = useSettings()
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+
+  // Without settings held, the first read failed or is still under way and may
+  // predate this version: read again.
+  useEffect(
+    () =>
+      api.watchSettings(version => {
+        const shown = queryClient.getQueryData<UserSettings>(settingsKey)
+        if (!shown || version > shown.version) {
+          void queryClient.invalidateQueries({ queryKey: settingsKey })
+        }
+      }),
+    [api, queryClient]
+  )
 
   const theme = data?.theme
   useEffect(() => {

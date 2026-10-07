@@ -3,12 +3,14 @@ import { pino } from 'pino'
 import { inject } from 'vitest'
 import { buildApp } from '../app.ts'
 import { eq } from 'drizzle-orm'
+import { listenToChanges } from '../infra/changes.ts'
 import { createDb, inTenant, type Db } from '../infra/db.ts'
 import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
 import type { Role } from '../modules/boards/access.ts'
-import { listenToBoards } from '../modules/boards/live.ts'
+import { BOARD_CHANNEL } from '../modules/boards/live.ts'
 import { boards, projectMembers, projects } from '../modules/boards/schema.ts'
+import { SETTINGS_CHANNEL } from '../modules/settings/routes.ts'
 
 export interface TestUser {
   userId: string
@@ -111,11 +113,13 @@ export async function aBoardIn(
 
 export async function startApp() {
   const { sql, db } = createDb(inject('databaseUrl'))
-  const boardChanges = await listenToBoards(sql)
+  const boardChanges = await listenToChanges(sql, BOARD_CHANNEL)
+  const settingsChanges = await listenToChanges(sql, SETTINGS_CHANNEL)
   const app = await buildApp({
     logger: pino({ level: 'silent' }),
     db,
     boardChanges,
+    settingsChanges,
     provider: {
       identify: () => Promise.resolve(null),
       verifyLogoutToken: () => Promise.reject(new Error('not in tests'))
@@ -165,6 +169,7 @@ export async function startApp() {
     close: async () => {
       await app.close()
       await boardChanges.close()
+      await settingsChanges.close()
       await sql.end()
     }
   }
