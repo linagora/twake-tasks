@@ -10,6 +10,7 @@ import {
 } from '@/ds/SpaceOverlay'
 import {
   computeOverlayRegion,
+  mirrorStyles,
   type SpaceOverlay,
   type SpaceOverlayStatus
 } from '@/ds/spaceOverlay'
@@ -196,5 +197,28 @@ describe('computeOverlayRegion', () => {
       '<div class="MuiModal-root MuiModal-hidden"><div class="MuiBackdrop-root"></div></div>'
 
     expect(computeOverlayRegion(document)).toEqual([])
+  })
+})
+
+describe('mirrorStyles', () => {
+  it('copies a rule inserted in the app at once, before it is laid out', () => {
+    const app = document.createElement('style')
+    document.head.appendChild(app)
+    const frame = document.createElement('iframe')
+    document.body.appendChild(frame)
+    const overlay = frame.contentDocument
+    if (overlay === null) throw new Error('The frame has no document')
+    mirrorStyles(document, overlay)
+
+    app.sheet?.insertRule('.paper { width: 300px }')
+
+    const copied = overlay.querySelector<HTMLStyleElement>('style[data-mirror]')
+    const rules = Array.from(copied?.sheet?.cssRules ?? [])
+    expect(rules.map(rule => rule.cssText.replace(/\s/g, ''))).toEqual(
+      expect.arrayContaining(['.paper{width:300px;}'])
+    )
+    expect(rules).toHaveLength(new Set(rules.map(rule => rule.cssText)).size)
+    app.remove()
+    frame.remove()
   })
 })

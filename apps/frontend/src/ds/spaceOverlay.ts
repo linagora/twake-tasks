@@ -147,7 +147,7 @@ function findOverlay(name: string): Document | null {
  * app adds some: Emotion and its global styles insert rules one by one
  * (`insertRule`), other styles arrive as elements of the head
  */
-function mirrorStyles(source: Document, target: Document): void {
+export function mirrorStyles(source: Document, target: Document): void {
   const sourceWindow = source.defaultView
   if (sourceWindow === null) return
   const mirror = target.createElement('style')
@@ -190,13 +190,30 @@ function mirrorStyles(source: Document, target: Document): void {
     })
   }
 
+  // A rule inserted in the app is in the overlay at once, before what it
+  // styles is laid out: a popover measures its paper as it mounts, and a
+  // paper without its rules spans the whole window. The copy that follows
+  // puts the rule back in its place.
+  const copyRule = (sheet: CSSStyleSheet, rule: string): void => {
+    const copied = mirror.sheet
+    // A stylesheet file is loaded again instead
+    if (Boolean(sheet.href) || copied === null || sheet === copied) return
+    try {
+      copied.insertRule(rule, copied.cssRules.length)
+    } catch {
+      // Not allowed at the end of a sheet (`@import`): left to the copy
+    }
+  }
+
   // Emotion inserts rules without touching the DOM: watch the CSSOM itself
   const prototype = sourceWindow.CSSStyleSheet.prototype
   // eslint-disable-next-line @typescript-eslint/unbound-method -- wrapped, called with its sheet
   const insertRule = prototype.insertRule
   prototype.insertRule = function (this: CSSStyleSheet, ...args) {
+    const index = insertRule.apply(this, args)
+    copyRule(this, args[0])
     schedule()
-    return insertRule.apply(this, args)
+    return index
   }
   // eslint-disable-next-line @typescript-eslint/unbound-method -- wrapped, called with its sheet
   const deleteRule = prototype.deleteRule
