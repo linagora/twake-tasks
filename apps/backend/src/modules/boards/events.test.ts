@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { OutgoingEvent } from '../../events/envelope.ts'
 import { outbox } from '../../events/schema.ts'
 import { createDb } from '../../infra/db.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -117,8 +117,12 @@ describe('task events', () => {
       changes: { section: { from: todo?.id, to: doing?.id } }
     })
     expect(events[8]?.event.data).toMatchObject({
-      assignee: { id: alice.userId }
+      assignee: { id: alice.userId },
+      recipients: [
+        { uuid: alice.userId, email: alice.email, reason: 'assigned' }
+      ]
     })
+    expect(events[9]?.event.data).not.toHaveProperty('recipients')
     expect(new Set(events.map(({ event }) => event.id)).size).toBe(12)
   })
 
@@ -137,6 +141,27 @@ describe('task events', () => {
     expect(actions(events).slice(-2)).toEqual(['completed', 'updated'])
     expect(events.at(-1)?.event.data).toMatchObject({
       changes: { dueDate: { to: '2099-02-28' } }
+    })
+  })
+
+  it('names the assignee of an assignment as its recipient, by uuid and email', async () => {
+    const alice = aUser()
+    const bob = aUser()
+    const board = await aBoardOf(alice)
+    await joinBoard(db, alice, board.id, bob, 'editor')
+    const task = await aTaskOn(alice, board.id, null)
+
+    await api.as(alice).put(`${task.path}/assignees`, { userIds: [bob.userId] })
+
+    const assigned = (await eventsOf(task.id)).at(-1)?.event
+    expect(assigned).toMatchObject({
+      type: 'com.twake.tasks.task.assigned.v1',
+      twakeactorid: alice.userId,
+      twakeactor: alice.email
+    })
+    expect(assigned?.data).toMatchObject({
+      assignee: { id: bob.userId },
+      recipients: [{ uuid: bob.userId, email: bob.email, reason: 'assigned' }]
     })
   })
 
