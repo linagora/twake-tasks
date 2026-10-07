@@ -313,7 +313,6 @@ export function fakeBoardsApi(boards: Board[] = []) {
     ),
     settings: vi.fn<BoardsApi['settings']>(() =>
       Promise.resolve({
-        version: 0,
         language: null,
         timezone: null,
         theme: 'auto',
@@ -321,7 +320,6 @@ export function fakeBoardsApi(boards: Board[] = []) {
         name: null
       })
     ),
-    watchSettings: vi.fn<BoardsApi['watchSettings']>(() => () => undefined),
     agenda: vi.fn<BoardsApi['agenda']>((_zone, days) =>
       Promise.resolve().then(() => {
         const today = new Intl.DateTimeFormat('en-CA').format(new Date())

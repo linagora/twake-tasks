@@ -130,7 +130,6 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     listBoards: async () =>
       (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
     getBoard: boardId => call('GET', `/boards/${boardId}`),
-    watchSettings: onVersion => watch('/settings/events', onVersion),
     watchBoard: (boardId, onVersion) =>
       watch(`/boards/${boardId}/events`, onVersion),
     createBoard: board => call('POST', '/boards', board),
