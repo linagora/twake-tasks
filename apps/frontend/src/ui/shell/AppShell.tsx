@@ -125,9 +125,10 @@ function Header({
   const compact = useMediaQuery(theme.breakpoints.down('md'))
   const phone = useMediaQuery(theme.breakpoints.down('lg'))
 
+  // The platform bar is 48px tall: a medium search bar would fill it.
   const search = (
     <TopBarSearch>
-      <SearchField inputRef={searchRef} />
+      <SearchField inputRef={searchRef} size={sdk ? 'small' : 'medium'} />
     </TopBarSearch>
   )
   const quickAdd = compact ? (
