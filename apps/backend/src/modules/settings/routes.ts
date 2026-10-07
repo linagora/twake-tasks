@@ -1,13 +1,39 @@
 import { eq } from 'drizzle-orm'
+import type { StreamVersions } from '../../infra/changes.ts'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
+import type { SettingsChanges } from './live.ts'
 import { userSettings } from './schema.ts'
 
 export function registerSettings(
   app: HttpServer,
-  deps: { db: Db; requireIdentity: RequireIdentity }
+  deps: {
+    db: Db
+    requireIdentity: RequireIdentity
+    changes: SettingsChanges
+    streamVersions: StreamVersions
+  }
 ) {
+  app.get(
+    '/settings/events',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const email = identity.email.toLowerCase()
+      const [kept] = await deps.db
+        .select({ version: userSettings.version })
+        .from(userSettings)
+        .where(eq(userSettings.email, email))
+      deps.streamVersions(request, reply, {
+        changes: deps.changes,
+        key: email,
+        version: kept?.version ?? 0
+      })
+    }
+  )
+
   app.get(
     '/settings',
     { preHandler: deps.requireIdentity },
@@ -16,6 +42,7 @@ export function registerSettings(
       if (!identity) return reply.code(401).send()
       const [kept] = await deps.db
         .select({
+          version: userSettings.version,
           language: userSettings.language,
           timezone: userSettings.timezone,
           theme: userSettings.theme,
@@ -25,6 +52,7 @@ export function registerSettings(
         .from(userSettings)
         .where(eq(userSettings.email, identity.email.toLowerCase()))
       return {
+        version: kept?.version ?? 0,
         language: kept?.language ?? null,
         timezone: kept?.timezone ?? null,
         theme: kept?.theme ?? 'auto',

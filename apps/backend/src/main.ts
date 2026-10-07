@@ -29,6 +29,7 @@ import {
 } from './modules/spaces/events.ts'
 import { planReconcile, reconcileJobs } from './modules/spaces/reconcile.ts'
 import { settingsRoutes } from './modules/settings/events.ts'
+import { listenToSettings } from './modules/settings/live.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
@@ -41,10 +42,12 @@ await migrateDb(db)
 
 let accepting = false
 const boardChanges = await listenToBoards(sql)
+const settingsChanges = await listenToSettings(sql)
 const server = await buildApp({
   logger,
   db,
   boardChanges,
+  settingsChanges,
   ...(await connectIdentityProvider({
     db,
     oidc: {
@@ -146,6 +149,7 @@ async function shutdown(signal: string): Promise<void> {
     await publisher.close()
     await server.close()
     await boardChanges.close()
+    await settingsChanges.close()
     await sql.end({ timeout: 5 })
   } catch (error) {
     logger.error({ err: error }, 'shutdown failed')

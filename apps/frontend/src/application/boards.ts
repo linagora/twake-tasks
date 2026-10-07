@@ -135,6 +135,7 @@ export interface HiddenTask {
 
 /** The person's Twake Workplace settings; null where they never chose. */
 export interface UserSettings {
+  version: number
   language: string | null
   timezone: string | null
   theme: 'light' | 'dark' | 'auto'
@@ -145,6 +146,8 @@ export interface UserSettings {
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
   settings: () => Promise<UserSettings>
+  /** Calls back with the settings' version now, then with each new one. */
+  watchSettings: (onVersion: (version: number) => void) => () => void
   /** Calls back with the board's version now, then with each new one. */
   watchBoard: (
     boardId: string,

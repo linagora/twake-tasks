@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { parseOrDrop, type Handler } from '../../events/router.ts'
 import type { Tx } from '../../infra/db.ts'
+import { SETTINGS_CHANNEL } from './live.ts'
 import { theme, userSettings } from './schema.ts'
 
 const optional = <T extends z.ZodType>(schema: T) =>
@@ -49,7 +50,7 @@ export async function keepSettings(
     avatar: person.avatar ?? null,
     name: nameOf(person)
   }
-  await tx
+  const kept = await tx
     .insert(userSettings)
     .values(row)
     .onConflictDoUpdate({
@@ -57,6 +58,12 @@ export async function keepSettings(
       set: row,
       setWhere: sql`${userSettings.version} < excluded.version`
     })
+    .returning({ email: userSettings.email })
+  // Sent on commit, to the replicas streaming this person's settings.
+  if (kept.length > 0)
+    await tx.execute(
+      sql`select pg_notify(${SETTINGS_CHANNEL}, ${`${row.email} ${String(version)}`})`
+    )
 }
 
 // Each message carries all the settings after a change.

@@ -1,4 +1,5 @@
 import type { Logger } from 'pino'
+import { versionStreams } from './infra/changes.ts'
 import type { Db } from './infra/db.ts'
 import { createServer } from './infra/http.ts'
 import {
@@ -9,12 +10,14 @@ import {
 } from './modules/auth/index.ts'
 import { registerLive, type BoardChanges } from './modules/boards/live.ts'
 import { registerBoards } from './modules/boards/routes.ts'
+import type { SettingsChanges } from './modules/settings/live.ts'
 import { registerSettings } from './modules/settings/routes.ts'
 
 export async function buildApp(deps: {
   logger: Logger
   db: Db
   boardChanges: BoardChanges
+  settingsChanges: SettingsChanges
   provider: IdentityProvider
   authenticate: Authenticate
   isReady: () => Promise<boolean>
@@ -28,13 +31,20 @@ export async function buildApp(deps: {
         provider: deps.provider,
         store: postgresAuthStore(deps.db)
       })
+      const streamVersions = versionStreams(api)
       registerBoards(api, { db: deps.db, requireIdentity })
       registerLive(api, {
         db: deps.db,
         requireIdentity,
-        changes: deps.boardChanges
+        changes: deps.boardChanges,
+        streamVersions
       })
-      registerSettings(api, { db: deps.db, requireIdentity })
+      registerSettings(api, {
+        db: deps.db,
+        requireIdentity,
+        changes: deps.settingsChanges,
+        streamVersions
+      })
       return Promise.resolve()
     },
     { prefix: '/api' }

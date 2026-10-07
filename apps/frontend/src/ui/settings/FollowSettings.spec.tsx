@@ -9,6 +9,7 @@ import { useI18n } from '@/ui/i18n/useI18n'
 import { FollowSettings } from '@/ui/settings/FollowSettings'
 
 const NONE: UserSettings = {
+  version: 0,
   language: null,
   timezone: null,
   theme: 'auto',
@@ -76,6 +77,31 @@ describe('FollowSettings', () => {
     expect(
       await screen.findByText(`Signing you in… ${browserZone}`)
     ).toBeInTheDocument()
+  })
+
+  it('follows a change made in Twake Workplace while the app is open', async () => {
+    const boardsApi = fakeBoardsApi()
+    let held: UserSettings = { ...NONE, version: 1, language: 'fr' }
+    boardsApi.settings = vi.fn(() => Promise.resolve(held))
+    let push: (version: number) => void = () => undefined
+    boardsApi.watchSettings = vi.fn(onVersion => {
+      push = onVersion
+      return () => undefined
+    })
+    renderWithProviders(
+      <FollowSettings>
+        <Probe />
+      </FollowSettings>,
+      { boardsApi }
+    )
+    await screen.findByText(/^Connexion en cours…/)
+
+    held = { ...held, version: 2, language: 'en' }
+    push(1)
+    push(2)
+
+    expect(await screen.findByText(/^Signing you in…/)).toBeInTheDocument()
+    expect(boardsApi.settings).toHaveBeenCalledTimes(2)
   })
 
   it('shows the app with the browser settings when they cannot be read', async () => {

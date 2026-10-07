@@ -122,4 +122,22 @@ describe('httpBoardsApi', () => {
     const [request] = send.mock.calls[0] ?? []
     expect(request?.url).toBe(`${BASE}/api/boards/b1/events`)
   })
+
+  it("watches the person's settings on their own stream", async () => {
+    const send = vi.fn<Send>(() =>
+      Promise.resolve(new Response('id: 3\ndata: {"version":3}\n\n'))
+    )
+    const versions: number[] = []
+
+    const stop = httpBoardsApi(BASE, send).watchSettings(version => {
+      versions.push(version)
+    })
+
+    await vi.waitFor(() => {
+      expect(versions).toEqual([3])
+    })
+    stop()
+    const [request] = send.mock.calls[0] ?? []
+    expect(request?.url).toBe(`${BASE}/api/settings/events`)
+  })
 })
