@@ -14,11 +14,7 @@ async function openQuickAdd() {
   })
   const boardsApi = fakeBoardsApi([inbox, design])
   renderRoute(`/boards/${design.id}`, { boardsApi })
-  fireEvent.click(
-    within(await screen.findByRole('banner')).getByRole('button', {
-      name: 'Quick add'
-    })
-  )
+  fireEvent.click(await screen.findByRole('button', { name: 'Quick add' }))
   const dialog = within(
     await screen.findByRole('dialog', { name: 'Quick add' })
   )

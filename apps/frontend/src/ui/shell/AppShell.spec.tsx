@@ -29,7 +29,7 @@ describe('AppShell', () => {
   })
 
   it.each(['/', '/boards/board-1'])(
-    'shows the platform bar, with the search and quick add, and signs out from it on %s',
+    'shows the platform bar with the search, the quick add in the sidebar, and signs out from it on %s',
     async path => {
       const session = fakeSession(() => Promise.resolve(fakeUser('id-token')))
       const board = { ...aBoard(), id: 'board-1' }
@@ -38,7 +38,12 @@ describe('AppShell', () => {
       const bar = within(await screen.findByRole('banner'))
       expect(bar.getByText('Twake Project')).toBeInTheDocument()
       expect(bar.getByRole('searchbox', { name: 'Search' })).toBeInTheDocument()
-      expect(bar.getByRole('button', { name: 'Quick add' })).toBeInTheDocument()
+      expect(bar.queryByRole('button', { name: 'Quick add' })).toBe(null)
+      expect(
+        within(screen.getByRole('complementary')).getByRole('button', {
+          name: 'Quick add'
+        })
+      ).toBeInTheDocument()
       expect(createSdk).toHaveBeenCalledWith({
         platformURL: 'https://alice.twake.test',
         idToken: 'id-token'

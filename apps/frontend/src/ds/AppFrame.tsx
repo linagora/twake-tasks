@@ -2,6 +2,7 @@ import { Task, Icon } from '@linagora/twake-icons'
 import {
   Badge,
   Box,
+  Button,
   Content,
   Layout,
   List,
@@ -152,6 +153,13 @@ export function CountBadge({
 
 // The phone bottom bar has room for five entries.
 export const WideScreenNavItem = styled(NavItem)(({ theme }) => ({
+  [theme.breakpoints.down('lg')]: { display: 'none' }
+}))
+
+// The main action above the nav, as wide as its entries. The sidebar is a
+// bottom bar on phones, which has no room for it.
+export const SidebarButton = styled(Button)(({ theme }) => ({
+  margin: '24px 16px 0',
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
 

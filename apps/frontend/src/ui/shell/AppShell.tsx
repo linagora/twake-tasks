@@ -11,7 +11,6 @@ import {
   Star
 } from '@linagora/twake-icons'
 import {
-  Button,
   Divider,
   IconButton,
   Link,
@@ -40,6 +39,7 @@ import {
   AppFrame,
   BrandMark,
   CountBadge,
+  SidebarButton,
   SidebarSection,
   TopBar,
   TopBarSearch,
@@ -63,10 +63,12 @@ export function AppShell(): ReactElement {
   const [quickAdd, setQuickAdd] = useState(false)
   const [help, setHelp] = useState(false)
   const search = useRef<HTMLInputElement>(null)
+  const { t } = useI18n()
+  const openQuickAdd = (): void => {
+    setQuickAdd(true)
+  }
   useShortcuts({
-    quickAdd: () => {
-      setQuickAdd(true)
-    },
+    quickAdd: openQuickAdd,
     search: () => {
       search.current?.focus()
     },
@@ -77,16 +79,15 @@ export function AppShell(): ReactElement {
 
   return (
     <AppFrame
-      topBar={
-        <Header
-          searchRef={search}
-          onQuickAdd={() => {
-            setQuickAdd(true)
-          }}
-        />
-      }
+      topBar={<Header searchRef={search} onQuickAdd={openQuickAdd} />}
       sidebar={
         <>
+          <SidebarButton
+            startIcon={<Icon icon={Plus} />}
+            onClick={openQuickAdd}
+          >
+            {t('quickAdd.title')}
+          </SidebarButton>
           <AppNav />
           <Favorites />
         </>
@@ -122,7 +123,6 @@ function Header({
   const { t } = useI18n()
   const { sdk } = useSession()
   const theme = useTheme()
-  const compact = useMediaQuery(theme.breakpoints.down('md'))
   const phone = useMediaQuery(theme.breakpoints.down('lg'))
 
   // The platform bar is 48px tall: a medium search bar would fill it.
@@ -131,7 +131,8 @@ function Header({
       <SearchField inputRef={searchRef} size={sdk ? 'small' : 'medium'} />
     </TopBarSearch>
   )
-  const quickAdd = compact ? (
+  // Wide screens have the quick add in the sidebar.
+  const quickAdd = phone && (
     <IconButton
       color="primary"
       aria-label={t('quickAdd.title')}
@@ -139,10 +140,6 @@ function Header({
     >
       <Icon icon={Plus} />
     </IconButton>
-  ) : (
-    <Button startIcon={<Icon icon={Plus} />} onClick={onQuickAdd}>
-      {t('quickAdd.title')}
-    </Button>
   )
 
   // The platform bar holds the account; the phone bottom bar has no room for
