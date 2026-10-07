@@ -1,10 +1,10 @@
+import { embedRoute } from '@linagora/twake-embed'
 import { Link, Typography } from '@linagora/twake-mui'
 import { useEffect, type ReactElement } from 'react'
 import {
   Navigate,
   Outlet,
   Link as RouterLink,
-  useLocation,
   useNavigate,
   useParams
 } from 'react-router'
@@ -14,49 +14,22 @@ import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { useBoards, useProjects } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-import {
-  EMBED_PREFIX,
-  isValidEmbedPath,
-  isValidResourceId,
-  parseEmbedUrl,
-  postEmbedPath,
-  spaceOrigins,
-  suppress
-} from '@/ui/embed/spaceHistory'
+import { EMBED_PREFIX, getTwakeSpace } from '@/ui/embed/twakeSpace'
 
 export function EmbedLayout(): ReactElement {
-  const { pathname, search, hash } = useLocation()
-  const { projectId = '' } = useParams()
   const navigate = useNavigate()
 
-  // The first URL comes from no history call: it is reported once, as a replace
   useEffect(() => {
-    const location = parseEmbedUrl(pathname, search, hash)
-    if (location) postEmbedPath(location, true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    const onMessage = (event: MessageEvent<unknown>): void => {
-      if (!spaceOrigins().includes(event.origin)) return
-      if (event.source !== window.parent) return
-      const { data } = event
-      if (typeof data !== 'object' || data === null) return
-      const { type, resourceId, path } = data as Record<string, unknown>
-      if (type !== 'twake-embed:load' && type !== 'twake-embed:navigate') return
-      if (!isValidResourceId(resourceId) || !isValidEmbedPath(path)) return
-      if (type === 'twake-embed:navigate' && resourceId !== projectId) return
-      void suppress(() =>
-        navigate(`${EMBED_PREFIX}${encodeURIComponent(resourceId)}${path}`, {
-          replace: true
-        })
+    // The router collapses '//' in a path: '/embed/projects/id//host' would
+    // land on '/host', outside the embed route
+    const show = (resourceId: string, path: string): Promise<void> => {
+      if (path.split(/[?#]/, 1)[0]?.includes('//')) return Promise.resolve()
+      return Promise.resolve(
+        navigate(embedRoute(EMBED_PREFIX, resourceId) + path, { replace: true })
       )
     }
-    window.addEventListener('message', onMessage)
-    return () => {
-      window.removeEventListener('message', onMessage)
-    }
-  }, [navigate, projectId])
+    return getTwakeSpace()?.syncHistory({ onLoad: show, onNavigate: show })
+  }, [navigate])
 
   return <Outlet />
 }
