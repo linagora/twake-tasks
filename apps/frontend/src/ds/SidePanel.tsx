@@ -153,10 +153,10 @@ export const TitleInput = styled(InputBase)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
   '& textarea': { padding: theme.spacing(0.5, 1) },
   marginLeft: theme.spacing(-1),
-  '&:hover': { backgroundColor: theme.palette.action.hover },
+  '&:hover': { backgroundColor: theme.vars.palette.action.hover },
   '&.Mui-focused': {
     backgroundColor: 'transparent',
-    boxShadow: `inset 0 0 0 2px ${theme.palette.primary.main}`
+    boxShadow: `inset 0 0 0 2px ${theme.vars.palette.primary.main}`
   }
 }))
 

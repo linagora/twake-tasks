@@ -1,9 +1,10 @@
 import { Magnifier } from '@linagora/twake-icons'
-import { SearchBar, Typography } from '@linagora/twake-mui'
+import { Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type RefObject } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
+import { SearchBar } from '@/ds/SearchBar'
 import { Group } from '@/ui/agenda/AgendaScreen'
 import { useSearch } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'

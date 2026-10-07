@@ -5,7 +5,6 @@ import {
   MenuItem,
   MenuList,
   Popover,
-  SearchBar,
   Typography
 } from '@linagora/twake-mui'
 import {
@@ -14,6 +13,8 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react'
+
+import { SearchBar } from '@/ds/SearchBar'
 
 export function PickerPopover({
   label,
@@ -78,12 +79,6 @@ export function PickerPopover({
           size="small"
           elevation={0}
           placeholder={searchLabel}
-          // SearchBar bakes in the light palette; the theme's CSS variables
-          // follow a color scheme switched at runtime.
-          sx={{
-            bgcolor: 'background.default',
-            '&:focus-within': { bgcolor: 'background.paper' }
-          }}
           value={search}
           onChange={event => {
             onSearch(event.target.value)

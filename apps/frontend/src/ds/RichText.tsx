@@ -25,7 +25,7 @@ const markdownOf = (editor: Editor): string => editor.getMarkdown().trim()
 
 const prose = (theme: Theme) => ({
   ...theme.typography.body2,
-  color: theme.palette.text.primary,
+  color: theme.vars.palette.text.primary,
   overflowWrap: 'anywhere' as const,
   '& .ProseMirror': { outline: 'none' },
   '& .ProseMirror > :first-of-type': { marginTop: 0 },
@@ -49,34 +49,34 @@ const prose = (theme: Theme) => ({
   '& ul[data-type="taskList"] li > label': { marginTop: 2 },
   '& ul[data-type="taskList"] li > div': { flex: 1 },
   '& li[data-checked="true"] > div': {
-    color: theme.palette.text.secondary,
+    color: theme.vars.palette.text.secondary,
     textDecoration: 'line-through'
   },
-  '& a': { color: theme.palette.primary.main },
+  '& a': { color: theme.vars.palette.primary.main },
   '& code': {
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
     fontSize: '0.85em',
     padding: '0.1em 0.35em',
     borderRadius: 4,
-    backgroundColor: theme.palette.action.hover
+    backgroundColor: theme.vars.palette.action.hover
   },
   '& pre': {
     margin: theme.spacing(0, 0, 1),
     padding: theme.spacing(1.5),
     borderRadius: theme.spacing(1),
-    backgroundColor: theme.palette.action.hover,
+    backgroundColor: theme.vars.palette.action.hover,
     overflowX: 'auto' as const
   },
   '& pre code': { padding: 0, backgroundColor: 'transparent' },
   '& blockquote': {
     margin: theme.spacing(0, 0, 1),
     paddingLeft: theme.spacing(1.5),
-    borderLeft: `3px solid ${theme.palette.divider}`,
-    color: theme.palette.text.secondary
+    borderLeft: `3px solid ${theme.vars.palette.divider}`,
+    color: theme.vars.palette.text.secondary
   },
   '& p.is-editor-empty:first-of-type::before': {
     content: 'attr(data-placeholder)',
-    color: theme.palette.text.disabled,
+    color: theme.vars.palette.text.disabled,
     float: 'left' as const,
     height: 0,
     pointerEvents: 'none' as const
@@ -162,7 +162,7 @@ export function RichTextEditor({
         transition: theme.transitions.create(['border-color', 'box-shadow']),
         '&:focus-within': {
           borderColor: 'primary.main',
-          boxShadow: `0 0 0 1px ${theme.palette.primary.main}`
+          boxShadow: `0 0 0 1px ${theme.vars.palette.primary.main}`
         }
       })}
     >

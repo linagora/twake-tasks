@@ -1,4 +1,4 @@
-import { alpha, Box } from '@linagora/twake-mui'
+import { Box } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 
 const fold = (text: string) =>
@@ -62,7 +62,7 @@ export function Highlight({
         component="mark"
         sx={theme => ({
           color: 'inherit',
-          bgcolor: alpha(theme.palette.primary.main, 0.2),
+          bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.2),
           borderRadius: 0.5
         })}
       >
