@@ -3,7 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router'
 
 import type { BoardsApi } from '@/application/boards'
 import type { SessionService } from '@/application/session'
-import type { SpaceOverlay } from '@/ds/spaceOverlay'
+import type { SpaceOverlay } from '@linagora/twake-mui'
 import { AppProviders } from '@/app/AppProviders'
 import { makeQueryClient } from '@/app/queryClient'
 import { routes } from '@/app/routes'

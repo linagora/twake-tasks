@@ -1,10 +1,13 @@
-import { TwakeMuiThemeProvider } from '@linagora/twake-mui'
+import {
+  overlayThemeOptions,
+  SpaceOverlayProvider,
+  TwakeMuiThemeProvider,
+  type SpaceOverlay
+} from '@linagora/twake-mui'
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query'
 import { useMemo, type ReactElement, type ReactNode } from 'react'
 
 import { PickersProvider } from '@/ds/Pickers'
-import { overlayThemeOptions, SpaceOverlayProvider } from '@/ds/SpaceOverlay'
-import type { SpaceOverlay } from '@/ds/spaceOverlay'
 import { I18nProvider } from '@/ui/i18n/I18nProvider'
 import type { SupportedLanguage } from '@/ui/i18n/languages'
 

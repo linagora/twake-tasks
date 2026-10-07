@@ -1,5 +1,6 @@
 import '@linagora/twake-css/dist/utils.css'
 
+import { connectSpaceOverlay, overlayRegionMessage } from '@linagora/twake-mui'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
@@ -12,7 +13,6 @@ import {
 } from '@/adapters/oidc/oidcSession'
 import { relayCallback } from '@/adapters/oidc/ssoFrame'
 import { App } from '@/app/App'
-import { connectSpaceOverlay } from '@/ds/spaceOverlay'
 
 const container = document.getElementById('root')
 if (!container) throw new Error('Root element #root not found')
@@ -30,10 +30,7 @@ if (!relayCallback()) {
     ? connectSpaceOverlay(region => {
         for (const origin of (window.TWAKE_SPACE_ORIGIN ?? '').split(' ')) {
           if (origin === '') continue
-          window.parent.postMessage(
-            { type: 'twake-embed:overlay-region', region },
-            origin
-          )
+          window.parent.postMessage(overlayRegionMessage(region), origin)
         }
       })
     : null
