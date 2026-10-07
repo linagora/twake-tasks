@@ -22,7 +22,7 @@ export function connectTwakeSpace(
     hostOrigins: spaceOrigins(),
     embedPrefix: EMBED_PREFIX,
     isResourceId: id => /^[\w.-]+$/.test(id),
-    ...(parent ? { parent } : {})
+    parent
   })
   return connection
 }

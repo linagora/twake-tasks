@@ -20,14 +20,10 @@ export function EmbedLayout(): ReactElement {
   const navigate = useNavigate()
 
   useEffect(() => {
-    // The router collapses '//' in a path: '/embed/projects/id//host' would
-    // land on '/host', outside the embed route
-    const show = (resourceId: string, path: string): Promise<void> => {
-      if (path.split(/[?#]/, 1)[0]?.includes('//')) return Promise.resolve()
-      return Promise.resolve(
+    const show = (resourceId: string, path: string): Promise<void> =>
+      Promise.resolve(
         navigate(embedRoute(EMBED_PREFIX, resourceId) + path, { replace: true })
       )
-    }
     return getTwakeSpace()?.syncHistory({ onLoad: show, onNavigate: show })
   }, [navigate])
 
