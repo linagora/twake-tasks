@@ -28,6 +28,7 @@ describe('the embedded view', () => {
     renderRoute(`/embed/projects/${roadmap.id}`, {
       boardsApi: projectBoardsApi([
         aBoard({ name: 'Roadmap', project: roadmap }),
+        aBoard({ name: 'Launch', project: roadmap }),
         aBoard({ name: 'Old roadmap', project: roadmap, archived: true }),
         aBoard({ name: 'Elsewhere', project: aProject({ managed: true }) }),
         aBoard({ name: 'Mine' })
@@ -39,7 +40,7 @@ describe('the embedded view', () => {
       within(list)
         .getAllByRole('link')
         .map(link => link.textContent)
-    ).toEqual(['Roadmap'])
+    ).toEqual(['Roadmap', 'Launch'])
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
   })
 
@@ -53,10 +54,54 @@ describe('the embedded view', () => {
     )
   })
 
+  it('opens the board of a project that has only one, with no way back to a list of one', async () => {
+    const board = aBoard({ name: 'Roadmap', project: roadmap })
+    const { router } = renderRoute(`/embed/projects/${roadmap.id}`, {
+      boardsApi: projectBoardsApi([
+        board,
+        aBoard({ name: 'Old roadmap', project: roadmap, archived: true })
+      ])
+    })
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        `/embed/projects/${roadmap.id}/boards/${board.id}`
+      )
+    })
+    expect(router.state.historyAction).toBe('REPLACE')
+    expect(
+      await screen.findByRole('heading', { name: 'Roadmap' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'Back to boards' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('keeps the way back on an archived board of a project with one active board', async () => {
+    const old = aBoard({
+      name: 'Old roadmap',
+      project: roadmap,
+      archived: true
+    })
+    renderRoute(`/embed/projects/${roadmap.id}/boards/${old.id}`, {
+      boardsApi: projectBoardsApi([
+        aBoard({ name: 'Roadmap', project: roadmap }),
+        old
+      ])
+    })
+
+    expect(
+      await screen.findByRole('link', { name: 'Back to boards' })
+    ).toBeInTheDocument()
+  })
+
   it('opens a board inside the project embed and comes back', async () => {
     const board = aBoard({ name: 'Roadmap', project: roadmap })
     const { router } = renderRoute(`/embed/projects/${roadmap.id}`, {
-      boardsApi: projectBoardsApi([board])
+      boardsApi: projectBoardsApi([
+        board,
+        aBoard({ name: 'Launch', project: roadmap })
+      ])
     })
 
     fireEvent.click(await screen.findByRole('link', { name: 'Roadmap' }))
