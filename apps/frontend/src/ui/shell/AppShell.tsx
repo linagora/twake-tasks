@@ -22,7 +22,6 @@ import {
   Nav,
   NavIcon,
   NavItem,
-  NavLink,
   NavText,
   useMediaQuery,
   useTheme
@@ -34,12 +33,7 @@ import {
   type ReactElement,
   type RefObject
 } from 'react'
-import {
-  Outlet,
-  Link as RouterLink,
-  NavLink as RouterNavLink,
-  useLocation
-} from 'react-router'
+import { Outlet, Link as RouterLink, useLocation } from 'react-router'
 
 import {
   AccountCard,
@@ -57,6 +51,7 @@ import { SearchField } from '@/ui/agenda/SearchScreen'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoards, useUnreadNotifications } from '@/ui/boards/queries'
 import { QuickAdd } from '@/ui/shell/QuickAdd'
+import { SidebarLink } from '@/ui/shell/SidebarLink'
 import { ShortcutsHelp, useShortcuts } from '@/ui/shell/Shortcuts'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
@@ -280,17 +275,12 @@ function AppNavLink({
   const Item = wideScreenOnly ? WideScreenNavItem : NavItem
   return (
     <Item>
-      <NavLink
-        component={RouterNavLink}
-        to={to}
-        end={end}
-        aria-label={count > 0 ? countLabel : undefined}
-      >
+      <SidebarLink to={to} end={end} label={count > 0 ? countLabel : undefined}>
         <CountBadge count={count}>
           <NavIcon icon={icon} />
         </CountBadge>
         <NavText>{label}</NavText>
-      </NavLink>
+      </SidebarLink>
     </Item>
   )
 }
@@ -306,10 +296,10 @@ function Favorites(): ReactElement | null {
     <SidebarSection label={t('boards.favorites')}>
       {favorites.map(board => (
         <NavItem key={board.id}>
-          <NavLink component={RouterNavLink} to={`/boards/${board.id}`}>
+          <SidebarLink to={`/boards/${board.id}`}>
             <NavIcon icon={Star} />
             <NavText>{board.name}</NavText>
-          </NavLink>
+          </SidebarLink>
         </NavItem>
       ))}
     </SidebarSection>
