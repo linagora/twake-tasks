@@ -22,7 +22,7 @@
     "@emotion/styled": "^11.14.1",
     "@linagora/twake-css": "^1.0.0",
     "@linagora/twake-icons": "^2.12.0",
-    "@linagora/twake-mui": "^10.0.0",
+    "@linagora/twake-mui": "^10.4.0",
     "@linagora/twake-oidc": "^1.0.0",
     "@mui/lab": "^9.0.0-beta.9",
     "@mui/material": "^9.4.0",

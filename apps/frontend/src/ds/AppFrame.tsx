@@ -155,6 +155,22 @@ export const WideScreenNavItem = styled(NavItem)(({ theme }) => ({
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
 
+// Holds the router link of a sidebar entry, which draws as the entry itself.
+export const SidebarEntry = styled('div')(({ theme }) => ({
+  display: 'contents',
+  '& > a': {
+    display: 'flex',
+    width: '100%',
+    color: 'inherit',
+    textDecoration: 'none'
+  },
+  // The bottom bar greys the entries that are not current, as twake-mui 10.0
+  // did; its NavLink now keeps them in the primary text colour.
+  [theme.breakpoints.down('lg')]: {
+    '& > a:not(.active) > div': { color: theme.vars.palette.text.secondary }
+  }
+}))
+
 export function AccountCard({
   avatar,
   name,
