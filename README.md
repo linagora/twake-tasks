@@ -41,8 +41,10 @@ The frontend reports errors to Sentry, and can offer a feedback button, from the
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `SENTRY_DSN`              | Turns Sentry on. Without it the app runs without Sentry. The image adds the DSN's origin (not its key) to the `connect-src` of the CSP. |
 | `SENTRY_ENVIRONMENT`      | The environment of the events.                                                                                                           |
-| `SENTRY_FEEDBACK_ENABLED` | `true` shows the feedback button in the app shell, once `SENTRY_DSN` is set. Off by default. Never shown on the embedded views.          |
+| `SENTRY_FEEDBACK_ENABLED` | `true` shows the draggable feedback button in the app shell, once `SENTRY_DSN` is set. Off by default. Never shown on the embedded views.          |
 
 Events carry the tag `app: twake-tasks` and the version of the frontend as release. They hold no user name or email: the feedback form has an optional email field, empty. Feedback needs a Sentry of 24.4.2 or later. See ADR 011.
+
+The feedback button comes from `@linagora/twake-feedback`. Drag it to move it: it snaps to the left or right edge, and the browser remembers where you left it. Without a mouse, `Shift+F10` (or the context menu key) on the button opens a menu to move it left or right, or to reset its position. The form opens on the same side, and its texts follow the language of the app.
 
 Run `npm run check` before you push. It's what CI runs.
