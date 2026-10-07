@@ -24,7 +24,9 @@ function twakeSpace(projectId: string, port: number) {
           if (event.target.tagName === 'IFRAME') event.target.contentWindow.postMessage({ type: 'twake-embed:hello' }, 'http://localhost:3300')
         }, true)
         addEventListener('message', event => {
-          if (event.origin === 'http://localhost:3300' && event.data.type === 'twake-embed:path') window.paths.push(event.data.path)
+          if (event.origin !== 'http://localhost:3300') return
+          if (event.data?.type === 'twake-embed:ready') event.source.postMessage({ type: 'twake-embed:hello' }, 'http://localhost:3300')
+          if (event.data?.type === 'twake-embed:path') window.paths.push(event.data.path)
         })
       </script>
       <iframe title="Tasks" src="http://localhost:3300/embed/projects/${projectId}"></iframe>`)
@@ -111,6 +113,10 @@ function twakeSpaceWithOverlay(projectId: string) {
         })
         addEventListener('message', event => {
           if (event.origin !== 'http://localhost:3300' || event.source !== tasks.contentWindow) return
+          if (event.data?.type === 'twake-embed:ready') {
+            event.source.postMessage({ type: 'twake-embed:hello' }, 'http://localhost:3300')
+            return
+          }
           if (event.data?.type !== 'twake-embed:overlay-region') return
           const region = event.data.region
           overlay.style.clipPath = region === 'full' ? 'none' : region.length === 0 ? 'inset(0 0 100% 0)'

@@ -179,13 +179,17 @@ describe('the history of the embedded view', () => {
     window.history.replaceState(null, '', '/')
   })
 
-  it('posts nothing until TwakeSpace greets the frame', async () => {
+  it('only says it is ready, to any origin, until TwakeSpace greets the frame', async () => {
     renderEmbed(`/embed/projects/${roadmap.id}/boards/${board.id}`, {
       greeted: false
     })
     await screen.findByRole('heading', { name: 'Roadmap' })
 
-    expect(post).not.toHaveBeenCalled()
+    expect(post).toHaveBeenCalled()
+    for (const [message, target] of post.mock.calls) {
+      expect(message).toEqual({ type: 'twake-embed:ready' })
+      expect(target).toBe('*')
+    }
     expect(getTwakeSpace()?.hostOrigin()).toBeNull()
   })
 
@@ -204,9 +208,13 @@ describe('the history of the embedded view', () => {
       )
     })
     expect(getTwakeSpace()?.hostOrigin()).toBe(SPACE)
-    expect(new Set(post.mock.calls.map(([, target]) => target))).toEqual(
-      new Set([SPACE])
-    )
+    const targets = post.mock.calls
+      .filter(
+        ([message]) =>
+          (message as { type: string }).type !== 'twake-embed:ready'
+      )
+      .map(([, target]) => target)
+    expect(new Set(targets)).toEqual(new Set([SPACE]))
   })
 
   it('reports a user navigation as a push that adds no entry', async () => {
