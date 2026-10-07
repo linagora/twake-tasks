@@ -43,7 +43,7 @@ export function CardTile({
         transition: theme.transitions.create(['border-color', 'box-shadow']),
         '&:hover, &:focus-within': {
           borderColor: 'primary.main',
-          boxShadow: theme.shadows[2]
+          boxShadow: theme.vars.shadows[2]
         },
         '& a': { color: 'text.primary', textDecoration: 'none' },
         '& a::after': { content: '""', position: 'absolute', inset: 0 },

@@ -5,7 +5,7 @@ import { SearchBar as TwakeSearchBar, styled } from '@linagora/twake-mui'
 export const SearchBar = styled(TwakeSearchBar)(({ theme }) => ({
   '&&': {
     backgroundColor: theme.vars.palette.background.default,
-    '&:focus-within': {
+    '&.SearchBar-focused': {
       backgroundColor: theme.vars.palette.background.paper,
       borderColor: theme.vars.palette.primary.main
     }
