@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, isNull, sql } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { roleOn } from './access.ts'
@@ -177,6 +177,24 @@ export function createReminderStore(db: Db) {
           )
         return null
       })
+    },
+
+    // One row per project with unread notifications, whatever their number.
+    unreadByProject(identity: Identity) {
+      return writeOrRefuse(db, identity, tx =>
+        tx
+          .select({ projectId: boards.projectId, count: count() })
+          .from(notifications)
+          .innerJoin(tasks, eq(tasks.id, notifications.taskId))
+          .innerJoin(boards, eq(boards.id, tasks.boardId))
+          .where(
+            and(
+              eq(notifications.userId, identity.userId),
+              isNull(notifications.readAt)
+            )
+          )
+          .groupBy(boards.projectId)
+      )
     },
 
     notificationsOf(identity: Identity) {

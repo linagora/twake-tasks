@@ -634,6 +634,18 @@ export function registerBoards(
   )
 
   app.get(
+    '/notifications/unread',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await reminderStore.unreadByProject(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return { projects: result.value }
+    }
+  )
+
+  app.get(
     '/notifications',
     { preHandler: deps.requireIdentity },
     async (request, reply) => {
