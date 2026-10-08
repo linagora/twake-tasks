@@ -309,10 +309,13 @@
     "move": "Move",
     "failed": "The task could not be moved.",
     "confirmTitle": "Move %{title}?",
-    "droppedAssignees": "These people are not on %{board} and will be unassigned: %{names}.",
-    "createdLabels": "These labels will be created in the project of %{board}: %{names}.",
+    "droppedAssignees": "These people have no access to %{board} and will be unassigned: %{names}.",
+    "createdLabels": "These labels will be created for %{board}: %{names}.",
     "cancel": "Cancel",
-    "moveAnyway": "Move anyway"
+    "moveAnyway": "Move anyway",
+    "removedAssignees": "The task was moved. These people have no access to %{board} and were unassigned: %{names}.",
+    "dismiss": "OK",
+    "formerMember": "Former member"
   },
   "archive": {
     "archive": "Archive",

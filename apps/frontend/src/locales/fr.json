@@ -309,10 +309,13 @@
     "move": "Déplacer",
     "failed": "La tâche n'a pas pu être déplacée.",
     "confirmTitle": "Déplacer %{title} ?",
-    "droppedAssignees": "Ces personnes ne sont pas dans %{board} et seront désassignées : %{names}.",
-    "createdLabels": "Ces labels seront créés dans le projet de %{board} : %{names}.",
+    "droppedAssignees": "Ces personnes n'ont pas accès à %{board} et seront retirées des responsables : %{names}.",
+    "createdLabels": "Ces étiquettes seront créées pour %{board} : %{names}.",
     "cancel": "Annuler",
-    "moveAnyway": "Déplacer quand même"
+    "moveAnyway": "Déplacer quand même",
+    "removedAssignees": "La tâche a été déplacée. Ces personnes n'ont pas accès à %{board} et ont été retirées des responsables : %{names}.",
+    "dismiss": "OK",
+    "formerMember": "Ancien membre"
   },
   "archive": {
     "archive": "Archiver",

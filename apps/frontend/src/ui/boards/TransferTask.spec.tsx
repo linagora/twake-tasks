@@ -155,4 +155,53 @@ describe('moving a task to another board', () => {
     })
     expect(screen.queryByRole('dialog', { name: 'Move Logo?' })).toBeNull()
   })
+
+  it('shows a failure inside the confirmation, which describes itself', async () => {
+    const { design, ops, boardsApi } = setup()
+    boardsApi.previewTransfer.mockResolvedValue({
+      droppedAssignees: [{ userId: 'u1', name: null, email: null }],
+      createdLabels: []
+    })
+    boardsApi.transferTask.mockRejectedValue(new Error('boom'))
+    const form = await openForm(boardsApi, design.id, 'Logo')
+
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Move Logo?' })
+    expect(dialog.getAttribute('aria-describedby')).not.toBeNull()
+    expect(
+      within(dialog).getByTestId('transfer-dropped-assignees').textContent
+    ).toContain('Former member')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Move anyway' }))
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'The task could not be moved.'
+    )
+  })
+
+  it('tells me who was unassigned when that differs from the preview', async () => {
+    const { design, ops, boardsApi } = setup()
+    boardsApi.transferTask.mockResolvedValue({
+      key: 'OPS-1',
+      droppedAssignees: [
+        { userId: 'u1', name: 'Bob', email: 'bob@example.com' }
+      ],
+      createdLabels: []
+    })
+    const form = await openForm(boardsApi, design.id, 'Logo')
+
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('Bob')
+    expect(alert.textContent).toContain('were unassigned')
+    expect(
+      screen.getByRole('form', { name: 'Move to another board' })
+    ).toBeTruthy()
+  })
 })

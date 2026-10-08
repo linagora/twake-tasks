@@ -309,10 +309,13 @@
     "move": "Chuyển",
     "failed": "Không thể chuyển công việc.",
     "confirmTitle": "Chuyển %{title}?",
-    "droppedAssignees": "Những người này không có trong %{board} và sẽ bị gỡ khỏi công việc: %{names}.",
-    "createdLabels": "Những nhãn này sẽ được tạo trong dự án của %{board}: %{names}.",
+    "droppedAssignees": "Những người này không có quyền truy cập %{board} và sẽ bị bỏ giao: %{names}.",
+    "createdLabels": "Những nhãn này sẽ được tạo cho %{board}: %{names}.",
     "cancel": "Hủy",
-    "moveAnyway": "Vẫn chuyển"
+    "moveAnyway": "Vẫn chuyển",
+    "removedAssignees": "Đã chuyển công việc. Những người này không có quyền truy cập %{board} và đã bị bỏ giao: %{names}.",
+    "dismiss": "OK",
+    "formerMember": "Thành viên cũ"
   },
   "archive": {
     "archive": "Lưu trữ",
