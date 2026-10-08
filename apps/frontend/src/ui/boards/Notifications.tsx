@@ -1,5 +1,12 @@
-import { Bell, Clock, Comment, Icon, People } from '@linagora/twake-icons'
-import { Button, Link, Typography } from '@linagora/twake-mui'
+import {
+  Bell,
+  Check,
+  Clock,
+  Comment,
+  Icon,
+  People
+} from '@linagora/twake-icons'
+import { Button, Link, Tooltip, Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
@@ -32,21 +39,24 @@ export function FollowButton({
   const { t } = useI18n()
   const following = useFollowing(boardId, task.id)
   const set = useSetFollowing(boardId, task.id)
-  const pressed = set.isPending ? set.variables : following.data === true
+  const followed = set.isPending ? set.variables : following.data === true
 
   return (
-    <Button
-      variant={pressed ? 'secondary' : 'text'}
-      size="small"
-      startIcon={<Icon icon={Bell} size={16} />}
-      aria-pressed={pressed}
-      disabled={!following.isSuccess}
-      onClick={() => {
-        set.mutate(!pressed)
-      }}
-    >
-      {t('notifications.follow')}
-    </Button>
+    <Tooltip title={followed ? t('notifications.unfollow') : ''} describeChild>
+      <Button
+        variant={followed ? 'primary' : 'secondary'}
+        size="small"
+        startIcon={<Icon icon={followed ? Check : Bell} size={16} />}
+        disabled={!following.isSuccess}
+        onClick={() => {
+          set.mutate(!followed)
+        }}
+      >
+        {followed
+          ? t('notifications.followingTask')
+          : t('notifications.follow')}
+      </Button>
+    </Tooltip>
   )
 }
 

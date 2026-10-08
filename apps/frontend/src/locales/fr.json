@@ -378,6 +378,8 @@
     "emptyHint": "Suivez une tâche pour être informé ici de ses changements.",
     "loadFailed": "Impossible de charger les notifications.",
     "follow": "Suivre",
+    "followingTask": "Suivi",
+    "unfollow": "Ne plus suivre",
     "reason": {
       "assigned": "Vous avez été assigné",
       "mentioned": "Vous avez été mentionné",
