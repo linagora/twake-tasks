@@ -12,7 +12,10 @@ const isSubsequence = (needle: string, haystack: string): boolean => {
 
 /** 0 when the person does not match; higher is a better match. */
 export function matchScore(person: Person, query: string): number {
-  const tokens = fold(query).split(/\s+/).filter(Boolean)
+  // Split like the words of the person, so "jean_du" or "jean.du" finds jean_dupont@
+  const tokens = fold(query)
+    .split(/[\s@._-]+/)
+    .filter(Boolean)
   if (tokens.length === 0) return 1
   const words = fold([person.name ?? '', person.email].join(' '))
     .split(/[\s@._-]+/)
