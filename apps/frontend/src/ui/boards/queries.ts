@@ -6,7 +6,7 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import type {
   Agenda,
@@ -242,9 +242,20 @@ export function useTransferTask(
   const queryClient = useQueryClient()
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+  // A move that ends after the form is gone has nobody left to refresh.
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const transfer = useMutation({
-    mutationFn: (to: { boardId: string; sectionId: string | null }) =>
-      api.transferTask(boardId, taskId, to),
+    mutationFn: async (to: { boardId: string; sectionId: string | null }) => {
+      const result = await api.transferTask(boardId, taskId, to)
+      if (!mounted.current) void refresh()
+      return result
+    },
     onError: refresh
   })
   return { transfer, refresh }

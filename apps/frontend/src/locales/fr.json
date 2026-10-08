@@ -316,7 +316,8 @@
     "moveAnyway": "Déplacer quand même",
     "removedAssignees": "La tâche a été déplacée. Ces personnes n'ont pas accès à %{board} et ont été retirées des responsables : %{names}.",
     "dismiss": "OK",
-    "formerMember": "Ancien membre"
+    "formerMember": "Ancien membre",
+    "moving": "Déplacement…"
   },
   "archive": {
     "archive": "Archiver",

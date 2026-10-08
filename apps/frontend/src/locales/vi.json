@@ -316,7 +316,8 @@
     "moveAnyway": "Vẫn chuyển",
     "removedAssignees": "Đã chuyển công việc. Những người này không có quyền truy cập %{board} và đã bị bỏ giao: %{names}.",
     "dismiss": "OK",
-    "formerMember": "Thành viên cũ"
+    "formerMember": "Thành viên cũ",
+    "moving": "Đang chuyển…"
   },
   "archive": {
     "archive": "Lưu trữ",

@@ -332,4 +332,150 @@ describe('moving a task to another board', () => {
       within(dialog).getByTestId('transfer-dropped-assignees').textContent
     ).toContain('Former member')
   })
+
+  it('does not let me cancel the confirmation while the move is under way', async () => {
+    const { design, ops, boardsApi } = setup()
+    boardsApi.previewTransfer.mockResolvedValue({
+      droppedAssignees: [
+        { userId: 'u1', name: 'Bob', email: 'bob@example.com' }
+      ],
+      createdLabels: []
+    })
+    let finish: () => void = () => undefined
+    boardsApi.transferTask.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          finish = () => {
+            resolve({
+              key: 'OPS-1',
+              droppedAssignees: [
+                { userId: 'u2', name: 'Eve', email: 'eve@example.com' }
+              ],
+              createdLabels: []
+            })
+          }
+        })
+    )
+    const form = await openForm(boardsApi, design.id, 'Logo')
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Move Logo?' })
+    expect(dialog.getAttribute('aria-busy')).toBe('false')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Move anyway' }))
+
+    await waitFor(() => {
+      expect(
+        within(dialog).getByRole('button', { name: 'Cancel' })
+      ).toBeDisabled()
+    })
+    expect(dialog.getAttribute('aria-busy')).toBe('true')
+    expect(within(dialog).getByRole('status').textContent).toBe('Moving…')
+    expect(document.activeElement).toBe(within(dialog).getByRole('status'))
+    fireEvent.keyDown(dialog, { key: 'Escape' })
+    expect(screen.getByRole('dialog', { name: 'Move Logo?' })).toBeTruthy()
+    finish()
+
+    const notice = await screen.findByRole('alert')
+    expect(within(notice).getByRole('button', { name: 'OK' })).toBe(
+      document.activeElement
+    )
+  })
+
+  it('refreshes the board when the form goes away during the move', async () => {
+    const { design, ops, boardsApi } = setup()
+    let finish: () => void = () => undefined
+    boardsApi.transferTask.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          finish = () => {
+            resolve({ key: 'OPS-1', droppedAssignees: [], createdLabels: [] })
+          }
+        })
+    )
+    const form = await openForm(boardsApi, design.id, 'Logo')
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+    const loads = boardsApi.getBoard.mock.calls.length
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+    await waitFor(() => {
+      expect(boardsApi.transferTask).toHaveBeenCalled()
+    })
+    fireEvent.keyDown(
+      screen.getByRole('dialog', { name: 'Move to another board' }),
+      { key: 'Escape' }
+    )
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Move to another board' })
+      ).toBeNull()
+    })
+    finish()
+
+    await waitFor(() => {
+      expect(boardsApi.getBoard.mock.calls.length).toBeGreaterThan(loads)
+    })
+  })
+
+  it('shows no stale failure when a retry opens the confirmation', async () => {
+    const { design, ops, boardsApi } = setup()
+    boardsApi.transferTask.mockRejectedValueOnce(new Error('boom'))
+    const form = await openForm(boardsApi, design.id, 'Logo')
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+    await screen.findByText('The task could not be moved.')
+    boardsApi.previewTransfer.mockResolvedValue({
+      droppedAssignees: [
+        { userId: 'u1', name: 'Bob', email: 'bob@example.com' }
+      ],
+      createdLabels: []
+    })
+
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Move Logo?' })
+    expect(within(dialog).queryByRole('alert')).toBeNull()
+  })
+
+  it('refreshes the board once when a move fails after the form is gone', async () => {
+    const { design, ops, boardsApi } = setup()
+    let fail: () => void = () => undefined
+    boardsApi.transferTask.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          fail = () => {
+            reject(new Error('boom'))
+          }
+        })
+    )
+    const form = await openForm(boardsApi, design.id, 'Logo')
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+    await waitFor(() => {
+      expect(boardsApi.transferTask).toHaveBeenCalled()
+    })
+    fireEvent.keyDown(
+      screen.getByRole('dialog', { name: 'Move to another board' }),
+      { key: 'Escape' }
+    )
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Move to another board' })
+      ).toBeNull()
+    })
+    const loads = boardsApi.getBoard.mock.calls.length
+    fail()
+
+    await waitFor(() => {
+      expect(boardsApi.getBoard.mock.calls.length).toBe(loads + 1)
+    })
+    await new Promise(resolve => setTimeout(resolve, 100))
+    expect(boardsApi.getBoard.mock.calls.length).toBe(loads + 1)
+  })
 })

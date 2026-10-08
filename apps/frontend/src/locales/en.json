@@ -316,7 +316,8 @@
     "moveAnyway": "Move anyway",
     "removedAssignees": "The task was moved. These people have no access to %{board} and were unassigned: %{names}.",
     "dismiss": "OK",
-    "formerMember": "Former member"
+    "formerMember": "Former member",
+    "moving": "Moving…"
   },
   "archive": {
     "archive": "Archive",
