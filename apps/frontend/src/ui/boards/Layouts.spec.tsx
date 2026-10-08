@@ -223,4 +223,45 @@ describe('board layouts', () => {
       'calendar'
     )
   })
+
+  describe('task panel', () => {
+    const panel = () => screen.queryByRole('dialog', { name: 'DES-1 Logo' })
+
+    it('stays closed when the view changes after closing a deep-linked task', async () => {
+      const board = designBoard()
+      const { router } = renderRoute(`/boards/${board.id}?task=DES-1`, {
+        boardsApi: fakeBoardsApi([board])
+      })
+
+      const open = await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+      fireEvent.click(within(open).getByRole('button', { name: 'Close' }))
+      await waitFor(() => {
+        expect(panel()).toBeNull()
+      })
+      expect(router.state.location.search).toBe('')
+
+      fireEvent.click(layouts().getByRole('button', { name: 'List' }))
+      await screen.findByRole('list', { name: 'In progress' })
+      expect(panel()).toBeNull()
+
+      fireEvent.click(layouts().getByRole('button', { name: 'Calendar' }))
+      await screen.findByRole('button', { name: 'Logo' })
+      expect(panel()).toBeNull()
+      expect(router.state.location.search).toBe('')
+    })
+
+    it.each(['board', 'list', 'calendar'] as const)(
+      'opens a deep-linked task in the %s view',
+      async layout => {
+        const board = designBoard({ layout, defaultLayout: layout })
+        renderRoute(`/boards/${board.id}?task=DES-1`, {
+          boardsApi: fakeBoardsApi([board])
+        })
+
+        expect(
+          await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+        ).toBeInTheDocument()
+      }
+    )
+  })
 })

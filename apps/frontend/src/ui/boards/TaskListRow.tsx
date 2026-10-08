@@ -1,6 +1,5 @@
 import { Checkbox, Link } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
-import { useSearchParams } from 'react-router'
+import type { ReactElement } from 'react'
 
 import { LabelChip } from '@/ds/Columns'
 import { ListRow } from '@/ds/ListView'
@@ -8,6 +7,7 @@ import type { Section, Task } from '@/domain/board'
 import { useBoardChange, useMoveTask } from '@/ui/boards/queries'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
+import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 // A task in a section is done by being in a completed section, so ticking
@@ -24,8 +24,7 @@ export function TaskListRow({
   editable: boolean
 }): ReactElement {
   const { t } = useI18n()
-  const [params] = useSearchParams()
-  const [open, setOpen] = useState(params.get('task') === task.key)
+  const panel = useTaskPanel(task.key)
   const complete = useBoardChange(boardId, (api, done: boolean) =>
     api.completeTask(boardId, task.id, done ? 'completed' : null)
   )
@@ -77,7 +76,7 @@ export function TaskListRow({
             underline="none"
             className="u-ta-left"
             onClick={() => {
-              setOpen(true)
+              panel.show()
             }}
           >
             {task.title}
@@ -94,14 +93,14 @@ export function TaskListRow({
           <LabelChip key={label.id} name={label.name} />
         ))}
       />
-      {open && (
+      {panel.open && (
         <TaskPanel
           task={task}
           boardId={boardId}
           editable={editable}
           depth={1}
           onClose={() => {
-            setOpen(false)
+            panel.close()
           }}
         />
       )}
