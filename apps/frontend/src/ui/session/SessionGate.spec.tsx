@@ -18,6 +18,26 @@ const failing = () => {
   return fakeSession(() => Promise.reject(new Error('bad state')))
 }
 
+const slowToGiveUp = () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  let rejectStart: (error: Error) => void = () => undefined
+  const session = fakeSession(
+    () =>
+      new Promise((_, reject) => {
+        rejectStart = reject
+      })
+  )
+  const giveUp = (error: Error) => {
+    rejectStart(error)
+  }
+  return { session, giveUp }
+}
+
+const pastTheTimeout = () =>
+  act(async () => {
+    await vi.advanceTimersByTimeAsync(8000)
+  })
+
 describe('SessionGate', () => {
   beforeEach(() => {
     document.body.innerHTML = page.body.innerHTML
@@ -85,19 +105,13 @@ describe('SessionGate', () => {
 
   it('keeps saying it is slow when the sign-in gives up afterwards', async () => {
     vi.useFakeTimers()
-    let giveUp: (error: Error) => void = () => undefined
-    vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const session = fakeSession(
-      () =>
-        new Promise((_, reject) => {
-          giveUp = reject
-        })
-    )
+    const { session, giveUp } = slowToGiveUp()
     renderWithProviders(<p>app</p>, { session })
+    await pastTheTimeout()
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(8000)
       giveUp(new Error('discovery timed out'))
+      await Promise.resolve()
     })
 
     expect(
@@ -171,6 +185,24 @@ describe('SessionGate', () => {
     )
 
     expect(await screen.findByText('app')).toBeInTheDocument()
+  })
+
+  it('keeps showing the app when the sign-in gives up after signing in again', async () => {
+    vi.useFakeTimers()
+    const { session, giveUp } = slowToGiveUp()
+    vi.mocked(session.signIn).mockResolvedValue(fakeUser())
+    renderWithProviders(<p>app</p>, { session })
+    await pastTheTimeout()
+    fireEvent.click(screen.getByRole('button', { name: 'Back to sign-in' }))
+    await act(() => Promise.resolve())
+    expect(screen.getByText('app')).toBeInTheDocument()
+
+    await act(async () => {
+      giveUp(new Error('no answer from the SSO'))
+      await Promise.resolve()
+    })
+
+    expect(screen.getByText('app')).toBeInTheDocument()
   })
 
   it('signs in again when another tab signs out', async () => {

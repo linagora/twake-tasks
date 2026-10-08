@@ -87,7 +87,10 @@ export function SessionGate({
       },
       (error: unknown) => {
         console.error('Sign-in failed:', error)
-        setState({ status: 'failed' })
+        // The timeout screen offers to sign in again before the start gives up
+        setState(current =>
+          current.status === 'signedIn' ? current : { status: 'failed' }
+        )
       }
     )
   }, [session])
