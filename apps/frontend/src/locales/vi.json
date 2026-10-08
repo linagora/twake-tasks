@@ -157,7 +157,8 @@
     "apply": "Áp dụng",
     "commentPlaceholder": "Viết bình luận…",
     "descriptionPlaceholder": "Thêm chi tiết, các bước hoặc liên kết…",
-    "sendHint": "Ctrl+Enter để gửi"
+    "sendHint": "Ctrl+Enter để gửi",
+    "mentionsLabel": "Người có thể nhắc đến"
   },
   "history": {
     "heading": "Lịch sử",

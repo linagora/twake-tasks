@@ -157,7 +157,8 @@
     "apply": "Apply",
     "commentPlaceholder": "Write a comment…",
     "descriptionPlaceholder": "Add details, steps or links…",
-    "sendHint": "Ctrl+Enter to send"
+    "sendHint": "Ctrl+Enter to send",
+    "mentionsLabel": "People to mention"
   },
   "history": {
     "heading": "History",

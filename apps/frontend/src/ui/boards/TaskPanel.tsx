@@ -150,7 +150,12 @@ export function TaskPanel({
           className="u-pt-1"
         >
           {tab === 'comments' ? (
-            <Comments task={task} boardId={boardId} />
+            <Comments
+              task={task}
+              boardId={boardId}
+              members={board?.members ?? []}
+              tasks={board?.tasks ?? []}
+            />
           ) : (
             <History task={task} boardId={boardId} />
           )}

@@ -1,25 +1,34 @@
 import { Button, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 
+import { Highlight } from '@/ds/Highlight'
 import { RichText, RichTextEditor } from '@/ds/RichText'
 import { Feed, FeedItem } from '@/ds/SidePanel'
-import type { Task } from '@/domain/board'
+import type { Person, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
+import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useAddComment, useComments } from '@/ui/boards/queries'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useSession } from '@/ui/session/SessionGate'
 
 const MAX_COMMENT = 10_000
+const MAX_SUGGESTIONS = 8
 
 export function Comments({
   task,
-  boardId
+  boardId,
+  members,
+  tasks
 }: {
   task: Task
   boardId: string
+  members: Person[]
+  tasks: Task[]
 }): ReactElement {
   const { t, lang } = useI18n()
+  const { user } = useSession()
   const labels = useRichTextLabels()
   const comments = useComments(boardId, task.id)
   const add = useAddComment(boardId, task.id)
@@ -30,6 +39,13 @@ export function Comments({
     timeStyle: 'short'
   })
   const sendable = !add.isPending && body !== '' && body.length <= MAX_COMMENT
+  const mentionable = (query: string) => {
+    const pinned = new Set(task.assignees.map(person => person.userId))
+    return matchingPeople(
+      suggestionOrder(members, pinned, user.email, tasks),
+      query
+    ).slice(0, MAX_SUGGESTIONS)
+  }
   const send = () => {
     if (!sendable) return
     add.mutate(body, {
@@ -90,6 +106,39 @@ export function Comments({
           minHeight={48}
           onChange={setBody}
           onSubmit={send}
+          suggestions={{
+            trigger: '@',
+            label: t('editor.mentionsLabel'),
+            search: query =>
+              mentionable(query).map(person => ({
+                key: person.userId,
+                insert: `@${person.email} `,
+                label: (
+                  <>
+                    <PersonAvatar
+                      email={person.email}
+                      name={person.name}
+                      avatar={person.avatar}
+                    />
+                    <div className="u-ellipsis">
+                      <Typography variant="body2" className="u-ellipsis">
+                        <Highlight text={displayName(person)} query={query} />
+                      </Typography>
+                      {displayName(person) !== person.email && (
+                        <Typography
+                          variant="caption"
+                          color="textSecondary"
+                          component="div"
+                          className="u-ellipsis"
+                        >
+                          <Highlight text={person.email} query={query} />
+                        </Typography>
+                      )}
+                    </div>
+                  </>
+                )
+              }))
+          }}
           footer={
             <>
               <Typography

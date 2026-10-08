@@ -157,7 +157,8 @@
     "apply": "Применить",
     "commentPlaceholder": "Напишите комментарий…",
     "descriptionPlaceholder": "Добавьте подробности, шаги или ссылки…",
-    "sendHint": "Ctrl+Enter, чтобы отправить"
+    "sendHint": "Ctrl+Enter, чтобы отправить",
+    "mentionsLabel": "Кого упомянуть"
   },
   "history": {
     "heading": "История",
