@@ -313,4 +313,23 @@ describe('moving a task to another board', () => {
       document.activeElement
     )
   })
+
+  it('names a person without a name or an email a former member', async () => {
+    const { design, ops, boardsApi } = setup()
+    boardsApi.previewTransfer.mockResolvedValue({
+      droppedAssignees: [{ userId: 'u1', name: null, email: '' }],
+      createdLabels: []
+    })
+    const form = await openForm(boardsApi, design.id, 'Logo')
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Move Logo?' })
+    expect(
+      within(dialog).getByTestId('transfer-dropped-assignees').textContent
+    ).toContain('Former member')
+  })
 })
