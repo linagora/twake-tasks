@@ -43,6 +43,13 @@ jobs:
       push: true
       version: ${{ needs.verify.outputs.version }}
 
+  manifest:
+    needs: [verify, check]
+    uses: linagora/twake-workflows/.github/workflows/publish-manifest.yml@v1
+    secrets:
+      REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+      DOWNCLOUD_SSH_KEY: ${{ secrets.DOWNCLOUD_SSH_KEY }}
+
   release:
     needs: [verify, publish]
     runs-on: ubuntu-latest

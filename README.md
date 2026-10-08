@@ -33,6 +33,12 @@ npm run dev -w @twake-tasks/frontend
 
 The backend refuses to connect to the database as a superuser, because a superuser skips the row level security that keeps organizations apart. Compose creates a `twake_tasks` role for it on a fresh volume. If your volume predates that, recreate it with `docker compose down -v`.
 
+## Publish it on the registry
+
+Twake Tasks shows in the Twake Workplace home and bar as a standalone app. The app ships no code: [manifest/manifest.webapp](manifest/manifest.webapp) and its icon are the whole archive, and the home and the bar open the URL held by the `project.embedded-app-url` flag instead of a subdomain. Set that flag to the Twake Tasks URL on each context.
+
+Every frontend release publishes the archive on the dev channel of the registry as `<version>-dev.<commit>` ([publish-manifest.yml](https://github.com/linagora/twake-workflows/blob/main/.github/workflows/publish-manifest.yml) in `frontend-release.yml`). The version comes from the release tag and must equal the one in `apps/frontend/package.json`; the manifest carries none.
+
 ## Error reporting and feedback
 
 The frontend reports errors to Sentry, and can offer a feedback button, from the runtime configuration (`/.env.js`, written from the container's environment):
