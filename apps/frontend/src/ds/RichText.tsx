@@ -301,7 +301,6 @@ export function RichTextEditor({
       ? {
           'aria-haspopup': 'listbox',
           'aria-autocomplete': 'list',
-          'aria-expanded': open ? 'true' : 'false',
           'aria-controls': open ? listId : null,
           'aria-activedescendant': open ? optionId(listId, active) : null
         }

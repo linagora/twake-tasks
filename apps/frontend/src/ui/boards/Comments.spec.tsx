@@ -284,7 +284,7 @@ describe('Comments', () => {
       const { editor } = await typeInComment('@zzz')
 
       expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
-      expect(editor).toHaveAttribute('aria-expanded', 'false')
+      expect(editor).not.toHaveAttribute('aria-controls')
     })
 
     it('does not suggest inside an email address', async () => {
@@ -297,21 +297,21 @@ describe('Comments', () => {
       const { editor } = await typeInComment('Hi')
       expect(editor).toHaveAttribute('aria-haspopup', 'listbox')
       expect(editor).toHaveAttribute('aria-autocomplete', 'list')
-      expect(editor).toHaveAttribute('aria-expanded', 'false')
+      // aria-expanded is not allowed on a textbox (ARIA 1.2)
+      expect(editor).not.toHaveAttribute('aria-expanded')
       expect(editor).not.toHaveAttribute('aria-controls')
 
       await typeRichText(editor, 'Hi @al')
 
       const list = await screen.findByRole('listbox')
       const [first, second] = within(list).getAllByRole('option')
-      expect(editor).toHaveAttribute('aria-expanded', 'true')
       expect(editor).toHaveAttribute('aria-controls', list.id)
       expect(editor).toHaveAttribute('aria-activedescendant', first?.id)
       fireEvent.keyDown(editor, { key: 'ArrowDown' })
       expect(editor).toHaveAttribute('aria-activedescendant', second?.id)
       fireEvent.keyDown(editor, { key: 'Escape' })
       await waitFor(() => {
-        expect(editor).toHaveAttribute('aria-expanded', 'false')
+        expect(editor).not.toHaveAttribute('aria-controls')
       })
       expect(editor).not.toHaveAttribute('aria-activedescendant')
     })
