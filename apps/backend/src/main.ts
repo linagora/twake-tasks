@@ -16,6 +16,10 @@ import {
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { accountRoutes } from './modules/boards/accounts.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
+import {
+  emailInvite,
+  PROJECT_INVITE_EMAIL_JOB
+} from './modules/boards/inviteEmails.ts'
 import { BOARD_CHANNEL } from './modules/boards/live.ts'
 import {
   emailNotification,
@@ -103,6 +107,7 @@ if (spaces && !(await knowsAnySpace(db))) {
     logger.error({ err: error }, 'space sync request failed')
   }
 }
+const send = createMailer(config, logger)
 const stopScheduler = createScheduler({
   db,
   logger,
@@ -113,7 +118,11 @@ const stopScheduler = createScheduler({
     [PURGE_SPACE_JOB]: purgeSpace,
     [NOTIFICATION_EMAIL_JOB]: emailNotification({
       appUrl: config.APP_URL,
-      send: createMailer(config, logger)
+      send
+    }),
+    [PROJECT_INVITE_EMAIL_JOB]: emailInvite({
+      appUrl: config.APP_URL,
+      send
     }),
     ...(spaces &&
       reconcileJobs(
