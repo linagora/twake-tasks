@@ -232,7 +232,7 @@
     "moveRight": "Déplacer à droite",
     "delete": "Supprimer",
     "name": "Nom",
-    "status": "Statut",
+    "status": "Type de section",
     "save": "Enregistrer",
     "cancel": "Annuler",
     "deleteTitle": "Supprimer %{section} ?",
@@ -246,6 +246,14 @@
       "started": "En cours",
       "completed": "Terminé",
       "canceled": "Annulé"
+    },
+    "help": {
+      "backlog": "Les tâches ne sont pas marquées comme terminées ou annulées. Les tâches déplacées ici depuis une section Terminé ou Annulé sont rouvertes.",
+      "unstarted": "Les tâches ne sont pas marquées comme terminées ou annulées. Les tâches déplacées ici depuis une section Terminé ou Annulé sont rouvertes.",
+      "started": "Les tâches ne sont pas marquées comme terminées ou annulées. Les tâches déplacées ici depuis une section Terminé ou Annulé sont rouvertes.",
+      "completed": "Les tâches déplacées ici dans ce tableau sont marquées comme terminées. Une tâche récurrente avec une échéance reste ouverte et passe à son échéance suivante.",
+      "canceled": "Les tâches déplacées ici sont marquées comme annulées.",
+      "editing": "Les tâches déjà dans cette section seront marquées comme terminées, annulées ou rouvertes selon le nouveau type, sans récurrence."
     }
   },
   "reminders": {
