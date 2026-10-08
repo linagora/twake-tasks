@@ -228,4 +228,33 @@ describe('moving a task to another board', () => {
     })
     expect(screen.queryByRole('alert')).toBeNull()
   })
+
+  it('forgets a failure when I cancel the confirmation', async () => {
+    const { design, ops, boardsApi } = setup()
+    boardsApi.previewTransfer.mockResolvedValue({
+      droppedAssignees: [
+        { userId: 'u1', name: 'Bob', email: 'bob@example.com' }
+      ],
+      createdLabels: []
+    })
+    boardsApi.transferTask.mockRejectedValueOnce(new Error('boom'))
+    const form = await openForm(boardsApi, design.id, 'Logo')
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+    let dialog = await screen.findByRole('dialog', { name: 'Move Logo?' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Move anyway' }))
+    await within(dialog).findByRole('alert')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Move Logo?' })).toBeNull()
+    })
+    expect(screen.queryByRole('alert')).toBeNull()
+
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+    dialog = await screen.findByRole('dialog', { name: 'Move Logo?' })
+    expect(within(dialog).queryByRole('alert')).toBeNull()
+  })
 })
