@@ -307,7 +307,12 @@
     "board": "Board",
     "section": "Section",
     "move": "Move",
-    "failed": "The task could not be moved."
+    "failed": "The task could not be moved.",
+    "confirmTitle": "Move %{title}?",
+    "droppedAssignees": "These people are not on %{board} and will be unassigned: %{names}.",
+    "createdLabels": "These labels will be created in the project of %{board}: %{names}.",
+    "cancel": "Cancel",
+    "moveAnyway": "Move anyway"
   },
   "archive": {
     "archive": "Archive",

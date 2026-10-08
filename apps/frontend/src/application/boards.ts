@@ -10,6 +10,19 @@ import type {
   Task
 } from '@/domain/board'
 
+/**
+ * The task and its sub-tasks lose their assignees who are not on the target
+ * board. Labels follow by name, and the target project gets the ones it lacks.
+ */
+export interface TransferPreview {
+  droppedAssignees: {
+    userId: string
+    name: string | null
+    email: string | null
+  }[]
+  createdLabels: string[]
+}
+
 export interface NewBoard {
   name: string
   keyPrefix: string
@@ -164,7 +177,13 @@ export interface BoardsApi {
     boardId: string,
     taskId: string,
     to: { boardId: string; sectionId: string | null }
-  ) => Promise<{ key: string }>
+  ) => Promise<{ key: string } & TransferPreview>
+  /** What moving the task would change, without moving it. */
+  previewTransfer: (
+    boardId: string,
+    taskId: string,
+    to: { boardId: string; sectionId: string | null }
+  ) => Promise<TransferPreview>
   /** Archiving or trashing a task also hides its sub-tasks. */
   archiveTask: (boardId: string, taskId: string) => Promise<void>
   /** The trash is purged after 30 days. */

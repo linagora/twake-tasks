@@ -307,7 +307,12 @@
     "board": "Tableau",
     "section": "Section",
     "move": "Déplacer",
-    "failed": "La tâche n'a pas pu être déplacée."
+    "failed": "La tâche n'a pas pu être déplacée.",
+    "confirmTitle": "Déplacer %{title} ?",
+    "droppedAssignees": "Ces personnes ne sont pas dans %{board} et seront désassignées : %{names}.",
+    "createdLabels": "Ces labels seront créés dans le projet de %{board} : %{names}.",
+    "cancel": "Annuler",
+    "moveAnyway": "Déplacer quand même"
   },
   "archive": {
     "archive": "Archiver",

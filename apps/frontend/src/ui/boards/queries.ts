@@ -26,7 +26,8 @@ import type {
   SavedFilter,
   Sharing,
   Shelf,
-  TaskMove
+  TaskMove,
+  TransferPreview
 } from '@/application/boards'
 import type { Board, BoardSummary, Layout } from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
@@ -204,6 +205,20 @@ export function useCreateTask(
     mutationFn: (task: NewTask) => api.createTask(boardId, task),
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+  })
+}
+
+export function usePreviewTransfer(
+  boardId: string,
+  taskId: string
+): UseMutationResult<
+  TransferPreview,
+  Error,
+  { boardId: string; sectionId: string | null }
+> {
+  const api = useBoardsApi()
+  return useMutation({
+    mutationFn: to => api.previewTransfer(boardId, taskId, to)
   })
 }
 

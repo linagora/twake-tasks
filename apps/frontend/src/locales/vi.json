@@ -307,7 +307,12 @@
     "board": "Bảng",
     "section": "Mục",
     "move": "Chuyển",
-    "failed": "Không thể chuyển công việc."
+    "failed": "Không thể chuyển công việc.",
+    "confirmTitle": "Chuyển %{title}?",
+    "droppedAssignees": "Những người này không có trong %{board} và sẽ bị gỡ khỏi công việc: %{names}.",
+    "createdLabels": "Những nhãn này sẽ được tạo trong dự án của %{board}: %{names}.",
+    "cancel": "Hủy",
+    "moveAnyway": "Vẫn chuyển"
   },
   "archive": {
     "archive": "Lưu trữ",

@@ -1,8 +1,23 @@
-import { Button, TextField, Typography } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  Typography
+} from '@linagora/twake-mui'
+import { useId, useState, type ReactElement } from 'react'
 
+import type { TransferPreview } from '@/application/boards'
 import type { Task } from '@/domain/board'
-import { useBoard, useBoardChange, useBoards } from '@/ui/boards/queries'
+import { displayName } from '@/domain/person'
+import {
+  useBoard,
+  useBoardChange,
+  useBoards,
+  usePreviewTransfer
+} from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 function SectionSelect({
@@ -38,6 +53,64 @@ function SectionSelect({
   )
 }
 
+function ConfirmTransfer({
+  task,
+  board,
+  preview,
+  busy,
+  onCancel,
+  onConfirm
+}: {
+  task: Task
+  board: string
+  preview: TransferPreview
+  busy: boolean
+  onCancel: () => void
+  onConfirm: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const titleId = useId()
+  const people = preview.droppedAssignees.map(person =>
+    displayName({ email: person.email ?? person.userId, name: person.name })
+  )
+  return (
+    <Dialog open onClose={onCancel} aria-labelledby={titleId} size="small">
+      <DialogTitle id={titleId}>
+        {t('transfer.confirmTitle', { title: task.title })}
+      </DialogTitle>
+      <DialogContent>
+        {people.length > 0 && (
+          <Typography
+            data-testid="transfer-dropped-assignees"
+            className="u-mb-1"
+          >
+            {t('transfer.droppedAssignees', {
+              board,
+              names: people.join(', ')
+            })}
+          </Typography>
+        )}
+        {preview.createdLabels.length > 0 && (
+          <Typography data-testid="transfer-created-labels">
+            {t('transfer.createdLabels', {
+              board,
+              names: preview.createdLabels.join(', ')
+            })}
+          </Typography>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button variant="text" onClick={onCancel}>
+          {t('transfer.cancel')}
+        </Button>
+        <Button disabled={busy} onClick={onConfirm}>
+          {t('transfer.moveAnyway')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
 export function TransferTask({
   task,
   boardId,
@@ -51,12 +124,17 @@ export function TransferTask({
   const boards = useBoards()
   const [target, setTarget] = useState('')
   const [sectionId, setSectionId] = useState('')
+  const [preview, setPreview] = useState<TransferPreview | null>(null)
   const transfer = useBoardChange(boardId, (api, to: string) =>
     api.transferTask(boardId, task.id, {
       boardId: to,
       sectionId: sectionId || null
     })
   )
+  const check = usePreviewTransfer(boardId, task.id)
+  const move = () => {
+    transfer.mutate(target, { onSuccess: onMoved })
+  }
   const targets =
     boards.data?.filter(
       board =>
@@ -70,7 +148,15 @@ export function TransferTask({
       className="u-flex u-flex-items-center u-mt-1"
       onSubmit={event => {
         event.preventDefault()
-        transfer.mutate(target, { onSuccess: onMoved })
+        check.mutate(
+          { boardId: target, sectionId: sectionId || null },
+          {
+            onSuccess: result => {
+              if (result.droppedAssignees.length === 0) move()
+              else setPreview(result)
+            }
+          }
+        )
       }}
     >
       <TextField
@@ -99,10 +185,25 @@ export function TransferTask({
           onChange={setSectionId}
         />
       )}
-      <Button type="submit" disabled={!target || transfer.isPending}>
+      <Button
+        type="submit"
+        disabled={!target || check.isPending || transfer.isPending}
+      >
         {t('transfer.move')}
       </Button>
-      {transfer.isError && (
+      {preview && (
+        <ConfirmTransfer
+          task={task}
+          board={targets.find(board => board.id === target)?.name ?? ''}
+          preview={preview}
+          busy={transfer.isPending}
+          onCancel={() => {
+            setPreview(null)
+          }}
+          onConfirm={move}
+        />
+      )}
+      {(check.isError || transfer.isError) && (
         <Typography role="alert" className="u-ml-1">
           {t('transfer.failed')}
         </Typography>
