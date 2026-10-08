@@ -164,6 +164,7 @@ export function createArchiveStore(db: Db) {
             )
           )
           .orderBy(desc(tasks[stamp]))
+        if (rows.length === 0) return []
         const described = await describeTasks(
           tx,
           board,

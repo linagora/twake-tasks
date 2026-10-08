@@ -143,7 +143,7 @@ function ago(at: string, lang: string): string {
   const format = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' })
   for (const [unit, size] of UNITS) {
     if (Math.abs(elapsed) >= size) {
-      return format.format(Math.round(elapsed / size), unit)
+      return format.format(Math.trunc(elapsed / size), unit)
     }
   }
   return format.format(0, 'minute')
@@ -235,7 +235,7 @@ function ShelfTasks({
             value={shelf}
             aria-label={t('archive.shelves')}
             onChange={(_event, next: Shelf | null) => {
-              if (next && next !== shelf) {
+              if (next) {
                 void navigate(`../${next}`, { relative: 'path', replace: true })
               }
             }}

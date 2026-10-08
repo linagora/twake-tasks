@@ -32,7 +32,7 @@ export function ShelfHeader({
     >
       {columns.map((column, index) => (
         <Typography
-          key={column}
+          key={index}
           variant="caption"
           color="textSecondary"
           sx={{ gridColumn: index === 0 ? 'span 2' : undefined }}
@@ -92,11 +92,13 @@ export function ShelfRow({
         borderColor: 'divider',
         transition: 'background-color 120ms',
         '&:hover, &:focus-within': { bgcolor: 'action.hover' },
-        // Phones give long titles a second line.
         '& .ShelfRow-title button': {
           display: { xs: '-webkit-box', md: 'block' },
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
+          // MUI makes a button link relative, which would trap the
+          // row-wide ::after below inside the title.
+          position: 'static',
           maxWidth: '100%',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -175,7 +177,7 @@ export function ShelfWhen({
 }): ReactElement {
   return (
     <Tooltip title={date}>
-      <Box sx={{ minWidth: 0 }}>
+      <Box sx={{ minWidth: 0, position: 'relative', zIndex: 1 }}>
         <Typography variant="body2" noWrap>
           {ago}
         </Typography>
