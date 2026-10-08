@@ -2,6 +2,7 @@ import { Box, type Theme } from '@linagora/twake-mui'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Placeholder } from '@tiptap/extensions'
 import { Markdown } from '@tiptap/markdown'
+import { Marked, type marked } from 'marked'
 import {
   EditorContent,
   useEditor,
@@ -33,6 +34,12 @@ import {
 
 export type { RichTextLabels } from '@/ds/RichTextToolbar'
 
+// @tiptap/markdown types the parser as the shared `marked`, but only calls
+// `use`, `lexer`, `setOptions` and `defaults`, which every `Marked` has.
+const ownMarked = (): typeof marked =>
+  // @ts-expect-error: a Marked has every member tiptap calls, its generics differ from marked's
+  new Marked()
+
 const extensions = (placeholder = '', more: AnyExtension[] = []) => [
   StarterKit.configure({
     heading: { levels: [1, 2, 3] },
@@ -40,7 +47,9 @@ const extensions = (placeholder = '', more: AnyExtension[] = []) => [
   }),
   TaskList,
   TaskItem.configure({ nested: true }),
-  Markdown,
+  // One parser per editor: the shared one of marked would keep the tokenizer
+  // of the mentions, and every other editor would drop the "@<email>" it reads
+  Markdown.configure({ marked: ownMarked() }),
   Placeholder.configure({ placeholder }),
   ...more
 ]

@@ -41,6 +41,7 @@
     "@tiptap/starter-kit": "^3.31.4",
     "@tiptap/suggestion": "^3.31.4",
     "dayjs": "^1.11.23",
+    "marked": "^17.0.6",
     "openid-client": "^6.8.8",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
