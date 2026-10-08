@@ -82,4 +82,36 @@ describe('notification emails', () => {
     ])
     expect(sent[0]?.text).toContain('You were assigned')
   })
+
+  it('sends nothing to someone the task left behind when it moved boards', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const design = (
+      await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
+    ).json<{ id: string }>()
+    const ops = (
+      await api.as(alice).post('/boards', { name: 'Ops', keyPrefix: 'OPS' })
+    ).json<{ id: string }>()
+    await joinBoard(db, alice, design.id, bob, 'editor')
+    const task = (
+      await api
+        .as(alice)
+        .post(`/boards/${design.id}/tasks`, { sectionId: null, title: 'Logo' })
+    ).json<{ id: string }>()
+    const mailbox = aMailbox()
+    await api.as(alice).put(`/boards/${design.id}/tasks/${task.id}/assignees`, {
+      userIds: [bob.userId]
+    })
+
+    await api.as(alice).post(`/boards/${design.id}/tasks/${task.id}/transfer`, {
+      boardId: ops.id,
+      sectionId: null
+    })
+    await api.as(alice).patch(`/boards/${ops.id}/tasks/${task.id}`, {
+      title: 'New logo'
+    })
+    await mailbox.deliver()
+
+    expect(mailbox.sent.filter(mail => mail.to === bob.email)).toEqual([])
+  })
 })
