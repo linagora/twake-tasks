@@ -204,4 +204,28 @@ describe('moving a task to another board', () => {
       screen.getByRole('form', { name: 'Move to another board' })
     ).toBeTruthy()
   })
+
+  it('moves without a notice when the server dropped nobody the preview named', async () => {
+    const { design, ops, boardsApi } = setup()
+    boardsApi.previewTransfer.mockResolvedValue({
+      droppedAssignees: [
+        { userId: 'u1', name: 'Bob', email: 'bob@example.com' }
+      ],
+      createdLabels: []
+    })
+    const form = await openForm(boardsApi, design.id, 'Logo')
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Move Logo?' })
+    )
+    fireEvent.click(dialog.getByRole('button', { name: 'Move anyway' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Logo' })).toBeNull()
+    })
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
 })
