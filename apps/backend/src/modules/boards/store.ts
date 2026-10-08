@@ -6,6 +6,7 @@ import {
   exists,
   ilike,
   inArray,
+  isNotNull,
   isNull,
   lt,
   notExists,
@@ -191,6 +192,25 @@ export function createBoardStore(db: Db) {
                 eq(tasks.boardId, boards.id),
                 isNull(tasks.parentId),
                 isNull(tasks.completedAt),
+                isNull(tasks.canceledAt),
+                shown
+              )
+            ),
+            doneTasks: tx.$count(
+              tasks,
+              and(
+                eq(tasks.boardId, boards.id),
+                isNull(tasks.parentId),
+                isNotNull(tasks.completedAt),
+                isNull(tasks.canceledAt),
+                shown
+              )
+            ),
+            totalTasks: tx.$count(
+              tasks,
+              and(
+                eq(tasks.boardId, boards.id),
+                isNull(tasks.parentId),
                 isNull(tasks.canceledAt),
                 shown
               )

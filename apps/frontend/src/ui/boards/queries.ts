@@ -170,9 +170,16 @@ export function useProjects({
   })
 }
 
-export function useBoards(): UseQueryResult<BoardSummary[]> {
+// `poll` follows the tasks done or added elsewhere.
+export function useBoards({
+  poll = false
+}: { poll?: boolean } = {}): UseQueryResult<BoardSummary[]> {
   const api = useBoardsApi()
-  return useQuery({ queryKey: boardsKey, queryFn: () => api.listBoards() })
+  return useQuery({
+    queryKey: boardsKey,
+    queryFn: () => api.listBoards(),
+    refetchInterval: poll ? POLL_MS : false
+  })
 }
 
 // Reloads on a newer version: a change made elsewhere, or one missed while

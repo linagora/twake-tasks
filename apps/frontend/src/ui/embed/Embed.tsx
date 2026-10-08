@@ -16,10 +16,13 @@ import { useBoards, useProjects } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 import { useReportBadges } from '@/ui/embed/badges'
+import { useReportMetadata } from '@/ui/embed/metadata'
 import { EMBED_PREFIX, getTwakeSpace } from '@/ui/embed/twakeSpace'
 
-function BadgeReporter({ space }: { space: TwakeSpaceConnection }): null {
+// The badges stay for the TwakeSpace builds that do not read metadata yet
+function SpaceReporter({ space }: { space: TwakeSpaceConnection }): null {
   useReportBadges(space)
+  useReportMetadata(space)
   return null
 }
 
@@ -37,7 +40,7 @@ export function EmbedLayout(): ReactElement {
 
   return (
     <EmbedFrame>
-      {space && <BadgeReporter space={space} />}
+      {space && <SpaceReporter space={space} />}
       <Outlet />
     </EmbedFrame>
   )

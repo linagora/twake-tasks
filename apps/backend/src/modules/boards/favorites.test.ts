@@ -6,6 +6,8 @@ interface Summary {
   name: string
   favorite: boolean
   openTasks: number
+  doneTasks: number
+  totalTasks: number
 }
 
 let api: Awaited<ReturnType<typeof startApp>>
@@ -74,6 +76,38 @@ describe('favorite boards', () => {
     )
 
     expect(listedDesign?.openTasks).toBe(2)
+  })
+
+  it('counts the done and the not canceled top-level tasks of each board', async () => {
+    const alice = aUser()
+    const design = await aBoard(alice, 'Design', 'DES')
+    const add = async (title: string, parentId?: string) =>
+      (
+        await api
+          .as(alice)
+          .post(
+            `/boards/${design.id}/tasks`,
+            parentId ? { title, parentId } : { title, sectionId: null }
+          )
+      ).json<{ id: string }>().id
+    const complete = (taskId: string, state: 'completed' | 'canceled') =>
+      api
+        .as(alice)
+        .post(`/boards/${design.id}/tasks/${taskId}/complete`, { state })
+    const logo = await add('Logo')
+    await complete(await add('Sketch', logo), 'completed')
+    await complete(await add('Poster'), 'completed')
+    await complete(await add('Flyer'), 'canceled')
+    const banner = await add('Banner')
+    await complete(banner, 'completed')
+    await api.as(alice).post(`/boards/${design.id}/tasks/${banner}/archive`, {})
+    await add('Mug')
+
+    const listedDesign = (await listed(alice)).find(
+      board => board.id === design.id
+    )
+
+    expect(listedDesign).toMatchObject({ doneTasks: 1, totalTasks: 3 })
   })
 
   it('keeps favorites personal', async () => {

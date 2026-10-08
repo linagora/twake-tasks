@@ -37,6 +37,8 @@ function board(
     archived: false,
     favorite: false,
     openTasks: 0,
+    doneTasks: 0,
+    totalTasks: 0,
     ...overrides
   }
 }

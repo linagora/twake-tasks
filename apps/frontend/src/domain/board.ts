@@ -28,6 +28,9 @@ export interface BoardSummary {
   archived: boolean
   favorite: boolean
   openTasks: number
+  /** Top-level tasks completed, out of `totalTasks`, the ones not canceled. */
+  doneTasks: number
+  totalTasks: number
 }
 
 export interface Section {
