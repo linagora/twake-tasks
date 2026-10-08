@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -216,5 +216,89 @@ describe('TaskPanel', () => {
     ).not.toBeInTheDocument()
     expect(panel.queryByRole('textbox', { name: 'Title' })).toBeNull()
     expect(panel.getByRole('heading', { name: 'Logo' })).toBeVisible()
+  })
+
+  describe('copy link', () => {
+    const stubClipboard = (writeText: () => Promise<void>) => {
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText },
+        configurable: true
+      })
+    }
+
+    it('copies the link of the task and says so', async () => {
+      const writeText = vi.fn(() => Promise.resolve())
+      stubClipboard(writeText)
+      const { board, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      fireEvent.click(panel.getByRole('button', { name: 'Copy link' }))
+
+      await waitFor(() => {
+        expect(writeText).toHaveBeenCalledWith(
+          `${window.location.origin}/boards/${board.id}?task=DES-1`
+        )
+      })
+      expect(await screen.findByRole('status')).toHaveTextContent('Link copied')
+    })
+
+    it('writes with the clipboard of the window that was clicked', async () => {
+      const own = vi.fn(() => Promise.resolve())
+      const other = vi.fn(() => Promise.resolve())
+      stubClipboard(other)
+      const { board, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      const button = panel.getByRole('button', { name: 'Copy link' })
+      // The overlay of TwakeSpace is another window than the global one
+      const win = window
+      const overlay = new Proxy(win, {
+        get: (target, name): unknown =>
+          name === 'navigator'
+            ? { clipboard: { writeText: own } }
+            : Reflect.get(target, name, target)
+      })
+      const view = vi
+        .spyOn(button.ownerDocument, 'defaultView', 'get')
+        .mockReturnValue(overlay)
+      fireEvent.click(button)
+
+      await waitFor(() => {
+        expect(own).toHaveBeenCalledTimes(1)
+      })
+      view.mockRestore()
+      expect(other).not.toHaveBeenCalled()
+    })
+
+    it('reports a clipboard that refuses', async () => {
+      stubClipboard(() => Promise.reject(new Error('denied')))
+      const { board, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      fireEvent.click(panel.getByRole('button', { name: 'Copy link' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'The link could not be copied.'
+      )
+    })
+
+    it('reports a missing clipboard', async () => {
+      Object.defineProperty(navigator, 'clipboard', {
+        value: undefined,
+        configurable: true
+      })
+      const { board, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      fireEvent.click(panel.getByRole('button', { name: 'Copy link' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'The link could not be copied.'
+      )
+    })
   })
 })

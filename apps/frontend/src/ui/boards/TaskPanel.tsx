@@ -20,6 +20,7 @@ import { Grow, Inline, PanelSection, SidePanel } from '@/ds/SidePanel'
 import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
 import { useRemoveTask } from '@/ui/boards/Archive'
 import { Comments } from '@/ui/boards/Comments'
+import { CopyLinkButton } from '@/ui/boards/CopyLink'
 import { History } from '@/ui/boards/History'
 import { FollowButton } from '@/ui/boards/Notifications'
 import {
@@ -69,6 +70,9 @@ export function TaskPanel({
           </Typography>
           <Grow />
           <FollowButton task={task} boardId={boardId} />
+          {depth === 1 && (
+            <CopyLinkButton boardId={boardId} taskKey={task.key} />
+          )}
           {editable && (
             <TaskMenu task={task} boardId={boardId} onRemoved={onClose} />
           )}
