@@ -8,7 +8,7 @@ import {
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { useId, useState, type ReactElement } from 'react'
+import { useEffect, useId, useRef, useState, type ReactElement } from 'react'
 
 import type { TransferPreview } from '@/application/boards'
 import type { Task } from '@/domain/board'
@@ -154,7 +154,21 @@ export function TransferTask({
   const [removed, setRemoved] = useState<TransferPreview | null>(null)
   const { transfer, refresh } = useTransferTask(boardId, task.id)
   const check = usePreviewTransfer(boardId, task.id)
+  // The board is refreshed once the notice is read, or when the form goes away
+  // without that, as when the person closes the dialog around it.
+  const stale = useRef(false)
+  const refreshNow = useRef(refresh)
+  useEffect(() => {
+    refreshNow.current = refresh
+  })
+  useEffect(
+    () => () => {
+      if (stale.current) void refreshNow.current()
+    },
+    []
+  )
   const finish = () => {
+    stale.current = false
     void refresh()
     onMoved()
   }
@@ -164,6 +178,7 @@ export function TransferTask({
       { boardId: target, sectionId: sectionId || null },
       {
         onSuccess: result => {
+          stale.current = true
           setPreview(null)
           const told = new Set(expected.droppedAssignees.map(p => p.userId))
           const same =
