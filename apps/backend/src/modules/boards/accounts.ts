@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, ne, notExists, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, ne, notExists, or, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import type { PlatformEvent } from '../../events/envelope.ts'
@@ -11,6 +11,7 @@ import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { userSettings } from '../settings/schema.ts'
 import {
+  inviteEmails,
   projectMembers,
   projects,
   savedFilters,
@@ -120,6 +121,18 @@ async function forget(tx: Tx, organizationId: string | null, userId: string) {
         .select({ email: sql<string>`lower(${projectMembers.email})` })
         .from(projectMembers)
         .where(eq(projectMembers.userId, userId))
+    )
+  )
+  await tx.delete(inviteEmails).where(
+    or(
+      eq(inviteEmails.invitedBy, userId),
+      inArray(
+        inviteEmails.email,
+        tx
+          .select({ email: sql<string>`lower(${projectMembers.email})` })
+          .from(projectMembers)
+          .where(eq(projectMembers.userId, userId))
+      )
     )
   )
   await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))

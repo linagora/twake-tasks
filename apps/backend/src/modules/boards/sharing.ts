@@ -1,5 +1,18 @@
-import { and, asc, eq, inArray, isNull, ne, notInArray, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  lt,
+  ne,
+  notInArray,
+  sql
+} from 'drizzle-orm'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
+import { schedule } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
 import { userSettings } from '../settings/schema.ts'
 import {
@@ -13,6 +26,7 @@ import {
 import { unfollowOutside, unfollowProject } from './followers.ts'
 import {
   boards,
+  inviteEmails,
   projectInvites,
   projectMembers,
   projects,
@@ -20,6 +34,7 @@ import {
   taskLabels,
   tasks
 } from './schema.ts'
+import { PROJECT_INVITE_EMAIL_JOB } from './inviteEmails.ts'
 import { bumpBoard, checkRole, Refused, writeOrRefuse } from './tasks.ts'
 
 async function projectOfBoard(tx: Tx, boardId: string) {
@@ -44,6 +59,48 @@ async function sharedProject(tx: Tx, identity: Identity, boardId: string) {
   const project = await projectOfBoard(tx, boardId)
   if (project.personal || project.managed) throw new Refused('forbidden')
   return project
+}
+
+export const EMAILS_PER_ADDRESS_WINDOW_MS = 24 * 60 * 60 * 1000
+export const EMAILS_PER_INVITER_WINDOW_MS = 60 * 60 * 1000
+export const EMAILS_PER_INVITER = 20
+
+// Anyone can make a board and invite any address, so the e-mail is limited
+// to one per address and project a day, and 20 an hour per inviter. The
+// invite itself is recorded either way.
+async function mayEmail(
+  tx: Tx,
+  projectId: string,
+  email: string,
+  inviter: string
+) {
+  const since = (ms: number) => new Date(Date.now() - ms)
+  // Nothing older than the longest window is needed: forget it. This reaches
+  // the rows of the tenant the inviter is in, as row level security allows.
+  await tx
+    .delete(inviteEmails)
+    .where(lt(inviteEmails.sentAt, since(EMAILS_PER_ADDRESS_WINDOW_MS)))
+  const [sameAddress] = await tx
+    .select({ n: count() })
+    .from(inviteEmails)
+    .where(
+      and(
+        eq(inviteEmails.projectId, projectId),
+        eq(inviteEmails.email, email),
+        gt(inviteEmails.sentAt, since(EMAILS_PER_ADDRESS_WINDOW_MS))
+      )
+    )
+  if (sameAddress && sameAddress.n > 0) return false
+  const [byInviter] = await tx
+    .select({ n: count() })
+    .from(inviteEmails)
+    .where(
+      and(
+        eq(inviteEmails.invitedBy, inviter),
+        gt(inviteEmails.sentAt, since(EMAILS_PER_INVITER_WINDOW_MS))
+      )
+    )
+  return (byInviter?.n ?? 0) < EMAILS_PER_INVITER
 }
 
 async function keepAnAdmin(tx: Tx, projectId: string, leaving: string) {
@@ -76,6 +133,15 @@ export function createSharingStore(db: Db) {
             )
           )
         if (member) return
+        const [existing] = await tx
+          .select({ role: projectInvites.role })
+          .from(projectInvites)
+          .where(
+            and(
+              eq(projectInvites.projectId, project.id),
+              eq(projectInvites.email, email)
+            )
+          )
         await tx
           .insert(projectInvites)
           .values({
@@ -89,6 +155,33 @@ export function createSharingStore(db: Db) {
             target: [projectInvites.projectId, projectInvites.email],
             set: { role }
           })
+        // An e-mail goes out for a new invite or a change of role, within the
+        // limits of mayEmail. The job reads the invite when it runs, so it
+        // tells the role current at delivery.
+        if (existing?.role === role) return
+        // Serialises one inviter's requests, so the ceiling holds in parallel.
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtextextended(${identity.userId}, 0))`
+        )
+        if (!(await mayEmail(tx, project.id, email, identity.userId))) return
+        await tx.insert(inviteEmails).values({
+          projectId: project.id,
+          organizationId: project.organizationId,
+          email,
+          invitedBy: identity.userId
+        })
+        await schedule(tx, {
+          kind: PROJECT_INVITE_EMAIL_JOB,
+          key: `project_invite_email:${project.id}:${email}`,
+          payload: {
+            projectId: project.id,
+            email,
+            boardId,
+            invitedBy: identity.userId,
+            organizationId: project.organizationId
+          },
+          runAt: new Date()
+        })
       })
     },
 

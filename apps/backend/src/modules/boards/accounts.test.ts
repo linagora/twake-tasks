@@ -18,7 +18,7 @@ import {
 import { keepSettings } from '../settings/events.ts'
 import { userSettings } from '../settings/schema.ts'
 import { accountRoutes } from './accounts.ts'
-import { projects } from './schema.ts'
+import { inviteEmails, projects } from './schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -181,6 +181,34 @@ describe.each([
     await deliver(routingKey, body(gone))
 
     expect(await filtersOf(gone)).toEqual([])
+  })
+
+  it('loses the invitation e-mails it sent and received', async () => {
+    const gone = makeUser()
+    const owner = aUser({ organizationId: gone.organizationId })
+    const board = (
+      await api.as(owner).post('/boards', { name: 'Shared', keyPrefix: 'SHA' })
+    ).json<{ id: string }>()
+    const invite = (by: TestUser, email: string, role: string) =>
+      api.as(by).post(`/boards/${board.id}/invites`, { email, role })
+    const third = `third-${gone.userId}@example.com`
+    const other = `other-${gone.userId}@example.com`
+    await invite(owner, gone.email, 'admin')
+    await boardsOf(gone)
+    await invite(gone, third, 'viewer')
+    await invite(owner, other, 'viewer')
+    const rows = () =>
+      db.transaction(async tx => {
+        await asTenant(tx, owner)
+        return (await tx.select().from(inviteEmails))
+          .map(row => row.email)
+          .filter(email => [gone.email, third, other].includes(email))
+      })
+    expect((await rows()).sort()).toEqual([gone.email, other, third].sort())
+
+    await deliver(routingKey, body(gone))
+
+    expect(await rows()).toEqual([other])
   })
 
   it('loses its Twake Workplace settings', async () => {
