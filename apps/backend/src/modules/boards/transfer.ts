@@ -98,7 +98,8 @@ async function carryOver(tx: Tx, ids: string[], from: Placed, to: Placed) {
 
 // Re-attaches each label to the label of the same name in the target project,
 // creating it there when it is missing. Concurrent moves of the same name
-// share the one label that wins the unique(project, name) conflict.
+// share the one label that wins the unique(project, name) conflict, and
+// insert in name order so they lock rows in the same order.
 async function followLabels(
   tx: Tx,
   ids: string[],
@@ -113,7 +114,7 @@ async function followLabels(
     await tx
       .insert(labels)
       .values(
-        [...new Set(carried.map(row => row.name))].map(name => ({
+        [...new Set(carried.map(row => row.name))].sort().map(name => ({
           organizationId: target.organizationId,
           projectId: target.projectId,
           name
