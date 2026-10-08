@@ -373,6 +373,29 @@ export function registerBoards(
   }
 
   app.post(
+    '/boards/:boardId/tasks/:taskId/transfer/preview',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = transferTarget.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await transferStore.previewTransfer(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        body.data
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return result.value
+    }
+  )
+
+  app.post(
     '/boards/:boardId/tasks/:taskId/transfer',
     { preHandler: deps.requireIdentity },
     async (request, reply) => {
