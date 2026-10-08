@@ -3,6 +3,7 @@ import { generateKeyBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { membersOf } from './access.ts'
+import { unfollowOutside } from './followers.ts'
 import { labelsOn } from './labels.ts'
 import { boards, labels, taskAssignees, taskLabels, tasks } from './schema.ts'
 import {
@@ -185,7 +186,7 @@ export function createTransferStore(db: Db) {
 
     // The task and its sub-tasks take new numbers on the target board, in
     // depth order, and keep their old keys. Assignees who are not on the
-    // target board are dropped, and labels follow by name.
+    // target board are dropped and stop following, and labels follow by name.
     transferTask(
       identity: Identity,
       boardId: string,
@@ -211,6 +212,9 @@ export function createTransferStore(db: Db) {
           from,
           target
         )
+        if (from.projectId !== target.projectId) {
+          await unfollowOutside(tx, ids, target.projectId)
+        }
         const first = target.number - ids.length + 1
         const [last] = await tx
           .select({ position: tasks.position })

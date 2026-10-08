@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
-import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
+import {
+  aUser,
+  followersOf,
+  joinBoard,
+  startApp,
+  type TestUser
+} from '../../testing/app.ts'
 
 interface Label {
   id: string
@@ -138,6 +144,100 @@ describe('moving a task to another board', () => {
         ]
       })
     ])
+  })
+
+  describe('followers', () => {
+    async function aFollowedTree() {
+      const owner = aUser()
+      const bob = aUser({ organizationId: owner.organizationId })
+      const carol = aUser({ organizationId: owner.organizationId })
+      const design = await aBoard(owner, 'DES')
+      const ops = await aBoard(owner, 'OPS')
+      await joinBoard(db, owner, design.id, bob, 'editor')
+      await joinBoard(db, owner, design.id, carol, 'editor')
+      await joinBoard(db, owner, ops.id, carol, 'viewer')
+      // In a section, so that leaving it for the other board is a change
+      // the followers are notified of.
+      const section = design.sections[0]
+      if (!section) throw new Error('no section')
+      const logo = (
+        await api.as(owner).post(`/boards/${design.id}/tasks`, {
+          sectionId: section.id,
+          title: 'Logo'
+        })
+      ).json<{ id: string }>().id
+      const sketch = (
+        await api.as(owner).post(`/boards/${design.id}/tasks`, {
+          title: 'Sketch',
+          parentId: logo
+        })
+      ).json<{ id: string }>().id
+      for (const task of [logo, sketch]) {
+        for (const user of [bob, carol]) {
+          await api.as(user).put(`/boards/${design.id}/tasks/${task}/follow`)
+        }
+      }
+      return { owner, bob, carol, design, ops, logo, sketch }
+    }
+
+    it('stops people without access to the target following the task and its sub-tasks', async () => {
+      const { owner, bob, carol, design, ops, logo, sketch } =
+        await aFollowedTree()
+
+      await api.as(owner).post(`/boards/${design.id}/tasks/${logo}/transfer`, {
+        boardId: ops.id,
+        sectionId: null
+      })
+
+      expect(await followersOf(db, owner, logo)).toEqual(
+        [owner.userId, carol.userId].sort()
+      )
+      expect(await followersOf(db, owner, sketch)).toEqual(
+        [owner.userId, carol.userId].sort()
+      )
+      expect(await followersOf(db, owner, logo)).not.toContain(bob.userId)
+    })
+
+    it('keeps everyone following when the boards share a project', async () => {
+      const { owner, bob, design, logo } = await aFollowedTree()
+      const sister = (
+        await api.as(owner).post('/boards', {
+          name: 'Ops',
+          keyPrefix: 'SIS',
+          projectId: design.project.id
+        })
+      ).json<Board>()
+
+      await api.as(owner).post(`/boards/${design.id}/tasks/${logo}/transfer`, {
+        boardId: sister.id,
+        sectionId: null
+      })
+
+      expect(await followersOf(db, owner, logo)).toContain(bob.userId)
+    })
+
+    it('does not notify the people it stopped following of later changes', async () => {
+      const { owner, bob, carol, design, ops, logo } = await aFollowedTree()
+      await api.as(owner).post(`/boards/${design.id}/tasks/${logo}/transfer`, {
+        boardId: ops.id,
+        sectionId: null
+      })
+
+      await api.as(owner).patch(`/boards/${ops.id}/tasks/${logo}`, {
+        title: 'New logo'
+      })
+
+      const inboxOf = async (user: TestUser) =>
+        (await api.as(user).get('/notifications')).json<{
+          notifications: { taskId: string; reason: string }[]
+        }>().notifications
+      expect(await inboxOf(carol)).toContainEqual(
+        expect.objectContaining({ taskId: logo, reason: 'following' })
+      )
+      expect(
+        (await inboxOf(bob)).filter(entry => entry.taskId === logo)
+      ).toEqual([])
+    })
   })
 
   describe('labels', () => {
