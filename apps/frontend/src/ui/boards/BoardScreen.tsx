@@ -25,6 +25,7 @@ import { EmptyState } from '@/ds/EmptyState'
 import { PageHeader, UnavailableButton } from '@/ds/PageHeader'
 import { Inline } from '@/ds/SidePanel'
 import { DropColumn, SortableList } from '@/ds/Sortable'
+import { TitleButton } from '@/ds/TitleButton'
 import type { Board, Section, Task } from '@/domain/board'
 import { ShelfDialog } from '@/ui/boards/Archive'
 import { BoardDrag } from '@/ui/boards/BoardDrag'
@@ -35,7 +36,12 @@ import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
 import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
 import { NewDatedTask } from '@/ui/boards/NewDatedTask'
-import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
+import {
+  useBoard,
+  useCreateTask,
+  useMoveTask,
+  useRenameBoard
+} from '@/ui/boards/queries'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { ShareDialog } from '@/ui/boards/ShareDialog'
 import { TaskCard } from '@/ui/boards/TaskCard'
@@ -115,6 +121,8 @@ function BoardColumns({
           ? t('sharing.adminOnly')
           : null
   const [moving, setMoving] = useState(false)
+  const [renaming, setRenaming] = useState(false)
+  const renamable = manageable && !board.inbox
   const targets = useMoveTargets(board)
   const movable = shareable && targets.length > 0
   const [shelf, setShelf] = useState<Shelf | null>(null)
@@ -180,9 +188,11 @@ function BoardColumns({
       <PageHeader
         back={back && <BackLink />}
         title={
-          <Typography variant="h3" component="h1" noWrap>
-            {board.name}
-          </Typography>
+          <BoardTitle
+            board={board}
+            renaming={renaming}
+            onRename={setRenaming}
+          />
         }
         actions={
           <>
@@ -231,6 +241,13 @@ function BoardColumns({
             <BoardMenu
               board={board}
               onOpenShelf={setShelf}
+              onRename={
+                renamable
+                  ? () => {
+                      setRenaming(true)
+                    }
+                  : undefined
+              }
               onMove={
                 movable
                   ? () => {
@@ -406,6 +423,114 @@ function BoardColumns({
             setAdding(null)
           }}
         />
+      )}
+    </>
+  )
+}
+
+function BoardTitle({
+  board,
+  renaming,
+  onRename
+}: {
+  board: Board
+  renaming: boolean
+  onRename: (renaming: boolean) => void
+}): ReactElement {
+  const { t } = useI18n()
+  const renamable = board.role === 'admin' && !board.archived && !board.inbox
+  // The title takes the focus back from an editor that just closed
+  const [returned, setReturned] = useState(false)
+
+  if (renaming && renamable) {
+    return (
+      <TitleEditor
+        board={board}
+        onDone={() => {
+          setReturned(true)
+          onRename(false)
+        }}
+      />
+    )
+  }
+  return (
+    <Typography variant="h3" component="h1" noWrap>
+      {renamable ? (
+        <Tooltip title={t('board.rename')} describeChild>
+          <TitleButton
+            focusOnMount={returned}
+            onClick={() => {
+              setReturned(false)
+              onRename(true)
+            }}
+          >
+            {board.name}
+          </TitleButton>
+        </Tooltip>
+      ) : (
+        board.name
+      )}
+    </Typography>
+  )
+}
+
+// Mounted for one edit: its draft and its guard start afresh each time
+function TitleEditor({
+  board,
+  onDone
+}: {
+  board: Board
+  onDone: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const rename = useRenameBoard(board.id)
+  const [name, setName] = useState(board.name)
+  // A blur follows Enter or Escape: save once
+  const settled = useRef(false)
+
+  const stop = (): void => {
+    settled.current = true
+    onDone()
+  }
+  const save = (): void => {
+    if (settled.current || rename.isPending) return
+    const next = name.trim()
+    if (!next || next === board.name) {
+      stop()
+      return
+    }
+    rename.mutate(next, { onSuccess: stop })
+  }
+
+  return (
+    <>
+      <TextField
+        label={t('board.renameName')}
+        value={name}
+        onChange={event => {
+          setName(event.target.value)
+        }}
+        onKeyDown={event => {
+          if (rename.isPending || event.nativeEvent.isComposing) return
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            save()
+          } else if (event.key === 'Escape') {
+            stop()
+          }
+        }}
+        onBlur={save}
+        size="small"
+        fullWidth
+        inputRef={focusOnMount}
+        slotProps={{
+          htmlInput: { maxLength: 100, readOnly: rename.isPending }
+        }}
+      />
+      {rename.isError && (
+        <Typography role="alert" variant="caption">
+          {t('board.renameFailed')}
+        </Typography>
       )}
     </>
   )

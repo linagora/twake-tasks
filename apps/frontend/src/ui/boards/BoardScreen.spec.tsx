@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { ApiError } from '@/application/boards'
@@ -544,6 +544,168 @@ describe('BoardScreen', () => {
 
       const stack = await screen.findByRole('button', { name: '6 members' })
       expect(stack).toHaveTextContent('+2')
+    })
+  })
+
+  describe('renaming', () => {
+    const heading = (name: string) =>
+      screen.findByRole('heading', { level: 1, name })
+
+    it('renames from the menu, with a trimmed name, and the sidebar follows', async () => {
+      const board = designBoard()
+      const boardsApi = fakeBoardsApi([board])
+      await boardsApi.setFavorite(board.id, true)
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      await heading('Design')
+      expect(await screen.findByRole('link', { name: 'Design' })).toBeVisible()
+      fireEvent.click(screen.getByRole('button', { name: 'Board options' }))
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Rename board' }))
+      const field = await screen.findByRole('textbox', { name: 'Board name' })
+      expect(field).toHaveValue('Design')
+      fireEvent.change(field, { target: { value: '  Product  ' } })
+      fireEvent.keyDown(field, { key: 'Enter' })
+
+      await heading('Product')
+      expect(boardsApi.renameBoard).toHaveBeenCalledWith(board.id, 'Product')
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+      expect(await screen.findByRole('link', { name: 'Product' })).toBeVisible()
+      expect(screen.queryByRole('link', { name: 'Design' })).toBeNull()
+    })
+
+    it('renames from the menu after an edit was canceled', async () => {
+      const board = designBoard()
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const title = await heading('Design')
+      fireEvent.click(within(title).getByRole('button', { name: 'Design' }))
+      fireEvent.keyDown(screen.getByRole('textbox', { name: 'Board name' }), {
+        key: 'Escape'
+      })
+      await heading('Design')
+      fireEvent.click(screen.getByRole('button', { name: 'Board options' }))
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Rename board' }))
+      const field = await screen.findByRole('textbox', { name: 'Board name' })
+      fireEvent.change(field, { target: { value: 'Product' } })
+      fireEvent.keyDown(field, { key: 'Enter' })
+
+      await heading('Product')
+      expect(boardsApi.renameBoard).toHaveBeenCalledWith(board.id, 'Product')
+    })
+
+    it('keeps the editor open when the menu gives the focus back', async () => {
+      const board = designBoard()
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      await heading('Design')
+      const options = screen.getByRole('button', { name: 'Board options' })
+      act(() => {
+        options.focus()
+      })
+      fireEvent.click(options)
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Rename board' }))
+      const field = await screen.findByRole('textbox', { name: 'Board name' })
+      await waitFor(() => {
+        expect(field).toHaveFocus()
+      })
+      await new Promise(resolve => setTimeout(resolve, 300))
+      const typed = screen.getByRole('textbox', { name: 'Board name' })
+      fireEvent.change(typed, { target: { value: 'Product' } })
+      fireEvent.keyDown(typed, { key: 'Enter' })
+
+      await heading('Product')
+      expect(boardsApi.renameBoard).toHaveBeenCalledWith(board.id, 'Product')
+    })
+
+    it('renames from the title, saving on blur', async () => {
+      const board = designBoard()
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const title = await heading('Design')
+      fireEvent.click(within(title).getByRole('button', { name: 'Design' }))
+      const field = screen.getByRole('textbox', { name: 'Board name' })
+      fireEvent.change(field, { target: { value: 'Product' } })
+      fireEvent.blur(field)
+
+      await heading('Product')
+      expect(boardsApi.renameBoard).toHaveBeenCalledTimes(1)
+    })
+
+    it('restores the title on Escape without saving', async () => {
+      const board = designBoard()
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const title = await heading('Design')
+      fireEvent.click(within(title).getByRole('button', { name: 'Design' }))
+      const field = screen.getByRole('textbox', { name: 'Board name' })
+      fireEvent.change(field, { target: { value: 'Product' } })
+      fireEvent.keyDown(field, { key: 'Escape' })
+
+      await heading('Design')
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+      expect(boardsApi.renameBoard).not.toHaveBeenCalled()
+    })
+
+    it('saves nothing for an empty or unchanged name', async () => {
+      const board = designBoard()
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      for (const value of ['   ', 'Design']) {
+        const title = await heading('Design')
+        fireEvent.click(within(title).getByRole('button', { name: 'Design' }))
+        const field = screen.getByRole('textbox', { name: 'Board name' })
+        fireEvent.change(field, { target: { value } })
+        fireEvent.keyDown(field, { key: 'Enter' })
+        await heading('Design')
+        expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+      }
+      expect(boardsApi.renameBoard).not.toHaveBeenCalled()
+    })
+
+    it('keeps the editor and the typed name when it fails', async () => {
+      const board = designBoard()
+      const boardsApi = fakeBoardsApi([board])
+      boardsApi.renameBoard.mockRejectedValue(new ApiError(500, 'oops'))
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const title = await heading('Design')
+      fireEvent.click(within(title).getByRole('button', { name: 'Design' }))
+      const field = screen.getByRole('textbox', { name: 'Board name' })
+      fireEvent.change(field, { target: { value: 'Product' } })
+      fireEvent.keyDown(field, { key: 'Enter' })
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'The board could not be renamed.'
+      )
+      expect(screen.getByRole('textbox', { name: 'Board name' })).toHaveValue(
+        'Product'
+      )
+    })
+
+    it('offers a viewer, an archived board and the inbox no rename', async () => {
+      for (const changes of [
+        { role: 'viewer' as const },
+        { archived: true },
+        { inbox: true }
+      ]) {
+        const board = { ...designBoard(), ...changes }
+        const { unmount } = renderRoute(`/boards/${board.id}`, {
+          boardsApi: fakeBoardsApi([board])
+        })
+
+        const title = await heading('Design')
+        expect(within(title).queryByRole('button')).toBeNull()
+        fireEvent.click(screen.getByRole('button', { name: 'Board options' }))
+        expect(
+          screen.queryByRole('menuitem', { name: 'Rename board' })
+        ).toBeNull()
+        unmount()
+      }
     })
   })
 })
