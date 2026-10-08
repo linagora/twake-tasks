@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import type { Task } from '@/domain/board'
@@ -82,5 +82,41 @@ describe('TaskCard', () => {
     ).toBeInTheDocument()
     expect(card.getAllByRole('img', { name: /^Assigned to/ })).toHaveLength(2)
     expect(card.getByLabelText('3 more assignees')).toBeInTheDocument()
+  })
+
+  describe('panel', () => {
+    async function renderBoard(search: string) {
+      const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
+      board.tasks = [
+        aTask(board.sections[0] ?? null, { key: 'DES-1', title: 'Logo' })
+      ]
+      const { router } = renderRoute(`/boards/${board.id}${search}`, {
+        boardsApi: fakeBoardsApi([board])
+      })
+      await screen.findByRole('article', { name: 'DES-1 Logo', hidden: true })
+      return router
+    }
+
+    it('puts the task in the URL when opened, keeping the other params', async () => {
+      const router = await renderBoard('?q=a')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Logo' }))
+
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+      expect(router.state.location.search).toBe('?q=a&task=DES-1')
+      expect(router.state.historyAction).toBe('REPLACE')
+    })
+
+    it('takes the task out of the URL when closed, keeping the other params', async () => {
+      const router = await renderBoard('?q=a&task=DES-1')
+
+      const dialog = await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
+
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+      })
+      expect(router.state.location.search).toBe('?q=a')
+    })
   })
 })

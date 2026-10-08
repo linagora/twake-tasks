@@ -161,10 +161,13 @@ test("opens a task's panel on the page of TwakeSpace, not in its frame", async (
     await expect(frame.getByRole('dialog')).toHaveCount(0)
     await expect.poll(clipPath).toBe('none')
     // Against the right end of TwakeSpace's window, its whole height
-    const box = await panel.boundingBox()
-    if (box === null) throw new Error('The panel is not laid out')
-    expect(Math.round(box.x + box.width)).toBe(1440)
-    expect(Math.round(box.height)).toBe(900)
+    // (polled: the panel slides in, and its URL change re-renders the page)
+    const edges = async () => {
+      const box = await panel.boundingBox()
+      if (box === null) throw new Error('The panel is not laid out')
+      return [Math.round(box.x + box.width), Math.round(box.height)]
+    }
+    await expect.poll(edges).toEqual([1440, 900])
 
     await panel.getByRole('textbox', { name: 'Comment' }).fill('On the page')
     await expect(panel.getByRole('textbox', { name: 'Comment' })).toContainText(

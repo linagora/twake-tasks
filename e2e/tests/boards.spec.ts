@@ -22,10 +22,39 @@ test('plans a board: a task and its comment survive a reload', async ({
   await panel.getByRole('button', { name: 'Send' }).click()
   await expect(comment()).toContainText('First draft by Friday')
 
+  // The task is in the URL: the reload brings its panel back
   await page.reload()
-  await page.getByRole('button', { name: 'Write the press release' }).click()
 
   await expect(comment()).toContainText('First draft by Friday')
+})
+
+test('changing the view does not reopen a closed task', async ({ page }) => {
+  await signIn(page, 'alice')
+  const { prefix } = await newBoard(page)
+  await addTask(page, 'Write the press release')
+  const task = `${prefix}-1 Write the press release`
+
+  await page.getByRole('button', { name: 'Write the press release' }).click()
+  const panel = page.getByRole('dialog', { name: task })
+  await expect(panel).toBeVisible()
+  await expect(page).toHaveURL(new RegExp(`\\?task=${prefix}-1$`))
+
+  await panel.getByRole('button', { name: 'Close' }).click()
+  await expect(panel).toBeHidden()
+  await expect(page).not.toHaveURL(/task=/)
+
+  const layout = page.getByRole('group', { name: 'Layout' })
+  await layout.getByRole('button', { name: 'List' }).click()
+  await expect(layout.getByRole('button', { name: 'List' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  await expect(panel).toBeHidden()
+  await layout.getByRole('button', { name: 'Calendar' }).click()
+  await expect(
+    layout.getByRole('button', { name: 'Calendar' })
+  ).toHaveAttribute('aria-pressed', 'true')
+  await expect(panel).toBeHidden()
 })
 
 test('shares a board: the invitee works on it, and the owner sees it live', async ({

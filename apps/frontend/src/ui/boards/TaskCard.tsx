@@ -8,7 +8,6 @@ import {
 } from '@linagora/twake-mui'
 import { CheckList, Comment, Dots, Icon } from '@linagora/twake-icons'
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
-import { useSearchParams } from 'react-router'
 
 import { Card, CardTitle, LabelChip, Meta, MetaChip } from '@/ds/Columns'
 import { SortableCard } from '@/ds/Sortable'
@@ -18,6 +17,7 @@ import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { Subtasks } from '@/ui/boards/Subtasks'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
+import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function TaskCard({
@@ -43,8 +43,7 @@ export function TaskCard({
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
   const [labeling, setLabeling] = useState<HTMLElement | null>(null)
-  const [params] = useSearchParams()
-  const [open, setOpen] = useState(params.get('task') === task.key)
+  const panel = useTaskPanel(task.key)
   const editable = onMove !== undefined
   const [showSubtasks, setShowSubtasks] = useState(false)
   const children = tasks.filter(each => each.parentId === task.id)
@@ -77,7 +76,7 @@ export function TaskCard({
           underline="hover"
           className="u-ta-left"
           onClick={() => {
-            setOpen(true)
+            panel.show()
           }}
         >
           {task.title}
@@ -200,14 +199,14 @@ export function TaskCard({
           </MenuItem>
         ))}
       </Menu>
-      {open && (
+      {panel.open && (
         <TaskPanel
           task={task}
           boardId={boardId}
           editable={editable}
           depth={1}
           onClose={() => {
-            setOpen(false)
+            panel.close()
           }}
         />
       )}

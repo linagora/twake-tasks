@@ -1,9 +1,9 @@
-import { useState, type ReactElement } from 'react'
-import { useSearchParams } from 'react-router'
+import type { ReactElement } from 'react'
 
 import { CalendarChip } from '@/ds/Calendar'
 import type { Task } from '@/domain/board'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
+import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 
 export function CalendarTask({
   task,
@@ -14,27 +14,26 @@ export function CalendarTask({
   boardId: string
   editable: boolean
 }): ReactElement {
-  const [params] = useSearchParams()
-  const [open, setOpen] = useState(params.get('task') === task.key)
+  const panel = useTaskPanel(task.key)
 
   return (
     <li>
       <CalendarChip
         done={task.completedAt !== null}
         onClick={() => {
-          setOpen(true)
+          panel.show()
         }}
       >
         {task.title}
       </CalendarChip>
-      {open && (
+      {panel.open && (
         <TaskPanel
           task={task}
           boardId={boardId}
           editable={editable}
           depth={1}
           onClose={() => {
-            setOpen(false)
+            panel.close()
           }}
         />
       )}
