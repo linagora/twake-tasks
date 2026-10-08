@@ -305,6 +305,28 @@ describe('moving a task to another board', () => {
       expect((await preview(stranger, theirs.id)).statusCode).toBe(404)
     })
 
+    it('refuses the preview to someone who only views the target', async () => {
+      const owner = aUser()
+      const viewer = aUser({ organizationId: owner.organizationId })
+      const design = await aBoard(viewer, 'DES')
+      const ops = await aBoard(owner, 'OPS')
+      await joinBoard(db, owner, ops.id, viewer, 'viewer')
+      const logo = await aTask(viewer, design.id, 'Logo')
+      await labelTask(viewer, design.id, logo, [
+        await aLabel(viewer, design.id, 'Urgent')
+      ])
+
+      const preview = await api
+        .as(viewer)
+        .post(`/boards/${design.id}/tasks/${logo}/transfer/preview`, {
+          boardId: ops.id,
+          sectionId: null
+        })
+
+      expect(preview.statusCode).toBe(403)
+      expect((await load(owner, ops.id)).labels).toEqual([])
+    })
+
     it('does not create labels in a project the mover only views', async () => {
       const owner = aUser()
       const viewer = aUser({ organizationId: owner.organizationId })
