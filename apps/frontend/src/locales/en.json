@@ -335,7 +335,12 @@
     "failed": "The change could not be saved.",
     "archiveBoard": "Archive board",
     "unarchiveBoard": "Unarchive board",
-    "boardArchived": "This board is archived and read only."
+    "boardArchived": "This board is archived and read only.",
+    "archived": "%{key} archived",
+    "trashed": "%{key} moved to the trash",
+    "undo": "Undo",
+    "viewArchived": "View archived tasks",
+    "viewTrash": "View trash"
   },
   "sharing": {
     "share": "Share",

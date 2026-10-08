@@ -335,7 +335,12 @@
     "failed": "La modification n'a pas pu être enregistrée.",
     "archiveBoard": "Archiver le tableau",
     "unarchiveBoard": "Désarchiver le tableau",
-    "boardArchived": "Ce tableau est archivé et en lecture seule."
+    "boardArchived": "Ce tableau est archivé et en lecture seule.",
+    "archived": "%{key} archivée",
+    "trashed": "%{key} placée dans la corbeille",
+    "undo": "Annuler",
+    "viewArchived": "Voir les tâches archivées",
+    "viewTrash": "Voir la corbeille"
   },
   "sharing": {
     "share": "Partager",

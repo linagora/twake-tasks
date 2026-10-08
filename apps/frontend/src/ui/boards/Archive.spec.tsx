@@ -72,6 +72,47 @@ describe('archive and trash', () => {
     ).toBeVisible()
   })
 
+  it('says where a deleted task went and opens the trash from there', async () => {
+    logoBoard()
+
+    await removeLogo('Delete')
+    const notice = within(
+      await screen.findByRole('status', { name: 'DES-1 moved to the trash' })
+    )
+    fireEvent.click(notice.getByRole('button', { name: 'View trash' }))
+
+    const shelf = within(await screen.findByRole('dialog', { name: 'Trash' }))
+    expect(
+      await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
+    ).toBeVisible()
+    expect(
+      screen.queryByRole('status', { name: 'DES-1 moved to the trash' })
+    ).toBeNull()
+  })
+
+  it('undoes an archive from the notice', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+
+    await removeLogo('Archive')
+    const notice = within(
+      await screen.findByRole('status', { name: 'DES-1 archived' })
+    )
+    expect(
+      notice.getByRole('button', { name: 'View archived tasks' })
+    ).toBeVisible()
+    fireEvent.click(notice.getByRole('button', { name: 'Undo' }))
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('status', { name: 'DES-1 archived' })
+      ).toBeNull()
+    })
+    expect(boardsApi.restoreTask).toHaveBeenCalledWith(board.id, logo.id)
+    expect(
+      await screen.findByRole('button', { name: 'Logo' }, { timeout: 3000 })
+    ).toBeVisible()
+  })
+
   it('archives a board, which becomes read only', async () => {
     const { board, boardsApi } = logoBoard()
 
