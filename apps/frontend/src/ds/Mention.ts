@@ -1,8 +1,10 @@
 import { Node } from '@tiptap/react'
 
-// The same shape the backend reads: "@", then an email, after a space or at the start.
-const MENTION = /^@([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]*[A-Za-z0-9])/
-const MENTION_START = /(?:^|\s)@[A-Za-z0-9._%+-]+@/
+// The shape the backend reads: "@", then an email, after a space or at the start.
+// More lenient than the backend: comments saved before the writer stopped escaping "_"
+// hold "@jean\_dupont@", shown as mentions here though they never notified anyone.
+const MENTION = /^@((?:[A-Za-z0-9._%+-]|\\_)+@[A-Za-z0-9.-]*[A-Za-z0-9])/
+const MENTION_START = /(?:^|\s)@(?:[A-Za-z0-9._%+-]|\\_)+@/
 
 /**
  * Shows "@alice@example.com" as the name of the person it mentions. Emails
@@ -39,7 +41,7 @@ export function mentionExtension(names: Record<string, string>) {
         // Like the backend, a mention follows a space or starts the text.
         if (!/(?:^|\s)$/.test(tokens.at(-1)?.raw ?? '')) return undefined
         const found = MENTION.exec(src)
-        const email = found?.[1]
+        const email = found?.[1]?.replaceAll('\\_', '_')
         if (!found || !email || !nameOf(email)) return undefined
         return { type: 'mention', raw: found[0], email }
       }
