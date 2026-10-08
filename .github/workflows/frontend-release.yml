@@ -46,6 +46,9 @@ jobs:
   manifest:
     needs: [verify, check]
     uses: linagora/twake-workflows/.github/workflows/publish-manifest.yml@v1
+    with:
+      tag-prefix: frontend-v
+      package-json: apps/frontend/package.json
     secrets:
       REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
       DOWNCLOUD_SSH_KEY: ${{ secrets.DOWNCLOUD_SSH_KEY }}
