@@ -257,4 +257,38 @@ describe('moving a task to another board', () => {
     dialog = await screen.findByRole('dialog', { name: 'Move Logo?' })
     expect(within(dialog).queryByRole('alert')).toBeNull()
   })
+
+  it('refreshes the board when the form goes away while the notice is shown', async () => {
+    const { design, ops, boardsApi } = setup()
+    boardsApi.transferTask.mockImplementation(async (boardId, taskId, to) => {
+      const moved = await fakeBoardsApi([design, ops]).transferTask(
+        boardId,
+        taskId,
+        to
+      )
+      return {
+        ...moved,
+        droppedAssignees: [
+          { userId: 'u1', name: 'Bob', email: 'bob@example.com' }
+        ]
+      }
+    })
+    const form = await openForm(boardsApi, design.id, 'Logo')
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+    const loads = boardsApi.getBoard.mock.calls.length
+
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+    await screen.findByRole('alert')
+    expect(boardsApi.getBoard.mock.calls.length).toBe(loads)
+    fireEvent.keyDown(
+      screen.getByRole('dialog', { name: 'Move to another board' }),
+      { key: 'Escape' }
+    )
+
+    await waitFor(() => {
+      expect(boardsApi.getBoard.mock.calls.length).toBeGreaterThan(loads)
+    })
+  })
 })
