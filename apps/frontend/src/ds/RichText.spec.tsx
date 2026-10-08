@@ -55,4 +55,18 @@ describe('mentions in rich text', () => {
       await screen.findByRole('textbox', { name: 'Description' })
     ).toHaveTextContent(TEXT)
   })
+
+  it('reads a mention saved with an escaped underscore', async () => {
+    renderWithProviders(
+      <RichText
+        markdown={'Ask @jean\\_dupont@example.com'}
+        mentions={{ 'jean_dupont@example.com': 'Jean Dupont' }}
+      />
+    )
+
+    expect(await screen.findByText('@Jean Dupont')).toHaveAttribute(
+      'title',
+      'jean_dupont@example.com'
+    )
+  })
 })
