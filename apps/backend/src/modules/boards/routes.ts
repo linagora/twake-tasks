@@ -122,6 +122,11 @@ const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
 
 const newLabel = z.object({ name: z.string().trim().min(1).max(50) })
 
+const transferTarget = z.object({
+  boardId: z.uuid(),
+  sectionId: z.uuid().nullable()
+})
+
 const labeling = z.object({ labelIds: z.array(z.uuid()).max(50) })
 
 const newComment = z.object({ body: z.string().trim().min(1).max(10_000) })
@@ -375,9 +380,7 @@ export function registerBoards(
       if (!identity) return reply.code(401).send()
       const params = taskParams.safeParse(request.params)
       if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = z
-        .object({ boardId: z.uuid(), sectionId: z.uuid().nullable() })
-        .safeParse(request.body)
+      const body = transferTarget.safeParse(request.body)
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
