@@ -37,7 +37,13 @@ import {
   taskLabels,
   tasks
 } from './schema.ts'
-import { Refused, writeOrRefuse, type Result } from './tasks.ts'
+import {
+  bumpBoard,
+  checkRole,
+  Refused,
+  writeOrRefuse,
+  type Result
+} from './tasks.ts'
 import { labelsOn } from './labels.ts'
 import { recurrenceOf, shift, todayIn } from './recurrence.ts'
 
@@ -77,6 +83,20 @@ function isUniqueViolation(error: unknown): boolean {
 
 export function createBoardStore(db: Db) {
   return {
+    renameBoard(identity: Identity, boardId: string, name: string) {
+      return writeOrRefuse(db, identity, async tx => {
+        await checkRole(tx, identity, boardId, 'admin')
+        await bumpBoard(tx, boardId)
+        const [board] = await tx
+          .update(boards)
+          .set({ name })
+          .where(and(eq(boards.id, boardId), eq(boards.inbox, false)))
+          .returning({ id: boards.id })
+        if (!board) throw new Refused('forbidden')
+        return null
+      })
+    },
+
     /** Overdue tasks, then those due within `days` days of today in `zone`. */
     agenda(identity: Identity, zone: string, days: number) {
       return inTenant(db, identity, async tx => {

@@ -23,11 +23,22 @@ import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
 import { createTaskStore, type Refusal } from './tasks.ts'
 import { createTransferStore } from './transfer.ts'
 
+// No control or format characters (newlines, bidi overrides, invisibles),
+// except the joiner of emoji sequences.
+const boardName = z
+  .string()
+  .trim()
+  .min(1)
+  .max(100)
+  .refine(name => !/(?!\u200D)[\p{Cc}\p{Cf}]/u.test(name))
+
 const newBoard = z.object({
-  name: z.string().trim().min(1).max(100),
+  name: boardName,
   keyPrefix: z.string().regex(/^[A-Z][A-Z0-9]{0,9}$/),
   projectId: z.uuid().optional()
 })
+
+const boardRename = z.object({ name: boardName })
 
 const boardParams = z.object({ boardId: z.uuid() })
 
@@ -874,6 +885,28 @@ export function registerBoards(
         params.data.boardId,
         params.data.taskId,
         body.data.state
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.patch(
+    '/boards/:boardId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = boardParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = boardRename.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await store.renameBoard(
+        identity,
+        params.data.boardId,
+        body.data.name
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()
