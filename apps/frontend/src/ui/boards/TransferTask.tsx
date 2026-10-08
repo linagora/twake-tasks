@@ -156,6 +156,7 @@ export function TransferTask({
   const check = usePreviewTransfer(boardId, task.id)
   // The board is refreshed once the notice is read, or when the form goes away
   // without that, as when the person closes the dialog around it.
+  const dismissButton = useRef<HTMLButtonElement>(null)
   const stale = useRef(false)
   const refreshNow = useRef(refresh)
   useEffect(() => {
@@ -167,6 +168,10 @@ export function TransferTask({
     },
     []
   )
+  const noticeShown = removed !== null
+  useEffect(() => {
+    if (noticeShown) dismissButton.current?.focus()
+  }, [noticeShown])
   const finish = () => {
     stale.current = false
     void refresh()
@@ -271,7 +276,12 @@ export function TransferTask({
           severity="warning"
           className="u-ml-1"
           action={
-            <Button color="inherit" size="small" onClick={finish}>
+            <Button
+              ref={dismissButton}
+              color="inherit"
+              size="small"
+              onClick={finish}
+            >
               {t('transfer.dismiss')}
             </Button>
           }
