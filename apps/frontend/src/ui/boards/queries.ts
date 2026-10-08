@@ -222,6 +222,34 @@ export function usePreviewTransfer(
   })
 }
 
+/**
+ * Unlike the other board changes, a transfer does not refresh the board by
+ * itself: the task leaves it, which closes the panel that tells the person what
+ * the move dropped. Call `refresh` once they have read it.
+ */
+export function useTransferTask(
+  boardId: string,
+  taskId: string
+): {
+  transfer: UseMutationResult<
+    { key: string } & TransferPreview,
+    Error,
+    { boardId: string; sectionId: string | null }
+  >
+  refresh: () => Promise<void>
+} {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+  const transfer = useMutation({
+    mutationFn: (to: { boardId: string; sectionId: string | null }) =>
+      api.transferTask(boardId, taskId, to),
+    onError: refresh
+  })
+  return { transfer, refresh }
+}
+
 export function useMoveTask(
   boardId: string
 ): UseMutationResult<void, Error, { taskId: string; move: TaskMove }> {

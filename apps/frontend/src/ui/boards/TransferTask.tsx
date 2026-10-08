@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -14,9 +15,9 @@ import type { Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import {
   useBoard,
-  useBoardChange,
   useBoards,
-  usePreviewTransfer
+  usePreviewTransfer,
+  useTransferTask
 } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -53,11 +54,21 @@ function SectionSelect({
   )
 }
 
+function personName(
+  person: TransferPreview['droppedAssignees'][number],
+  former: string
+): string {
+  return person.email === null && !person.name?.trim()
+    ? former
+    : displayName({ email: person.email ?? '', name: person.name })
+}
+
 function ConfirmTransfer({
   task,
   board,
   preview,
   busy,
+  failed,
   onCancel,
   onConfirm
 }: {
@@ -65,37 +76,52 @@ function ConfirmTransfer({
   board: string
   preview: TransferPreview
   busy: boolean
+  failed: boolean
   onCancel: () => void
   onConfirm: () => void
 }): ReactElement {
   const { t } = useI18n()
   const titleId = useId()
+  const descriptionId = useId()
   const people = preview.droppedAssignees.map(person =>
-    displayName({ email: person.email ?? person.userId, name: person.name })
+    personName(person, t('transfer.formerMember'))
   )
   return (
-    <Dialog open onClose={onCancel} aria-labelledby={titleId} size="small">
+    <Dialog
+      open
+      onClose={onCancel}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+      size="small"
+    >
       <DialogTitle id={titleId}>
         {t('transfer.confirmTitle', { title: task.title })}
       </DialogTitle>
       <DialogContent>
-        {people.length > 0 && (
-          <Typography
-            data-testid="transfer-dropped-assignees"
-            className="u-mb-1"
-          >
-            {t('transfer.droppedAssignees', {
-              board,
-              names: people.join(', ')
-            })}
-          </Typography>
-        )}
-        {preview.createdLabels.length > 0 && (
-          <Typography data-testid="transfer-created-labels">
-            {t('transfer.createdLabels', {
-              board,
-              names: preview.createdLabels.join(', ')
-            })}
+        <div id={descriptionId}>
+          {people.length > 0 && (
+            <Typography
+              data-testid="transfer-dropped-assignees"
+              className="u-mb-1"
+            >
+              {t('transfer.droppedAssignees', {
+                board,
+                names: people.join(', ')
+              })}
+            </Typography>
+          )}
+          {preview.createdLabels.length > 0 && (
+            <Typography data-testid="transfer-created-labels">
+              {t('transfer.createdLabels', {
+                board,
+                names: preview.createdLabels.join(', ')
+              })}
+            </Typography>
+          )}
+        </div>
+        {failed && (
+          <Typography role="alert" color="error" className="u-mt-1">
+            {t('transfer.failed')}
           </Typography>
         )}
       </DialogContent>
@@ -125,15 +151,29 @@ export function TransferTask({
   const [target, setTarget] = useState('')
   const [sectionId, setSectionId] = useState('')
   const [preview, setPreview] = useState<TransferPreview | null>(null)
-  const transfer = useBoardChange(boardId, (api, to: string) =>
-    api.transferTask(boardId, task.id, {
-      boardId: to,
-      sectionId: sectionId || null
-    })
-  )
+  const [removed, setRemoved] = useState<TransferPreview | null>(null)
+  const { transfer, refresh } = useTransferTask(boardId, task.id)
   const check = usePreviewTransfer(boardId, task.id)
-  const move = () => {
-    transfer.mutate(target, { onSuccess: onMoved })
+  const finish = () => {
+    void refresh()
+    onMoved()
+  }
+  // `expected` is what the person was told, so a difference is worth saying.
+  const move = (expected: TransferPreview) => {
+    transfer.mutate(
+      { boardId: target, sectionId: sectionId || null },
+      {
+        onSuccess: result => {
+          setPreview(null)
+          const told = new Set(expected.droppedAssignees.map(p => p.userId))
+          const same =
+            result.droppedAssignees.length === told.size &&
+            result.droppedAssignees.every(p => told.has(p.userId))
+          if (same) finish()
+          else setRemoved(result)
+        }
+      }
+    )
   }
   const targets =
     boards.data?.filter(
@@ -152,7 +192,7 @@ export function TransferTask({
           { boardId: target, sectionId: sectionId || null },
           {
             onSuccess: result => {
-              if (result.droppedAssignees.length === 0) move()
+              if (result.droppedAssignees.length === 0) move(result)
               else setPreview(result)
             }
           }
@@ -187,7 +227,7 @@ export function TransferTask({
       )}
       <Button
         type="submit"
-        disabled={!target || check.isPending || transfer.isPending}
+        disabled={!target || check.isPending || transfer.isPending || !!removed}
       >
         {t('transfer.move')}
       </Button>
@@ -197,13 +237,35 @@ export function TransferTask({
           board={targets.find(board => board.id === target)?.name ?? ''}
           preview={preview}
           busy={transfer.isPending}
+          failed={transfer.isError}
           onCancel={() => {
             setPreview(null)
           }}
-          onConfirm={move}
+          onConfirm={() => {
+            move(preview)
+          }}
         />
       )}
-      {(check.isError || transfer.isError) && (
+      {removed && (
+        <Alert
+          role="alert"
+          severity="warning"
+          className="u-ml-1"
+          action={
+            <Button color="inherit" size="small" onClick={finish}>
+              {t('transfer.dismiss')}
+            </Button>
+          }
+        >
+          {t('transfer.removedAssignees', {
+            board: targets.find(board => board.id === target)?.name ?? '',
+            names: removed.droppedAssignees
+              .map(person => personName(person, t('transfer.formerMember')))
+              .join(', ')
+          })}
+        </Alert>
+      )}
+      {(check.isError || (transfer.isError && !preview)) && (
         <Typography role="alert" className="u-ml-1">
           {t('transfer.failed')}
         </Typography>
