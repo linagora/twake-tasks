@@ -8,6 +8,11 @@ export async function typeRichText(
   const paragraph = box.querySelector('p')
   if (!paragraph) throw new Error('The editor has no paragraph to type in')
   paragraph.textContent = text
+  // Typing leaves the caret after the text, which is where ProseMirror looks for a suggestion.
+  const selection = box.ownerDocument.getSelection()
+  if (selection && paragraph.firstChild) {
+    selection.collapse(paragraph.firstChild, text.length)
+  }
   fireEvent.input(box)
   await act(async () => {
     await Promise.resolve()

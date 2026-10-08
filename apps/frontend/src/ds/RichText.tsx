@@ -2,15 +2,37 @@ import { Box, type Theme } from '@linagora/twake-mui'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Placeholder } from '@tiptap/extensions'
 import { Markdown } from '@tiptap/markdown'
-import { EditorContent, useEditor, type Editor } from '@tiptap/react'
+import {
+  EditorContent,
+  useEditor,
+  type AnyExtension,
+  type Editor
+} from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useEffect, useRef, type ReactElement, type ReactNode } from 'react'
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode
+} from 'react'
 
 import { Toolbar, type RichTextLabels } from '@/ds/RichTextToolbar'
+import {
+  optionId,
+  SuggestionList,
+  suggestionsExtension,
+  useEditorComboboxAttributes,
+  type SuggestionBridge,
+  type SuggestionHandlers,
+  type SuggestionState,
+  type Suggestions
+} from '@/ds/Suggestions'
 
 export type { RichTextLabels } from '@/ds/RichTextToolbar'
 
-const extensions = (placeholder = '') => [
+const extensions = (placeholder = '', more: AnyExtension[] = []) => [
   StarterKit.configure({
     heading: { levels: [1, 2, 3] },
     link: { openOnClick: false, autolink: true, defaultProtocol: 'https' }
@@ -18,10 +40,23 @@ const extensions = (placeholder = '') => [
   TaskList,
   TaskItem.configure({ nested: true }),
   Markdown,
-  Placeholder.configure({ placeholder })
+  Placeholder.configure({ placeholder }),
+  ...more
 ]
 
-const markdownOf = (editor: Editor): string => editor.getMarkdown().trim()
+// The markdown writer escapes the "_" of jean_dupont@example.com, and the
+// backend does not read "@jean\_dupont@example.com" as a mention.
+const MENTION_ESCAPES = /(^|\s)(@(?:[\w.%+-]|\\_)+@[\w.-]*\w)/g
+
+const markdownOf = (editor: Editor): string =>
+  editor
+    .getMarkdown()
+    .trim()
+    .replace(
+      MENTION_ESCAPES,
+      (_all, before: string, mention: string) =>
+        before + mention.replaceAll('\\_', '_')
+    )
 
 const prose = (theme: Theme) => ({
   ...theme.typography.body2,
@@ -108,6 +143,7 @@ export function RichTextEditor({
   minHeight = 96,
   onChange,
   onSubmit,
+  suggestions,
   footer
 }: {
   label: string
@@ -117,6 +153,8 @@ export function RichTextEditor({
   minHeight?: number
   onChange: (markdown: string) => void
   onSubmit?: () => void
+  /** A list of options that opens when the user types its trigger character. */
+  suggestions?: Suggestions
   footer?: ReactNode
 }): ReactElement {
   // The editor keeps the callbacks it was created with, so it reads the latest ones here.
@@ -124,8 +162,86 @@ export function RichTextEditor({
   useEffect(() => {
     latest.current = { onChange, onSubmit }
   })
+  const listId = useId()
+  const [open, setOpen] = useState<SuggestionState | null>(null)
+  const [active, setActive] = useState(0)
+  const shown = useRef({ open, active })
+  useEffect(() => {
+    shown.current = { open, active }
+  })
+  const move = (index: number) => {
+    shown.current.active = index
+    setActive(index)
+  }
+  const handlers = useRef<SuggestionHandlers>({
+    search: () => [],
+    show: () => undefined,
+    hide: () => undefined,
+    keyDown: () => false
+  })
+  // The editor is created once, so it talks to the latest handlers through this.
+  const [bridge] = useState<SuggestionBridge>(() => ({
+    trigger: suggestions?.trigger ?? '',
+    search: query => handlers.current.search(query),
+    show: next => {
+      handlers.current.show(next)
+    },
+    hide: () => {
+      handlers.current.hide()
+    },
+    keyDown: event => handlers.current.keyDown(event)
+  }))
+  useEffect(() => {
+    handlers.current = {
+      search: query => suggestions?.search(query) ?? [],
+      show: next => {
+        if (next.items.length === 0) {
+          setOpen(null)
+          return
+        }
+        const sameQuery = shown.current.open?.query === next.query
+        move(
+          sameQuery ? Math.min(shown.current.active, next.items.length - 1) : 0
+        )
+        shown.current.open = next
+        setOpen(next)
+      },
+      hide: () => {
+        shown.current.open = null
+        setOpen(null)
+      },
+      keyDown: event => {
+        const { open: current, active: index } = shown.current
+        if (!current) return false
+        const count = current.items.length
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault()
+          move((index + (event.key === 'ArrowDown' ? 1 : count - 1)) % count)
+          return true
+        }
+        const chosen = current.items[index]
+        if (
+          chosen &&
+          (event.key === 'Enter' || (event.key === 'Tab' && !event.shiftKey))
+        ) {
+          event.preventDefault()
+          current.pick(chosen)
+          return true
+        }
+        if (event.key === 'Escape') {
+          // Closing the list must not also close the panel around the editor.
+          event.stopPropagation()
+          return true
+        }
+        return false
+      }
+    }
+  })
   const editor = useEditor({
-    extensions: extensions(placeholder),
+    extensions: extensions(
+      placeholder,
+      suggestions ? [suggestionsExtension(bridge)] : []
+    ),
     content: initial,
     contentType: 'markdown',
     editorProps: {
@@ -138,6 +254,7 @@ export function RichTextEditor({
         const submit = latest.current.onSubmit
         if (
           submit &&
+          !shown.current.open &&
           event.key === 'Enter' &&
           (event.metaKey || event.ctrlKey)
         ) {
@@ -149,8 +266,23 @@ export function RichTextEditor({
     },
     onUpdate: ({ editor: current }) => {
       latest.current.onChange(markdownOf(current))
+    },
+    onBlur: () => {
+      bridge.hide()
     }
   })
+  useEditorComboboxAttributes(
+    editor,
+    suggestions
+      ? {
+          'aria-haspopup': 'listbox',
+          'aria-autocomplete': 'list',
+          'aria-expanded': open ? 'true' : 'false',
+          'aria-controls': open ? listId : null,
+          'aria-activedescendant': open ? optionId(listId, active) : null
+        }
+      : {}
+  )
 
   return (
     <Box
@@ -179,6 +311,15 @@ export function RichTextEditor({
       >
         <EditorContent editor={editor} />
       </Box>
+      {suggestions && open && (
+        <SuggestionList
+          editor={editor}
+          listId={listId}
+          label={suggestions.label}
+          state={open}
+          active={active}
+        />
+      )}
       {footer && (
         <Box
           sx={{
