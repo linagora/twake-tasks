@@ -594,12 +594,22 @@ export const notifications = pgTable.withRLS(
     organizationId: organizationId(),
     userId: uuid('user_id').notNull(),
     reason: text().notNull(),
+    // What caused it, for the email: who, and the change or the comment.
+    actorId: uuid('actor_id'),
+    historyId: uuid('history_id').references(() => taskHistory.id, {
+      onDelete: 'set null'
+    }),
+    commentId: uuid('comment_id').references(() => comments.id, {
+      onDelete: 'set null'
+    }),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     readAt: timestamptz('read_at'),
     tenant: tenant()
   },
   table => [
     index().on(table.userId, table.createdAt),
+    index().on(table.historyId),
+    index().on(table.commentId),
     uniqueIndex()
       .on(table.userId, table.taskId, table.reason)
       .where(sql`${table.readAt} is null`),
