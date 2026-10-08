@@ -27,7 +27,12 @@ import { Inline } from '@/ds/SidePanel'
 import { DropColumn, SortableList } from '@/ds/Sortable'
 import { TitleButton } from '@/ds/TitleButton'
 import type { Board, Section, Task } from '@/domain/board'
-import { ShelfDialog } from '@/ui/boards/Archive'
+import {
+  RemovalNotice,
+  RemovalNotices,
+  ShelfDialog,
+  type Removal
+} from '@/ui/boards/Archive'
 import { BoardDrag } from '@/ui/boards/BoardDrag'
 import { BoardMenu } from '@/ui/boards/BoardMenu'
 import { CalendarTask } from '@/ui/boards/CalendarTask'
@@ -126,6 +131,7 @@ function BoardColumns({
   const targets = useMoveTargets(board)
   const movable = shareable && targets.length > 0
   const [shelf, setShelf] = useState<Shelf | null>(null)
+  const [removal, setRemoval] = useState<Removal | null>(null)
   const [adding, setAdding] = useState<string | null>(null)
   const stopAdding = (key: string): void => {
     setAdding(current => (current === key ? null : current))
@@ -184,7 +190,7 @@ function BoardColumns({
     topLevel.filter(task => task.sectionId === column.id)
 
   return (
-    <>
+    <RemovalNotices.Provider value={setRemoval}>
       <PageHeader
         back={back && <BackLink />}
         title={
@@ -424,7 +430,18 @@ function BoardColumns({
           }}
         />
       )}
-    </>
+      {removal && (
+        <RemovalNotice
+          key={`${removal.shelf}:${removal.task.id}`}
+          board={board}
+          removal={removal}
+          onOpenShelf={setShelf}
+          onClose={() => {
+            setRemoval(null)
+          }}
+        />
+      )}
+    </RemovalNotices.Provider>
   )
 }
 

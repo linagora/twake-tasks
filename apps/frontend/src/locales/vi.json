@@ -335,7 +335,12 @@
     "failed": "Không thể lưu thay đổi.",
     "archiveBoard": "Lưu trữ bảng",
     "unarchiveBoard": "Bỏ lưu trữ bảng",
-    "boardArchived": "Bảng này đã được lưu trữ và chỉ có thể xem."
+    "boardArchived": "Bảng này đã được lưu trữ và chỉ có thể xem.",
+    "archived": "Đã lưu trữ %{key}",
+    "trashed": "Đã chuyển %{key} vào thùng rác",
+    "undo": "Hoàn tác",
+    "viewArchived": "Xem công việc đã lưu trữ",
+    "viewTrash": "Xem thùng rác"
   },
   "sharing": {
     "share": "Chia sẻ",

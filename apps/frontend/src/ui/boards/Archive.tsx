@@ -1,13 +1,15 @@
 import { Archive, Trash } from '@linagora/twake-icons'
 import {
+  Alert,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Snackbar,
   Typography
 } from '@linagora/twake-mui'
-import { useId, type ReactElement } from 'react'
+import { createContext, useContext, useId, type ReactElement } from 'react'
 
 import type { Shelf } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
@@ -15,11 +17,94 @@ import type { Board, Task } from '@/domain/board'
 import { useBoardChange, useHiddenTasks } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
+export interface Removal {
+  task: Task
+  shelf: Shelf
+}
+
+// The panel that removes a task closes with it, so the board shows the notice.
+export const RemovalNotices = createContext<(removal: Removal) => void>(
+  () => undefined
+)
+
 export function useRemoveTask(boardId: string, task: Task) {
-  return useBoardChange(boardId, (api, shelf: Shelf) =>
-    shelf === 'archived'
+  const announce = useContext(RemovalNotices)
+  return useBoardChange(boardId, async (api, shelf: Shelf) => {
+    await (shelf === 'archived'
       ? api.archiveTask(boardId, task.id)
-      : api.trashTask(boardId, task.id)
+      : api.trashTask(boardId, task.id))
+    announce({ task, shelf })
+  })
+}
+
+export function RemovalNotice({
+  board,
+  removal,
+  onOpenShelf,
+  onClose
+}: {
+  board: Board
+  removal: Removal
+  onOpenShelf: (shelf: Shelf) => void
+  onClose: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const labelId = useId()
+  const restore = useBoardChange(board.id, (api, taskId: string) =>
+    api.restoreTask(board.id, taskId)
+  )
+  const { task, shelf } = removal
+
+  return (
+    <Snackbar
+      open
+      autoHideDuration={restore.isError ? null : 8000}
+      onClose={(_, reason) => {
+        if (reason !== 'clickaway') onClose()
+      }}
+    >
+      <Alert
+        severity={restore.isError ? 'error' : 'info'}
+        role={restore.isError ? 'alert' : 'status'}
+        aria-labelledby={labelId}
+        action={
+          <>
+            <Button
+              variant="text"
+              size="small"
+              disabled={restore.isPending}
+              onClick={() => {
+                restore.mutate(task.id, { onSuccess: onClose })
+              }}
+            >
+              {t('archive.undo')}
+            </Button>
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => {
+                onClose()
+                onOpenShelf(shelf)
+              }}
+            >
+              {t(
+                shelf === 'archived'
+                  ? 'archive.viewArchived'
+                  : 'archive.viewTrash'
+              )}
+            </Button>
+          </>
+        }
+      >
+        <span id={labelId}>
+          {restore.isError
+            ? t('archive.failed')
+            : t(shelf === 'archived' ? 'archive.archived' : 'archive.trashed', {
+                key: task.key
+              })}
+        </span>
+      </Alert>
+    </Snackbar>
   )
 }
 
