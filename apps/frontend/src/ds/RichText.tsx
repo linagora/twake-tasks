@@ -18,6 +18,7 @@ import {
   type ReactNode
 } from 'react'
 
+import { mentionExtension } from '@/ds/Mention'
 import { Toolbar, type RichTextLabels } from '@/ds/RichTextToolbar'
 import {
   optionId,
@@ -88,6 +89,13 @@ const prose = (theme: Theme) => ({
     textDecoration: 'line-through'
   },
   '& a': { color: theme.vars.palette.primary.main },
+  '& .mention': {
+    padding: '0.05em 0.35em',
+    borderRadius: 4,
+    fontWeight: 500,
+    color: theme.vars.palette.primary.main,
+    backgroundColor: theme.alpha(theme.vars.palette.primary.main, 0.12)
+  },
   '& code': {
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
     fontSize: '0.85em',
@@ -118,15 +126,22 @@ const prose = (theme: Theme) => ({
   }
 })
 
-export function RichText({ markdown }: { markdown: string }): ReactElement {
+export function RichText({
+  markdown,
+  mentions
+}: {
+  markdown: string
+  /** Who "@<email>" stands for: the lowercase email, then the name to show. */
+  mentions?: Record<string, string>
+}): ReactElement {
   const editor = useEditor(
     {
-      extensions: extensions(),
+      extensions: extensions('', mentions ? [mentionExtension(mentions)] : []),
       content: markdown,
       contentType: 'markdown',
       editable: false
     },
-    [markdown]
+    [markdown, mentions]
   )
   return (
     <Box sx={prose}>
