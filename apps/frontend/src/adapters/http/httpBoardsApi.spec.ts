@@ -122,4 +122,19 @@ describe('httpBoardsApi', () => {
     const [request] = send.mock.calls[0] ?? []
     expect(request?.url).toBe(`${BASE}/api/boards/b1/events`)
   })
+
+  it('previews a transfer by posting the target to the preview route', async () => {
+    const preview = { droppedAssignees: [], createdLabels: ['Brand'] }
+    const send = backend(200, preview)
+
+    const result = await httpBoardsApi(BASE, send).previewTransfer('b1', 't1', {
+      boardId: 'b2',
+      sectionId: null
+    })
+
+    expect(result).toEqual(preview)
+    const [request] = send.mock.calls[0] ?? []
+    expect(request?.method).toBe('POST')
+    expect(request?.url).toBe(`${BASE}/api/boards/b1/tasks/t1/transfer/preview`)
+  })
 })

@@ -175,8 +175,11 @@ export function fakeBoardsApi(boards: Board[] = []) {
         task.key = `${target.keyPrefix}-${String(target.tasks.length + 1)}`
         task.sectionId = to.sectionId
         target.tasks.push(task)
-        return { key: task.key }
+        return { key: task.key, droppedAssignees: [], createdLabels: [] }
       })
+    ),
+    previewTransfer: vi.fn<BoardsApi['previewTransfer']>(() =>
+      Promise.resolve({ droppedAssignees: [], createdLabels: [] })
     ),
     archiveTask: vi.fn<BoardsApi['archiveTask']>(hide('archived')),
     trashTask: vi.fn<BoardsApi['trashTask']>(hide('trash')),
