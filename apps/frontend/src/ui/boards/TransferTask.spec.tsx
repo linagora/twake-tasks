@@ -291,4 +291,26 @@ describe('moving a task to another board', () => {
       expect(boardsApi.getBoard.mock.calls.length).toBeGreaterThan(loads)
     })
   })
+
+  it('focuses OK when the notice shows', async () => {
+    const { design, ops, boardsApi } = setup()
+    boardsApi.transferTask.mockResolvedValue({
+      key: 'OPS-1',
+      droppedAssignees: [
+        { userId: 'u1', name: 'Bob', email: 'bob@example.com' }
+      ],
+      createdLabels: []
+    })
+    const form = await openForm(boardsApi, design.id, 'Logo')
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: ops.id }
+    })
+
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(within(alert).getByRole('button', { name: 'OK' })).toBe(
+      document.activeElement
+    )
+  })
 })
