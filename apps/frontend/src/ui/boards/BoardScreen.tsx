@@ -9,7 +9,7 @@ import {
   Typography
 } from '@linagora/twake-mui'
 import { useRef, useState, type ReactElement } from 'react'
-import { Link as RouterLink, useParams } from 'react-router'
+import { Link as RouterLink, useNavigate, useParams } from 'react-router'
 
 import { ApiError, type Shelf } from '@/application/boards'
 import {
@@ -30,7 +30,6 @@ import type { Board, Section, Task } from '@/domain/board'
 import {
   RemovalNotice,
   RemovalNotices,
-  ShelfDialog,
   type Removal
 } from '@/ui/boards/Archive'
 import { BoardDrag } from '@/ui/boards/BoardDrag'
@@ -130,7 +129,10 @@ function BoardColumns({
   const renamable = manageable && !board.inbox
   const targets = useMoveTargets(board)
   const movable = shareable && targets.length > 0
-  const [shelf, setShelf] = useState<Shelf | null>(null)
+  const navigate = useNavigate()
+  const openShelf = (shelf: Shelf): void => {
+    void navigate(shelf)
+  }
   const [removal, setRemoval] = useState<Removal | null>(null)
   const [adding, setAdding] = useState<string | null>(null)
   const stopAdding = (key: string): void => {
@@ -246,7 +248,7 @@ function BoardColumns({
             )}
             <BoardMenu
               board={board}
-              onOpenShelf={setShelf}
+              onOpenShelf={openShelf}
               onRename={
                 renamable
                   ? () => {
@@ -269,15 +271,6 @@ function BoardColumns({
         <Alert severity="info" className="u-mb-1">
           {t('archive.boardArchived')}
         </Alert>
-      )}
-      {shelf && (
-        <ShelfDialog
-          board={board}
-          shelf={shelf}
-          onClose={() => {
-            setShelf(null)
-          }}
-        />
       )}
       {sharing && (
         <ShareDialog
@@ -435,7 +428,7 @@ function BoardColumns({
           key={`${removal.shelf}:${removal.task.id}`}
           board={board}
           removal={removal}
-          onOpenShelf={setShelf}
+          onOpenShelf={openShelf}
           onClose={() => {
             setRemoval(null)
           }}
