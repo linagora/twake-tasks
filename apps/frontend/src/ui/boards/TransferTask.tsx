@@ -86,12 +86,21 @@ function ConfirmTransfer({
   const people = preview.droppedAssignees.map(person =>
     personName(person, t('transfer.formerMember'))
   )
+  // The buttons are disabled while the move is under way, which would drop the
+  // focus out of the dialog.
+  const status = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (busy) status.current?.focus()
+  }, [busy])
   return (
     <Dialog
       open
-      onClose={onCancel}
+      onClose={() => {
+        if (!busy) onCancel()
+      }}
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
+      slotProps={{ paper: { 'aria-busy': busy } }}
       size="small"
     >
       <DialogTitle id={titleId}>
@@ -119,6 +128,9 @@ function ConfirmTransfer({
             </Typography>
           )}
         </div>
+        <div ref={status} role="status" tabIndex={-1} className="u-mt-1">
+          {busy && t('transfer.moving')}
+        </div>
         {failed && (
           <Typography role="alert" color="error" className="u-mt-1">
             {t('transfer.failed')}
@@ -126,7 +138,7 @@ function ConfirmTransfer({
         )}
       </DialogContent>
       <DialogActions>
-        <Button variant="text" onClick={onCancel}>
+        <Button variant="text" disabled={busy} onClick={onCancel}>
           {t('transfer.cancel')}
         </Button>
         <Button disabled={busy} onClick={onConfirm}>
