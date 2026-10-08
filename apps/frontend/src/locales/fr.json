@@ -349,7 +349,12 @@
     "remove": "Retirer",
     "close": "Fermer",
     "failed": "La modification n'a pas pu être enregistrée.",
-    "loadFailed": "Les membres n'ont pas pu être chargés."
+    "loadFailed": "Les membres n'ont pas pu être chargés.",
+    "personalBoard": "Un tableau de votre projet personnel est privé. Déplacez-le dans un projet pour le partager.",
+    "managedBoard": "Les membres de ce projet sont gérés par son intégration.",
+    "archivedBoard": "Un tableau archivé ne peut pas être partagé.",
+    "adminOnly": "Seul un administrateur peut partager ce tableau.",
+    "help": "Partager ce tableau partage son projet %{project} avec tous ses membres."
   },
   "moveBoard": {
     "action": "Déplacer vers un projet",
@@ -443,5 +448,8 @@
     "mineEmpty": "Rien ne vous est assigné",
     "mineEmptyHint": "Les tâches qui vous sont assignées, sur tous les tableaux, apparaissent ici.",
     "completeFailed": "Impossible de terminer la tâche."
+  },
+  "members": {
+    "count": "%{smart_count} membre |||| %{smart_count} membres"
   }
 }

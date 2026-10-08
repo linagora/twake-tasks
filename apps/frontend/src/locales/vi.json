@@ -349,7 +349,12 @@
     "remove": "Xóa",
     "close": "Đóng",
     "failed": "Không thể lưu thay đổi.",
-    "loadFailed": "Không thể tải danh sách thành viên."
+    "loadFailed": "Không thể tải danh sách thành viên.",
+    "personalBoard": "Bảng của dự án cá nhân là riêng tư. Hãy chuyển bảng vào một dự án để chia sẻ.",
+    "managedBoard": "Thành viên của dự án này do tích hợp của dự án quản lý.",
+    "archivedBoard": "Không thể chia sẻ bảng đã lưu trữ.",
+    "adminOnly": "Chỉ quản trị viên mới có thể chia sẻ bảng này.",
+    "help": "Chia sẻ bảng này sẽ chia sẻ dự án %{project} với tất cả thành viên của dự án."
   },
   "moveBoard": {
     "action": "Chuyển sang dự án",
@@ -443,5 +448,8 @@
     "mineEmpty": "Chưa có việc nào giao cho bạn",
     "mineEmptyHint": "Công việc được giao cho bạn trên mọi bảng sẽ hiện ở đây.",
     "completeFailed": "Không thể hoàn thành công việc."
+  },
+  "members": {
+    "count": "%{smart_count} thành viên"
   }
 }

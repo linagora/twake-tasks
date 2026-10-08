@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { ApiError } from '@/application/boards'
-import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { aBoard, aProject, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 const alice = {
@@ -499,5 +499,51 @@ describe('BoardScreen', () => {
     expect(
       screen.getByRole('link', { name: 'Back to boards' })
     ).toHaveAttribute('href', '/')
+  })
+
+  describe('member stack', () => {
+    it('opens the share dialog for an admin of a shareable project', async () => {
+      const board = designBoard()
+      const boardsApi = fakeBoardsApi([board])
+      boardsApi.sharings.set(board.id, { members: [], invites: [] })
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      fireEvent.click(await screen.findByRole('button', { name: '2 members' }))
+
+      expect(
+        await screen.findByRole('dialog', { name: 'Share Design' })
+      ).toBeVisible()
+    })
+
+    it.each([
+      ['a viewer', () => ({ role: 'viewer' as const })],
+      ['a personal project', () => ({ project: aProject({ personal: true }) })]
+    ])('lists the members read-only for %s', async (_name, overrides) => {
+      const board = { ...designBoard(), ...overrides() }
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+      fireEvent.click(await screen.findByRole('button', { name: '2 members' }))
+
+      const dialog = within(
+        await screen.findByRole('dialog', { name: 'People with access' })
+      )
+      expect(dialog.getByText('Alice Martin')).toBeVisible()
+      expect(dialog.getByText('bob.durand@example.com')).toBeVisible()
+      expect(dialog.queryByRole('button', { name: /^Role/ })).toBeNull()
+    })
+
+    it('summarises a larger board with a +N bubble', async () => {
+      const board = aBoard({
+        members: Array.from({ length: 6 }, (_, index) => ({
+          userId: `u${String(index)}`,
+          email: `u${String(index)}@example.com`,
+          name: null
+        }))
+      })
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+      const stack = await screen.findByRole('button', { name: '6 members' })
+      expect(stack).toHaveTextContent('+2')
+    })
   })
 })

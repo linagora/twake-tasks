@@ -138,6 +138,9 @@ export function ShareDialog({
         </IconButton>
       </DialogTitle>
       <DialogContent className="u-pb-1-half">
+        <Typography variant="body2" color="textSecondary" className="u-mb-1">
+          {t('sharing.help', { project: board.project.name })}
+        </Typography>
         <InviteRow
           label={t('sharing.invite')}
           onSubmit={() => {

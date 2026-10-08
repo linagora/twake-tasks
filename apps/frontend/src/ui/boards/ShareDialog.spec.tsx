@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import type { Project, Sharing } from '@/application/boards'
@@ -145,21 +145,60 @@ describe('sharing a board', () => {
       expect(screen.queryByRole('dialog')).toBeNull()
     })
     expect(boardsApi.moveToProject).toHaveBeenCalledWith(board.id, 'ops')
-    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Share' })).toHaveAttribute(
+        'aria-disabled',
+        'true'
+      )
+    })
   })
 
-  it('offers sharing only to admins of shareable projects', async () => {
-    for (const board of [
-      aBoard({ role: 'editor' }),
-      aBoard({ inbox: true, project: aProject({ personal: true }) }),
-      aBoard({ project: aProject({ managed: true }) })
-    ]) {
-      const view = renderRoute(`/boards/${board.id}`, {
-        boardsApi: fakeBoardsApi([board])
-      })
-      await screen.findByRole('heading', { level: 1 })
-      expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
-      view.unmount()
-    }
+  it('names the project in the sharing help', async () => {
+    const { dialog } = await openSharing()
+    expect(
+      dialog.getByText(
+        'Sharing this board shares its project Design with everyone on it.'
+      )
+    ).toBeVisible()
+  })
+
+  it.each([
+    [
+      'a personal project',
+      () => aBoard({ inbox: true, project: aProject({ personal: true }) }),
+      'A board of your personal project is private. Move it to a project to share it.'
+    ],
+    [
+      'a managed project',
+      () => aBoard({ project: aProject({ managed: true }) }),
+      'The members of this project are managed by its integration.'
+    ],
+    [
+      'an archived board',
+      () => aBoard({ archived: true }),
+      "An archived board can't be shared."
+    ],
+    [
+      'a non-admin',
+      () => aBoard({ role: 'editor' }),
+      'Only an admin can share this board.'
+    ]
+  ])('explains why %s cannot be shared', async (_name, make, reason) => {
+    const board = make()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+    const button = await screen.findByRole('button', { name: 'Share' })
+
+    expect(button).toHaveAttribute('aria-disabled', 'true')
+    expect(button).not.toBeDisabled()
+    fireEvent.keyDown(document.body, { key: 'Tab' })
+    act(() => {
+      button.focus()
+    })
+    const tooltip = await screen.findByRole('tooltip')
+    expect(tooltip).toHaveTextContent(reason)
+    expect(button).toHaveAttribute('aria-describedby', tooltip.id)
+
+    fireEvent.click(button)
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })
