@@ -175,9 +175,11 @@ describe('Comments', () => {
       const { boardsApi, editor } = await typeInComment('@al')
       const list = await screen.findByRole('listbox')
       const options = within(list).getAllByRole('option')
-      expect(options.slice(0, 2).map(option => option.textContent)).toEqual([
-        expect.stringContaining('Alice Martin'),
-        expect.stringContaining('Albert Roux')
+      // The person writing comes last: mentioning yourself tells nobody
+      expect(options.map(option => option.textContent)).toEqual([
+        expect.stringContaining('Albert Roux'),
+        expect.stringContaining('Jean Dupont'),
+        expect.stringContaining('Alice Martin')
       ])
       expect(options[0]).toHaveAttribute('aria-selected', 'true')
 
@@ -204,7 +206,7 @@ describe('Comments', () => {
       fireEvent.keyDown(editor, { key: 'Enter' })
 
       await waitFor(() => {
-        expect(editor.textContent).toBe('@albert@example.com ')
+        expect(editor.textContent).toBe('@jean_dupont@example.com ')
       })
       expect(editor.querySelectorAll('p')).toHaveLength(1)
       expect(screen.queryByRole('listbox')).not.toBeInTheDocument()

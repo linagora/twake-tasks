@@ -41,10 +41,17 @@ export function Comments({
   const sendable = !add.isPending && body !== '' && body.length <= MAX_COMMENT
   const mentionable = (query: string) => {
     const pinned = new Set(task.assignees.map(person => person.userId))
-    return matchingPeople(
-      suggestionOrder(members, pinned, user.email, tasks),
+    const found = matchingPeople(
+      suggestionOrder(members, pinned, null, tasks),
       query
-    ).slice(0, MAX_SUGGESTIONS)
+    )
+    // Mentioning yourself tells nobody: you come last
+    const isMe = (person: Person) =>
+      person.email.toLowerCase() === user.email?.toLowerCase()
+    return [
+      ...found.filter(person => !isMe(person)),
+      ...found.filter(isMe)
+    ].slice(0, MAX_SUGGESTIONS)
   }
   const names = useMemo(
     () =>
