@@ -9,6 +9,7 @@ import {
   useParams
 } from 'react-router'
 
+import { EmbedFrame } from '@/ds/AppFrame'
 import { TileGrid, Tile } from '@/ds/TileGrid'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { useBoards, useProjects } from '@/ui/boards/queries'
@@ -35,10 +36,10 @@ export function EmbedLayout(): ReactElement {
   }, [navigate])
 
   return (
-    <>
+    <EmbedFrame>
       {space && <BadgeReporter space={space} />}
       <Outlet />
-    </>
+    </EmbedFrame>
   )
 }
 
