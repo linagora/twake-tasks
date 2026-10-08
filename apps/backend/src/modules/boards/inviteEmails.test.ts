@@ -176,11 +176,14 @@ describe('project invite emails', () => {
 
   it('names the project and flattens line breaks in names', async () => {
     const alice = aUser({ name: 'Eve\n\nClick here\u202e' })
-    const boardId = (
-      await api
-        .as(alice)
-        .post('/boards', { name: 'Plan\r\nFake: line', keyPrefix: 'PLN' })
-    ).json<{ id: string }>().id
+    const boardId = await aSharedBoard(alice)
+    // The API refuses such a name now, but a board created before still holds it
+    await inTenant(db, alice, tx =>
+      tx
+        .update(boards)
+        .set({ name: 'Plan\r\nFake: line' })
+        .where(eq(boards.id, boardId))
+    )
     const mailbox = aMailbox()
 
     await invite(alice, boardId, 'inject@example.com', 'viewer')
