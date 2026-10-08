@@ -53,6 +53,13 @@ export function AppFrame({
   )
 }
 
+export const EmbedFrame = styled('div')(({ theme }) => ({
+  minHeight: '100dvh',
+  ...theme.applyStyles('light', {
+    backgroundColor: theme.vars.palette.background.paper
+  })
+}))
+
 export function TopBar({ children }: { children: ReactNode }): ReactElement {
   return (
     <Box
