@@ -193,7 +193,10 @@ export function TransferTask({
           {
             onSuccess: result => {
               if (result.droppedAssignees.length === 0) move(result)
-              else setPreview(result)
+              else {
+                transfer.reset()
+                setPreview(result)
+              }
             }
           }
         )
@@ -239,6 +242,7 @@ export function TransferTask({
           busy={transfer.isPending}
           failed={transfer.isError}
           onCancel={() => {
+            transfer.reset()
             setPreview(null)
           }}
           onConfirm={() => {
