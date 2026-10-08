@@ -169,7 +169,7 @@ export function TransferTask({
           const same =
             result.droppedAssignees.length === told.size &&
             result.droppedAssignees.every(p => told.has(p.userId))
-          if (same) finish()
+          if (same || result.droppedAssignees.length === 0) finish()
           else setRemoved(result)
         }
       }
