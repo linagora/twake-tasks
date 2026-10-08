@@ -58,7 +58,7 @@ function personName(
   person: TransferPreview['droppedAssignees'][number],
   former: string
 ): string {
-  return person.email === null && !person.name?.trim()
+  return !person.email && !person.name?.trim()
     ? former
     : displayName({ email: person.email ?? '', name: person.name })
 }
