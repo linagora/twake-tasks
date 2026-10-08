@@ -15,7 +15,9 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        /* Scrolls in a frame too small for the sign-in buttons */
+        justify-content: safe center;
+        overflow: auto;
         padding: 16px 16px 98px;
         background: #fff;
         color: #424244;
