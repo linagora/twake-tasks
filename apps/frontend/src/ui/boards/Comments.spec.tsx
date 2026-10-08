@@ -324,4 +324,103 @@ describe('Comments', () => {
       expect(list.ownerDocument).toBe(editor.ownerDocument)
     })
   })
+
+  describe('mentions typed by hand', () => {
+    it('are stored as the plain @<email> the backend reads', async () => {
+      const { board, logo, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      const panel = await openLogo()
+      const editor = await panel.findByRole('textbox', { name: 'Comment' })
+      editor.focus()
+
+      await typeRichText(editor, 'Hi @alice@example.com ')
+      fireEvent.click(panel.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => {
+        expect(boardsApi.addComment).toHaveBeenCalledWith(
+          board.id,
+          logo.id,
+          'Hi @alice@example.com'
+        )
+      })
+    })
+  })
+
+  describe('mentions in a comment', () => {
+    function commentWith(body: string) {
+      const { board, logo, boardsApi } = logoBoard()
+      boardsApi.comments.set(logo.id, [
+        {
+          id: 'c3',
+          author: {
+            userId: 'bob',
+            email: 'bob@example.com',
+            name: 'Bob Durand'
+          },
+          body,
+          createdAt: '2026-10-05T09:00:00Z'
+        }
+      ])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      return openLogo().then(panel =>
+        panel.findByRole('article', { name: 'Bob Durand' })
+      )
+    }
+
+    it('shows a mention as the name of the member, with the email as its title', async () => {
+      const comment = within(
+        await commentWith('Thanks @alice@example.com, it is **done**.')
+      )
+
+      const mention = await comment.findByText('@Alice Martin')
+
+      expect(mention).toHaveAttribute('title', 'alice@example.com')
+      expect(comment.getByText('done').tagName).toBe('STRONG')
+      expect(comment.queryByText(/alice@example.com/)).not.toBeInTheDocument()
+    })
+
+    it('shows a member whose email has an underscore', async () => {
+      const comment = within(await commentWith('cc @jean_dupont@example.com'))
+
+      expect(await comment.findByText('@Jean Dupont')).toHaveAttribute(
+        'title',
+        'jean_dupont@example.com'
+      )
+    })
+
+    it('reads the email without caring about its case', async () => {
+      const comment = within(await commentWith('@Albert@Example.com ok?'))
+
+      expect(await comment.findByText('@Albert Roux')).toHaveAttribute(
+        'title',
+        'Albert@Example.com'
+      )
+    })
+
+    it('keeps the email of someone who is not a member as it was typed', async () => {
+      const article = await commentWith(
+        'Ask @ghost@example.com or mail ghost@example.com'
+      )
+
+      await waitFor(() => {
+        expect(article).toHaveTextContent(
+          'Ask @ghost@example.com or mail ghost@example.com'
+        )
+      })
+      expect(
+        within(article).queryByTitle('ghost@example.com')
+      ).not.toBeInTheDocument()
+    })
+
+    it('does not turn an address with an @ inside a word into a mention', async () => {
+      const article = await commentWith('write to bob@alice@example.com')
+
+      await waitFor(() => {
+        expect(article).toHaveTextContent('write to bob@alice@example.com')
+      })
+      expect(
+        within(article).queryByText('@Alice Martin')
+      ).not.toBeInTheDocument()
+    })
+  })
 })

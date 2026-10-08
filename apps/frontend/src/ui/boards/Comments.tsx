@@ -1,5 +1,5 @@
 import { Button, Typography } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import { useMemo, useState, type ReactElement } from 'react'
 
 import { Highlight } from '@/ds/Highlight'
 import { RichText, RichTextEditor } from '@/ds/RichText'
@@ -46,6 +46,13 @@ export function Comments({
       query
     ).slice(0, MAX_SUGGESTIONS)
   }
+  const names = useMemo(
+    () =>
+      Object.fromEntries(
+        members.map(person => [person.email.toLowerCase(), displayName(person)])
+      ),
+    [members]
+  )
   const send = () => {
     if (!sendable) return
     add.mutate(body, {
@@ -85,7 +92,7 @@ export function Comments({
                   {` · ${format.format(new Date(comment.createdAt))}`}
                 </Typography>
               </Typography>
-              <RichText markdown={comment.body} />
+              <RichText markdown={comment.body} mentions={names} />
             </article>
           </FeedItem>
         ))}
