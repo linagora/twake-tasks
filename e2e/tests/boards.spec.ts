@@ -130,3 +130,37 @@ test('notifies the person a task is assigned to', async ({ page, browser }) => {
   })
   await expect(notification).toContainText('You were assigned')
 })
+
+test('notifies the person mentioned in a comment', async ({
+  page,
+  browser
+}) => {
+  const bob = await asPerson(browser, 'bob')
+  await signIn(page, 'alice')
+  const { name, prefix } = await newBoard(page)
+  await invite(page, name, 'bob@acme.e2e.test')
+  // An invite turns into a membership when the invitee next uses Tasks
+  await bob.reload()
+  await page.reload()
+  await addTask(page, 'Book the venue')
+
+  const task = `${prefix}-1 Book the venue`
+  await page.getByRole('button', { name: 'Book the venue' }).click()
+  const panel = page.getByRole('dialog', { name: task })
+  const editor = panel.getByRole('textbox', { name: 'Comment' })
+  await editor.click()
+  await editor.pressSequentially('Can you check the rooms @bo')
+  await page
+    .getByRole('option', { name: 'Bob Durand bob@acme.e2e.test' })
+    .click()
+  await panel.getByRole('button', { name: 'Send' }).click()
+  await expect(
+    panel.getByRole('article', { name: 'Alice Martin' })
+  ).toContainText('Can you check the rooms @Bob Durand')
+
+  await bob.getByRole('link', { name: /^Notifications/ }).click()
+  const notification = bob.getByRole('listitem').filter({
+    has: bob.getByRole('link', { name: task })
+  })
+  await expect(notification).toContainText('You were mentioned')
+})
