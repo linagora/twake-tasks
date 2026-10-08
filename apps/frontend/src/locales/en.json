@@ -106,7 +106,10 @@
     "labelFailed": "The label could not be created.",
     "labelsFailed": "The labels could not be saved.",
     "moveFailed": "The task could not be moved.",
-    "addFailed": "The task could not be added."
+    "addFailed": "The task could not be added.",
+    "rename": "Rename board",
+    "renameName": "Board name",
+    "renameFailed": "The board could not be renamed."
   },
   "task": {
     "description": "Description",

@@ -151,6 +151,8 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
           `/boards/${boardId}/${shelf}`
         )
       ).tasks,
+    renameBoard: (boardId, name) =>
+      call('PATCH', `/boards/${boardId}`, { name }),
     setBoardArchived: (boardId, archived) =>
       call(
         'POST',

@@ -4,6 +4,7 @@ import {
   Dots,
   FolderMoveto,
   Icon,
+  Pen,
   Restore,
   Trash
 } from '@linagora/twake-icons'
@@ -25,14 +26,19 @@ import { useI18n } from '@/ui/i18n/useI18n'
 export function BoardMenu({
   board,
   onOpenShelf,
-  onMove
+  onMove,
+  onRename
 }: {
   board: Board
   onOpenShelf: (shelf: Shelf) => void
   onMove?: (() => void) | undefined
+  onRename?: (() => void) | undefined
 }): ReactElement {
   const { t } = useI18n()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  // The editor opens once the menu is gone, which gives the focus back to its
+  // button first: the editor would lose the focus and close at once
+  const [renaming, setRenaming] = useState(false)
   const setLayout = useSetLayout(board.id)
   const archive = useBoardChange(board.id, (api, archived: boolean) =>
     api.setBoardArchived(board.id, archived)
@@ -71,6 +77,15 @@ export function BoardMenu({
         anchorEl={anchor}
         open={anchor !== null}
         onClose={close}
+        slotProps={{
+          transition: {
+            onExited: () => {
+              if (!renaming) return
+              setRenaming(false)
+              onRename?.()
+            }
+          }
+        }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
@@ -87,6 +102,13 @@ export function BoardMenu({
           onOpenShelf('trash')
         })}
         {admin && !board.inbox && <Divider />}
+        {admin &&
+          !board.archived &&
+          !board.inbox &&
+          onRename &&
+          item(Pen, t('board.rename'), () => {
+            setRenaming(true)
+          })}
         {onMove && item(FolderMoveto, t('moveBoard.action'), onMove)}
         {admin &&
           !board.inbox &&

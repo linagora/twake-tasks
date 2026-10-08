@@ -106,7 +106,10 @@
     "labelFailed": "L'étiquette n'a pas pu être créée.",
     "labelsFailed": "Les étiquettes n'ont pas pu être enregistrées.",
     "moveFailed": "La tâche n'a pas pu être déplacée.",
-    "addFailed": "La tâche n'a pas pu être ajoutée."
+    "addFailed": "La tâche n'a pas pu être ajoutée.",
+    "rename": "Renommer le tableau",
+    "renameName": "Nom du tableau",
+    "renameFailed": "Le tableau n'a pas pu être renommé."
   },
   "task": {
     "description": "Description",

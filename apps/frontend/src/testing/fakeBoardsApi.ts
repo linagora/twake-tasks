@@ -204,6 +204,11 @@ export function fakeBoardsApi(boards: Board[] = []) {
           }))
       })
     ),
+    renameBoard: vi.fn<BoardsApi['renameBoard']>((boardId, name) =>
+      Promise.resolve().then(() => {
+        find(boardId).name = name
+      })
+    ),
     setBoardArchived: vi.fn<BoardsApi['setBoardArchived']>(
       (boardId, archived) =>
         Promise.resolve().then(() => {

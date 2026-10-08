@@ -192,6 +192,7 @@ export interface BoardsApi {
   hiddenTasks: (boardId: string, shelf: Shelf) => Promise<HiddenTask[]>
   /** An archived board is read only. Admins only. */
   setBoardArchived: (boardId: string, archived: boolean) => Promise<void>
+  renameBoard: (boardId: string, name: string) => Promise<void>
   /** The projects the signed-in person belongs to, with their role. */
   listProjects: () => Promise<Project[]>
   /**

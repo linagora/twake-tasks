@@ -553,6 +553,18 @@ export function useSetLayout(
   })
 }
 
+export function useRenameBoard(
+  boardId: string
+): UseMutationResult<void, Error, string> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (name: string) => api.renameBoard(boardId, name),
+    // The list of boards and the board itself: every key starts with boardsKey
+    onSettled: () => queryClient.invalidateQueries({ queryKey: boardsKey })
+  })
+}
+
 export function useSetFavorite(): UseMutationResult<
   void,
   Error,

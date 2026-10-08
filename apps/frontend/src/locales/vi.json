@@ -106,7 +106,10 @@
     "labelFailed": "Không thể tạo nhãn.",
     "labelsFailed": "Không thể lưu nhãn.",
     "moveFailed": "Không thể di chuyển công việc.",
-    "addFailed": "Không thể thêm công việc."
+    "addFailed": "Không thể thêm công việc.",
+    "rename": "Đổi tên bảng",
+    "renameName": "Tên bảng",
+    "renameFailed": "Không thể đổi tên bảng."
   },
   "task": {
     "description": "Mô tả",
