@@ -1,8 +1,10 @@
 import { eq, sql as statement, type SQL } from 'drizzle-orm'
 import { afterAll, describe, expect, inject, it } from 'vitest'
+import type { Role } from '../modules/boards/access.ts'
 import {
   boardFavorites,
   boards,
+  projectInvites,
   projectMembers,
   projects,
   sections,
@@ -86,6 +88,19 @@ const join = (
     email: user.email,
     role: 'viewer'
   }) as const
+
+const invite = (
+  projectId: string,
+  invitee: TestUser,
+  by: TestUser,
+  role: Role
+) => ({
+  projectId,
+  organizationId: by.organizationId,
+  email: invitee.email,
+  role,
+  invitedBy: by.userId
+})
 
 describe('inTenant', () => {
   it('only shows the rows of the current organization', async () => {
@@ -177,6 +192,64 @@ describe('inTenant', () => {
     await expect(
       inTenant(db, bob, tx => tx.insert(boardFavorites).values(favorite(alice)))
     ).rejects.toThrow()
+  })
+})
+
+describe('B2C invites', () => {
+  const INSUFFICIENT_PRIVILEGE = '42501'
+
+  it('refuses an invite to one’s own email on a project one cannot see', async () => {
+    const alice = aB2cUser()
+    const bob = aB2cUser()
+    const { projectId } = await aProjectOf(alice)
+
+    await expect(
+      inTenant(db, bob, tx =>
+        tx.insert(projectInvites).values(invite(projectId, bob, bob, 'admin'))
+      )
+    ).rejects.toHaveProperty('cause.code', INSUFFICIENT_PRIVILEGE)
+  })
+
+  it('refuses to let the invitee raise the role of their invite', async () => {
+    const alice = aB2cUser()
+    const bob = aB2cUser()
+    const { projectId } = await aProjectOf(alice)
+    await inTenant(db, alice, tx =>
+      tx.insert(projectInvites).values(invite(projectId, bob, alice, 'viewer'))
+    )
+
+    await expect(
+      inTenant(db, bob, tx =>
+        tx
+          .update(projectInvites)
+          .set({ role: 'admin' })
+          .where(eq(projectInvites.projectId, projectId))
+      )
+    ).rejects.toHaveProperty('cause.code', INSUFFICIENT_PRIVILEGE)
+  })
+
+  it('lets the invitee claim an invite to a project they cannot see yet', async () => {
+    const alice = aB2cUser()
+    const bob = aB2cUser()
+    const { projectId } = await aProjectOf(alice)
+    await inTenant(db, alice, tx =>
+      tx.insert(projectInvites).values(invite(projectId, bob, alice, 'viewer'))
+    )
+    expect(await boardsSeenBy(bob)).toEqual([])
+
+    await inTenant(db, bob, tx =>
+      tx.execute(statement`select app_claim_invites()`)
+    )
+
+    expect(await boardsSeenBy(bob)).toEqual([{ organizationId: null }])
+    expect(
+      await inTenant(db, bob, tx =>
+        tx
+          .select({ userId: projectMembers.userId, role: projectMembers.role })
+          .from(projectMembers)
+          .where(eq(projectMembers.projectId, projectId))
+      )
+    ).toContainEqual({ userId: bob.userId, role: 'viewer' })
   })
 })
 

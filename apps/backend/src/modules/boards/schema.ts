@@ -125,7 +125,9 @@ export const projectMembers = pgTable.withRLS(
 )
 
 // An invite waits for its email to sign in, then app_claim_invites turns it
-// into a membership. The organization keeps it inside its tenant.
+// into a membership. The organization keeps it inside its tenant. Before a
+// B2C invitee can see the project, their email lets them read and delete
+// their invites, which the claim does, but never write one.
 export const projectInvites = pgTable.withRLS(
   'project_invites',
   {
@@ -153,7 +155,8 @@ export const projectInvites = pgTable.withRLS(
     ),
     tenantPolicy(
       table.organizationId,
-      sql`${visibleProject(table.projectId)} or ${table.email} = lower(current_setting('app.user_email', true))`
+      sql`${visibleProject(table.projectId)} or ${table.email} = lower(current_setting('app.user_email', true))`,
+      visibleProject(table.projectId)
     )
   ]
 )
