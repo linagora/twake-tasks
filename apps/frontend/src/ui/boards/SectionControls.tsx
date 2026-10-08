@@ -147,6 +147,7 @@ export function SectionMenu({
         <SectionDialog
           title={t('section.editTitle')}
           initial={section}
+          editing
           change={edit}
           onClose={() => {
             setDialog(null)
@@ -169,10 +170,12 @@ export function SectionMenu({
 function SectionDialog({
   title,
   initial,
+  editing = false,
   change,
   onClose
 }: {
   title: string
+  editing?: boolean
   initial: Omit<Section, 'id'>
   change: ReturnType<typeof useBoardChange<Omit<Section, 'id'>>>
   onClose: () => void
@@ -210,13 +213,21 @@ function SectionDialog({
           <TextField
             select
             label={t('section.status')}
+            helperText={
+              category === initial.category || !editing
+                ? t(`section.help.${category}`)
+                : `${t(`section.help.${category}`)} ${t('section.help.editing')}`
+            }
             value={category}
             onChange={event => {
               setCategory(event.target.value as SectionCategory)
             }}
             fullWidth
             margin="dense"
-            slotProps={{ select: { native: true } }}
+            slotProps={{
+              select: { native: true },
+              formHelperText: { 'aria-live': 'polite' }
+            }}
           >
             {CATEGORIES.map(value => (
               <option key={value} value={value}>
@@ -283,7 +294,10 @@ function DeleteSectionDialog({
               }}
               fullWidth
               margin="dense"
-              slotProps={{ select: { native: true } }}
+              slotProps={{
+                select: { native: true },
+                formHelperText: { 'aria-live': 'polite' }
+              }}
             >
               {others.map(other => (
                 <option key={other.id} value={other.id}>

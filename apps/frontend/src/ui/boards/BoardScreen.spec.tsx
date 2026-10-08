@@ -394,7 +394,7 @@ describe('BoardScreen', () => {
     fireEvent.change(dialog.getByRole('textbox', { name: 'Name' }), {
       target: { value: 'Review' }
     })
-    fireEvent.change(dialog.getByRole('combobox', { name: 'Status' }), {
+    fireEvent.change(dialog.getByRole('combobox', { name: 'Section type' }), {
       target: { value: 'started' }
     })
     fireEvent.click(dialog.getByRole('button', { name: 'Save' }))

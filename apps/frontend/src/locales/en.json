@@ -229,7 +229,7 @@
     "moveRight": "Move right",
     "delete": "Delete",
     "name": "Name",
-    "status": "Status",
+    "status": "Section type",
     "save": "Save",
     "cancel": "Cancel",
     "deleteTitle": "Delete %{section}?",
@@ -243,6 +243,14 @@
       "started": "In progress",
       "completed": "Done",
       "canceled": "Canceled"
+    },
+    "help": {
+      "backlog": "Tasks are not marked done or canceled. Tasks moved here from a Done or Canceled section are reopened.",
+      "unstarted": "Tasks are not marked done or canceled. Tasks moved here from a Done or Canceled section are reopened.",
+      "started": "Tasks are not marked done or canceled. Tasks moved here from a Done or Canceled section are reopened.",
+      "completed": "Tasks moved here within this board are marked done. A recurring task with a due date stays open and moves to its next due date.",
+      "canceled": "Tasks moved here are marked canceled.",
+      "editing": "The tasks already in this section will be marked done, marked canceled or reopened to match the new type, with no recurrence."
     }
   },
   "reminders": {
