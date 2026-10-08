@@ -6,7 +6,12 @@ import { MalformedEventError } from '../../events/router.ts'
 import { eq, sql as raw } from 'drizzle-orm'
 import { asOrganization, createDb } from '../../infra/db.ts'
 import { boards } from '../boards/schema.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
+import {
+  aUser,
+  followersOf,
+  startApp,
+  type TestUser
+} from '../../testing/app.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { outbox } from '../../events/schema.ts'
 import {
@@ -260,6 +265,14 @@ async function aSpaceWithATask(admin: TestUser, members: TestUser[]) {
   return { space, boardId: board.id, assignees }
 }
 
+async function firstTaskOf(user: TestUser, boardId: string) {
+  const [task] = (await api.as(user).get(`/boards/${boardId}`)).json<{
+    tasks: { id: string }[]
+  }>().tasks
+  if (!task) throw new Error('no task')
+  return task
+}
+
 describe('twake.space.member.removed', () => {
   it('takes the board away and unassigns, matching by uuid or by email', async () => {
     const admin = aUser()
@@ -275,6 +288,40 @@ describe('twake.space.member.removed', () => {
     expect(await spaceBoards(byUuid)).toEqual([])
     expect(await spaceBoards(byEmail)).toEqual([])
     expect(await assignees()).toEqual([admin.userId])
+  })
+
+  it('stops the people removed following the tasks of the space', async () => {
+    const admin = aUser()
+    const gone = aUser({ organizationId: admin.organizationId })
+    const stays = aUser({ organizationId: admin.organizationId })
+    const { space, boardId } = await aSpaceWithATask(admin, [gone, stays])
+    const [task] = (await api.as(admin).get(`/boards/${boardId}`)).json<{
+      tasks: { id: string }[]
+    }>().tasks
+    if (!task) throw new Error('no task')
+    expect(await followersOf(db, admin, task.id)).toContain(gone.userId)
+
+    await deliver('twake.space.member.removed', {
+      ...space,
+      members: [{ uuid: gone.userId }]
+    })
+
+    expect(await followersOf(db, admin, task.id)).toEqual(
+      [admin.userId, stays.userId].sort()
+    )
+  })
+
+  it('removes the follows once, and a replay changes nothing', async () => {
+    const admin = aUser()
+    const gone = aUser({ organizationId: admin.organizationId })
+    const { space, boardId } = await aSpaceWithATask(admin, [gone])
+    const task = await firstTaskOf(admin, boardId)
+    const removal = { ...space, members: [{ uuid: gone.userId }] }
+
+    await deliver('twake.space.member.removed', removal)
+    await deliver('twake.space.member.removed', removal)
+
+    expect(await followersOf(db, admin, task.id)).toEqual([admin.userId])
   })
 })
 
@@ -499,6 +546,25 @@ describe('twake.space.synced', () => {
         project: expect.objectContaining({ name: 'Operations' }) as object
       })
     ])
+  })
+
+  it('stops the members a snapshot drops following, and a replay changes nothing', async () => {
+    const admin = aUser()
+    const leaver = aUser({ organizationId: admin.organizationId })
+    const { space, boardId } = await aSpaceWithATask(admin, [leaver])
+    const task = await firstTaskOf(admin, boardId)
+    expect(await followersOf(db, admin, task.id)).toContain(leaver.userId)
+    const snapshot = {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      groups: []
+    }
+
+    await deliver('twake.space.synced', snapshot)
+    await deliver('twake.space.synced', snapshot)
+
+    expect(await followersOf(db, admin, task.id)).toEqual([admin.userId])
   })
 
   it('keeps a member the snapshot lists without a uuid', async () => {
