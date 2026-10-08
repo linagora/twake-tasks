@@ -1,4 +1,7 @@
+import 'dayjs/locale/de'
+import 'dayjs/locale/es'
 import 'dayjs/locale/fr'
+import 'dayjs/locale/it'
 import 'dayjs/locale/ru'
 import 'dayjs/locale/vi'
 
@@ -8,7 +11,15 @@ import { DateCalendar } from '@mui/x-date-pickers/DateCalendar'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
-import { enUS, frFR, ruRU, viVN } from '@mui/x-date-pickers/locales'
+import {
+  deDE,
+  enUS,
+  esES,
+  frFR,
+  itIT,
+  ruRU,
+  viVN
+} from '@mui/x-date-pickers/locales'
 import dayjs, { type Dayjs } from 'dayjs'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 
@@ -19,6 +30,9 @@ type LocaleText = NonNullable<
 const TEXTS: Record<string, typeof enUS> = {
   en: enUS,
   fr: frFR,
+  de: deDE,
+  it: itIT,
+  es: esES,
   ru: ruRU,
   vi: viVN
 }
