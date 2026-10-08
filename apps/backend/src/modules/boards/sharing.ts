@@ -10,6 +10,7 @@ import {
   settingsOfMember,
   type Role
 } from './access.ts'
+import { unfollowOutside, unfollowProject } from './followers.ts'
 import {
   boards,
   projectInvites,
@@ -204,6 +205,14 @@ export function createSharingStore(db: Db) {
           )
         if (taken) throw new Refused('key_prefix_taken')
         await bumpBoard(tx, boardId)
+        await unfollowOutside(
+          tx,
+          tx
+            .select({ id: tasks.id })
+            .from(tasks)
+            .where(eq(tasks.boardId, boardId)),
+          projectId
+        )
         await tx.update(boards).set({ projectId }).where(eq(boards.id, boardId))
         const boardTasks = tx
           .select({ id: tasks.id })
@@ -242,6 +251,9 @@ export function createSharingStore(db: Db) {
           project = await sharedProject(tx, identity, boardId)
         }
         await keepAnAdmin(tx, project.id, userId)
+        // Before the membership goes: in a B2C tenant the tasks, and so their
+        // followers, stop being visible to a member who has left.
+        await unfollowProject(tx, [userId], project.id)
         const removed = await tx
           .delete(projectMembers)
           .where(

@@ -10,6 +10,7 @@ import {
   aBoardIn,
   aManagedProject,
   aUser,
+  followersOf,
   joinBoard,
   startApp,
   type TestUser
@@ -74,7 +75,7 @@ async function aBoard(
     (await api.as(viewer).get(`/boards/${board.id}`))
       .json<{ tasks: { assignees: { userId: string }[] }[] }>()
       .tasks[0]?.assignees.map(person => person.userId)
-  return { id: board.id, assignees }
+  return { id: board.id, taskId: task.id, assignees }
 }
 
 const filtersOf = async (user: TestUser) =>
@@ -153,6 +154,21 @@ describe.each([
       expect.not.arrayContaining([gone.userId])
     )
     expect(await personalProjectsOf(gone)).toEqual([])
+  })
+
+  it('stops following the tasks it leaves', async () => {
+    const gone = makeUser()
+    const peer =
+      gone.organizationId === null
+        ? aB2cUser()
+        : aUser({ organizationId: gone.organizationId })
+    await boardsOf(gone)
+    const home = await aBoard(gone, 'Home', [[peer, 'editor']])
+    expect(await followersOf(db, peer, home.taskId)).toContain(gone.userId)
+
+    await deliver(routingKey, body(gone))
+
+    expect(await followersOf(db, peer, home.taskId)).not.toContain(gone.userId)
   })
 
   it('loses its saved filters', async () => {

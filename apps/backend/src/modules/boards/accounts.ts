@@ -14,7 +14,8 @@ import {
   projectMembers,
   projects,
   savedFilters,
-  taskAssignees
+  taskAssignees,
+  taskFollowers
 } from './schema.ts'
 
 // ldap-rest names B2B users by email until it sends their entryUUID.
@@ -122,6 +123,7 @@ async function forget(tx: Tx, organizationId: string | null, userId: string) {
     )
   )
   await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
+  await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
   await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
   await tx
     .delete(projects)

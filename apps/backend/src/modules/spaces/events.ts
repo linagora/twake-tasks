@@ -19,6 +19,7 @@ import {
   schedule,
   type Handler as JobHandler
 } from '../../scheduler/scheduler.ts'
+import { unfollowProject } from '../boards/followers.ts'
 import {
   boards,
   memberRole,
@@ -225,7 +226,7 @@ async function renameSpace(tx: Tx, space: SpaceRef, name: string) {
   await tx.update(projects).set({ name }).where(eq(projects.id, projectId))
 }
 
-/** Takes the space's boards and its tasks away from these people. */
+/** Takes the space's boards and its tasks away from these people, and stops them following. */
 async function removeMembers(
   tx: Tx,
   space: SpaceRef,
@@ -238,6 +239,11 @@ async function removeMembers(
     .where(and(eq(projectMembers.projectId, projectId), which))
     .returning({ userId: projectMembers.userId })
   if (removed.length === 0) return
+  await unfollowProject(
+    tx,
+    removed.map(m => m.userId),
+    projectId
+  )
   await tx.delete(taskAssignees).where(
     and(
       inArray(

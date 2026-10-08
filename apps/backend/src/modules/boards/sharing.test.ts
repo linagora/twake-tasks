@@ -5,6 +5,7 @@ import {
   aBoardIn,
   aManagedProject,
   aUser,
+  followersOf,
   startApp,
   type TestUser
 } from '../../testing/app.ts'
@@ -210,5 +211,59 @@ describe('sharing a board', () => {
     expect(await boardIdsOf(guest)).not.toContainEqual(
       expect.objectContaining({ id: boardId })
     )
+  })
+
+  describe('followers', () => {
+    async function aFollowedTask() {
+      const owner = aUser()
+      const guest = aUser({ organizationId: owner.organizationId })
+      const boardId = await aBoardOf(owner)
+      await invite(owner, boardId, guest.email, 'editor')
+      await boardIdsOf(guest)
+      const taskId = (
+        await api
+          .as(owner)
+          .post(`/boards/${boardId}/tasks`, { sectionId: null, title: 'Logo' })
+      ).json<{ id: string }>().id
+      await api.as(guest).put(`/boards/${boardId}/tasks/${taskId}/follow`)
+      return { owner, guest, boardId, taskId }
+    }
+
+    it('stops someone who leaves following the tasks', async () => {
+      const { owner, guest, boardId, taskId } = await aFollowedTask()
+
+      await api.as(guest).delete(`/boards/${boardId}/members/${guest.userId}`)
+
+      expect(await followersOf(db, owner, taskId)).toEqual([owner.userId])
+    })
+
+    it('stops someone an admin removes following the tasks', async () => {
+      const { owner, guest, boardId, taskId } = await aFollowedTask()
+
+      await api.as(owner).delete(`/boards/${boardId}/members/${guest.userId}`)
+
+      expect(await followersOf(db, owner, taskId)).toEqual([owner.userId])
+    })
+
+    it('keeps only the followers who are members of the project a board moves to', async () => {
+      const { owner, guest, boardId, taskId } = await aFollowedTask()
+      const carol = aUser({ organizationId: owner.organizationId })
+      const other = (
+        await api.as(owner).post('/boards', { name: 'Ops', keyPrefix: 'OPS' })
+      ).json<{ id: string; project: { id: string } }>()
+      await invite(owner, boardId, carol.email, 'editor')
+      await invite(owner, other.id, carol.email, 'editor')
+      await boardIdsOf(carol)
+      await api.as(carol).put(`/boards/${boardId}/tasks/${taskId}/follow`)
+
+      await api
+        .as(owner)
+        .post(`/boards/${boardId}/move`, { projectId: other.project.id })
+
+      expect(await followersOf(db, owner, taskId)).toEqual(
+        [owner.userId, carol.userId].sort()
+      )
+      expect(await followersOf(db, owner, taskId)).not.toContain(guest.userId)
+    })
   })
 })
