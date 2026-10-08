@@ -391,6 +391,8 @@
     "emptyHint": "Theo dõi một công việc để nhận thông báo về thay đổi tại đây.",
     "loadFailed": "Không thể tải thông báo.",
     "follow": "Theo dõi",
+    "followingTask": "Đang theo dõi",
+    "unfollow": "Bỏ theo dõi",
     "reason": {
       "assigned": "Bạn được giao",
       "mentioned": "Bạn được nhắc đến",

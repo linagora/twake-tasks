@@ -391,6 +391,8 @@
     "emptyHint": "Follow a task to hear about its changes here.",
     "loadFailed": "Couldn’t load notifications.",
     "follow": "Follow",
+    "followingTask": "Following",
+    "unfollow": "Unfollow",
     "reason": {
       "assigned": "You were assigned",
       "mentioned": "You were mentioned",

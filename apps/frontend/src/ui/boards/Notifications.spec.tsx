@@ -22,13 +22,45 @@ describe('following a task', () => {
     )
 
     const follow = await panel.findByRole('button', { name: 'Follow' })
-    expect(follow).toHaveAttribute('aria-pressed', 'false')
     fireEvent.click(follow)
 
-    expect(
-      await panel.findByRole('button', { name: 'Follow', pressed: true })
-    ).toBeVisible()
+    const following = await panel.findByRole('button', {
+      name: 'Following'
+    })
+    expect(following).toBeVisible()
+    expect(panel.queryByRole('button', { name: 'Follow' })).toBeNull()
     expect(boardsApi.setFollowing).toHaveBeenCalledWith(board.id, logo.id, true)
+
+    fireEvent.click(following)
+    expect(await panel.findByRole('button', { name: 'Follow' })).toBeVisible()
+    expect(boardsApi.setFollowing).toHaveBeenLastCalledWith(
+      board.id,
+      logo.id,
+      false
+    )
+  })
+
+  it('shows an unfollow tooltip only once the task is followed', async () => {
+    const { board, boardsApi } = aBoardWithLogo()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+
+    const follow = await panel.findByRole('button', { name: 'Follow' })
+    fireEvent.mouseOver(follow)
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    const bell = follow.querySelector('svg')?.innerHTML
+    fireEvent.click(follow)
+
+    const following = await panel.findByRole('button', {
+      name: 'Following'
+    })
+    expect(following.querySelector('svg')?.innerHTML).not.toBe(bell)
+    fireEvent.mouseOver(following)
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Unfollow')
+    expect(following).toHaveAccessibleDescription('Unfollow')
   })
 })
 
