@@ -3,6 +3,7 @@ import type { RouteObject } from 'react-router'
 import { AgendaScreen, FilterScreen } from '@/ui/agenda/AgendaScreen'
 import { FiltersScreen } from '@/ui/agenda/FiltersScreen'
 import { SearchScreen } from '@/ui/agenda/SearchScreen'
+import { ShelfScreen } from '@/ui/boards/Archive'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { BoardsScreen } from '@/ui/boards/BoardsScreen'
 import { NotificationsScreen } from '@/ui/boards/Notifications'
@@ -23,6 +24,14 @@ export const routes: RouteObject[] = [
         children: [
           { path: '/', element: <BoardsScreen /> },
           { path: '/boards/:boardId', element: <BoardScreen /> },
+          {
+            path: '/boards/:boardId/archived',
+            element: <ShelfScreen shelf="archived" />
+          },
+          {
+            path: '/boards/:boardId/trash',
+            element: <ShelfScreen shelf="trash" />
+          },
           { path: '/today', element: <AgendaScreen view="today" /> },
           { path: '/upcoming', element: <AgendaScreen view="upcoming" /> },
           { path: '/mine', element: <AgendaScreen view="mine" /> },
@@ -43,7 +52,15 @@ export const routes: RouteObject[] = [
         errorElement: <CrashScreen />,
         children: [
           { index: true, element: <EmbedProjectScreen /> },
-          { path: 'boards/:boardId', element: <EmbedBoardScreen /> }
+          { path: 'boards/:boardId', element: <EmbedBoardScreen /> },
+          {
+            path: 'boards/:boardId/archived',
+            element: <ShelfScreen shelf="archived" />
+          },
+          {
+            path: 'boards/:boardId/trash',
+            element: <ShelfScreen shelf="trash" />
+          }
         ]
       }
     ]

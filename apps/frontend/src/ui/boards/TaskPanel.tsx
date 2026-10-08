@@ -12,7 +12,7 @@ import {
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { useId, useState, type ReactElement } from 'react'
+import { useId, useState, type ReactElement, type ReactNode } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { RichText, RichTextEditor } from '@/ds/RichText'
@@ -44,12 +44,14 @@ export function TaskPanel({
   boardId,
   editable,
   depth,
+  notice,
   onClose
 }: {
   task: Task
   boardId: string
   editable: boolean
   depth: number
+  notice?: ReactNode
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
@@ -86,6 +88,7 @@ export function TaskPanel({
         </>
       }
     >
+      {notice}
       <Title task={task} boardId={boardId} editable={editable} />
       <TaskProperties
         task={task}

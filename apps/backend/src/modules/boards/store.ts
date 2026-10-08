@@ -423,7 +423,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
   }
 }
 
-async function describeTasks(
+export async function describeTasks(
   tx: Tx,
   board: typeof boards.$inferSelect,
   rows: (typeof tasks.$inferSelect)[],

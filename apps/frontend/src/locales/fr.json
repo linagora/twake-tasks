@@ -340,7 +340,20 @@
     "trashed": "%{key} placée dans la corbeille",
     "undo": "Annuler",
     "viewArchived": "Voir les tâches archivées",
-    "viewTrash": "Voir la corbeille"
+    "viewTrash": "Voir la corbeille",
+    "back": "Retour à %{board}",
+    "shelves": "Tâches masquées",
+    "archivedShelf": "Archivées",
+    "trashShelf": "Corbeille",
+    "loadFailed": "Ces tâches n'ont pas pu être chargées.",
+    "archivedOn": "Archivée",
+    "deletedOn": "Supprimée",
+    "daysLeft": "Encore %{smart_count} jour |||| Encore %{smart_count} jours",
+    "restoreTask": "Restaurer %{key}",
+    "restored": "%{key} est de retour sur le tableau",
+    "openTask": "Ouvrir",
+    "inTrash": "Dans la corbeille, supprimée définitivement dans %{smart_count} jour. |||| Dans la corbeille, supprimée définitivement dans %{smart_count} jours.",
+    "isArchived": "Cette tâche est archivée."
   },
   "sharing": {
     "share": "Partager",

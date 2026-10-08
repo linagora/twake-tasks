@@ -101,6 +101,34 @@ describe('archive and trash', () => {
     expect(await purge()).toEqual([])
   })
 
+  it('lists a trashed task with its details and when it was trashed', async () => {
+    const owner = aUser()
+    const { boardId, sectionId, ids } = await aBoard(owner, ['Logo'])
+    const [logo = ''] = ids
+    await api.as(owner).patch(`/boards/${boardId}/tasks/${logo}`, {
+      priority: 1,
+      dueDate: '2030-01-15'
+    })
+    await api.as(owner).delete(`/boards/${boardId}/tasks/${logo}`)
+
+    const [trashed] = (
+      await api.as(owner).get(`/boards/${boardId}/trash`)
+    ).json<{ tasks: Record<string, unknown>[] }>().tasks
+
+    expect(trashed).toEqual(
+      expect.objectContaining({
+        key: 'DES-1',
+        title: 'Logo',
+        sectionId,
+        priority: 1,
+        dueDate: '2030-01-15',
+        assignees: [],
+        labels: [],
+        at: expect.any(String) as string
+      })
+    )
+  })
+
   it('purges a trashed task for good', async () => {
     const owner = aUser()
     const { boardId, ids } = await aBoard(owner, ['Logo'])

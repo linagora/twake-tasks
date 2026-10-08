@@ -34,7 +34,8 @@ async function boardMenu() {
 
 async function openShelf(name: 'Archived tasks' | 'Trash') {
   fireEvent.click((await boardMenu()).getByRole('menuitem', { name }))
-  return within(await screen.findByRole('dialog', { name }))
+  await screen.findByRole('heading', { name, level: 1 })
+  return within(screen.getByRole('main'))
 }
 
 describe('archive and trash', () => {
@@ -47,13 +48,21 @@ describe('archive and trash', () => {
     const item = within(
       await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
     )
-    fireEvent.click(item.getByRole('button', { name: 'Restore' }))
+    fireEvent.click(item.getByRole('button', { name: 'Restore DES-1' }))
     expect(await findEmptyState('No archived tasks')).toHaveTextContent(
       'Archive a task to hide it from the board without deleting it.'
     )
-    fireEvent.click(shelf.getByRole('button', { name: 'Close' }))
+    fireEvent.click(
+      within(
+        await screen.findByRole('status', {
+          name: 'DES-1 is back on the board'
+        })
+      ).getByRole('button', { name: 'Open' })
+    )
 
-    expect(await screen.findByRole('button', { name: 'Logo' })).toBeVisible()
+    expect(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    ).toBeVisible()
     expect(boardsApi.restoreTask).toHaveBeenCalledWith(board.id, logo.id)
   })
 
@@ -64,12 +73,55 @@ describe('archive and trash', () => {
 
     expect(boardsApi.trashTask).toHaveBeenCalledWith(board.id, logo.id)
     const shelf = await openShelf('Trash')
+    const item = within(
+      await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
+    )
     expect(
       shelf.getByText('Tasks in the trash are deleted for good after 30 days.')
+    ).toBeVisible()
+    expect(item.getByText('30 days left')).toBeVisible()
+    expect(item.getByText('this minute')).toBeVisible()
+  })
+
+  it('switches between the archived tasks and the trash, and goes back to the board', async () => {
+    logoBoard()
+
+    await removeLogo('Archive')
+    const shelf = await openShelf('Trash')
+    expect(await findEmptyState('The trash is empty')).toBeVisible()
+    fireEvent.click(shelf.getByRole('button', { name: 'Archived' }))
+    expect(
+      await screen.findByRole('heading', { name: 'Archived tasks', level: 1 })
     ).toBeVisible()
     expect(
       await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
     ).toBeVisible()
+
+    fireEvent.click(shelf.getByRole('link', { name: 'Back to Design' }))
+    expect(
+      await screen.findByRole('button', { name: 'Board options' })
+    ).toBeVisible()
+  })
+
+  it('shows a trashed task read only, and restores it from there', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+
+    await removeLogo('Delete')
+    const shelf = await openShelf('Trash')
+    fireEvent.click(await shelf.findByRole('button', { name: 'Logo' }))
+
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+    expect(panel.queryByRole('button', { name: 'Task options' })).toBeNull()
+    expect(
+      panel.getByText('In the trash, deleted for good in 30 days.')
+    ).toBeVisible()
+    fireEvent.click(panel.getByRole('button', { name: 'Restore DES-1' }))
+
+    expect(await findEmptyState('The trash is empty')).toBeVisible()
+    expect(boardsApi.restoreTask).toHaveBeenCalledWith(board.id, logo.id)
+    expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
   })
 
   it('says where a deleted task went and opens the trash from there', async () => {
@@ -81,7 +133,8 @@ describe('archive and trash', () => {
     )
     fireEvent.click(notice.getByRole('button', { name: 'View trash' }))
 
-    const shelf = within(await screen.findByRole('dialog', { name: 'Trash' }))
+    await screen.findByRole('heading', { name: 'Trash', level: 1 })
+    const shelf = within(screen.getByRole('main'))
     expect(
       await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
     ).toBeVisible()

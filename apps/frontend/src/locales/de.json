@@ -340,7 +340,20 @@
     "trashed": "%{key} in den Papierkorb verschoben",
     "undo": "Rückgängig",
     "viewArchived": "Archivierte Aufgaben anzeigen",
-    "viewTrash": "Papierkorb anzeigen"
+    "viewTrash": "Papierkorb anzeigen",
+    "back": "Zurück zu %{board}",
+    "shelves": "Ausgeblendete Aufgaben",
+    "archivedShelf": "Archiviert",
+    "trashShelf": "Papierkorb",
+    "loadFailed": "Diese Aufgaben konnten nicht geladen werden.",
+    "archivedOn": "Archiviert",
+    "deletedOn": "Gelöscht",
+    "daysLeft": "Noch %{smart_count} Tag |||| Noch %{smart_count} Tage",
+    "restoreTask": "%{key} wiederherstellen",
+    "restored": "%{key} ist wieder auf dem Board",
+    "openTask": "Öffnen",
+    "inTrash": "Im Papierkorb, wird in %{smart_count} Tag endgültig gelöscht. |||| Im Papierkorb, wird in %{smart_count} Tagen endgültig gelöscht.",
+    "isArchived": "Diese Aufgabe ist archiviert."
   },
   "sharing": {
     "share": "Teilen",

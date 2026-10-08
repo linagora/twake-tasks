@@ -340,7 +340,20 @@
     "trashed": "%{key} spostata nel cestino",
     "undo": "Annulla",
     "viewArchived": "Vedi attività archiviate",
-    "viewTrash": "Vedi cestino"
+    "viewTrash": "Vedi cestino",
+    "back": "Torna a %{board}",
+    "shelves": "Attività nascoste",
+    "archivedShelf": "Archiviate",
+    "trashShelf": "Cestino",
+    "loadFailed": "Impossibile caricare queste attività.",
+    "archivedOn": "Archiviata",
+    "deletedOn": "Eliminata",
+    "daysLeft": "Ancora %{smart_count} giorno |||| Ancora %{smart_count} giorni",
+    "restoreTask": "Ripristina %{key}",
+    "restored": "%{key} è di nuovo sulla bacheca",
+    "openTask": "Apri",
+    "inTrash": "Nel cestino, verrà eliminata definitivamente tra %{smart_count} giorno. |||| Nel cestino, verrà eliminata definitivamente tra %{smart_count} giorni.",
+    "isArchived": "Questa attività è archiviata."
   },
   "sharing": {
     "share": "Condividi",

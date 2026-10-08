@@ -7,8 +7,10 @@ import {
   type Handler
 } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
-import { roleOn } from './access.ts'
+import { membersOf, roleOn } from './access.ts'
+import { labelsOn } from './labels.ts'
 import { boards, projects, tasks } from './schema.ts'
+import { describeTasks } from './store.ts'
 import {
   bumpBoard,
   checkRole,
@@ -146,15 +148,14 @@ export function createArchiveStore(db: Db) {
       return inTenant(db, identity, async tx => {
         if (!(await roleOn(tx, identity.userId, boardId))) return null
         const column = sql.raw(columnOf[stamp])
+        const [board] = await tx
+          .select()
+          .from(boards)
+          .where(eq(boards.id, boardId))
+        if (!board) return null
         const rows = await tx
-          .select({
-            id: tasks.id,
-            key: sql<string>`${boards.keyPrefix} || '-' || ${tasks.number}`,
-            title: tasks.title,
-            at: tasks[stamp]
-          })
+          .select()
           .from(tasks)
-          .innerJoin(boards, eq(boards.id, tasks.boardId))
           .where(
             and(
               eq(tasks.boardId, boardId),
@@ -163,7 +164,18 @@ export function createArchiveStore(db: Db) {
             )
           )
           .orderBy(desc(tasks[stamp]))
-        return rows
+        if (rows.length === 0) return []
+        const described = await describeTasks(
+          tx,
+          board,
+          rows,
+          await membersOf(tx, board),
+          await labelsOn(tx, board)
+        )
+        return described.map((task, index) => ({
+          ...task,
+          at: rows[index]?.[stamp] ?? null
+        }))
       })
     },
 
