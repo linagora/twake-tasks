@@ -340,7 +340,20 @@
     "trashed": "%{key} movida a la papelera",
     "undo": "Deshacer",
     "viewArchived": "Ver tareas archivadas",
-    "viewTrash": "Ver papelera"
+    "viewTrash": "Ver papelera",
+    "back": "Volver a %{board}",
+    "shelves": "Tareas ocultas",
+    "archivedShelf": "Archivadas",
+    "trashShelf": "Papelera",
+    "loadFailed": "No se pudieron cargar estas tareas.",
+    "archivedOn": "Archivada",
+    "deletedOn": "Eliminada",
+    "daysLeft": "Queda %{smart_count} día |||| Quedan %{smart_count} días",
+    "restoreTask": "Restaurar %{key}",
+    "restored": "%{key} ha vuelto al tablero",
+    "openTask": "Abrir",
+    "inTrash": "En la papelera, se eliminará definitivamente en %{smart_count} día. |||| En la papelera, se eliminará definitivamente en %{smart_count} días.",
+    "isArchived": "Esta tarea está archivada."
   },
   "sharing": {
     "share": "Compartir",

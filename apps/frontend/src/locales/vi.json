@@ -340,7 +340,20 @@
     "trashed": "Đã chuyển %{key} vào thùng rác",
     "undo": "Hoàn tác",
     "viewArchived": "Xem công việc đã lưu trữ",
-    "viewTrash": "Xem thùng rác"
+    "viewTrash": "Xem thùng rác",
+    "back": "Quay lại %{board}",
+    "shelves": "Công việc đã ẩn",
+    "archivedShelf": "Đã lưu trữ",
+    "trashShelf": "Thùng rác",
+    "loadFailed": "Không thể tải các công việc này.",
+    "archivedOn": "Đã lưu trữ",
+    "deletedOn": "Đã xóa",
+    "daysLeft": "Còn %{smart_count} ngày",
+    "restoreTask": "Khôi phục %{key}",
+    "restored": "%{key} đã trở lại bảng",
+    "openTask": "Mở",
+    "inTrash": "Trong thùng rác, sẽ bị xóa vĩnh viễn sau %{smart_count} ngày.",
+    "isArchived": "Công việc này đã được lưu trữ."
   },
   "sharing": {
     "share": "Chia sẻ",

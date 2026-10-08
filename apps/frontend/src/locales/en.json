@@ -340,7 +340,20 @@
     "trashed": "%{key} moved to the trash",
     "undo": "Undo",
     "viewArchived": "View archived tasks",
-    "viewTrash": "View trash"
+    "viewTrash": "View trash",
+    "back": "Back to %{board}",
+    "shelves": "Hidden tasks",
+    "archivedShelf": "Archived",
+    "trashShelf": "Trash",
+    "loadFailed": "These tasks could not be loaded.",
+    "archivedOn": "Archived",
+    "deletedOn": "Deleted",
+    "daysLeft": "%{smart_count} day left |||| %{smart_count} days left",
+    "restoreTask": "Restore %{key}",
+    "restored": "%{key} is back on the board",
+    "openTask": "Open",
+    "inTrash": "In the trash, deleted for good in %{smart_count} day. |||| In the trash, deleted for good in %{smart_count} days.",
+    "isArchived": "This task is archived."
   },
   "sharing": {
     "share": "Share",

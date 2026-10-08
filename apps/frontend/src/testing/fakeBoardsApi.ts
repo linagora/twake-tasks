@@ -196,12 +196,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
         find(boardId)
         return [...hidden.values()]
           .filter(entry => entry.shelf === shelf)
-          .map(({ task, at }) => ({
-            id: task.id,
-            key: task.key,
-            title: task.title,
-            at
-          }))
+          .map(({ task, at }) => ({ ...task, at }))
       })
     ),
     renameBoard: vi.fn<BoardsApi['renameBoard']>((boardId, name) =>

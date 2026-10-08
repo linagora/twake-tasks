@@ -340,7 +340,20 @@
     "trashed": "%{key} перемещена в корзину",
     "undo": "Отменить",
     "viewArchived": "Открыть архив задач",
-    "viewTrash": "Открыть корзину"
+    "viewTrash": "Открыть корзину",
+    "back": "Назад к %{board}",
+    "shelves": "Скрытые задачи",
+    "archivedShelf": "Архив",
+    "trashShelf": "Корзина",
+    "loadFailed": "Не удалось загрузить эти задачи.",
+    "archivedOn": "В архиве",
+    "deletedOn": "Удалена",
+    "daysLeft": "Остался %{smart_count} день |||| Осталось %{smart_count} дня |||| Осталось %{smart_count} дней",
+    "restoreTask": "Восстановить %{key}",
+    "restored": "%{key} снова на доске",
+    "openTask": "Открыть",
+    "inTrash": "В корзине, будет удалена навсегда через %{smart_count} день. |||| В корзине, будет удалена навсегда через %{smart_count} дня. |||| В корзине, будет удалена навсегда через %{smart_count} дней.",
+    "isArchived": "Эта задача в архиве."
   },
   "sharing": {
     "share": "Поделиться",

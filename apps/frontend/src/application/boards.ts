@@ -145,10 +145,7 @@ export interface Project extends ProjectSummary {
 export type Shelf = 'archived' | 'trash'
 
 /** `at` is when the task was archived or trashed. */
-export interface HiddenTask {
-  id: string
-  key: string
-  title: string
+export interface HiddenTask extends Task {
   at: string
 }
 
