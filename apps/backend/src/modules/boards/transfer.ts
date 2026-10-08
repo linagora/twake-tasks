@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, notInArray, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
@@ -29,6 +29,15 @@ export interface TransferPreview {
 
 interface Placed {
   projectId: string
+}
+
+async function boardOf(tx: Tx, boardId: string): Promise<Placed> {
+  const [board] = await tx
+    .select({ projectId: boards.projectId })
+    .from(boards)
+    .where(and(eq(boards.id, boardId), isNull(boards.archivedAt)))
+  if (!board) throw new Refused('archived')
+  return board
 }
 
 // The task and its sub-tasks, in depth order.
@@ -142,6 +151,37 @@ async function followLabels(
 
 export function createTransferStore(db: Db) {
   return {
+    // What moving the task would drop or create, without moving it.
+    previewTransfer(
+      identity: Identity,
+      boardId: string,
+      taskId: string,
+      to: { boardId: string; sectionId: string | null }
+    ) {
+      return writeOrRefuse(
+        db,
+        identity,
+        async (tx: Tx): Promise<TransferPreview> => {
+          if (to.boardId === boardId) throw new Refused('same_board')
+          await checkRole(tx, identity, boardId, 'editor')
+          await checkRole(tx, identity, to.boardId, 'editor')
+          const from = await boardOf(tx, boardId)
+          const task = await taskOf(tx, boardId, taskId)
+          if (task.parentId !== null) throw new Refused('invalid_parent')
+          await sectionOf(tx, to.boardId, to.sectionId)
+          const target = await boardOf(tx, to.boardId)
+          const ids = (await treeOf(tx, taskId)).map(row => row.id)
+          const { droppedAssignees, createdLabels } = await carryOver(
+            tx,
+            ids,
+            from,
+            target
+          )
+          return { droppedAssignees, createdLabels }
+        }
+      )
+    },
+
     // The task and its sub-tasks take new numbers on the target board, in
     // depth order, and keep their old keys. Assignees who are not on the
     // target board are dropped, and labels follow by name.

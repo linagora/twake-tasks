@@ -215,6 +215,96 @@ describe('moving a task to another board', () => {
       ])
     })
 
+    it('previews exactly what the move then does', async () => {
+      const owner = aUser()
+      const bob = aUser({ organizationId: owner.organizationId })
+      const { design, ops, logo, sketch } = await aLabeledTask(owner)
+      await aLabel(owner, ops.id, 'Urgent')
+      await api.as(owner).post(`/boards/${design.id}/invites`, {
+        email: bob.email,
+        role: 'editor'
+      })
+      await api.as(bob).get('/boards')
+      await api
+        .as(owner)
+        .put(`/boards/${design.id}/tasks/${sketch}/assignees`, {
+          userIds: [owner.userId, bob.userId]
+        })
+      const target = { boardId: ops.id, sectionId: null }
+
+      const preview = await api
+        .as(owner)
+        .post(`/boards/${design.id}/tasks/${logo}/transfer/preview`, target)
+      const unchanged = await load(owner, design.id)
+      const opsBefore = await load(owner, ops.id)
+      const moved = await api
+        .as(owner)
+        .post(`/boards/${design.id}/tasks/${logo}/transfer`, target)
+
+      expect(preview.statusCode).toBe(200)
+      expect(preview.json()).toEqual({
+        droppedAssignees: [
+          { userId: bob.userId, email: bob.email, name: null }
+        ],
+        createdLabels: ['Brand']
+      })
+      expect(unchanged.tasks).toHaveLength(2)
+      expect(names(unchanged.tasks[0]?.labels ?? [])).not.toEqual([])
+      expect(opsBefore.tasks).toEqual([])
+      expect(names(opsBefore.labels)).toEqual(['Urgent'])
+      expect(moved.json()).toMatchObject(preview.json())
+      const after = await load(owner, ops.id)
+      expect(after.tasks).toHaveLength(2)
+      expect(names(after.labels)).toEqual(['Brand', 'Urgent'])
+    })
+
+    it('previews nothing to lose when the boards share a project', async () => {
+      const owner = aUser()
+      const design = await aBoard(owner, 'DES')
+      const ops = (
+        await api.as(owner).post('/boards', {
+          name: 'Ops',
+          keyPrefix: 'OPS',
+          projectId: design.project.id
+        })
+      ).json<Board>()
+      const logo = await aTask(owner, design.id, 'Logo')
+      await labelTask(owner, design.id, logo, [
+        await aLabel(owner, design.id, 'Urgent')
+      ])
+
+      const preview = await api
+        .as(owner)
+        .post(`/boards/${design.id}/tasks/${logo}/transfer/preview`, {
+          boardId: ops.id,
+          sectionId: null
+        })
+
+      expect(preview.json()).toEqual({
+        droppedAssignees: [],
+        createdLabels: []
+      })
+    })
+
+    it('refuses the preview as it refuses the move', async () => {
+      const owner = aUser()
+      const stranger = aUser({ organizationId: owner.organizationId })
+      const design = await aBoard(owner, 'DES')
+      const theirs = await aBoard(stranger, 'OPS')
+      const logo = await aTask(owner, design.id, 'Logo')
+      const preview = (user: TestUser, boardId: string) =>
+        api
+          .as(user)
+          .post(`/boards/${design.id}/tasks/${logo}/transfer/preview`, {
+            boardId,
+            sectionId: null
+          })
+
+      expect((await preview(owner, theirs.id)).statusCode).toBe(404)
+      expect((await preview(owner, design.id)).statusCode).toBe(400)
+      expect((await preview(stranger, theirs.id)).statusCode).toBe(404)
+    })
+
     it('does not create labels in a project the mover only views', async () => {
       const owner = aUser()
       const viewer = aUser({ organizationId: owner.organizationId })
