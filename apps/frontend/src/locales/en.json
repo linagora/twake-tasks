@@ -352,7 +352,12 @@
     "remove": "Remove",
     "close": "Close",
     "failed": "The change could not be saved.",
-    "loadFailed": "The members could not be loaded."
+    "loadFailed": "The members could not be loaded.",
+    "personalBoard": "A board of your personal project is private. Move it to a project to share it.",
+    "managedBoard": "The members of this project are managed by its integration.",
+    "archivedBoard": "An archived board can't be shared.",
+    "adminOnly": "Only an admin can share this board.",
+    "help": "Sharing this board shares its project %{project} with everyone on it."
   },
   "moveBoard": {
     "action": "Move to project",
@@ -446,5 +451,8 @@
     "mineEmpty": "Nothing assigned to you",
     "mineEmptyHint": "Tasks assigned to you on any board show up here.",
     "completeFailed": "Couldn’t complete the task."
+  },
+  "members": {
+    "count": "%{smart_count} member |||| %{smart_count} members"
   }
 }

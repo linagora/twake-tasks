@@ -5,6 +5,7 @@ import {
   ClickAwayListener,
   Link,
   TextField,
+  Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import { useRef, useState, type ReactElement } from 'react'
@@ -21,7 +22,7 @@ import {
   EmptyColumn
 } from '@/ds/Columns'
 import { EmptyState } from '@/ds/EmptyState'
-import { PageHeader } from '@/ds/PageHeader'
+import { PageHeader, UnavailableButton } from '@/ds/PageHeader'
 import { Inline } from '@/ds/SidePanel'
 import { DropColumn, SortableList } from '@/ds/Sortable'
 import type { Board, Section, Task } from '@/domain/board'
@@ -31,6 +32,7 @@ import { BoardMenu } from '@/ui/boards/BoardMenu'
 import { CalendarTask } from '@/ui/boards/CalendarTask'
 import { localToday } from '@/ui/boards/dueLabel'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
+import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
 import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
 import { NewDatedTask } from '@/ui/boards/NewDatedTask'
 import { useBoard, useCreateTask, useMoveTask } from '@/ui/boards/queries'
@@ -102,6 +104,16 @@ function BoardColumns({
   const shareable =
     manageable && !board.project.personal && !board.project.managed
   const [sharing, setSharing] = useState(false)
+  const [listing, setListing] = useState(false)
+  const whyNot = board.project.personal
+    ? t('sharing.personalBoard')
+    : board.project.managed
+      ? t('sharing.managedBoard')
+      : board.archived
+        ? t('sharing.archivedBoard')
+        : board.role !== 'admin'
+          ? t('sharing.adminOnly')
+          : null
   const [moving, setMoving] = useState(false)
   const targets = useMoveTargets(board)
   const movable = shareable && targets.length > 0
@@ -175,7 +187,16 @@ function BoardColumns({
         actions={
           <>
             <LayoutSwitch board={board} />
-            {shareable && (
+            {board.members.length > 0 && (
+              <MemberStack
+                members={board.members}
+                onClick={() => {
+                  if (shareable) setSharing(true)
+                  else setListing(true)
+                }}
+              />
+            )}
+            {shareable ? (
               <Button
                 variant="secondary"
                 startIcon={<Icon icon={Share} />}
@@ -185,6 +206,17 @@ function BoardColumns({
               >
                 {t('sharing.share')}
               </Button>
+            ) : (
+              <Tooltip title={whyNot ?? ''} describeChild>
+                <UnavailableButton
+                  variant="secondary"
+                  startIcon={<Icon icon={Share} />}
+                  aria-disabled="true"
+                  disableRipple
+                >
+                  {t('sharing.share')}
+                </UnavailableButton>
+              </Tooltip>
             )}
             {editable && first && (
               <Button
@@ -229,6 +261,14 @@ function BoardColumns({
           board={board}
           onClose={() => {
             setSharing(false)
+          }}
+        />
+      )}
+      {listing && (
+        <MembersDialog
+          board={board}
+          onClose={() => {
+            setListing(false)
           }}
         />
       )}

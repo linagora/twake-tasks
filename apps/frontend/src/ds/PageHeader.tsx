@@ -1,4 +1,10 @@
-import { Box, styled, ToggleButtonGroup } from '@linagora/twake-mui'
+import {
+  Box,
+  Button,
+  ButtonBase,
+  styled,
+  ToggleButtonGroup
+} from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
 // Same height as the buttons it sits next to.
@@ -66,3 +72,18 @@ export function PageHeader({
     </Box>
   )
 }
+
+// Looks unavailable but stays focusable, so its tooltip can say why.
+export const UnavailableButton = styled(Button)({
+  opacity: 0.5,
+  cursor: 'default',
+  '& .MuiTouchRipple-root': { display: 'none' }
+})
+
+export const StackButton = styled(ButtonBase)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius,
+  '&:focus-visible': {
+    outline: `2px solid ${theme.palette.primary.main}`,
+    outlineOffset: 2
+  }
+}))
