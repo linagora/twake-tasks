@@ -9,7 +9,12 @@ import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
 import type { Role } from '../modules/boards/access.ts'
 import { BOARD_CHANNEL } from '../modules/boards/live.ts'
-import { boards, projectMembers, projects } from '../modules/boards/schema.ts'
+import {
+  boards,
+  projectMembers,
+  projects,
+  taskFollowers
+} from '../modules/boards/schema.ts'
 
 export interface TestUser {
   userId: string
@@ -169,4 +174,19 @@ export async function startApp() {
       await sql.end()
     }
   }
+}
+
+/** Who follows the task, as the viewer sees it. */
+export async function followersOf(
+  db: Db,
+  viewer: TestUser,
+  taskId: string
+): Promise<string[]> {
+  const rows = await inTenant(db, viewer, tx =>
+    tx
+      .select({ userId: taskFollowers.userId })
+      .from(taskFollowers)
+      .where(eq(taskFollowers.taskId, taskId))
+  )
+  return rows.map(row => row.userId).sort()
 }
