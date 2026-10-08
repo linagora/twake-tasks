@@ -87,6 +87,9 @@ export function aTask(section: Section | null, overrides: Partial<Task> = {}) {
 }
 
 function summaryOf(board: Board, favorite = false): BoardSummary {
+  const counted = board.tasks.filter(
+    task => task.parentId === null && task.canceledAt === null
+  )
   return {
     id: board.id,
     name: board.name,
@@ -96,12 +99,9 @@ function summaryOf(board: Board, favorite = false): BoardSummary {
     role: board.role,
     archived: board.archived,
     favorite,
-    openTasks: board.tasks.filter(
-      task =>
-        task.parentId === null &&
-        task.completedAt === null &&
-        task.canceledAt === null
-    ).length
+    openTasks: counted.filter(task => task.completedAt === null).length,
+    doneTasks: counted.filter(task => task.completedAt !== null).length,
+    totalTasks: counted.length
   }
 }
 
