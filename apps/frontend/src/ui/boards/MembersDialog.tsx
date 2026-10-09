@@ -34,7 +34,7 @@ export function MemberStack({
       aria-haspopup="dialog"
       aria-label={t('members.count', { smart_count: members.length })}
     >
-      <AvatarStack>
+      <AvatarStack size={32}>
         {members.slice(0, SHOWN).map(person => (
           <PersonAvatar
             key={person.userId}
