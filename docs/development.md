@@ -31,6 +31,14 @@ npm run dev -w @twake-tasks/frontend
 
 The frontend dev server proxies `/api` to `API_UPSTREAM`, `http://localhost:8080` by default. The backend restarts on every change.
 
+To run the built images instead:
+
+```bash
+OIDC_CLIENT_SECRET=... docker compose --profile app up -d --build
+```
+
+The app is on http://localhost:3000 again. The SSO settings default to `sign-up.twake.app` and can be changed from the shell, with the same names as in `.env.js`, as can `APP_URL`, `SPACE_INTEGRATION` and the `LDAP_REST_*` settings.
+
 To try the emails, run a local mail catcher such as mailpit and set `SMTP_URL=smtp://localhost:1025`.
 
 ## Checks
