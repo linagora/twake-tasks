@@ -58,7 +58,12 @@ export function EmbedBoardScreen(): ReactElement {
   const { projectId = '', boardId } = useParams()
   const { boards, shown } = useProjectBoards(projectId)
   const only = shown.length === 1 && shown[0]?.id === boardId
-  return <BoardScreen back={boards.isSuccess && !only} />
+  return (
+    <BoardScreen
+      back={boards.isSuccess && !only}
+      waiting={boards.isPending && boards.failureCount === 0}
+    />
+  )
 }
 
 export function EmbedProjectScreen(): ReactElement {
