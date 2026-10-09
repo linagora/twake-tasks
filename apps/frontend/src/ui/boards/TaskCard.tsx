@@ -71,7 +71,7 @@ export function TaskCard({
       <CardTitle>
         <Link
           component="button"
-          variant="body1"
+          variant="body2"
           color="textPrimary"
           underline="hover"
           className="u-ta-left"
