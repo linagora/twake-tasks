@@ -56,6 +56,11 @@ services:
     tmpfs: [/tmp]
     environment:
       API_UPSTREAM: http://backend:8080
+      SSO_BASE_URL: ${SSO_BASE_URL:-https://sign-up.twake.app/}
+      SSO_CLIENT_ID: ${SSO_CLIENT_ID:-twaketasks}
+      SSO_SCOPE: ${SSO_SCOPE:-openid email profile workplaceFqdn}
+      SSO_REDIRECT_URI: ${SSO_REDIRECT_URI:-http://localhost:3000/auth/callback}
+      SSO_POST_LOGOUT_REDIRECT: ${SSO_POST_LOGOUT_REDIRECT:-http://localhost:3000/}
     ports:
       - '127.0.0.1:3000:8080'
 

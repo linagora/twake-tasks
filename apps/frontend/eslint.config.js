@@ -19,10 +19,6 @@ const EVERYWHERE = [
     message: 'Import from the @linagora/twake-mui entry point.'
   },
   {
-    group: ['posthog-js', 'posthog-js/**'],
-    message: 'Only adapters/posthog/ imports posthog-js.'
-  },
-  {
     group: ['@sentry/*'],
     message: 'Only adapters/sentry/ imports @sentry/*.'
   },
@@ -147,15 +143,6 @@ export default defineConfig(
   {
     files: ['src/ds/**/*.{ts,tsx}'],
     rules: { 'no-restricted-syntax': ['error', ...FORBIDDEN_SYNTAX] }
-  },
-  {
-    files: ['src/adapters/posthog/**/*.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        { patterns: EVERYWHERE.filter(p => !p.group.includes('posthog-js')) }
-      ]
-    }
   },
   {
     files: ['src/adapters/sentry/**/*.ts'],
