@@ -3,7 +3,8 @@ import {
   Button,
   ButtonBase,
   styled,
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  Typography
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
@@ -33,6 +34,10 @@ export function ToggleLabel({
     </Box>
   )
 }
+
+export const PageTitle = styled(Typography)({
+  fontWeight: 700
+}) as typeof Typography
 
 export function PageHeader({
   back,

@@ -22,7 +22,7 @@ import {
   EmptyColumn
 } from '@/ds/Columns'
 import { EmptyState } from '@/ds/EmptyState'
-import { PageHeader, UnavailableButton } from '@/ds/PageHeader'
+import { PageHeader, PageTitle, UnavailableButton } from '@/ds/PageHeader'
 import { Inline } from '@/ds/SidePanel'
 import { DropColumn, SortableList } from '@/ds/Sortable'
 import { TitleButton } from '@/ds/TitleButton'
@@ -474,7 +474,7 @@ function BoardTitle({
     )
   }
   return (
-    <Typography variant="h3" component="h1" noWrap>
+    <PageTitle variant="h3" component="h1" noWrap>
       {renamable ? (
         <Tooltip title={t('board.rename')} describeChild>
           <TitleButton
@@ -490,7 +490,7 @@ function BoardTitle({
       ) : (
         board.name
       )}
-    </Typography>
+    </PageTitle>
   )
 }
 
