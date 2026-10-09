@@ -70,3 +70,20 @@ describe('mentions in rich text', () => {
     )
   })
 })
+
+describe('links in rich text', () => {
+  it('ignore the target, rel and class written in the markdown', async () => {
+    renderWithProviders(
+      <RichText
+        markdown={
+          '<a href="https://example.com" target="_top" rel="opener" class="mention">spec</a>'
+        }
+      />
+    )
+
+    const link = await screen.findByRole('link', { name: 'spec' })
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer nofollow')
+    expect(link).not.toHaveAttribute('class')
+  })
+})

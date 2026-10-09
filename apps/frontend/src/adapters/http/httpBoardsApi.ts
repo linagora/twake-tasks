@@ -33,6 +33,19 @@ async function errorCode(response: Response): Promise<string | null> {
 const RETRY_MS = 1000
 const MAX_RETRY_MS = 30_000
 
+// Ids come from the address bar. Encoding keeps "..%2F" from reaching another
+// API path; "." and ".." are refused because URLs resolve them even encoded.
+const route = (strings: TemplateStringsArray, ...ids: string[]) =>
+  String.raw(
+    { raw: strings },
+    ...ids.map(id => {
+      if (id === '' || id === '.' || id === '..') {
+        throw new ApiError(404, 'not_found')
+      }
+      return encodeURIComponent(id)
+    })
+  )
+
 // The stream's messages each carry the version as their id.
 async function readVersions(
   body: ReadableStream<Uint8Array>,
@@ -109,14 +122,15 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     listFilters: async () =>
       (await call<{ filters: SavedFilter[] }>('GET', '/filters')).filters,
     createFilter: filter => call('POST', '/filters', filter),
-    deleteFilter: filterId => call('DELETE', `/filters/${filterId}`),
+    deleteFilter: filterId => call('DELETE', route`/filters/${filterId}`),
     labelNames: async () =>
       (await call<{ labels: string[] }>('GET', '/labels')).labels,
     filteredTasks: async (filterId, zone) =>
       (
         await call<{ tasks: AgendaTask[] }>(
           'GET',
-          `/filters/${filterId}/tasks?${new URLSearchParams({ zone }).toString()}`
+          route`/filters/${filterId}/tasks` +
+            `?${new URLSearchParams({ zone }).toString()}`
         )
       ).tasks,
     search: async text =>
@@ -130,82 +144,88 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (await call<{ tasks: AgendaTask[] }>('GET', '/my-tasks')).tasks,
     listBoards: async () =>
       (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
-    getBoard: boardId => call('GET', `/boards/${boardId}`),
+    getBoard: boardId => call('GET', route`/boards/${boardId}`),
     watchBoard: (boardId, onVersion) =>
-      watch(`/boards/${boardId}/events`, onVersion),
+      watch(route`/boards/${boardId}/events`, onVersion),
     createBoard: board => call('POST', '/boards', board),
     transferTask: (boardId, taskId, to) =>
-      call('POST', `/boards/${boardId}/tasks/${taskId}/transfer`, to),
+      call('POST', route`/boards/${boardId}/tasks/${taskId}/transfer`, to),
     previewTransfer: (boardId, taskId, to) =>
-      call('POST', `/boards/${boardId}/tasks/${taskId}/transfer/preview`, to),
+      call(
+        'POST',
+        route`/boards/${boardId}/tasks/${taskId}/transfer/preview`,
+        to
+      ),
     archiveTask: (boardId, taskId) =>
-      call('POST', `/boards/${boardId}/tasks/${taskId}/archive`, {}),
+      call('POST', route`/boards/${boardId}/tasks/${taskId}/archive`, {}),
     trashTask: (boardId, taskId) =>
-      call('DELETE', `/boards/${boardId}/tasks/${taskId}`),
+      call('DELETE', route`/boards/${boardId}/tasks/${taskId}`),
     restoreTask: (boardId, taskId) =>
-      call('POST', `/boards/${boardId}/tasks/${taskId}/restore`, {}),
+      call('POST', route`/boards/${boardId}/tasks/${taskId}/restore`, {}),
     hiddenTasks: async (boardId, shelf) =>
       (
         await call<{ tasks: HiddenTask[] }>(
           'GET',
-          `/boards/${boardId}/${shelf}`
+          route`/boards/${boardId}/${shelf}`
         )
       ).tasks,
     renameBoard: (boardId, name) =>
-      call('PATCH', `/boards/${boardId}`, { name }),
+      call('PATCH', route`/boards/${boardId}`, { name }),
     setBoardArchived: (boardId, archived) =>
       call(
         'POST',
-        `/boards/${boardId}/${archived ? 'archive' : 'unarchive'}`,
+        route`/boards/${boardId}/${archived ? 'archive' : 'unarchive'}`,
         {}
       ),
     listProjects: async () =>
       (await call<{ projects: Project[] }>('GET', '/projects')).projects,
     moveToProject: (boardId, projectId) =>
-      call('POST', `/boards/${boardId}/move`, { projectId }),
-    getSharing: boardId => call('GET', `/boards/${boardId}/sharing`),
+      call('POST', route`/boards/${boardId}/move`, { projectId }),
+    getSharing: boardId => call('GET', route`/boards/${boardId}/sharing`),
     invite: (boardId, email, role) =>
-      call('POST', `/boards/${boardId}/invites`, { email, role }),
+      call('POST', route`/boards/${boardId}/invites`, { email, role }),
     cancelInvite: (boardId, inviteId) =>
-      call('DELETE', `/boards/${boardId}/invites/${inviteId}`),
+      call('DELETE', route`/boards/${boardId}/invites/${inviteId}`),
     setMemberRole: (boardId, userId, role) =>
-      call('PUT', `/boards/${boardId}/members/${userId}`, { role }),
+      call('PUT', route`/boards/${boardId}/members/${userId}`, { role }),
     removeMember: (boardId, userId) =>
-      call('DELETE', `/boards/${boardId}/members/${userId}`),
+      call('DELETE', route`/boards/${boardId}/members/${userId}`),
     setLayout: (boardId, layout) =>
-      call('PUT', `/boards/${boardId}/layout`, { layout }),
+      call('PUT', route`/boards/${boardId}/layout`, { layout }),
     setDefaultLayout: (boardId, layout) =>
-      call('PUT', `/boards/${boardId}/default-layout`, { layout }),
+      call('PUT', route`/boards/${boardId}/default-layout`, { layout }),
     setFavorite: (boardId, favorite) =>
-      call(favorite ? 'PUT' : 'DELETE', `/boards/${boardId}/favorite`),
+      call(favorite ? 'PUT' : 'DELETE', route`/boards/${boardId}/favorite`),
     createTask: (boardId, task) =>
-      call('POST', `/boards/${boardId}/tasks`, task),
+      call('POST', route`/boards/${boardId}/tasks`, task),
     moveTask: (boardId, taskId, move) =>
-      call('POST', `/boards/${boardId}/tasks/${taskId}/move`, move),
+      call('POST', route`/boards/${boardId}/tasks/${taskId}/move`, move),
     completeTask: (boardId, taskId, state) =>
-      call('POST', `/boards/${boardId}/tasks/${taskId}/complete`, { state }),
+      call('POST', route`/boards/${boardId}/tasks/${taskId}/complete`, {
+        state
+      }),
     editTask: (boardId, taskId, changes) =>
-      call('PATCH', `/boards/${boardId}/tasks/${taskId}`, changes),
+      call('PATCH', route`/boards/${boardId}/tasks/${taskId}`, changes),
     getDescription: (boardId, taskId) =>
-      call('GET', `/boards/${boardId}/tasks/${taskId}/description`),
+      call('GET', route`/boards/${boardId}/tasks/${taskId}/description`),
     setDescription: (boardId, taskId, edit) =>
-      call('PUT', `/boards/${boardId}/tasks/${taskId}/description`, edit),
+      call('PUT', route`/boards/${boardId}/tasks/${taskId}/description`, edit),
     listHistory: async (boardId, taskId) =>
       (
         await call<{ entries: HistoryEntry[] }>(
           'GET',
-          `/boards/${boardId}/tasks/${taskId}/history`
+          route`/boards/${boardId}/tasks/${taskId}/history`
         )
       ).entries,
     listComments: async (boardId, taskId) =>
       (
         await call<{ comments: Comment[] }>(
           'GET',
-          `/boards/${boardId}/tasks/${taskId}/comments`
+          route`/boards/${boardId}/tasks/${taskId}/comments`
         )
       ).comments,
     addComment: async (boardId, taskId, body) => {
-      await call('POST', `/boards/${boardId}/tasks/${taskId}/comments`, {
+      await call('POST', route`/boards/${boardId}/tasks/${taskId}/comments`, {
         body
       })
     },
@@ -213,32 +233,32 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (
         await call<{ reminders: Reminder[] }>(
           'GET',
-          `/boards/${boardId}/tasks/${taskId}/reminders`
+          route`/boards/${boardId}/tasks/${taskId}/reminders`
         )
       ).reminders,
     addReminder: async (boardId, taskId, reminder) => {
       await call(
         'POST',
-        `/boards/${boardId}/tasks/${taskId}/reminders`,
+        route`/boards/${boardId}/tasks/${taskId}/reminders`,
         reminder
       )
     },
     deleteReminder: (boardId, taskId, reminderId) =>
       call(
         'DELETE',
-        `/boards/${boardId}/tasks/${taskId}/reminders/${reminderId}`
+        route`/boards/${boardId}/tasks/${taskId}/reminders/${reminderId}`
       ),
     following: async (boardId, taskId) =>
       (
         await call<{ following: boolean }>(
           'GET',
-          `/boards/${boardId}/tasks/${taskId}/follow`
+          route`/boards/${boardId}/tasks/${taskId}/follow`
         )
       ).following,
     setFollowing: (boardId, taskId, following) =>
       call(
         following ? 'PUT' : 'DELETE',
-        `/boards/${boardId}/tasks/${taskId}/follow`
+        route`/boards/${boardId}/tasks/${taskId}/follow`
       ),
     listNotifications: async () =>
       (await call<{ notifications: Notification[] }>('GET', '/notifications'))
@@ -252,21 +272,25 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       ).projects,
     markNotificationsRead: () => call('POST', '/notifications/read', {}),
     setAssignees: (boardId, taskId, userIds) =>
-      call('PUT', `/boards/${boardId}/tasks/${taskId}/assignees`, { userIds }),
+      call('PUT', route`/boards/${boardId}/tasks/${taskId}/assignees`, {
+        userIds
+      }),
     createLabel: (boardId, name) =>
-      call('POST', `/boards/${boardId}/labels`, { name }),
+      call('POST', route`/boards/${boardId}/labels`, { name }),
     setLabels: (boardId, taskId, labelIds) =>
-      call('PUT', `/boards/${boardId}/tasks/${taskId}/labels`, { labelIds }),
+      call('PUT', route`/boards/${boardId}/tasks/${taskId}/labels`, {
+        labelIds
+      }),
     createSection: (boardId, section) =>
-      call('POST', `/boards/${boardId}/sections`, section),
+      call('POST', route`/boards/${boardId}/sections`, section),
     editSection: (boardId, sectionId, changes) =>
-      call('PATCH', `/boards/${boardId}/sections/${sectionId}`, changes),
+      call('PATCH', route`/boards/${boardId}/sections/${sectionId}`, changes),
     moveSection: (boardId, sectionId, move) =>
-      call('POST', `/boards/${boardId}/sections/${sectionId}/move`, move),
+      call('POST', route`/boards/${boardId}/sections/${sectionId}/move`, move),
     deleteSection: (boardId, sectionId, tasksTo) =>
       call(
         'DELETE',
-        `/boards/${boardId}/sections/${sectionId}`,
+        route`/boards/${boardId}/sections/${sectionId}`,
         tasksTo === undefined ? undefined : { tasksTo }
       )
   }

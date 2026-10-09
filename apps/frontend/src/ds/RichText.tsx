@@ -1,4 +1,5 @@
 import { Box, type Theme } from '@linagora/twake-mui'
+import { Link } from '@tiptap/extension-link'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Placeholder } from '@tiptap/extensions'
 import { Markdown } from '@tiptap/markdown'
@@ -40,10 +41,29 @@ const ownMarked = (): typeof marked =>
   // @ts-expect-error: a Marked has every member tiptap calls, its generics differ from marked's
   new Marked()
 
+const LINK_TARGET = '_blank'
+const LINK_REL = 'noopener noreferrer nofollow'
+
+// The markdown keeps raw <a> tags, whose attributes would otherwise win:
+// rel="opener" lets the linked page navigate this tab, and a class can dress
+// a link up as a mention.
+const SafeLink = Link.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      target: { default: LINK_TARGET, parseHTML: () => LINK_TARGET },
+      rel: { default: LINK_REL, parseHTML: () => LINK_REL },
+      class: { default: null, parseHTML: () => null }
+    }
+  }
+})
+
 const extensions = (placeholder = '', more: AnyExtension[] = []) => [
-  StarterKit.configure({
-    heading: { levels: [1, 2, 3] },
-    link: { openOnClick: false, autolink: true, defaultProtocol: 'https' }
+  StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false }),
+  SafeLink.configure({
+    openOnClick: false,
+    autolink: true,
+    defaultProtocol: 'https'
   }),
   TaskList,
   TaskItem.configure({ nested: true }),

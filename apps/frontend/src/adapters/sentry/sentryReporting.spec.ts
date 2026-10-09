@@ -7,6 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   readSentryConfig,
+  scrubBreadcrumb,
+  scrubEvent,
   startSentry
 } from '@/adapters/sentry/sentryReporting'
 
@@ -158,5 +160,40 @@ describe('startSentry', () => {
     reporting.feedback?.setColorScheme('dark')
 
     expect(integration.setTheme).toHaveBeenCalledWith('dark')
+  })
+})
+
+describe('what reaches Sentry', () => {
+  it('drops the query of navigation and fetch breadcrumbs', () => {
+    expect(
+      scrubBreadcrumb({
+        category: 'navigation',
+        data: { from: '/auth/callback?code=c&state=s', to: '/boards' }
+      }).data
+    ).toEqual({ from: '/auth/callback', to: '/boards' })
+    expect(
+      scrubBreadcrumb({
+        category: 'fetch',
+        data: { url: 'https://tasks.example/api/search?q=salaries' }
+      }).data
+    ).toEqual({ url: 'https://tasks.example/api/search' })
+  })
+
+  it('drops the query and the referrer of the page an event comes from', () => {
+    expect(
+      scrubEvent({
+        request: {
+          url: 'https://tasks.example/auth/callback?code=c#x',
+          query_string: 'code=c',
+          headers: {
+            Referer: 'https://tasks.example/auth/callback?code=c',
+            'User-Agent': 'Firefox'
+          }
+        }
+      }).request
+    ).toEqual({
+      url: 'https://tasks.example/auth/callback',
+      headers: { 'User-Agent': 'Firefox' }
+    })
   })
 })

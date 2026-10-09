@@ -39,6 +39,7 @@ export interface LdapRest {
 
 const STRENGTH: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 }
 const PAGE_SIZE = 100
+const REQUEST_TIMEOUT_MS = 10_000
 
 export function ldapRestClient(deps: {
   url: string
@@ -54,10 +55,13 @@ export function ldapRestClient(deps: {
     const signature = createHmac('sha256', deps.secret)
       .update(`GET|${path}|${timestamp}|`)
       .digest('hex')
+    // The reconcile job calls this inside the scheduler's transaction, which a
+    // hung ldap-rest would hold open along with every job queued behind it.
     const response = await send(new URL(path, deps.url), {
       headers: {
         authorization: `HMAC-SHA256 ${deps.serviceId}:${timestamp}:${signature}`
-      }
+      },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
     })
     if (response.status === 404) return null
     if (!response.ok) {

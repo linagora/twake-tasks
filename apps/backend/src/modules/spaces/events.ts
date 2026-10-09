@@ -31,7 +31,15 @@ import {
 import { addDefaultSections } from '../boards/store.ts'
 import { spaces } from './schema.ts'
 
-const timestamp = z.iso.datetime({ offset: true })
+const MAX_CLOCK_AHEAD_MS = 24 * 60 * 60 * 1000
+
+// An event dated far ahead would mark every later event of its space stale.
+const timestamp = z.iso
+  .datetime({ offset: true })
+  .refine(
+    at => Date.parse(at) <= Date.now() + MAX_CLOCK_AHEAD_MS,
+    'dated in the future'
+  )
 
 const spaceEvent = z.looseObject({
   organizationId: z.string().min(1),
