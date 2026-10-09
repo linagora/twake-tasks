@@ -247,8 +247,6 @@ export function CalendarChip({
         px: 0.75,
         py: 0.25,
         borderRadius: 1,
-        borderLeft: 3,
-        borderColor: done ? 'divider' : 'primary.main',
         bgcolor: done
           ? 'action.hover'
           : theme.alpha(theme.vars.palette.primary.main, 0.08),
