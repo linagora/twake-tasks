@@ -465,6 +465,9 @@ export async function describeTasks(
     .from(comments)
     .where(inArray(comments.taskId, ids))
     .groupBy(comments.taskId)
+  const assigned = new Set(assignments.map(a => `${a.taskId}:${a.userId}`))
+  const labeledWith = new Set(labeled.map(l => `${l.taskId}:${l.labelId}`))
+  const commentCounts = new Map(commented.map(c => [c.taskId, c.count]))
   return rows.map(task => ({
     id: task.id,
     key: `${board.keyPrefix}-${String(task.number)}`,
@@ -485,17 +488,12 @@ export async function describeTasks(
     canceledAt: task.canceledAt,
     // Someone who left the board stays assigned, but is not shown.
     assignees: members.filter(member =>
-      assignments.some(
-        assigned =>
-          assigned.taskId === task.id && assigned.userId === member.userId
-      )
+      assigned.has(`${task.id}:${member.userId}`)
     ),
     labels: boardLabels.filter(label =>
-      labeled.some(
-        entry => entry.taskId === task.id && entry.labelId === label.id
-      )
+      labeledWith.has(`${task.id}:${label.id}`)
     ),
-    commentCount: commented.find(entry => entry.taskId === task.id)?.count ?? 0
+    commentCount: commentCounts.get(task.id) ?? 0
   }))
 }
 

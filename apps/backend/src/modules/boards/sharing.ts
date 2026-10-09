@@ -7,7 +7,6 @@ import {
   inArray,
   isNull,
   lt,
-  ne,
   notInArray,
   sql
 } from 'drizzle-orm'
@@ -103,19 +102,24 @@ async function mayEmail(
   return (byInviter?.n ?? 0) < EMAILS_PER_INVITER
 }
 
+// Locks every admin, in a fixed order, so two admins demoting each other at
+// once wait for one another instead of both passing the check.
 async function keepAnAdmin(tx: Tx, projectId: string, leaving: string) {
-  const [other] = await tx
+  if ((await roleIn(tx, leaving, projectId)) !== 'admin') return
+  const admins = await tx
     .select({ userId: projectMembers.userId })
     .from(projectMembers)
     .where(
       and(
         eq(projectMembers.projectId, projectId),
-        eq(projectMembers.role, 'admin'),
-        ne(projectMembers.userId, leaving)
+        eq(projectMembers.role, 'admin')
       )
     )
-    .limit(1)
-  if (!other) throw new Refused('last_admin')
+    .orderBy(asc(projectMembers.userId))
+    .for('update')
+  if (!admins.some(admin => admin.userId !== leaving)) {
+    throw new Refused('last_admin')
+  }
 }
 
 export function createSharingStore(db: Db) {

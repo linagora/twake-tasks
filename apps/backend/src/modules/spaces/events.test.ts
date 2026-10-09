@@ -404,6 +404,36 @@ describe('the order of space events', () => {
     ])
   })
 
+  it('drops an event dated in the future, and applies the next ones', async () => {
+    const admin = aUser()
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+    await deliver('twake.space.created', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(0)
+    })
+    await expect(
+      deliver('twake.space.updated', {
+        ...space,
+        name: 'From the future',
+        timestamp: new Date(Date.UTC(2100, 0, 1)).toISOString()
+      })
+    ).rejects.toThrow(MalformedEventError)
+
+    await deliver('twake.space.updated', {
+      ...space,
+      name: 'Now',
+      timestamp: new Date().toISOString()
+    })
+
+    expect(await spaceBoards(admin)).toEqual([
+      expect.objectContaining({
+        project: expect.objectContaining({ name: 'Now' }) as object
+      })
+    ])
+  })
+
   it('applies events with the same timestamp in the order they arrive', async () => {
     const admin = aUser()
     const other = aUser({ organizationId: admin.organizationId })
@@ -638,7 +668,7 @@ describe('twake.space.sync.completed', () => {
     await deliver('twake.space.updated', {
       ...newer.space,
       name: 'Newer',
-      timestamp: '2999-01-01T00:00:00.000Z'
+      timestamp: new Date(Date.now() + 60_000).toISOString()
     })
 
     await deliver('twake.space.sync.completed', {
