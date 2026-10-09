@@ -28,6 +28,24 @@ describe('httpBoardsApi', () => {
     expect(request?.url).toBe(`${BASE}/api/boards`)
   })
 
+  it('keeps an id from the address bar inside its path segment', async () => {
+    const send = backend(404, { error: 'not_found' })
+
+    await expect(
+      httpBoardsApi(BASE, send).getBoard('../search?q=x')
+    ).rejects.toThrow()
+
+    const [request] = send.mock.calls[0] ?? []
+    expect(request?.url).toBe(`${BASE}/api/boards/..%2Fsearch%3Fq%3Dx`)
+  })
+
+  it.each(['', '.', '..'])('sends nothing for the id %j', id => {
+    const send = backend(200, {})
+
+    expect(() => httpBoardsApi(BASE, send).trashTask(id, 'x')).toThrow(ApiError)
+    expect(send).not.toHaveBeenCalled()
+  })
+
   it('posts a new board as JSON', async () => {
     const send = backend(201, { id: 'b1', name: 'Design' })
 

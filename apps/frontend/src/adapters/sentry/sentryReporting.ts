@@ -43,6 +43,39 @@ function sentryFeedback(integration: FeedbackIntegration): FeedbackWidget {
   }
 }
 
+// Query strings hold the sign-in code and state on /auth/callback, and what
+// people search for on /api/search.
+const QUERY = /[?#].*$/s
+const withoutQuery = (url: unknown) =>
+  typeof url === 'string' ? url.replace(QUERY, '') : url
+
+export const scrubBreadcrumb = (
+  breadcrumb: Sentry.Breadcrumb
+): Sentry.Breadcrumb => {
+  if (!breadcrumb.data) return breadcrumb
+  const data = { ...breadcrumb.data }
+  for (const key of ['url', 'from', 'to']) {
+    if (key in data) data[key] = withoutQuery(data[key])
+  }
+  return { ...breadcrumb, data }
+}
+
+export const scrubEvent = <E extends Sentry.Event>(event: E): E => {
+  const request = event.request
+  if (!request) return event
+  const headers = { ...request.headers }
+  delete headers.Referer
+  return {
+    ...event,
+    request: {
+      ...request,
+      url: request.url?.replace(QUERY, ''),
+      query_string: undefined,
+      headers
+    }
+  }
+}
+
 /**
  * Starts Sentry for errors, and for the feedback form when turned on. No
  * tracing, no replay, and no user: the form's email is the only identity.
@@ -63,7 +96,9 @@ export function startSentry(
     release,
     initialScope: { tags: { app: 'twake-tasks' } },
     integrations: feedback ? [feedback] : [],
-    denyUrls: [/^(chrome|moz|safari(-web)?)-extension:\/\//]
+    denyUrls: [/^(chrome|moz|safari(-web)?)-extension:\/\//],
+    beforeBreadcrumb: scrubBreadcrumb,
+    beforeSend: scrubEvent
   })
 
   const report = Sentry.reactErrorHandler()
