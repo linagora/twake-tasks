@@ -14,7 +14,6 @@ docker run -d --name "$NAME" \
   -p 127.0.0.1::8080 \
   -e SSO_BASE_URL='https://sso.example.com/' \
   -e SSO_CLIENT_ID='twake-tasks' \
-  -e POSTHOG_HOST='https://posthog.example.com' \
   -e SENTRY_DSN='https://public-key@errors.example.com/42' \
   -e SENTRY_ENVIRONMENT='smoke' \
   -e SENTRY_FEEDBACK_ENABLED='true' \
@@ -60,7 +59,7 @@ script="$(body "$BASE/" | grep -o 'src="/static/js/index[^"]*"' | head -1 | cut 
 expect 'hashed assets are cached for a year' "$(header "$script" Cache-Control)" '*immutable'
 csp="$(header / Content-Security-Policy)"
 expect 'CSP sent' "$csp" "default-src 'self'; script-src 'self';*"
-expect 'CSP: SSO, PostHog and Sentry origins in connect-src, without the DSN key' "$csp" "*connect-src 'self' https://sso.example.com https://posthog.example.com https://errors.example.com;*"
+expect 'CSP: SSO and Sentry origins in connect-src, without the DSN key' "$csp" "*connect-src 'self' https://sso.example.com https://errors.example.com;*"
 expect 'CSP: the SSO may be framed, for the silent sign-in' "$csp" "*frame-src 'self' https://sso.example.com;*"
 expect 'CSP: pictures from the hosts in CSP_IMG_SRC' "$csp" "*img-src 'self' data: blob: https://avatars.example.com;*"
 expect 'CSP: pages refuse to be framed' "$csp" "*frame-ancestors 'none'"

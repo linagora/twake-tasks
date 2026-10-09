@@ -5,7 +5,7 @@ set -eu
 
 ME=$(basename "$0")
 OUT=/tmp/nginx
-RUNTIME_KEYS="SSO_BASE_URL SSO_CLIENT_ID SSO_SCOPE SSO_REDIRECT_URI SSO_POST_LOGOUT_REDIRECT POSTHOG_KEY POSTHOG_HOST SENTRY_DSN SENTRY_ENVIRONMENT SENTRY_FEEDBACK_ENABLED"
+RUNTIME_KEYS="SSO_BASE_URL SSO_CLIENT_ID SSO_SCOPE SSO_REDIRECT_URI SSO_POST_LOGOUT_REDIRECT SENTRY_DSN SENTRY_ENVIRONMENT SENTRY_FEEDBACK_ENABLED"
 
 fail() {
   echo "$ME: error: $*" >&2
@@ -44,7 +44,7 @@ for key in $RUNTIME_KEYS; do
 done
 
 connect_src="'self'"
-for url in "${SSO_BASE_URL:-}" "${POSTHOG_HOST:-}" "${SENTRY_DSN:-}"; do
+for url in "${SSO_BASE_URL:-}" "${SENTRY_DSN:-}"; do
   [ -n "$url" ] && connect_src="$connect_src $(origin "$url")"
 done
 [ -n "${CSP_CONNECT_SRC:-}" ] && connect_src="$connect_src $CSP_CONNECT_SRC"
