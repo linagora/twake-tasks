@@ -9,6 +9,7 @@ import {
   type MockInstance
 } from 'vitest'
 
+import { ApiError } from '@/application/boards'
 import type { Board } from '@/domain/board'
 import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderBrowserRoute, renderRoute } from '@/testing/renderWithProviders'
@@ -101,6 +102,38 @@ describe('the embedded view', () => {
     expect(
       await screen.findByRole('link', { name: 'Back to boards' })
     ).toBeInTheDocument()
+  })
+
+  it('shows the board, with no way back, when the list of boards fails to load', async () => {
+    const board = aBoard({ name: 'Roadmap', project: roadmap })
+    const boardsApi = projectBoardsApi([board])
+    boardsApi.listBoards.mockRejectedValue(new Error('down'))
+    renderRoute(`/embed/projects/${roadmap.id}/boards/${board.id}`, {
+      boardsApi
+    })
+
+    expect(
+      await screen.findByRole('heading', { name: 'Roadmap' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'Back to boards' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('offers no way back from the only board of a project when it fails to load', async () => {
+    const board = aBoard({ name: 'Roadmap', project: roadmap })
+    const boardsApi = projectBoardsApi([board])
+    boardsApi.getBoard.mockRejectedValue(new ApiError(403, null))
+    renderRoute(`/embed/projects/${roadmap.id}/boards/${board.id}`, {
+      boardsApi
+    })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The board could not be loaded.'
+    )
+    expect(
+      screen.queryByRole('link', { name: 'Back to boards' })
+    ).not.toBeInTheDocument()
   })
 
   it('opens a board inside the project embed and comes back', async () => {

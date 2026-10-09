@@ -54,7 +54,13 @@ import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
-export function BoardScreen({ back = true }: { back?: boolean }): ReactElement {
+export function BoardScreen({
+  back = true,
+  waiting = false
+}: {
+  back?: boolean
+  waiting?: boolean
+}): ReactElement {
   const { t } = useI18n()
   const { boardId = '' } = useParams()
   const board = useBoard(boardId)
@@ -63,7 +69,7 @@ export function BoardScreen({ back = true }: { back?: boolean }): ReactElement {
 
   return (
     <main className="u-p-2">
-      {!board.data && <BackLink />}
+      {!board.data && back && <BackLink />}
       {missing && (
         <EmptyState
           icon={Compass}
@@ -76,8 +82,12 @@ export function BoardScreen({ back = true }: { back?: boolean }): ReactElement {
           {t('board.loadFailed')}
         </Typography>
       )}
-      {board.isPending && <ColumnsSkeleton label={t('app.loading')} />}
-      {board.data && <BoardColumns board={board.data} back={back} />}
+      {(board.isPending || (waiting && !board.isError)) && (
+        <ColumnsSkeleton label={t('app.loading')} />
+      )}
+      {board.data && !waiting && (
+        <BoardColumns board={board.data} back={back} />
+      )}
     </main>
   )
 }
