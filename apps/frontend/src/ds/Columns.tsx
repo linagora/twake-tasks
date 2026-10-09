@@ -355,9 +355,13 @@ export function LabelChip({
   )
 }
 
+const AVATAR_BORDER = 2
+
 export function AvatarStack({
+  size = 24,
   children
 }: {
+  size?: number
   children: ReactNode
 }): ReactElement {
   return (
@@ -365,10 +369,10 @@ export function AvatarStack({
       sx={{
         display: 'flex',
         ml: 'auto',
-        '& > *': {
-          border: 2,
+        '& > .MuiAvatar-root': {
+          border: AVATAR_BORDER,
           borderColor: 'background.paper',
-          fontSize: 10,
+          fontSize: 0.45 * (size - 2 * AVATAR_BORDER),
           letterSpacing: 0
         },
         '& > * + *': { ml: -0.5 }
