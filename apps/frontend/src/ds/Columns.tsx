@@ -60,7 +60,7 @@ export function ColumnsSkeleton({ label }: { label: string }): ReactElement {
               gap: 1,
               p: 1.5,
               borderRadius: 2,
-              bgcolor: 'action.hover'
+              bgcolor: 'background.default'
             }}
           >
             <Skeleton variant="text" width="40%" />
@@ -112,7 +112,7 @@ export function Column({
         borderRadius: 2,
         bgcolor: highlighted
           ? theme.alpha(theme.vars.palette.primary.main, 0.08)
-          : 'action.hover',
+          : 'background.default',
         transition: 'background-color 120ms'
       })}
     >
