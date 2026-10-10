@@ -61,6 +61,7 @@ export function EmbedBoardScreen(): ReactElement {
   return (
     <BoardScreen
       back={boards.isSuccess && !only}
+      flush
       waiting={boards.isPending && boards.failureCount === 0}
     />
   )
@@ -78,7 +79,7 @@ export function EmbedProjectScreen(): ReactElement {
   if (only) return <Navigate to={`boards/${only.id}`} replace />
 
   return (
-    <main className="u-p-2">
+    <main>
       {failed && <Typography role="alert">{t('boards.loadFailed')}</Typography>}
       {boards.isSuccess && known && shown.length === 0 && (
         <Typography>{t('boards.empty')}</Typography>

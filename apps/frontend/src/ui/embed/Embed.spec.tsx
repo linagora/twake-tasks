@@ -136,6 +136,22 @@ describe('the embedded view', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('pads the page once, in the frame', async () => {
+    const board = aBoard({ name: 'Roadmap', project: roadmap })
+    renderRoute(`/embed/projects/${roadmap.id}/boards/${board.id}`, {
+      boardsApi: projectBoardsApi([board])
+    })
+
+    const main = (
+      await screen.findByRole('heading', { name: 'Roadmap' })
+    ).closest('main')
+    expect(main).not.toHaveClass('u-p-2')
+    expect(main?.parentElement).toHaveStyle({
+      paddingLeft: '16px',
+      paddingBottom: '16px'
+    })
+  })
+
   it('opens a board inside the project embed and comes back', async () => {
     const board = aBoard({ name: 'Roadmap', project: roadmap })
     const { router } = renderRoute(`/embed/projects/${roadmap.id}`, {

@@ -56,9 +56,11 @@ import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 export function BoardScreen({
   back = true,
+  flush = false,
   waiting = false
 }: {
   back?: boolean
+  flush?: boolean
   waiting?: boolean
 }): ReactElement {
   const { t } = useI18n()
@@ -68,7 +70,7 @@ export function BoardScreen({
   const missing = board.error instanceof ApiError && board.error.status === 404
 
   return (
-    <main className="u-p-2">
+    <main className={flush ? undefined : 'u-p-2'}>
       {!board.data && back && <BackLink />}
       {missing && (
         <EmptyState
