@@ -280,7 +280,7 @@ export interface BoardsApi {
     taskId: string,
     userIds: string[]
   ) => Promise<void>
-  /** Rejects with `label_taken` when the board's space or owner has that name. */
+  /** Rejects with `label_taken` when the board's project has that name in any case. */
   createLabel: (boardId: string, name: string) => Promise<Label>
   setLabels: (
     boardId: string,

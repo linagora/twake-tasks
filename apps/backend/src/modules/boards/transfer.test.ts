@@ -288,6 +288,29 @@ describe('moving a task to another board', () => {
       ])
     })
 
+    it('attaches a label to the one whose name differs only by case', async () => {
+      const owner = aUser()
+      const { design, ops, logo } = await aLabeledTask(owner)
+      const existing = await aLabel(owner, ops.id, 'urgent')
+      const target = { boardId: ops.id, sectionId: null }
+
+      const preview = await api
+        .as(owner)
+        .post(`/boards/${design.id}/tasks/${logo}/transfer/preview`, target)
+      await api
+        .as(owner)
+        .post(`/boards/${design.id}/tasks/${logo}/transfer`, target)
+
+      expect(preview.json()).toMatchObject({ createdLabels: ['Brand'] })
+      const board = await load(owner, ops.id)
+      expect(names(board.labels)).toEqual(['Brand', 'urgent'])
+      expect(
+        board.tasks
+          .find(task => task.id === logo)
+          ?.labels.find(label => label.name === 'urgent')?.id
+      ).toBe(existing)
+    })
+
     it('keeps the labels when the other board is in the same project', async () => {
       const owner = aUser()
       const design = await aBoard(owner, 'DES')
