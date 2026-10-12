@@ -95,6 +95,17 @@ describe('labels', () => {
     expect(again.json()).toEqual({ error: 'label_taken' })
   })
 
+  it('refuses a name that differs only by case', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+    await board.addLabel('Urgent')
+
+    const again = await board.addLabel('URGENT')
+
+    expect(again.statusCode).toBe(409)
+    expect(again.json()).toEqual({ error: 'label_taken' })
+  })
+
   it('keeps viewers from labeling', async () => {
     const alice = aUser()
     const bob = aUser({ organizationId: alice.organizationId })

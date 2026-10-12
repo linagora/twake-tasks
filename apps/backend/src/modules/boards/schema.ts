@@ -379,7 +379,10 @@ export const labels = pgTable.withRLS(
   },
   table => [
     unique().on(table.tenant, table.id),
-    unique().on(table.projectId, table.name),
+    uniqueIndex('labels_project_id_lower_name_index').on(
+      table.projectId,
+      sql`lower(${table.name})`
+    ),
     foreignKey({
       columns: [table.tenant, table.projectId],
       foreignColumns: [projects.tenant, projects.id]

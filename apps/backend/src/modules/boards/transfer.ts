@@ -90,17 +90,19 @@ async function carryOver(tx: Tx, ids: string[], from: Placed, to: Placed) {
           .innerJoin(labels, eq(labels.id, taskLabels.labelId))
           .where(inArray(taskLabels.taskId, ids))
           .orderBy(labels.name)
-  const existing = new Set((await labelsOn(tx, to)).map(label => label.name))
+  const existing = new Set(
+    (await labelsOn(tx, to)).map(label => label.name.toLowerCase())
+  )
   const createdLabels = carried
     .map(label => label.name)
-    .filter(name => !existing.has(name))
+    .filter(name => !existing.has(name.toLowerCase()))
   return { droppedAssignees, createdLabels }
 }
 
-// Re-attaches each label to the label of the same name in the target project,
-// creating it there when it is missing. Concurrent moves of the same name
-// share the one label that wins the unique(project, name) conflict, and
-// insert in name order so they lock rows in the same order.
+// Re-attaches each label to the label of the same name, in any case, in the
+// target project, creating it there when it is missing. Concurrent moves of
+// the same name share the one label that wins the unique(project, lower(name))
+// conflict, and insert in name order so they lock rows in the same order.
 async function followLabels(
   tx: Tx,
   ids: string[],
@@ -123,13 +125,16 @@ async function followLabels(
       )
       .onConflictDoNothing()
     const there = new Map(
-      (await labelsOn(tx, target)).map(label => [label.name, label.id])
+      (await labelsOn(tx, target)).map(label => [
+        label.name.toLowerCase(),
+        label.id
+      ])
     )
     await tx
       .insert(taskLabels)
       .values(
         carried.flatMap(row => {
-          const labelId = there.get(row.name)
+          const labelId = there.get(row.name.toLowerCase())
           return labelId === undefined
             ? []
             : [
