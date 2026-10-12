@@ -12,7 +12,7 @@ import {
   type HistoryEntry,
   type SearchResult
 } from '@/application/boards'
-import type { BoardSummary } from '@/domain/board'
+import type { BoardSummary, Person } from '@/domain/board'
 
 export type Send = (request: Request) => Promise<Response>
 
@@ -182,6 +182,14 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     moveToProject: (boardId, projectId) =>
       call('POST', route`/boards/${boardId}/move`, { projectId }),
     getSharing: boardId => call('GET', route`/boards/${boardId}/sharing`),
+    suggestPeople: async (boardId, query) =>
+      (
+        await call<{ people: Person[] }>(
+          'GET',
+          route`/boards/${boardId}/sharing/people` +
+            `?${new URLSearchParams({ q: query }).toString()}`
+        )
+      ).people,
     invite: (boardId, email, role) =>
       call('POST', route`/boards/${boardId}/invites`, { email, role }),
     cancelInvite: (boardId, inviteId) =>

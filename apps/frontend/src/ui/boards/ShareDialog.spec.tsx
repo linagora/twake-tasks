@@ -34,7 +34,7 @@ describe('sharing a board', () => {
     const { boardsApi, board, dialog } = await openSharing()
     const form = within(dialog.getByRole('form', { name: 'Invite' }))
 
-    fireEvent.change(form.getByRole('textbox', { name: 'Email' }), {
+    fireEvent.change(form.getByRole('combobox', { name: 'Email' }), {
       target: { value: 'bob@example.com' }
     })
     fireEvent.click(form.getByRole('button', { name: 'Role: Viewer' }))
@@ -50,6 +50,31 @@ describe('sharing a board', () => {
       'bob@example.com',
       'editor'
     )
+  })
+
+  it('suggests people by name and invites the one picked', async () => {
+    const board = aBoard({ name: 'Design' })
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.sharings.set(board.id, { members: [me], invites: [] })
+    boardsApi.directory.push(
+      { userId: 'ada', email: 'ada@example.com', name: 'Ada Lovelace' },
+      { userId: 'bob', email: 'bob@example.com', name: 'Bob' }
+    )
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    fireEvent.click(await screen.findByRole('button', { name: 'Share' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Share Design' })
+    )
+    const email = dialog.getByRole('combobox', { name: 'Email' })
+
+    fireEvent.change(email, { target: { value: 'love' } })
+    fireEvent.click(await screen.findByRole('option', { name: /Ada Lovelace/ }))
+
+    expect(email).toHaveValue('ada@example.com')
+    expect(screen.queryByRole('option', { name: /Bob/ })).toBeNull()
+    fireEvent.click(dialog.getByRole('button', { name: 'Invite' }))
+    expect(await dialog.findByText('Invited ada@example.com.')).toBeVisible()
+    expect(boardsApi.suggestPeople).toHaveBeenCalledWith(board.id, 'love')
   })
 
   it('changes a member role and removes a member', async () => {
