@@ -243,22 +243,34 @@ export function CalendarChip({
       onClick={onClick}
       sx={theme => ({
         justifyContent: 'flex-start',
+        gap: 0.75,
         minWidth: 0,
-        px: 0.75,
+        px: 0.5,
         py: 0.25,
         borderRadius: 1,
-        bgcolor: done
-          ? 'action.hover'
-          : theme.alpha(theme.vars.palette.primary.main, 0.08),
         color: done ? 'text.secondary' : 'text.primary',
         textDecoration: done ? 'line-through' : 'none',
         typography: 'caption',
-        fontWeight: 500,
-        '&:hover': {
-          bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.16)
+        '&:hover': { bgcolor: 'action.hover' },
+        '&:focus-visible': {
+          outline: `2px solid ${theme.vars.palette.primary.main}`,
+          outlineOffset: -2
         }
       })}
     >
+      <Box
+        component="span"
+        aria-hidden
+        sx={theme => ({
+          flexShrink: 0,
+          width: '0.75rem',
+          height: '0.75rem',
+          borderRadius: 0.5,
+          bgcolor: done
+            ? 'action.disabledBackground'
+            : theme.alpha(theme.vars.palette.primary.main, 0.24)
+        })}
+      />
       <Box
         component="span"
         sx={{
