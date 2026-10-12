@@ -8,13 +8,13 @@ import { localZone } from '@/ui/boards/dueLabel'
 
 function boards() {
   const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
-  design.labels = [{ id: 'l1', name: 'client' }]
+  design.labels = [{ id: 'l1', name: 'client', color: null }]
   design.tasks = [
     aTask(null, {
       key: 'DES-1',
       title: 'Logo',
       priority: 1,
-      labels: [{ id: 'l1', name: 'client' }]
+      labels: [{ id: 'l1', name: 'client', color: null }]
     }),
     aTask(null, { key: 'DES-2', title: 'Poster', priority: 1 }),
     aTask(null, { key: 'DES-3', title: 'Flyer' })

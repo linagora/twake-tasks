@@ -5,7 +5,7 @@ import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
-const urgent = { id: 'urgent', name: 'Urgent' }
+const urgent = { id: 'urgent', name: 'Urgent', color: null }
 
 function labeledBoard() {
   const board = aBoard({ name: 'Design', keyPrefix: 'DES', labels: [urgent] })
@@ -89,14 +89,70 @@ describe('Labels', () => {
       picker.queryByRole('menuitemcheckbox', { name: 'Urgent' })
     ).not.toBeInTheDocument()
     fireEvent.click(picker.getByRole('menuitem', { name: 'Create “Later”' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'New label' })
+    )
+    expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('Later')
+    fireEvent.click(dialog.getByRole('radio', { name: 'Purple' }))
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
 
     expect(await (await logoCard()).findByText('Later')).toBeInTheDocument()
     expect((await logoCard()).getByText('Urgent')).toBeInTheDocument()
-    expect(boardsApi.createLabel).toHaveBeenCalledWith(board.id, 'Later')
+    expect(boardsApi.createLabel).toHaveBeenCalledWith(board.id, {
+      name: 'Later',
+      color: '#7E57E3'
+    })
     expect(boardsApi.setLabels).toHaveBeenCalledWith(board.id, logo.id, [
       urgent.id,
       expect.any(String)
     ])
+    expect(
+      screen.queryByRole('dialog', { name: 'New label' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('creates a label without a colour by default', async () => {
+    const { board, boardsApi } = labeledBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const picker = await openLabels()
+    search(picker, 'Later')
+    fireEvent.click(picker.getByRole('menuitem', { name: 'Create “Later”' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'New label' })
+    )
+    expect(dialog.getByRole('radio', { name: 'No color' })).toBeChecked()
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createLabel).toHaveBeenCalledWith(board.id, {
+        name: 'Later',
+        color: null
+      })
+    })
+  })
+
+  it('renames and recolours a label', async () => {
+    const { board, boardsApi } = labeledBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const picker = await openLabels()
+    fireEvent.click(picker.getByRole('button', { name: 'Edit Urgent' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Edit label' })
+    )
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Name' }), {
+      target: { value: 'Blocker' }
+    })
+    fireEvent.click(dialog.getByRole('radio', { name: 'Red' }))
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+
+    expect(await (await logoCard()).findByText('Blocker')).toBeInTheDocument()
+    expect(boardsApi.editLabel).toHaveBeenCalledWith(board.id, urgent.id, {
+      name: 'Blocker',
+      color: '#E0465C'
+    })
+    expect(boardsApi.setLabels).not.toHaveBeenCalled()
   })
 
   it('puts the cursor in the search field', async () => {
@@ -135,9 +191,13 @@ describe('Labels', () => {
     const picker = await openLabels()
     search(picker, 'Soon')
     fireEvent.click(picker.getByRole('menuitem', { name: 'Create “Soon”' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'New label' })
+    )
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
 
     expect(
-      await picker.findByText('A label named Soon already exists.')
+      await dialog.findByText('A label named Soon already exists.')
     ).toBeInTheDocument()
   })
 })

@@ -295,7 +295,16 @@ export interface BoardsApi {
     userIds: string[]
   ) => Promise<void>
   /** Rejects with `label_taken` when the board's project has that name in any case. */
-  createLabel: (boardId: string, name: string) => Promise<Label>
+  createLabel: (
+    boardId: string,
+    label: { name: string; color?: string | null }
+  ) => Promise<Label>
+  /** Rejects with `label_taken` as `createLabel` does. */
+  editLabel: (
+    boardId: string,
+    labelId: string,
+    changes: Partial<Pick<Label, 'name' | 'color'>>
+  ) => Promise<Label>
   setLabels: (
     boardId: string,
     taskId: string,

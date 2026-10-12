@@ -375,6 +375,7 @@ export const labels = pgTable.withRLS(
       .references(() => projects.id, { onDelete: 'cascade' }),
     organizationId: organizationId(),
     name: text().notNull(),
+    color: text(),
     tenant: tenant()
   },
   table => [

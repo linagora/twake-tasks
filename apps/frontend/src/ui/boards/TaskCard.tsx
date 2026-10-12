@@ -65,7 +65,7 @@ export function TaskCard({
           {task.key}
         </Typography>
         {task.labels.map(label => (
-          <LabelChip key={label.id} name={label.name} />
+          <LabelChip key={label.id} name={label.name} color={label.color} />
         ))}
       </Meta>
       <CardTitle>

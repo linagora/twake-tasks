@@ -50,7 +50,7 @@ describe('AgendaScreen', () => {
       assignees: [
         { userId: 'u1', email: 'ana@example.com', name: 'Ana Lopez' }
       ],
-      labels: [{ id: 'l1', name: 'client' }]
+      labels: [{ id: 'l1', name: 'client', color: null }]
     })
     renderRoute('/today', { boardsApi })
 

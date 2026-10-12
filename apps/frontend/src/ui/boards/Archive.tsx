@@ -425,7 +425,7 @@ function ShelfTask({
           task.priority !== null && <PriorityChip priority={task.priority} />
         }
         labels={task.labels.map(label => (
-          <LabelChip key={label.id} name={label.name} />
+          <LabelChip key={label.id} name={label.name} color={label.color} />
         ))}
         when={
           <ShelfWhen

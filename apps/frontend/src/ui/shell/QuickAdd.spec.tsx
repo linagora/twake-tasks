@@ -10,7 +10,7 @@ async function openQuickAdd() {
     name: 'Product Design',
     keyPrefix: 'DES',
     members: [{ userId: 'u-ana', email: 'ana@example.com', name: 'Ana Lopez' }],
-    labels: [{ id: 'l1', name: 'ops' }]
+    labels: [{ id: 'l1', name: 'ops', color: null }]
   })
   const boardsApi = fakeBoardsApi([inbox, design])
   renderRoute(`/boards/${design.id}`, { boardsApi })

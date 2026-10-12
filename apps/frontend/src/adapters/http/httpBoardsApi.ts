@@ -283,8 +283,10 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       call('PUT', route`/boards/${boardId}/tasks/${taskId}/assignees`, {
         userIds
       }),
-    createLabel: (boardId, name) =>
-      call('POST', route`/boards/${boardId}/labels`, { name }),
+    createLabel: (boardId, label) =>
+      call('POST', route`/boards/${boardId}/labels`, label),
+    editLabel: (boardId, labelId, changes) =>
+      call('PATCH', route`/boards/${boardId}/labels/${labelId}`, changes),
     setLabels: (boardId, taskId, labelIds) =>
       call('PUT', route`/boards/${boardId}/tasks/${taskId}/labels`, {
         labelIds
