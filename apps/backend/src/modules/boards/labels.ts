@@ -1,18 +1,22 @@
-import { and, asc, eq, notInArray } from 'drizzle-orm'
+import { and, asc, eq, ne, notInArray, sql } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { labels, taskLabels } from './schema.ts'
+import { boards, labels, taskLabels } from './schema.ts'
 import {
   bumpBoard,
   checkRole,
+  isUniqueViolation,
   Refused,
   taskOf,
-  writeOrRefuse
+  writeOrRefuse,
+  type Result
 } from './tasks.ts'
+
+const shape = { id: labels.id, name: labels.name, color: labels.color }
 
 export function labelsOn(tx: Tx, board: { projectId: string }) {
   return tx
-    .select({ id: labels.id, name: labels.name })
+    .select(shape)
     .from(labels)
     .where(eq(labels.projectId, board.projectId))
     .orderBy(asc(labels.name))
@@ -23,7 +27,11 @@ export function createLabelStore(db: Db) {
     writeOrRefuse(db, identity, work)
 
   return {
-    createLabel(identity: Identity, boardId: string, name: string) {
+    createLabel(
+      identity: Identity,
+      boardId: string,
+      input: { name: string; color?: string | null | undefined }
+    ) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
         const board = await bumpBoard(tx, boardId)
@@ -32,13 +40,60 @@ export function createLabelStore(db: Db) {
           .values({
             organizationId: board.organizationId,
             projectId: board.projectId,
-            name
+            name: input.name,
+            color: input.color ?? null
           })
           .onConflictDoNothing()
-          .returning({ id: labels.id, name: labels.name })
+          .returning(shape)
         if (!label) throw new Refused('label_taken')
         return label
       })
+    },
+
+    async editLabel(
+      identity: Identity,
+      boardId: string,
+      labelId: string,
+      changes: { name?: string | undefined; color?: string | null | undefined }
+    ): Promise<Result<{ id: string; name: string; color: string | null }>> {
+      try {
+        return await write(identity, async tx => {
+          await checkRole(tx, identity, boardId, 'editor')
+          // The label shows on every board of the project, so each one's
+          // live viewers have to reload. Locking them all in id order first
+          // keeps two edits from different boards from deadlocking.
+          const [owner] = await tx
+            .select({ projectId: boards.projectId })
+            .from(boards)
+            .where(eq(boards.id, boardId))
+          if (!owner) throw new Refused('not_found')
+          await tx
+            .select({ id: boards.id })
+            .from(boards)
+            .where(eq(boards.projectId, owner.projectId))
+            .orderBy(asc(boards.id))
+            .for('update')
+          const board = await bumpBoard(tx, boardId)
+          const [label] = await tx
+            .update(labels)
+            .set(changes)
+            .where(
+              and(eq(labels.id, labelId), eq(labels.projectId, board.projectId))
+            )
+            .returning(shape)
+          if (!label) throw new Refused('not_found')
+          await tx
+            .update(boards)
+            .set({ version: sql`${boards.version} + 1` })
+            .where(
+              and(eq(boards.projectId, board.projectId), ne(boards.id, boardId))
+            )
+          return label
+        })
+      } catch (error) {
+        if (isUniqueViolation(error)) return { ok: false, error: 'label_taken' }
+        throw error
+      }
     },
 
     setLabels(

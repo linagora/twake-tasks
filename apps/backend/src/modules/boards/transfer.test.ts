@@ -288,6 +288,29 @@ describe('moving a task to another board', () => {
       ])
     })
 
+    it('creates a missing label in the colour it had', async () => {
+      const owner = aUser()
+      const design = await aBoard(owner, 'DES')
+      const ops = await aBoard(owner, 'OPS')
+      const logo = await aTask(owner, design.id, 'Logo')
+      const brand = (
+        await api.as(owner).post(`/boards/${design.id}/labels`, {
+          name: 'Brand',
+          color: '#7E57E3'
+        })
+      ).json<Label>().id
+      await labelTask(owner, design.id, logo, [brand])
+
+      await api.as(owner).post(`/boards/${design.id}/tasks/${logo}/transfer`, {
+        boardId: ops.id,
+        sectionId: null
+      })
+
+      expect((await load(owner, ops.id)).labels).toMatchObject([
+        { name: 'Brand', color: '#7E57E3' }
+      ])
+    })
+
     it('attaches a label to the one whose name differs only by case', async () => {
       const owner = aUser()
       const { design, ops, logo } = await aLabeledTask(owner)
@@ -370,7 +393,7 @@ describe('moving a task to another board', () => {
 
       expect(moved.json()).toMatchObject({ createdLabels: [] })
       expect((await load(owner, ops.id)).tasks[0]?.labels).toEqual([
-        { id: urgent, name: 'Urgent' }
+        { id: urgent, name: 'Urgent', color: null }
       ])
     })
 

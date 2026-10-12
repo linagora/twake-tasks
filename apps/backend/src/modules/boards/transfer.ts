@@ -118,18 +118,25 @@ async function followLabels(
   target: { projectId: string; organizationId: string | null }
 ) {
   const carried = await tx
-    .select({ taskId: taskLabels.taskId, name: labels.name, key: folded })
+    .select({
+      taskId: taskLabels.taskId,
+      name: labels.name,
+      color: labels.color,
+      key: folded
+    })
     .from(taskLabels)
     .innerJoin(labels, eq(labels.id, taskLabels.labelId))
     .where(inArray(taskLabels.taskId, ids))
   if (carried.length > 0) {
+    const colors = new Map(carried.map(row => [row.name, row.color]))
     await tx
       .insert(labels)
       .values(
-        [...new Set(carried.map(row => row.name))].sort().map(name => ({
+        [...colors.keys()].sort().map(name => ({
           organizationId: target.organizationId,
           projectId: target.projectId,
-          name
+          name,
+          color: colors.get(name) ?? null
         }))
       )
       .onConflictDoNothing()

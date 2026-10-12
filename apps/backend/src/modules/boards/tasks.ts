@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, isNull, ne, notInArray, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
+import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { membersOf, roleOn } from './access.ts'
@@ -178,6 +179,15 @@ export async function writeOrRefuse<T>(
     if (error instanceof Refused) return { ok: false, error: error.refusal }
     throw error
   }
+}
+
+const UNIQUE_VIOLATION = '23505'
+
+export function isUniqueViolation(error: unknown): boolean {
+  const cause = error instanceof Error ? error.cause : undefined
+  return (
+    cause instanceof postgres.PostgresError && cause.code === UNIQUE_VIOLATION
+  )
 }
 
 type Maybe<T> = T | undefined

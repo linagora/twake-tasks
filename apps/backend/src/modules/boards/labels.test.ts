@@ -5,10 +5,12 @@ import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 interface Label {
   id: string
   name: string
+  color: string | null
 }
 
 interface Board {
   id: string
+  version: number
   labels: Label[]
   tasks: { id: string; labels: Label[] }[]
 }
@@ -29,7 +31,10 @@ function on(user: TestUser, boardId: string) {
   const as = api.as(user)
   return {
     load: async () => (await as.get(`/boards/${boardId}`)).json<Board>(),
-    addLabel: (name: string) => as.post(`/boards/${boardId}/labels`, { name }),
+    addLabel: (name: string, color?: string | null) =>
+      as.post(`/boards/${boardId}/labels`, { name, color }),
+    editLabel: (labelId: string, changes: object) =>
+      as.patch(`/boards/${boardId}/labels/${labelId}`, changes),
     addTask: async () =>
       (
         await as.post(`/boards/${boardId}/tasks`, {
@@ -62,8 +67,93 @@ describe('labels', () => {
     expect(created.statusCode).toBe(201)
     expect(labeled.statusCode).toBe(204)
     const loaded = await board.load()
-    expect(loaded.labels).toEqual([{ id: label.id, name: 'Urgent' }])
-    expect(loaded.tasks[0]?.labels).toEqual([{ id: label.id, name: 'Urgent' }])
+    const urgent = { id: label.id, name: 'Urgent', color: null }
+    expect(loaded.labels).toEqual([urgent])
+    expect(loaded.tasks[0]?.labels).toEqual([urgent])
+  })
+
+  it('keeps the colour picked for a new label', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+
+    const created = await board.addLabel('Urgent', '#e0465c')
+
+    expect(created.statusCode).toBe(201)
+    expect(created.json()).toMatchObject({ name: 'Urgent', color: '#E0465C' })
+    expect((await board.load()).labels).toMatchObject([{ color: '#E0465C' }])
+  })
+
+  it('refuses a colour that is not #RRGGBB', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+
+    expect((await board.addLabel('Urgent', 'red')).statusCode).toBe(400)
+    expect((await board.addLabel('Urgent', '#E0465')).statusCode).toBe(400)
+  })
+
+  it('renames and recolours a label', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+    const label = (await board.addLabel('Urgent')).json<Label>()
+
+    const edited = await board.editLabel(label.id, {
+      name: 'Blocker',
+      color: '#273891'
+    })
+
+    expect(edited.statusCode).toBe(200)
+    expect(edited.json()).toEqual({
+      id: label.id,
+      name: 'Blocker',
+      color: '#273891'
+    })
+    expect((await board.load()).labels).toEqual([edited.json()])
+  })
+
+  it('takes the colour off a label', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+    const label = (await board.addLabel('Urgent', '#273891')).json<Label>()
+
+    const edited = await board.editLabel(label.id, { color: null })
+
+    expect(edited.json()).toMatchObject({ name: 'Urgent', color: null })
+  })
+
+  it('refuses a rename to a name taken in any case', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+    await board.addLabel('Urgent')
+    const later = (await board.addLabel('Later')).json<Label>()
+
+    const renamed = await board.editLabel(later.id, { name: 'URGENT' })
+
+    expect(renamed.statusCode).toBe(409)
+    expect(renamed.json()).toEqual({ error: 'label_taken' })
+  })
+
+  it('keeps the labels of other projects out of reach', async () => {
+    const alice = aUser()
+    const design = await aBoard(alice, 'DES')
+    const elsewhere = await aBoard(alice, 'ELS')
+    const label = (await design.addLabel('Urgent')).json<Label>()
+
+    const edited = await elsewhere.editLabel(label.id, { name: 'Mine' })
+
+    expect(edited.statusCode).toBe(404)
+    expect((await design.load()).labels).toEqual([label])
+  })
+
+  it('brings every board of the project up to date with an edit', async () => {
+    const alice = aUser()
+    const design = await aBoard(alice, 'DES')
+    const ops = await aBoard(alice, 'OPS', design.projectId)
+    const label = (await design.addLabel('Urgent')).json<Label>()
+    const before = (await ops.load()).version
+
+    await design.editLabel(label.id, { color: '#273891' })
+
+    expect((await ops.load()).version).toBeGreaterThan(before)
   })
 
   it("shares a project's labels across its boards, not with other projects", async () => {
@@ -117,6 +207,9 @@ describe('labels', () => {
     const asBob = on(bob, boardId)
 
     expect((await asBob.addLabel('Later')).statusCode).toBe(403)
+    expect(
+      (await asBob.editLabel(label.id, { name: 'Later' })).statusCode
+    ).toBe(403)
     expect((await asBob.label(task.id, [label.id])).statusCode).toBe(403)
     expect((await asBob.load()).labels).toEqual([label])
   })

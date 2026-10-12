@@ -15,7 +15,6 @@ import {
   type SQL
 } from 'drizzle-orm'
 import { generateNKeysBetween } from 'fractional-indexing'
-import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import {
@@ -41,6 +40,7 @@ import {
 import {
   bumpBoard,
   checkRole,
+  isUniqueViolation,
   Refused,
   writeOrRefuse,
   type Result
@@ -55,8 +55,6 @@ const DEFAULT_SECTIONS = [
 ] as const
 
 export const INBOX_KEY_PREFIX = 'INBOX'
-
-const UNIQUE_VIOLATION = '23505'
 
 const SEARCH_LIMIT = 50
 
@@ -73,13 +71,6 @@ function excerptOf(description: string, text: string): string | null {
   const from = Math.max(0, wordAt(at) - WORDS_BEFORE)
   const to = Math.min(words.length, wordAt(at + text.length) + 1 + WORDS_AFTER)
   return `${from > 0 ? '…' : ''}${words.slice(from, to).join(' ')}${to < words.length ? '…' : ''}`
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  const cause = error instanceof Error ? error.cause : undefined
-  return (
-    cause instanceof postgres.PostgresError && cause.code === UNIQUE_VIOLATION
-  )
 }
 
 export function createBoardStore(db: Db) {
@@ -448,7 +439,7 @@ export async function describeTasks(
   board: typeof boards.$inferSelect,
   rows: (typeof tasks.$inferSelect)[],
   members: Member[],
-  boardLabels: { id: string; name: string }[]
+  boardLabels: { id: string; name: string; color: string | null }[]
 ) {
   const ids = rows.map(task => task.id)
   if (ids.length === 0) return []
