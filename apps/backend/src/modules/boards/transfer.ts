@@ -54,6 +54,17 @@ async function treeOf(tx: Tx, taskId: string) {
     from tree`)
 }
 
+// Folds in the database, as the unique index does, so a name matches exactly
+// the labels the index treats as the same.
+const folded = sql<string>`lower(${labels.name})`
+
+function labelKeysOn(tx: Tx, board: { projectId: string }) {
+  return tx
+    .select({ id: labels.id, key: folded })
+    .from(labels)
+    .where(eq(labels.projectId, board.projectId))
+}
+
 // What a move changes for the task and its sub-tasks. The preview and the
 // move both read it, so the preview is exactly what the move does. Labels
 // follow by name into another project, which creates the ones it lacks: moving
@@ -85,17 +96,15 @@ async function carryOver(tx: Tx, ids: string[], from: Placed, to: Placed) {
     from.projectId === to.projectId
       ? []
       : await tx
-          .selectDistinct({ id: labels.id, name: labels.name })
+          .selectDistinct({ id: labels.id, name: labels.name, key: folded })
           .from(taskLabels)
           .innerJoin(labels, eq(labels.id, taskLabels.labelId))
           .where(inArray(taskLabels.taskId, ids))
           .orderBy(labels.name)
-  const existing = new Set(
-    (await labelsOn(tx, to)).map(label => label.name.toLowerCase())
-  )
+  const existing = new Set((await labelKeysOn(tx, to)).map(label => label.key))
   const createdLabels = carried
+    .filter(label => !existing.has(label.key))
     .map(label => label.name)
-    .filter(name => !existing.has(name.toLowerCase()))
   return { droppedAssignees, createdLabels }
 }
 
@@ -109,7 +118,7 @@ async function followLabels(
   target: { projectId: string; organizationId: string | null }
 ) {
   const carried = await tx
-    .select({ taskId: taskLabels.taskId, name: labels.name })
+    .select({ taskId: taskLabels.taskId, name: labels.name, key: folded })
     .from(taskLabels)
     .innerJoin(labels, eq(labels.id, taskLabels.labelId))
     .where(inArray(taskLabels.taskId, ids))
@@ -125,16 +134,13 @@ async function followLabels(
       )
       .onConflictDoNothing()
     const there = new Map(
-      (await labelsOn(tx, target)).map(label => [
-        label.name.toLowerCase(),
-        label.id
-      ])
+      (await labelKeysOn(tx, target)).map(label => [label.key, label.id])
     )
     await tx
       .insert(taskLabels)
       .values(
         carried.flatMap(row => {
-          const labelId = there.get(row.name.toLowerCase())
+          const labelId = there.get(row.key)
           return labelId === undefined
             ? []
             : [

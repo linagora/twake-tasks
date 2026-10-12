@@ -590,7 +590,11 @@ export function fakeBoardsApi(boards: Board[] = []) {
     createLabel: vi.fn<BoardsApi['createLabel']>((boardId, name) =>
       Promise.resolve().then(() => {
         const board = find(boardId)
-        if (board.labels.some(label => label.name === name)) {
+        if (
+          board.labels.some(
+            label => label.name.toLowerCase() === name.toLowerCase()
+          )
+        ) {
           throw new ApiError(409, 'label_taken')
         }
         const label = { id: nextId(), name }

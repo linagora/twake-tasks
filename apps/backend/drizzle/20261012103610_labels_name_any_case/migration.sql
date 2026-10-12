@@ -1,9 +1,7 @@
--- Label names become unique in a project regardless of case. Labels that
--- differ only by case are merged into the oldest one first: its tasks gain the
--- others' tasks, then the others go. The tables are forced to row-level
--- security even for their owner, which would hide every row from a migration,
--- so it is lifted around the merge. Nobody labeled anything, so the merge
--- leaves no task history.
+-- Labels that differ only by case merge into the oldest one before the index
+-- goes in. Forced row-level security would hide every row from the owner, so
+-- it is lifted around the merge. Nobody labeled anything, so the merge leaves
+-- no task history.
 DO $$
 BEGIN
   IF NOT EXISTS (
