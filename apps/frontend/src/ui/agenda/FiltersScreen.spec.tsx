@@ -67,6 +67,37 @@ describe('FiltersScreen', () => {
     )
   })
 
+  it('shows the tasks as a board, one column per status kind', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    const [todo, doing] = design.sections
+    design.tasks = [
+      aTask(doing ?? null, { key: 'DES-1', title: 'Logo' }),
+      aTask(null, { key: 'DES-2', title: 'Poster' }),
+      aTask(todo ?? null, { key: 'DES-3', title: 'Flyer' })
+    ]
+    const boardsApi = fakeBoardsApi([design])
+    const { id } = await boardsApi.createFilter({ name: 'All', criteria: {} })
+    const { unmount } = renderRoute(`/filters/${id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Board' }))
+
+    const started = within(screen.getByRole('region', { name: 'In progress' }))
+    expect(started.getByRole('link', { name: 'Logo' })).toHaveAttribute(
+      'href',
+      `/boards/${design.id}?task=DES-1`
+    )
+    expect(started.getByText('DES-1 · Design')).toBeVisible()
+    const unstarted = within(screen.getByRole('region', { name: 'To do' }))
+    expect(unstarted.getByText('Poster')).toBeVisible()
+    expect(unstarted.getByText('Flyer')).toBeVisible()
+
+    unmount()
+    renderRoute(`/filters/${id}`, { boardsApi })
+    expect(
+      await screen.findByRole('region', { name: 'In progress' })
+    ).toBeVisible()
+  })
+
   it('sums up what each saved filter looks for', async () => {
     const boardsApi = boards()
     await boardsApi.createFilter({

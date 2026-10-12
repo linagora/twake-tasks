@@ -7,6 +7,7 @@ import type {
   ProjectSummary,
   Role,
   Section,
+  SectionCategory,
   Task
 } from '@/domain/board'
 
@@ -113,7 +114,12 @@ export interface SectionMove {
   beforeId?: string
 }
 
-export type AgendaTask = Task & { boardId: string; boardName: string }
+/** `category` is the kind of the task's section, null when it has none. */
+export type AgendaTask = Task & {
+  category: SectionCategory | null
+  boardId: string
+  boardName: string
+}
 
 /** `excerpt` quotes the description around the match when the title does not match. */
 export type SearchResult = AgendaTask & { excerpt: string | null }
