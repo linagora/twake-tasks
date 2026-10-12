@@ -1,4 +1,5 @@
 import {
+  keepPreviousData,
   skipToken,
   useMutation,
   useQuery,
@@ -163,12 +164,11 @@ export function usePeopleSuggestions(
       clearTimeout(timer)
     }
   }, [query])
+  const term = query.trim().length >= 2 && settled.length >= 2 ? settled : ''
   return useQuery({
-    queryKey: [...boardKey(boardId), 'sharing', 'people', settled],
-    queryFn:
-      settled.length >= 2
-        ? () => api.suggestPeople(boardId, settled)
-        : skipToken
+    queryKey: [...boardKey(boardId), 'sharing', 'people', term],
+    queryFn: term ? () => api.suggestPeople(boardId, term) : skipToken,
+    ...(term && { placeholderData: keepPreviousData })
   })
 }
 

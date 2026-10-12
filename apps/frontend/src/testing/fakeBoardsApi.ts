@@ -233,13 +233,13 @@ export function fakeBoardsApi(boards: Board[] = []) {
       Promise.resolve().then(() => {
         const sharing = sharingOf(boardId)
         const taken = new Set([
-          ...sharing.members.map(member => member.email),
-          ...sharing.invites.map(pending => pending.email)
+          ...sharing.members.map(member => member.email.toLowerCase()),
+          ...sharing.invites.map(pending => pending.email.toLowerCase())
         ])
         const q = query.toLowerCase()
         return directory.filter(
           person =>
-            !taken.has(person.email) &&
+            !taken.has(person.email.toLowerCase()) &&
             `${person.name ?? ''} ${person.email}`.toLowerCase().includes(q)
         )
       })

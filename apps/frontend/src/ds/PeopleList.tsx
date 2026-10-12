@@ -52,7 +52,6 @@ export interface PersonSuggestion {
   avatar: ReactNode
 }
 
-/** A free text field that also offers people while typing. */
 export function PersonCombobox({
   label,
   value,

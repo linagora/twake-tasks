@@ -82,7 +82,7 @@ const newInvite = z.object({
 const inviteParams = boardParams.extend({ inviteId: z.uuid() })
 
 // Two characters at least, so a suggestion never lists the whole directory.
-const peopleQuery = z.object({ q: z.string().trim().min(2).max(100) })
+const peopleQuery = z.object({ q: z.string().trim().min(2).max(254) })
 
 const memberParams = boardParams.extend({ userId: z.uuid() })
 
