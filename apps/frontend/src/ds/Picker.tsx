@@ -115,11 +115,14 @@ export function PickerOption({
   checked,
   onToggle,
   start,
+  action,
   children
 }: {
   checked: boolean
   onToggle: () => void
   start?: ReactNode
+  /** A button shown on hover or focus, whose clicks do not toggle */
+  action?: ReactNode
   children: ReactNode
 }): ReactElement {
   return (
@@ -127,12 +130,34 @@ export function PickerOption({
       role="menuitemcheckbox"
       aria-checked={checked}
       onClick={onToggle}
-      sx={{ gap: 1.5 }}
+      sx={{
+        gap: 1.5,
+        '@media (hover: hover)': { '& .picker-action': { opacity: 0 } },
+        '&:hover .picker-action, &.Mui-focusVisible .picker-action, & .picker-action:focus-within':
+          { opacity: 1 }
+      }}
     >
       {start}
       <Box sx={{ flex: 1, minWidth: 0 }} className="u-ellipsis">
         {children}
       </Box>
+      {action && (
+        <Box
+          component="span"
+          className="picker-action"
+          sx={{ display: 'flex', my: -0.5 }}
+          onClick={event => {
+            event.stopPropagation()
+          }}
+          onKeyDown={event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.stopPropagation()
+            }
+          }}
+        >
+          {action}
+        </Box>
+      )}
       <Box
         component="span"
         sx={{ display: 'flex', color: 'primary.main', width: 16 }}
@@ -145,19 +170,13 @@ export function PickerOption({
 
 export function PickerCreate({
   onCreate,
-  disabled,
   children
 }: {
   onCreate: () => void
-  disabled: boolean
   children: ReactNode
 }): ReactElement {
   return (
-    <MenuItem
-      onClick={onCreate}
-      disabled={disabled}
-      sx={{ gap: 1.5, color: 'primary.main' }}
-    >
+    <MenuItem onClick={onCreate} sx={{ gap: 1.5, color: 'primary.main' }}>
       <Icon icon={Plus} size={16} />
       <Box sx={{ flex: 1, minWidth: 0 }} className="u-ellipsis">
         {children}
