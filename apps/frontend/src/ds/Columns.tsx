@@ -237,9 +237,13 @@ export function CardTitle({ children }: { children: ReactNode }): ReactElement {
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden',
         '& > *': { fontWeight: 'inherit' },
-        // Stretches the title button over the whole card, so a click anywhere on it opens the task.
-        '& > button': { position: 'static' },
-        '& > button::after': { content: '""', position: 'absolute', inset: 0 }
+        // Stretches the title button or link over the whole card, so a click anywhere on it opens the task.
+        '& > :is(button, a)': { position: 'static' },
+        '& > :is(button, a)::after': {
+          content: '""',
+          position: 'absolute',
+          inset: 0
+        }
       }}
     >
       {children}

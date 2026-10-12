@@ -132,6 +132,36 @@ describe('saved filters', () => {
     ).toEqual([])
   })
 
+  it('tells the status kind of each task, to group them by', async () => {
+    const owner = aUser()
+    const board = (
+      await api.as(owner).post('/boards', { name: 'DES', keyPrefix: 'DES' })
+    ).json<{ id: string }>()
+    const { sections } = (await api.as(owner).get(`/boards/${board.id}`)).json<{
+      sections: { id: string; category: string }[]
+    }>()
+    const started = sections.find(section => section.category === 'started')
+    await api.as(owner).post(`/boards/${board.id}/tasks`, {
+      sectionId: started?.id,
+      title: 'Doing'
+    })
+    await api
+      .as(owner)
+      .post(`/boards/${board.id}/tasks`, { sectionId: null, title: 'Loose' })
+    const { id } = (
+      await api.as(owner).post('/filters', { name: 'All', criteria: {} })
+    ).json<{ id: string }>()
+
+    const { tasks } = (
+      await api.as(owner).get(`/filters/${id}/tasks?zone=${zone}`)
+    ).json<{ tasks: { key: string; category: string | null }[] }>()
+
+    expect(tasks.map(({ key, category }) => ({ key, category }))).toEqual([
+      { key: 'DES-1', category: 'started' },
+      { key: 'DES-2', category: null }
+    ])
+  })
+
   it('refuses unknown criteria', async () => {
     const response = await api
       .as(aUser())

@@ -1,14 +1,24 @@
 import { CheckCircle, Profile } from '@linagora/twake-icons'
 import { Checkbox, Link, Typography } from '@linagora/twake-mui'
-import type { ReactElement } from 'react'
+import { useState, type ReactElement, type ReactNode } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
 import type { AgendaTask, SearchResult } from '@/application/boards'
-import { LabelChip } from '@/ds/Columns'
+import {
+  Card,
+  CardTitle,
+  Column,
+  Columns,
+  EmptyColumn,
+  LabelChip,
+  Meta
+} from '@/ds/Columns'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Highlight } from '@/ds/Highlight'
+import { PageHeader } from '@/ds/PageHeader'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import { formatDay } from '@/ui/boards/dueLabel'
+import { LayoutToggle } from '@/ui/boards/Layouts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import {
   useAgenda,
@@ -109,53 +119,155 @@ function AgendaRow({
   )
 }
 
+const FILTER_LAYOUTS = ['list', 'board'] as const
+type FilterLayout = (typeof FILTER_LAYOUTS)[number]
+
+// Open tasks only, so done and canceled get no column. A task outside any
+// section is to do.
+const OPEN_CATEGORIES = ['backlog', 'unstarted', 'started'] as const
+
+// Remembered on this device only: a saved filter has no stored layout.
+function useFilterLayout(filterId: string) {
+  const key = `filter-layout:${filterId}`
+  const [layout, setLayout] = useState<FilterLayout>(() => {
+    try {
+      return localStorage.getItem(key) === 'board' ? 'board' : 'list'
+    } catch {
+      return 'list'
+    }
+  })
+  const choose = (next: FilterLayout) => {
+    setLayout(next)
+    try {
+      localStorage.setItem(key, next)
+    } catch {
+      // Private browsing: the choice lasts until the page closes.
+    }
+  }
+  return [layout, choose] as const
+}
+
 export function FilterScreen(): ReactElement {
   const { filterId = '' } = useParams()
+  return <FilterView key={filterId} filterId={filterId} />
+}
+
+function FilterView({ filterId }: { filterId: string }): ReactElement {
   const filters = useFilters()
+  const [layout, setLayout] = useFilterLayout(filterId)
   return (
     <AgendaScreen
       view={{ filterId }}
       title={filters.data?.find(filter => filter.id === filterId)?.name ?? ''}
+      actions={
+        <LayoutToggle
+          layouts={FILTER_LAYOUTS}
+          value={layout}
+          onChange={setLayout}
+        />
+      }
+      body={
+        layout === 'board' ? tasks => <ByStatus tasks={tasks} /> : undefined
+      }
     />
+  )
+}
+
+function ByStatus({ tasks }: { tasks: AgendaTask[] }): ReactElement {
+  const { t } = useI18n()
+  const columns = OPEN_CATEGORIES.map(category => ({
+    category,
+    tasks: tasks.filter(task => (task.category ?? 'unstarted') === category)
+  })).filter(column => column.category !== 'backlog' || column.tasks.length > 0)
+  return (
+    <Columns>
+      {columns.map(column => (
+        <Column
+          key={column.category}
+          title={t(`section.category.${column.category}`)}
+          count={column.tasks.length}
+        >
+          {column.tasks.map(task => (
+            <FilterCard key={task.id} task={task} />
+          ))}
+          {column.tasks.length === 0 && (
+            <EmptyColumn label={t('board.emptyColumn')} />
+          )}
+        </Column>
+      ))}
+    </Columns>
+  )
+}
+
+function FilterCard({ task }: { task: AgendaTask }): ReactElement {
+  return (
+    <Card label={`${task.key} ${task.title}`}>
+      <Typography variant="caption" color="textSecondary">
+        {`${task.key} · ${task.boardName}`}
+      </Typography>
+      <CardTitle>
+        <Link
+          component={RouterLink}
+          to={`/boards/${task.boardId}?task=${task.key}`}
+          color="inherit"
+          underline="none"
+        >
+          {task.title}
+        </Link>
+      </CardTitle>
+      {(task.priority !== null ||
+        task.dueDate !== null ||
+        task.labels.length > 0 ||
+        task.assignees.length > 0) && (
+        <Meta>
+          {task.priority !== null && <PriorityChip priority={task.priority} />}
+          <DueChip task={task} />
+          {task.labels.map(label => (
+            <LabelChip key={label.id} name={label.name} />
+          ))}
+          {task.assignees.length > 0 && <Assignees people={task.assignees} />}
+        </Meta>
+      )}
+    </Card>
   )
 }
 
 export function AgendaScreen(
   props:
     | { view: 'today' | 'upcoming' | 'mine' }
-    | { view: AgendaView; title: string }
+    | {
+        view: AgendaView
+        title: string
+        actions?: ReactNode
+        body?: ((tasks: AgendaTask[]) => ReactNode) | undefined
+      }
 ): ReactElement {
-  const { t, lang } = useI18n()
+  const { t } = useI18n()
   const { view } = props
   const agenda = useAgenda(view)
   const title = 'title' in props ? props.title : t(`agenda.${props.view}`)
+  const actions = 'actions' in props ? props.actions : undefined
+  const body = 'body' in props ? props.body : undefined
   useDocumentTitle(title || null)
 
-  const today = agenda.data?.today ?? ''
   const tasks = agenda.data?.tasks ?? []
-  const overdue = tasks.filter(
-    task => task.dueDate !== null && task.dueDate < today
-  )
-  const undated = tasks.filter(task => task.dueDate === null)
-  const days = [
-    ...new Set(
-      tasks.flatMap(task =>
-        task.dueDate && task.dueDate >= today ? [task.dueDate] : []
-      )
-    )
-  ]
+  const empty = agenda.isSuccess && tasks.length === 0
 
   return (
     <main className="u-p-2">
-      <Typography variant="h3" component="h1" className="u-mb-2">
-        {title}
-      </Typography>
+      <PageHeader
+        title={
+          <Typography variant="h3" component="h1">
+            {title}
+          </Typography>
+        }
+        actions={actions}
+      />
       {agenda.isError && (
         <Typography role="alert">{t('agenda.loadFailed')}</Typography>
       )}
       {agenda.isPending && <ListSkeleton label={t('app.loading')} />}
-      {agenda.isSuccess &&
-        tasks.length === 0 &&
+      {empty &&
         (view === 'mine' ? (
           <EmptyState
             icon={Profile}
@@ -169,6 +281,38 @@ export function AgendaScreen(
             text={t('agenda.emptyHint')}
           />
         ))}
+      {agenda.data &&
+        !empty &&
+        (body ? (
+          body(tasks)
+        ) : (
+          <ByDay today={agenda.data.today} tasks={tasks} />
+        ))}
+    </main>
+  )
+}
+
+function ByDay({
+  today,
+  tasks
+}: {
+  today: string
+  tasks: AgendaTask[]
+}): ReactElement {
+  const { t, lang } = useI18n()
+  const overdue = tasks.filter(
+    task => task.dueDate !== null && task.dueDate < today
+  )
+  const undated = tasks.filter(task => task.dueDate === null)
+  const days = [
+    ...new Set(
+      tasks.flatMap(task =>
+        task.dueDate && task.dueDate >= today ? [task.dueDate] : []
+      )
+    )
+  ]
+  return (
+    <>
       {overdue.length > 0 && (
         <Group label={t('agenda.overdue')} tasks={overdue} tone="error" />
       )}
@@ -183,6 +327,6 @@ export function AgendaScreen(
       {undated.length > 0 && (
         <Group label={t('agenda.noDate')} tasks={undated} />
       )}
-    </main>
+    </>
   )
 }

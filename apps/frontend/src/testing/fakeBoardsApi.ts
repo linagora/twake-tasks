@@ -2,6 +2,7 @@ import { vi } from 'vitest'
 
 import {
   ApiError,
+  type AgendaTask,
   type BoardsApi,
   type Comment,
   type Description,
@@ -134,16 +135,21 @@ export function fakeBoardsApi(boards: Board[] = []) {
     return task
   }
 
+  const agendaTask = (board: Board, task: Task): AgendaTask => ({
+    ...structuredClone(task),
+    category:
+      board.sections.find(section => section.id === task.sectionId)?.category ??
+      null,
+    boardId: board.id,
+    boardName: board.name
+  })
+
   const filters: SavedFilter[] = []
   const openTasks = () =>
     [...store.values()].flatMap(board =>
       board.tasks
         .filter(task => !task.completedAt && !task.canceledAt)
-        .map(task => ({
-          ...structuredClone(task),
-          boardId: board.id,
-          boardName: board.name
-        }))
+        .map(task => agendaTask(board, task))
     )
 
   const sharings = new Map<string, Sharing>()
@@ -322,12 +328,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
                 task.key.toLowerCase().startsWith(text.toLowerCase()) ||
                 task.title.toLowerCase().includes(text.toLowerCase())
             )
-            .map(task => ({
-              ...structuredClone(task),
-              boardId: board.id,
-              boardName: board.name,
-              excerpt: null
-            }))
+            .map(task => ({ ...agendaTask(board, task), excerpt: null }))
         )
       )
     ),
@@ -355,11 +356,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
                 !task.completedAt &&
                 !task.canceledAt
             )
-            .map(task => ({
-              ...structuredClone(task),
-              boardId: board.id,
-              boardName: board.name
-            }))
+            .map(task => agendaTask(board, task))
         )
         tasks.sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? ''))
         return { today, tasks }
@@ -376,11 +373,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
                   !task.completedAt &&
                   !task.canceledAt
               )
-              .map(task => ({
-                ...structuredClone(task),
-                boardId: board.id,
-                boardName: board.name
-              }))
+              .map(task => agendaTask(board, task))
           )
           .sort((a, b) =>
             (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999')

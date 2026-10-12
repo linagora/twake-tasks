@@ -54,6 +54,7 @@ describe('SearchScreen', () => {
     boardsApi.search.mockResolvedValue([
       {
         ...aTask(null, { key: 'DES-2', title: 'Poster' }),
+        category: null,
         boardId: design.id,
         boardName: design.name,
         excerpt: '…for the spring fair in Lyon'
