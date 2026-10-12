@@ -157,10 +157,14 @@ export function Reminders({
           </Typography>
         )}
         <EditorActions>
-          <Button variant="text" onClick={close}>
+          <Button variant="text" size="small" onClick={close}>
             {t('board.cancel')}
           </Button>
-          <Button type="submit" disabled={add.isPending || (fixed && !at)}>
+          <Button
+            type="submit"
+            size="small"
+            disabled={add.isPending || (fixed && !at)}
+          >
             {t('reminders.save')}
           </Button>
         </EditorActions>

@@ -232,6 +232,7 @@ function DatesEditor({
           label={t('dates.pin', { zone: task.dueZone ?? localZone() })}
           control={
             <Checkbox
+              size="small"
               checked={draft.pinned}
               onChange={event => {
                 set({ pinned: event.target.checked })
@@ -306,6 +307,7 @@ function DatesEditor({
         disabled={!draft.dueDate}
         control={
           <Checkbox
+            size="small"
             checked={draft.fromCompletion}
             onChange={event => {
               set({ fromCompletion: event.target.checked })
@@ -319,10 +321,10 @@ function DatesEditor({
         </Typography>
       )}
       <EditorActions>
-        <Button variant="text" onClick={onClose}>
+        <Button variant="text" size="small" onClick={onClose}>
           {t('board.cancel')}
         </Button>
-        <Button type="submit" disabled={save.isPending}>
+        <Button type="submit" size="small" disabled={save.isPending}>
           {t('dates.save')}
         </Button>
       </EditorActions>

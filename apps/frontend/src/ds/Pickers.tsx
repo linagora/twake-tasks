@@ -79,7 +79,15 @@ export function DayCalendar({
       onChange={(next: Dayjs | null) => {
         onChange(next?.format(DAY) ?? '')
       }}
-      sx={{ width: '100%', maxWidth: 320, height: 'auto', mx: 'auto' }}
+      sx={{
+        width: '100%',
+        height: 'auto',
+        '& .MuiPickersCalendarHeader-root': { mt: 0, mb: 0.5, pl: 1.5 },
+        '& .MuiDayCalendar-weekDayLabel': { width: 32, height: 32 },
+        '& .MuiPickerDay-root': { '--PickerDay-size': '32px' },
+        // Six weeks of 32px days and their 2px margins
+        '& .MuiDayCalendar-slideTransition': { minHeight: 6 * 36 }
+      }}
     />
   )
 }
@@ -154,7 +162,7 @@ export function EditorPopover({
         paper: {
           role: 'dialog',
           'aria-label': label,
-          sx: { width: 360, maxWidth: 'calc(100vw - 32px)' }
+          sx: { width: 320, maxWidth: 'calc(100vw - 32px)' }
         }
       }}
     >
@@ -164,7 +172,18 @@ export function EditorPopover({
           event.preventDefault()
           onSubmit()
         }}
-        sx={{ p: 2, display: 'grid', gap: 1.5 }}
+        sx={{
+          p: 1.5,
+          display: 'grid',
+          gap: 1,
+          // twake-mui makes small fields 48px high, MUI's own 40px fit here
+          '& .MuiInputBase-sizeSmall:not(.MuiInputBase-multiline) .MuiInputBase-input':
+            { py: '8.5px' },
+          '& .MuiInputLabel-sizeSmall:not(.MuiInputLabel-shrink)': {
+            transform: 'translate(14px, 9px) scale(1)'
+          },
+          '& .MuiFormControlLabel-label': { typography: 'body2' }
+        }}
       >
         {children}
       </Box>
@@ -190,7 +209,7 @@ export function QuickPicks({
   children: ReactNode
 }): ReactElement {
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>{children}</Box>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>{children}</Box>
   )
 }
 
