@@ -26,19 +26,39 @@ const LAYOUT_ICONS = {
 } as const
 
 export function LayoutSwitch({ board }: { board: Board }): ReactElement {
-  const { t } = useI18n()
   const setLayout = useSetLayout(board.id)
+  return (
+    <LayoutToggle
+      layouts={LAYOUTS}
+      value={board.layout}
+      onChange={layout => {
+        setLayout.mutate({ layout, everyone: false })
+      }}
+    />
+  )
+}
+
+export function LayoutToggle<L extends Layout>({
+  layouts,
+  value,
+  onChange
+}: {
+  layouts: readonly L[]
+  value: L
+  onChange: (layout: L) => void
+}): ReactElement {
+  const { t } = useI18n()
   return (
     <HeaderToggleGroup
       exclusive
       size="small"
-      value={board.layout}
+      value={value}
       aria-label={t('layout.title')}
-      onChange={(_event, layout: Layout | null) => {
-        if (layout) setLayout.mutate({ layout, everyone: false })
+      onChange={(_event, layout: L | null) => {
+        if (layout) onChange(layout)
       }}
     >
-      {LAYOUTS.map(layout => (
+      {layouts.map(layout => (
         <ToggleButton
           key={layout}
           value={layout}

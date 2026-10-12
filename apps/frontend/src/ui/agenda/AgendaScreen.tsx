@@ -1,5 +1,5 @@
-import { CheckCircle, Icon, List, Mosaic, Profile } from '@linagora/twake-icons'
-import { Checkbox, Link, ToggleButton, Typography } from '@linagora/twake-mui'
+import { CheckCircle, Profile } from '@linagora/twake-icons'
+import { Checkbox, Link, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
@@ -15,9 +15,10 @@ import {
 } from '@/ds/Columns'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Highlight } from '@/ds/Highlight'
-import { HeaderToggleGroup, PageHeader, ToggleLabel } from '@/ds/PageHeader'
+import { PageHeader } from '@/ds/PageHeader'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import { formatDay } from '@/ui/boards/dueLabel'
+import { LayoutToggle } from '@/ui/boards/Layouts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import {
   useAgenda,
@@ -120,7 +121,6 @@ function AgendaRow({
 
 const FILTER_LAYOUTS = ['list', 'board'] as const
 type FilterLayout = (typeof FILTER_LAYOUTS)[number]
-const FILTER_LAYOUT_ICONS = { list: List, board: Mosaic } as const
 
 // Open tasks only, so done and canceled get no column. A task outside any
 // section is to do.
@@ -153,35 +153,18 @@ export function FilterScreen(): ReactElement {
 }
 
 function FilterView({ filterId }: { filterId: string }): ReactElement {
-  const { t } = useI18n()
   const filters = useFilters()
   const [layout, setLayout] = useFilterLayout(filterId)
-  const title = filters.data?.find(filter => filter.id === filterId)?.name ?? ''
   return (
     <AgendaScreen
       view={{ filterId }}
-      title={title}
+      title={filters.data?.find(filter => filter.id === filterId)?.name ?? ''}
       actions={
-        <HeaderToggleGroup
-          exclusive
-          size="small"
+        <LayoutToggle
+          layouts={FILTER_LAYOUTS}
           value={layout}
-          aria-label={t('layout.title')}
-          onChange={(_event, next: FilterLayout | null) => {
-            if (next) setLayout(next)
-          }}
-        >
-          {FILTER_LAYOUTS.map(each => (
-            <ToggleButton
-              key={each}
-              value={each}
-              aria-label={t(`layout.${each}`)}
-            >
-              <Icon icon={FILTER_LAYOUT_ICONS[each]} />
-              <ToggleLabel>{t(`layout.${each}`)}</ToggleLabel>
-            </ToggleButton>
-          ))}
-        </HeaderToggleGroup>
+          onChange={setLayout}
+        />
       }
       body={
         layout === 'board' ? tasks => <ByStatus tasks={tasks} /> : undefined
