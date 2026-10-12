@@ -81,6 +81,9 @@ const newInvite = z.object({
 
 const inviteParams = boardParams.extend({ inviteId: z.uuid() })
 
+// Two characters at least, so a suggestion never lists the whole directory.
+const peopleQuery = z.object({ q: z.string().trim().min(2).max(100) })
+
 const memberParams = boardParams.extend({ userId: z.uuid() })
 
 const searchQuery = z.object({ q: z.string().trim().min(1).max(200) })
@@ -259,6 +262,28 @@ export function registerBoards(
       const result = await sharingStore.sharing(identity, params.data.boardId)
       if (!result.ok) return refuse(reply, result.error)
       return result.value
+    }
+  )
+
+  app.get(
+    '/boards/:boardId/sharing/people',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = boardParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const query = peopleQuery.safeParse(request.query)
+      if (!query.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await sharingStore.suggestPeople(
+        identity,
+        params.data.boardId,
+        query.data.q
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return { people: result.value }
     }
   )
 

@@ -8,6 +8,7 @@ import {
   isNull,
   lt,
   notInArray,
+  or,
   sql
 } from 'drizzle-orm'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
@@ -59,6 +60,8 @@ async function sharedProject(tx: Tx, identity: Identity, boardId: string) {
   if (project.personal || project.managed) throw new Refused('forbidden')
   return project
 }
+
+const SUGGESTIONS = 8
 
 export const EMAILS_PER_ADDRESS_WINDOW_MS = 24 * 60 * 60 * 1000
 export const EMAILS_PER_INVITER_WINDOW_MS = 60 * 60 * 1000
@@ -214,6 +217,50 @@ export function createSharingStore(db: Db) {
             .where(eq(projectInvites.projectId, project.id))
             .orderBy(asc(projectInvites.email))
         }
+      })
+    },
+
+    // The people Tasks knows: everyone of the organization who opened Tasks
+    // or was added to a project, and in B2C those who share a project with
+    // the admin. Row level security draws that line.
+    suggestPeople(identity: Identity, boardId: string, query: string) {
+      return writeOrRefuse(db, identity, async tx => {
+        const project = await sharedProject(tx, identity, boardId)
+        const pattern = `%${query.toLowerCase().replace(/[\\%_]/g, '\\$&')}%`
+        const inProject = tx
+          .select({ userId: projectMembers.userId })
+          .from(projectMembers)
+          .where(eq(projectMembers.projectId, project.id))
+        const invited = tx
+          .select({ email: projectInvites.email })
+          .from(projectInvites)
+          .where(eq(projectInvites.projectId, project.id))
+        const people = tx
+          .selectDistinctOn([projectMembers.userId], {
+            userId: projectMembers.userId,
+            email: projectMembers.email,
+            name: memberLooks.name.as('name'),
+            avatar: memberLooks.avatar
+          })
+          .from(projectMembers)
+          .leftJoin(userSettings, settingsOfMember)
+          .where(
+            and(
+              notInArray(projectMembers.userId, inProject),
+              notInArray(sql`lower(${projectMembers.email})`, invited),
+              or(
+                sql`lower(${projectMembers.email}) like ${pattern}`,
+                sql`lower(${memberLooks.name}) like ${pattern}`
+              )
+            )
+          )
+          .orderBy(asc(projectMembers.userId))
+          .as('people')
+        return tx
+          .select()
+          .from(people)
+          .orderBy(asc(people.email))
+          .limit(SUGGESTIONS)
       })
     },
 
