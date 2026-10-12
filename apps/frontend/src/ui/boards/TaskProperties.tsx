@@ -87,7 +87,7 @@ export function TaskProperties({
         </Property>
         <Property icon={<Icon icon={Label} />} label={t('task.labels')}>
           {task.labels.map(label => (
-            <LabelChip key={label.id} name={label.name} />
+            <LabelChip key={label.id} name={label.name} color={label.color} />
           ))}
           {task.labels.length === 0 && (
             <Typography variant="body2" color="textSecondary">

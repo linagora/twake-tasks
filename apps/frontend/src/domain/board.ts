@@ -84,6 +84,8 @@ export interface Recurrence {
 export interface Label {
   id: string
   name: string
+  /** `#RRGGBB`, or null for the colour computed from the name */
+  color: string | null
 }
 
 export const MAX_TASK_DEPTH = 4

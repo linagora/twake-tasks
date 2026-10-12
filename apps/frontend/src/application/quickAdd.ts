@@ -100,7 +100,7 @@ export async function quickAdd(
         async typed =>
           (
             board.labels.find(label => same(typed, label.name)) ??
-            (await api.createLabel(board.id, typed))
+            (await api.createLabel(board.id, { name: typed }))
           ).id
       )
     )

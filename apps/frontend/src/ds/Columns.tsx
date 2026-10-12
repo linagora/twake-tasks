@@ -321,12 +321,14 @@ function hueOf(name: string): number {
   return hash
 }
 
-// Labels have no stored colour, so each name gets a stable hue.
+// A label without a picked colour gets a stable hue from its name.
 export function LabelChip({
   name,
+  color = null,
   highlight = ''
 }: {
   name: string
+  color?: string | null | undefined
   highlight?: string
 }): ReactElement {
   const hue = hueOf(name)
@@ -334,6 +336,16 @@ export function LabelChip({
     <Box
       component="span"
       sx={theme => ({
+        ...(color === null
+          ? {
+              color: `hsl(${String(hue)} 60% 32%)`,
+              bgcolor: `hsl(${String(hue)} 75% 93%)`,
+              ...theme.applyStyles('dark', {
+                color: `hsl(${String(hue)} 70% 78%)`,
+                bgcolor: `hsl(${String(hue)} 40% 24%)`
+              })
+            }
+          : { color: theme.palette.getContrastText(color), bgcolor: color }),
         display: 'inline-flex',
         alignItems: 'center',
         height: 20,
@@ -345,13 +357,7 @@ export function LabelChip({
         maxWidth: '100%',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        color: `hsl(${String(hue)} 60% 32%)`,
-        bgcolor: `hsl(${String(hue)} 75% 93%)`,
-        ...theme.applyStyles('dark', {
-          color: `hsl(${String(hue)} 70% 78%)`,
-          bgcolor: `hsl(${String(hue)} 40% 24%)`
-        })
+        whiteSpace: 'nowrap'
       })}
     >
       <Highlight text={name} query={highlight} />

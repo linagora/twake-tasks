@@ -5,7 +5,7 @@ import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
-const urgent = { id: 'urgent', name: 'Urgent' }
+const urgent = { id: 'urgent', name: 'Urgent', color: null }
 
 function labeledBoard() {
   const board = aBoard({ name: 'Design', keyPrefix: 'DES', labels: [urgent] })
@@ -92,7 +92,9 @@ describe('Labels', () => {
 
     expect(await (await logoCard()).findByText('Later')).toBeInTheDocument()
     expect((await logoCard()).getByText('Urgent')).toBeInTheDocument()
-    expect(boardsApi.createLabel).toHaveBeenCalledWith(board.id, 'Later')
+    expect(boardsApi.createLabel).toHaveBeenCalledWith(board.id, {
+      name: 'Later'
+    })
     expect(boardsApi.setLabels).toHaveBeenCalledWith(board.id, logo.id, [
       urgent.id,
       expect.any(String)

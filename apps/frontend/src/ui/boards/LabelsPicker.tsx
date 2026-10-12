@@ -32,7 +32,7 @@ export function LabelsPicker({
     () => new Set(task.labels.map(label => label.id))
   )
   const create = useBoardChange(boardId, (api, labelName: string) =>
-    api.createLabel(boardId, labelName)
+    api.createLabel(boardId, { name: labelName })
   )
   const save = useBoardChange(boardId, (api, labelIds: string[]) =>
     api.setLabels(boardId, task.id, labelIds)

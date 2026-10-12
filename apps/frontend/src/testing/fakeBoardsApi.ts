@@ -17,6 +17,7 @@ import {
 import type {
   Board,
   BoardSummary,
+  Label,
   Person,
   ProjectSummary,
   Section,
@@ -597,7 +598,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
         )
       })
     ),
-    createLabel: vi.fn<BoardsApi['createLabel']>((boardId, name) =>
+    createLabel: vi.fn<BoardsApi['createLabel']>((boardId, { name, color }) =>
       Promise.resolve().then(() => {
         const board = find(boardId)
         if (
@@ -607,8 +608,32 @@ export function fakeBoardsApi(boards: Board[] = []) {
         ) {
           throw new ApiError(409, 'label_taken')
         }
-        const label = { id: nextId(), name }
+        const label = { id: nextId(), name, color: color ?? null }
         board.labels.push(label)
+        return label
+      })
+    ),
+    editLabel: vi.fn<BoardsApi['editLabel']>((boardId, labelId, changes) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        const { name } = changes
+        if (
+          name !== undefined &&
+          board.labels.some(
+            label =>
+              label.id !== labelId &&
+              label.name.toLowerCase() === name.toLowerCase()
+          )
+        ) {
+          throw new ApiError(409, 'label_taken')
+        }
+        const old = board.labels.find(each => each.id === labelId)
+        if (!old) throw new ApiError(404, 'not_found')
+        const label = { ...old, ...changes }
+        const swap = (labels: Label[]) =>
+          labels.map(each => (each.id === labelId ? label : each))
+        board.labels = swap(board.labels)
+        for (const task of board.tasks) task.labels = swap(task.labels)
         return label
       })
     ),

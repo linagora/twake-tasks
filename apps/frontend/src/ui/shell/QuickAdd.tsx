@@ -232,7 +232,10 @@ function Understood({
       )}
       {parsed.labels.map(name => (
         <ParsedPart key={`%${name}`}>
-          <LabelChip name={name} />
+          <LabelChip
+            name={name}
+            color={board?.labels.find(each => same(name, each.name))?.color}
+          />
         </ParsedPart>
       ))}
       {parsed.people.map(typed => {

@@ -19,7 +19,7 @@ function boards() {
       { userId: 'u-alice', email: 'alice@example.com', name: null },
       { userId: 'u-bob', email: 'bob@example.com', name: null }
     ],
-    labels: [{ id: 'l-urgent', name: 'Urgent' }]
+    labels: [{ id: 'l-urgent', name: 'Urgent', color: null }]
   })
   return { inbox, design, api: fakeBoardsApi([inbox, design]) }
 }

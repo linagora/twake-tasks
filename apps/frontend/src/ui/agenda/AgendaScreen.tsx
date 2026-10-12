@@ -110,7 +110,7 @@ function AgendaRow({
           {task.priority !== null && <PriorityChip priority={task.priority} />}
           {showDue && <DueChip task={task} />}
           {task.labels.map(label => (
-            <LabelChip key={label.id} name={label.name} />
+            <LabelChip key={label.id} name={label.name} color={label.color} />
           ))}
           {task.assignees.length > 0 && <Assignees people={task.assignees} />}
         </>
@@ -223,7 +223,7 @@ function FilterCard({ task }: { task: AgendaTask }): ReactElement {
           {task.priority !== null && <PriorityChip priority={task.priority} />}
           <DueChip task={task} />
           {task.labels.map(label => (
-            <LabelChip key={label.id} name={label.name} />
+            <LabelChip key={label.id} name={label.name} color={label.color} />
           ))}
           {task.assignees.length > 0 && <Assignees people={task.assignees} />}
         </Meta>
