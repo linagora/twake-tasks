@@ -189,6 +189,12 @@ async function describe(
         )
       return messages.section(actor, section ? plain(section.name) : null)
     }
+    case 'board': {
+      const board = z.object({ name: z.string() }).safeParse(entry.to)
+      return board.success
+        ? messages.board(actor, plain(board.data.name))
+        : messages.updated(actor)
+    }
     case 'completion':
       return entry.to === 'completed'
         ? messages.completed(actor)

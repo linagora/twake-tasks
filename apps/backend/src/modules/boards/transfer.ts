@@ -253,7 +253,13 @@ export function createTransferStore(db: Db) {
           .set(completionFor(section?.category ?? null, task))
           .where(eq(tasks.id, taskId))
         if (from.projectId !== target.projectId) {
+          await tx.execute(
+            sql`select set_config('app.following_labels', 'on', true)`
+          )
           await followLabels(tx, ids, target)
+          await tx.execute(
+            sql`select set_config('app.following_labels', '', true)`
+          )
         }
         if (droppedAssignees.length > 0) {
           await tx.delete(taskAssignees).where(

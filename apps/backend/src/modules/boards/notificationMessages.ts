@@ -12,6 +12,7 @@ export interface NotificationMessages {
   dueDate: (actor: string, date: string | null) => string
   deadline: (actor: string, date: string | null) => string
   section: (actor: string, section: string | null) => string
+  board: (actor: string, board: string) => string
   completed: (actor: string) => string
   canceled: (actor: string) => string
   reopened: (actor: string) => string
@@ -58,6 +59,7 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       section
         ? `${actor} moved the task to ${section}`
         : `${actor} moved the task out of its section`,
+    board: (actor, board) => `${actor} moved the task to the board ${board}`,
     completed: actor => `${actor} completed the task`,
     canceled: actor => `${actor} canceled the task`,
     reopened: actor => `${actor} reopened the task`,
@@ -109,6 +111,8 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       section
         ? `${actor} a déplacé la tâche dans ${section}`
         : `${actor} a sorti la tâche de sa section`,
+    board: (actor, board) =>
+      `${actor} a déplacé la tâche dans le tableau ${board}`,
     completed: actor => `${actor} a terminé la tâche`,
     canceled: actor => `${actor} a annulé la tâche`,
     reopened: actor => `${actor} a rouvert la tâche`,
@@ -161,6 +165,8 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       section
         ? `${actor} hat die Aufgabe nach ${section} verschoben`
         : `${actor} hat die Aufgabe aus ihrem Abschnitt genommen`,
+    board: (actor, board) =>
+      `${actor} hat die Aufgabe in das Board ${board} verschoben`,
     completed: actor => `${actor} hat die Aufgabe erledigt`,
     canceled: actor => `${actor} hat die Aufgabe abgebrochen`,
     reopened: actor => `${actor} hat die Aufgabe wieder geöffnet`,
@@ -213,6 +219,8 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       section
         ? `${actor} ha spostato l’attività in ${section}`
         : `${actor} ha tolto l’attività dalla sua sezione`,
+    board: (actor, board) =>
+      `${actor} ha spostato l’attività nella bacheca ${board}`,
     completed: actor => `${actor} ha completato l’attività`,
     canceled: actor => `${actor} ha annullato l’attività`,
     reopened: actor => `${actor} ha riaperto l’attività`,
@@ -264,6 +272,7 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       section
         ? `${actor} movió la tarea a ${section}`
         : `${actor} sacó la tarea de su sección`,
+    board: (actor, board) => `${actor} movió la tarea al tablero ${board}`,
     completed: actor => `${actor} completó la tarea`,
     canceled: actor => `${actor} canceló la tarea`,
     reopened: actor => `${actor} reabrió la tarea`,
@@ -312,6 +321,7 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       section
         ? `${actor} переместил(а) задачу в ${section}`
         : `${actor} убрал(а) задачу из раздела`,
+    board: (actor, board) => `${actor} переместил(а) задачу на доску ${board}`,
     completed: actor => `${actor} завершил(а) задачу`,
     canceled: actor => `${actor} отменил(а) задачу`,
     reopened: actor => `${actor} снова открыл(а) задачу`,
@@ -360,6 +370,7 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       section
         ? `${actor} đã chuyển công việc sang ${section}`
         : `${actor} đã đưa công việc ra khỏi mục`,
+    board: (actor, board) => `${actor} đã chuyển công việc sang bảng ${board}`,
     completed: actor => `${actor} đã hoàn thành công việc`,
     canceled: actor => `${actor} đã hủy công việc`,
     reopened: actor => `${actor} đã mở lại công việc`,

@@ -125,6 +125,37 @@ describe('notification emails', () => {
     )
   })
 
+  it('names the board a followed task moved to', async () => {
+    const { alice, bob, board, task } = await aTask()
+    const { project } = (await api.as(alice).get(`/boards/${board.id}`)).json<{
+      project: { id: string }
+    }>()
+    const ops = (
+      await api.as(alice).post('/boards', {
+        name: 'Ops',
+        keyPrefix: 'OPS',
+        projectId: project.id
+      })
+    ).json<{ id: string }>()
+    await api.as(bob).post(`/boards/${board.id}/tasks/${task.id}/comments`, {
+      body: 'Following along'
+    })
+    const mailbox = aMailbox()
+
+    await api.as(alice).post(`/boards/${board.id}/tasks/${task.id}/transfer`, {
+      boardId: ops.id,
+      sectionId: null
+    })
+    await mailbox.deliver()
+
+    const [mail] = mailbox.sent.filter(
+      each => each.to === bob.email && each.text.includes(ops.id)
+    )
+    expect(mail?.text.split('\n')[0]).toBe(
+      'Alice Martin moved the task to the board Ops'
+    )
+  })
+
   it('writes in the language the person chose, and escapes what people typed', async () => {
     const { alice, bob, board, task } = await aTask('<b>Logo</b> & co')
     await db
