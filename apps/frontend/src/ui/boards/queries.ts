@@ -1,4 +1,5 @@
 import {
+  keepPreviousData,
   skipToken,
   useMutation,
   useQuery,
@@ -6,7 +7,7 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type {
   Agenda,
@@ -29,7 +30,7 @@ import type {
   TaskMove,
   TransferPreview
 } from '@/application/boards'
-import type { Board, BoardSummary, Layout } from '@/domain/board'
+import type { Board, BoardSummary, Layout, Person } from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
 import { findBoard, quickAdd } from '@/application/quickAdd'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
@@ -144,6 +145,30 @@ export function useSharing(boardId: string): UseQueryResult<Sharing> {
   return useQuery({
     queryKey: [...boardKey(boardId), 'sharing'],
     queryFn: () => api.getSharing(boardId)
+  })
+}
+
+const SUGGEST_DELAY_MS = 250
+
+export function usePeopleSuggestions(
+  boardId: string,
+  query: string
+): UseQueryResult<Person[]> {
+  const api = useBoardsApi()
+  const [settled, setSettled] = useState('')
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSettled(query.trim())
+    }, SUGGEST_DELAY_MS)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [query])
+  const term = query.trim().length >= 2 && settled.length >= 2 ? settled : ''
+  return useQuery({
+    queryKey: [...boardKey(boardId), 'sharing', 'people', term],
+    queryFn: term ? () => api.suggestPeople(boardId, term) : skipToken,
+    ...(term && { placeholderData: keepPreviousData })
   })
 }
 

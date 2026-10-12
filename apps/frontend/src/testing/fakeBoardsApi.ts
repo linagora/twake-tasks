@@ -16,6 +16,7 @@ import {
 import type {
   Board,
   BoardSummary,
+  Person,
   ProjectSummary,
   Section,
   Task
@@ -154,6 +155,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
   }
 
   const projects: Project[] = []
+  const directory: Person[] = []
 
   const hidden = new Map<string, { shelf: Shelf; task: Task; at: string }>()
   const hide = (shelf: Shelf) => (boardId: string, taskId: string) =>
@@ -226,6 +228,21 @@ export function fakeBoardsApi(boards: Board[] = []) {
     ),
     getSharing: vi.fn<BoardsApi['getSharing']>(boardId =>
       Promise.resolve().then(() => structuredClone(sharingOf(boardId)))
+    ),
+    suggestPeople: vi.fn<BoardsApi['suggestPeople']>((boardId, query) =>
+      Promise.resolve().then(() => {
+        const sharing = sharingOf(boardId)
+        const taken = new Set([
+          ...sharing.members.map(member => member.email.toLowerCase()),
+          ...sharing.invites.map(pending => pending.email.toLowerCase())
+        ])
+        const q = query.toLowerCase()
+        return directory.filter(
+          person =>
+            !taken.has(person.email.toLowerCase()) &&
+            `${person.name ?? ''} ${person.email}`.toLowerCase().includes(q)
+        )
+      })
     ),
     invite: vi.fn<BoardsApi['invite']>((boardId, email, role) =>
       Promise.resolve().then(() => {
@@ -674,6 +691,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
     comments,
     history,
     sharings,
-    projects
+    projects,
+    directory
   })
 }

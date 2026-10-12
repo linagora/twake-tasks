@@ -213,6 +213,82 @@ describe('sharing a board', () => {
     )
   })
 
+  describe('suggestions', () => {
+    const suggest = async (by: TestUser, boardId: string, q: string) => {
+      const response = await api
+        .as(by)
+        .get(`/boards/${boardId}/sharing/people?q=${encodeURIComponent(q)}`)
+      return {
+        statusCode: response.statusCode,
+        emails: response
+          .json<{ people?: { email: string }[] }>()
+          .people?.map(person => person.email)
+      }
+    }
+
+    it('suggests the people of the organization by name or email, not those already in', async () => {
+      const owner = aUser()
+      const tag = owner.userId.slice(0, 8)
+      const organizationId = owner.organizationId
+      const ada = aUser({ organizationId, email: `ada-${tag}@example.com` })
+      const grace = aUser({ organizationId, name: `Grace ${tag}` })
+      const member = aUser({ organizationId, email: `bob-${tag}@example.com` })
+      const invited = aUser({ organizationId, email: `eve-${tag}@example.com` })
+      const outsider = aUser({ email: `zed-${tag}@example.com` })
+      for (const user of [ada, grace, member, invited, outsider]) {
+        await boardIdsOf(user)
+      }
+      const boardId = await aBoardOf(owner)
+      await invite(owner, boardId, member.email, 'viewer')
+      await boardIdsOf(member)
+      await invite(owner, boardId, invited.email, 'viewer')
+
+      expect(await suggest(owner, boardId, tag)).toEqual({
+        statusCode: 200,
+        emails: [ada.email, grace.email].sort()
+      })
+      expect((await suggest(owner, boardId, 'ADA-')).emails).toContain(
+        ada.email
+      )
+    })
+
+    it('keeps B2C people to those who share a project', async () => {
+      const owner = aB2cUser()
+      const tag = owner.userId.slice(0, 8)
+      const partner = { ...aB2cUser(), email: `pal-${tag}@example.com` }
+      const stranger = { ...aB2cUser(), email: `who-${tag}@example.com` }
+      await boardIdsOf(stranger)
+      const shared = await aBoardOf(owner)
+      await invite(owner, shared, partner.email, 'viewer')
+      await boardIdsOf(partner)
+      const boardId = await aBoardOf(owner)
+
+      expect((await suggest(owner, boardId, tag)).emails).toEqual([
+        partner.email
+      ])
+    })
+
+    it('takes a query of two characters at least, and only from an admin', async () => {
+      const owner = aUser()
+      const viewer = aUser({ organizationId: owner.organizationId })
+      const boardId = await aBoardOf(owner)
+      await invite(owner, boardId, viewer.email, 'viewer')
+      await boardIdsOf(viewer)
+
+      expect((await suggest(owner, boardId, ' a ')).statusCode).toBe(400)
+      expect((await suggest(viewer, boardId, 'user')).statusCode).toBe(403)
+    })
+
+    it('reads % and _ as plain characters', async () => {
+      const owner = aUser()
+      await boardIdsOf(aUser({ organizationId: owner.organizationId }))
+      const boardId = await aBoardOf(owner)
+
+      expect((await suggest(owner, boardId, '%%')).emails).toEqual([])
+      expect((await suggest(owner, boardId, '__')).emails).toEqual([])
+    })
+  })
+
   describe('followers', () => {
     async function aFollowedTask() {
       const owner = aUser()

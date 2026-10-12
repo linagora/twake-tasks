@@ -13,16 +13,19 @@ import {
   ListItemText,
   Menu,
   MenuItem,
-  TextField,
   Typography
 } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement } from 'react'
 
-import { InviteRow, PersonRow } from '@/ds/PeopleList'
+import { InviteRow, PersonCombobox, PersonRow } from '@/ds/PeopleList'
 import { ROLES, type Board, type Role } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useBoardChange, useSharing } from '@/ui/boards/queries'
+import {
+  useBoardChange,
+  usePeopleSuggestions,
+  useSharing
+} from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 function RoleMenu({
@@ -104,6 +107,7 @@ export function ShareDialog({
   const titleId = useId()
   const sharing = useSharing(board.id)
   const [email, setEmail] = useState('')
+  const suggestions = usePeopleSuggestions(board.id, email)
   const [role, setRole] = useState<Role>('viewer')
   const [invited, setInvited] = useState<string | null>(null)
   const invite = useBoardChange(board.id, (api, to: string) =>
@@ -153,15 +157,27 @@ export function ShareDialog({
             })
           }}
         >
-          <TextField
+          <PersonCombobox
             label={t('sharing.email')}
             type="email"
-            size="small"
+            maxLength={254}
             value={email}
-            onChange={event => {
-              setEmail(event.target.value)
-            }}
-            slotProps={{ htmlInput: { maxLength: 254 } }}
+            onChange={setEmail}
+            suggestions={(suggestions.data ?? []).map(person => ({
+              key: person.userId,
+              value: person.email,
+              label: displayName(person),
+              detail:
+                displayName(person) === person.email ? undefined : person.email,
+              avatar: (
+                <PersonAvatar
+                  email={person.email}
+                  name={person.name}
+                  avatar={person.avatar}
+                  size={32}
+                />
+              )
+            }))}
           />
           <RoleMenu value={role} onChange={setRole} />
           <Button type="submit" disabled={invite.isPending || !email.trim()}>

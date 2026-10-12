@@ -202,6 +202,11 @@ export interface BoardsApi {
   moveToProject: (boardId: string, projectId: string) => Promise<void>
   /** A user's board's members and pending invites. Admins only. */
   getSharing: (boardId: string) => Promise<Sharing>
+  /**
+   * The people Tasks knows whose name or email holds the query, apart from
+   * the board's members and invites. Admins only, two characters at least.
+   */
+  suggestPeople: (boardId: string, query: string) => Promise<Person[]>
   /** Resolves whether or not the email has an account. */
   invite: (boardId: string, email: string, role: Role) => Promise<void>
   cancelInvite: (boardId: string, inviteId: string) => Promise<void>
