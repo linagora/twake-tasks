@@ -248,12 +248,13 @@ export function CalendarChip({
         px: 0.5,
         py: 0.25,
         borderRadius: 1,
-        color: done ? 'text.disabled' : 'text.secondary',
+        color: done ? 'text.secondary' : 'text.primary',
         textDecoration: done ? 'line-through' : 'none',
         typography: 'caption',
-        '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
+        '&:hover': { bgcolor: 'action.hover' },
         '&:focus-visible': {
-          outline: `2px solid ${theme.vars.palette.primary.main}`
+          outline: `2px solid ${theme.vars.palette.primary.main}`,
+          outlineOffset: -2
         }
       })}
     >
