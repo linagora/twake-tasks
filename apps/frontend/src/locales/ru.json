@@ -177,6 +177,7 @@
     "duration": "%{actor} установил(а) длительность %{duration}",
     "durationCleared": "%{actor} убрал(а) длительность",
     "section": "%{actor} переместил(а) задачу в %{section}",
+    "board": "%{actor} переместил(а) задачу с доски %{from} на %{to}",
     "completed": "%{actor} завершил(а) задачу",
     "canceled": "%{actor} отменил(а) задачу",
     "reopened": "%{actor} снова открыл(а) задачу",

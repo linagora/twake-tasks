@@ -177,6 +177,7 @@
     "duration": "%{actor} hat die Dauer auf %{duration} gesetzt",
     "durationCleared": "%{actor} hat die Dauer entfernt",
     "section": "%{actor} hat sie nach %{section} verschoben",
+    "board": "%{actor} hat sie vom Board %{from} nach %{to} verschoben",
     "completed": "%{actor} hat sie erledigt",
     "canceled": "%{actor} hat sie abgebrochen",
     "reopened": "%{actor} hat sie wieder geöffnet",

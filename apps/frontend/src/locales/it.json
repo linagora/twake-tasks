@@ -177,6 +177,7 @@
     "duration": "%{actor} ha impostato la durata a %{duration}",
     "durationCleared": "%{actor} ha rimosso la durata",
     "section": "%{actor} l’ha spostata in %{section}",
+    "board": "%{actor} l’ha spostata dalla bacheca %{from} a %{to}",
     "completed": "%{actor} l’ha completata",
     "canceled": "%{actor} l’ha annullata",
     "reopened": "%{actor} l’ha riaperta",

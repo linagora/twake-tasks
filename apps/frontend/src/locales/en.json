@@ -177,6 +177,7 @@
     "duration": "%{actor} set the duration to %{duration}",
     "durationCleared": "%{actor} removed the duration",
     "section": "%{actor} moved it to %{section}",
+    "board": "%{actor} moved it from the board %{from} to %{to}",
     "completed": "%{actor} completed it",
     "canceled": "%{actor} canceled it",
     "reopened": "%{actor} reopened it",

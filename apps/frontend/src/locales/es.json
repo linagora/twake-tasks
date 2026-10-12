@@ -177,6 +177,7 @@
     "duration": "%{actor} fijó la duración en %{duration}",
     "durationCleared": "%{actor} quitó la duración",
     "section": "%{actor} la movió a %{section}",
+    "board": "%{actor} la movió del tablero %{from} a %{to}",
     "completed": "%{actor} la completó",
     "canceled": "%{actor} la canceló",
     "reopened": "%{actor} la reabrió",

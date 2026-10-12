@@ -94,7 +94,10 @@ export interface Reminder {
 export type NewReminder =
   { at: string } | { beforeMinutes: number; zone: string }
 
-/** `from` and `to` are ids for `section`, `assignees` and `labels`. */
+/**
+ * `from` and `to` are ids for `section`, `assignees` and `labels`, and
+ * `{ id, name }` for `board`.
+ */
 export interface HistoryEntry {
   actor: Person
   field: string

@@ -177,6 +177,7 @@
     "duration": "%{actor} đã đặt thời lượng %{duration}",
     "durationCleared": "%{actor} đã bỏ thời lượng",
     "section": "%{actor} đã chuyển sang %{section}",
+    "board": "%{actor} đã chuyển từ bảng %{from} sang %{to}",
     "completed": "%{actor} đã hoàn thành",
     "canceled": "%{actor} đã hủy",
     "reopened": "%{actor} đã mở lại",
