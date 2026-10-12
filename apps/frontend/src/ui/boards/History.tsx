@@ -14,6 +14,11 @@ type Translate = ReturnType<typeof useI18n>['t']
 const text = (value: unknown): string =>
   typeof value === 'string' || typeof value === 'number' ? String(value) : ''
 
+const boardName = (value: unknown): string =>
+  typeof value === 'object' && value !== null && 'name' in value
+    ? text(value.name)
+    : ''
+
 function describe(
   entry: HistoryEntry,
   board: Board | undefined,
@@ -54,6 +59,12 @@ function describe(
         section:
           board?.sections.find(section => section.id === entry.to)?.name ??
           t('board.noSection')
+      })
+    case 'board':
+      return t('history.board', {
+        actor,
+        from: boardName(entry.from),
+        to: boardName(entry.to)
       })
     case 'completion':
       return t(

@@ -311,6 +311,42 @@ describe('moving a task to another board', () => {
       ).toBe(existing)
     })
 
+    it('records the move once, on the task moved, and not the labels that follow it', async () => {
+      const owner = aUser()
+      const { design, ops, logo, sketch } = await aLabeledTask(owner)
+      const inProgress = ops.sections.find(
+        section => section.name === 'In progress'
+      )
+
+      await api.as(owner).post(`/boards/${design.id}/tasks/${logo}/transfer`, {
+        boardId: ops.id,
+        sectionId: inProgress?.id ?? null
+      })
+
+      const historyOf = async (taskId: string) =>
+        (
+          await api.as(owner).get(`/boards/${ops.id}/tasks/${taskId}/history`)
+        ).json<{ entries: { field: string; from: unknown; to: unknown }[] }>()
+          .entries
+      const move = {
+        field: 'board',
+        from: { id: design.id, name: 'DES' },
+        to: { id: ops.id, name: 'OPS' }
+      }
+      const logoHistory = await historyOf(logo)
+      expect(logoHistory[0]).toMatchObject(move)
+      expect(logoHistory.map(entry => entry.field)).toEqual([
+        'board',
+        'labels',
+        'labels',
+        'created'
+      ])
+      expect((await historyOf(sketch)).map(entry => entry.field)).toEqual([
+        'labels',
+        'created'
+      ])
+    })
+
     it('keeps the labels when the other board is in the same project', async () => {
       const owner = aUser()
       const design = await aBoard(owner, 'DES')

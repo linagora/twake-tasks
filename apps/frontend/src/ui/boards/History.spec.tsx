@@ -15,6 +15,13 @@ function logoBoard() {
   const boardsApi = fakeBoardsApi([board])
   const at = '2026-10-05T09:00:00Z'
   boardsApi.history.set(logo.id, [
+    {
+      actor: alice,
+      field: 'board',
+      from: { id: 'ops', name: 'Ops' },
+      to: { id: board.id, name: 'Design' },
+      at
+    },
     { actor: alice, field: 'assignees', from: null, to: bob.userId, at },
     { actor: alice, field: 'section', from: null, to: doing?.id, at },
     { actor: alice, field: 'title', from: 'Draft', to: 'Logo', at },
@@ -37,6 +44,7 @@ describe('History', () => {
         item => within(item).getByRole('paragraph').textContent.split(' · ')[0]
       )
     ).toEqual([
+      'Alice moved it from the board Ops to Design',
       'Alice assigned bob@example.com',
       'Alice moved it to In progress',
       'Alice renamed it from Draft to Logo',
