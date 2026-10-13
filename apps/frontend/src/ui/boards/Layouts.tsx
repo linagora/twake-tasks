@@ -1,4 +1,4 @@
-import { CalendarToday, Icon, List, Mosaic } from '@linagora/twake-icons'
+import { Calendar, Icon, List, Mosaic } from '@linagora/twake-icons'
 import { ToggleButton, useMediaQuery, useTheme } from '@linagora/twake-mui'
 import dayjs from 'dayjs'
 import { useState, type ReactElement, type ReactNode } from 'react'
@@ -25,7 +25,7 @@ import { useI18n } from '@/ui/i18n/useI18n'
 const LAYOUT_ICONS = {
   board: Mosaic,
   list: List,
-  calendar: CalendarToday
+  calendar: Calendar
 } as const
 
 export function LayoutSwitch({ board }: { board: Board }): ReactElement {
