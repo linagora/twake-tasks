@@ -21,10 +21,11 @@ const configSchema = z
     RABBITMQ_ACTIVITY_EXCHANGE: z.string().min(1).default('activity'),
     RABBITMQ_QUEUE: z.string().min(1).default('twake-tasks'),
     RABBITMQ_OLD_QUEUE: z.string().min(1).default('platform.all.twake-tasks'),
-    RABBITMQ_CONCURRENCY: z.coerce.number().int().min(1).default(10),
+    RABBITMQ_CONCURRENCY: z.coerce.number().int().min(1).default(5),
     RABBITMQ_DEAD_LETTER_EXCHANGE: z.string().min(1).default('twake-tasks.dlx'),
     RABBITMQ_LIVE_EXCHANGE: z.string().min(1).default('twake-tasks.live'),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+    DATABASE_POOL_MAX: z.coerce.number().int().min(1).default(20),
     APP_URL: z.url({ protocol: /^https?$/ }),
     OIDC_ISSUER: z.url({ protocol: /^https$/ }),
     OIDC_AUDIENCE: z.string().min(1).default('twaketasks'),
@@ -37,6 +38,13 @@ const configSchema = z
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
       .default('info')
+  })
+  // Draining the queue also unbinds it, so naming it twice would leave Tasks
+  // deaf to every event.
+  .refine(env => env.RABBITMQ_QUEUE !== env.RABBITMQ_OLD_QUEUE, {
+    message:
+      'RABBITMQ_QUEUE must differ from RABBITMQ_OLD_QUEUE, the queue of older versions that each start drains and unbinds',
+    path: ['RABBITMQ_QUEUE']
   })
   .and(spaceIntegration)
 

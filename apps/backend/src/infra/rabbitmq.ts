@@ -50,15 +50,19 @@ const otherBindings = (names: ConsumerNames) => [
   { exchange: names.settingsExchange, routingKey: 'user.settings.updated' }
 ]
 
-async function queueExists(url: string, queue: string): Promise<boolean> {
+/** The messages ready on the queue, or undefined when there is no such queue. */
+async function readyMessages(
+  url: string,
+  queue: string
+): Promise<number | undefined> {
   const connection = await amqplib.connect(url)
   try {
     // A missing queue closes the channel it is checked on.
     const probe = await connection.createChannel()
     probe.on('error', () => undefined)
     return await probe.checkQueue(queue).then(
-      () => true,
-      () => false
+      ok => ok.messageCount,
+      () => undefined
     )
   } finally {
     await connection.close()
@@ -98,24 +102,24 @@ export async function startConsumer(
   names: ConsumerNames,
   logger: Logger,
   handle: (delivery: Delivery) => Promise<Outcome>,
-  options: { concurrency?: number; retryDelayMs?: number } = {}
+  options: {
+    concurrency?: number
+    retryDelayMs?: number
+    drainCheckMs?: number
+  } = {}
 ): Promise<Consumer> {
-  let draining = false
+  const unbind = () =>
+    unbindOldQueue(url, names).catch((error: unknown) => {
+      logger.error({ err: error }, 'unbinding the old queue failed')
+    })
+  const retryDelay = options.retryDelayMs ?? 1000
   const client = new RabbitMQClient({
     url,
     logger,
-    prefetch: options.concurrency ?? 10,
-    retryDelay: options.retryDelayMs ?? 1000,
+    prefetch: options.concurrency ?? 5,
+    retryDelay,
     // Only dead letters are published here, and the next pass retries them.
-    publishMaxAttempts: 1,
-    hooks: {
-      onReconnect: () => {
-        if (!draining) return
-        unbindOldQueue(url, names).catch((error: unknown) => {
-          logger.error({ err: error }, 'unbinding the old queue failed')
-        })
-      }
-    }
+    publishMaxAttempts: 1
   })
   await client.init()
   // The client hands the same properties to every retry of a delivery, so
@@ -163,10 +167,21 @@ export async function startConsumer(
     }
   )
   // The queue of older versions had a single active consumer, which a declared
-  // queue cannot drop. It is drained here, and gets nothing new.
-  if (await queueExists(url, names.oldQueue)) {
-    draining = true
-    await client.subscribe(
+  // queue cannot drop. It is drained here, one message at a time, and gets
+  // nothing new. Older replicas still running bind it again when they
+  // reconnect, so it is unbound again then, and once more when found empty.
+  let drain: RabbitMQClient | undefined
+  let drainCheck: NodeJS.Timeout | undefined
+  if ((await readyMessages(url, names.oldQueue)) !== undefined) {
+    drain = new RabbitMQClient({
+      url,
+      logger,
+      prefetch: 1,
+      retryDelay,
+      hooks: { onReconnect: () => void unbind() }
+    })
+    await drain.init()
+    await drain.subscribe(
       names.spaceExchange,
       SPACE_EVENTS,
       names.oldQueue,
@@ -174,6 +189,25 @@ export async function startConsumer(
       { ...subscription, queueArguments: { 'x-single-active-consumer': true } }
     )
     await unbindOldQueue(url, names)
+    const checkEvery = options.drainCheckMs ?? 60_000
+    const check = () => {
+      drainCheck = setTimeout(() => {
+        readyMessages(url, names.oldQueue)
+          .then(async ready => {
+            if (ready) {
+              check()
+              return
+            }
+            await unbind()
+            logger.info({ queue: names.oldQueue }, 'old queue drained')
+          })
+          .catch((error: unknown) => {
+            logger.error({ err: error }, 'checking the old queue failed')
+            check()
+          })
+      }, checkEvery)
+    }
+    check()
   }
   return {
     // An unroutable publish fails, so the caller keeps the event.
@@ -194,7 +228,11 @@ export async function startConsumer(
           }
         }
       ),
-    close: () => client.close()
+    async close() {
+      clearTimeout(drainCheck)
+      await drain?.close()
+      await client.close()
+    }
   }
 }
 

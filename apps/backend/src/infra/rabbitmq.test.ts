@@ -337,7 +337,8 @@ describe('startConsumer', () => {
     expect(await ready(DEAD_LETTER_QUEUE)).toBe(0)
   })
 
-  it('drains the queue of older versions, which then gets nothing new', async () => {
+  // As versions with a single active consumer declared it.
+  async function declareOldQueue() {
     for (const exchange of [
       'space',
       'b2b',
@@ -366,6 +367,52 @@ describe('startConsumer', () => {
     })
     await channel.bindQueue(OLD_QUEUE, 'space', 'twake.space.#')
     await channel.bindQueue(OLD_QUEUE, 'b2b', 'domain.user.deleted')
+  }
+
+  it('unbinds the queue of older versions again once it finds it empty', async () => {
+    await declareOldQueue()
+    channel.sendToQueue(OLD_QUEUE, Buffer.from('{}'), { messageId: 'm-old' })
+    const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    handle.mockResolvedValue('processed')
+
+    try {
+      consumer = await startConsumer(
+        container.getAmqpUrl(),
+        names,
+        pino({ level: 'silent' }),
+        handle,
+        { retryDelayMs: 10, drainCheckMs: 500 }
+      )
+      await vi.waitFor(() => {
+        expect(handle).toHaveBeenCalledWith(
+          expect.objectContaining({ messageId: 'm-old' })
+        )
+      })
+      // An older replica reconnecting.
+      await channel.bindQueue(OLD_QUEUE, 'space', 'twake.space.#')
+      await new Promise(resolve => setTimeout(resolve, 1500))
+
+      publish('space', 'twake.space.updated', 'm-1')
+
+      await vi.waitFor(() => {
+        expect(handle).toHaveBeenCalledWith(
+          expect.objectContaining({ messageId: 'm-1' })
+        )
+      })
+      await new Promise(resolve => setTimeout(resolve, 300))
+      expect(
+        handle.mock.calls.filter(([d]) => d.messageId === 'm-1')
+      ).toHaveLength(1)
+    } finally {
+      await consumer?.close()
+      consumer = undefined
+      await channel.deleteQueue(OLD_QUEUE)
+      await channel.deleteQueue(OLD_DEAD_LETTER_QUEUE)
+    }
+  })
+
+  it('drains the queue of older versions, which then gets nothing new', async () => {
+    await declareOldQueue()
     channel.sendToQueue(OLD_QUEUE, Buffer.from('{}'), { messageId: 'm-old' })
     const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
     handle.mockResolvedValue('processed')

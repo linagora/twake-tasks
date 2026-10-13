@@ -5,12 +5,13 @@ The backend talks to the rest of Twake Workplace through RabbitMQ only. The exch
 ## The queue
 
 - One queue, `twake-tasks`, bound to every routing key below.
-- Every replica consumes it, handling up to 10 messages at once (`RABBITMQ_CONCURRENCY`). Events are not handled in the order they were published.
+- Every replica consumes it, handling up to 5 messages at once (`RABBITMQ_CONCURRENCY`). Events are not handled in the order they were published.
 - Each event is handled once, deduplicated on its message id. Settings updates carry none, so they are deduplicated on their content.
 - A transient failure, such as the database being down, retries until it passes.
 - An event that fails 5 times, or that the backend rejects, goes to the dead letter exchange `twake-tasks.dlx`, which routes it to `twake-tasks.dlq`.
 - Never replay a space event from the dead letter queue: a creation could bring back a space deleted since, and the nightly space repair fixes what it missed. An account deletion can be replayed once its cause is fixed.
-- Versions before this one consumed `platform.all.twake-tasks`, with a single active consumer. Each start drains it and unbinds it and its dead letter queue, so nothing new lands there. A later release deletes them.
+- Versions before this one consumed `platform.all.twake-tasks`, with a single active consumer. Each start drains it one message at a time, and unbinds it and its dead letter queue, so nothing new lands there. A later release deletes them.
+- During a rolling deploy, an older replica still running binds `platform.all.twake-tasks` again whenever it reconnects, so an event can reach both queues until the last one is gone. Deduplication handles it once. Newer replicas unbind it again on each of their own reconnections, and once more when they find it empty.
 
 ## Order
 
