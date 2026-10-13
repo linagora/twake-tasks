@@ -419,7 +419,8 @@
     "managedBoard": "The members of this project are managed by its integration.",
     "archivedBoard": "An archived board can't be shared.",
     "adminOnly": "Only an admin can share this board.",
-    "help": "Sharing this board shares its project %{project} with everyone on it."
+    "help": "Sharing this board shares its project %{project} with everyone on it.",
+    "sameOrganization": "An invite only works for an account in your own organization."
   },
   "moveBoard": {
     "action": "Move to project",

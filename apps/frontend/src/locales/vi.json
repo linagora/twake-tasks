@@ -419,7 +419,8 @@
     "managedBoard": "Thành viên của dự án này do tích hợp của dự án quản lý.",
     "archivedBoard": "Không thể chia sẻ bảng đã lưu trữ.",
     "adminOnly": "Chỉ quản trị viên mới có thể chia sẻ bảng này.",
-    "help": "Chia sẻ bảng này sẽ chia sẻ dự án %{project} với tất cả thành viên của dự án."
+    "help": "Chia sẻ bảng này sẽ chia sẻ dự án %{project} với tất cả thành viên của dự án.",
+    "sameOrganization": "Lời mời chỉ có tác dụng với tài khoản thuộc tổ chức của bạn."
   },
   "moveBoard": {
     "action": "Chuyển sang dự án",

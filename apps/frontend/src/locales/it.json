@@ -419,7 +419,8 @@
     "managedBoard": "I membri di questo progetto sono gestiti dalla sua integrazione.",
     "archivedBoard": "Una bacheca archiviata non può essere condivisa.",
     "adminOnly": "Solo un amministratore può condividere questa bacheca.",
-    "help": "Condividere questa bacheca condivide il suo progetto %{project} con tutte le persone che ne fanno parte."
+    "help": "Condividere questa bacheca condivide il suo progetto %{project} con tutte le persone che ne fanno parte.",
+    "sameOrganization": "Un invito funziona solo per un account della tua stessa organizzazione."
   },
   "moveBoard": {
     "action": "Sposta nel progetto",

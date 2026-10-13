@@ -419,7 +419,8 @@
     "managedBoard": "Los miembros de este proyecto los gestiona su integración.",
     "archivedBoard": "Un tablero archivado no se puede compartir.",
     "adminOnly": "Solo un administrador puede compartir este tablero.",
-    "help": "Compartir este tablero comparte su proyecto %{project} con todas las personas que lo integran."
+    "help": "Compartir este tablero comparte su proyecto %{project} con todas las personas que lo integran.",
+    "sameOrganization": "Una invitación solo funciona para una cuenta de tu propia organización."
   },
   "moveBoard": {
     "action": "Mover a un proyecto",
