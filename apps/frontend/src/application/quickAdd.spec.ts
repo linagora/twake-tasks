@@ -56,6 +56,14 @@ describe('quickAdd', () => {
     ])
   })
 
+  it('lands in the first open section of a board when none is named', async () => {
+    const { design, api } = boards()
+
+    await quickAdd(api, 'Logo #des', today)
+
+    expect(design.tasks).toMatchObject([{ sectionId: design.sections[0]?.id }])
+  })
+
   it('finds a board by its key prefix', async () => {
     const { design, api } = boards()
 
