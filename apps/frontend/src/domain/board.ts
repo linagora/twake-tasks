@@ -88,6 +88,17 @@ export interface Label {
   color: string | null
 }
 
+const invisible =
+  /(?<=[\p{Extended_Pictographic}\p{Emoji_Modifier}️])(‍)(?=\p{Extended_Pictographic})|\p{Cf}/gu
+
+/** The name as the server stores it, so names that render alike compare equal. */
+export function labelName(text: string): string {
+  return text
+    .replace(invisible, (_, joiner: string | undefined) => joiner ?? '')
+    .normalize('NFC')
+    .trim()
+}
+
 export const MAX_TASK_DEPTH = 4
 
 export const LAYOUTS = ['board', 'list', 'calendar'] as const

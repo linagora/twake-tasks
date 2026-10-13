@@ -134,7 +134,21 @@ const taskChanges = z
 
 const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
 
-const labelName = z.string().trim().min(1).max(50)
+// Two names that render alike are the same label: invisible format characters
+// go, except a joiner inside an emoji such as 👩‍💻, and accents are composed.
+const invisible =
+  /(?<=[\p{Extended_Pictographic}\p{Emoji_Modifier}️])(‍)(?=\p{Extended_Pictographic})|\p{Cf}/gu
+
+const labelName = z
+  .string()
+  .overwrite(name =>
+    name
+      .replace(invisible, (_, joiner: string | undefined) => joiner ?? '')
+      .normalize('NFC')
+  )
+  .trim()
+  .min(1)
+  .max(50)
 
 const labelColor = z
   .string()

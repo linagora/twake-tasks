@@ -196,6 +196,31 @@ describe('labels', () => {
     expect(again.json()).toEqual({ error: 'label_taken' })
   })
 
+  it.each([
+    ['a zero width space', 'Urgent​'],
+    ['a word joiner', 'Ur⁠gent'],
+    ['decomposed accents', 'Café']
+  ])('refuses a name that differs only by %s', async (_, lookalike) => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+    await board.addLabel('Urgent')
+    await board.addLabel('Café')
+
+    const again = await board.addLabel(lookalike)
+
+    expect(again.statusCode).toBe(409)
+    expect(again.json()).toEqual({ error: 'label_taken' })
+  })
+
+  it('stores a name without its invisible characters', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+
+    const label = await board.addLabel('​Café⁠')
+
+    expect(label.json()).toMatchObject({ name: 'Café' })
+  })
+
   it('keeps viewers from labeling', async () => {
     const alice = aUser()
     const bob = aUser({ organizationId: alice.organizationId })

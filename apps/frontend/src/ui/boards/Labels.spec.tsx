@@ -183,6 +183,21 @@ describe('Labels', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('finds a label by a name with invisible characters', async () => {
+    const { board, boardsApi } = labeledBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const picker = await openLabels()
+    search(picker, 'Ur⁠gent​')
+
+    expect(
+      picker.getByRole('menuitemcheckbox', { name: 'Urgent' })
+    ).toBeInTheDocument()
+    expect(
+      picker.queryByRole('menuitem', { name: /^Create/ })
+    ).not.toBeInTheDocument()
+  })
+
   it('says when the name is taken', async () => {
     const { board, boardsApi } = labeledBoard()
     boardsApi.createLabel.mockRejectedValue(new ApiError(409, 'label_taken'))
