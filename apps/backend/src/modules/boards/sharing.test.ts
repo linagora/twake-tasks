@@ -67,6 +67,17 @@ describe('sharing a board', () => {
     expect(await invitesOn(owner, boardId)).toEqual([])
   })
 
+  it('opens the board of an invite before the guest listed their boards', async () => {
+    const owner = aUser()
+    const guest = aUser({ organizationId: owner.organizationId })
+    const boardId = await aBoardOf(owner)
+    await invite(owner, boardId, guest.email, 'viewer')
+
+    const response = await api.as(guest).get(`/boards/${boardId}`)
+
+    expect(response.statusCode).toBe(200)
+  })
+
   it('answers invited for an unknown email too', async () => {
     const owner = aUser()
     const boardId = await aBoardOf(owner)

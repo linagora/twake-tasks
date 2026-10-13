@@ -4,7 +4,7 @@ import type { Changes, StreamVersions } from '../../infra/changes.ts'
 import { inTenant, type Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
-import { roleOn } from './access.ts'
+import { claimInvites, roleOn } from './access.ts'
 import { boards } from './schema.ts'
 
 // Sent by the boards_notify_change trigger.
@@ -30,9 +30,10 @@ export function registerLive(
       const params = boardParams.safeParse(request.params)
       if (!params.success) return reply.code(404).send({ error: 'not_found' })
       const { boardId } = params.data
-      const role = await inTenant(deps.db, identity, tx =>
-        roleOn(tx, identity.userId, boardId)
-      )
+      const role = await inTenant(deps.db, identity, async tx => {
+        await claimInvites(tx)
+        return roleOn(tx, identity.userId, boardId)
+      })
       if (!role) return reply.code(404).send({ error: 'not_found' })
 
       await deps.streamVersions(request, reply, {
