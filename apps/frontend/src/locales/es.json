@@ -309,7 +309,7 @@
     "daysBefore": "%{smart_count} día antes |||| %{smart_count} días antes",
     "add": "Añadir recordatorio",
     "save": "Guardar recordatorio",
-    "delete": "Eliminar recordatorio",
+    "delete": "Eliminar recordatorio %{reminder}",
     "failed": "No se pudo guardar el recordatorio.",
     "past": "Elige una hora futura."
   },

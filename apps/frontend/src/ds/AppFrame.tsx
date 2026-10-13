@@ -155,8 +155,20 @@ export function CountBadge({
   )
 }
 
+// twake-mui sizes a bottom bar entry to its label, so five of them overflow a
+// 360px screen; sharing the bar between them keeps the labels inside.
+export const BarNavItem = styled(NavItem)(({ theme }) => ({
+  [theme.breakpoints.down('lg')]: {
+    flex: '1 1 0',
+    minWidth: 0,
+    margin: 0,
+    overflow: 'hidden',
+    '& span': { overflow: 'hidden', textOverflow: 'ellipsis' }
+  }
+}))
+
 // The phone bottom bar has room for five entries.
-export const WideScreenNavItem = styled(NavItem)(({ theme }) => ({
+export const WideScreenNavItem = styled(BarNavItem)(({ theme }) => ({
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
 

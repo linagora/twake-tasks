@@ -142,7 +142,9 @@ describe('Reminders', () => {
     const item = await reminders.findByRole('listitem')
 
     fireEvent.click(
-      within(item).getByRole('button', { name: 'Delete reminder' })
+      within(item).getByRole('button', {
+        name: 'Delete reminder At the due time'
+      })
     )
 
     await waitFor(() => {

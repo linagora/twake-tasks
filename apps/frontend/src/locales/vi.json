@@ -309,7 +309,7 @@
     "daysBefore": "Trước %{smart_count} ngày",
     "add": "Thêm lời nhắc",
     "save": "Lưu lời nhắc",
-    "delete": "Xóa lời nhắc",
+    "delete": "Xóa lời nhắc %{reminder}",
     "failed": "Không thể lưu lời nhắc.",
     "past": "Hãy chọn một thời điểm trong tương lai."
   },

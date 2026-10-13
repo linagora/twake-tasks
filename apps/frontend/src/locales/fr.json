@@ -309,7 +309,7 @@
     "daysBefore": "%{smart_count} jour avant |||| %{smart_count} jours avant",
     "add": "Ajouter un rappel",
     "save": "Enregistrer le rappel",
-    "delete": "Supprimer le rappel",
+    "delete": "Supprimer le rappel %{reminder}",
     "failed": "Le rappel n'a pas pu être enregistré.",
     "past": "Choisissez une heure dans le futur."
   },

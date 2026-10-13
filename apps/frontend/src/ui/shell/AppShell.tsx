@@ -37,6 +37,7 @@ import { Outlet, Link as RouterLink, useLocation } from 'react-router'
 import {
   AccountCard,
   AppFrame,
+  BarNavItem,
   BrandMark,
   CountBadge,
   SidebarButton,
@@ -307,7 +308,7 @@ function AppNavLink({
   countLabel?: string
   wideScreenOnly?: boolean
 }): ReactElement {
-  const Item = wideScreenOnly ? WideScreenNavItem : NavItem
+  const Item = wideScreenOnly ? WideScreenNavItem : BarNavItem
   return (
     <Item>
       <SidebarLink to={to} end={end} label={count > 0 ? countLabel : undefined}>
