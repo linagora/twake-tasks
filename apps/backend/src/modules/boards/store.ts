@@ -20,6 +20,7 @@ import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import {
   accessibleBoards,
+  claimInvites,
   membersOf,
   roleIn,
   roleOn,
@@ -184,7 +185,7 @@ export function createBoardStore(db: Db) {
     listBoards(identity: Identity) {
       return inTenant(db, identity, async tx => {
         await ensureInbox(tx, identity)
-        await tx.execute(sql`select app_claim_invites()`)
+        await claimInvites(tx)
         if (identity.name !== null) {
           await tx
             .update(projectMembers)
@@ -327,9 +328,10 @@ export function createBoardStore(db: Db) {
     },
 
     getBoard(identity: Identity, boardId: string) {
-      return inTenant(db, identity, tx =>
-        loadBoard(tx, boardId, identity.userId)
-      )
+      return inTenant(db, identity, async tx => {
+        await claimInvites(tx)
+        return loadBoard(tx, boardId, identity.userId)
+      })
     }
   }
 }

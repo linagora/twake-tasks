@@ -46,6 +46,20 @@ describe('live board updates', () => {
     })
   })
 
+  it('opens a stream for an invite the guest has not listed yet', async () => {
+    const alice = aUser()
+    const guest = aUser({ organizationId: alice.organizationId })
+    const board = await aBoardOf(alice)
+    await api.as(alice).post(`/boards/${board.id}/invites`, {
+      email: guest.email,
+      role: 'viewer'
+    })
+    const stream = openBoardStream(guest, board.id)
+
+    expect((await stream.response).status).toBe(200)
+    stream.close()
+  })
+
   it('refuses a stream on a board the person cannot see', async () => {
     const board = await aBoardOf(aUser())
     const stream = openBoardStream(aUser(), board.id)

@@ -25,6 +25,10 @@ export function accessibleBoards(tx: Tx, userId: string) {
     .as('accessible')
 }
 
+export async function claimInvites(tx: Tx) {
+  await tx.execute(sql`select app_claim_invites()`)
+}
+
 export interface Member {
   userId: string
   email: string
