@@ -125,6 +125,48 @@ describe('notification emails', () => {
     )
   })
 
+  const repeat = { every: 1, unit: 'weeks', fromCompletion: false }
+  it.each([
+    ['archived', 'archived the task'],
+    ['unarchived', 'restored the task from the archive'],
+    ['deleted', 'deleted the task'],
+    ['undeleted', 'restored the task from the trash'],
+    ['repeating', 'set the task to repeat'],
+    ['not repeating', 'stopped the task from repeating']
+  ])('tells a follower the task is %s', async (change, line) => {
+    const { alice, bob, board, task } = await aTask()
+    const path = `/boards/${board.id}/tasks/${task.id}`
+    const as = api.as(alice)
+    const changes: Record<string, () => Promise<unknown>> = {
+      archived: () => as.post(`${path}/archive`, {}),
+      unarchived: () => as.post(`${path}/restore`, {}),
+      deleted: () => as.delete(path),
+      undeleted: () => as.post(`${path}/restore`, {}),
+      repeating: () => as.patch(path, { recurrence: repeat }),
+      'not repeating': () => as.patch(path, { recurrence: null })
+    }
+    const before: Record<string, (() => Promise<unknown>)[]> = {
+      unarchived: [changes.archived as () => Promise<unknown>],
+      undeleted: [changes.deleted as () => Promise<unknown>],
+      repeating: [() => as.patch(path, { dueDate: '2026-10-13' })],
+      'not repeating': [
+        () => as.patch(path, { dueDate: '2026-10-13' }),
+        changes.repeating as () => Promise<unknown>
+      ]
+    }
+    for (const step of before[change] ?? []) await step()
+    await api.as(bob).put(`${path}/follow`, {})
+    const mailbox = aMailbox()
+
+    await (changes[change] as () => Promise<unknown>)()
+    await mailbox.deliver()
+
+    const [mail] = mailbox.sent.filter(
+      each => each.to === bob.email && each.text.includes(board.id)
+    )
+    expect(mail?.text.split('\n')[0]).toBe(`Alice Martin ${line}`)
+  })
+
   it('announces a due date that has a time', async () => {
     const { alice, bob, board, task } = await aTask()
     await api.as(bob).post(`/boards/${board.id}/tasks/${task.id}/comments`, {

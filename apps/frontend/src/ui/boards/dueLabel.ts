@@ -1,4 +1,5 @@
-import type { Task } from '@/domain/board'
+import type { Recurrence, Task } from '@/domain/board'
+import type { useI18n } from '@/ui/i18n/useI18n'
 
 let followedZone: string | null = null
 
@@ -96,6 +97,17 @@ export function shortDay(day: string, lang: string): string {
     timeZone: 'UTC'
   }).format(new Date(day))
 }
+
+export const recurrenceLabel = (
+  t: ReturnType<typeof useI18n>['t'],
+  recurrence: Recurrence
+): string =>
+  t(
+    recurrence.fromCompletion
+      ? `dates.every.${recurrence.unit}AfterCompletion`
+      : `dates.every.${recurrence.unit}`,
+    { smart_count: recurrence.every }
+  )
 
 // A pinned time shows its zone when the reader is elsewhere.
 export function dueLabel(

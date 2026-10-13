@@ -21,6 +21,9 @@ export interface NotificationMessages {
   labeled: (actor: string, name: string) => string
   unlabeled: (actor: string, name: string) => string
   described: (actor: string) => string
+  archived: (actor: string, archived: boolean) => string
+  trashed: (actor: string, trashed: boolean) => string
+  repeats: (actor: string, repeating: boolean) => string
   updated: (actor: string) => string
   reminder: (due: string | null) => string
   subjects: {
@@ -68,6 +71,18 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     labeled: (actor, name) => `${actor} added the label ${name}`,
     unlabeled: (actor, name) => `${actor} removed the label ${name}`,
     described: actor => `${actor} edited the description`,
+    archived: (actor, archived) =>
+      archived
+        ? `${actor} archived the task`
+        : `${actor} restored the task from the archive`,
+    trashed: (actor, trashed) =>
+      trashed
+        ? `${actor} deleted the task`
+        : `${actor} restored the task from the trash`,
+    repeats: (actor, repeating) =>
+      repeating
+        ? `${actor} set the task to repeat`
+        : `${actor} stopped the task from repeating`,
     updated: actor => `${actor} updated the task`,
     reminder: due => (due ? `Reminder: due ${due}` : 'Reminder'),
     subjects: {
@@ -121,6 +136,18 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     labeled: (actor, name) => `${actor} a ajouté l’étiquette ${name}`,
     unlabeled: (actor, name) => `${actor} a retiré l’étiquette ${name}`,
     described: actor => `${actor} a modifié la description`,
+    archived: (actor, archived) =>
+      archived
+        ? `${actor} a archivé la tâche`
+        : `${actor} a restauré la tâche depuis les archives`,
+    trashed: (actor, trashed) =>
+      trashed
+        ? `${actor} a supprimé la tâche`
+        : `${actor} a restauré la tâche depuis la corbeille`,
+    repeats: (actor, repeating) =>
+      repeating
+        ? `${actor} a configuré la tâche pour se répéter`
+        : `${actor} a arrêté la répétition de la tâche`,
     updated: actor => `${actor} a modifié la tâche`,
     reminder: due => (due ? `Rappel : échéance ${due}` : 'Rappel'),
     subjects: {
@@ -175,6 +202,18 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     labeled: (actor, name) => `${actor} hat das Label ${name} hinzugefügt`,
     unlabeled: (actor, name) => `${actor} hat das Label ${name} entfernt`,
     described: actor => `${actor} hat die Beschreibung bearbeitet`,
+    archived: (actor, archived) =>
+      archived
+        ? `${actor} hat die Aufgabe archiviert`
+        : `${actor} hat die Aufgabe aus dem Archiv wiederhergestellt`,
+    trashed: (actor, trashed) =>
+      trashed
+        ? `${actor} hat die Aufgabe gelöscht`
+        : `${actor} hat die Aufgabe aus dem Papierkorb wiederhergestellt`,
+    repeats: (actor, repeating) =>
+      repeating
+        ? `${actor} hat die Aufgabe auf Wiederholung gestellt`
+        : `${actor} hat die Wiederholung der Aufgabe beendet`,
     updated: actor => `${actor} hat die Aufgabe geändert`,
     reminder: due => (due ? `Erinnerung: fällig ${due}` : 'Erinnerung'),
     subjects: {
@@ -229,6 +268,18 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     labeled: (actor, name) => `${actor} ha aggiunto l’etichetta ${name}`,
     unlabeled: (actor, name) => `${actor} ha rimosso l’etichetta ${name}`,
     described: actor => `${actor} ha modificato la descrizione`,
+    archived: (actor, archived) =>
+      archived
+        ? `${actor} ha archiviato l’attività`
+        : `${actor} ha ripristinato l’attività dall’archivio`,
+    trashed: (actor, trashed) =>
+      trashed
+        ? `${actor} ha eliminato l’attività`
+        : `${actor} ha ripristinato l’attività dal cestino`,
+    repeats: (actor, repeating) =>
+      repeating
+        ? `${actor} ha impostato l’attività come ricorrente`
+        : `${actor} ha interrotto la ricorrenza dell’attività`,
     updated: actor => `${actor} ha modificato l’attività`,
     reminder: due => (due ? `Promemoria: scade ${due}` : 'Promemoria'),
     subjects: {
@@ -281,6 +332,18 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     labeled: (actor, name) => `${actor} añadió la etiqueta ${name}`,
     unlabeled: (actor, name) => `${actor} quitó la etiqueta ${name}`,
     described: actor => `${actor} editó la descripción`,
+    archived: (actor, archived) =>
+      archived
+        ? `${actor} archivó la tarea`
+        : `${actor} restauró la tarea del archivo`,
+    trashed: (actor, trashed) =>
+      trashed
+        ? `${actor} eliminó la tarea`
+        : `${actor} restauró la tarea de la papelera`,
+    repeats: (actor, repeating) =>
+      repeating
+        ? `${actor} configuró la tarea para repetirse`
+        : `${actor} dejó de repetir la tarea`,
     updated: actor => `${actor} modificó la tarea`,
     reminder: due => (due ? `Recordatorio: vence ${due}` : 'Recordatorio'),
     subjects: {
@@ -330,6 +393,18 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     labeled: (actor, name) => `${actor} добавил(а) метку ${name}`,
     unlabeled: (actor, name) => `${actor} убрал(а) метку ${name}`,
     described: actor => `${actor} изменил(а) описание`,
+    archived: (actor, archived) =>
+      archived
+        ? `${actor} архивировал(а) задачу`
+        : `${actor} восстановил(а) задачу из архива`,
+    trashed: (actor, trashed) =>
+      trashed
+        ? `${actor} удалил(а) задачу`
+        : `${actor} восстановил(а) задачу из корзины`,
+    repeats: (actor, repeating) =>
+      repeating
+        ? `${actor} сделал(а) задачу повторяющейся`
+        : `${actor} отключил(а) повторение задачи`,
     updated: actor => `${actor} изменил(а) задачу`,
     reminder: due => (due ? `Напоминание: срок ${due}` : 'Напоминание'),
     subjects: {
@@ -379,6 +454,18 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     labeled: (actor, name) => `${actor} đã thêm nhãn ${name}`,
     unlabeled: (actor, name) => `${actor} đã bỏ nhãn ${name}`,
     described: actor => `${actor} đã sửa mô tả`,
+    archived: (actor, archived) =>
+      archived
+        ? `${actor} đã lưu trữ công việc`
+        : `${actor} đã khôi phục công việc từ kho lưu trữ`,
+    trashed: (actor, trashed) =>
+      trashed
+        ? `${actor} đã xóa công việc`
+        : `${actor} đã khôi phục công việc từ thùng rác`,
+    repeats: (actor, repeating) =>
+      repeating
+        ? `${actor} đã đặt công việc lặp lại`
+        : `${actor} đã tắt lặp lại của công việc`,
     updated: actor => `${actor} đã cập nhật công việc`,
     reminder: due => (due ? `Nhắc nhở: hạn ${due}` : 'Nhắc nhở'),
     subjects: {

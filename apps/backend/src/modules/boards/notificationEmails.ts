@@ -227,6 +227,12 @@ async function describe(
         : messages.unlabeled(actor, plain(entry.name))
     case 'description':
       return messages.described(actor)
+    case 'archived':
+      return messages.archived(actor, entry.to !== null)
+    case 'deleted':
+      return messages.trashed(actor, entry.to !== null)
+    case 'recurrence':
+      return messages.repeats(actor, entry.to !== null)
     default:
       return messages.updated(actor)
   }

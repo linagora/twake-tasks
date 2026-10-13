@@ -49,7 +49,12 @@ import {
   type Mention,
   type QuickTask
 } from '@/domain/quickAdd'
-import { formatDay, localToday, shortDay } from '@/ui/boards/dueLabel'
+import {
+  formatDay,
+  localToday,
+  recurrenceLabel,
+  shortDay
+} from '@/ui/boards/dueLabel'
 import { useQuickAdd, useQuickAddBoard } from '@/ui/boards/queries'
 import { PriorityChip } from '@/ui/boards/TaskFacts'
 import { focusOnMount } from '@/ui/focusOnMount'
@@ -157,12 +162,7 @@ function Understood({
           <MetaChip
             icon={<Icon icon={Sync} />}
             tone="info"
-            label={t(
-              recurrence.fromCompletion
-                ? `dates.every.${recurrence.unit}AfterCompletion`
-                : `dates.every.${recurrence.unit}`,
-              { smart_count: recurrence.every }
-            )}
+            label={recurrenceLabel(t, recurrence)}
           >
             {t(`dates.every.${recurrence.unit}`, {
               smart_count: recurrence.every
