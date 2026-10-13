@@ -56,8 +56,8 @@ import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { ShareDialog } from '@/ui/boards/ShareDialog'
 import { TaskCard } from '@/ui/boards/TaskCard'
 import { TaskListRow } from '@/ui/boards/TaskListRow'
-import { TaskPanel } from '@/ui/boards/TaskPanel'
-import { lineage, useTaskPanel } from '@/ui/boards/useTaskPanel'
+import { LinkedTaskPanel } from '@/ui/boards/TaskPanel'
+import { lineage } from '@/ui/boards/useTaskPanel'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -149,11 +149,13 @@ function LinkedTask({
   return (
     <>
       {root && (
-        <RootPanel
+        <LinkedTaskPanel
           key={root.id}
           task={root}
-          board={board}
+          tasks={board.tasks}
+          boardId={board.id}
           editable={editable}
+          depth={1}
         />
       )}
       <Toast
@@ -166,27 +168,6 @@ function LinkedTask({
         <Alert severity="warning">{t('board.taskNotFound')}</Alert>
       </Toast>
     </>
-  )
-}
-
-function RootPanel({
-  task,
-  board,
-  editable
-}: {
-  task: Task
-  board: Board
-  editable: boolean
-}): ReactElement {
-  const panel = useTaskPanel(task.key, board.tasks)
-  return (
-    <TaskPanel
-      task={task}
-      boardId={board.id}
-      editable={editable}
-      depth={1}
-      onClose={panel.close}
-    />
   )
 }
 

@@ -126,7 +126,7 @@ export function TaskPanel({
       )}
       {board &&
         children.map(child => (
-          <SubtaskPanel
+          <LinkedTaskPanel
             key={child.id}
             task={child}
             tasks={board.tasks}
@@ -177,7 +177,7 @@ export function TaskPanel({
   )
 }
 
-function SubtaskPanel({
+export function LinkedTaskPanel({
   task,
   tasks,
   boardId,
