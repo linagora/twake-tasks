@@ -68,28 +68,30 @@ export function Reminders({
       <Row>
         {reminders.data && reminders.data.length > 0 ? (
           <Chips label={t('reminders.title')}>
-            {reminders.data.map(reminder => (
-              <li key={reminder.id}>
-                <Chip
-                  size="small"
-                  icon={<Icon icon={Bell} size={12} />}
-                  label={
-                    reminder.beforeMinutes === null
-                      ? format.format(new Date(reminder.at ?? ''))
-                      : beforeLabel(reminder.beforeMinutes)
-                  }
-                />
-                <IconButton
-                  size="small"
-                  aria-label={t('reminders.delete')}
-                  onClick={() => {
-                    remove.mutate(reminder.id)
-                  }}
-                >
-                  <Icon icon={CrossSmall} size={12} />
-                </IconButton>
-              </li>
-            ))}
+            {reminders.data.map(reminder => {
+              const label =
+                reminder.beforeMinutes === null
+                  ? format.format(new Date(reminder.at ?? ''))
+                  : beforeLabel(reminder.beforeMinutes)
+              return (
+                <li key={reminder.id}>
+                  <Chip
+                    size="small"
+                    icon={<Icon icon={Bell} size={12} />}
+                    label={label}
+                  />
+                  <IconButton
+                    size="small"
+                    aria-label={t('reminders.delete', { reminder: label })}
+                    onClick={() => {
+                      remove.mutate(reminder.id)
+                    }}
+                  >
+                    <Icon icon={CrossSmall} size={12} />
+                  </IconButton>
+                </li>
+              )
+            })}
           </Chips>
         ) : (
           <Typography variant="body2" color="textSecondary">

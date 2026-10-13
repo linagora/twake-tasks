@@ -309,7 +309,7 @@
     "daysBefore": "%{smart_count} Tag vorher |||| %{smart_count} Tage vorher",
     "add": "Erinnerung hinzufügen",
     "save": "Erinnerung speichern",
-    "delete": "Erinnerung löschen",
+    "delete": "Erinnerung löschen: %{reminder}",
     "failed": "Die Erinnerung konnte nicht gespeichert werden.",
     "past": "Wählen Sie einen Zeitpunkt in der Zukunft."
   },
