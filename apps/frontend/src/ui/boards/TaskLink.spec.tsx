@@ -76,6 +76,29 @@ describe('a link to a task', () => {
     ).toBeInTheDocument()
   })
 
+  it('opens a task the layout does not show', async () => {
+    const board = aBoard({
+      name: 'Design',
+      keyPrefix: 'DES',
+      layout: 'calendar'
+    })
+    board.tasks = [
+      aTask(board.sections[0] ?? null, {
+        key: 'DES-1',
+        title: 'Launch',
+        dueDate: '2099-01-15'
+      })
+    ]
+
+    renderRoute(`/boards/${board.id}?task=DES-1`, {
+      boardsApi: fakeBoardsApi([board])
+    })
+
+    expect(
+      await screen.findByRole('dialog', { name: 'DES-1 Launch' })
+    ).toBeInTheDocument()
+  })
+
   it('says a task it cannot find, and leaves the board alone', async () => {
     const { board, boardsApi } = logoWithSketch()
     const { router } = renderRoute(`/boards/${board.id}?task=DES-999`, {

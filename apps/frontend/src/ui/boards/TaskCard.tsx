@@ -16,7 +16,6 @@ import { AssignPicker } from '@/ui/boards/AssignPicker'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { Subtasks } from '@/ui/boards/Subtasks'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
-import { TaskPanel } from '@/ui/boards/TaskPanel'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -43,7 +42,7 @@ export function TaskCard({
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
   const [labeling, setLabeling] = useState<HTMLElement | null>(null)
-  const panel = useTaskPanel(task.key, tasks)
+  const panel = useTaskPanel(task.key)
   const editable = onMove !== undefined
   const [showSubtasks, setShowSubtasks] = useState(false)
   const children = tasks.filter(each => each.parentId === task.id)
@@ -198,17 +197,6 @@ export function TaskCard({
           </MenuItem>
         ))}
       </Menu>
-      {panel.open && (
-        <TaskPanel
-          task={task}
-          boardId={boardId}
-          editable={editable}
-          depth={1}
-          onClose={() => {
-            panel.close()
-          }}
-        />
-      )}
       {assigning && (
         <AssignPicker
           task={task}

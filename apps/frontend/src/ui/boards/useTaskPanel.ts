@@ -16,6 +16,8 @@ export interface TaskPanelState {
  * page to go back to, so it replaces the entry of the history, as TwakeSpace
  * does with a push in the frame.
  *
+ * On a board, the board shows the panel, not the item: a view does not render
+ * every task (another month of the calendar, a collapsed section, a sub-task).
  * A sub-task's panel opens over the ones of its parents, so `?task=` holding
  * a sub-task also opens its ancestors among `tasks`, and closing it goes back
  * to its parent.
@@ -36,9 +38,8 @@ export function useTaskPanel(key: string, tasks: Task[] = []): TaskPanelState {
     )
   }, [key, setParams])
 
-  const own = tasks.find(task => task.key === key)
-  const parentKey = tasks.find(task => task.id === own?.parentId)?.key
   const close = useCallback(() => {
+    const parentKey = lineage(key, tasks)[1]
     setParams(
       current => {
         const next = new URLSearchParams(current)
@@ -48,18 +49,20 @@ export function useTaskPanel(key: string, tasks: Task[] = []): TaskPanelState {
       },
       { replace: true }
     )
-  }, [parentKey, setParams])
+  }, [key, tasks, setParams])
 
   return { open, show, close }
 }
 
-function lineage(key: string, tasks: Task[]): string[] {
+/** The key, then the keys of its parents up to its top-level task */
+export function lineage(key: string, tasks: Task[]): string[] {
   const keys = [key]
   let task = tasks.find(each => each.key === key)
   while (task?.parentId) {
     const parentId = task.parentId
     task = tasks.find(each => each.id === parentId)
-    if (task) keys.push(task.key)
+    if (!task || keys.includes(task.key)) break
+    keys.push(task.key)
   }
   return keys
 }
