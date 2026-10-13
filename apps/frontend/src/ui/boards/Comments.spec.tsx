@@ -54,6 +54,21 @@ describe('Comments', () => {
     expect(comment.getByText('Which palette?')).toBeInTheDocument()
   })
 
+  it('keeps the old comments but hides the composer on an archived board', async () => {
+    const { board, boardsApi } = logoBoard()
+    board.archived = true
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+
+    expect(
+      await panel.findByRole('article', { name: 'Bob Durand' })
+    ).toBeInTheDocument()
+    expect(
+      panel.queryByRole('button', { name: 'Send' })
+    ).not.toBeInTheDocument()
+  })
+
   it("shows the author's Twake Workplace avatar", async () => {
     const { board, logo, boardsApi } = logoBoard()
     const [first] = boardsApi.comments.get(logo.id) ?? []

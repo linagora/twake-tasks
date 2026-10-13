@@ -21,12 +21,14 @@ export function Comments({
   task,
   boardId,
   members,
-  tasks
+  tasks,
+  archived
 }: {
   task: Task
   boardId: string
   members: Person[]
   tasks: Task[]
+  archived: boolean
 }): ReactElement {
   const { t, lang } = useI18n()
   const { user } = useSession()
@@ -102,76 +104,78 @@ export function Comments({
           </FeedItem>
         ))}
       </Feed>
-      <form
-        className="u-mt-1"
-        onSubmit={event => {
-          event.preventDefault()
-          send()
-        }}
-      >
-        <RichTextEditor
-          key={draft}
-          label={t('task.comment')}
-          initial=""
-          placeholder={t('editor.commentPlaceholder')}
-          labels={labels}
-          minHeight={48}
-          onChange={setBody}
-          onSubmit={send}
-          suggestions={{
-            trigger: '@',
-            label: t('editor.mentionsLabel'),
-            search: query =>
-              mentionable(query).map(person => ({
-                key: person.userId,
-                insert: `@${person.email} `,
-                label: (
-                  <>
-                    <PersonAvatar
-                      email={person.email}
-                      name={person.name}
-                      avatar={person.avatar}
-                    />
-                    <div className="u-ellipsis">
-                      <Typography variant="body2" className="u-ellipsis">
-                        <Highlight text={displayName(person)} query={query} />
-                      </Typography>
-                      {displayName(person) !== person.email && (
-                        <Typography
-                          variant="caption"
-                          color="textSecondary"
-                          component="div"
-                          className="u-ellipsis"
-                        >
-                          <Highlight text={person.email} query={query} />
-                        </Typography>
-                      )}
-                    </div>
-                  </>
-                )
-              }))
+      {!archived && (
+        <form
+          className="u-mt-1"
+          onSubmit={event => {
+            event.preventDefault()
+            send()
           }}
-          footer={
-            <>
-              <Typography
-                variant="caption"
-                color="textSecondary"
-                className="u-mr-auto u-ml-half"
-              >
-                {t('editor.sendHint')}
-              </Typography>
-              <Button type="submit" size="small" disabled={!sendable}>
-                {t('task.send')}
-              </Button>
-            </>
-          }
-        />
-        {add.isError && (
-          <Typography role="alert" variant="caption">
-            {t('task.commentFailed')}
-          </Typography>
-        )}
-      </form>
+        >
+          <RichTextEditor
+            key={draft}
+            label={t('task.comment')}
+            initial=""
+            placeholder={t('editor.commentPlaceholder')}
+            labels={labels}
+            minHeight={48}
+            onChange={setBody}
+            onSubmit={send}
+            suggestions={{
+              trigger: '@',
+              label: t('editor.mentionsLabel'),
+              search: query =>
+                mentionable(query).map(person => ({
+                  key: person.userId,
+                  insert: `@${person.email} `,
+                  label: (
+                    <>
+                      <PersonAvatar
+                        email={person.email}
+                        name={person.name}
+                        avatar={person.avatar}
+                      />
+                      <div className="u-ellipsis">
+                        <Typography variant="body2" className="u-ellipsis">
+                          <Highlight text={displayName(person)} query={query} />
+                        </Typography>
+                        {displayName(person) !== person.email && (
+                          <Typography
+                            variant="caption"
+                            color="textSecondary"
+                            component="div"
+                            className="u-ellipsis"
+                          >
+                            <Highlight text={person.email} query={query} />
+                          </Typography>
+                        )}
+                      </div>
+                    </>
+                  )
+                }))
+            }}
+            footer={
+              <>
+                <Typography
+                  variant="caption"
+                  color="textSecondary"
+                  className="u-mr-auto u-ml-half"
+                >
+                  {t('editor.sendHint')}
+                </Typography>
+                <Button type="submit" size="small" disabled={!sendable}>
+                  {t('task.send')}
+                </Button>
+              </>
+            }
+          />
+          {add.isError && (
+            <Typography role="alert" variant="caption">
+              {t('task.commentFailed')}
+            </Typography>
+          )}
+        </form>
+      )}
     </section>
   )
 }

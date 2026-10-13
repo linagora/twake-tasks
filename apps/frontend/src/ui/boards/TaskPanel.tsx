@@ -166,6 +166,7 @@ export function TaskPanel({
               boardId={boardId}
               members={board?.members ?? []}
               tasks={board?.tasks ?? []}
+              archived={board?.archived ?? false}
             />
           ) : (
             <History task={task} boardId={boardId} />

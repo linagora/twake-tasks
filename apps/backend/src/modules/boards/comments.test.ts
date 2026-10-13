@@ -74,6 +74,23 @@ describe('task comments', () => {
     )
   })
 
+  it('refuses a comment on an archived board but still lists the old ones', async () => {
+    const alice = aUser()
+    const { boardId, taskId } = await aTaskOf(alice)
+    const path = `/boards/${boardId}/tasks/${taskId}/comments`
+    await api.as(alice).post(path, { body: 'Before' })
+    await api.as(alice).post(`/boards/${boardId}/archive`, {})
+
+    expect((await api.as(alice).post(path, { body: 'After' })).statusCode).toBe(
+      409
+    )
+    expect(
+      (await api.as(alice).get(path))
+        .json<{ comments: { body: string }[] }>()
+        .comments.map(comment => comment.body)
+    ).toEqual(['Before'])
+  })
+
   it('counts the comments of each task on the board', async () => {
     const alice = aUser()
     const { boardId, taskId } = await aTaskOf(alice)

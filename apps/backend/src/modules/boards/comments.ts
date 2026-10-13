@@ -2,7 +2,7 @@ import { asc, eq } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { looksOn, roleOn } from './access.ts'
-import { comments } from './schema.ts'
+import { boards, comments } from './schema.ts'
 import { Refused, taskOf, writeOrRefuse } from './tasks.ts'
 
 async function visibleTask(
@@ -49,6 +49,11 @@ export function createCommentStore(db: Db) {
     ) {
       return writeOrRefuse(db, identity, async tx => {
         const task = await visibleTask(tx, identity, boardId, taskId)
+        const [board] = await tx
+          .select({ archivedAt: boards.archivedAt })
+          .from(boards)
+          .where(eq(boards.id, boardId))
+        if (board?.archivedAt) throw new Refused('archived')
         const [comment] = await tx
           .insert(comments)
           .values({
