@@ -8,30 +8,32 @@ import { useI18n } from '@/ui/i18n/useI18n'
 import { useReporting } from '@/ui/reporting/ReportingProvider'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
-function BackToBoards(): ReactElement {
-  const { t } = useI18n()
-  return (
-    <Button
-      component={RouterLink}
-      to="/"
-      variant="secondary"
-      startIcon={<Icon icon={Left} />}
-    >
-      {t('board.back')}
-    </Button>
-  )
-}
-
-export function NotFoundScreen(): ReactElement {
+export function NotFoundScreen({
+  title,
+  back
+}: {
+  title?: string
+  back?: { to: string; label: string }
+}): ReactElement {
   const { t } = useI18n()
   useDocumentTitle(t('problems.notFound'))
+  const { to, label } = back ?? { to: '/', label: t('board.back') }
   return (
     <main className="u-p-2">
       <EmptyState
         icon={Compass}
-        title={t('problems.notFound')}
+        title={title ?? t('problems.notFound')}
         text={t('problems.notFoundHint')}
-        action={<BackToBoards />}
+        action={
+          <Button
+            component={RouterLink}
+            to={to}
+            variant="secondary"
+            startIcon={<Icon icon={Left} />}
+          >
+            {label}
+          </Button>
+        }
       />
     </main>
   )

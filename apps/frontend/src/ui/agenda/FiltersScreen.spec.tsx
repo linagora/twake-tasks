@@ -98,6 +98,20 @@ describe('FiltersScreen', () => {
     ).toBeVisible()
   })
 
+  it('says so when the filter does not exist, with a way back to the filters', async () => {
+    renderRoute('/filters/unknown', { boardsApi: boards() })
+
+    expect(
+      await findEmptyState("This filter doesn't exist, or you can't open it.")
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Back to filters' })
+    ).toHaveAttribute('href', '/filters')
+    expect(document.title).toContain('Page not found')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Board' })).toBeNull()
+  })
+
   it('sums up what each saved filter looks for', async () => {
     const boardsApi = boards()
     await boardsApi.createFilter({

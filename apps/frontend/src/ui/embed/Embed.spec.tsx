@@ -11,6 +11,7 @@ import {
 
 import { ApiError } from '@/application/boards'
 import type { Board } from '@/domain/board'
+import { findEmptyState } from '@/testing/emptyState'
 import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderBrowserRoute, renderRoute } from '@/testing/renderWithProviders'
 import {
@@ -58,9 +59,10 @@ describe('the embedded view', () => {
       boardsApi: projectBoardsApi([aBoard({ project: roadmap })])
     })
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'The boards could not be loaded.'
-    )
+    expect(
+      await findEmptyState("This project doesn't exist, or you can't open it.")
+    ).toBeVisible()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('opens the board of a project that has only one, with no way back to a list of one', async () => {

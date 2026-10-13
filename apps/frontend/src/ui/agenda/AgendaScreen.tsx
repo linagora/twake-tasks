@@ -3,7 +3,11 @@ import { Checkbox, Link, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
-import type { AgendaTask, SearchResult } from '@/application/boards'
+import {
+  ApiError,
+  type AgendaTask,
+  type SearchResult
+} from '@/application/boards'
 import {
   Card,
   CardTitle,
@@ -27,6 +31,7 @@ import {
   type AgendaView
 } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { NotFoundScreen } from '@/ui/shell/Problems'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 export function Group({
@@ -153,8 +158,18 @@ export function FilterScreen(): ReactElement {
 }
 
 function FilterView({ filterId }: { filterId: string }): ReactElement {
+  const { t } = useI18n()
   const filters = useFilters()
+  const agenda = useAgenda({ filterId })
   const [layout, setLayout] = useFilterLayout(filterId)
+  if (agenda.error instanceof ApiError && agenda.error.status === 404) {
+    return (
+      <NotFoundScreen
+        title={t('filters.notFound')}
+        back={{ to: '/filters', label: t('filters.back') }}
+      />
+    )
+  }
   return (
     <AgendaScreen
       view={{ filterId }}

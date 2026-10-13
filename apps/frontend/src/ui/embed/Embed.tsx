@@ -1,4 +1,5 @@
 import { embedRoute, type TwakeSpaceConnection } from '@linagora/twake-embed'
+import { Compass } from '@linagora/twake-icons'
 import { Link, Typography } from '@linagora/twake-mui'
 import { useEffect, type ReactElement } from 'react'
 import {
@@ -10,6 +11,7 @@ import {
 } from 'react-router'
 
 import { EmbedFrame } from '@/ds/AppFrame'
+import { EmptyState } from '@/ds/EmptyState'
 import { TileGrid, Tile } from '@/ds/TileGrid'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { useBoards, useProjects } from '@/ui/boards/queries'
@@ -73,13 +75,20 @@ export function EmbedProjectScreen(): ReactElement {
   const projects = useProjects()
   const { boards, shown } = useProjectBoards(projectId)
   const known = projects.data?.some(project => project.id === projectId)
-  const failed = boards.isError || projects.isError || known === false
+  const failed = boards.isError || projects.isError
   const only = known && shown.length === 1 ? shown[0] : undefined
 
   if (only) return <Navigate to={`boards/${only.id}`} replace />
 
   return (
     <main>
+      {known === false && (
+        <EmptyState
+          icon={Compass}
+          title={t('boards.projectNotFound')}
+          text={t('problems.notFoundHint')}
+        />
+      )}
       {failed && <Typography role="alert">{t('boards.loadFailed')}</Typography>}
       {boards.isSuccess && known && shown.length === 0 && (
         <Typography>{t('boards.empty')}</Typography>
