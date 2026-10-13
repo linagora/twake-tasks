@@ -66,6 +66,32 @@ describe('renaming a board', () => {
     expect((await projectOf(boardId)).name).toBe('Product')
   })
 
+  it('keeps the name of a project the board was not the start of', async () => {
+    const owner = aUser()
+    const started = await aBoardOf(owner)
+    const projectId = (await api.as(owner).get(`/boards/${started}`)).json<{
+      project: { id: string }
+    }>().project.id
+    const joined = (
+      await api
+        .as(owner)
+        .post('/boards', { name: 'Roadmap', keyPrefix: 'MAP', projectId })
+    ).json<Board>().id
+    const elsewhere = (
+      await api.as(owner).post('/boards', { name: 'Other', keyPrefix: 'OTH' })
+    ).json<{ project: { id: string } }>().project.id
+    await api
+      .as(owner)
+      .post(`/boards/${started}/move`, { projectId: elsewhere })
+
+    await rename(owner, joined, 'Plans')
+
+    const project = (await api.as(owner).get(`/boards/${joined}`)).json<{
+      project: { name: string }
+    }>().project
+    expect(project.name).toBe('Design')
+  })
+
   it('refuses an editor', async () => {
     const owner = aUser()
     const editor = aUser({ organizationId: owner.organizationId })
