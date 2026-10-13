@@ -54,6 +54,7 @@
     "unstar": "Quitar %{name} de favoritos",
     "personal": "Tablero personal",
     "space": "Tablero de espacio",
+    "projectBoard": "Tablero de proyecto",
     "personalProject": "Personal",
     "openTasks": "%{smart_count} tarea abierta |||| %{smart_count} tareas abiertas",
     "noOpenTasks": "No hay tareas abiertas"

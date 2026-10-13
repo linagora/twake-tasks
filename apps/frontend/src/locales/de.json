@@ -54,6 +54,7 @@
     "unstar": "%{name} aus den Favoriten entfernen",
     "personal": "Persönliches Board",
     "space": "Space-Board",
+    "projectBoard": "Projekt-Board",
     "personalProject": "Persönlich",
     "openTasks": "%{smart_count} offene Aufgabe |||| %{smart_count} offene Aufgaben",
     "noOpenTasks": "Keine offenen Aufgaben"

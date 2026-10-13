@@ -54,6 +54,7 @@
     "unstar": "Rimuovi %{name} dai preferiti",
     "personal": "Bacheca personale",
     "space": "Bacheca di spazio",
+    "projectBoard": "Bacheca di progetto",
     "personalProject": "Personale",
     "openTasks": "%{smart_count} attività aperta |||| %{smart_count} attività aperte",
     "noOpenTasks": "Nessuna attività aperta"

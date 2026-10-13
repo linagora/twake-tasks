@@ -89,7 +89,11 @@ function BoardShelf({
           label={board.name}
           badge={(Array.from(board.name)[0] ?? '').toUpperCase()}
           badgeLabel={t(
-            board.project.managed ? 'boards.space' : 'boards.personal'
+            board.project.personal
+              ? 'boards.personal'
+              : board.project.managed
+                ? 'boards.space'
+                : 'boards.projectBoard'
           )}
           title={
             <Link component={RouterLink} to={`/boards/${board.id}`}>
