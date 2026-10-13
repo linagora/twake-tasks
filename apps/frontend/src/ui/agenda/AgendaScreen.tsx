@@ -1,5 +1,11 @@
-import { CheckCircle, Profile } from '@linagora/twake-icons'
-import { Checkbox, Link, Typography } from '@linagora/twake-mui'
+import {
+  CheckCircle,
+  Compass,
+  Icon,
+  Left,
+  Profile
+} from '@linagora/twake-icons'
+import { Button, Checkbox, Link, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
@@ -155,10 +161,12 @@ export function FilterScreen(): ReactElement {
 function FilterView({ filterId }: { filterId: string }): ReactElement {
   const filters = useFilters()
   const [layout, setLayout] = useFilterLayout(filterId)
+  const filter = filters.data?.find(candidate => candidate.id === filterId)
+  if (filters.isSuccess && !filter) return <MissingFilter />
   return (
     <AgendaScreen
       view={{ filterId }}
-      title={filters.data?.find(filter => filter.id === filterId)?.name ?? ''}
+      title={filter?.name ?? ''}
       actions={
         <LayoutToggle
           layouts={FILTER_LAYOUTS}
@@ -170,6 +178,30 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
         layout === 'board' ? tasks => <ByStatus tasks={tasks} /> : undefined
       }
     />
+  )
+}
+
+function MissingFilter(): ReactElement {
+  const { t } = useI18n()
+  useDocumentTitle(t('problems.notFound'))
+  return (
+    <main className="u-p-2">
+      <EmptyState
+        icon={Compass}
+        title={t('filters.notFound')}
+        text={t('problems.notFoundHint')}
+        action={
+          <Button
+            component={RouterLink}
+            to="/filters"
+            variant="secondary"
+            startIcon={<Icon icon={Left} />}
+          >
+            {t('filters.back')}
+          </Button>
+        }
+      />
+    </main>
   )
 }
 
