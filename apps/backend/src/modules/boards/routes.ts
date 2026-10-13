@@ -239,6 +239,7 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   invalid_dates: 400,
   invalid_reminder: 400,
   label_taken: 409,
+  section_name_taken: 409,
   last_admin: 409,
   key_prefix_taken: 409,
   same_board: 400

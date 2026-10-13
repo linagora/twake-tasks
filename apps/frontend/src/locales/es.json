@@ -291,6 +291,7 @@
     "tasksTo": "Mover sus tareas a",
     "moveFailed": "No se pudo mover la sección.",
     "saveFailed": "No se pudo guardar la sección.",
+    "nameTaken": "Ya existe una sección llamada %{name}.",
     "deleteFailed": "No se pudo eliminar la sección.",
     "category": {
       "backlog": "Backlog",

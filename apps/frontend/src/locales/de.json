@@ -291,6 +291,7 @@
     "tasksTo": "Aufgaben verschieben nach",
     "moveFailed": "Der Abschnitt konnte nicht verschoben werden.",
     "saveFailed": "Der Abschnitt konnte nicht gespeichert werden.",
+    "nameTaken": "Ein Abschnitt namens %{name} existiert bereits.",
     "deleteFailed": "Der Abschnitt konnte nicht gelöscht werden.",
     "category": {
       "backlog": "Backlog",

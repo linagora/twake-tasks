@@ -291,6 +291,7 @@
     "tasksTo": "Déplacer ses tâches vers",
     "moveFailed": "La section n'a pas pu être déplacée.",
     "saveFailed": "La section n'a pas pu être enregistrée.",
+    "nameTaken": "Une section nommée %{name} existe déjà.",
     "deleteFailed": "La section n'a pas pu être supprimée.",
     "category": {
       "backlog": "Backlog",

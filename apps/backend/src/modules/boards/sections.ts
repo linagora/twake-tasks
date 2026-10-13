@@ -17,6 +17,26 @@ import {
 
 type Category = (typeof sectionCategory.enumValues)[number]
 
+async function refuseTakenName(
+  tx: Tx,
+  boardId: string,
+  name: string,
+  except?: string
+) {
+  const [taken] = await tx
+    .select({ id: sections.id })
+    .from(sections)
+    .where(
+      and(
+        eq(sections.boardId, boardId),
+        sql`lower(${sections.name}) = lower(${name})`,
+        except ? ne(sections.id, except) : undefined
+      )
+    )
+    .limit(1)
+  if (taken) throw new Refused('section_name_taken')
+}
+
 async function existingSection(tx: Tx, boardId: string, sectionId: string) {
   const [section] = await tx
     .select()
@@ -87,6 +107,7 @@ export function createSectionStore(db: Db) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'admin')
         const board = await bumpBoard(tx, boardId)
+        await refuseTakenName(tx, boardId, input.name)
         const others = await othersOn(tx, boardId)
         const [section] = await tx
           .insert(sections)
@@ -117,6 +138,9 @@ export function createSectionStore(db: Db) {
         await checkRole(tx, identity, boardId, 'admin')
         await bumpBoard(tx, boardId)
         await existingSection(tx, boardId, sectionId)
+        if (changes.name !== undefined) {
+          await refuseTakenName(tx, boardId, changes.name, sectionId)
+        }
         await tx.update(sections).set(changes).where(eq(sections.id, sectionId))
         if (changes.category) {
           const { category } = changes

@@ -291,6 +291,7 @@
     "tasksTo": "Move its tasks to",
     "moveFailed": "The section could not be moved.",
     "saveFailed": "The section could not be saved.",
+    "nameTaken": "A section named %{name} already exists.",
     "deleteFailed": "The section could not be deleted.",
     "category": {
       "backlog": "Backlog",

@@ -291,6 +291,7 @@
     "tasksTo": "Sposta le sue attività in",
     "moveFailed": "Impossibile spostare la sezione.",
     "saveFailed": "Impossibile salvare la sezione.",
+    "nameTaken": "Esiste già una sezione chiamata %{name}.",
     "deleteFailed": "Impossibile eliminare la sezione.",
     "category": {
       "backlog": "Backlog",

@@ -13,6 +13,7 @@ import {
 import { Dots, Icon, Plus } from '@linagora/twake-icons'
 import { useId, useState, type ReactElement } from 'react'
 
+import { ApiError } from '@/application/boards'
 import { NewColumnButton } from '@/ds/Columns'
 import type { Board, Section, SectionCategory } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
@@ -188,6 +189,9 @@ function SectionDialog({
     change.reset()
     onClose()
   }
+  const taken =
+    change.error instanceof ApiError &&
+    change.error.code === 'section_name_taken'
 
   return (
     <Dialog open onClose={close} aria-labelledby={titleId} size="small">
@@ -204,10 +208,13 @@ function SectionDialog({
             value={name}
             onChange={event => {
               setName(event.target.value)
+              change.reset()
             }}
             required
             fullWidth
             margin="dense"
+            error={taken}
+            helperText={taken && t('section.nameTaken', { name: name.trim() })}
             slotProps={{ htmlInput: { maxLength: 100 } }}
           />
           <TextField
@@ -235,7 +242,9 @@ function SectionDialog({
               </option>
             ))}
           </TextField>
-          {change.isError && <p role="alert">{t('section.saveFailed')}</p>}
+          {change.isError && !taken && (
+            <p role="alert">{t('section.saveFailed')}</p>
+          )}
         </DialogContent>
         <DialogActions>
           <Button variant="text" onClick={close}>

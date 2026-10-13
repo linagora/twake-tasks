@@ -245,6 +245,10 @@ export const sections = pgTable.withRLS(
   table => [
     unique().on(table.boardId, table.id),
     unique().on(table.boardId, table.position),
+    uniqueIndex('sections_board_id_lower_name_index').on(
+      table.boardId,
+      sql`lower(${table.name})`
+    ),
     foreignKey({
       columns: [table.tenant, table.boardId],
       foreignColumns: [boards.tenant, boards.id]

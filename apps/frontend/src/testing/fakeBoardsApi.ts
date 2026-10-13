@@ -655,6 +655,13 @@ export function fakeBoardsApi(boards: Board[] = []) {
       (boardId, { name, category, afterId }) =>
         Promise.resolve().then(() => {
           const board = find(boardId)
+          if (
+            board.sections.some(
+              other => other.name.toLowerCase() === name.toLowerCase()
+            )
+          ) {
+            throw new ApiError(409, 'section_name_taken')
+          }
           const section = { id: nextId(), name, category }
           const after = board.sections.findIndex(
             candidate => candidate.id === afterId
@@ -670,7 +677,18 @@ export function fakeBoardsApi(boards: Board[] = []) {
     editSection: vi.fn<BoardsApi['editSection']>(
       (boardId, sectionId, changes) =>
         Promise.resolve().then(() => {
-          const section = sectionOf(find(boardId), sectionId)
+          const board = find(boardId)
+          const section = sectionOf(board, sectionId)
+          if (
+            changes.name !== undefined &&
+            board.sections.some(
+              other =>
+                other.id !== sectionId &&
+                other.name.toLowerCase() === changes.name?.toLowerCase()
+            )
+          ) {
+            throw new ApiError(409, 'section_name_taken')
+          }
           Object.assign(section, changes)
         })
     ),
