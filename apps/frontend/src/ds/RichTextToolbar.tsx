@@ -170,6 +170,7 @@ export function Toolbar({
           sx={{ display: 'flex', gap: 1, p: 1, alignItems: 'center' }}
           onSubmit={event => {
             event.preventDefault()
+            event.stopPropagation()
             const href = url.trim()
             if (href) chain().extendMarkRange('link').setLink({ href }).run()
             setLinkAnchor(null)

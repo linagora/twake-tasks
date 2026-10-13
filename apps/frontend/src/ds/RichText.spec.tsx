@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { RichText, RichTextEditor } from '@/ds/RichText'
@@ -85,5 +85,60 @@ describe('links in rich text', () => {
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', 'noopener noreferrer nofollow')
     expect(link).not.toHaveAttribute('class')
+  })
+})
+
+describe('link tool', () => {
+  it('does not submit the form around the editor when applying a link', async () => {
+    const submit = vi.fn((event: { preventDefault: () => void }) => {
+      event.preventDefault()
+    })
+    renderWithProviders(
+      <form onSubmit={submit}>
+        <RichTextEditor
+          label="Comment"
+          initial="see site"
+          labels={LABELS}
+          onChange={vi.fn()}
+        />
+      </form>
+    )
+
+    await screen.findByRole('textbox', { name: 'Comment' })
+    fireEvent.click(screen.getByRole('button', { name: 'Link' }))
+    fireEvent.change(await screen.findByRole('textbox', { name: 'URL' }), {
+      target: { value: 'https://example.org' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(submit).not.toHaveBeenCalled()
+  })
+})
+
+describe('checklists in rich text', () => {
+  it('show the checkboxes of saved text as read-only', async () => {
+    renderWithProviders(<RichText markdown="- [ ] check me" />)
+
+    expect(await screen.findByRole('checkbox')).toBeDisabled()
+  })
+
+  it('nudge the checkbox by 2px, not by two spacing units', async () => {
+    renderWithProviders(<RichText markdown="- [ ] check me" />)
+
+    const label = (await screen.findByRole('checkbox')).closest('label')
+    expect(label && getComputedStyle(label).marginTop).toBe('2px')
+  })
+
+  it('keep the checkboxes of the editor tickable', async () => {
+    renderWithProviders(
+      <RichTextEditor
+        label="Description"
+        initial="- [ ] check me"
+        labels={LABELS}
+        onChange={vi.fn()}
+      />
+    )
+
+    expect(await screen.findByRole('checkbox')).toBeEnabled()
   })
 })
