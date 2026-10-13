@@ -1,13 +1,11 @@
-import { Check, Cross, Icon } from '@linagora/twake-icons'
+import { Check, Icon } from '@linagora/twake-icons'
 import {
   Button,
   Chip,
   Dialog,
   DialogContent,
-  DialogTitle,
   Divider,
   DropdownButton,
-  IconButton,
   List,
   ListItemIcon,
   ListItemText,
@@ -15,8 +13,11 @@ import {
   MenuItem,
   Typography
 } from '@linagora/twake-mui'
-import { useId, useState, type ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 
+import { ApiError } from '@/application/boards'
+import { ClosableTitle } from '@/ds/ClosableTitle'
+import { MenuHint } from '@/ds/MenuHint'
 import { InviteRow, PersonCombobox, PersonRow } from '@/ds/PeopleList'
 import { ROLES, type Board, type Role } from '@/domain/board'
 import { displayName } from '@/domain/person'
@@ -30,10 +31,14 @@ import { useI18n } from '@/ui/i18n/useI18n'
 
 function RoleMenu({
   value,
+  person,
+  lastAdmin = false,
   onChange,
   action
 }: {
   value: Role
+  person?: string
+  lastAdmin?: boolean
   onChange?: (role: Role) => void
   action?: { label: string; run: () => void }
 }): ReactElement {
@@ -48,7 +53,11 @@ function RoleMenu({
     <>
       <DropdownButton
         textVariant="body2"
-        aria-label={t('sharing.roleOf', { role: label })}
+        aria-label={
+          person
+            ? t('sharing.roleOfPerson', { person, role: label })
+            : t('sharing.roleOf', { role: label })
+        }
         aria-haspopup="menu"
         aria-expanded={anchor !== null}
         onClick={event => {
@@ -64,11 +73,13 @@ function RoleMenu({
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
+        {lastAdmin && <MenuHint>{t('sharing.lastAdmin')}</MenuHint>}
         {onChange &&
           ROLES.map(role => (
             <MenuItem
               key={role}
               selected={role === value}
+              disabled={lastAdmin && role !== value}
               onClick={() => {
                 close()
                 if (role !== value) onChange(role)
@@ -83,6 +94,7 @@ function RoleMenu({
         {onChange && action && <Divider />}
         {action && (
           <MenuItem
+            disabled={lastAdmin}
             onClick={() => {
               close()
               action.run()
@@ -104,7 +116,6 @@ export function ShareDialog({
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
-  const titleId = useId()
   const sharing = useSharing(board.id)
   const [email, setEmail] = useState('')
   const suggestions = usePeopleSuggestions(board.id, email)
@@ -123,24 +134,25 @@ export function ShareDialog({
   const cancel = useBoardChange(board.id, (api, inviteId: string) =>
     api.cancelInvite(board.id, inviteId)
   )
+  // Clears the last action's message. A pending action keeps running: a
+  // reset would drop its onSuccess and re-enable Invite mid-request.
+  const start = (): void => {
+    setInvited(null)
+    for (const action of [invite, change, cancel]) {
+      if (!action.isPending) action.reset()
+    }
+  }
+  const failure = invite.error ?? change.error ?? cancel.error
+  const admins =
+    sharing.data?.members.filter(member => member.role === 'admin').length ?? 0
 
   return (
-    <Dialog open onClose={onClose} aria-labelledby={titleId}>
-      <DialogTitle
-        id={titleId}
-        className="u-flex u-flex-items-center u-flex-justify-between"
-      >
-        <span className="u-ellipsis">
-          {t('sharing.title', { name: board.name })}
-        </span>
-        <IconButton
-          aria-label={t('sharing.close')}
-          onClick={onClose}
-          className="u-ml-half"
-        >
-          <Icon icon={Cross} />
-        </IconButton>
-      </DialogTitle>
+    <Dialog open onClose={onClose}>
+      <ClosableTitle
+        title={t('sharing.title', { name: board.name })}
+        closeLabel={t('sharing.close')}
+        onClose={onClose}
+      />
       <DialogContent className="u-pb-1-half">
         <Typography variant="body2" color="textSecondary" className="u-mb-1">
           {t('sharing.help', { project: board.project.name })}
@@ -149,6 +161,7 @@ export function ShareDialog({
           label={t('sharing.invite')}
           onSubmit={() => {
             const to = email.trim().toLowerCase()
+            start()
             invite.mutate(to, {
               onSuccess: () => {
                 setInvited(to)
@@ -189,9 +202,11 @@ export function ShareDialog({
             {t('sharing.invited', { email: invited })}
           </Typography>
         )}
-        {(invite.isError || change.isError || cancel.isError) && (
+        {failure && (
           <Typography role="alert" color="error" className="u-mt-1">
-            {t('sharing.failed')}
+            {failure instanceof ApiError && failure.code === 'last_admin'
+              ? t('sharing.lastAdmin')
+              : t('sharing.failed')}
           </Typography>
         )}
         {sharing.isError && (
@@ -221,12 +236,16 @@ export function ShareDialog({
             >
               <RoleMenu
                 value={member.role}
+                person={displayName(member)}
+                lastAdmin={member.role === 'admin' && admins === 1}
                 onChange={next => {
+                  start()
                   change.mutate({ userId: member.userId, role: next })
                 }}
                 action={{
                   label: t('sharing.remove'),
                   run: () => {
+                    start()
                     change.mutate({ userId: member.userId, role: null })
                   }
                 }}
@@ -242,9 +261,11 @@ export function ShareDialog({
               <Chip size="small" label={t('sharing.pending')} />
               <RoleMenu
                 value={pending.role}
+                person={pending.email}
                 action={{
                   label: t('sharing.cancelInvite'),
                   run: () => {
+                    start()
                     cancel.mutate(pending.id)
                   }
                 }}

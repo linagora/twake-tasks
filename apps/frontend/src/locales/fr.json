@@ -402,6 +402,8 @@
     "invited": "%{email} a été invité.",
     "pending": "En attente",
     "roleOf": "Rôle : %{role}",
+    "roleOfPerson": "Rôle de %{person} : %{role}",
+    "lastAdmin": "Un projet doit avoir au moins un admin. Nommez d'abord quelqu'un d'autre admin.",
     "people": "Personnes ayant accès",
     "cancelInvite": "Annuler l'invitation",
     "remove": "Retirer",

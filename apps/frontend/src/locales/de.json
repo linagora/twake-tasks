@@ -402,6 +402,8 @@
     "invited": "%{email} eingeladen.",
     "pending": "Ausstehend",
     "roleOf": "Rolle: %{role}",
+    "roleOfPerson": "Rolle von %{person}: %{role}",
+    "lastAdmin": "Ein Projekt braucht mindestens einen Admin. Machen Sie zuerst jemand anderen zum Admin.",
     "people": "Personen mit Zugriff",
     "cancelInvite": "Einladung zurückziehen",
     "remove": "Entfernen",

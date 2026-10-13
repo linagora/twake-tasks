@@ -1,14 +1,7 @@
-import { Cross, Icon } from '@linagora/twake-icons'
-import {
-  Avatar,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  List
-} from '@linagora/twake-mui'
-import { useId, type ReactElement } from 'react'
+import { Avatar, Dialog, DialogContent, List } from '@linagora/twake-mui'
+import type { ReactElement } from 'react'
 
+import { ClosableTitle } from '@/ds/ClosableTitle'
 import { AvatarStack } from '@/ds/Columns'
 import { StackButton } from '@/ds/PageHeader'
 import { PersonRow } from '@/ds/PeopleList'
@@ -62,22 +55,13 @@ export function MembersDialog({
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
-  const titleId = useId()
   return (
-    <Dialog open onClose={onClose} aria-labelledby={titleId}>
-      <DialogTitle
-        id={titleId}
-        className="u-flex u-flex-items-center u-flex-justify-between"
-      >
-        <span className="u-ellipsis">{t('sharing.people')}</span>
-        <IconButton
-          aria-label={t('sharing.close')}
-          onClick={onClose}
-          className="u-ml-half"
-        >
-          <Icon icon={Cross} />
-        </IconButton>
-      </DialogTitle>
+    <Dialog open onClose={onClose}>
+      <ClosableTitle
+        title={t('sharing.people')}
+        closeLabel={t('sharing.close')}
+        onClose={onClose}
+      />
       <DialogContent className="u-pb-1-half">
         <List dense>
           {board.members.map(member => (
