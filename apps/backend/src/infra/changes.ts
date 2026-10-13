@@ -7,12 +7,11 @@ type Listener = (version: number) => void
 
 export interface Changes {
   subscribe(key: string, listener: Listener): () => void
+  emit(key: string, version: number): void
 }
 
 /** The streams open on this replica, by key. */
-export function createChanges(): Changes & {
-  emit(key: string, version: number): void
-} {
+export function createChanges(): Changes {
   const listeners = new Map<string, Set<Listener>>()
   return {
     subscribe(key, listener) {

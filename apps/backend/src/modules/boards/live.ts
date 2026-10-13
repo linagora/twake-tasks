@@ -2,11 +2,7 @@ import type { RabbitMQClient } from '@linagora/rabbitmq-client'
 import { eq } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import { z } from 'zod'
-import {
-  createChanges,
-  type Changes,
-  type StreamVersions
-} from '../../infra/changes.ts'
+import type { Changes, StreamVersions } from '../../infra/changes.ts'
 import { afterCommit, inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
@@ -21,10 +17,7 @@ const boardChanged = z.object({
 })
 type BoardChanged = z.infer<typeof boardChanged>
 
-export type Broker = Pick<
-  RabbitMQClient,
-  'publish' | 'subscribe' | 'isConnected'
->
+export type Broker = Pick<RabbitMQClient, 'publish' | 'subscribe'>
 
 let publish: (message: BoardChanged) => void = () => undefined
 
@@ -41,13 +34,14 @@ export function tellBoardChanged(
 
 // Each replica gets its own queue, since each holds different streams. A
 // change lost while it is disconnected only costs a refresh: a stream sends
-// the current version when it reopens.
+// the current version when it reopens. The queue drops its oldest versions
+// past its length, for the same reason.
 export async function listenForBoardChanges(
   broker: Broker,
   exchange: string,
+  changes: Pick<Changes, 'emit'>,
   log: Pick<Logger, 'warn'>
-): Promise<Changes> {
-  const changes = createChanges()
+): Promise<void> {
   await broker.subscribe(
     exchange,
     BOARD_CHANGED,
@@ -64,12 +58,12 @@ export async function listenForBoardChanges(
       }
       return Promise.resolve()
     },
-    { exclusive: true }
+    { exclusive: true, queueArguments: { 'x-max-length': 1000 } }
   )
   // A version is only worth something now, so it is not retried across an
-  // outage.
+  // outage. Still, every one is attempted: after a failed publish, only the
+  // next publish reconnects the client.
   publish = message => {
-    if (!broker.isConnected()) return
     broker
       .publish(exchange, BOARD_CHANGED, message, { maxAttempts: 1 })
       .catch((error: unknown) => {
@@ -79,7 +73,6 @@ export async function listenForBoardChanges(
         )
       })
   }
-  return changes
 }
 
 const boardParams = z.object({ boardId: z.uuid() })

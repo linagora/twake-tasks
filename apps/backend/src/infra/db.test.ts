@@ -1,5 +1,5 @@
 import { eq, sql as statement, type SQL } from 'drizzle-orm'
-import { afterAll, describe, expect, inject, it } from 'vitest'
+import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import type { Role } from '../modules/boards/access.ts'
 import {
   boardFavorites,
@@ -360,6 +360,29 @@ describe('afterCommit', () => {
     })
 
     expect(ran).toEqual(['committed', 'released'])
+  })
+
+  it('logs a hook that throws, and still runs the next ones', async () => {
+    const log = { error: vi.fn() }
+    const logged = createDb(inject('databaseUrl'), log)
+    const ran: string[] = []
+
+    try {
+      await expect(
+        logged.db.transaction(tx => {
+          afterCommit(tx, () => {
+            throw new Error('hook failed')
+          })
+          afterCommit(tx, () => ran.push('next'))
+          return Promise.resolve('committed')
+        })
+      ).resolves.toBe('committed')
+    } finally {
+      await logged.sql.end()
+    }
+
+    expect(ran).toEqual(['next'])
+    expect(log.error).toHaveBeenCalledOnce()
   })
 })
 

@@ -4,6 +4,7 @@ import { pino } from 'pino'
 import { inject } from 'vitest'
 import { buildApp } from '../app.ts'
 import { eq } from 'drizzle-orm'
+import { createChanges } from '../infra/changes.ts'
 import { createDb, inTenant, type Db } from '../infra/db.ts'
 import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
@@ -115,32 +116,41 @@ export async function aBoardIn(
   })
 }
 
-const handlers: RabbitMQMessageHandler[] = []
+const handlers = new Set<RabbitMQMessageHandler>()
 
 // Delivers each live message to every app started in this process, as the
 // live exchange does to every replica.
-const inMemoryBroker: Broker = {
-  isConnected: () => true,
-  subscribe(_exchange, _routingKey, _queue, handler) {
-    handlers.push(handler)
-    return Promise.resolve()
-  },
-  async publish(exchange, routingKey, message) {
-    for (const handler of handlers) {
-      await handler(structuredClone(message), {
-        exchange,
-        routingKey,
-        headers: {}
-      })
+function inMemoryBroker(): Broker & { close(): void } {
+  const own = new Set<RabbitMQMessageHandler>()
+  return {
+    subscribe(_exchange, _routingKey, _queue, handler) {
+      own.add(handler)
+      handlers.add(handler)
+      return Promise.resolve()
+    },
+    async publish(exchange, routingKey, message) {
+      for (const handler of handlers) {
+        await handler(structuredClone(message), {
+          exchange,
+          routingKey,
+          headers: {}
+        })
+      }
+    },
+    close() {
+      for (const handler of own) handlers.delete(handler)
     }
   }
 }
 
 export async function startApp() {
   const { sql, db } = createDb(inject('databaseUrl'))
-  const boardChanges = await listenForBoardChanges(
-    inMemoryBroker,
+  const broker = inMemoryBroker()
+  const boardChanges = createChanges()
+  await listenForBoardChanges(
+    broker,
     'live',
+    boardChanges,
     pino({ level: 'silent' })
   )
   const app = await buildApp({
@@ -194,6 +204,7 @@ export async function startApp() {
     tokenOf,
     listen: () => app.listen({ host: '127.0.0.1', port: 0 }),
     close: async () => {
+      broker.close()
       await app.close()
       await sql.end()
     }

@@ -4,6 +4,7 @@ import { loadConfig } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
 import { createRelay } from './events/outbox.ts'
 import { createMessageHandler } from './events/router.ts'
+import { createChanges } from './infra/changes.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
@@ -40,17 +41,12 @@ const config = loadConfig()
 const logger = pino({ level: config.LOG_LEVEL })
 const spaces = config.SPACE_INTEGRATION === 'true'
 
-const { sql, db } = createDb(config.DATABASE_URL)
+const { sql, db } = createDb(config.DATABASE_URL, logger)
 await assertRowLevelSecurity(sql)
 await migrateDb(db)
 
 let accepting = false
-const live = await connectLive(config.RABBITMQ_URL, logger)
-const boardChanges = await listenForBoardChanges(
-  live,
-  config.RABBITMQ_LIVE_EXCHANGE,
-  logger
-)
+const boardChanges = createChanges()
 const server = await buildApp({
   logger,
   db,
@@ -68,6 +64,13 @@ const server = await buildApp({
 })
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })
 
+const live = await connectLive(config.RABBITMQ_URL, logger)
+await listenForBoardChanges(
+  live,
+  config.RABBITMQ_LIVE_EXCHANGE,
+  boardChanges,
+  logger
+)
 const publisher = await startPublisher(
   config.RABBITMQ_URL,
   config.RABBITMQ_ACTIVITY_EXCHANGE,

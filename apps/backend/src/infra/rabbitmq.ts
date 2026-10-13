@@ -127,7 +127,11 @@ export async function connectLive(
   url: string,
   logger: Logger
 ): Promise<RabbitMQClient> {
-  const client = new RabbitMQClient({ url, logger })
+  // The client logs every publish and delivery at info.
+  const client = new RabbitMQClient({
+    url,
+    logger: logger.child({ component: 'live' }, { level: 'warn' })
+  })
   await client.init()
   return client
 }

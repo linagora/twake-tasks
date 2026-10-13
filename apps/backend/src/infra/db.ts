@@ -57,12 +57,18 @@ export type Db = ReturnType<typeof connect>['db']
 export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 type Transaction = Db['transaction']
 
+interface HookLog {
+  error(object: object, message: string): void
+}
+
 const commitHooks = new WeakMap<Tx, (() => void)[]>()
 
 // Drizzle has no commit hook. A savepoint hands its hooks to its transaction
-// once it is released, so one that rolls back alone drops them.
+// once it is released, so one that rolls back alone drops them. A hook that
+// throws is only logged, since its transaction has committed.
 function runHooksOnCommit(
   target: { transaction: Transaction },
+  log: HookLog,
   outer?: (() => void)[]
 ) {
   const transaction = target.transaction.bind(target)
@@ -73,18 +79,26 @@ function runHooksOnCommit(
     const hooks: (() => void)[] = []
     const result = await transaction(tx => {
       commitHooks.set(tx, hooks)
-      runHooksOnCommit(tx, hooks)
+      runHooksOnCommit(tx, log, hooks)
       return body(tx)
     }, config)
     if (outer) outer.push(...hooks)
-    else for (const hook of hooks) hook()
+    else {
+      for (const hook of hooks) {
+        try {
+          hook()
+        } catch (error) {
+          log.error({ err: error }, 'a commit hook failed')
+        }
+      }
+    }
     return result
   }) as Transaction
 }
 
-export function createDb(url: string) {
+export function createDb(url: string, log: HookLog = console) {
   const { sql, db } = connect(url)
-  runHooksOnCommit(db)
+  runHooksOnCommit(db, log)
   return { sql, db }
 }
 
