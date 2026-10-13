@@ -16,9 +16,7 @@ const BACKEND = { id: 'twaketasks-backend', secret: 'e2e-backend-secret' }
 const AUDIENCE = 'twaketasks'
 const TOKEN_TTL_S = 3600
 const FRAME_ANCESTORS = process.env.FRAME_ANCESTORS ?? "'self'"
-const BACKCHANNEL_LOGOUT_URI =
-  process.env.BACKCHANNEL_LOGOUT_URI ??
-  'http://backend:8080/api/auth/backchannel-logout'
+const BACKCHANNEL_LOGOUT_URI = 'http://backend:8080/api/auth/backchannel-logout'
 
 const PEOPLE = {
   alice: {
@@ -79,10 +77,11 @@ function userinfo(grant: Grant) {
   }
 }
 
-// LemonLDAP tells the backend a session ended, which then refuses its tokens
-// at once rather than when its identity cache expires.
+// LemonLDAP tells the backend a session ended, so the backend refuses its
+// tokens at once rather than when its identity cache expires.
 async function backchannelLogout(sid: string, username: Username) {
   const response = await fetch(BACKCHANNEL_LOGOUT_URI, {
+    signal: AbortSignal.timeout(5000),
     method: 'POST',
     body: new URLSearchParams({
       logout_token: jwt({
@@ -95,8 +94,11 @@ async function backchannelLogout(sid: string, username: Username) {
         events: { 'http://schemas.openid.net/event/backchannel-logout': {} }
       })
     })
+  }).catch((error: unknown) => {
+    console.error('back-channel logout failed', error)
+    return undefined
   })
-  if (!response.ok) {
+  if (response && !response.ok) {
     console.error('back-channel logout answered', response.status)
   }
 }
