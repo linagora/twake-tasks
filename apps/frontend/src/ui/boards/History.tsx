@@ -4,7 +4,7 @@ import type { ReactElement } from 'react'
 import type { HistoryEntry } from '@/application/boards'
 import { Feed, FeedItem } from '@/ds/SidePanel'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import type { Board, Duration, Task } from '@/domain/board'
+import type { Board, Duration, Recurrence, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { dueLabel, formatDay, momentFormat } from '@/ui/boards/dueLabel'
 import { useBoard, useHistory } from '@/ui/boards/queries'
@@ -101,6 +101,24 @@ function describe(
         actor,
         name
       })
+    }
+    case 'archived':
+      return t(added ? 'history.archived' : 'history.unarchived', { actor })
+    case 'deleted':
+      return t(added ? 'history.deleted' : 'history.restored', { actor })
+    case 'recurrence': {
+      const recurrence = entry.to as Recurrence | null
+      return recurrence
+        ? t('history.recurrence', {
+            actor,
+            rule: t(
+              recurrence.fromCompletion
+                ? `dates.every.${recurrence.unit}AfterCompletion`
+                : `dates.every.${recurrence.unit}`,
+              { smart_count: recurrence.every }
+            ).toLocaleLowerCase(lang)
+          })
+        : t('history.recurrenceCleared', { actor })
     }
     default:
       return t('history.description', { actor })

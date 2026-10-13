@@ -131,6 +131,66 @@ describe('task history', () => {
     })
   })
 
+  it('records a task archived, deleted and restored', async () => {
+    const alice = aUser()
+    const board = await aBoardOf(alice)
+    const task = (
+      await api.as(alice).post(`/boards/${board.id}/tasks`, {
+        sectionId: board.sections[0]?.id,
+        title: 'Logo'
+      })
+    ).json<{ id: string }>()
+    const path = `/boards/${board.id}/tasks/${task.id}`
+    await api.as(alice).post(`${path}/archive`, {})
+    await api.as(alice).post(`${path}/restore`, {})
+    await api.as(alice).delete(path)
+    await api.as(alice).post(`${path}/restore`, {})
+
+    const entries = await historyOf(alice, board.id, task.id)
+
+    expect(entries.map(({ field, from, to }) => ({ field, from, to }))).toEqual(
+      [
+        { field: 'deleted', from: true, to: null },
+        { field: 'deleted', from: null, to: true },
+        { field: 'archived', from: true, to: null },
+        { field: 'archived', from: null, to: true },
+        { field: 'created', from: null, to: 'Logo' }
+      ]
+    )
+  })
+
+  it('records a task set to repeat and no longer repeating', async () => {
+    const alice = aUser()
+    const board = await aBoardOf(alice)
+    const task = (
+      await api.as(alice).post(`/boards/${board.id}/tasks`, {
+        sectionId: board.sections[0]?.id,
+        title: 'Water plants'
+      })
+    ).json<{ id: string }>()
+    const path = `/boards/${board.id}/tasks/${task.id}`
+    await api.as(alice).patch(path, { dueDate: '2026-10-13' })
+    await api.as(alice).patch(path, {
+      recurrence: { every: 1, unit: 'weeks', fromCompletion: false }
+    })
+    await api.as(alice).patch(path, { recurrence: null })
+
+    const entries = (await historyOf(alice, board.id, task.id)).filter(
+      ({ field }) => field === 'recurrence'
+    )
+
+    expect(entries.map(({ from, to }) => ({ from, to }))).toEqual([
+      {
+        from: { every: 1, unit: 'weeks', fromCompletion: false },
+        to: null
+      },
+      {
+        from: null,
+        to: { every: 1, unit: 'weeks', fromCompletion: false }
+      }
+    ])
+  })
+
   it('keeps the name of a section deleted since, and of each label', async () => {
     const alice = aUser()
     const board = await aBoardOf(alice)
