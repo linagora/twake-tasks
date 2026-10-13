@@ -43,7 +43,8 @@ async function projectOfBoard(tx: Tx, boardId: string) {
       id: projects.id,
       organizationId: projects.organizationId,
       personal: projects.personal,
-      managed: projects.managed
+      managed: projects.managed,
+      archived: sql<boolean>`${boards.archivedAt} is not null`
     })
     .from(boards)
     .innerJoin(projects, eq(projects.id, boards.projectId))
@@ -58,6 +59,14 @@ async function sharedProject(tx: Tx, identity: Identity, boardId: string) {
   await checkRole(tx, identity, boardId, 'admin')
   const project = await projectOfBoard(tx, boardId)
   if (project.personal || project.managed) throw new Refused('forbidden')
+  return project
+}
+
+// An archived board is read only, its sharing included, though anyone may
+// still leave it.
+async function sharingToChange(tx: Tx, identity: Identity, boardId: string) {
+  const project = await sharedProject(tx, identity, boardId)
+  if (project.archived) throw new Refused('archived')
   return project
 }
 
@@ -129,7 +138,7 @@ export function createSharingStore(db: Db) {
   return {
     invite(identity: Identity, boardId: string, email: string, role: Role) {
       return writeOrRefuse(db, identity, async tx => {
-        const project = await sharedProject(tx, identity, boardId)
+        const project = await sharingToChange(tx, identity, boardId)
         const [member] = await tx
           .select({ userId: projectMembers.userId })
           .from(projectMembers)
@@ -266,7 +275,7 @@ export function createSharingStore(db: Db) {
 
     cancelInvite(identity: Identity, boardId: string, inviteId: string) {
       return writeOrRefuse(db, identity, async tx => {
-        const project = await sharedProject(tx, identity, boardId)
+        const project = await sharingToChange(tx, identity, boardId)
         await tx
           .delete(projectInvites)
           .where(
@@ -280,7 +289,7 @@ export function createSharingStore(db: Db) {
 
     setRole(identity: Identity, boardId: string, userId: string, role: Role) {
       return writeOrRefuse(db, identity, async tx => {
-        const project = await sharedProject(tx, identity, boardId)
+        const project = await sharingToChange(tx, identity, boardId)
         if (role !== 'admin') await keepAnAdmin(tx, project.id, userId)
         const updated = await tx
           .update(projectMembers)
@@ -392,7 +401,7 @@ export function createSharingStore(db: Db) {
             throw new Refused('forbidden')
           }
         } else {
-          project = await sharedProject(tx, identity, boardId)
+          project = await sharingToChange(tx, identity, boardId)
         }
         await keepAnAdmin(tx, project.id, userId)
         // Before the membership goes: in a B2C tenant the tasks, and so their
