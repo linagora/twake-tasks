@@ -188,7 +188,7 @@ describe('Labels', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const picker = await openLabels()
-    search(picker, 'Ur⁠gent​')
+    search(picker, 'Ur\u{2060}gent\u{200B}')
 
     expect(
       picker.getByRole('menuitemcheckbox', { name: 'Urgent' })

@@ -197,9 +197,9 @@ describe('labels', () => {
   })
 
   it.each([
-    ['a zero width space', 'Urgent​'],
-    ['a word joiner', 'Ur⁠gent'],
-    ['decomposed accents', 'Café']
+    ['a zero width space', 'Urgent\u{200B}'],
+    ['a word joiner', 'Ur\u{2060}gent'],
+    ['decomposed accents', 'Cafe\u{301}']
   ])('refuses a name that differs only by %s', async (_, lookalike) => {
     const alice = aUser()
     const board = await aBoard(alice)
@@ -216,9 +216,26 @@ describe('labels', () => {
     const alice = aUser()
     const board = await aBoard(alice)
 
-    const label = await board.addLabel('​Café⁠')
+    const label = await board.addLabel('\u{200B}Cafe\u{301}\u{2060}')
 
     expect(label.json()).toMatchObject({ name: 'Café' })
+  })
+
+  it.each([
+    ['an emoji sequence', '\u{1F469}\u{200D}\u{1F4BB}'],
+    [
+      'a flag with tags',
+      '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}'
+    ],
+    ['a Persian non-joiner', 'می\u{200C}روم'],
+    ['a Devanagari joiner', 'क्\u{200D}ष']
+  ])('keeps the joiners of %s', async (_, name) => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+
+    const label = await board.addLabel(name)
+
+    expect(label.json()).toMatchObject({ name })
   })
 
   it('keeps viewers from labeling', async () => {

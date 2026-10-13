@@ -135,15 +135,22 @@ const taskChanges = z
 const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
 
 // Two names that render alike are the same label: invisible format characters
-// go, except a joiner inside an emoji such as 👩‍💻, and accents are composed.
-const invisible =
-  /(?<=[\p{Extended_Pictographic}\p{Emoji_Modifier}️])(‍)(?=\p{Extended_Pictographic})|\p{Cf}/gu
+// go, and accents are composed. Kept, because they change what renders: the
+// joiner of an emoji sequence, a joiner between letters of a script that
+// shapes with it (Persian, Devanagari), the tags of a subdivision flag.
+const emojiJoiner = String.raw`(?<=[\p{Extended_Pictographic}\p{Emoji_Modifier}\u{FE0F}])\u{200D}(?=\p{Extended_Pictographic})`
+const scriptJoiner = String.raw`(?<=[\p{L}\p{M}])(?<![\p{sc=Latin}\p{sc=Inherited}])[\u{200C}\u{200D}](?=[\p{L}\p{M}])`
+const flagTag = String.raw`(?<=[\u{1F3F4}\u{E0020}-\u{E007E}])[\u{E0020}-\u{E007F}]`
+const invisible = new RegExp(
+  String.raw`(${emojiJoiner}|${scriptJoiner}|${flagTag})|\p{Cf}`,
+  'gu'
+)
 
 const labelName = z
   .string()
   .overwrite(name =>
     name
-      .replace(invisible, (_, joiner: string | undefined) => joiner ?? '')
+      .replace(invisible, (_, kept: string | undefined) => kept ?? '')
       .normalize('NFC')
   )
   .trim()
