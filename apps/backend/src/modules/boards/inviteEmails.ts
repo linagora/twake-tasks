@@ -118,9 +118,9 @@ const MESSAGES: Record<Language, Messages> = {
   }
 }
 
-// Runs as the person who shared. Any app load claims the invite into a
-// membership, which may come before delivery, so a missing invite only means
-// a cancel when the address is not a member either.
+// Runs as the person who shared. Any app load can claim the invite into a
+// membership before delivery, so nothing is sent only when the address is
+// neither invited nor a member.
 export function emailInvite(deps: {
   appUrl: string
   send: (mail: Mail) => Promise<void>
