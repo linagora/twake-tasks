@@ -402,6 +402,8 @@
     "invited": "Đã mời %{email}.",
     "pending": "Đang chờ",
     "roleOf": "Vai trò: %{role}",
+    "roleOfPerson": "Vai trò của %{person}: %{role}",
+    "lastAdmin": "Dự án cần ít nhất một quản trị viên. Hãy đặt người khác làm quản trị viên trước.",
     "people": "Những người có quyền truy cập",
     "cancelInvite": "Hủy lời mời",
     "remove": "Xóa",

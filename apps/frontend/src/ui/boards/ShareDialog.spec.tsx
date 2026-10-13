@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import type { Project, Sharing } from '@/application/boards'
+import { ApiError, type Project, type Sharing } from '@/application/boards'
 import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
@@ -92,7 +92,9 @@ describe('sharing a board', () => {
     )
     expect(bob.getByText('bob@example.com')).toBeVisible()
 
-    fireEvent.click(bob.getByRole('button', { name: 'Role: Viewer' }))
+    fireEvent.click(
+      bob.getByRole('button', { name: 'Role of Bob Durand: Viewer' })
+    )
     fireEvent.click(screen.getByRole('menuitem', { name: 'Editor' }))
     await waitFor(() => {
       expect(boardsApi.setMemberRole).toHaveBeenCalledWith(
@@ -101,7 +103,9 @@ describe('sharing a board', () => {
         'editor'
       )
     })
-    fireEvent.click(await bob.findByRole('button', { name: 'Role: Editor' }))
+    fireEvent.click(
+      await bob.findByRole('button', { name: 'Role of Bob Durand: Editor' })
+    )
     fireEvent.click(screen.getByRole('menuitem', { name: 'Remove' }))
 
     await waitFor(() => {
@@ -126,11 +130,99 @@ describe('sharing a board', () => {
     )
 
     expect(eve.getByText('Pending')).toBeVisible()
-    fireEvent.click(eve.getByRole('button', { name: 'Role: Editor' }))
+    fireEvent.click(
+      eve.getByRole('button', { name: 'Role of eve@example.com: Editor' })
+    )
     fireEvent.click(screen.getByRole('menuitem', { name: 'Cancel invite' }))
 
     await waitFor(() => {
       expect(boardsApi.cancelInvite).toHaveBeenCalledWith(board.id, 'inv')
+    })
+  })
+
+  it('names the dialog after its title only', async () => {
+    await openSharing()
+    const label = document.getElementById(
+      screen.getByRole('dialog').getAttribute('aria-labelledby') ?? ''
+    )
+    expect(label).toHaveTextContent(/^Share Design$/)
+    expect(label?.querySelector('button')).toBeNull()
+  })
+
+  it('keeps the only admin from demoting or removing themselves', async () => {
+    const { boardsApi, dialog } = await openSharing()
+
+    fireEvent.click(
+      await dialog.findByRole('button', {
+        name: 'Role of me@example.com: Admin'
+      })
+    )
+
+    expect(
+      screen.getByText(
+        'A project needs at least one admin. Make someone else admin first.'
+      )
+    ).toBeVisible()
+    for (const name of ['Viewer', 'Editor', 'Remove']) {
+      expect(screen.getByRole('menuitem', { name })).toHaveAttribute(
+        'aria-disabled',
+        'true'
+      )
+    }
+    expect(boardsApi.setMemberRole).not.toHaveBeenCalled()
+  })
+
+  it('explains a refusal to leave the project without an admin', async () => {
+    const { boardsApi, dialog } = await openSharing([
+      me,
+      { userId: 'bob', email: 'bob@example.com', name: null, role: 'admin' }
+    ])
+    boardsApi.setMemberRole.mockRejectedValueOnce(
+      new ApiError(409, 'last_admin')
+    )
+
+    fireEvent.click(
+      await dialog.findByRole('button', {
+        name: 'Role of me@example.com: Admin'
+      })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Viewer' }))
+
+    expect(await dialog.findByRole('alert')).toHaveTextContent(
+      'A project needs at least one admin. Make someone else admin first.'
+    )
+  })
+
+  it('shows only the outcome of the last action', async () => {
+    const { boardsApi, dialog } = await openSharing([
+      me,
+      { userId: 'bob', email: 'bob@example.com', name: null, role: 'viewer' }
+    ])
+    const form = within(dialog.getByRole('form', { name: 'Invite' }))
+    fireEvent.change(form.getByRole('combobox', { name: 'Email' }), {
+      target: { value: 'eve@example.com' }
+    })
+    fireEvent.click(form.getByRole('button', { name: 'Invite' }))
+    expect(await dialog.findByText('Invited eve@example.com.')).toBeVisible()
+
+    boardsApi.setMemberRole.mockRejectedValueOnce(new ApiError(500, null))
+    fireEvent.click(
+      dialog.getByRole('button', { name: 'Role of bob@example.com: Viewer' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Editor' }))
+    expect(await dialog.findByRole('alert')).toHaveTextContent(
+      'The change could not be saved.'
+    )
+    expect(dialog.queryByText('Invited eve@example.com.')).toBeNull()
+
+    fireEvent.click(
+      await dialog.findByRole('button', {
+        name: 'Role of eve@example.com: Viewer'
+      })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Cancel invite' }))
+    await waitFor(() => {
+      expect(dialog.queryByRole('alert')).toBeNull()
     })
   })
 
