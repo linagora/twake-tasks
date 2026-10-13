@@ -32,8 +32,9 @@ Deleting an organization, a space or a person records the time of the deletion i
 ## Parked events
 
 - An update, member event or deletion for a space Tasks has never seen, with no row and no recorded deletion, is parked: stored in the `parked_events` table and acknowledged. The space's `twake.space.created` may only be late.
-- One replica at a time retries the parked events in the order they arrived, 5 seconds after its previous pass ended. An event whose space is now known leaves the table, whatever its outcome. One whose retry fails stays for the next pass.
-- An event still parked after 30 minutes, RabbitMQ's default `consumer_timeout`, is published to `twake-tasks.dlx` with its message id and the headers `x-twake-tasks-exchange`, `x-twake-tasks-routing-key` and `x-twake-tasks-reason`. It stays parked while that publish fails.
+- Every replica looks for parked events to retry 5 seconds after its previous pass ended, oldest first. A pass takes only the events whose space is now known, or that waited 30 minutes, and claims them for a minute so no other replica retries them meanwhile.
+- A retried event that applies leaves the table. One whose retry fails is tried again after its claim ends.
+- An event rejected on retry, or one that waited 30 minutes, RabbitMQ's default `consumer_timeout`, and still does not apply, is published to `twake-tasks.dlx` with its message id and the headers `x-twake-tasks-exchange`, `x-twake-tasks-routing-key` and `x-twake-tasks-reason`. It leaves the table once published, and stays while the publish fails.
 - `twake.space.synced` is never parked, since it carries the whole space and creates it when missing.
 
 ## Consumed

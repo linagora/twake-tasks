@@ -440,7 +440,7 @@ export async function matchSpace(tx: Tx, space: WholeSpace): Promise<void> {
 // Only twake.space.created and a sync bring a space.
 async function lockKnownSpace(tx: Tx, space: SpaceRef): Promise<LockedSpace> {
   const locked = await lockSpace(tx, space)
-  if (!locked) throw new NotYetKnownError(`space ${space.id} not known yet`)
+  if (!locked) throw new NotYetKnownError(space.id)
   return locked
 }
 

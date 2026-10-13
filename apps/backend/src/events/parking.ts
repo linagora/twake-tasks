@@ -1,22 +1,23 @@
-import { and, asc, eq, lt, sql } from 'drizzle-orm'
+import { and, asc, eq, exists, inArray, lt, lte, or, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import type { Db } from '../infra/db.ts'
 import type { Delivery } from '../infra/rabbitmq.ts'
+import { spaces } from '../modules/spaces/schema.ts'
 import type { Outcome, Park } from './router.ts'
 import { parkedEvents } from './schema.ts'
 
 // RabbitMQ's default consumer_timeout: the event that brings the space can be
 // held unacknowledged that long by a replica retrying it.
 const WAIT = '30 minutes'
+// A replica that stops while retrying leaves its rows to the others after it.
+const CLAIM = '1 minute'
 const RETRY_EVERY_MS = 5000
 const BATCH = 100
-// Any constant shared by every replica: only the holder retries.
-const RETRY_LOCK = 0x7061726b
 
 export type DeadLetter = (delivery: Delivery, reason: string) => Promise<void>
 
 export function parkIn(db: Db): Park {
-  return async (delivery, reason) => {
+  return async (delivery, spaceId, reason) => {
     await db
       .insert(parkedEvents)
       .values({
@@ -24,6 +25,7 @@ export function parkIn(db: Db): Park {
         exchange: delivery.exchange,
         routingKey: delivery.routingKey,
         body: delivery.body,
+        spaceId,
         reason
       })
       .onConflictDoNothing()
@@ -38,9 +40,52 @@ export function parkedRetries(deps: {
 }) {
   const { db, logger, handle, deadLetter } = deps
 
-  // A retry that throws keeps its row for the next pass. A dead letter that
-  // fails to send keeps it too.
-  async function retry(row: typeof parkedEvents.$inferSelect) {
+  // Only rows whose space arrived, or that waited long enough, so the others
+  // cost nothing. Claimed rather than locked, so replicas share the rows and
+  // no connection waits in a transaction while they are retried.
+  const claim = () =>
+    db.transaction(async tx => {
+      await tx.execute(sql`select set_config('app.space_lookup', 'on', true)`)
+      const due = tx
+        .select({ messageId: parkedEvents.messageId })
+        .from(parkedEvents)
+        .where(
+          and(
+            lte(parkedEvents.retryAt, sql`now()`),
+            or(
+              lt(parkedEvents.parkedAt, sql`now() - ${WAIT}::interval`),
+              exists(
+                tx
+                  .select({ id: spaces.id })
+                  .from(spaces)
+                  .where(eq(spaces.id, parkedEvents.spaceId))
+              )
+            )
+          )
+        )
+        .orderBy(asc(parkedEvents.parkedAt), asc(parkedEvents.messageId))
+        .limit(BATCH)
+        .for('update', { skipLocked: true })
+      return tx
+        .update(parkedEvents)
+        .set({ retryAt: sql`now() + ${CLAIM}::interval` })
+        .where(inArray(parkedEvents.messageId, due))
+        .returning({
+          messageId: parkedEvents.messageId,
+          exchange: parkedEvents.exchange,
+          routingKey: parkedEvents.routingKey,
+          body: parkedEvents.body,
+          reason: parkedEvents.reason,
+          expired: sql<boolean>`${parkedEvents.parkedAt} < now() - ${WAIT}::interval`
+        })
+    })
+
+  type Claimed = Awaited<ReturnType<typeof claim>>[number]
+
+  // Once it waited long enough, an event goes to the dead letter queue unless
+  // it applies. A rejected one goes at once. Until its dead letter is sent, it
+  // stays for a later pass.
+  async function retry(row: Claimed) {
     const delivery: Delivery = {
       exchange: row.exchange,
       routingKey: row.routingKey,
@@ -48,57 +93,44 @@ export function parkedRetries(deps: {
       body: row.body
     }
     const context = { routingKey: row.routingKey, messageId: row.messageId }
-    const parked = eq(parkedEvents.messageId, row.messageId)
-    let outcome: Outcome
+    let reason = row.reason
+    let outcome: Outcome | undefined
     try {
       outcome = await handle(delivery)
     } catch (error) {
       logger.warn({ err: error, ...context }, 'parked event failed')
+      reason = error instanceof Error ? error.message : String(error)
+    }
+    const rejected = outcome === 'rejected'
+    if (outcome !== undefined && outcome !== 'parked' && !rejected) {
+      await db
+        .delete(parkedEvents)
+        .where(eq(parkedEvents.messageId, row.messageId))
       return
     }
-    if (outcome !== 'parked') {
-      await db.delete(parkedEvents).where(parked)
+    if (rejected) reason = 'rejected'
+    if (!row.expired && !rejected) return
+    try {
+      await deadLetter(delivery, reason)
+    } catch (error) {
+      logger.error(
+        { err: error, ...context },
+        'parked event could not reach the dead letter queue'
+      )
       return
     }
     await db
-      .transaction(async tx => {
-        const [expired] = await tx
-          .delete(parkedEvents)
-          .where(
-            and(
-              parked,
-              lt(parkedEvents.parkedAt, sql`now() - ${WAIT}::interval`)
-            )
-          )
-          .returning({ reason: parkedEvents.reason })
-        if (!expired) return
-        await deadLetter(delivery, expired.reason)
-        logger.warn(
-          { ...context, reason: expired.reason },
-          'parked event sent to the dead letter queue'
-        )
-      })
-      .catch((error: unknown) => {
-        logger.error(
-          { err: error, ...context },
-          'parked event could not reach the dead letter queue'
-        )
-      })
+      .delete(parkedEvents)
+      .where(eq(parkedEvents.messageId, row.messageId))
+    logger.warn(
+      { ...context, reason },
+      'parked event sent to the dead letter queue'
+    )
   }
 
-  const retryOnce = () =>
-    db.transaction(async tx => {
-      const [lock] = await tx.execute<{ locked: boolean }>(
-        sql`select pg_try_advisory_xact_lock(${RETRY_LOCK}) as locked`
-      )
-      if (!lock?.locked) return
-      const rows = await db
-        .select()
-        .from(parkedEvents)
-        .orderBy(asc(parkedEvents.parkedAt), asc(parkedEvents.messageId))
-        .limit(BATCH)
-      for (const row of rows) await retry(row)
-    })
+  const retryOnce = async () => {
+    for (const row of await claim()) await retry(row)
+  }
 
   return {
     retryOnce,

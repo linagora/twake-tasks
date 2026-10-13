@@ -8,7 +8,7 @@ import { projectMembers } from '../modules/boards/schema.ts'
 import { spaceRoutes } from '../modules/spaces/events.ts'
 import { postgresDeduplicator } from './dedupe.ts'
 import { parkedRetries, parkIn, type DeadLetter } from './parking.ts'
-import { createMessageHandler } from './router.ts'
+import { createMessageHandler, type Outcome } from './router.ts'
 import { parkedEvents } from './schema.ts'
 
 // Only this file parks events, so its retry passes see no one else's.
@@ -26,8 +26,13 @@ const handle = createMessageHandler({
   logger
 })
 
-function retries(deadLetter: DeadLetter = vi.fn<DeadLetter>()) {
-  return parkedRetries({ db, logger, handle, deadLetter })
+type Handle = (delivery: Delivery) => Promise<Outcome>
+
+function retries(
+  deadLetter: DeadLetter = vi.fn<DeadLetter>(),
+  retried: Handle = handle
+) {
+  return parkedRetries({ db, logger, handle: retried, deadLetter })
 }
 
 function aSpace() {
@@ -45,10 +50,36 @@ const memberAdded = (space: ReturnType<typeof aSpace>, userId: string) => ({
   }
 })
 
+async function create(space: ReturnType<typeof aSpace>, admin: string) {
+  await handle({
+    exchange: 'space',
+    routingKey: 'twake.space.created',
+    messageId: randomUUID(),
+    body: {
+      ...space,
+      name: 'Ops',
+      timestamp: new Date(Date.now() - 60_000).toISOString(),
+      members: [{ uuid: admin, email: `${admin}@example.com`, role: 'admin' }]
+    }
+  })
+}
+
 const parked = (delivery: Delivery) =>
   db
     .select()
     .from(parkedEvents)
+    .where(eq(parkedEvents.messageId, delivery.messageId ?? ''))
+
+const expire = (delivery: Delivery) =>
+  db
+    .update(parkedEvents)
+    .set({ parkedAt: raw`now() - interval '31 minutes'` })
+    .where(eq(parkedEvents.messageId, delivery.messageId ?? ''))
+
+const due = (delivery: Delivery) =>
+  db
+    .update(parkedEvents)
+    .set({ retryAt: raw`now()` })
     .where(eq(parkedEvents.messageId, delivery.messageId ?? ''))
 
 async function membersOf(space: ReturnType<typeof aSpace>) {
@@ -67,35 +98,42 @@ describe('parked events', () => {
     const admin = randomUUID()
     const late = randomUUID()
     const added = memberAdded(space, late)
+    const retried = vi.fn<Handle>(handle)
 
     expect(await handle(added)).toBe('parked')
-    await retries().retryOnce()
+    await retries(undefined, retried).retryOnce()
+    expect(retried).not.toHaveBeenCalled()
     expect(await parked(added)).toHaveLength(1)
 
-    await handle({
-      exchange: 'space',
-      routingKey: 'twake.space.created',
-      messageId: randomUUID(),
-      body: {
-        ...space,
-        name: 'Ops',
-        timestamp: new Date(Date.now() - 60_000).toISOString(),
-        members: [{ uuid: admin, email: `${admin}@example.com`, role: 'admin' }]
-      }
-    })
-    await retries().retryOnce()
+    await create(space, admin)
+    await retries(undefined, retried).retryOnce()
 
+    expect(retried).toHaveBeenCalledOnce()
     expect(await parked(added)).toEqual([])
     expect(await membersOf(space)).toEqual([admin, late].sort())
+  })
+
+  it('are retried once each when replicas retry at the same time', async () => {
+    const space = aSpace()
+    const added = [randomUUID(), randomUUID(), randomUUID()].map(user =>
+      memberAdded(space, user)
+    )
+    for (const event of added) await handle(event)
+    await create(space, randomUUID())
+    const retried = vi.fn<Handle>(handle)
+
+    await Promise.all([
+      retries(undefined, retried).retryOnce(),
+      retries(undefined, retried).retryOnce()
+    ])
+
+    expect(retried).toHaveBeenCalledTimes(3)
   })
 
   it('go to the dead letter queue once they waited 30 minutes', async () => {
     const added = memberAdded(aSpace(), randomUUID())
     await handle(added)
-    await db
-      .update(parkedEvents)
-      .set({ parkedAt: raw`now() - interval '31 minutes'` })
-      .where(eq(parkedEvents.messageId, added.messageId))
+    await expire(added)
     const deadLetter = vi.fn<DeadLetter>().mockResolvedValue()
 
     await retries(deadLetter).retryOnce()
@@ -107,13 +145,53 @@ describe('parked events', () => {
     expect(await parked(added)).toEqual([])
   })
 
+  it('go to the dead letter queue once they waited 30 minutes, even when their retry fails', async () => {
+    const added = memberAdded(aSpace(), randomUUID())
+    await handle(added)
+    await expire(added)
+    const deadLetter = vi.fn<DeadLetter>().mockResolvedValue()
+    const failing = vi.fn<Handle>().mockRejectedValue(new Error('db down'))
+
+    await retries(deadLetter, failing).retryOnce()
+
+    expect(deadLetter).toHaveBeenCalledWith(added, 'db down')
+    expect(await parked(added)).toEqual([])
+  })
+
+  it('stay parked for a later pass when their retry fails early', async () => {
+    const space = aSpace()
+    const added = memberAdded(space, randomUUID())
+    await handle(added)
+    await create(space, randomUUID())
+    const deadLetter = vi.fn<DeadLetter>()
+    const failing = vi.fn<Handle>().mockRejectedValue(new Error('db down'))
+
+    await retries(deadLetter, failing).retryOnce()
+    await retries(deadLetter, failing).retryOnce()
+
+    expect(failing).toHaveBeenCalledOnce()
+    expect(deadLetter).not.toHaveBeenCalled()
+    expect(await parked(added)).toHaveLength(1)
+  })
+
+  it('go to the dead letter queue at once when rejected', async () => {
+    const space = aSpace()
+    const added = memberAdded(space, randomUUID())
+    await handle(added)
+    await create(space, randomUUID())
+    const deadLetter = vi.fn<DeadLetter>().mockResolvedValue()
+    const rejecting = vi.fn<Handle>().mockResolvedValue('rejected')
+
+    await retries(deadLetter, rejecting).retryOnce()
+
+    expect(deadLetter).toHaveBeenCalledWith(added, 'rejected')
+    expect(await parked(added)).toEqual([])
+  })
+
   it('stay parked while their dead letter cannot be sent', async () => {
     const added = memberAdded(aSpace(), randomUUID())
     await handle(added)
-    await db
-      .update(parkedEvents)
-      .set({ parkedAt: raw`now() - interval '31 minutes'` })
-      .where(eq(parkedEvents.messageId, added.messageId))
+    await expire(added)
     const deadLetter = vi
       .fn<DeadLetter>()
       .mockRejectedValueOnce(new Error('unroutable'))
@@ -122,6 +200,7 @@ describe('parked events', () => {
     await retries(deadLetter).retryOnce()
     expect(await parked(added)).toHaveLength(1)
 
+    await due(added)
     await retries(deadLetter).retryOnce()
     expect(await parked(added)).toEqual([])
   })

@@ -4,7 +4,8 @@ import {
   jsonb,
   pgTable,
   primaryKey,
-  text
+  text,
+  uuid
 } from 'drizzle-orm/pg-core'
 import { timestamptz } from '../infra/db.ts'
 
@@ -48,8 +49,10 @@ export const parkedEvents = pgTable(
     exchange: text().notNull(),
     routingKey: text('routing_key').notNull(),
     body: jsonb().notNull(),
+    spaceId: uuid('space_id').notNull(),
     reason: text().notNull(),
-    parkedAt: timestamptz('parked_at').notNull().defaultNow()
+    parkedAt: timestamptz('parked_at').notNull().defaultNow(),
+    retryAt: timestamptz('retry_at').notNull().defaultNow()
   },
-  table => [index().on(table.parkedAt)]
+  table => [index().on(table.parkedAt), index().on(table.spaceId)]
 )

@@ -16,10 +16,18 @@ export class RejectedEventError extends Error {}
 
 // Thrown for an event about a space Tasks does not hold yet: the event that
 // brings it may only be late.
-export class NotYetKnownError extends Error {}
+export class NotYetKnownError extends Error {
+  readonly spaceId: string
+
+  constructor(spaceId: string) {
+    super(`space ${spaceId} not known yet`)
+    this.spaceId = spaceId
+  }
+}
 
 export type Park = (
   delivery: Delivery & { messageId: string },
+  spaceId: string,
   reason: string
 ) => Promise<void>
 
@@ -73,7 +81,11 @@ export function createMessageHandler(deps: {
       )
     } catch (error) {
       if (error instanceof NotYetKnownError) {
-        await park({ ...delivery, messageId: event.messageId }, error.message)
+        await park(
+          { ...delivery, messageId: event.messageId },
+          error.spaceId,
+          error.message
+        )
         logger.info({ ...context, reason: error.message }, 'event parked')
         return 'parked'
       }

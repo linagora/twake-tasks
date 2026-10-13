@@ -111,10 +111,14 @@ describe('createMessageHandler', () => {
 
   it('parks an event about a space not known yet, without marking it processed', async () => {
     const { handle, handler, dedupe, park } = setup()
-    handler.mockRejectedValueOnce(new NotYetKnownError('space s1 not known'))
+    handler.mockRejectedValueOnce(new NotYetKnownError('s1'))
 
     expect(await handle(delivery())).toBe('parked')
-    expect(park).toHaveBeenCalledWith(delivery(), 'space s1 not known')
+    expect(park).toHaveBeenCalledWith(
+      delivery(),
+      's1',
+      'space s1 not known yet'
+    )
     expect(dedupe.keys).toEqual([])
   })
 
