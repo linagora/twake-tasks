@@ -89,7 +89,7 @@ describe('links in rich text', () => {
 })
 
 describe('link tool', () => {
-  it('keeps the form around the editor unsubmitted when applying a link the form around the editor', async () => {
+  it('does not submit the form around the editor when applying a link', async () => {
     const submit = vi.fn((event: { preventDefault: () => void }) => {
       event.preventDefault()
     })
