@@ -1,5 +1,7 @@
 import { CalendarToday, Icon, List, Mosaic } from '@linagora/twake-icons'
 import { ToggleButton, useMediaQuery, useTheme } from '@linagora/twake-mui'
+import dayjs from 'dayjs'
+import localeData from 'dayjs/plugin/localeData'
 import { useState, type ReactElement, type ReactNode } from 'react'
 
 import {
@@ -118,16 +120,19 @@ export function ListLayout({
   )
 }
 
+dayjs.extend(localeData)
+
 const addDays = (day: string, amount: number) => {
   const date = new Date(`${day}T00:00:00Z`)
   date.setUTCDate(date.getUTCDate() + amount)
   return date.toISOString().slice(0, 10)
 }
 
-// The weeks covering a month, Monday first.
-function monthGrid(month: string): string[] {
+// The weeks covering a month, from the locale's first day of the week.
+function monthGrid(month: string, firstDay: number): string[] {
   const first = `${month}-01`
-  const weekday = (new Date(`${first}T00:00:00Z`).getUTCDay() + 6) % 7
+  const weekday =
+    (new Date(`${first}T00:00:00Z`).getUTCDay() - firstDay + 7) % 7
   const start = addDays(first, -weekday)
   const days: string[] = []
   for (let day = start; day.slice(0, 7) <= month || days.length % 7 !== 0;) {
@@ -170,7 +175,8 @@ export function CalendarLayout({
     weekday: compact ? 'narrow' : 'short',
     timeZone: 'UTC'
   })
-  const weekdays = monthGrid('2024-01')
+  const firstDay = dayjs().locale(lang).localeData().firstDayOfWeek()
+  const weekdays = monthGrid('2024-01', firstDay)
     .slice(0, 7)
     .map(day => weekdayName.format(new Date(`${day}T00:00:00Z`)))
 
@@ -209,7 +215,7 @@ export function CalendarLayout({
         }
       >
         <MonthGrid weekdays={weekdays}>
-          {monthGrid(month).map(day =>
+          {monthGrid(month, firstDay).map(day =>
             compact ? (
               <DayButton
                 key={day}
