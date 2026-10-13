@@ -16,6 +16,9 @@ const BACKEND = { id: 'twaketasks-backend', secret: 'e2e-backend-secret' }
 const AUDIENCE = 'twaketasks'
 const TOKEN_TTL_S = 3600
 const FRAME_ANCESTORS = process.env.FRAME_ANCESTORS ?? "'self'"
+const BACKCHANNEL_LOGOUT_URI =
+  process.env.BACKCHANNEL_LOGOUT_URI ??
+  'http://backend:8080/api/auth/backchannel-logout'
 
 const PEOPLE = {
   alice: {
@@ -73,6 +76,28 @@ function userinfo(grant: Grant) {
     name: person.name,
     org_id: ORG,
     org_role: person.org_role
+  }
+}
+
+// LemonLDAP tells the backend a session ended, which then refuses its tokens
+// at once rather than when its identity cache expires.
+async function backchannelLogout(sid: string, username: Username) {
+  const response = await fetch(BACKCHANNEL_LOGOUT_URI, {
+    method: 'POST',
+    body: new URLSearchParams({
+      logout_token: jwt({
+        iss: ISSUER,
+        aud: AUDIENCE,
+        sub: emailOf(username),
+        sid,
+        iat: Math.floor(Date.now() / 1000),
+        jti: randomUUID(),
+        events: { 'http://schemas.openid.net/event/backchannel-logout': {} }
+      })
+    })
+  })
+  if (!response.ok) {
+    console.error('back-channel logout answered', response.status)
   }
 }
 
@@ -327,7 +352,10 @@ const server = createServer(
 
         case '/logout': {
           const session = cookieSession(req.headers.cookie)
-          if (session) sessions.delete(session.sid)
+          if (session) {
+            sessions.delete(session.sid)
+            await backchannelLogout(session.sid, session.username)
+          }
           const back = url.searchParams.get('post_logout_redirect_uri')
           if (back) {
             redirect(res, new URL(back), {
