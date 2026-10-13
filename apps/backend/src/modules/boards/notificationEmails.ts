@@ -57,9 +57,23 @@ const AVATAR_COLORS = ['#7c5cff', '#0f9d76', '#e8710a', '#d6336c', '#1a73e8']
 const isDay = (value: unknown): value is string =>
   typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
 
-const dayOf = (value: unknown): string | null => {
-  const day = typeof value === 'string' ? value.slice(0, 10) : null
-  return isDay(day) ? day : null
+const DUE = /^(\d{4}-\d{2}-\d{2})(?: (\d{2}:\d{2}))?(?: (\S+))?$/
+
+function formatDue(lang: Language, value: unknown): string | null {
+  const match = typeof value === 'string' ? DUE.exec(value) : null
+  if (!match?.[1]) return null
+  const [, day, time, zone] = match
+  if (!time) return formatDay(lang, day)
+  const wallClock = new Intl.DateTimeFormat(lang, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: 'UTC'
+  }).format(new Date(`${day}T${time}:00Z`))
+  return zone ? `${wallClock} ${zone}` : wallClock
 }
 
 function formatDay(lang: Language, day: string): string {
@@ -178,10 +192,8 @@ async function describe(
         actor,
         typeof entry.to === 'number' ? `P${String(entry.to)}` : null
       )
-    case 'dueDate': {
-      const day = dayOf(entry.to)
-      return messages.dueDate(actor, day ? formatDay(lang, day) : null)
-    }
+    case 'dueDate':
+      return messages.dueDate(actor, formatDue(lang, entry.to))
     case 'deadline':
       return messages.deadline(
         actor,

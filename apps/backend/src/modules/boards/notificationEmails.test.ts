@@ -142,8 +142,36 @@ describe('notification emails', () => {
       each => each.to === bob.email && each.text.includes(board.id)
     )
     expect(mail?.text.split('\n')[0]).toBe(
-      'Alice Martin set the due date to Tue, Oct 13'
+      'Alice Martin set the due date to Tue, Oct 13, 15:00'
     )
+  })
+
+  it('shows the time of a due date in the zone it was set in', async () => {
+    const { alice, bob, board, task } = await aTask()
+    await api.as(bob).post(`/boards/${board.id}/tasks/${task.id}/comments`, {
+      body: 'Following along'
+    })
+    const mailbox = aMailbox()
+
+    await api.as(alice).patch(`/boards/${board.id}/tasks/${task.id}`, {
+      dueDate: '2026-10-14',
+      dueTime: '09:00',
+      dueZone: 'Europe/Paris'
+    })
+    await mailbox.deliver()
+    await api.as(bob).post('/notifications/read', {})
+    await api.as(alice).patch(`/boards/${board.id}/tasks/${task.id}`, {
+      dueTime: '15:00'
+    })
+    await mailbox.deliver()
+
+    const firstLines = mailbox.sent
+      .filter(each => each.to === bob.email && each.text.includes(board.id))
+      .map(each => each.text.split('\n')[0])
+    expect(firstLines).toEqual([
+      'Alice Martin set the due date to Wed, Oct 14, 09:00 Europe/Paris',
+      'Alice Martin set the due date to Wed, Oct 14, 15:00 Europe/Paris'
+    ])
   })
 
   it('names the board a followed task moved to', async () => {
