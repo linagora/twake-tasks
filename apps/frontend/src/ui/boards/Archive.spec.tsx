@@ -11,8 +11,8 @@ function logoBoard(overrides: Partial<Board> = {}) {
   const logo = aTask(board.sections[0] ?? null, { key: 'DES-1', title: 'Logo' })
   board.tasks = [logo]
   const boardsApi = fakeBoardsApi([board])
-  renderRoute(`/boards/${board.id}`, { boardsApi })
-  return { board, logo, boardsApi }
+  const { router } = renderRoute(`/boards/${board.id}`, { boardsApi })
+  return { board, logo, boardsApi, router }
 }
 
 async function removeLogo(action: 'Archive' | 'Delete') {
@@ -149,6 +149,30 @@ describe('archive and trash', () => {
     expect(
       await screen.findByRole('status', { name: 'DES-1 is back on the board' })
     ).toBeVisible()
+  })
+
+  it('leaves the task panel the user moved to alone once a row has restored its task', async () => {
+    const { boardsApi, router } = logoBoard()
+
+    await removeLogo('Delete')
+    const shelf = await openShelf('Trash')
+    const getBoard = boardsApi.getBoard.getMockImplementation()
+    if (!getBoard) throw new Error('getBoard is not faked')
+    boardsApi.getBoard.mockImplementation(async (...args) => {
+      await new Promise(resolve => setTimeout(resolve, 300))
+      void router.navigate(
+        { pathname: router.state.location.pathname, search: '?task=DES-2' },
+        { replace: true }
+      )
+      return getBoard(...args)
+    })
+    const item = within(
+      await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
+    )
+    fireEvent.click(item.getByRole('button', { name: 'Restore DES-1' }))
+
+    await screen.findByRole('status', { name: 'DES-1 is back on the board' })
+    expect(router.state.location.search).toBe('?task=DES-2')
   })
 
   it('says where a deleted task went and opens the trash from there', async () => {

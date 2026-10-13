@@ -16,7 +16,9 @@ import {
 import {
   createContext,
   useContext,
+  useEffect,
   useId,
+  useRef,
   useState,
   type ReactElement
 } from 'react'
@@ -376,6 +378,13 @@ function ShelfTask({
   const restore = useBoardChange(board.id, api =>
     api.restoreTask(board.id, task.id)
   )
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const left = daysLeft(task.at)
   const restoreButton = (variant: 'secondary' | 'text') =>
     editable && (
@@ -388,7 +397,9 @@ function ShelfTask({
         onClick={() => {
           restore.mutateAsync(undefined).then(
             () => {
-              panel.close()
+              // A row that unmounted holds a stale URL: closing from it would
+              // drop the task the user has moved to.
+              if (mounted.current) panel.close()
               onRestored(false)
             },
             () => {
