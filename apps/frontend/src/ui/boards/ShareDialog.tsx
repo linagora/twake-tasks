@@ -134,13 +134,13 @@ export function ShareDialog({
   const cancel = useBoardChange(board.id, (api, inviteId: string) =>
     api.cancelInvite(board.id, inviteId)
   )
-  // Each action replaces the message of the one before, so a stale
-  // "Invited" or error never sits next to the outcome of a later action.
+  // Clears the last action's message. A pending action keeps running: a
+  // reset would drop its onSuccess and re-enable Invite mid-request.
   const start = (): void => {
     setInvited(null)
-    invite.reset()
-    change.reset()
-    cancel.reset()
+    for (const action of [invite, change, cancel]) {
+      if (!action.isPending) action.reset()
+    }
   }
   const failure = invite.error ?? change.error ?? cancel.error
   const admins =
