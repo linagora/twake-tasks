@@ -4,11 +4,12 @@ import { loadConfig } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
 import { createRelay } from './events/outbox.ts'
 import { createMessageHandler } from './events/router.ts'
-import { listenToChanges } from './infra/changes.ts'
+import { createChanges } from './infra/changes.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
 import {
+  connectLive,
   requestSpaceSync,
   startConsumer,
   startPublisher
@@ -20,7 +21,7 @@ import {
   emailInvite,
   PROJECT_INVITE_EMAIL_JOB
 } from './modules/boards/inviteEmails.ts'
-import { BOARD_CHANNEL } from './modules/boards/live.ts'
+import { listenForBoardChanges } from './modules/boards/live.ts'
 import {
   emailNotification,
   NOTIFICATION_EMAIL_JOB
@@ -40,12 +41,12 @@ const config = loadConfig()
 const logger = pino({ level: config.LOG_LEVEL })
 const spaces = config.SPACE_INTEGRATION === 'true'
 
-const { sql, db } = createDb(config.DATABASE_URL)
+const { sql, db } = createDb(config.DATABASE_URL, logger)
 await assertRowLevelSecurity(sql)
 await migrateDb(db)
 
 let accepting = false
-const boardChanges = await listenToChanges(sql, BOARD_CHANNEL)
+const boardChanges = createChanges()
 const server = await buildApp({
   logger,
   db,
@@ -63,6 +64,13 @@ const server = await buildApp({
 })
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })
 
+const live = await connectLive(config.RABBITMQ_URL, logger)
+await listenForBoardChanges(
+  live,
+  config.RABBITMQ_LIVE_EXCHANGE,
+  boardChanges,
+  logger
+)
 const publisher = await startPublisher(
   config.RABBITMQ_URL,
   config.RABBITMQ_ACTIVITY_EXCHANGE,
@@ -155,7 +163,7 @@ async function shutdown(signal: string): Promise<void> {
     await stopRelay()
     await publisher.close()
     await server.close()
-    await boardChanges.close()
+    await live.close()
     await sql.end({ timeout: 5 })
   } catch (error) {
     logger.error({ err: error }, 'shutdown failed')

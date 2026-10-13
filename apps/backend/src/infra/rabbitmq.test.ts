@@ -10,12 +10,20 @@ import {
   beforeAll,
   describe,
   expect,
+  inject,
   it,
   vi
 } from 'vitest'
 import type { OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 import {
+  listenForBoardChanges,
+  tellBoardChanged
+} from '../modules/boards/live.ts'
+import { createChanges } from './changes.ts'
+import { createDb } from './db.ts'
+import {
+  connectLive,
   requestSpaceSync,
   startConsumer,
   startPublisher,
@@ -365,6 +373,78 @@ describe('startPublisher', () => {
       ).resolves.toBeUndefined()
     } finally {
       await publisher.close()
+    }
+  })
+})
+
+describe('live board changes', () => {
+  it('reach the streams of every replica once committed', async () => {
+    const { sql, db } = createDb(inject('databaseUrl'))
+    const log = pino({ level: 'silent' })
+    const replicas = [
+      await connectLive(container.getAmqpUrl(), log),
+      await connectLive(container.getAmqpUrl(), log)
+    ]
+    const boardId = '0199d0a4-5c3e-7b1a-9f2d-3e4f5a6b7c8d'
+    const heard = replicas.map(() => vi.fn<(version: number) => void>())
+
+    try {
+      for (const [index, replica] of replicas.entries()) {
+        const changes = createChanges()
+        changes.subscribe(boardId, version => heard[index]?.(version))
+        await listenForBoardChanges(replica, 'live', changes, log)
+      }
+      await db.transaction(tx => {
+        tellBoardChanged(tx, { id: boardId, version: 7 })
+        return Promise.resolve()
+      })
+
+      for (const listener of heard) {
+        await vi.waitFor(() => {
+          expect(listener).toHaveBeenCalledWith(7)
+        })
+      }
+    } finally {
+      for (const replica of replicas) await replica.close()
+      await sql.end()
+    }
+  })
+
+  it('still publishes after a publish failed', async () => {
+    const { sql, db } = createDb(inject('databaseUrl'))
+    const boardId = '0199d0a4-5c3e-7b1a-9f2d-3e4f5a6b7c8d'
+    // As the client: a failed publish marks it disconnected, and only the
+    // next publish reconnects it.
+    let connected = true
+    const publish = vi.fn(() => {
+      if (publish.mock.calls.length > 1) return Promise.resolve()
+      connected = false
+      return Promise.reject(new Error('channel closed'))
+    })
+    const broker = {
+      isConnected: () => connected,
+      subscribe: () => Promise.resolve(),
+      publish
+    }
+    const tell = () =>
+      db.transaction(tx => {
+        tellBoardChanged(tx, { id: boardId, version: 7 })
+        return Promise.resolve()
+      })
+
+    try {
+      await listenForBoardChanges(
+        broker,
+        'live',
+        createChanges(),
+        pino({ level: 'silent' })
+      )
+      await tell()
+      await tell()
+
+      expect(publish).toHaveBeenCalledTimes(2)
+    } finally {
+      await sql.end()
     }
   })
 })

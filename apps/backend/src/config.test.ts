@@ -17,7 +17,8 @@ describe('the RabbitMQ names', () => {
       RABBITMQ_AUTH_EXCHANGE: 'auth',
       RABBITMQ_ACTIVITY_EXCHANGE: 'activity',
       RABBITMQ_QUEUE: 'platform.all.twake-tasks',
-      RABBITMQ_DEAD_LETTER_EXCHANGE: 'twake-tasks.dlx'
+      RABBITMQ_DEAD_LETTER_EXCHANGE: 'twake-tasks.dlx',
+      RABBITMQ_LIVE_EXCHANGE: 'twake-tasks.live'
     })
   })
 

@@ -1,5 +1,5 @@
 import { eq, sql as statement, type SQL } from 'drizzle-orm'
-import { afterAll, describe, expect, inject, it } from 'vitest'
+import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import type { Role } from '../modules/boards/access.ts'
 import {
   boardFavorites,
@@ -14,6 +14,7 @@ import { aB2cUser, aUser, type TestUser } from '../testing/app.ts'
 import { PostgreSqlContainer } from '@testcontainers/postgresql'
 import postgres from 'postgres'
 import {
+  afterCommit,
   assertRowLevelSecurity,
   createDb,
   inTenant,
@@ -329,6 +330,59 @@ describe('assertRowLevelSecurity', () => {
         and relrowsecurity and not relforcerowsecurity`
 
     expect(unforced).toEqual([])
+  })
+})
+
+describe('afterCommit', () => {
+  it('runs once the transaction commits, keeping a savepoint only if it is released', async () => {
+    const ran: string[] = []
+    const rollBack = () => Promise.reject(new Error('rolled back'))
+
+    await db
+      .transaction(tx => {
+        afterCommit(tx, () => ran.push('rolled back'))
+        return rollBack()
+      })
+      .catch(() => undefined)
+    await db.transaction(async tx => {
+      afterCommit(tx, () => ran.push('committed'))
+      await tx.transaction(savepoint => {
+        afterCommit(savepoint, () => ran.push('released'))
+        return Promise.resolve()
+      })
+      await tx
+        .transaction(savepoint => {
+          afterCommit(savepoint, () => ran.push('savepoint rolled back'))
+          return rollBack()
+        })
+        .catch(() => undefined)
+      expect(ran).toEqual([])
+    })
+
+    expect(ran).toEqual(['committed', 'released'])
+  })
+
+  it('logs a hook that throws, and still runs the next ones', async () => {
+    const log = { error: vi.fn() }
+    const logged = createDb(inject('databaseUrl'), log)
+    const ran: string[] = []
+
+    try {
+      await expect(
+        logged.db.transaction(tx => {
+          afterCommit(tx, () => {
+            throw new Error('hook failed')
+          })
+          afterCommit(tx, () => ran.push('next'))
+          return Promise.resolve('committed')
+        })
+      ).resolves.toBe('committed')
+    } finally {
+      await logged.sql.end()
+    }
+
+    expect(ran).toEqual(['next'])
+    expect(log.error).toHaveBeenCalledOnce()
   })
 })
 

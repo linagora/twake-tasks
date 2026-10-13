@@ -13,6 +13,7 @@ import { boards, projects, tasks } from './schema.ts'
 import { describeTasks } from './store.ts'
 import {
   bumpBoard,
+  bumpBoards,
   checkRole,
   Refused,
   taskOf,
@@ -192,16 +193,15 @@ export function createArchiveStore(db: Db) {
     setBoardArchived(identity: Identity, boardId: string, archived: boolean) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'admin')
-        const [board] = await tx
-          .update(boards)
-          .set({
+        const [board] = await bumpBoards(
+          tx,
+          and(eq(boards.id, boardId), eq(boards.inbox, false)),
+          {
             archivedAt: archived
               ? sql`coalesce(${boards.archivedAt}, now())`
-              : null,
-            version: sql`${boards.version} + 1`
-          })
-          .where(and(eq(boards.id, boardId), eq(boards.inbox, false)))
-          .returning({ id: boards.id })
+              : null
+          }
+        )
         if (!board) throw new Refused('forbidden')
         return null
       })

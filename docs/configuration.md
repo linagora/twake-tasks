@@ -37,6 +37,7 @@ RabbitMQ names, when the broker's differ:
 - `RABBITMQ_ACTIVITY_EXCHANGE` (`activity`)
 - `RABBITMQ_QUEUE` (`platform.all.twake-tasks`)
 - `RABBITMQ_DEAD_LETTER_EXCHANGE` (`twake-tasks.dlx`)
+- `RABBITMQ_LIVE_EXCHANGE` (`twake-tasks.live`), for [live updates](events.md#live-updates) between replicas
 
 Server:
 

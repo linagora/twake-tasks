@@ -1,9 +1,20 @@
-import { and, asc, desc, eq, isNull, ne, notInArray, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  isNull,
+  ne,
+  notInArray,
+  sql,
+  type SQL
+} from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { membersOf, roleOn } from './access.ts'
+import { tellBoardChanged } from './live.ts'
 import { plainText } from './markdown.ts'
 import {
   daysBetween,
@@ -155,20 +166,37 @@ export function inSection(boardId: string, sectionId: string | null) {
 export async function bumpBoard(
   tx: Tx,
   boardId: string,
-  extra: { taskCounter?: ReturnType<typeof sql> } = {}
+  extra: { taskCounter?: SQL } = {}
 ) {
-  const [board] = await tx
+  const [board] = await bumpBoards(
+    tx,
+    and(eq(boards.id, boardId), sql`${boards.archivedAt} is null`),
+    extra
+  )
+  if (!board) throw new Refused('archived')
+  return board
+}
+
+/** Bumps the version of the boards matched, and tells their live viewers. */
+export async function bumpBoards(
+  tx: Tx,
+  where: SQL | undefined,
+  extra: { taskCounter?: SQL; archivedAt?: SQL | null } = {}
+) {
+  const bumped = await tx
     .update(boards)
     .set({ version: sql`${boards.version} + 1`, ...extra })
-    .where(and(eq(boards.id, boardId), sql`${boards.archivedAt} is null`))
+    .where(where)
     .returning({
+      id: boards.id,
+      version: boards.version,
       number: boards.taskCounter,
       keyPrefix: boards.keyPrefix,
       organizationId: boards.organizationId,
       projectId: boards.projectId
     })
-  if (!board) throw new Refused('archived')
-  return board
+  for (const board of bumped) tellBoardChanged(tx, board)
+  return bumped
 }
 
 export async function writeOrRefuse<T>(
