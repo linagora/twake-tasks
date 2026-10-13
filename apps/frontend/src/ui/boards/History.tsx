@@ -6,7 +6,7 @@ import { Feed, FeedItem } from '@/ds/SidePanel'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import type { Board, Duration, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
-import { dueLabel, formatDay } from '@/ui/boards/dueLabel'
+import { dueLabel, formatDay, momentFormat } from '@/ui/boards/dueLabel'
 import { useBoard, useHistory } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -117,10 +117,7 @@ export function History({
   const { t, lang } = useI18n()
   const history = useHistory(boardId, task.id)
   const board = useBoard(boardId)
-  const format = new Intl.DateTimeFormat(lang, {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  })
+  const format = momentFormat(lang)
 
   return (
     <>

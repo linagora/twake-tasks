@@ -6,6 +6,7 @@ import { RichText, RichTextEditor } from '@/ds/RichText'
 import { Feed, FeedItem } from '@/ds/SidePanel'
 import type { Person, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
+import { momentFormat } from '@/ui/boards/dueLabel'
 import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useAddComment, useComments } from '@/ui/boards/queries'
@@ -34,10 +35,7 @@ export function Comments({
   const add = useAddComment(boardId, task.id)
   const [body, setBody] = useState('')
   const [draft, setDraft] = useState(0)
-  const format = new Intl.DateTimeFormat(lang, {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  })
+  const format = momentFormat(lang)
   const sendable = !add.isPending && body !== '' && body.length <= MAX_COMMENT
   const mentionable = (query: string) => {
     const pinned = new Set(task.assignees.map(person => person.userId))
