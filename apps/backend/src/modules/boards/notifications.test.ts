@@ -226,4 +226,75 @@ describe('following and notifications', () => {
 
     expect((await api.as(stranger).put(`${path}/follow`)).statusCode).toBe(404)
   })
+
+  describe('when the person loses access to the task', () => {
+    async function anAssignedBob() {
+      const team = await aTeam()
+      await api
+        .as(team.alice)
+        .put(`${team.path}/assignees`, { userIds: [team.bob.userId] })
+      const unread = async () =>
+        (await api.as(team.bob).get('/notifications/unread')).json<{
+          projects: unknown[]
+        }>().projects
+      return { ...team, unread }
+    }
+
+    async function moveToAnotherProject(
+      team: Awaited<ReturnType<typeof anAssignedBob>>
+    ) {
+      const secret = (
+        await api
+          .as(team.alice)
+          .post('/boards', { name: 'Secret', keyPrefix: 'SEC' })
+      ).json<{ id: string }>()
+      await api.as(team.alice).post(`${team.path}/transfer`, {
+        boardId: secret.id,
+        sectionId: null
+      })
+      return secret.id
+    }
+
+    it('hides the notifications of a task moved out of reach', async () => {
+      const team = await anAssignedBob()
+      const secret = await moveToAnotherProject(team)
+      await api
+        .as(team.alice)
+        .patch(`/boards/${secret}/tasks/${team.taskId}`, { title: 'Hidden' })
+
+      expect(await team.inbox(team.bob)).toEqual([])
+      expect(await team.unread()).toEqual([])
+    })
+
+    it('hides the notifications of a task once removed from its project', async () => {
+      const team = await anAssignedBob()
+      const boardId = team.path.split('/')[2] ?? ''
+
+      await api
+        .as(team.alice)
+        .delete(`/boards/${boardId}/members/${team.bob.userId}`)
+
+      expect(await team.inbox(team.bob)).toEqual([])
+      expect(await team.unread()).toEqual([])
+    })
+
+    it('leaves the notifications of a task out of reach alone when marking read', async () => {
+      const team = await anAssignedBob()
+      const boardId = team.path.split('/')[2] ?? ''
+      const secret = await moveToAnotherProject(team)
+
+      await api.as(team.bob).post('/notifications/read', {})
+      await api
+        .as(team.alice)
+        .post(`/boards/${secret}/tasks/${team.taskId}/transfer`, {
+          boardId,
+          sectionId: null
+        })
+      await api
+        .as(team.alice)
+        .put(`${team.path}/assignees`, { userIds: [team.bob.userId] })
+
+      expect(await team.inbox(team.bob)).toMatchObject([{ readAt: null }])
+    })
+  })
 })

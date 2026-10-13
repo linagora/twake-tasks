@@ -1,7 +1,7 @@
-import { and, asc, count, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { roleOn } from './access.ts'
+import { accessibleBoards, roleOn } from './access.ts'
 import { scheduleReminder, unscheduleReminder } from './reminderJobs.ts'
 import {
   boards,
@@ -19,6 +19,19 @@ const firesAt =
   else reminder_time(${tasks.dueDate}, ${tasks.dueTime}, ${tasks.dueZone}, ${taskReminders.zone}, ${taskReminders.beforeMinutes}) end`.mapWith(
     taskReminders.at
   )
+
+// Notifications outlive the access that let the person open the task, and RLS
+// lets only their owner delete them, so they are filtered when read.
+function openableBy(tx: Tx, userId: string) {
+  const accessible = accessibleBoards(tx, userId)
+  return inArray(
+    notifications.taskId,
+    tx
+      .select({ id: tasks.id })
+      .from(tasks)
+      .innerJoin(accessible, eq(accessible.boardId, tasks.boardId))
+  )
+}
 
 async function visibleTask(
   tx: Tx,
@@ -172,7 +185,8 @@ export function createReminderStore(db: Db) {
           .where(
             and(
               eq(notifications.userId, identity.userId),
-              isNull(notifications.readAt)
+              isNull(notifications.readAt),
+              openableBy(tx, identity.userId)
             )
           )
         return null
@@ -190,7 +204,8 @@ export function createReminderStore(db: Db) {
           .where(
             and(
               eq(notifications.userId, identity.userId),
-              isNull(notifications.readAt)
+              isNull(notifications.readAt),
+              openableBy(tx, identity.userId)
             )
           )
           .groupBy(boards.projectId)
@@ -213,7 +228,12 @@ export function createReminderStore(db: Db) {
           .from(notifications)
           .innerJoin(tasks, eq(tasks.id, notifications.taskId))
           .innerJoin(boards, eq(boards.id, tasks.boardId))
-          .where(eq(notifications.userId, identity.userId))
+          .where(
+            and(
+              eq(notifications.userId, identity.userId),
+              openableBy(tx, identity.userId)
+            )
+          )
           .orderBy(desc(notifications.createdAt))
           .limit(50)
       )
