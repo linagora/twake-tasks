@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -26,7 +26,18 @@ async function openQuickAdd() {
     type(line)
     fireEvent.click(dialog.getByRole('button', { name: 'Add' }))
   }
-  return { dialog, field, type, add, design }
+  const holdNextAdd = () => {
+    const real = boardsApi.createTask.getMockImplementation()
+    const gate = Promise.withResolvers<undefined>()
+    boardsApi.createTask.mockImplementationOnce(async (...args) => {
+      await gate.promise
+      return real ? real(...args) : Promise.reject(new Error('no fake'))
+    })
+    return () => {
+      gate.resolve(undefined)
+    }
+  }
+  return { dialog, field, type, add, design, holdNextAdd, boardsApi }
 }
 
 describe('QuickAdd', () => {
@@ -73,6 +84,35 @@ describe('QuickAdd', () => {
     type('Next')
 
     expect(dialog.queryByText('DES-1 added.')).toBeNull()
+  })
+
+  it('keeps an add in flight when the line is edited meanwhile', async () => {
+    const { dialog, field, type, add, design, holdNextAdd } =
+      await openQuickAdd()
+    const release = holdNextAdd()
+    add('Logo #DES')
+    await waitFor(() => {
+      expect(dialog.getByRole('button', { name: 'Add' })).toBeDisabled()
+    })
+    type('Logo #DES!')
+
+    release()
+
+    expect(await dialog.findByText('DES-1 added.')).toBeVisible()
+    expect(field()).toHaveValue('')
+    expect(design.tasks).toHaveLength(1)
+  })
+
+  it('keeps the success notice after a retry succeeds', async () => {
+    const { dialog, add, design, boardsApi } = await openQuickAdd()
+    boardsApi.createTask.mockRejectedValueOnce(new Error('offline'))
+    add('Logo #DES')
+    expect(await dialog.findByRole('alert')).toBeVisible()
+
+    fireEvent.click(dialog.getByRole('button', { name: 'Add' }))
+
+    expect(await dialog.findByText('DES-1 added.')).toBeVisible()
+    expect(design.tasks).toHaveLength(1)
   })
 
   it('shows what it understood as you type', async () => {

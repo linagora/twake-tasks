@@ -132,6 +132,7 @@ export function Reminders({
             label={t('reminders.remindMe')}
             value={before}
             onChange={event => {
+              add.reset()
               setBefore(event.target.value as Before)
             }}
             size="small"
@@ -148,12 +149,18 @@ export function Reminders({
           </TextField>
         )}
         {fixed && (
-          <MomentField label={t('reminders.at')} value={at} onChange={setAt} />
+          <MomentField
+            label={t('reminders.at')}
+            value={at}
+            onChange={value => {
+              add.reset()
+              setAt(value)
+            }}
+          />
         )}
         {add.isError && (
           <Typography role="alert" variant="caption" color="error">
-            {fixed &&
-            add.error instanceof ApiError &&
+            {add.error instanceof ApiError &&
             add.error.code === 'invalid_reminder'
               ? t('reminders.past')
               : t('reminders.failed')}

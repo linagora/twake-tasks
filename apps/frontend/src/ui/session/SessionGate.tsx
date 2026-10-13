@@ -52,10 +52,15 @@ const sinceNavigation = (): number =>
     ? performance.now()
     : 0
 
+const SIGNED_OUT = [
+  'login_required',
+  'interaction_required',
+  'consent_required',
+  'account_selection_required'
+]
+
 const isSignedOut = (error: unknown): boolean =>
-  error instanceof Error &&
-  (error.message === 'login_required' ||
-    error.message === 'interaction_required')
+  error instanceof Error && SIGNED_OUT.includes(error.message)
 
 // The platform exchanges the id token for a token of its own, once per sign-in
 const signedInWith = (user: User): GateState => {

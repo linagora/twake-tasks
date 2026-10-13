@@ -289,12 +289,16 @@ export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
     nextCaret.current = null
   }, [line])
 
-  const type = (value: string, at: number) => {
-    if (!add.isIdle) add.reset()
+  const setText = (value: string, at: number) => {
     setLine(value)
     setCaret(at)
     setActive(0)
     setDismissed(false)
+  }
+
+  const type = (value: string, at: number) => {
+    if (!add.isIdle && !add.isPending) add.reset()
+    setText(value, at)
   }
 
   const pick = (suggestion: Suggestion) => {
@@ -317,7 +321,7 @@ export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
           event.preventDefault()
           add.mutate(line, {
             onSuccess: () => {
-              type('', 0)
+              setText('', 0)
             }
           })
         }}
