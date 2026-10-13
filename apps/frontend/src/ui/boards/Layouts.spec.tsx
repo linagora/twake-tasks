@@ -155,6 +155,29 @@ describe('board layouts', () => {
     expect(screen.getByRole('heading', { name: month })).toBeVisible()
   })
 
+  it.each([
+    ['en', 'Sun'],
+    ['fr', 'lun.']
+  ] as const)(
+    'starts the calendar weeks on the first day of the %s locale',
+    async (lang, first) => {
+      const board = designBoard({
+        layout: 'calendar',
+        defaultLayout: 'calendar'
+      })
+      renderRoute(`/boards/${board.id}`, {
+        boardsApi: fakeBoardsApi([board]),
+        lang
+      })
+
+      await screen.findByRole('region', {
+        name: formatDay(localToday(), lang)
+      })
+      const header = screen.getByText(first).parentElement
+      expect(header?.firstElementChild).toHaveTextContent(first)
+    }
+  )
+
   it('opens a task from its day', async () => {
     const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
