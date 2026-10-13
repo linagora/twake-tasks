@@ -9,6 +9,7 @@ import {
 import type { Identity } from '../auth/index.ts'
 import { membersOf, roleOn } from './access.ts'
 import { labelsOn } from './labels.ts'
+import { tellBoardChanged } from './live.ts'
 import { boards, projects, tasks } from './schema.ts'
 import { describeTasks } from './store.ts'
 import {
@@ -201,8 +202,9 @@ export function createArchiveStore(db: Db) {
             version: sql`${boards.version} + 1`
           })
           .where(and(eq(boards.id, boardId), eq(boards.inbox, false)))
-          .returning({ id: boards.id })
+          .returning({ id: boards.id, version: boards.version })
         if (!board) throw new Refused('forbidden')
+        tellBoardChanged(tx, board)
         return null
       })
     }

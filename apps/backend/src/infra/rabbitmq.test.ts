@@ -10,12 +10,19 @@ import {
   beforeAll,
   describe,
   expect,
+  inject,
   it,
   vi
 } from 'vitest'
 import type { OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 import {
+  listenForBoardChanges,
+  tellBoardChanged
+} from '../modules/boards/live.ts'
+import { createDb } from './db.ts'
+import {
+  connectLive,
   requestSpaceSync,
   startConsumer,
   startPublisher,
@@ -365,6 +372,39 @@ describe('startPublisher', () => {
       ).resolves.toBeUndefined()
     } finally {
       await publisher.close()
+    }
+  })
+})
+
+describe('live board changes', () => {
+  it('reach the streams of every replica once committed', async () => {
+    const { sql, db } = createDb(inject('databaseUrl'))
+    const log = pino({ level: 'silent' })
+    const replicas = [
+      await connectLive(container.getAmqpUrl(), log),
+      await connectLive(container.getAmqpUrl(), log)
+    ]
+    const boardId = '0199d0a4-5c3e-7b1a-9f2d-3e4f5a6b7c8d'
+    const heard = replicas.map(() => vi.fn<(version: number) => void>())
+
+    try {
+      for (const [index, replica] of replicas.entries()) {
+        const changes = await listenForBoardChanges(replica, 'live', log)
+        changes.subscribe(boardId, version => heard[index]?.(version))
+      }
+      await db.transaction(tx => {
+        tellBoardChanged(tx, { id: boardId, version: 7 })
+        return Promise.resolve()
+      })
+
+      for (const listener of heard) {
+        await vi.waitFor(() => {
+          expect(listener).toHaveBeenCalledWith(7)
+        })
+      }
+    } finally {
+      for (const replica of replicas) await replica.close()
+      await sql.end()
     }
   })
 })

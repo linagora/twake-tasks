@@ -4,6 +4,7 @@ import postgres from 'postgres'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { membersOf, roleOn } from './access.ts'
+import { tellBoardChanged } from './live.ts'
 import { plainText } from './markdown.ts'
 import {
   daysBetween,
@@ -162,12 +163,15 @@ export async function bumpBoard(
     .set({ version: sql`${boards.version} + 1`, ...extra })
     .where(and(eq(boards.id, boardId), sql`${boards.archivedAt} is null`))
     .returning({
+      id: boards.id,
+      version: boards.version,
       number: boards.taskCounter,
       keyPrefix: boards.keyPrefix,
       organizationId: boards.organizationId,
       projectId: boards.projectId
     })
   if (!board) throw new Refused('archived')
+  tellBoardChanged(tx, board)
   return board
 }
 

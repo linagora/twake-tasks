@@ -24,7 +24,7 @@ flowchart LR
 ## Backend
 
 - Every API route is under `/api`. A request is authenticated by introspecting its token at the SSO and reading its userinfo.
-- Board pages get live updates over server-sent events (`/api/boards/<id>/events`). A change made on any replica reaches every replica through PostgreSQL `LISTEN`/`NOTIFY`.
+- Board pages get live updates over server-sent events (`/api/boards/<id>/events`). A change made on any replica reaches every replica through RabbitMQ (see [events](events.md#live-updates)).
 - Background work runs in the backend process, from a jobs table in PostgreSQL that every replica polls with `SKIP LOCKED`: reminders, notification and invitation emails, the purge of tasks 30 days after they go to the trash, and in space mode the nightly space repair.
 - Outgoing events are written to an outbox table in the same transaction as the change, and relayed to RabbitMQ by one replica at a time (behind an advisory lock), in order.
 

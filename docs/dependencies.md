@@ -11,7 +11,8 @@
 Required in every mode. The backend connects at start, then:
 
 - consumes account deletions, settings updates and, in space mode, space events;
-- publishes on the `activity` exchange.
+- publishes on the `activity` exchange;
+- sends live board updates between its replicas on the `twake-tasks.live` exchange.
 
 See [events](events.md) for the exchanges, routing keys and queue.
 

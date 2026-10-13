@@ -37,3 +37,22 @@ All on the `space` exchange. An event dated more than a day ahead is rejected, s
 
 - `twake.space.sync.requested` on `space`, at start, in space mode, while no space is known yet.
 - `com.twake.tasks.space.provisioned.v1` on `activity`, once a space has its project. A CloudEvent whose data holds the space id and the project (`{ kind: 'project', id }`), which tells TwakeSpace the project to show for the space.
+
+## Live updates
+
+```mermaid
+sequenceDiagram
+  participant W as Write (transaction)
+  participant K as twake-tasks.live exchange
+  participant R as Every replica
+  participant FE as Browser
+  W->>W: bumps the board version
+  Note over W: published once the transaction commits
+  W->>K: board.changed {boardId, version}
+  K-->>R: one exclusive queue per replica
+  R->>FE: data: {version} on /api/boards/<id>/events
+```
+
+- Every write to a board bumps its version, and publishes `board.changed` with `{boardId, version}` on the `twake-tasks.live` exchange once the transaction commits. A rolled back change publishes nothing.
+- Every replica consumes from its own exclusive, auto-deleted queue, `twake-tasks.live.replica.<uuid>`, and sends the version to each stream open on that board.
+- Delivery is best effort. A replica that is disconnected publishes nothing, a failed publish is not retried, and a message published while a replica is disconnected is lost. A stream sends the board's current version when it opens, and the browser reloads the board when the version is newer than its own.

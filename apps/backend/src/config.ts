@@ -21,6 +21,7 @@ const configSchema = z
     RABBITMQ_ACTIVITY_EXCHANGE: z.string().min(1).default('activity'),
     RABBITMQ_QUEUE: z.string().min(1).default('platform.all.twake-tasks'),
     RABBITMQ_DEAD_LETTER_EXCHANGE: z.string().min(1).default('twake-tasks.dlx'),
+    RABBITMQ_LIVE_EXCHANGE: z.string().min(1).default('twake-tasks.live'),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     APP_URL: z.url({ protocol: /^https?$/ }),
     OIDC_ISSUER: z.url({ protocol: /^https$/ }),

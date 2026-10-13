@@ -123,6 +123,15 @@ export async function requestSpaceSync(
   }
 }
 
+export async function connectLive(
+  url: string,
+  logger: Logger
+): Promise<RabbitMQClient> {
+  const client = new RabbitMQClient({ url, logger })
+  await client.init()
+  return client
+}
+
 export interface Publisher {
   publish(event: OutgoingEvent): Promise<void>
   close(): Promise<void>

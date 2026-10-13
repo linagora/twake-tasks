@@ -1,6 +1,7 @@
 import { and, asc, eq, ne, notInArray, sql } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { tellBoardChanged } from './live.ts'
 import { boards, labels, taskLabels } from './schema.ts'
 import {
   bumpBoard,
@@ -82,12 +83,14 @@ export function createLabelStore(db: Db) {
             )
             .returning(shape)
           if (!label) throw new Refused('not_found')
-          await tx
+          const siblings = await tx
             .update(boards)
             .set({ version: sql`${boards.version} + 1` })
             .where(
               and(eq(boards.projectId, board.projectId), ne(boards.id, boardId))
             )
+            .returning({ id: boards.id, version: boards.version })
+          for (const sibling of siblings) tellBoardChanged(tx, sibling)
           return label
         })
       } catch (error) {

@@ -1,14 +1,14 @@
 import { randomUUID } from 'node:crypto'
+import type { RabbitMQMessageHandler } from '@linagora/rabbitmq-client'
 import { pino } from 'pino'
 import { inject } from 'vitest'
 import { buildApp } from '../app.ts'
 import { eq } from 'drizzle-orm'
-import { listenToChanges } from '../infra/changes.ts'
 import { createDb, inTenant, type Db } from '../infra/db.ts'
 import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
 import type { Role } from '../modules/boards/access.ts'
-import { BOARD_CHANNEL } from '../modules/boards/live.ts'
+import { listenForBoardChanges, type Broker } from '../modules/boards/live.ts'
 import {
   boards,
   projectMembers,
@@ -115,9 +115,34 @@ export async function aBoardIn(
   })
 }
 
+const handlers: RabbitMQMessageHandler[] = []
+
+// Delivers each live message to every app started in this process, as the
+// live exchange does to every replica.
+const inMemoryBroker: Broker = {
+  isConnected: () => true,
+  subscribe(_exchange, _routingKey, _queue, handler) {
+    handlers.push(handler)
+    return Promise.resolve()
+  },
+  async publish(exchange, routingKey, message) {
+    for (const handler of handlers) {
+      await handler(structuredClone(message), {
+        exchange,
+        routingKey,
+        headers: {}
+      })
+    }
+  }
+}
+
 export async function startApp() {
   const { sql, db } = createDb(inject('databaseUrl'))
-  const boardChanges = await listenToChanges(sql, BOARD_CHANNEL)
+  const boardChanges = await listenForBoardChanges(
+    inMemoryBroker,
+    'live',
+    pino({ level: 'silent' })
+  )
   const app = await buildApp({
     logger: pino({ level: 'silent' }),
     db,
@@ -170,7 +195,6 @@ export async function startApp() {
     listen: () => app.listen({ host: '127.0.0.1', port: 0 }),
     close: async () => {
       await app.close()
-      await boardChanges.close()
       await sql.end()
     }
   }

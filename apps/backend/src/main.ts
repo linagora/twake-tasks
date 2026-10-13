@@ -4,11 +4,11 @@ import { loadConfig } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
 import { createRelay } from './events/outbox.ts'
 import { createMessageHandler } from './events/router.ts'
-import { listenToChanges } from './infra/changes.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
 import {
+  connectLive,
   requestSpaceSync,
   startConsumer,
   startPublisher
@@ -20,7 +20,7 @@ import {
   emailInvite,
   PROJECT_INVITE_EMAIL_JOB
 } from './modules/boards/inviteEmails.ts'
-import { BOARD_CHANNEL } from './modules/boards/live.ts'
+import { listenForBoardChanges } from './modules/boards/live.ts'
 import {
   emailNotification,
   NOTIFICATION_EMAIL_JOB
@@ -45,7 +45,12 @@ await assertRowLevelSecurity(sql)
 await migrateDb(db)
 
 let accepting = false
-const boardChanges = await listenToChanges(sql, BOARD_CHANNEL)
+const live = await connectLive(config.RABBITMQ_URL, logger)
+const boardChanges = await listenForBoardChanges(
+  live,
+  config.RABBITMQ_LIVE_EXCHANGE,
+  logger
+)
 const server = await buildApp({
   logger,
   db,
@@ -155,7 +160,7 @@ async function shutdown(signal: string): Promise<void> {
     await stopRelay()
     await publisher.close()
     await server.close()
-    await boardChanges.close()
+    await live.close()
     await sql.end({ timeout: 5 })
   } catch (error) {
     logger.error({ err: error }, 'shutdown failed')
