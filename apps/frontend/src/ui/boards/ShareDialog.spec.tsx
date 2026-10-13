@@ -274,7 +274,16 @@ describe('sharing a board', () => {
     const { dialog } = await openSharing()
     expect(
       dialog.getByText(
-        'Sharing this board shares its project Design with everyone on it.'
+        /Sharing this board shares its project Design with everyone on it\./
+      )
+    ).toBeVisible()
+  })
+
+  it('says an invite only works inside the organization', async () => {
+    const { dialog } = await openSharing()
+    expect(
+      dialog.getByText(
+        /An invite only works for an account in your own organization\./
       )
     ).toBeVisible()
   })

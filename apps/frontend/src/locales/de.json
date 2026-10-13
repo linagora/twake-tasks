@@ -424,7 +424,8 @@
     "managedBoard": "Die Mitglieder dieses Projekts werden von seiner Integration verwaltet.",
     "archivedBoard": "Ein archiviertes Board kann nicht geteilt werden.",
     "adminOnly": "Nur ein Admin kann dieses Board teilen.",
-    "help": "Wenn Sie dieses Board teilen, teilen Sie sein Projekt %{project} mit allen darin."
+    "help": "Wenn Sie dieses Board teilen, teilen Sie sein Projekt %{project} mit allen darin.",
+    "sameOrganization": "Eine Einladung funktioniert nur für ein Konto Ihrer eigenen Organisation."
   },
   "moveBoard": {
     "action": "In Projekt verschieben",

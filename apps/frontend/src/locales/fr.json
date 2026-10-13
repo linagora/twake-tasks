@@ -424,7 +424,8 @@
     "managedBoard": "Les membres de ce projet sont gérés par son intégration.",
     "archivedBoard": "Un tableau archivé ne peut pas être partagé.",
     "adminOnly": "Seul un administrateur peut partager ce tableau.",
-    "help": "Partager ce tableau partage son projet %{project} avec tous ses membres."
+    "help": "Partager ce tableau partage son projet %{project} avec tous ses membres.",
+    "sameOrganization": "Une invitation ne fonctionne que pour un compte de votre propre organisation."
   },
   "moveBoard": {
     "action": "Déplacer vers un projet",

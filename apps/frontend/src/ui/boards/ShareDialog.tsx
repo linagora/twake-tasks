@@ -155,7 +155,8 @@ export function ShareDialog({
       />
       <DialogContent className="u-pb-1-half">
         <Typography variant="body2" color="textSecondary" className="u-mb-1">
-          {t('sharing.help', { project: board.project.name })}
+          {t('sharing.help', { project: board.project.name })}{' '}
+          {t('sharing.sameOrganization')}
         </Typography>
         <InviteRow
           label={t('sharing.invite')}

@@ -41,7 +41,7 @@ const MESSAGES: Record<Language, Messages> = {
   en: {
     subject: (who, board) => `${who} shared "${board}" with you`,
     body: (who, board, as, project) =>
-      `${who} shared the board "${board}" with you, ${as}. It belongs to the project "${project}", whose boards you can now open.`,
+      `${who} shared the board "${board}" with you, ${as}. It belongs to the project "${project}". You can open it with an account of the organization it was shared from.`,
     as: role => `as ${role}`,
     someone: 'Someone',
     roles: { admin: 'admin', editor: 'editor', viewer: 'viewer' },
@@ -52,7 +52,7 @@ const MESSAGES: Record<Language, Messages> = {
   fr: {
     subject: (who, board) => `${who} partage « ${board} » avec vous`,
     body: (who, board, as, project) =>
-      `${who} partage le tableau « ${board} » avec vous, ${as}. Il appartient au projet « ${project} », dont vous pouvez maintenant ouvrir les tableaux.`,
+      `${who} partage le tableau « ${board} » avec vous, ${as}. Il appartient au projet « ${project} ». Vous pouvez l'ouvrir avec un compte de l'organisation depuis laquelle il a été partagé.`,
     as: role =>
       /^[aeiouéh]/.test(role) ? `en tant qu'${role}` : `en tant que ${role}`,
     someone: 'Quelqu’un',
@@ -64,7 +64,7 @@ const MESSAGES: Record<Language, Messages> = {
   de: {
     subject: (who, board) => `${who} hat „${board}“ mit dir geteilt`,
     body: (who, board, as, project) =>
-      `${who} hat das Board „${board}“ mit dir geteilt, ${as}. Es gehört zum Projekt „${project}“, dessen Boards du jetzt öffnen kannst.`,
+      `${who} hat das Board „${board}“ mit dir geteilt, ${as}. Es gehört zum Projekt „${project}“. Du kannst es mit einem Konto der Organisation öffnen, aus der es geteilt wurde.`,
     as: role => `als ${role}`,
     someone: 'Jemand',
     roles: { admin: 'Admin', editor: 'Bearbeiter', viewer: 'Betrachter' },
@@ -75,7 +75,7 @@ const MESSAGES: Record<Language, Messages> = {
   it: {
     subject: (who, board) => `${who} ha condiviso «${board}» con te`,
     body: (who, board, as, project) =>
-      `${who} ha condiviso la bacheca «${board}» con te, ${as}. Appartiene al progetto «${project}», di cui ora puoi aprire le bacheche.`,
+      `${who} ha condiviso la bacheca «${board}» con te, ${as}. Appartiene al progetto «${project}». Puoi aprirla con un account dell'organizzazione da cui è stata condivisa.`,
     as: role => `come ${role}`,
     someone: 'Qualcuno',
     roles: { admin: 'amministratore', editor: 'editor', viewer: 'lettore' },
@@ -86,7 +86,7 @@ const MESSAGES: Record<Language, Messages> = {
   es: {
     subject: (who, board) => `${who} compartió «${board}» contigo`,
     body: (who, board, as, project) =>
-      `${who} compartió el tablero «${board}» contigo, ${as}. Pertenece al proyecto «${project}», cuyos tableros ya puedes abrir.`,
+      `${who} compartió el tablero «${board}» contigo, ${as}. Pertenece al proyecto «${project}». Puedes abrirlo con una cuenta de la organización desde la que se compartió.`,
     as: role => `como ${role}`,
     someone: 'Alguien',
     roles: { admin: 'administrador', editor: 'editor', viewer: 'lector' },
@@ -97,7 +97,7 @@ const MESSAGES: Record<Language, Messages> = {
   ru: {
     subject: (who, board) => `${who} поделился(-ась) доской «${board}»`,
     body: (who, board, as, project) =>
-      `${who} поделился(-ась) с вами доской «${board}», ${as}. Она входит в проект «${project}», доски которого теперь вам доступны.`,
+      `${who} поделился(-ась) с вами доской «${board}», ${as}. Она входит в проект «${project}». Открыть её можно с учётной записью организации, из которой ею поделились.`,
     as: role => `с ролью «${role}»`,
     someone: 'Кто-то',
     roles: { admin: 'администратор', editor: 'редактор', viewer: 'читатель' },
@@ -108,7 +108,7 @@ const MESSAGES: Record<Language, Messages> = {
   vi: {
     subject: (who, board) => `${who} đã chia sẻ "${board}" với bạn`,
     body: (who, board, as, project) =>
-      `${who} đã chia sẻ bảng "${board}" với bạn, ${as}. Bảng thuộc dự án "${project}", giờ bạn có thể mở các bảng của dự án này.`,
+      `${who} đã chia sẻ bảng "${board}" với bạn, ${as}. Bảng thuộc dự án "${project}". Bạn có thể mở bảng bằng tài khoản thuộc tổ chức đã chia sẻ bảng này.`,
     as: role => `với vai trò ${role}`,
     someone: 'Ai đó',
     roles: { admin: 'quản trị', editor: 'biên tập', viewer: 'người xem' },

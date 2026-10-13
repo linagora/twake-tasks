@@ -81,7 +81,10 @@ describe('project invite emails', () => {
     expect(sent[0]?.text).toContain(
       'Alice Martin shared the board "Roadmap" with you, as editor. It belongs to the project "'
     )
-    expect(sent[0]?.text).toContain('whose boards you can now open.')
+    expect(sent[0]?.text).toContain(
+      'You can open it with an account of the organization it was shared from.'
+    )
+    expect(sent[0]?.text).not.toContain('whose boards you can now open')
     expect(sent[0]?.text).toContain(
       `https://tasks.example.com/boards/${boardId}`
     )
@@ -121,7 +124,7 @@ describe('project invite emails', () => {
       "Alice Martin partage le tableau « Roadmap » avec vous, en tant qu'éditeur. Il appartient au projet « "
     )
     expect(sent[0]?.text).toContain(
-      'dont vous pouvez maintenant ouvrir les tableaux.'
+      "Vous pouvez l'ouvrir avec un compte de l'organisation depuis laquelle il a été partagé."
     )
   })
 
