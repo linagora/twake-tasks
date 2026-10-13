@@ -57,6 +57,11 @@ const AVATAR_COLORS = ['#7c5cff', '#0f9d76', '#e8710a', '#d6336c', '#1a73e8']
 const isDay = (value: unknown): value is string =>
   typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
 
+const dayOf = (value: unknown): string | null => {
+  const day = typeof value === 'string' ? value.slice(0, 10) : null
+  return isDay(day) ? day : null
+}
+
 function formatDay(lang: Language, day: string): string {
   return new Intl.DateTimeFormat(lang, {
     weekday: 'short',
@@ -173,11 +178,10 @@ async function describe(
         actor,
         typeof entry.to === 'number' ? `P${String(entry.to)}` : null
       )
-    case 'dueDate':
-      return messages.dueDate(
-        actor,
-        isDay(entry.to) ? formatDay(lang, entry.to) : null
-      )
+    case 'dueDate': {
+      const day = dayOf(entry.to)
+      return messages.dueDate(actor, day ? formatDay(lang, day) : null)
+    }
     case 'deadline':
       return messages.deadline(
         actor,
