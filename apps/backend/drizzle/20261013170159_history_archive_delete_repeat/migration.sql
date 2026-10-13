@@ -1,5 +1,6 @@
--- Archiving or trashing a task hides its sub-tasks with it, and each logs its
--- own entry like it does for a completion.
+-- Archiving or trashing a task hides its sub-tasks with it, which sets
+-- app.cascading: only the task acted on gets an entry, so its followers are
+-- notified once.
 CREATE OR REPLACE FUNCTION record_task_change() RETURNS trigger
   LANGUAGE plpgsql
 AS $$
@@ -23,8 +24,7 @@ BEGIN
   IF duration_of(NEW) IS DISTINCT FROM duration_of(OLD) THEN
     PERFORM log_task_change(NEW.id, NEW.org_id, 'duration', duration_of(OLD), duration_of(NEW));
   END IF;
-  IF (NEW.recur_every, NEW.recur_unit, NEW.recur_from_completion)
-    IS DISTINCT FROM (OLD.recur_every, OLD.recur_unit, OLD.recur_from_completion) THEN
+  IF recurrence_of(NEW) IS DISTINCT FROM recurrence_of(OLD) THEN
     PERFORM log_task_change(NEW.id, NEW.org_id, 'recurrence', recurrence_of(OLD), recurrence_of(NEW));
   END IF;
   IF NEW.board_id IS DISTINCT FROM OLD.board_id THEN
@@ -40,6 +40,12 @@ BEGIN
     PERFORM log_task_change(NEW.id, NEW.org_id, 'completion',
       completion_of(OLD.completed_at, OLD.canceled_at), completion_of(NEW.completed_at, NEW.canceled_at));
   END IF;
+  IF NEW.description IS DISTINCT FROM OLD.description THEN
+    PERFORM log_task_change(NEW.id, NEW.org_id, 'description', NULL, NULL);
+  END IF;
+  IF current_setting('app.cascading', true) = 'on' THEN
+    RETURN NULL;
+  END IF;
   IF (NEW.archived_at IS NULL) IS DISTINCT FROM (OLD.archived_at IS NULL) THEN
     PERFORM log_task_change(NEW.id, NEW.org_id, 'archived',
       CASE WHEN OLD.archived_at IS NULL THEN NULL ELSE to_jsonb(true) END,
@@ -49,9 +55,6 @@ BEGIN
     PERFORM log_task_change(NEW.id, NEW.org_id, 'deleted',
       CASE WHEN OLD.deleted_at IS NULL THEN NULL ELSE to_jsonb(true) END,
       CASE WHEN NEW.deleted_at IS NULL THEN NULL ELSE to_jsonb(true) END);
-  END IF;
-  IF NEW.description IS DISTINCT FROM OLD.description THEN
-    PERFORM log_task_change(NEW.id, NEW.org_id, 'description', NULL, NULL);
   END IF;
   RETURN NULL;
 END
@@ -65,7 +68,9 @@ AS $$
     'fromCompletion', t.recur_from_completion
   ) END
 $$;--> statement-breakpoint
--- Archiving and trashing are published by the task events, not as updates.
+-- Archiving and trashing are not published as updates. Trashing and restoring
+-- from the trash are published as deleted and restored by publish_task_change;
+-- archiving and restoring from the archive are not published.
 CREATE OR REPLACE FUNCTION publish_history_entry() RETURNS trigger
   LANGUAGE plpgsql
 AS $$

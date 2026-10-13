@@ -226,7 +226,7 @@
     "unarchived": "%{actor} restored it from the archive",
     "deleted": "%{actor} deleted it",
     "restored": "%{actor} restored it from the trash",
-    "recurrence": "%{actor} set it to repeat %{rule}",
+    "recurrence": "%{actor} set it to repeat: %{rule}",
     "recurrenceCleared": "%{actor} stopped it from repeating",
     "assigned": "%{actor} assigned %{name}",
     "unassigned": "%{actor} unassigned %{name}",

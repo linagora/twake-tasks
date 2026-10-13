@@ -26,7 +26,8 @@ import {
   dueLabel,
   formatDay,
   localToday,
-  localZone
+  localZone,
+  recurrenceLabel
 } from '@/ui/boards/dueLabel'
 import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -83,13 +84,7 @@ function Summary({ task }: { task: Task }): ReactElement {
       t('dates.deadlineOn', { date: formatDay(task.deadline, lang) }),
     task.duration &&
       t(`dates.${task.duration.unit}`, { amount: task.duration.amount }),
-    task.recurrence &&
-      t(
-        task.recurrence.fromCompletion
-          ? `dates.every.${task.recurrence.unit}AfterCompletion`
-          : `dates.every.${task.recurrence.unit}`,
-        { smart_count: task.recurrence.every }
-      )
+    task.recurrence && recurrenceLabel(t, task.recurrence)
   ].filter(Boolean)
 
   if (facts.length === 0) {

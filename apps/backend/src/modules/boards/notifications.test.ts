@@ -73,6 +73,40 @@ describe('following and notifications', () => {
     ])
   })
 
+  it('logs one entry and sends one notification for a task trashed with its sub-tasks', async () => {
+    const { alice, bob, path, taskId, inbox } = await aTeam()
+    const boardPath = path.slice(0, path.lastIndexOf('/tasks/'))
+    const children: string[] = []
+    for (const title of ['Sketch', 'Colors']) {
+      const child = (
+        await api
+          .as(alice)
+          .post(`${boardPath}/tasks`, { parentId: taskId, title })
+      ).json<{ id: string }>()
+      await api.as(alice).put(`${boardPath}/tasks/${child.id}/follow`, {})
+      await api.as(bob).put(`${boardPath}/tasks/${child.id}/follow`, {})
+      children.push(child.id)
+    }
+    await api.as(bob).put(`${path}/follow`, {})
+
+    await api.as(alice).delete(path)
+
+    expect(await inbox(bob)).toMatchObject([{ taskId }])
+    for (const id of children) {
+      const history = (
+        await api.as(alice).get(`${boardPath}/tasks/${id}/history`)
+      ).json<{ entries: { field: string }[] }>().entries
+      expect(history.map(({ field }) => field)).toEqual(['created'])
+    }
+    await api.as(alice).post(`${path}/restore`, {})
+    for (const id of children) {
+      const history = (
+        await api.as(alice).get(`${boardPath}/tasks/${id}/history`)
+      ).json<{ entries: { field: string }[] }>().entries
+      expect(history.map(({ field }) => field)).toEqual(['created'])
+    }
+  })
+
   it('keeps one unread notification per task and reason', async () => {
     const { alice, bob, path, inbox } = await aTeam()
 

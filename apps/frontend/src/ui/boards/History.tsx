@@ -6,7 +6,12 @@ import { Feed, FeedItem } from '@/ds/SidePanel'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import type { Board, Duration, Recurrence, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
-import { dueLabel, formatDay, momentFormat } from '@/ui/boards/dueLabel'
+import {
+  dueLabel,
+  formatDay,
+  momentFormat,
+  recurrenceLabel
+} from '@/ui/boards/dueLabel'
 import { useBoard, useHistory } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -111,12 +116,7 @@ function describe(
       return recurrence
         ? t('history.recurrence', {
             actor,
-            rule: t(
-              recurrence.fromCompletion
-                ? `dates.every.${recurrence.unit}AfterCompletion`
-                : `dates.every.${recurrence.unit}`,
-              { smart_count: recurrence.every }
-            ).toLocaleLowerCase(lang)
+            rule: recurrenceLabel(t, recurrence)
           })
         : t('history.recurrenceCleared', { actor })
     }

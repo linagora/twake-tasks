@@ -40,7 +40,12 @@ const columnOf = { archivedAt: 'archived_at', deletedAt: 'deleted_at' }
 
 // The task and its shown sub-tasks get the same stamp; restoring clears it from
 // the task and from the sub-tasks that carry that exact stamp.
+// Only the task acted on is logged in its history: its sub-tasks follow it
+// silently, or their followers would be notified once each.
 async function hide(tx: Tx, taskId: string, stamp: Stamp) {
+  const column = sql.raw(columnOf[stamp])
+  await tx.execute(sql`update tasks set ${column} = now() where id = ${taskId}`)
+  await tx.execute(sql`select set_config('app.cascading', 'on', true)`)
   await tx.execute(sql`
     with recursive tree as (
       select id from tasks where id = ${taskId}
@@ -48,13 +53,15 @@ async function hide(tx: Tx, taskId: string, stamp: Stamp) {
       select child.id from tasks child join tree on child.parent_id = tree.id
       where child.archived_at is null and child.deleted_at is null
     )
-    update tasks set ${sql.raw(columnOf[stamp])} = now()
-    where id in (select id from tree)`)
+    update tasks set ${column} = now()
+    where id in (select id from tree) and id <> ${taskId}`)
+  await tx.execute(sql`select set_config('app.cascading', '', true)`)
 }
 
 async function reveal(tx: Tx, task: typeof tasks.$inferSelect) {
   const stamp: Stamp = task.deletedAt ? 'deletedAt' : 'archivedAt'
   const column = sql.raw(columnOf[stamp])
+  await tx.execute(sql`select set_config('app.cascading', 'on', true)`)
   await tx.execute(sql`
     with recursive tree as (
       select id from tasks where id = ${task.id}
@@ -62,7 +69,10 @@ async function reveal(tx: Tx, task: typeof tasks.$inferSelect) {
       select child.id from tasks child join tree on child.parent_id = tree.id
       where child.${column} = (select ${column} from tasks where id = ${task.id})
     )
-    update tasks set ${column} = null where id in (select id from tree)`)
+    update tasks set ${column} = null
+    where id in (select id from tree) and id <> ${task.id}`)
+  await tx.execute(sql`select set_config('app.cascading', '', true)`)
+  await tx.execute(sql`update tasks set ${column} = null where id = ${task.id}`)
 }
 
 // Runs as the creator of the board's project, whom the projects policy always
