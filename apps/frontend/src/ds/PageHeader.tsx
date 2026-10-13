@@ -8,8 +8,15 @@ import {
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
-// Same height as the buttons it sits next to.
+// Same height as the buttons it sits next to. The chosen button takes the
+// selected grey of the side menu; the others stay neutral.
 export const HeaderToggleGroup = styled(ToggleButtonGroup)(({ theme }) => ({
+  '& .MuiToggleButton-root:not(.Mui-selected)': {
+    backgroundColor: 'transparent',
+    '&:hover': { backgroundColor: theme.vars.palette.action.hover }
+  },
+  '& .MuiToggleButton-root.Mui-selected, & .MuiToggleButton-root.Mui-selected:hover':
+    { backgroundColor: theme.vars.palette.action.selected },
   '& .MuiToggleButton-root': {
     height: 40,
     padding: theme.spacing(0, 1),
