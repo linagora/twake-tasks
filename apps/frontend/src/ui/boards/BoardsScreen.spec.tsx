@@ -105,18 +105,28 @@ describe('BoardsScreen', () => {
       keyPrefix: 'OPS',
       project: aProject({ managed: true })
     })
-    renderRoute('/', { boardsApi: fakeBoardsApi([design, ops]) })
+    const inbox = aBoard({
+      name: 'Inbox',
+      keyPrefix: 'ME',
+      inbox: true,
+      project: aProject({ personal: true })
+    })
+    renderRoute('/', { boardsApi: fakeBoardsApi([design, ops, inbox]) })
 
     const designCard = within(
       await screen.findByRole('listitem', { name: 'Design' })
     )
     const opsCard = within(screen.getByRole('listitem', { name: 'Ops' }))
+    const inboxCard = within(screen.getByRole('listitem', { name: 'Inbox' }))
 
     expect(designCard.getByText('DES')).toBeVisible()
     expect(designCard.getByText('2 open tasks')).toBeVisible()
     expect(
-      designCard.getByRole('img', { name: 'Personal board' })
+      designCard.getByRole('img', { name: 'Project board' })
     ).toHaveTextContent('D')
+    expect(
+      inboxCard.getByRole('img', { name: 'Personal board' })
+    ).toHaveTextContent('I')
     expect(opsCard.getByText('No open tasks')).toBeVisible()
     expect(opsCard.getByRole('img', { name: 'Space board' })).toHaveTextContent(
       'O'
