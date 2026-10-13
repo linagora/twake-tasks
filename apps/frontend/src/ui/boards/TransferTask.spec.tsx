@@ -64,6 +64,16 @@ describe('moving a task to another board', () => {
     )
   }
 
+  async function chooseBoard(
+    form: Awaited<ReturnType<typeof openForm>>,
+    id: string
+  ) {
+    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
+      target: { value: id }
+    })
+    await form.findByRole('combobox', { name: 'Section' })
+  }
+
   function setup() {
     const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
     const logo = aTask(design.sections[0] ?? null, {
@@ -74,6 +84,44 @@ describe('moving a task to another board', () => {
     const ops = aBoard({ name: 'Ops', keyPrefix: 'OPS' })
     return { design, logo, ops, boardsApi: fakeBoardsApi([design, ops]) }
   }
+
+  it('puts the task in the first section of the board by default', async () => {
+    const { design, logo, ops, boardsApi } = setup()
+    const form = await openForm(boardsApi, design.id, 'Logo')
+
+    await chooseBoard(form, ops.id)
+    expect(
+      form.getByRole<HTMLSelectElement>('combobox', { name: 'Section' }).value
+    ).toBe(ops.sections[0]?.id)
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => {
+      expect(boardsApi.transferTask).toHaveBeenCalledWith(design.id, logo.id, {
+        boardId: ops.id,
+        sectionId: ops.sections[0]?.id
+      })
+    })
+  })
+
+  it('does not reload the moved task under its old board', async () => {
+    const { design, logo, ops, boardsApi } = setup()
+    const form = await openForm(boardsApi, design.id, 'Logo')
+    await chooseBoard(form, ops.id)
+    const loads = boardsApi.getDescription.mock.calls.length
+
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Logo' })).toBeNull()
+    })
+    expect(
+      boardsApi.getDescription.mock.calls
+        .slice(loads)
+        .filter(
+          ([boardId, taskId]) => boardId === design.id && taskId === logo.id
+        )
+    ).toEqual([])
+  })
 
   it('asks before dropping assignees, and lists them with the labels to create', async () => {
     const { design, logo, ops, boardsApi } = setup()
@@ -86,9 +134,7 @@ describe('moving a task to another board', () => {
     })
     const form = await openForm(boardsApi, design.id, 'Logo')
 
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
 
     const dialog = within(
@@ -107,7 +153,7 @@ describe('moving a task to another board', () => {
     await waitFor(() => {
       expect(boardsApi.transferTask).toHaveBeenCalledWith(design.id, logo.id, {
         boardId: ops.id,
-        sectionId: null
+        sectionId: ops.sections[0]?.id
       })
     })
   })
@@ -122,9 +168,7 @@ describe('moving a task to another board', () => {
     })
     const form = await openForm(boardsApi, design.id, 'Logo')
 
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
     const dialog = within(
       await screen.findByRole('dialog', { name: 'Move Logo?' })
@@ -145,9 +189,7 @@ describe('moving a task to another board', () => {
     })
     const form = await openForm(boardsApi, design.id, 'Logo')
 
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
 
     await waitFor(() => {
@@ -165,9 +207,7 @@ describe('moving a task to another board', () => {
     boardsApi.transferTask.mockRejectedValue(new Error('boom'))
     const form = await openForm(boardsApi, design.id, 'Logo')
 
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
     const dialog = await screen.findByRole('dialog', { name: 'Move Logo?' })
     expect(dialog.getAttribute('aria-describedby')).not.toBeNull()
@@ -192,9 +232,7 @@ describe('moving a task to another board', () => {
     })
     const form = await openForm(boardsApi, design.id, 'Logo')
 
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
 
     const alert = await screen.findByRole('alert')
@@ -214,9 +252,7 @@ describe('moving a task to another board', () => {
       createdLabels: []
     })
     const form = await openForm(boardsApi, design.id, 'Logo')
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
     const dialog = within(
       await screen.findByRole('dialog', { name: 'Move Logo?' })
@@ -239,9 +275,7 @@ describe('moving a task to another board', () => {
     })
     boardsApi.transferTask.mockRejectedValueOnce(new Error('boom'))
     const form = await openForm(boardsApi, design.id, 'Logo')
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
 
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
     let dialog = await screen.findByRole('dialog', { name: 'Move Logo?' })
@@ -274,9 +308,7 @@ describe('moving a task to another board', () => {
       }
     })
     const form = await openForm(boardsApi, design.id, 'Logo')
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     const loads = boardsApi.getBoard.mock.calls.length
 
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
@@ -302,9 +334,7 @@ describe('moving a task to another board', () => {
       createdLabels: []
     })
     const form = await openForm(boardsApi, design.id, 'Logo')
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
 
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
 
@@ -321,9 +351,7 @@ describe('moving a task to another board', () => {
       createdLabels: []
     })
     const form = await openForm(boardsApi, design.id, 'Logo')
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
 
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
 
@@ -357,9 +385,7 @@ describe('moving a task to another board', () => {
         })
     )
     const form = await openForm(boardsApi, design.id, 'Logo')
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
     const dialog = await screen.findByRole('dialog', { name: 'Move Logo?' })
     expect(dialog.getAttribute('aria-busy')).toBe('false')
@@ -395,9 +421,7 @@ describe('moving a task to another board', () => {
         })
     )
     const form = await openForm(boardsApi, design.id, 'Logo')
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     const loads = boardsApi.getBoard.mock.calls.length
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
     await waitFor(() => {
@@ -423,9 +447,7 @@ describe('moving a task to another board', () => {
     const { design, ops, boardsApi } = setup()
     boardsApi.transferTask.mockRejectedValueOnce(new Error('boom'))
     const form = await openForm(boardsApi, design.id, 'Logo')
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
     await screen.findByText('The task could not be moved.')
     boardsApi.previewTransfer.mockResolvedValue({
@@ -453,9 +475,7 @@ describe('moving a task to another board', () => {
         })
     )
     const form = await openForm(boardsApi, design.id, 'Logo')
-    fireEvent.change(form.getByRole('combobox', { name: 'Board' }), {
-      target: { value: ops.id }
-    })
+    await chooseBoard(form, ops.id)
     fireEvent.click(form.getByRole('button', { name: 'Move' }))
     await waitFor(() => {
       expect(boardsApi.transferTask).toHaveBeenCalled()

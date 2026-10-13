@@ -272,8 +272,10 @@ export function useTransferTask(
 } {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
+  // Exact: the moved task's comments, reminders and the rest now 404 under the
+  // old board, and its panel is still open while it closes.
   const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+    queryClient.invalidateQueries({ queryKey: boardKey(boardId), exact: true })
   // A move that ends after the form is gone has nobody left to refresh.
   const mounted = useRef(true)
   useEffect(() => {
