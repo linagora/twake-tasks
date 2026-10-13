@@ -226,4 +226,23 @@ describe('following and notifications', () => {
 
     expect((await api.as(stranger).put(`${path}/follow`)).statusCode).toBe(404)
   })
+
+  it('shows nothing of a task once the person can no longer open its board', async () => {
+    const { alice, bob, path, taskId, inbox } = await aTeam()
+    await api.as(alice).put(`${path}/assignees`, { userIds: [bob.userId] })
+    const secret = (
+      await api.as(alice).post('/boards', { name: 'Secret', keyPrefix: 'SEC' })
+    ).json<{ id: string }>()
+    await api.as(alice).post(`${path}/transfer`, {
+      boardId: secret.id,
+      sectionId: null
+    })
+    await api.as(alice).patch(`/boards/${secret.id}/tasks/${taskId}`, {
+      title: 'Secret renamed title'
+    })
+
+    expect(await inbox(bob)).toEqual([])
+    const unread = await api.as(bob).get('/notifications/unread')
+    expect(unread.json()).toEqual({ projects: [] })
+  })
 })

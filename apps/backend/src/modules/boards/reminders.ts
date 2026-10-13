@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, isNull, sql } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { roleOn } from './access.ts'
+import { accessibleBoards, roleOn } from './access.ts'
 import { scheduleReminder, unscheduleReminder } from './reminderJobs.ts'
 import {
   boards,
@@ -181,12 +181,14 @@ export function createReminderStore(db: Db) {
 
     // One row per project with unread notifications, whatever their number.
     unreadByProject(identity: Identity) {
-      return writeOrRefuse(db, identity, tx =>
-        tx
+      return writeOrRefuse(db, identity, tx => {
+        const accessible = accessibleBoards(tx, identity.userId)
+        return tx
           .select({ projectId: boards.projectId, count: count() })
           .from(notifications)
           .innerJoin(tasks, eq(tasks.id, notifications.taskId))
           .innerJoin(boards, eq(boards.id, tasks.boardId))
+          .innerJoin(accessible, eq(accessible.boardId, boards.id))
           .where(
             and(
               eq(notifications.userId, identity.userId),
@@ -194,12 +196,13 @@ export function createReminderStore(db: Db) {
             )
           )
           .groupBy(boards.projectId)
-      )
+      })
     },
 
     notificationsOf(identity: Identity) {
-      return writeOrRefuse(db, identity, tx =>
-        tx
+      return writeOrRefuse(db, identity, tx => {
+        const accessible = accessibleBoards(tx, identity.userId)
+        return tx
           .select({
             id: notifications.id,
             reason: notifications.reason,
@@ -213,10 +216,11 @@ export function createReminderStore(db: Db) {
           .from(notifications)
           .innerJoin(tasks, eq(tasks.id, notifications.taskId))
           .innerJoin(boards, eq(boards.id, tasks.boardId))
+          .innerJoin(accessible, eq(accessible.boardId, boards.id))
           .where(eq(notifications.userId, identity.userId))
           .orderBy(desc(notifications.createdAt))
           .limit(50)
-      )
+      })
     }
   }
 }
