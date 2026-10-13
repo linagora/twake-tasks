@@ -6,8 +6,10 @@ import type { Identity } from '../auth/index.ts'
 import { membersOf, roleOn } from './access.ts'
 import { plainText } from './markdown.ts'
 import {
+  daysBetween,
   nextOccurrence,
   recurrenceOf,
+  shift,
   todayIn,
   type Recurrence
 } from './recurrence.ts'
@@ -247,10 +249,18 @@ async function recur(tx: Tx, task: typeof tasks.$inferSelect) {
   await tx.execute(
     sql`select log_task_change(${task.id}, ${task.organizationId}, 'completion', null, '"completed"'::jsonb)`
   )
+  const dueDate = nextOccurrence(task.dueDate, rule, todayIn(task.dueZone))
   await tx
     .update(tasks)
     .set({
-      dueDate: nextOccurrence(task.dueDate, rule, todayIn(task.dueZone))
+      dueDate,
+      ...(task.deadline !== null && {
+        deadline: shift(
+          task.deadline,
+          daysBetween(task.dueDate, dueDate),
+          'days'
+        )
+      })
     })
     .where(eq(tasks.id, task.id))
   await moveReminders(tx, task.id)
