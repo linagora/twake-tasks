@@ -569,7 +569,15 @@ async function tasksOf(
 ) {
   const accessible = accessibleBoards(tx, userId)
   const query = tx
-    .select({ task: tasks, board: boards, category: sections.category })
+    .select({
+      task: tasks,
+      board: boards,
+      category: sections.category,
+      completable: sql<boolean>`${tasks.sectionId} is null or exists (
+        select 1 from ${sections} as completed
+        where completed.board_id = ${boards.id} and completed.category = 'completed'
+      )`
+    })
     .from(tasks)
     .innerJoin(boards, eq(boards.id, tasks.boardId))
     .innerJoin(projects, eq(projects.id, boards.projectId))
@@ -599,9 +607,10 @@ async function tasksOf(
       )
     )
   }
-  return rows.map(({ task, board, category }) => ({
+  return rows.map(({ task, board, category, completable }) => ({
     ...described.get(board.id)?.find(each => each.id === task.id),
     category,
+    completable,
     boardId: board.id,
     boardName: board.name
   }))

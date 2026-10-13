@@ -106,6 +106,25 @@ describe('AgendaScreen', () => {
     })
   })
 
+  it('disables the checkbox of a task whose board has no done section', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    design.sections = design.sections.filter(
+      section => section.category !== 'completed'
+    )
+    design.tasks = [
+      aTask(design.sections[0] ?? null, {
+        key: 'DES-1',
+        title: 'Logo',
+        dueDate: day(0)
+      })
+    ]
+    renderRoute('/today', { boardsApi: fakeBoardsApi([design]) })
+
+    expect(
+      await screen.findByRole('checkbox', { name: 'Complete Logo' })
+    ).toBeDisabled()
+  })
+
   it('leaves the day out of rows already grouped by day', async () => {
     const { boardsApi } = boards()
     renderRoute('/upcoming', { boardsApi })

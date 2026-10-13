@@ -116,9 +116,13 @@ export interface SectionMove {
   beforeId?: string
 }
 
-/** `category` is the kind of the task's section, null when it has none. */
+/**
+ * `category` is the kind of the task's section, null when it has none.
+ * `completable` is false for a task whose board has no completed section.
+ */
 export type AgendaTask = Task & {
   category: SectionCategory | null
+  completable: boolean
   boardId: string
   boardName: string
 }
