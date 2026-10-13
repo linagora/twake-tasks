@@ -113,6 +113,28 @@ describe('link tool', () => {
 
     expect(submit).not.toHaveBeenCalled()
   })
+
+  it('does not send the comment on Ctrl+Enter in the link field', async () => {
+    const onSubmit = vi.fn()
+    renderWithProviders(
+      <RichTextEditor
+        label="Comment"
+        initial="see site"
+        labels={LABELS}
+        onChange={vi.fn()}
+        onSubmit={onSubmit}
+      />
+    )
+
+    await screen.findByRole('textbox', { name: 'Comment' })
+    fireEvent.click(screen.getByRole('button', { name: 'Link' }))
+    fireEvent.keyDown(await screen.findByRole('textbox', { name: 'URL' }), {
+      key: 'Enter',
+      ctrlKey: true
+    })
+
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
 })
 
 describe('checklists in rich text', () => {

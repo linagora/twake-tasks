@@ -342,20 +342,6 @@ export function RichTextEditor({
           boxShadow: `0 0 0 1px ${theme.vars.palette.primary.main}`
         }
       })}
-      onKeyDownCapture={event => {
-        const submit = latest.current.onSubmit
-        if (
-          submit &&
-          !shown.current.open &&
-          event.key === 'Enter' &&
-          (event.metaKey || event.ctrlKey)
-        ) {
-          // ProseMirror drops Enter keydowns on Chrome for Android before its key handlers run.
-          event.preventDefault()
-          event.stopPropagation()
-          submit()
-        }
-      }}
     >
       <Toolbar editor={editor} labels={labels} />
       <Box
@@ -367,6 +353,20 @@ export function RichTextEditor({
           '& .ProseMirror': { outline: 'none', minHeight }
         })}
         onClick={() => editor.commands.focus()}
+        onKeyDownCapture={event => {
+          const submit = latest.current.onSubmit
+          if (
+            submit &&
+            !shown.current.open &&
+            event.key === 'Enter' &&
+            (event.metaKey || event.ctrlKey)
+          ) {
+            // ProseMirror drops Enter keydowns on Chrome for Android before its key handlers run.
+            event.preventDefault()
+            event.stopPropagation()
+            submit()
+          }
+        }}
       >
         <EditorContent editor={editor} />
       </Box>
