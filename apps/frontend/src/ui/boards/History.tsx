@@ -20,7 +20,7 @@ const boardName = (value: unknown): string =>
     ? text(value.name)
     : ''
 
-// A due date is logged as "YYYY-MM-DD", followed by " HH:mm" and " Zone" when pinned.
+// History logs a due date as "YYYY-MM-DD[ HH:mm[ Zone]]".
 function dueOf(value: string, lang: string): string {
   const [dueDate = '', dueTime = null, dueZone = null] = value.split(' ')
   return dueLabel({ dueDate, dueTime, dueZone }, lang) ?? value

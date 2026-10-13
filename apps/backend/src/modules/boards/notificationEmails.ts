@@ -151,7 +151,7 @@ async function withNames(
 
 async function describe(
   tx: Tx,
-  row: { projectId: string; boardId: string },
+  row: { projectId: string },
   entry: {
     field: string
     from: unknown
@@ -184,10 +184,7 @@ async function describe(
         isDay(entry.to) ? formatDay(lang, entry.to) : null
       )
     case 'section':
-      return messages.section(
-        actor,
-        typeof entry.to === 'string' && entry.name ? plain(entry.name) : null
-      )
+      return messages.section(actor, entry.name ? plain(entry.name) : null)
     case 'board': {
       const board = z.object({ name: z.string() }).safeParse(entry.to)
       return board.success
