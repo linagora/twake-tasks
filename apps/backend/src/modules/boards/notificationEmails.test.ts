@@ -125,6 +125,27 @@ describe('notification emails', () => {
     )
   })
 
+  it('announces a due date that has a time', async () => {
+    const { alice, bob, board, task } = await aTask()
+    await api.as(bob).post(`/boards/${board.id}/tasks/${task.id}/comments`, {
+      body: 'Following along'
+    })
+    const mailbox = aMailbox()
+
+    await api.as(alice).patch(`/boards/${board.id}/tasks/${task.id}`, {
+      dueDate: '2026-10-13',
+      dueTime: '15:00'
+    })
+    await mailbox.deliver()
+
+    const [mail] = mailbox.sent.filter(
+      each => each.to === bob.email && each.text.includes(board.id)
+    )
+    expect(mail?.text.split('\n')[0]).toBe(
+      'Alice Martin set the due date to Tue, Oct 13'
+    )
+  })
+
   it('names the board a followed task moved to', async () => {
     const { alice, bob, board, task } = await aTask()
     const { project } = (await api.as(alice).get(`/boards/${board.id}`)).json<{

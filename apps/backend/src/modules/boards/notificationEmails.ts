@@ -176,7 +176,9 @@ async function describe(
     case 'dueDate':
       return messages.dueDate(
         actor,
-        isDay(entry.to) ? formatDay(lang, entry.to) : null
+        typeof entry.to === 'string'
+          ? formatDay(lang, entry.to.slice(0, 10))
+          : null
       )
     case 'deadline':
       return messages.deadline(
