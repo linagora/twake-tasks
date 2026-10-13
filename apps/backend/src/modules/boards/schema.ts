@@ -462,6 +462,9 @@ export const taskHistory = pgTable.withRLS(
     field: text().notNull(),
     from: jsonb(),
     to: jsonb(),
+    // The section or label the entry points to, as named then: it may be
+    // deleted, or belong to the board the task was moved away from.
+    name: text(),
     at: timestamptz('at').notNull().defaultNow(),
     tenant: tenant()
   },

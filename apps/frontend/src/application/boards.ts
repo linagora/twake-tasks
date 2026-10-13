@@ -97,13 +97,15 @@ export type NewReminder =
 
 /**
  * `from` and `to` are ids for `section`, `assignees` and `labels`, and
- * `{ id, name }` for `board`.
+ * `{ id, name }` for `board`. `name` is the section or label's name when the
+ * entry was logged, if it existed then.
  */
 export interface HistoryEntry {
   actor: Person
   field: string
   from: unknown
   to: unknown
+  name: string | null
   at: string
 }
 

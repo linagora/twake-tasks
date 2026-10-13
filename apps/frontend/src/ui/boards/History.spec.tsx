@@ -14,18 +14,32 @@ function logoBoard() {
   board.tasks = [logo]
   const boardsApi = fakeBoardsApi([board])
   const at = '2026-10-05T09:00:00Z'
+  const entry = { actor: alice, name: null, at }
   boardsApi.history.set(logo.id, [
     {
-      actor: alice,
+      ...entry,
       field: 'board',
       from: { id: 'ops', name: 'Ops' },
-      to: { id: board.id, name: 'Design' },
-      at
+      to: { id: board.id, name: 'Design' }
     },
-    { actor: alice, field: 'assignees', from: null, to: bob.userId, at },
-    { actor: alice, field: 'section', from: null, to: doing?.id, at },
-    { actor: alice, field: 'title', from: 'Draft', to: 'Logo', at },
-    { actor: alice, field: 'created', from: null, to: 'Draft', at }
+    { ...entry, field: 'labels', from: null, to: 'ops-urgent', name: 'Urgent' },
+    { ...entry, field: 'labels', from: null, to: 'gone' },
+    {
+      ...entry,
+      field: 'section',
+      from: null,
+      to: 'ops-todo',
+      name: 'Ops To do'
+    },
+    { ...entry, field: 'section', from: null, to: 'gone' },
+    { ...entry, field: 'section', from: 'gone', to: null },
+    { ...entry, field: 'deadline', from: null, to: '2026-10-20' },
+    { ...entry, field: 'dueDate', from: null, to: '2026-10-13 15:00' },
+    { ...entry, field: 'dueDate', from: null, to: '2026-10-12' },
+    { ...entry, field: 'assignees', from: null, to: bob.userId },
+    { ...entry, field: 'section', from: null, to: doing?.id },
+    { ...entry, field: 'title', from: 'Draft', to: 'Logo' },
+    { ...entry, field: 'created', from: null, to: 'Draft' }
   ])
   return { board, boardsApi }
 }
@@ -45,6 +59,14 @@ describe('History', () => {
       )
     ).toEqual([
       'Alice moved it from the board Ops to Design',
+      'Alice added the label Urgent',
+      'Alice added the label a deleted label',
+      'Alice moved it to Ops To do',
+      'Alice moved it to a deleted section',
+      'Alice moved it to No section',
+      'Alice set the deadline to Oct 20, 2026',
+      'Alice set the due date to Oct 13, 2026, 15:00',
+      'Alice set the due date to Oct 12, 2026',
       'Alice assigned bob@example.com',
       'Alice moved it to In progress',
       'Alice renamed it from Draft to Logo',

@@ -6,6 +6,7 @@ import { Feed, FeedItem } from '@/ds/SidePanel'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import type { Board, Duration, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
+import { dueLabel, formatDay } from '@/ui/boards/dueLabel'
 import { useBoard, useHistory } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -19,10 +20,17 @@ const boardName = (value: unknown): string =>
     ? text(value.name)
     : ''
 
+// A due date is logged as "YYYY-MM-DD", followed by " HH:mm" and " Zone" when pinned.
+function dueOf(value: string, lang: string): string {
+  const [dueDate = '', dueTime = null, dueZone = null] = value.split(' ')
+  return dueLabel({ dueDate, dueTime, dueZone }, lang) ?? value
+}
+
 function describe(
   entry: HistoryEntry,
   board: Board | undefined,
-  t: Translate
+  t: Translate,
+  lang: string
 ): string {
   const actor = displayName(entry.actor)
   const value = text(entry.to ?? entry.from)
@@ -38,11 +46,11 @@ function describe(
         : t('history.priorityCleared', { actor })
     case 'dueDate':
       return added
-        ? t('history.dueDate', { actor, date: value })
+        ? t('history.dueDate', { actor, date: dueOf(value, lang) })
         : t('history.dueDateCleared', { actor })
     case 'deadline':
       return added
-        ? t('history.deadline', { actor, date: value })
+        ? t('history.deadline', { actor, date: formatDay(value, lang) })
         : t('history.deadlineCleared', { actor })
     case 'duration': {
       const duration = entry.to as Duration | null
@@ -58,7 +66,8 @@ function describe(
         actor,
         section:
           board?.sections.find(section => section.id === entry.to)?.name ??
-          t('board.noSection')
+          entry.name ??
+          t(entry.to === null ? 'board.noSection' : 'history.someSection')
       })
     case 'board':
       return t('history.board', {
@@ -86,6 +95,7 @@ function describe(
     case 'labels': {
       const name =
         board?.labels.find(label => label.id === value)?.name ??
+        entry.name ??
         t('history.someLabel')
       return t(added ? 'history.labeled' : 'history.unlabeled', {
         actor,
@@ -130,7 +140,7 @@ export function History({
             }
           >
             <Typography variant="body2">
-              {`${describe(entry, board.data, t)} · `}
+              {`${describe(entry, board.data, t, lang)} · `}
               <Typography
                 component="span"
                 variant="caption"
