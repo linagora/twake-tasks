@@ -14,6 +14,7 @@ import type { Notification } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import type { Task } from '@/domain/board'
+import { momentFormat } from '@/ui/boards/dueLabel'
 import {
   useFollowing,
   useNotifications,
@@ -64,10 +65,7 @@ export function NotificationsScreen(): ReactElement {
   const { t, lang } = useI18n()
   useDocumentTitle(t('notifications.title'))
   const notifications = useNotifications()
-  const format = new Intl.DateTimeFormat(lang, {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  })
+  const format = momentFormat(lang)
   const all = notifications.data ?? []
   const groups = [
     {

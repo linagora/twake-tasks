@@ -29,6 +29,7 @@ import { HeaderToggleGroup, PageHeader, ToggleLabel } from '@/ds/PageHeader'
 import { ShelfHeader, ShelfList, ShelfRow, ShelfWhen } from '@/ds/ShelfList'
 import { Toast } from '@/ds/Toast'
 import type { Board, Task } from '@/domain/board'
+import { momentFormat } from '@/ui/boards/dueLabel'
 import { useBoard, useBoardChange, useHiddenTasks } from '@/ui/boards/queries'
 import { Assignees, PriorityChip } from '@/ui/boards/TaskFacts'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
@@ -429,10 +430,7 @@ function ShelfTask({
         ))}
         when={
           <ShelfWhen
-            date={new Intl.DateTimeFormat(lang, {
-              dateStyle: 'medium',
-              timeStyle: 'short'
-            }).format(new Date(task.at))}
+            date={momentFormat(lang).format(new Date(task.at))}
             ago={ago(task.at, lang)}
             note={
               shelf === 'trash'
