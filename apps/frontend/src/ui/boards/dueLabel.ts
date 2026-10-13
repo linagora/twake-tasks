@@ -19,9 +19,20 @@ export function followZone(zone: string | null): void {
 export const localZone = (): string =>
   followedZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone
 
-// en-CA formats a date as YYYY-MM-DD.
-export const localToday = (): string =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: localZone() }).format(new Date())
+// From parts, as the default pattern of a locale (even en-CA) varies by engine.
+export function localToday(): string {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: localZone(),
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+      .formatToParts(new Date())
+      .map(part => [part.type, part.value])
+  ) as Record<'year' | 'month' | 'day', string>
+  return `${parts.year}-${parts.month}-${parts.day}`
+}
 
 /** The instant a YYYY-MM-DDTHH:mm wall clock time shows in the local zone. */
 export function zonedInstant(wallClock: string): Date {
