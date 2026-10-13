@@ -594,13 +594,8 @@ export function useRenameBoard(
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (name: string) => api.renameBoard(boardId, name),
-    // The list of boards and the board itself: every key starts with boardsKey.
-    // A board's own project follows its name.
-    onSettled: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: boardsKey }),
-        queryClient.invalidateQueries({ queryKey: ['projects'] })
-      ])
+    // The list of boards and the board itself: every key starts with boardsKey
+    onSettled: () => queryClient.invalidateQueries({ queryKey: boardsKey })
   })
 }
 
