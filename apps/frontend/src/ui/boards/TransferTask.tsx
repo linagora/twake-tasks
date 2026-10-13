@@ -40,14 +40,14 @@ function SectionSelect({
   return (
     <TextField
       select
-      size="small"
-      className="u-mr-1"
+      fullWidth
+      margin="dense"
       label={t('transfer.section')}
       value={value ?? ''}
       onChange={event => {
         onChange(event.target.value === '' ? null : event.target.value)
       }}
-      slotProps={{ select: { native: true } }}
+      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
     >
       <option value="">{t('board.noSection')}</option>
       {sections.map(section => (
@@ -157,11 +157,13 @@ function ConfirmTransfer({
 export function TransferTask({
   task,
   boardId,
-  onMoved
+  onMoved,
+  onCancel
 }: {
   task: Task
   boardId: string
   onMoved: () => void
+  onCancel: () => void
 }): ReactElement | null {
   const { t } = useI18n()
   const boards = useBoards()
@@ -217,11 +219,14 @@ export function TransferTask({
         board.id !== boardId && board.role !== 'viewer' && !board.archived
     ) ?? []
   if (targets.length === 0) return null
+  const targetName = targets.find(board => board.id === target)?.name ?? ''
+  // Unmounting mid-request drops the mutate callbacks, so the move would land
+  // without the board refreshing.
+  const busy = check.isPending || transfer.isPending
 
   return (
     <form
       aria-label={t('transfer.title')}
-      className="u-flex u-flex-items-center u-mt-1"
       onSubmit={event => {
         event.preventDefault()
         check.mutate(to, {
@@ -235,47 +240,82 @@ export function TransferTask({
         })
       }}
     >
-      <TextField
-        select
-        size="small"
-        className="u-mr-1"
-        label={t('transfer.board')}
-        value={target}
-        onChange={event => {
-          setTarget(event.target.value)
-          setSectionId(undefined)
-        }}
-        slotProps={{ select: { native: true } }}
-      >
-        <option value="" />
-        {targets.map(board => (
-          <option key={board.id} value={board.id}>
-            {board.name}
-          </option>
-        ))}
-      </TextField>
-      {target && (
-        <SectionSelect
-          boardId={target}
-          value={sectionId}
-          onChange={setSectionId}
-        />
-      )}
-      <Button
-        type="submit"
-        disabled={
-          sectionId === undefined ||
-          check.isPending ||
-          transfer.isPending ||
-          !!removed
-        }
-      >
-        {t('transfer.move')}
-      </Button>
+      <DialogContent>
+        <TextField
+          select
+          fullWidth
+          margin="dense"
+          label={t('transfer.board')}
+          value={target}
+          onChange={event => {
+            setTarget(event.target.value)
+            setSectionId(undefined)
+          }}
+          slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
+        >
+          <option value="" />
+          {targets.map(board => (
+            <option key={board.id} value={board.id}>
+              {board.name}
+            </option>
+          ))}
+        </TextField>
+        {target && (
+          <SectionSelect
+            boardId={target}
+            value={sectionId}
+            onChange={setSectionId}
+          />
+        )}
+        {removed && (
+          <Alert
+            role="alert"
+            severity="warning"
+            className="u-mt-1"
+            action={
+              <Button
+                ref={dismissButton}
+                color="inherit"
+                size="small"
+                onClick={finish}
+              >
+                {t('transfer.dismiss')}
+              </Button>
+            }
+          >
+            {t('transfer.removedAssignees', {
+              board: targetName,
+              names: removed.droppedAssignees
+                .map(person => personName(person, t('transfer.formerMember')))
+                .join(', ')
+            })}
+          </Alert>
+        )}
+        {(check.isError || (transfer.isError && !preview)) && (
+          <Typography role="alert" color="error" className="u-mt-1">
+            {t('transfer.failed')}
+          </Typography>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button
+          variant="text"
+          disabled={busy}
+          onClick={removed ? finish : onCancel}
+        >
+          {t('transfer.cancel')}
+        </Button>
+        <Button
+          type="submit"
+          disabled={sectionId === undefined || busy || !!removed}
+        >
+          {t('transfer.move')}
+        </Button>
+      </DialogActions>
       {preview && (
         <ConfirmTransfer
           task={task}
-          board={targets.find(board => board.id === target)?.name ?? ''}
+          board={targetName}
           preview={preview}
           busy={transfer.isPending}
           failed={transfer.isError}
@@ -287,35 +327,6 @@ export function TransferTask({
             move(preview)
           }}
         />
-      )}
-      {removed && (
-        <Alert
-          role="alert"
-          severity="warning"
-          className="u-ml-1"
-          action={
-            <Button
-              ref={dismissButton}
-              color="inherit"
-              size="small"
-              onClick={finish}
-            >
-              {t('transfer.dismiss')}
-            </Button>
-          }
-        >
-          {t('transfer.removedAssignees', {
-            board: targets.find(board => board.id === target)?.name ?? '',
-            names: removed.droppedAssignees
-              .map(person => personName(person, t('transfer.formerMember')))
-              .join(', ')
-          })}
-        </Alert>
-      )}
-      {(check.isError || (transfer.isError && !preview)) && (
-        <Typography role="alert" className="u-ml-1">
-          {t('transfer.failed')}
-        </Typography>
       )}
     </form>
   )

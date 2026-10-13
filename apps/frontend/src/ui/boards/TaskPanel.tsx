@@ -2,7 +2,6 @@ import { CheckList, Cross, Dots, Icon, Pen } from '@linagora/twake-icons'
 import {
   Button,
   Dialog,
-  DialogContent,
   DialogTitle,
   IconButton,
   Menu,
@@ -289,9 +288,14 @@ function TaskMenu({
           size="small"
         >
           <DialogTitle id={titleId}>{t('transfer.title')}</DialogTitle>
-          <DialogContent>
-            <TransferTask task={task} boardId={boardId} onMoved={onRemoved} />
-          </DialogContent>
+          <TransferTask
+            task={task}
+            boardId={boardId}
+            onMoved={onRemoved}
+            onCancel={() => {
+              setMoving(false)
+            }}
+          />
         </Dialog>
       )}
     </>

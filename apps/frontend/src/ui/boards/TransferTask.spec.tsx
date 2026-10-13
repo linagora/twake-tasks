@@ -85,6 +85,34 @@ describe('moving a task to another board', () => {
     return { design, logo, ops, boardsApi: fakeBoardsApi([design, ops]) }
   }
 
+  it('keeps the section label above "No section"', async () => {
+    const { design, ops, boardsApi } = setup()
+    const form = await openForm(boardsApi, design.id, 'Logo')
+
+    await chooseBoard(form, ops.id)
+    const section = form.getByRole('combobox', { name: 'Section' })
+    fireEvent.change(section, { target: { value: '' } })
+
+    expect(
+      form.getByText('Section', { selector: 'label' }).dataset.shrink
+    ).toBe('true')
+  })
+
+  it('closes without moving on Cancel', async () => {
+    const { design, ops, boardsApi } = setup()
+    const form = await openForm(boardsApi, design.id, 'Logo')
+
+    await chooseBoard(form, ops.id)
+    fireEvent.click(form.getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('form', { name: 'Move to another board' })
+      ).toBeNull()
+    })
+    expect(boardsApi.transferTask).not.toHaveBeenCalled()
+  })
+
   it('puts the task in the first section of the board by default', async () => {
     const { design, logo, ops, boardsApi } = setup()
     const form = await openForm(boardsApi, design.id, 'Logo')
