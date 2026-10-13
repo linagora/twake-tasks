@@ -33,7 +33,9 @@ async function openQuickAdd() {
       await gate.promise
       return real ? real(...args) : Promise.reject(new Error('no fake'))
     })
-    return gate.resolve
+    return () => {
+      gate.resolve(undefined)
+    }
   }
   return { dialog, field, type, add, design, holdNextAdd, boardsApi }
 }

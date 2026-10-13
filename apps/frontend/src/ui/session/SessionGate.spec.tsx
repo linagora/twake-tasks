@@ -196,6 +196,23 @@ describe('SessionGate', () => {
     expect(session.signIn).toHaveBeenCalled()
   })
 
+  it.each([
+    'interaction_required',
+    'consent_required',
+    'account_selection_required'
+  ])('asks to sign in when the SSO answers %s', async code => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const session = fakeSession(() => Promise.reject(new Error(code)))
+    renderWithProviders(<p>app</p>, { session })
+
+    expect(
+      await screen.findByRole('heading', { name: 'Sign in to Twake Project' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Try again' })
+    ).not.toBeInTheDocument()
+  })
+
   it('shows the app when signing in again succeeds without leaving the page', async () => {
     const session = failing()
     vi.mocked(session.signIn).mockResolvedValue(fakeUser())
