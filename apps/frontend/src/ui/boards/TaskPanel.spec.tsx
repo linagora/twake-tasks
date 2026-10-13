@@ -83,6 +83,39 @@ describe('TaskPanel', () => {
     ).toHaveTextContent('Mine')
   })
 
+  it('keeps the panel and the typed text when Escape is pressed in a field', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(
+      await panel.findByRole('button', { name: 'Edit description' })
+    )
+    const editor = await panel.findByRole('textbox', { name: 'Description' })
+    await typeRichText(editor, 'Half typed')
+    editor.focus()
+    fireEvent.keyDown(editor, { key: 'Escape' })
+
+    expect(screen.getByRole('dialog', { name: 'DES-1 Logo' })).toBeVisible()
+    expect(
+      panel.getByRole('textbox', { name: 'Description' })
+    ).toHaveTextContent('Half typed')
+  })
+
+  it('closes the panel on Escape outside a field', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.keyDown(panel.getByRole('button', { name: 'Edit description' }), {
+      key: 'Escape'
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+    })
+  })
+
   it('renames the task in place', async () => {
     const { board, logo, boardsApi } = logoBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })

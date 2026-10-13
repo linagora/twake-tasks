@@ -80,7 +80,7 @@ describe('Sub-tasks', () => {
         title: 'Colors'
       })
     })
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    fireEvent.click(panel.getByRole('button', { name: 'Close' }))
     expect(
       await (await logoCard()).findByRole('checkbox', { name: 'Colors' })
     ).toBeInTheDocument()
