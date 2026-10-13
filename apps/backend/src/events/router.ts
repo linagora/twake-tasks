@@ -5,7 +5,7 @@ import type { Delivery } from '../infra/rabbitmq.ts'
 import type { Deduplicator } from './dedupe.ts'
 import { parsePlatformEvent, type PlatformEvent } from './envelope.ts'
 
-export type Handler<E> = (event: E, tx: Tx) => Promise<void>
+export type Handler<E> = (event: E, tx: Tx, log: Logger) => Promise<void>
 
 // Thrown by a handler for an event it can never process, so it is dropped.
 export class MalformedEventError extends Error {}
@@ -69,7 +69,7 @@ export function createMessageHandler(deps: {
     try {
       processed = await dedupe.once(
         { source: 'amqp', id: event.messageId },
-        tx => handler(event, tx)
+        tx => handler(event, tx, logger.child(context))
       )
     } catch (error) {
       if (error instanceof NotYetKnownError) {

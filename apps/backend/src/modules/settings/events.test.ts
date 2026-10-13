@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
+import { pino } from 'pino'
 import { afterAll, describe, expect, inject, it } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { MalformedEventError } from '../../events/router.ts'
@@ -28,7 +29,7 @@ function deliver(version: number, payload: Record<string, unknown>) {
       payload: { nickname: 'alice', version, ...payload }
     }
   }
-  return db.transaction(tx => handler(event, tx))
+  return db.transaction(tx => handler(event, tx, pino({ level: 'silent' })))
 }
 
 const anEmail = () => `user-${randomUUID()}@example.com`

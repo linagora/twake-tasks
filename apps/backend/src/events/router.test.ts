@@ -63,7 +63,8 @@ describe('createMessageHandler', () => {
         messageId: 'm-1',
         body: { id: 's1' }
       },
-      tx
+      tx,
+      expect.anything()
     )
     expect(dedupe.keys).toEqual([{ source: 'amqp', id: 'm-1' }])
   })

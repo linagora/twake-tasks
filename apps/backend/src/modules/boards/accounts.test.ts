@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import { and, eq, sql as raw } from 'drizzle-orm'
+import { and, eq, inArray, sql as raw } from 'drizzle-orm'
+import { pino } from 'pino'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { RejectedEventError } from '../../events/router.ts'
@@ -36,7 +37,7 @@ function deliver(routingKey: string, body: object) {
   const handler = accountRoutes.get(routingKey)
   if (!handler) throw new Error(`no handler for ${routingKey}`)
   const event: PlatformEvent = { routingKey, messageId: randomUUID(), body }
-  return db.transaction(tx => handler(event, tx))
+  return db.transaction(tx => handler(event, tx, pino({ level: 'silent' })))
 }
 
 interface Board {
@@ -331,6 +332,41 @@ describe('a deleted organization', () => {
     await deliver('domain.organization.deleted', body)
 
     expect(await projectsOf(owner.organizationId)).toEqual([])
+  })
+
+  it('still lets its members be forgotten when their deletions come after', async () => {
+    const byUuid = aUser()
+    const organizationId = byUuid.organizationId
+    const byEmail = aUser({ organizationId })
+    for (const user of [byUuid, byEmail]) {
+      await boardsOf(user)
+      await db.transaction(tx =>
+        keepSettings(tx, 1, { email: user.email, display_name: 'Gone' })
+      )
+    }
+
+    await deliver('domain.organization.deleted', { organizationId })
+    await deliver('domain.user.deleted', {
+      organizationId,
+      uuid: byUuid.userId,
+      internalEmail: byUuid.email
+    })
+    await deliver('domain.user.deleted', {
+      organizationId,
+      internalEmail: byEmail.email
+    })
+
+    expect(
+      await db
+        .select()
+        .from(userSettings)
+        .where(
+          inArray(userSettings.email, [
+            byUuid.email.toLowerCase(),
+            byEmail.email.toLowerCase()
+          ])
+        )
+    ).toEqual([])
   })
 
   it('rejects a deletion without an organization', async () => {

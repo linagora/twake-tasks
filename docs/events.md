@@ -15,14 +15,23 @@ The backend talks to the rest of Twake Workplace through RabbitMQ only. The exch
 
 ## Order
 
-- The events of one space apply one at a time: each handler locks the space's row first. Events of different spaces run in parallel.
+- The events of one space apply one at a time: each handler locks the space's row, then its project's. Events of different spaces run in parallel.
 - A space keeps the time of the last event applied to it. An older event is skipped, except a deletion, which always applies. Events with the same time apply in the order they are handled.
 - A member event for a deleted space adds or removes no one.
-- Account deletions and settings updates do not depend on order: a deletion only removes, and a settings update older than the one held is ignored. A space member event handled after its person's deletion still adds them to the space's project, until a space sync or the nightly space repair no longer lists them.
+- Settings updates do not depend on order: one older than the update held is ignored.
+
+## Deletions
+
+Deleting an organization, a space or a person records the time of the deletion in the `last_changes` table, kept forever, under `organization:<id>:deleted`, `space:<id>:deleted`, `user:<uuid>:deleted` or `email:<email>:deleted`. The time is the event's `timestamp`, or the time Tasks handles it when the event has none.
+
+- A space event dated no later than its organization's deletion is dropped, so neither a creation nor a sync brings the organization's spaces back. A repair, which has no time, never applies to a deleted organization. A space event waits for its organization's deletion in progress, if any.
+- A space event for a space deleted and then purged is dropped and logged, never parked: space ids are never reused.
+- A space member event or sync leaves out a person deleted after the event's time, by uuid or by email. One handled at the very time of the deletion can still add them, until the next space sync or the nightly space repair.
+- Forgetting a person finds their data by uuid and by email, so it is complete even when the organization's deletion came first.
 
 ## Parked events
 
-- An update, member event or deletion for a space Tasks does not know yet is parked: stored in the `parked_events` table and acknowledged. The space's `twake.space.created` may only be late.
+- An update, member event or deletion for a space Tasks has never seen, with no row and no recorded deletion, is parked: stored in the `parked_events` table and acknowledged. The space's `twake.space.created` may only be late.
 - One replica at a time retries the parked events in the order they arrived, 5 seconds after its previous pass ended. An event whose space is now known leaves the table, whatever its outcome. One whose retry fails stays for the next pass.
 - An event still parked after 30 minutes, RabbitMQ's default `consumer_timeout`, is published to `twake-tasks.dlx` with its message id and the headers `x-twake-tasks-exchange`, `x-twake-tasks-routing-key` and `x-twake-tasks-reason`. It stays parked while that publish fails.
 - `twake.space.synced` is never parked, since it carries the whole space and creates it when missing.
@@ -35,7 +44,7 @@ Accounts, in every mode:
 - `user.deleted` on `auth`: forgets a B2C person.
 - `domain.organization.deleted` on `b2b`: deletes the organization's projects, filters and pending jobs.
 
-When a person is forgotten, their Personal project, filters, settings, invitations and memberships go. A project whose only admin leaves goes to its oldest editor, or is deleted when it has none. Managed projects are left to their space.
+When a person is forgotten, their Personal project, filters, settings, invitations and memberships go, whether or not their organization's deletion came first. A project whose only admin leaves goes to its oldest editor, or is deleted when it has none. Managed projects are left to their space.
 
 Settings, in every mode:
 

@@ -31,6 +31,14 @@ export const processedEvents = pgTable(
   table => [primaryKey({ columns: [table.consumer, table.source, table.id] })]
 )
 
+// When an organization, a space or a person was deleted, kept forever so a late
+// event cannot bring them back. Read across organizations, so outside row level
+// security.
+export const lastChanges = pgTable('last_changes', {
+  object: text().primaryKey(),
+  at: timestamptz('at').notNull()
+})
+
 // Events about a space not known yet, set aside so the queue goes on. Retried
 // across organizations, so outside row level security.
 export const parkedEvents = pgTable(
