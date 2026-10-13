@@ -25,6 +25,11 @@
       "board": "Opening your board…"
     },
     "slow": "Still connecting to your account…",
+    "signedOut": {
+      "title": "Sign in to Twake Project",
+      "hint": "Sign in to continue."
+    },
+    "signIn": "Sign in",
     "failed": {
       "title": "We couldn’t sign you in",
       "hint": "Something went wrong while connecting to your account."

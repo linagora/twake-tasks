@@ -25,6 +25,11 @@
       "board": "Abriendo tu tablero…"
     },
     "slow": "Seguimos conectando con tu cuenta…",
+    "signedOut": {
+      "title": "Inicia sesión en Twake Project",
+      "hint": "Inicia sesión para continuar."
+    },
+    "signIn": "Iniciar sesión",
     "failed": {
       "title": "No pudimos iniciar tu sesión",
       "hint": "Algo salió mal al conectar con tu cuenta."
