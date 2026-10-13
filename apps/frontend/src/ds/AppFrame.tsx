@@ -145,9 +145,6 @@ export function CountBadge({
       max={99}
       sx={(theme: Theme) => ({
         '& .MuiBadge-badge': {
-          fontSize: 10,
-          height: 16,
-          minWidth: 16,
           right: 12,
           [theme.breakpoints.down('lg')]: { right: 0 }
         }
