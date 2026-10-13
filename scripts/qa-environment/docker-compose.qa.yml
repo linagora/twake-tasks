@@ -1,0 +1,90 @@
+# QA stack started by start.sh, on top of docker-compose.yml:
+#   docker compose -p twake-tasks-qa -f docker-compose.yml -f scripts/qa-environment/docker-compose.qa.yml --profile app
+# The SSO is the mock of the end to end suite, with more people; emails are caught by Mailpit;
+# a stand-in for TwakeSpace frames the embedded pages. Only the frontend and the stand-in reach
+# the host, on 127.0.0.1.
+services:
+  rabbitmq:
+    ports: !reset []
+
+  postgres:
+    ports: !reset []
+
+  oidc:
+    image: node:24-slim
+    working_dir: /oidc
+    command: ['node', 'server.ts']
+    volumes:
+      - ./e2e/oidc:/oidc:ro
+      - ./scripts/qa-environment/.generated/certs:/certs:ro
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('https://localhost:8443/.well-known/openid-configuration').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+        ]
+      interval: 2s
+      retries: 20
+    environment:
+      NODE_EXTRA_CA_CERTS: /certs/oidc.crt
+      EXTRA_PEOPLE: ${QA_USERS:-}
+      FRAME_ANCESTORS: "'self' http://localhost:${QA_APP_PORT:?} http://localhost:${QA_SPACE_PORT:?}"
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 'true'
+      MP_SMTP_AUTH_ALLOW_INSECURE: 'true'
+
+  twakespace:
+    image: node:24-slim
+    working_dir: /twakespace
+    command: ['node', 'server.ts']
+    volumes:
+      - ./scripts/qa-environment/twakespace:/twakespace:ro
+      - ./scripts/qa-environment/.generated/space.json:/space.json:ro
+    environment:
+      APP_ORIGIN: http://localhost:${QA_APP_PORT:?}
+    ports:
+      - '127.0.0.1:${QA_SPACE_PORT:?}:8080'
+
+  backend:
+    ports: !reset []
+    depends_on:
+      oidc:
+        condition: service_healthy
+    volumes:
+      - ./scripts/qa-environment/.generated/certs:/certs:ro
+    environment:
+      APP_URL: http://localhost:${QA_APP_PORT:?}
+      OIDC_ISSUER: https://oidc:8443
+      OIDC_CLIENT_SECRET: e2e-backend-secret
+      NODE_EXTRA_CA_CERTS: /certs/oidc.crt
+      SPACE_INTEGRATION: 'true'
+      # No ldap-rest here: the nightly reconcile fails and retries, nothing else needs it.
+      LDAP_REST_URL: http://ldap-rest.invalid
+      LDAP_REST_SECRET: qa
+      SMTP_URL: smtp://mailpit:1025
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:8080/health/ready').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+        ]
+      interval: 2s
+      retries: 60
+
+  frontend:
+    ports: !override
+      - '127.0.0.1:${QA_APP_PORT:?}:8080'
+    environment:
+      SSO_BASE_URL: https://oidc:8443
+      SSO_CLIENT_ID: twaketasks
+      SSO_SCOPE: openid email profile
+      SSO_REDIRECT_URI: http://localhost:${QA_APP_PORT:?}/auth/callback
+      SSO_POST_LOGOUT_REDIRECT: http://localhost:${QA_APP_PORT:?}/
+      CSP_FRAME_ANCESTORS: http://localhost:${QA_SPACE_PORT:?}
