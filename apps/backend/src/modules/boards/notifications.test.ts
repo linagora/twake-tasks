@@ -272,12 +272,10 @@ describe('following and notifications', () => {
     async function anAssignedBob(b2c = false) {
       const team = await aTeam(b2c)
       const boardId = team.path.split('/')[2] ?? ''
-      const assignBob = async () => {
-        await api.as(team.alice).put(`${team.path}/assignees`, { userIds: [] })
-        await api
+      const assignBob = () =>
+        api
           .as(team.alice)
           .put(`${team.path}/assignees`, { userIds: [team.bob.userId] })
-      }
       await assignBob()
       const unread = async () =>
         (await api.as(team.bob).get('/notifications/unread')).json<{

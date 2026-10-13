@@ -422,18 +422,9 @@ export function createSharingStore(db: Db) {
         }
         await keepAnAdmin(tx, project.id, userId)
         // Before the membership goes: in a B2C tenant the tasks, and so their
-        // followers and notifications, stop being visible to a member who has left.
+        // assignees, followers and notifications, stop being visible to a
+        // member who has left.
         await revokeProject(tx, [userId], project.id)
-        const removed = await tx
-          .delete(projectMembers)
-          .where(
-            and(
-              eq(projectMembers.projectId, project.id),
-              eq(projectMembers.userId, userId)
-            )
-          )
-          .returning({ userId: projectMembers.userId })
-        if (removed.length === 0) throw new Refused('not_found')
         await tx
           .delete(taskAssignees)
           .where(
@@ -449,6 +440,16 @@ export function createSharingStore(db: Db) {
               )
             )
           )
+        const removed = await tx
+          .delete(projectMembers)
+          .where(
+            and(
+              eq(projectMembers.projectId, project.id),
+              eq(projectMembers.userId, userId)
+            )
+          )
+          .returning({ userId: projectMembers.userId })
+        if (removed.length === 0) throw new Refused('not_found')
       })
     }
   }

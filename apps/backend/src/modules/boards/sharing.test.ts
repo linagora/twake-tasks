@@ -6,6 +6,7 @@ import {
   aManagedProject,
   aUser,
   followersOf,
+  joinBoard,
   startApp,
   type TestUser
 } from '../../testing/app.ts'
@@ -263,6 +264,35 @@ describe('sharing a board', () => {
     expect(await boardIdsOf(guest)).not.toContainEqual(
       expect.objectContaining({ id: boardId })
     )
+  })
+
+  it.each([
+    { kind: 'B2B', makeUser: () => aUser() },
+    { kind: 'B2C', makeUser: () => aB2cUser() }
+  ])('unassigns someone who leaves ($kind)', async ({ makeUser }) => {
+    const owner = makeUser()
+    const guest =
+      owner.organizationId === null
+        ? aB2cUser()
+        : aUser({ organizationId: owner.organizationId })
+    const boardId = await aBoardOf(owner)
+    await joinBoard(db, owner, boardId, guest, 'editor')
+    const taskId = (
+      await api
+        .as(owner)
+        .post(`/boards/${boardId}/tasks`, { sectionId: null, title: 'Logo' })
+    ).json<{ id: string }>().id
+    await api.as(owner).put(`/boards/${boardId}/tasks/${taskId}/assignees`, {
+      userIds: [owner.userId, guest.userId]
+    })
+
+    await api.as(guest).delete(`/boards/${boardId}/members/${guest.userId}`)
+    await joinBoard(db, owner, boardId, guest, 'editor')
+
+    const [task] = (await api.as(owner).get(`/boards/${boardId}`)).json<{
+      tasks: { assignees: { userId: string }[] }[]
+    }>().tasks
+    expect(task?.assignees.map(person => person.userId)).toEqual([owner.userId])
   })
 
   describe('suggestions', () => {
