@@ -105,15 +105,15 @@ describe('Reminders', () => {
 
     const editor = await openEditor()
     fireEvent.change(editor.getByDisplayValue(''), {
-      target: { value: '11/02/2026 20:00' }
+      target: { value: '11/02/2026 08:00' }
     })
     fireEvent.click(editor.getByRole('button', { name: 'Save reminder' }))
 
     expect(await reminders.findByRole('listitem')).toHaveTextContent(
-      'Nov 2, 2026, 20:00'
+      'Nov 2, 2026, 08:00'
     )
     expect(boardsApi.addReminder).toHaveBeenCalledWith(board.id, logo.id, {
-      at: '2026-11-02T11:00:00.000Z'
+      at: '2026-11-01T23:00:00.000Z'
     })
   })
 

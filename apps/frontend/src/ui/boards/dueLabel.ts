@@ -61,15 +61,12 @@ export function zonedInstant(wallClock: string): Date {
 }
 
 // 24-hour in every language, like the stored due times and the pickers.
-export function momentFormat(
-  lang: string,
-  timeZone?: string
-): Intl.DateTimeFormat {
+export function momentFormat(lang: string): Intl.DateTimeFormat {
   return new Intl.DateTimeFormat(lang, {
     dateStyle: 'medium',
     timeStyle: 'short',
     hourCycle: 'h23',
-    timeZone
+    timeZone: localZone()
   })
 }
 

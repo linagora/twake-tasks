@@ -43,7 +43,7 @@ export function Reminders({
   const shut = () => {
     setAnchor(null)
   }
-  const format = momentFormat(lang, localZone())
+  const format = momentFormat(lang)
   const fixed = task.dueDate === null || before === 'at'
 
   const beforeLabel = (minutes: number) => {
