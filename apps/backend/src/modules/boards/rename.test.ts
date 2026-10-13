@@ -14,7 +14,12 @@ afterAll(async () => {
   await sql.end()
 })
 
-type Board = { id: string; name: string; version: number }
+type Board = {
+  id: string
+  name: string
+  version: number
+  project: { id: string; name: string }
+}
 
 async function aBoardOf(owner: TestUser) {
   return (
@@ -40,6 +45,47 @@ describe('renaming a board', () => {
     const after = await boardOf(owner, boardId)
     expect(after.name).toBe('Product')
     expect(after.version).toBeGreaterThan(before.version)
+  })
+
+  it('renames the project the board started, while it is the only board there', async () => {
+    const owner = aUser()
+    const boardId = await aBoardOf(owner)
+
+    await rename(owner, boardId, 'Product')
+    const { project } = await boardOf(owner, boardId)
+    expect(project.name).toBe('Product')
+
+    const second = (
+      await api.as(owner).post('/boards', {
+        name: 'Roadmap',
+        keyPrefix: 'MAP',
+        projectId: project.id
+      })
+    ).json<Board>().id
+    await rename(owner, boardId, 'Design')
+    await rename(owner, second, 'Plans')
+    expect((await boardOf(owner, boardId)).project.name).toBe('Product')
+  })
+
+  it('keeps the name of a project the board was not the start of', async () => {
+    const owner = aUser()
+    const started = await aBoardOf(owner)
+    const projectId = (await boardOf(owner, started)).project.id
+    const joined = (
+      await api
+        .as(owner)
+        .post('/boards', { name: 'Roadmap', keyPrefix: 'MAP', projectId })
+    ).json<Board>().id
+    const elsewhere = (
+      await api.as(owner).post('/boards', { name: 'Other', keyPrefix: 'OTH' })
+    ).json<Board>().project.id
+    await api
+      .as(owner)
+      .post(`/boards/${started}/move`, { projectId: elsewhere })
+
+    await rename(owner, joined, 'Plans')
+
+    expect((await boardOf(owner, joined)).project.name).toBe('Design')
   })
 
   it('refuses an editor', async () => {

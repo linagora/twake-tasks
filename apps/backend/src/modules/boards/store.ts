@@ -9,6 +9,7 @@ import {
   isNotNull,
   isNull,
   lt,
+  ne,
   notExists,
   or,
   sql,
@@ -79,12 +80,41 @@ export function createBoardStore(db: Db) {
       return writeOrRefuse(db, identity, async tx => {
         await checkRole(tx, identity, boardId, 'admin')
         await bumpBoard(tx, boardId)
+        const [previous] = await tx
+          .select({ name: boards.name })
+          .from(boards)
+          .where(eq(boards.id, boardId))
         const [board] = await tx
           .update(boards)
           .set({ name })
           .where(and(eq(boards.id, boardId), eq(boards.inbox, false)))
-          .returning({ id: boards.id })
-        if (!board) throw new Refused('forbidden')
+          .returning({ id: boards.id, projectId: boards.projectId })
+        if (!board || !previous) throw new Refused('forbidden')
+        // A board made without a project started one named after it, and the
+        // UI offers no other way to rename that project. A matching name tells
+        // that project apart from one a board was moved into.
+        await tx
+          .update(projects)
+          .set({ name })
+          .where(
+            and(
+              eq(projects.id, board.projectId),
+              eq(projects.name, previous.name),
+              eq(projects.managed, false),
+              eq(projects.personal, false),
+              notExists(
+                tx
+                  .select({ id: boards.id })
+                  .from(boards)
+                  .where(
+                    and(
+                      eq(boards.projectId, board.projectId),
+                      ne(boards.id, board.id)
+                    )
+                  )
+              )
+            )
+          )
         return null
       })
     },
