@@ -8,8 +8,13 @@ import {
   Tooltip,
   Typography
 } from '@linagora/twake-mui'
-import { useRef, useState, type ReactElement } from 'react'
-import { Link as RouterLink, useNavigate, useParams } from 'react-router'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
+import {
+  Link as RouterLink,
+  useNavigate,
+  useParams,
+  useSearchParams
+} from 'react-router'
 
 import { ApiError, type Shelf } from '@/application/boards'
 import {
@@ -26,6 +31,7 @@ import { PageHeader, PageTitle, UnavailableButton } from '@/ds/PageHeader'
 import { Inline } from '@/ds/SidePanel'
 import { DropColumn, SortableList } from '@/ds/Sortable'
 import { TitleButton } from '@/ds/TitleButton'
+import { Toast } from '@/ds/Toast'
 import type { Board, Section, Task } from '@/domain/board'
 import {
   RemovalNotice,
@@ -88,9 +94,60 @@ export function BoardScreen({
         <ColumnsSkeleton label={t('app.loading')} />
       )}
       {board.data && !waiting && (
-        <BoardColumns board={board.data} back={back} />
+        <>
+          <BoardColumns board={board.data} back={back} />
+          <MissingTask board={board.data} settled={!board.isFetching} />
+        </>
       )}
     </main>
+  )
+}
+
+// A link can name a task the board no longer has, or never had. Each key is
+// checked once, on fresh data: a task removed while its panel is open leaves
+// its key in the URL for a moment, and a restored one is not in the cache yet.
+function MissingTask({
+  board,
+  settled
+}: {
+  board: Board
+  settled: boolean
+}): ReactElement {
+  const { t } = useI18n()
+  const [params, setParams] = useSearchParams()
+  const shown = params.get('task')
+  const [checked, setChecked] = useState<string | null>(null)
+  const [lost, setLost] = useState<string | null>(null)
+
+  if (shown !== checked && (shown === null || settled)) {
+    setChecked(shown)
+    if (shown !== null && !board.tasks.some(task => task.key === shown)) {
+      setLost(shown)
+    }
+  }
+
+  useEffect(() => {
+    if (lost === null || shown !== lost) return
+    setParams(
+      current => {
+        const next = new URLSearchParams(current)
+        next.delete('task')
+        return next
+      },
+      { replace: true }
+    )
+  }, [lost, shown, setParams])
+
+  return (
+    <Toast
+      open={lost !== null}
+      autoHideDuration={8000}
+      onClose={(_, reason) => {
+        if (reason !== 'clickaway') setLost(null)
+      }}
+    >
+      <Alert severity="warning">{t('board.taskNotFound')}</Alert>
+    </Toast>
   )
 }
 
@@ -405,6 +462,7 @@ function BoardColumns({
             <TaskListRow
               key={task.id}
               task={task}
+              tasks={board.tasks}
               boardId={board.id}
               sections={board.sections}
               editable={editable}
@@ -419,6 +477,7 @@ function BoardColumns({
             <CalendarTask
               key={task.id}
               task={task}
+              tasks={board.tasks}
               boardId={board.id}
               editable={editable}
             />

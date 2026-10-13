@@ -1,24 +1,22 @@
 import { Checkbox, Link } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import type { ReactElement } from 'react'
 
 import { Checklist } from '@/ds/Columns'
 import type { Task } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
-import { TaskPanel } from '@/ui/boards/TaskPanel'
+import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 
 export function Subtasks({
   parentId,
   tasks,
   boardId,
   editable,
-  depth,
   label
 }: {
   parentId: string
   tasks: Task[]
   boardId: string
   editable: boolean
-  depth: number
   label?: string
 }): ReactElement | null {
   const children = tasks.filter(task => task.parentId === parentId)
@@ -32,7 +30,6 @@ export function Subtasks({
           tasks={tasks}
           boardId={boardId}
           editable={editable}
-          depth={depth}
         />
       ))}
     </Checklist>
@@ -43,16 +40,14 @@ function Subtask({
   task,
   tasks,
   boardId,
-  editable,
-  depth
+  editable
 }: {
   task: Task
   tasks: Task[]
   boardId: string
   editable: boolean
-  depth: number
 }): ReactElement {
-  const [open, setOpen] = useState(false)
+  const panel = useTaskPanel(task.key, tasks)
   const complete = useBoardChange(boardId, (api, done: boolean) =>
     api.completeTask(boardId, task.id, done ? 'completed' : null)
   )
@@ -74,29 +69,15 @@ function Subtask({
         color="textPrimary"
         underline="hover"
         className="u-ta-left"
-        onClick={() => {
-          setOpen(true)
-        }}
+        onClick={panel.show}
       >
         {task.title}
       </Link>
-      {open && (
-        <TaskPanel
-          task={task}
-          boardId={boardId}
-          editable={editable}
-          depth={depth}
-          onClose={() => {
-            setOpen(false)
-          }}
-        />
-      )}
       <Subtasks
         parentId={task.id}
         tasks={tasks}
         boardId={boardId}
         editable={editable}
-        depth={depth + 1}
       />
     </li>
   )

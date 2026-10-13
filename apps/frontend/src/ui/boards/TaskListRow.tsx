@@ -14,17 +14,19 @@ import { useI18n } from '@/ui/i18n/useI18n'
 // it moves it there; a task outside sections is completed in place.
 export function TaskListRow({
   task,
+  tasks,
   boardId,
   sections,
   editable
 }: {
   task: Task
+  tasks: Task[]
   boardId: string
   sections: Section[]
   editable: boolean
 }): ReactElement {
   const { t } = useI18n()
-  const panel = useTaskPanel(task.key)
+  const panel = useTaskPanel(task.key, tasks)
   const complete = useBoardChange(boardId, (api, done: boolean) =>
     api.completeTask(boardId, task.id, done ? 'completed' : null)
   )

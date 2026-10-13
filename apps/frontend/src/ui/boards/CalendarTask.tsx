@@ -7,14 +7,16 @@ import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 
 export function CalendarTask({
   task,
+  tasks,
   boardId,
   editable
 }: {
   task: Task
+  tasks: Task[]
   boardId: string
   editable: boolean
 }): ReactElement {
-  const panel = useTaskPanel(task.key)
+  const panel = useTaskPanel(task.key, tasks)
 
   return (
     <li>

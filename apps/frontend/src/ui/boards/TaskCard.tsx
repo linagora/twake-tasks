@@ -43,7 +43,7 @@ export function TaskCard({
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
   const [labeling, setLabeling] = useState<HTMLElement | null>(null)
-  const panel = useTaskPanel(task.key)
+  const panel = useTaskPanel(task.key, tasks)
   const editable = onMove !== undefined
   const [showSubtasks, setShowSubtasks] = useState(false)
   const children = tasks.filter(each => each.parentId === task.id)
@@ -122,7 +122,6 @@ export function TaskCard({
           tasks={tasks}
           boardId={boardId}
           editable={editable}
-          depth={2}
         />
       )}
     </>
