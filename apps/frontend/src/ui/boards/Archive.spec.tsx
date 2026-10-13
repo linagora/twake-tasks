@@ -50,9 +50,13 @@ describe('archive and trash', () => {
       await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
     )
     fireEvent.click(item.getByRole('button', { name: 'Restore DES-1' }))
-    expect(await findEmptyState('No archived tasks')).toHaveTextContent(
+    const empty = await findEmptyState('No archived tasks')
+    expect(empty).toHaveTextContent(
       'Archive a task to hide it from the board without deleting it.'
     )
+    expect(
+      empty.querySelector('svg')?.closest('[aria-hidden="true"]')
+    ).not.toBe(null)
     fireEvent.click(
       within(
         await screen.findByRole('status', {

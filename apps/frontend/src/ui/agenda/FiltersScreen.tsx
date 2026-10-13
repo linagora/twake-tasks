@@ -88,6 +88,7 @@ export function FiltersScreen(): ReactElement {
       {filters.data?.length === 0 && (
         <EmptyState
           icon={Filter}
+          illustrated
           title={t('filters.empty')}
           text={t('filters.emptyHint')}
         />

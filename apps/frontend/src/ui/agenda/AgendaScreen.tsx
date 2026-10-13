@@ -292,6 +292,7 @@ export function AgendaScreen(
         ) : (
           <EmptyState
             icon={CheckCircle}
+            illustrated
             title={t('agenda.empty')}
             text={t('agenda.emptyHint')}
           />

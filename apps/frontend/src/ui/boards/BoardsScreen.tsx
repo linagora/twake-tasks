@@ -178,6 +178,7 @@ export function BoardsScreen(): ReactElement {
         ) : (
           <EmptyState
             icon={Archive}
+            illustrated
             title={t('boards.emptyArchived')}
             text={t('boards.emptyArchivedHint')}
           />

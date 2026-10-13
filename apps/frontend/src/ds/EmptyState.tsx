@@ -8,6 +8,7 @@ export function EmptyState({
   text,
   action,
   compact = false,
+  illustrated = false,
   tone = 'default'
 }: {
   icon: IconProps['icon']
@@ -15,26 +16,35 @@ export function EmptyState({
   text?: string
   action?: ReactNode
   compact?: boolean
+  illustrated?: boolean
   tone?: 'default' | 'error'
 }): ReactElement {
-  const badge = compact ? 40 : 64
+  const badge = illustrated ? 200 : compact ? 40 : 64
   return (
     <Empty
       role={tone === 'error' ? 'alert' : 'status'}
       icon={
         <Box
+          aria-hidden
           sx={{
             width: badge,
             height: badge,
-            borderRadius: '50%',
+            borderRadius: illustrated ? '33%' : '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: 'action.hover',
-            color: tone === 'error' ? 'error.main' : 'primary.main'
+            bgcolor: illustrated ? 'action.selected' : 'action.hover',
+            color: illustrated
+              ? 'common.white'
+              : tone === 'error'
+                ? 'error.main'
+                : 'primary.main',
+            '& svg': illustrated
+              ? { filter: 'drop-shadow(0 2px 10px rgb(0 0 0 / 10%))' }
+              : undefined
           }}
         >
-          <Icon icon={icon} size={compact ? 18 : 28} />
+          <Icon icon={icon} size={illustrated ? 124 : compact ? 18 : 28} />
         </Box>
       }
       title={title}
@@ -47,11 +57,11 @@ export function EmptyState({
       sx={{
         boxSizing: 'border-box',
         width: '100%',
-        p: compact ? 2 : 6,
+        p: compact ? 2 : { xs: 2, sm: 6 },
         '& .Empty-icon': {
           display: 'flex',
           height: badge,
-          mb: compact ? 1 : 2
+          mb: illustrated ? 5 : compact ? 1 : 2
         }
       }}
     >
