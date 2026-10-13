@@ -575,6 +575,25 @@ describe('deletions', () => {
     })
     expect(await membersOf(space)).toEqual([admin.userId])
   })
+
+  it('of a person by uuid keep them out of member events dated after too', async () => {
+    const admin = aUser()
+    const gone = aUser({ organizationId: admin.organizationId })
+    const space = await aSpaceAt(admin, 0)
+    await deliver('domain.user.deleted', {
+      organizationId: space.organizationId,
+      uuid: gone.userId,
+      timestamp: at(10)
+    })
+
+    await deliver('twake.space.member.added', {
+      ...space,
+      members: [member(gone, 'editor')],
+      timestamp: at(20)
+    })
+
+    expect(await membersOf(space)).toEqual([admin.userId])
+  })
 })
 
 describe('the order of space events', () => {

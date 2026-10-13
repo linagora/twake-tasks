@@ -26,7 +26,7 @@ Deleting an organization, a space or a person records the time of the deletion i
 
 - A space event dated no later than its organization's deletion is dropped, so neither a creation nor a sync brings the organization's spaces back. A repair, which has no time, never applies to a deleted organization. A space event waits for its organization's deletion in progress, if any.
 - A space event for a space deleted and then purged is dropped and logged, never parked: space ids are never reused.
-- A space member event or sync leaves out a person deleted after the event's time, by uuid or by email. One handled at the very time of the deletion can still add them, until the next space sync or the nightly space repair.
+- A space member event or sync leaves out a person whose uuid was deleted, whatever its time, since a uuid is never reused. A person deleted by email is left out of the events dated before the deletion only, since the email can go to someone new. One handled at the very time of the deletion can still add them, until the next space sync or the nightly space repair.
 - Forgetting a person finds their data by uuid and by email, so it is complete even when the organization's deletion came first.
 
 ## Parked events

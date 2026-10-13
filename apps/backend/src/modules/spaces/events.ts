@@ -215,25 +215,28 @@ const knownName = (userId: string) =>
 
 type Member = z.infer<typeof member>
 
-// A person deleted after the event would come back as a member. A repair,
+// A uuid is never reused, so a deleted one never comes back. An email can go to
+// a new person, so only a deletion after the event holds it back; a repair,
 // without a time, reads people as they are now.
 async function notDeletedSince(
   tx: Tx,
   members: Member[],
   at: string | undefined
 ): Promise<Member[]> {
-  if (at === undefined) return members
-  const keys = (m: Member) => [
-    ...(m.uuid ? [deletedUserKey(m.uuid)] : []),
-    deletedEmailKey(m.email)
-  ]
-  const deleted = await deletions(tx, members.flatMap(keys))
-  const time = new Date(at)
-  const deletedAfter = (key: string) => {
-    const deletion = deleted.get(key)
-    return deletion !== undefined && deletion > time
+  const deleted = await deletions(
+    tx,
+    members.flatMap(m => [
+      ...(m.uuid ? [deletedUserKey(m.uuid)] : []),
+      deletedEmailKey(m.email)
+    ])
+  )
+  const time = at === undefined ? undefined : new Date(at)
+  const gone = (m: Member) => {
+    if (m.uuid && deleted.has(deletedUserKey(m.uuid))) return true
+    const deletion = deleted.get(deletedEmailKey(m.email))
+    return time !== undefined && deletion !== undefined && deletion > time
   }
-  return members.filter(m => !keys(m).some(deletedAfter))
+  return members.filter(m => !gone(m))
 }
 
 async function upsertMembers(
