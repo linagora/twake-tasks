@@ -184,7 +184,7 @@ describe('saved filters', () => {
     expect(response.json()).toEqual({ labels: ['client', 'urgent'] })
   })
 
-  it('names the parent of a sub-task and files it in the parent’s column', async () => {
+  it('names the parent of a sub-task', async () => {
     const owner = aUser()
     const board = (
       await api.as(owner).post('/boards', { name: 'Design', keyPrefix: 'DES' })
@@ -204,7 +204,11 @@ describe('saved filters', () => {
     const { tasks } = (
       await api.as(owner).get(`/filters/${id}/tasks?zone=${zone}`)
     ).json<{
-      tasks: { title: string; category: string; parentTitle: string | null }[]
+      tasks: {
+        title: string
+        category: string | null
+        parentTitle: string | null
+      }[]
     }>()
 
     expect(tasks).toEqual([
@@ -215,7 +219,7 @@ describe('saved filters', () => {
       }),
       expect.objectContaining({
         title: 'Step 1',
-        category: 'started',
+        category: null,
         parentTitle: 'Parent task'
       })
     ])

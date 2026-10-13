@@ -509,7 +509,7 @@
     }
   },
   "agenda": {
-    "subtaskOf": "Подзадача: %{title}",
+    "subtaskOf": "Подзадача задачи «%{title}»",
     "today": "Сегодня",
     "upcoming": "Предстоящие",
     "mine": "Мои задачи",

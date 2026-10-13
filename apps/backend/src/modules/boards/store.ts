@@ -570,7 +570,6 @@ async function tasksOf(
 ) {
   const accessible = accessibleBoards(tx, userId)
   const parent = alias(tasks, 'parent')
-  const parentSection = alias(sections, 'parent_section')
   const query = tx
     .select({
       task: tasks,
@@ -580,8 +579,7 @@ async function tasksOf(
         select 1 from ${sections} as completed
         where completed.board_id = ${boards.id} and completed.category = 'completed'
       )`,
-      parentTitle: parent.title,
-      parentCategory: parentSection.category
+      parentTitle: parent.title
     })
     .from(tasks)
     .innerJoin(boards, eq(boards.id, tasks.boardId))
@@ -589,7 +587,6 @@ async function tasksOf(
     .innerJoin(accessible, eq(accessible.boardId, boards.id))
     .leftJoin(sections, eq(sections.id, tasks.sectionId))
     .leftJoin(parent, eq(parent.id, tasks.parentId))
-    .leftJoin(parentSection, eq(parentSection.id, parent.sectionId))
     .where(and(shown, which))
     .orderBy(
       sql`${tasks.dueDate} asc nulls last`,
@@ -614,14 +611,12 @@ async function tasksOf(
       )
     )
   }
-  return rows.map(
-    ({ task, board, category, completable, parentTitle, parentCategory }) => ({
-      ...described.get(board.id)?.find(each => each.id === task.id),
-      category: category ?? parentCategory,
-      completable,
-      parentTitle,
-      boardId: board.id,
-      boardName: board.name
-    })
-  )
+  return rows.map(({ task, board, category, completable, parentTitle }) => ({
+    ...described.get(board.id)?.find(each => each.id === task.id),
+    category,
+    completable,
+    parentTitle,
+    boardId: board.id,
+    boardName: board.name
+  }))
 }
