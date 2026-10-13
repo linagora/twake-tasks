@@ -58,6 +58,21 @@ const SafeLink = Link.extend({
   }
 })
 
+// Tiptap reverts a click on the checkbox of a read-only editor, so show it as disabled.
+const ReadOnlyTaskItem = TaskItem.extend({
+  addNodeView() {
+    const nodeView = this.parent?.()
+    if (!nodeView) return null
+    return props => {
+      const view = nodeView(props)
+      if (!props.editor.isEditable) {
+        view.dom.querySelector('input')?.setAttribute('disabled', '')
+      }
+      return view
+    }
+  }
+})
+
 const extensions = (placeholder = '', more: AnyExtension[] = []) => [
   StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false }),
   SafeLink.configure({
@@ -66,7 +81,7 @@ const extensions = (placeholder = '', more: AnyExtension[] = []) => [
     defaultProtocol: 'https'
   }),
   TaskList,
-  TaskItem.configure({ nested: true }),
+  ReadOnlyTaskItem.configure({ nested: true }),
   // One parser per editor: the shared one of marked would keep the tokenizer
   // of the mentions, and every other editor would drop the "@<email>" it reads
   Markdown.configure({ marked: ownMarked() }),
@@ -111,7 +126,7 @@ const prose = (theme: Theme) => ({
     gap: theme.spacing(1),
     alignItems: 'flex-start'
   },
-  '& ul[data-type="taskList"] li > label': { marginTop: 2 },
+  '& ul[data-type="taskList"] li > label': { marginTop: '2px' },
   '& ul[data-type="taskList"] li > div': { flex: 1 },
   '& li[data-checked="true"] > div': {
     color: theme.vars.palette.text.secondary,
