@@ -219,6 +219,10 @@ export function TransferTask({
         board.id !== boardId && board.role !== 'viewer' && !board.archived
     ) ?? []
   if (targets.length === 0) return null
+  const targetName = targets.find(board => board.id === target)?.name ?? ''
+  // Unmounting mid-request drops the mutate callbacks, so the move would land
+  // without the board refreshing.
+  const busy = check.isPending || transfer.isPending
 
   return (
     <form
@@ -280,7 +284,7 @@ export function TransferTask({
             }
           >
             {t('transfer.removedAssignees', {
-              board: targets.find(board => board.id === target)?.name ?? '',
+              board: targetName,
               names: removed.droppedAssignees
                 .map(person => personName(person, t('transfer.formerMember')))
                 .join(', ')
@@ -294,17 +298,16 @@ export function TransferTask({
         )}
       </DialogContent>
       <DialogActions>
-        <Button variant="text" onClick={onCancel}>
+        <Button
+          variant="text"
+          disabled={busy}
+          onClick={removed ? finish : onCancel}
+        >
           {t('transfer.cancel')}
         </Button>
         <Button
           type="submit"
-          disabled={
-            sectionId === undefined ||
-            check.isPending ||
-            transfer.isPending ||
-            !!removed
-          }
+          disabled={sectionId === undefined || busy || !!removed}
         >
           {t('transfer.move')}
         </Button>
@@ -312,7 +315,7 @@ export function TransferTask({
       {preview && (
         <ConfirmTransfer
           task={task}
-          board={targets.find(board => board.id === target)?.name ?? ''}
+          board={targetName}
           preview={preview}
           busy={transfer.isPending}
           failed={transfer.isError}
