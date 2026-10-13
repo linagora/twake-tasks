@@ -9,6 +9,7 @@ import {
   isNotNull,
   isNull,
   lt,
+  ne,
   notExists,
   or,
   sql,
@@ -83,8 +84,31 @@ export function createBoardStore(db: Db) {
           .update(boards)
           .set({ name })
           .where(and(eq(boards.id, boardId), eq(boards.inbox, false)))
-          .returning({ id: boards.id })
+          .returning({ id: boards.id, projectId: boards.projectId })
         if (!board) throw new Refused('forbidden')
+        // A board made without a project started one named after it, and the
+        // UI offers no other way to rename that project.
+        await tx
+          .update(projects)
+          .set({ name })
+          .where(
+            and(
+              eq(projects.id, board.projectId),
+              eq(projects.managed, false),
+              eq(projects.personal, false),
+              notExists(
+                tx
+                  .select({ id: boards.id })
+                  .from(boards)
+                  .where(
+                    and(
+                      eq(boards.projectId, board.projectId),
+                      ne(boards.id, board.id)
+                    )
+                  )
+              )
+            )
+          )
         return null
       })
     },
