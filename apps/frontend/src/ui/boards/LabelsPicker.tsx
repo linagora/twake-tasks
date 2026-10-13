@@ -9,7 +9,7 @@ import {
   PickerOption,
   PickerPopover
 } from '@/ds/Picker'
-import type { Label, Task } from '@/domain/board'
+import { labelName, type Label, type Task } from '@/domain/board'
 import { LabelDialog } from '@/ui/boards/LabelDialog'
 import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -36,11 +36,12 @@ export function LabelsPicker({
   const save = useBoardChange(boardId, (api, labelIds: string[]) =>
     api.setLabels(boardId, task.id, labelIds)
   )
-  const name = search.trim()
+  const name = labelName(search)
   const query = name.toLowerCase()
-  const shown = labels.filter(label => label.name.toLowerCase().includes(query))
+  const folded = (label: Label) => labelName(label.name).toLowerCase()
+  const shown = labels.filter(label => folded(label).includes(query))
   const creatable =
-    name !== '' && !labels.some(label => label.name.toLowerCase() === query)
+    name !== '' && !labels.some(label => folded(label) === query)
 
   const apply = (next: Set<string>) => {
     setChosen(next)

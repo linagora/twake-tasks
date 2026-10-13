@@ -196,6 +196,48 @@ describe('labels', () => {
     expect(again.json()).toEqual({ error: 'label_taken' })
   })
 
+  it.each([
+    ['a zero width space', 'Urgent\u{200B}'],
+    ['a word joiner', 'Ur\u{2060}gent'],
+    ['decomposed accents', 'Cafe\u{301}']
+  ])('refuses a name that differs only by %s', async (_, lookalike) => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+    await board.addLabel('Urgent')
+    await board.addLabel('Café')
+
+    const again = await board.addLabel(lookalike)
+
+    expect(again.statusCode).toBe(409)
+    expect(again.json()).toEqual({ error: 'label_taken' })
+  })
+
+  it('stores a name without its invisible characters', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+
+    const label = await board.addLabel('\u{200B}Cafe\u{301}\u{2060}')
+
+    expect(label.json()).toMatchObject({ name: 'Café' })
+  })
+
+  it.each([
+    ['an emoji sequence', '\u{1F469}\u{200D}\u{1F4BB}'],
+    [
+      'a flag with tags',
+      '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}'
+    ],
+    ['a Persian non-joiner', 'می\u{200C}روم'],
+    ['a Devanagari joiner', 'क्\u{200D}ष']
+  ])('keeps the joiners of %s', async (_, name) => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+
+    const label = await board.addLabel(name)
+
+    expect(label.json()).toMatchObject({ name })
+  })
+
   it('keeps viewers from labeling', async () => {
     const alice = aUser()
     const bob = aUser({ organizationId: alice.organizationId })

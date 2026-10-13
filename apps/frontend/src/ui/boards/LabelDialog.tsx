@@ -12,7 +12,7 @@ import { useId, useState, type ReactElement } from 'react'
 import { ApiError } from '@/application/boards'
 import { ColorSwatches } from '@/ds/ColorSwatches'
 import { LabelChip } from '@/ds/Columns'
-import type { Label } from '@/domain/board'
+import { labelName, type Label } from '@/domain/board'
 import { LABEL_COLORS } from '@/domain/labelColors'
 import { useBoardChange } from '@/ui/boards/queries'
 import { focusOnMount } from '@/ui/focusOnMount'
@@ -45,7 +45,7 @@ export function LabelDialog({
   )
   const taken =
     save.error instanceof ApiError && save.error.code === 'label_taken'
-  const trimmed = name.trim()
+  const trimmed = labelName(name)
 
   return (
     <Dialog open onClose={onClose} aria-labelledby={titleId} size="small">
