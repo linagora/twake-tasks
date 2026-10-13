@@ -82,7 +82,7 @@ describe('project invite emails', () => {
       'Alice Martin shared the board "Roadmap" with you, as editor. It belongs to the project "'
     )
     expect(sent[0]?.text).toContain(
-      'You can open it with an account in the same organization as Alice Martin.'
+      'You can open it with an account of the organization it was shared from.'
     )
     expect(sent[0]?.text).not.toContain('whose boards you can now open')
     expect(sent[0]?.text).toContain(
@@ -124,7 +124,7 @@ describe('project invite emails', () => {
       "Alice Martin partage le tableau « Roadmap » avec vous, en tant qu'éditeur. Il appartient au projet « "
     )
     expect(sent[0]?.text).toContain(
-      "Vous pouvez l'ouvrir avec un compte de la même organisation que Alice Martin."
+      "Vous pouvez l'ouvrir avec un compte de l'organisation depuis laquelle il a été partagé."
     )
   })
 
