@@ -1,6 +1,8 @@
 import type { Nodes } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
+import { gfmTaskListItemFromMarkdown } from 'mdast-util-gfm-task-list-item'
 import { toString } from 'mdast-util-to-string'
+import { gfmTaskListItem } from 'micromark-extension-gfm-task-list-item'
 
 const CONTAINERS = new Set(['root', 'list', 'listItem', 'blockquote'])
 
@@ -11,5 +13,10 @@ function textOf(node: Nodes): string {
 }
 
 export function plainText(markdown: string): string {
-  return textOf(fromMarkdown(markdown))
+  return textOf(
+    fromMarkdown(markdown, {
+      extensions: [gfmTaskListItem()],
+      mdastExtensions: [gfmTaskListItemFromMarkdown()]
+    })
+  )
 }

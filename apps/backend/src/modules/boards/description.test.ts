@@ -57,6 +57,23 @@ describe('task description', () => {
     expect(row?.text).toBe('Brief\nUse the new palette.')
   })
 
+  it('keeps checklist markers out of the plain text copy', async () => {
+    const alice = aUser()
+    const { boardId, taskId } = await aTaskOf(alice)
+    await api.as(alice).put(`/boards/${boardId}/tasks/${taskId}/description`, {
+      markdown: 'Plan\n\n- [ ] check me\n- [x] done',
+      version: 0
+    })
+    const [row] = await inTenant(db, alice, tx =>
+      tx
+        .select({ text: tasks.descriptionText })
+        .from(tasks)
+        .where(eq(tasks.id, taskId))
+    )
+
+    expect(row?.text).toBe('Plan\ncheck me\ndone')
+  })
+
   it('refuses an edit made on a stale version', async () => {
     const alice = aUser()
     const { boardId, taskId } = await aTaskOf(alice)
