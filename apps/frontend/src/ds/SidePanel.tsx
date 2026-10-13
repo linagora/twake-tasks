@@ -9,6 +9,10 @@ import {
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
+function inField(element: Element | null): boolean {
+  return element?.matches('input, textarea, [contenteditable]') ?? false
+}
+
 export function SidePanel({
   label,
   onClose,
@@ -24,7 +28,11 @@ export function SidePanel({
     <Drawer
       open
       anchor="right"
-      onClose={onClose}
+      onClose={(_event, reason) => {
+        if (reason === 'escapeKeyDown' && inField(document.activeElement))
+          return
+        onClose()
+      }}
       slotProps={{
         paper: {
           role: 'dialog',
