@@ -34,6 +34,7 @@ import { Subtasks } from '@/ui/boards/Subtasks'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
+import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -72,9 +73,7 @@ export function TaskPanel({
           </Typography>
           <Grow />
           <FollowButton task={task} boardId={boardId} />
-          {depth === 1 && (
-            <CopyLinkButton boardId={boardId} taskKey={task.key} />
-          )}
+          <CopyLinkButton boardId={boardId} taskKey={task.key} />
           {editable && (
             <TaskMenu task={task} boardId={boardId} onRemoved={onClose} />
           )}
@@ -117,7 +116,6 @@ export function TaskPanel({
               tasks={board.tasks}
               boardId={boardId}
               editable={editable}
-              depth={depth + 1}
               label={t('task.subtasks')}
             />
           )}
@@ -126,6 +124,17 @@ export function TaskPanel({
           )}
         </PanelSection>
       )}
+      {board &&
+        children.map(child => (
+          <LinkedTaskPanel
+            key={child.id}
+            task={child}
+            tasks={board.tasks}
+            boardId={boardId}
+            editable={editable}
+            depth={depth + 1}
+          />
+        ))}
       <div>
         <Tabs
           value={tab}
@@ -165,6 +174,32 @@ export function TaskPanel({
         </div>
       </div>
     </SidePanel>
+  )
+}
+
+export function LinkedTaskPanel({
+  task,
+  tasks,
+  boardId,
+  editable,
+  depth
+}: {
+  task: Task
+  tasks: Task[]
+  boardId: string
+  editable: boolean
+  depth: number
+}): ReactElement | null {
+  const panel = useTaskPanel(task.key, tasks)
+  if (!panel.open) return null
+  return (
+    <TaskPanel
+      task={task}
+      boardId={boardId}
+      editable={editable}
+      depth={depth}
+      onClose={panel.close}
+    />
   )
 }
 

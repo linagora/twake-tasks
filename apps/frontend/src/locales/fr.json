@@ -103,6 +103,7 @@
     "menu": "Options du tableau",
     "newTask": "Ajouter une tâche",
     "notFound": "Ce tableau n'existe pas, ou vous ne pouvez pas l'ouvrir.",
+    "taskNotFound": "Cette tâche n'existe pas, ou vous ne pouvez pas l'ouvrir.",
     "loadFailed": "Le tableau n'a pas pu être chargé.",
     "noSection": "Sans section",
     "emptyColumn": "Aucune tâche",

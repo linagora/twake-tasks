@@ -8,8 +8,13 @@ import {
   Tooltip,
   Typography
 } from '@linagora/twake-mui'
-import { useRef, useState, type ReactElement } from 'react'
-import { Link as RouterLink, useNavigate, useParams } from 'react-router'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
+import {
+  Link as RouterLink,
+  useNavigate,
+  useParams,
+  useSearchParams
+} from 'react-router'
 
 import { ApiError, type Shelf } from '@/application/boards'
 import {
@@ -26,6 +31,7 @@ import { PageHeader, PageTitle, UnavailableButton } from '@/ds/PageHeader'
 import { Inline } from '@/ds/SidePanel'
 import { DropColumn, SortableList } from '@/ds/Sortable'
 import { TitleButton } from '@/ds/TitleButton'
+import { Toast } from '@/ds/Toast'
 import type { Board, Section, Task } from '@/domain/board'
 import {
   RemovalNotice,
@@ -50,6 +56,8 @@ import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { ShareDialog } from '@/ui/boards/ShareDialog'
 import { TaskCard } from '@/ui/boards/TaskCard'
 import { TaskListRow } from '@/ui/boards/TaskListRow'
+import { LinkedTaskPanel } from '@/ui/boards/TaskPanel'
+import { lineage } from '@/ui/boards/useTaskPanel'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -88,9 +96,78 @@ export function BoardScreen({
         <ColumnsSkeleton label={t('app.loading')} />
       )}
       {board.data && !waiting && (
-        <BoardColumns board={board.data} back={back} />
+        <BoardColumns
+          board={board.data}
+          back={back}
+          settled={!board.isFetching}
+        />
       )}
     </main>
+  )
+}
+
+// A link can name a task the board no longer has, or never had. Each key is
+// checked once, on fresh data: a task removed while its panel is open leaves
+// its key in the URL for a moment, and a restored one is not in the cache yet.
+function LinkedTask({
+  board,
+  editable,
+  settled
+}: {
+  board: Board
+  editable: boolean
+  settled: boolean
+}): ReactElement {
+  const { t } = useI18n()
+  const [params, setParams] = useSearchParams()
+  const shown = params.get('task')
+  const rootKey =
+    shown === null ? undefined : lineage(shown, board.tasks).at(-1)
+  const root = board.tasks.find(task => task.key === rootKey)
+  const [checked, setChecked] = useState<string | null>(null)
+  const [lost, setLost] = useState<string | null>(null)
+
+  if (shown !== checked && (shown === null || settled)) {
+    setChecked(shown)
+    if (shown !== null && !board.tasks.some(task => task.key === shown)) {
+      setLost(shown)
+    }
+  }
+
+  useEffect(() => {
+    if (lost === null || shown !== lost) return
+    setParams(
+      current => {
+        const next = new URLSearchParams(current)
+        next.delete('task')
+        return next
+      },
+      { replace: true }
+    )
+  }, [lost, shown, setParams])
+
+  return (
+    <>
+      {root && (
+        <LinkedTaskPanel
+          key={root.id}
+          task={root}
+          tasks={board.tasks}
+          boardId={board.id}
+          editable={editable}
+          depth={1}
+        />
+      )}
+      <Toast
+        open={lost !== null}
+        autoHideDuration={8000}
+        onClose={(_, reason) => {
+          if (reason !== 'clickaway') setLost(null)
+        }}
+      >
+        <Alert severity="warning">{t('board.taskNotFound')}</Alert>
+      </Toast>
+    </>
   )
 }
 
@@ -114,10 +191,12 @@ function BackLink(): ReactElement {
 
 function BoardColumns({
   board,
-  back
+  back,
+  settled
 }: {
   board: Board
   back: boolean
+  settled: boolean
 }): ReactElement {
   const { t } = useI18n()
   const move = useMoveTask(board.id)
@@ -415,14 +494,7 @@ function BoardColumns({
       {board.layout === 'calendar' && (
         <CalendarLayout
           tasks={topLevel}
-          item={task => (
-            <CalendarTask
-              key={task.id}
-              task={task}
-              boardId={board.id}
-              editable={editable}
-            />
-          )}
+          item={task => <CalendarTask key={task.id} task={task} />}
         />
       )}
       {board.layout === 'calendar' && first && adding !== null && (
@@ -435,6 +507,7 @@ function BoardColumns({
           }}
         />
       )}
+      <LinkedTask board={board} editable={editable} settled={settled} />
       {removal && (
         <RemovalNotice
           key={`${removal.shelf}:${removal.task.id}`}

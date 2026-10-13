@@ -103,6 +103,7 @@
     "menu": "Opciones del tablero",
     "newTask": "Añadir tarea",
     "notFound": "Este tablero no existe o no puedes abrirlo.",
+    "taskNotFound": "Esta tarea no existe o no puedes abrirla.",
     "loadFailed": "No se pudo cargar el tablero.",
     "noSection": "Sin sección",
     "emptyColumn": "No hay tareas",

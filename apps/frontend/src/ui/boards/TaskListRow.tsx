@@ -6,7 +6,6 @@ import { ListRow } from '@/ds/ListView'
 import type { Section, Task } from '@/domain/board'
 import { useBoardChange, useMoveTask } from '@/ui/boards/queries'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
-import { TaskPanel } from '@/ui/boards/TaskPanel'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -44,66 +43,53 @@ export function TaskListRow({
   }
 
   return (
-    <>
-      <ListRow
-        label={`${task.key} ${task.title}`}
-        check={
-          <Checkbox
-            size="small"
-            checked={done}
-            disabled={
-              !editable ||
-              task.canceledAt !== null ||
-              (section ? !target || move.isPending : complete.isPending)
+    <ListRow
+      label={`${task.key} ${task.title}`}
+      check={
+        <Checkbox
+          size="small"
+          checked={done}
+          disabled={
+            !editable ||
+            task.canceledAt !== null ||
+            (section ? !target || move.isPending : complete.isPending)
+          }
+          slotProps={{
+            input: {
+              'aria-label': t('layout.complete', { title: task.title })
             }
-            slotProps={{
-              input: {
-                'aria-label': t('layout.complete', { title: task.title })
-              }
-            }}
-            onChange={event => {
-              toggle(event.target.checked)
-            }}
-          />
-        }
-        taskKey={task.key}
-        done={done}
-        title={
-          <Link
-            component="button"
-            variant="body2"
-            color="inherit"
-            underline="none"
-            className="u-ta-left"
-            onClick={() => {
-              panel.show()
-            }}
-          >
-            {task.title}
-          </Link>
-        }
-        people={
-          task.assignees.length > 0 && <Assignees people={task.assignees} />
-        }
-        due={<DueChip task={task} />}
-        priority={
-          task.priority !== null && <PriorityChip priority={task.priority} />
-        }
-        labels={task.labels.map(label => (
-          <LabelChip key={label.id} name={label.name} color={label.color} />
-        ))}
-      />
-      {panel.open && (
-        <TaskPanel
-          task={task}
-          boardId={boardId}
-          editable={editable}
-          depth={1}
-          onClose={() => {
-            panel.close()
+          }}
+          onChange={event => {
+            toggle(event.target.checked)
           }}
         />
-      )}
-    </>
+      }
+      taskKey={task.key}
+      done={done}
+      title={
+        <Link
+          component="button"
+          variant="body2"
+          color="inherit"
+          underline="none"
+          className="u-ta-left"
+          onClick={() => {
+            panel.show()
+          }}
+        >
+          {task.title}
+        </Link>
+      }
+      people={
+        task.assignees.length > 0 && <Assignees people={task.assignees} />
+      }
+      due={<DueChip task={task} />}
+      priority={
+        task.priority !== null && <PriorityChip priority={task.priority} />
+      }
+      labels={task.labels.map(label => (
+        <LabelChip key={label.id} name={label.name} color={label.color} />
+      ))}
+    />
   )
 }

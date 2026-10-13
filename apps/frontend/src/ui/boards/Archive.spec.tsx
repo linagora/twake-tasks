@@ -44,6 +44,7 @@ describe('archive and trash', () => {
 
     await removeLogo('Archive')
     expect(boardsApi.archiveTask).toHaveBeenCalledWith(board.id, logo.id)
+    expect(screen.queryByText(/This task doesn't exist/)).toBeNull()
     const shelf = await openShelf('Archived tasks')
     const item = within(
       await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
@@ -63,6 +64,7 @@ describe('archive and trash', () => {
     expect(
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     ).toBeVisible()
+    expect(screen.queryByText(/This task doesn't exist/)).toBeNull()
     expect(boardsApi.restoreTask).toHaveBeenCalledWith(board.id, logo.id)
   })
 

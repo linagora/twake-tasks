@@ -103,6 +103,7 @@
     "menu": "Board-Optionen",
     "newTask": "Aufgabe hinzufügen",
     "notFound": "Dieses Board existiert nicht, oder Sie können es nicht öffnen.",
+    "taskNotFound": "Diese Aufgabe existiert nicht, oder Sie können sie nicht öffnen.",
     "loadFailed": "Das Board konnte nicht geladen werden.",
     "noSection": "Kein Abschnitt",
     "emptyColumn": "Keine Aufgaben",

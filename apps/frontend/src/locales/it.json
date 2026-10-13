@@ -103,6 +103,7 @@
     "menu": "Opzioni della bacheca",
     "newTask": "Aggiungi attività",
     "notFound": "Questa bacheca non esiste, oppure non puoi aprirla.",
+    "taskNotFound": "Questa attività non esiste, oppure non puoi aprirla.",
     "loadFailed": "Impossibile caricare la bacheca.",
     "noSection": "Nessuna sezione",
     "emptyColumn": "Nessuna attività",

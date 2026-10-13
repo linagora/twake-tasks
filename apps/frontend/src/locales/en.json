@@ -103,6 +103,7 @@
     "menu": "Board options",
     "newTask": "Add task",
     "notFound": "This board doesn't exist, or you can't open it.",
+    "taskNotFound": "This task doesn't exist, or you can't open it.",
     "loadFailed": "The board could not be loaded.",
     "noSection": "No section",
     "emptyColumn": "No tasks",
