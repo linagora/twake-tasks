@@ -5,7 +5,7 @@ import type { PlatformEvent } from '../../events/envelope.ts'
 import { MalformedEventError } from '../../events/router.ts'
 import { eq, sql as raw } from 'drizzle-orm'
 import { asOrganization, createDb } from '../../infra/db.ts'
-import { boards, projectMembers } from '../boards/schema.ts'
+import { boards, projectMembers, projects } from '../boards/schema.ts'
 import {
   aUser,
   followersOf,
@@ -637,6 +637,45 @@ describe('concurrent space events', () => {
     await Promise.all([first.done, second])
 
     expect(await spaceBoards(admin)).toHaveLength(1)
+  })
+
+  it('wait for a deletion of their project in flight, then add no one', async () => {
+    const admin = aUser()
+    const late = aUser({ organizationId: admin.organizationId })
+    const { space } = await aSpaceWithATask(admin, [])
+    const [board] = await spaceBoards(admin)
+    const projectId = board?.project.id ?? ''
+    let release = () => {}
+    const released = new Promise<void>(resolve => (release = resolve))
+    let deleting = () => {}
+    const deleted = new Promise<void>(resolve => (deleting = resolve))
+    const deletion = db.transaction(async tx => {
+      await asOrganization(tx, space.organizationId)
+      await tx
+        .update(projects)
+        .set({ deletedAt: new Date() })
+        .where(eq(projects.id, projectId))
+      deleting()
+      await released
+    })
+    await deleted
+
+    const added = deliver('twake.space.member.added', {
+      ...space,
+      members: [member(late, 'editor')]
+    })
+    expect(await settled(added)).toBe(false)
+    release()
+    await Promise.all([deletion, added])
+
+    const members = await db.transaction(async tx => {
+      await asOrganization(tx, space.organizationId)
+      return tx
+        .select({ userId: projectMembers.userId })
+        .from(projectMembers)
+        .where(eq(projectMembers.projectId, projectId))
+    })
+    expect(members).toEqual([{ userId: admin.userId }])
   })
 })
 
