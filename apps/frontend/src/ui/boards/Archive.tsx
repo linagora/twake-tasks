@@ -268,6 +268,7 @@ function ShelfTasks({
       {hidden.isSuccess && tasks.length === 0 && (
         <EmptyState
           icon={SHELF_ICONS[shelf]}
+          illustrated
           title={t(
             shelf === 'archived'
               ? 'archive.emptyArchived'
