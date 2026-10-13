@@ -130,6 +130,27 @@ describe('archive and trash', () => {
     expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
   })
 
+  it('says a task is back on the board when its row restores it from the trash', async () => {
+    const { boardsApi } = logoBoard()
+
+    await removeLogo('Delete')
+    const shelf = await openShelf('Trash')
+    const getBoard = boardsApi.getBoard.getMockImplementation()
+    if (!getBoard) throw new Error('getBoard is not faked')
+    boardsApi.getBoard.mockImplementation(async (...args) => {
+      await new Promise(resolve => setTimeout(resolve, 300))
+      return getBoard(...args)
+    })
+    const item = within(
+      await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
+    )
+    fireEvent.click(item.getByRole('button', { name: 'Restore DES-1' }))
+
+    expect(
+      await screen.findByRole('status', { name: 'DES-1 is back on the board' })
+    ).toBeVisible()
+  })
+
   it('says where a deleted task went and opens the trash from there', async () => {
     logoBoard()
 

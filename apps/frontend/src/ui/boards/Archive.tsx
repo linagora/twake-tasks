@@ -386,15 +386,15 @@ function ShelfTask({
         disabled={restore.isPending}
         aria-label={t('archive.restoreTask', { key: task.key })}
         onClick={() => {
-          restore.mutate(undefined, {
-            onSuccess: () => {
+          restore.mutateAsync(undefined).then(
+            () => {
               panel.close()
               onRestored(false)
             },
-            onError: () => {
+            () => {
               onRestored(true)
             }
-          })
+          )
         }}
       >
         {t('archive.restore')}
