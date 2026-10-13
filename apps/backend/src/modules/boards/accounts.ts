@@ -20,6 +20,7 @@ import { userSettings } from '../settings/schema.ts'
 import { spaces } from '../spaces/schema.ts'
 import {
   inviteEmails,
+  notifications,
   projectMembers,
   projects,
   savedFilters,
@@ -176,6 +177,7 @@ async function forget(
   if (userId) {
     await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
     await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
+    await tx.delete(notifications).where(eq(notifications.userId, userId))
     await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
     await tx
       .delete(projects)

@@ -3,7 +3,7 @@ import { generateKeyBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { membersOf } from './access.ts'
-import { unfollowOutside } from './followers.ts'
+import { revokeOutside } from './followers.ts'
 import { labelsOn } from './labels.ts'
 import { boards, labels, taskAssignees, taskLabels, tasks } from './schema.ts'
 import {
@@ -231,7 +231,7 @@ export function createTransferStore(db: Db) {
           target
         )
         if (from.projectId !== target.projectId) {
-          await unfollowOutside(tx, ids, target.projectId)
+          await revokeOutside(tx, ids, target.projectId)
         }
         const first = target.number - ids.length + 1
         const [last] = await tx

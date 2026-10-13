@@ -19,7 +19,7 @@ import {
 import { keepSettings } from '../settings/events.ts'
 import { userSettings } from '../settings/schema.ts'
 import { accountRoutes } from './accounts.ts'
-import { inviteEmails, projects } from './schema.ts'
+import { inviteEmails, notifications, projects } from './schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -170,6 +170,32 @@ describe.each([
     await deliver(routingKey, body(gone))
 
     expect(await followersOf(db, peer, home.taskId)).not.toContain(gone.userId)
+  })
+
+  it('loses its notifications', async () => {
+    const gone = makeUser()
+    const peer =
+      gone.organizationId === null
+        ? aB2cUser()
+        : aUser({ organizationId: gone.organizationId })
+    await boardsOf(gone)
+    const home = await aBoard(gone, 'Home', [[peer, 'editor']])
+    await api
+      .as(peer)
+      .patch(`/boards/${home.id}/tasks/${home.taskId}`, { title: 'New logo' })
+    const notificationsOf = () =>
+      db.transaction(async tx => {
+        await asTenant(tx, gone)
+        return tx
+          .select({ id: notifications.id })
+          .from(notifications)
+          .where(eq(notifications.userId, gone.userId))
+      })
+    expect(await notificationsOf()).toHaveLength(1)
+
+    await deliver(routingKey, body(gone))
+
+    expect(await notificationsOf()).toEqual([])
   })
 
   it('loses its saved filters', async () => {

@@ -20,8 +20,8 @@ const firesAt =
     taskReminders.at
   )
 
-// Notifications outlive the access that let the person open the task, and RLS
-// lets only their owner delete them, so they are filtered when read.
+// Losing access drops a person's notifications, but those of a deleted space
+// stay until it is purged, so they are filtered when read too.
 function openableBy(tx: Tx, userId: string) {
   const accessible = accessibleBoards(tx, userId)
   return inArray(
