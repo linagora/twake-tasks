@@ -1,15 +1,13 @@
-import {
-  CheckCircle,
-  Compass,
-  Icon,
-  Left,
-  Profile
-} from '@linagora/twake-icons'
-import { Button, Checkbox, Link, Typography } from '@linagora/twake-mui'
+import { CheckCircle, Profile } from '@linagora/twake-icons'
+import { Checkbox, Link, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
-import type { AgendaTask, SearchResult } from '@/application/boards'
+import {
+  ApiError,
+  type AgendaTask,
+  type SearchResult
+} from '@/application/boards'
 import {
   Card,
   CardTitle,
@@ -33,6 +31,7 @@ import {
   type AgendaView
 } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { NotFoundScreen } from '@/ui/shell/Problems'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 export function Group({
@@ -159,14 +158,22 @@ export function FilterScreen(): ReactElement {
 }
 
 function FilterView({ filterId }: { filterId: string }): ReactElement {
+  const { t } = useI18n()
   const filters = useFilters()
+  const agenda = useAgenda({ filterId })
   const [layout, setLayout] = useFilterLayout(filterId)
-  const filter = filters.data?.find(candidate => candidate.id === filterId)
-  if (filters.isSuccess && !filter) return <MissingFilter />
+  if (agenda.error instanceof ApiError && agenda.error.status === 404) {
+    return (
+      <NotFoundScreen
+        title={t('filters.notFound')}
+        back={{ to: '/filters', label: t('filters.back') }}
+      />
+    )
+  }
   return (
     <AgendaScreen
       view={{ filterId }}
-      title={filter?.name ?? ''}
+      title={filters.data?.find(filter => filter.id === filterId)?.name ?? ''}
       actions={
         <LayoutToggle
           layouts={FILTER_LAYOUTS}
@@ -178,30 +185,6 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
         layout === 'board' ? tasks => <ByStatus tasks={tasks} /> : undefined
       }
     />
-  )
-}
-
-function MissingFilter(): ReactElement {
-  const { t } = useI18n()
-  useDocumentTitle(t('problems.notFound'))
-  return (
-    <main className="u-p-2">
-      <EmptyState
-        icon={Compass}
-        title={t('filters.notFound')}
-        text={t('problems.notFoundHint')}
-        action={
-          <Button
-            component={RouterLink}
-            to="/filters"
-            variant="secondary"
-            startIcon={<Icon icon={Left} />}
-          >
-            {t('filters.back')}
-          </Button>
-        }
-      />
-    </main>
   )
 }
 
