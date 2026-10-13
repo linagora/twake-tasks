@@ -197,6 +197,47 @@ describe('sharing a board', () => {
     )
   })
 
+  it('keeps the sharing of an archived board as it is, but lets anyone leave', async () => {
+    const owner = aUser()
+    const guest = aUser({ organizationId: owner.organizationId })
+    const editor = aUser({ organizationId: owner.organizationId })
+    const boardId = await aBoardOf(owner)
+    await invite(owner, boardId, guest.email, 'viewer')
+    await invite(owner, boardId, editor.email, 'editor')
+    await boardIdsOf(guest)
+    await boardIdsOf(editor)
+    await invite(owner, boardId, 'pending@example.com', 'viewer')
+    const [pending] = (
+      await api.as(owner).get(`/boards/${boardId}/sharing`)
+    ).json<{ invites: { id: string }[] }>().invites
+    await api.as(owner).post(`/boards/${boardId}/archive`, {})
+    const member = (userId: string) => `/boards/${boardId}/members/${userId}`
+
+    expect(
+      (await invite(owner, boardId, 'late@example.com', 'viewer')).statusCode
+    ).toBe(409)
+    expect(
+      (await api.as(owner).put(member(guest.userId), { role: 'admin' }))
+        .statusCode
+    ).toBe(409)
+    expect(
+      (
+        await api
+          .as(owner)
+          .delete(`/boards/${boardId}/invites/${pending?.id ?? ''}`)
+      ).statusCode
+    ).toBe(409)
+    expect((await api.as(owner).delete(member(guest.userId))).statusCode).toBe(
+      409
+    )
+    expect(await invitesOn(owner, boardId)).toEqual([
+      { email: 'pending@example.com', role: 'viewer' }
+    ])
+    expect(
+      (await api.as(editor).delete(member(editor.userId))).statusCode
+    ).toBe(204)
+  })
+
   it('lets anyone leave a board', async () => {
     const owner = aUser()
     const guest = aUser({ organizationId: owner.organizationId })
