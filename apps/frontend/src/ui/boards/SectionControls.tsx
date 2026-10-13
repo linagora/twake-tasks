@@ -228,6 +228,7 @@ function SectionDialog({
             value={category}
             onChange={event => {
               setCategory(event.target.value as SectionCategory)
+              change.reset()
             }}
             fullWidth
             margin="dense"

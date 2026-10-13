@@ -9,33 +9,15 @@ import {
   checkRole,
   completionFor,
   inSection,
+  isUniqueViolation,
   positionBetween,
   Refused,
+  type Result,
   sectionOf,
   writeOrRefuse
 } from './tasks.ts'
 
 type Category = (typeof sectionCategory.enumValues)[number]
-
-async function refuseTakenName(
-  tx: Tx,
-  boardId: string,
-  name: string,
-  except?: string
-) {
-  const [taken] = await tx
-    .select({ id: sections.id })
-    .from(sections)
-    .where(
-      and(
-        eq(sections.boardId, boardId),
-        sql`lower(${sections.name}) = lower(${name})`,
-        except ? ne(sections.id, except) : undefined
-      )
-    )
-    .limit(1)
-  if (taken) throw new Refused('section_name_taken')
-}
 
 async function existingSection(tx: Tx, boardId: string, sectionId: string) {
   const [section] = await tx
@@ -99,67 +81,80 @@ export function createSectionStore(db: Db) {
     writeOrRefuse(db, identity, work)
 
   return {
-    createSection(
+    async createSection(
       identity: Identity,
       boardId: string,
       input: { name: string; category: Category; afterId?: string | undefined }
-    ) {
-      return write(identity, async tx => {
-        await checkRole(tx, identity, boardId, 'admin')
-        const board = await bumpBoard(tx, boardId)
-        await refuseTakenName(tx, boardId, input.name)
-        const others = await othersOn(tx, boardId)
-        const [section] = await tx
-          .insert(sections)
-          .values({
-            boardId,
-            organizationId: board.organizationId,
-            name: input.name,
-            category: input.category,
-            position: positionBetween(others, input.afterId, undefined)
-          })
-          .returning({
-            id: sections.id,
-            name: sections.name,
-            category: sections.category
-          })
-        if (!section) throw new Error('section insert returned nothing')
-        return section
-      })
+    ): Promise<Result<{ id: string; name: string; category: Category }>> {
+      try {
+        return await write(identity, async tx => {
+          await checkRole(tx, identity, boardId, 'admin')
+          const board = await bumpBoard(tx, boardId)
+          const others = await othersOn(tx, boardId)
+          const [section] = await tx
+            .insert(sections)
+            .values({
+              boardId,
+              organizationId: board.organizationId,
+              name: input.name,
+              category: input.category,
+              position: positionBetween(others, input.afterId, undefined)
+            })
+            .returning({
+              id: sections.id,
+              name: sections.name,
+              category: sections.category
+            })
+          if (!section) throw new Error('section insert returned nothing')
+          return section
+        })
+      } catch (error) {
+        if (isUniqueViolation(error)) {
+          return { ok: false, error: 'section_name_taken' }
+        }
+        throw error
+      }
     },
 
-    editSection(
+    async editSection(
       identity: Identity,
       boardId: string,
       sectionId: string,
       changes: { name?: string | undefined; category?: Category | undefined }
-    ) {
-      return write(identity, async tx => {
-        await checkRole(tx, identity, boardId, 'admin')
-        await bumpBoard(tx, boardId)
-        await existingSection(tx, boardId, sectionId)
-        if (changes.name !== undefined) {
-          await refuseTakenName(tx, boardId, changes.name, sectionId)
-        }
-        await tx.update(sections).set(changes).where(eq(sections.id, sectionId))
-        if (changes.category) {
-          const { category } = changes
+    ): Promise<Result<null>> {
+      try {
+        return await write(identity, async tx => {
+          await checkRole(tx, identity, boardId, 'admin')
+          await bumpBoard(tx, boardId)
+          await existingSection(tx, boardId, sectionId)
           await tx
-            .update(tasks)
-            .set({
-              completedAt:
-                category === 'completed'
-                  ? sql`coalesce(${tasks.completedAt}, now())`
-                  : null,
-              canceledAt:
-                category === 'canceled'
-                  ? sql`coalesce(${tasks.canceledAt}, now())`
-                  : null
-            })
-            .where(inSection(boardId, sectionId))
+            .update(sections)
+            .set(changes)
+            .where(eq(sections.id, sectionId))
+          if (changes.category) {
+            const { category } = changes
+            await tx
+              .update(tasks)
+              .set({
+                completedAt:
+                  category === 'completed'
+                    ? sql`coalesce(${tasks.completedAt}, now())`
+                    : null,
+                canceledAt:
+                  category === 'canceled'
+                    ? sql`coalesce(${tasks.canceledAt}, now())`
+                    : null
+              })
+              .where(inSection(boardId, sectionId))
+          }
+          return null
+        })
+      } catch (error) {
+        if (isUniqueViolation(error)) {
+          return { ok: false, error: 'section_name_taken' }
         }
-        return null
-      })
+        throw error
+      }
     },
 
     moveSection(

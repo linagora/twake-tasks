@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -36,6 +36,25 @@ describe('section name', () => {
     expect(
       dialog.queryByText('A section named to do already exists.')
     ).not.toBeInTheDocument()
+  })
+
+  it('clears the refusal when the type changes', async () => {
+    const dialog = await openNewSection()
+
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Name' }), {
+      target: { value: 'to do' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+    await dialog.findByText('A section named to do already exists.')
+    fireEvent.change(dialog.getByRole('combobox', { name: 'Section type' }), {
+      target: { value: 'started' }
+    })
+
+    await waitFor(() => {
+      expect(
+        dialog.queryByText('A section named to do already exists.')
+      ).not.toBeInTheDocument()
+    })
   })
 })
 
