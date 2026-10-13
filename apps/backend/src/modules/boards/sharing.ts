@@ -7,6 +7,7 @@ import {
   inArray,
   isNull,
   lt,
+  notExists,
   notInArray,
   or,
   sql
@@ -367,6 +368,22 @@ export function createSharingStore(db: Db) {
           projectId
         )
         await tx.update(boards).set({ projectId }).where(eq(boards.id, boardId))
+        await tx
+          .update(projects)
+          .set({ deletedAt: sql`now()` })
+          .where(
+            and(
+              eq(projects.id, board.projectId),
+              eq(projects.personal, false),
+              eq(projects.managed, false),
+              notExists(
+                tx
+                  .select({ id: boards.id })
+                  .from(boards)
+                  .where(eq(boards.projectId, board.projectId))
+              )
+            )
+          )
         const boardTasks = tx
           .select({ id: tasks.id })
           .from(tasks)

@@ -105,6 +105,63 @@ describe('moving a board to another project', () => {
     expect(moved.tasks[0]?.assignees).toMatchObject([{ userId: owner.userId }])
   })
 
+  it('deletes the project the board leaves empty', async () => {
+    const owner = aUser()
+    const guest = aUser({ organizationId: owner.organizationId })
+    const { boardId, projectId } = await aBoardWithATask(owner)
+    await api.as(owner).post(`/boards/${boardId}/invites`, {
+      email: guest.email,
+      role: 'editor'
+    })
+    await roleOf(guest, boardId)
+    const target = await aBoardWithATask(owner, 'OPS')
+
+    expect((await move(owner, boardId, target.projectId)).statusCode).toBe(204)
+
+    const ids = async (user: TestUser) =>
+      (await api.as(user).get('/projects'))
+        .json<{ projects: { id: string }[] }>()
+        .projects.map(project => project.id)
+    expect(await ids(owner)).not.toContain(projectId)
+    expect(await ids(guest)).not.toContain(projectId)
+  })
+
+  it('keeps a project that still has a board', async () => {
+    const owner = aUser()
+    const { boardId, projectId } = await aBoardWithATask(owner)
+    await api
+      .as(owner)
+      .post('/boards', { name: 'Second', keyPrefix: 'SEC', projectId })
+    const target = await aBoardWithATask(owner, 'OPS')
+
+    expect((await move(owner, boardId, target.projectId)).statusCode).toBe(204)
+
+    const projects = (await api.as(owner).get('/projects')).json<{
+      projects: { id: string }[]
+    }>().projects
+    expect(projects.map(project => project.id)).toContain(projectId)
+  })
+
+  it('keeps a managed project the board leaves empty', async () => {
+    const owner = aUser()
+    const managed = await aManagedProject(db, [[owner, 'admin']])
+    const board = (
+      await api.as(owner).post('/boards', {
+        name: 'Design',
+        keyPrefix: 'DES',
+        projectId: managed
+      })
+    ).json<Board>()
+    const target = await aBoardWithATask(owner, 'OPS')
+
+    expect((await move(owner, board.id, target.projectId)).statusCode).toBe(204)
+
+    const projects = (await api.as(owner).get('/projects')).json<{
+      projects: { id: string }[]
+    }>().projects
+    expect(projects.map(project => project.id)).toContain(managed)
+  })
+
   it('lists the projects I belong to, with my role', async () => {
     const me = aUser()
     const projectId = await aManagedProject(db, [[me, 'editor']])
