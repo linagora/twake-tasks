@@ -143,7 +143,7 @@ describe('Reminders', () => {
 
     fireEvent.click(
       within(item).getByRole('button', {
-        name: 'Delete reminder At the due time'
+        name: 'Delete reminder: At the due time'
       })
     )
 
