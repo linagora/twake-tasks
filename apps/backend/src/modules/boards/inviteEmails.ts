@@ -118,8 +118,9 @@ const MESSAGES: Record<Language, Messages> = {
   }
 }
 
-// Runs as the person who shared, so nothing is sent once the invite is gone:
-// canceled, or already claimed into a membership at the person's sign-in.
+// Runs as the person who shared. Any app load can claim the invite into a
+// membership before delivery, so nothing is sent only when the address is
+// neither invited nor a member.
 export function emailInvite(deps: {
   appUrl: string
   send: (mail: Mail) => Promise<void>
@@ -141,7 +142,19 @@ export function emailInvite(deps: {
           eq(projectInvites.email, email)
         )
       )
-    if (!invite) return undefined
+    const [member] = invite
+      ? []
+      : await tx
+          .select({ role: projectMembers.role })
+          .from(projectMembers)
+          .where(
+            and(
+              eq(projectMembers.projectId, job.projectId),
+              eq(sql`lower(${projectMembers.email})`, email)
+            )
+          )
+    const granted = invite?.role ?? member?.role
+    if (!granted) return undefined
     const [board] = await tx
       .select({ name: boards.name, project: projects.name })
       .from(boards)
@@ -165,7 +178,7 @@ export function emailInvite(deps: {
     const lang = languageOf(settings?.language)
     const messages = MESSAGES[lang]
     const who = plain(inviter?.name || inviter?.email || messages.someone)
-    const role = messages.roles[invite.role] ?? invite.role
+    const role = messages.roles[granted] ?? granted
     const link = `${deps.appUrl.replace(/\/$/, '')}/boards/${job.boardId}`
     const name = plain(board.name)
     const project = plain(board.project)
