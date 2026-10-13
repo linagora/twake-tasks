@@ -22,7 +22,6 @@ import {
 import {
   boards,
   comments,
-  labels,
   notifications,
   projectMembers,
   projects,
@@ -152,8 +151,13 @@ async function withNames(
 
 async function describe(
   tx: Tx,
-  row: { projectId: string; boardId: string },
-  entry: { field: string; from: unknown; to: unknown } | null,
+  row: { projectId: string },
+  entry: {
+    field: string
+    from: unknown
+    to: unknown
+    name: string | null
+  } | null,
   messages: NotificationMessages,
   lang: Language,
   actor: string
@@ -179,16 +183,8 @@ async function describe(
         actor,
         isDay(entry.to) ? formatDay(lang, entry.to) : null
       )
-    case 'section': {
-      if (typeof entry.to !== 'string') return messages.section(actor, null)
-      const [section] = await tx
-        .select({ name: sections.name })
-        .from(sections)
-        .where(
-          and(eq(sections.id, entry.to), eq(sections.boardId, row.boardId))
-        )
-      return messages.section(actor, section ? plain(section.name) : null)
-    }
+    case 'section':
+      return messages.section(actor, entry.name ? plain(entry.name) : null)
     case 'board': {
       const board = z.object({ name: z.string() }).safeParse(entry.to)
       return board.success
@@ -208,17 +204,11 @@ async function describe(
         ? messages.assigned(actor, name)
         : messages.unassigned(actor, name)
     }
-    case 'labels': {
-      if (!id) return messages.updated(actor)
-      const [label] = await tx
-        .select({ name: labels.name })
-        .from(labels)
-        .where(and(eq(labels.id, id), eq(labels.projectId, row.projectId)))
-      if (!label) return messages.updated(actor)
+    case 'labels':
+      if (!entry.name) return messages.updated(actor)
       return entry.to !== null
-        ? messages.labeled(actor, plain(label.name))
-        : messages.unlabeled(actor, plain(label.name))
-    }
+        ? messages.labeled(actor, plain(entry.name))
+        : messages.unlabeled(actor, plain(entry.name))
     case 'description':
       return messages.described(actor)
     default:
@@ -242,6 +232,7 @@ export function emailNotification(deps: {
         historyField: taskHistory.field,
         historyFrom: taskHistory.from,
         historyTo: taskHistory.to,
+        historyName: taskHistory.name,
         historyActorEmail: taskHistory.actorEmail,
         commentBody: comments.body,
         commentAuthorEmail: comments.authorEmail,
@@ -308,7 +299,12 @@ export function emailNotification(deps: {
     const entry =
       row.historyField === null
         ? null
-        : { field: row.historyField, from: row.historyFrom, to: row.historyTo }
+        : {
+            field: row.historyField,
+            from: row.historyFrom,
+            to: row.historyTo,
+            name: row.historyName
+          }
     const person = await nameOf(tx, row.projectId, row.actorId)
     const actorEmail =
       person?.email ??

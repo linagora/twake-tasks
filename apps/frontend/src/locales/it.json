@@ -219,7 +219,8 @@
     "labeled": "%{actor} ha aggiunto l’etichetta %{name}",
     "unlabeled": "%{actor} ha rimosso l’etichetta %{name}",
     "someone": "una persona che ha lasciato la bacheca",
-    "someLabel": "un’etichetta eliminata"
+    "someLabel": "un’etichetta eliminata",
+    "someSection": "una sezione eliminata"
   },
   "dates": {
     "edit": "Modifica date",

@@ -219,7 +219,8 @@
     "labeled": "%{actor} added the label %{name}",
     "unlabeled": "%{actor} removed the label %{name}",
     "someone": "someone who left the board",
-    "someLabel": "a deleted label"
+    "someLabel": "a deleted label",
+    "someSection": "a deleted section"
   },
   "dates": {
     "edit": "Edit dates",

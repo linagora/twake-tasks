@@ -31,6 +31,7 @@ export function historyOf(
       field: row.field,
       from: row.from,
       to: row.to,
+      name: row.name,
       at: row.at
     }))
   })

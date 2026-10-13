@@ -219,7 +219,8 @@
     "labeled": "%{actor} добавил(а) метку %{name}",
     "unlabeled": "%{actor} убрал(а) метку %{name}",
     "someone": "человек, покинувший доску",
-    "someLabel": "удалённая метка"
+    "someLabel": "удалённая метка",
+    "someSection": "удалённый раздел"
   },
   "dates": {
     "edit": "Изменить даты",

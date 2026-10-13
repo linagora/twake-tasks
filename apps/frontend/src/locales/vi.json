@@ -219,7 +219,8 @@
     "labeled": "%{actor} đã thêm nhãn %{name}",
     "unlabeled": "%{actor} đã bỏ nhãn %{name}",
     "someone": "người đã rời bảng",
-    "someLabel": "nhãn đã xóa"
+    "someLabel": "nhãn đã xóa",
+    "someSection": "mục đã xóa"
   },
   "dates": {
     "edit": "Sửa ngày",

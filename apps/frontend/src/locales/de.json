@@ -219,7 +219,8 @@
     "labeled": "%{actor} hat das Label %{name} hinzugefügt",
     "unlabeled": "%{actor} hat das Label %{name} entfernt",
     "someone": "eine Person, die das Board verlassen hat",
-    "someLabel": "ein gelöschtes Label"
+    "someLabel": "ein gelöschtes Label",
+    "someSection": "einem gelöschten Abschnitt"
   },
   "dates": {
     "edit": "Termine bearbeiten",

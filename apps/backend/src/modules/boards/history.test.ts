@@ -19,13 +19,14 @@ interface Entry {
   field: string
   from: unknown
   to: unknown
+  name: string | null
   at: string
 }
 
 async function aBoardOf(owner: TestUser) {
   return (
     await api.as(owner).post('/boards', { name: 'Design', keyPrefix: 'DES' })
-  ).json<{ id: string; sections: { id: string }[] }>()
+  ).json<{ id: string; sections: { id: string; name: string }[] }>()
 }
 
 async function historyOf(user: TestUser, boardId: string, taskId: string) {
@@ -128,6 +129,41 @@ describe('task history', () => {
       to: 'completed',
       actor: { userId: alice.userId }
     })
+  })
+
+  it('keeps the name of a section deleted since, and of each label', async () => {
+    const alice = aUser()
+    const board = await aBoardOf(alice)
+    const [todo, doing] = board.sections
+    const path = `/boards/${board.id}`
+    const task = (
+      await api
+        .as(alice)
+        .post(`${path}/tasks`, { sectionId: todo?.id, title: 'Logo' })
+    ).json<{ id: string }>()
+    const label = (
+      await api.as(alice).post(`${path}/labels`, { name: 'Urgent' })
+    ).json<{ id: string }>()
+    await api
+      .as(alice)
+      .put(`${path}/tasks/${task.id}/labels`, { labelIds: [label.id] })
+    await api
+      .as(alice)
+      .post(`${path}/tasks/${task.id}/move`, { sectionId: doing?.id })
+    await api
+      .as(alice)
+      .delete(`${path}/sections/${doing?.id ?? ''}`, { tasksTo: todo?.id })
+
+    const entries = await historyOf(alice, board.id, task.id)
+
+    expect(entries.map(({ field, to, name }) => ({ field, to, name }))).toEqual(
+      [
+        { field: 'section', to: todo?.id, name: todo?.name },
+        { field: 'section', to: doing?.id, name: doing?.name },
+        { field: 'labels', to: label.id, name: 'Urgent' },
+        { field: 'created', to: 'Logo', name: null }
+      ]
+    )
   })
 
   it('shows the history to viewers and hides it from outsiders', async () => {

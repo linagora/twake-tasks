@@ -219,7 +219,8 @@
     "labeled": "%{actor} añadió la etiqueta %{name}",
     "unlabeled": "%{actor} quitó la etiqueta %{name}",
     "someone": "alguien que dejó el tablero",
-    "someLabel": "una etiqueta eliminada"
+    "someLabel": "una etiqueta eliminada",
+    "someSection": "una sección eliminada"
   },
   "dates": {
     "edit": "Editar fechas",
