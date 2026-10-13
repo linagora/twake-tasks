@@ -37,11 +37,14 @@ const names: ConsumerNames = {
   b2bExchange: 'b2b',
   authExchange: 'auth',
   settingsExchange: 'settings',
-  queue: 'platform.all.twake-tasks',
+  queue: 'twake-tasks',
+  oldQueue: 'platform.all.twake-tasks',
   deadLetterExchange: 'twake-tasks.dlx'
 }
 const QUEUE = names.queue
 const DEAD_LETTER_QUEUE = `${QUEUE}.dlq`
+const OLD_QUEUE = names.oldQueue
+const OLD_DEAD_LETTER_QUEUE = `${OLD_QUEUE}.dlq`
 const ACTIVITY_EXCHANGE = 'activity'
 
 let container: StartedRabbitMQContainer
@@ -174,11 +177,12 @@ describe('startConsumer', () => {
     expect(space).toBeUndefined()
   })
 
-  it('delivers to one instance at a time, so events stay in order', async () => {
-    const first = vi.fn<(d: Delivery) => Promise<Outcome>>()
-    first.mockResolvedValue('processed')
-    const second = vi.fn<(d: Delivery) => Promise<Outcome>>()
-    second.mockResolvedValue('processed')
+  it('hands messages to every instance, several at a time', async () => {
+    let release = () => {}
+    const released = new Promise<void>(resolve => (release = resolve))
+    const held = () => released.then((): Outcome => 'processed')
+    const first = vi.fn<(d: Delivery) => Promise<Outcome>>(held)
+    const second = vi.fn<(d: Delivery) => Promise<Outcome>>(held)
     await consume(first)
     const other = await startConsumer(
       container.getAmqpUrl(),
@@ -193,11 +197,31 @@ describe('startConsumer', () => {
       }
 
       await vi.waitFor(() => {
-        expect(first).toHaveBeenCalledTimes(4)
+        expect(first.mock.calls.length + second.mock.calls.length).toBe(4)
       })
-      expect(second).not.toHaveBeenCalled()
+      expect(first).toHaveBeenCalled()
+      expect(second).toHaveBeenCalled()
     } finally {
+      release()
       await other.close()
+    }
+  })
+
+  it('counts the attempts of each failing message apart', async () => {
+    const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    handle.mockRejectedValue(new Error('bug'))
+    await consume(handle)
+
+    publish('space', 'twake.space.updated', 'm-1')
+    publish('space', 'twake.space.updated', 'm-2')
+
+    await vi.waitFor(async () => {
+      expect(await ready(DEAD_LETTER_QUEUE)).toBe(2)
+    })
+    for (const id of ['m-1', 'm-2']) {
+      expect(
+        handle.mock.calls.filter(([delivery]) => delivery.messageId === id)
+      ).toHaveLength(5)
     }
   })
 
@@ -251,7 +275,7 @@ describe('startConsumer', () => {
     expect(handle).not.toHaveBeenCalled()
   })
 
-  it('dead letters an event that keeps failing, and goes on with the next', async () => {
+  it('dead letters an event that keeps failing, without holding up the next', async () => {
     const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
     handle.mockImplementation(delivery =>
       delivery.messageId === 'm-1'
@@ -263,17 +287,12 @@ describe('startConsumer', () => {
     publish('space', 'twake.space.updated', 'm-1')
     publish('space', 'twake.space.updated', 'm-2')
 
-    await vi.waitFor(() => {
-      expect(handle).toHaveBeenLastCalledWith(
-        expect.objectContaining({ messageId: 'm-2' })
-      )
-    })
-    expect(
-      handle.mock.calls.filter(([delivery]) => delivery.messageId === 'm-1')
-    ).toHaveLength(5)
     await vi.waitFor(async () => {
       expect(await ready(DEAD_LETTER_QUEUE)).toBe(1)
     })
+    expect(
+      handle.mock.calls.map(([delivery]) => delivery.messageId).sort()
+    ).toEqual(['m-1', 'm-1', 'm-1', 'm-1', 'm-1', 'm-2'])
   })
 
   it('keeps retrying while the database is unreachable', async () => {
@@ -318,6 +337,69 @@ describe('startConsumer', () => {
     expect(await ready(DEAD_LETTER_QUEUE)).toBe(0)
   })
 
+  it('drains the queue of older versions, which then gets nothing new', async () => {
+    for (const exchange of [
+      'space',
+      'b2b',
+      'auth',
+      'settings',
+      'twake-tasks.dlx'
+    ]) {
+      await channel.assertExchange(exchange, 'topic', { durable: true })
+    }
+    await channel.assertQueue(OLD_DEAD_LETTER_QUEUE, { durable: true })
+    await channel.bindQueue(
+      OLD_DEAD_LETTER_QUEUE,
+      'twake-tasks.dlx',
+      'twake.space.#.dead'
+    )
+    await channel.assertQueue(OLD_QUEUE, {
+      durable: true,
+      deadLetterExchange: 'twake-tasks.dlx',
+      deadLetterRoutingKey: 'twake.space.#.dead',
+      arguments: {
+        'x-queue-type': 'quorum',
+        'x-overflow': 'reject-publish',
+        'x-dead-letter-strategy': 'at-least-once',
+        'x-single-active-consumer': true
+      }
+    })
+    await channel.bindQueue(OLD_QUEUE, 'space', 'twake.space.#')
+    await channel.bindQueue(OLD_QUEUE, 'b2b', 'domain.user.deleted')
+    channel.sendToQueue(OLD_QUEUE, Buffer.from('{}'), { messageId: 'm-old' })
+    const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
+    handle.mockResolvedValue('processed')
+
+    try {
+      await consume(handle)
+      await vi.waitFor(() => {
+        expect(handle).toHaveBeenCalledWith(
+          expect.objectContaining({ messageId: 'm-old' })
+        )
+      })
+      await consumer?.close()
+      consumer = undefined
+
+      publish('space', 'twake.space.updated', 'm-1')
+      publish('b2b', 'domain.user.deleted', 'm-2')
+      channel.publish(
+        'twake-tasks.dlx',
+        'twake.space.#.dead',
+        Buffer.from('{}')
+      )
+
+      await vi.waitFor(async () => {
+        expect(await ready(QUEUE)).toBe(2)
+        expect(await ready(DEAD_LETTER_QUEUE)).toBe(1)
+      })
+      expect(await ready(OLD_QUEUE)).toBe(0)
+      expect(await ready(OLD_DEAD_LETTER_QUEUE)).toBe(0)
+    } finally {
+      await channel.deleteQueue(OLD_QUEUE)
+      await channel.deleteQueue(OLD_DEAD_LETTER_QUEUE)
+    }
+  })
+
   it('follows the exchange and queue names it is given', async () => {
     const renamed: ConsumerNames = {
       spaceExchange: 'staging.space',
@@ -325,6 +407,7 @@ describe('startConsumer', () => {
       authExchange: 'staging.auth',
       settingsExchange: 'staging.settings',
       queue: 'staging.twake-tasks',
+      oldQueue: 'staging.platform.all.twake-tasks',
       deadLetterExchange: 'staging.twake-tasks.dlx'
     }
     const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()

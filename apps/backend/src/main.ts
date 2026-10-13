@@ -97,10 +97,12 @@ const consumer = await startConsumer(
     authExchange: config.RABBITMQ_AUTH_EXCHANGE,
     settingsExchange: config.RABBITMQ_SETTINGS_EXCHANGE,
     queue: config.RABBITMQ_QUEUE,
+    oldQueue: config.RABBITMQ_OLD_QUEUE,
     deadLetterExchange: config.RABBITMQ_DEAD_LETTER_EXCHANGE
   },
   logger,
-  handle
+  handle,
+  { concurrency: config.RABBITMQ_CONCURRENCY }
 )
 const stopParkedRetries = parkedRetries({
   db,

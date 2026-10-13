@@ -4,12 +4,27 @@ The backend talks to the rest of Twake Workplace through RabbitMQ only. The exch
 
 ## The queue
 
-- One queue, `platform.all.twake-tasks`, bound to every routing key below.
-- It is a single active consumer, taking one message at a time: with several replicas, events are still handled one by one, in the order they were published.
+- One queue, `twake-tasks`, bound to every routing key below.
+- Every replica consumes it, handling up to 10 messages at once (`RABBITMQ_CONCURRENCY`). Events are not handled in the order they were published.
 - Each event is handled once, deduplicated on its message id. Settings updates carry none, so they are deduplicated on their content.
 - A transient failure, such as the database being down, retries until it passes.
-- An event that fails 5 times, or that the backend rejects, goes to the dead letter exchange `twake-tasks.dlx`, so the events behind it go on.
-- Never replay a space event from the dead letter queue: it could undo newer ones, and the nightly space repair fixes what it missed. An account deletion can be replayed once its cause is fixed.
+- An event that fails 5 times, or that the backend rejects, goes to the dead letter exchange `twake-tasks.dlx`, which routes it to `twake-tasks.dlq`.
+- Never replay a space event from the dead letter queue: a creation could bring back a space deleted since, and the nightly space repair fixes what it missed. An account deletion can be replayed once its cause is fixed.
+- Versions before this one consumed `platform.all.twake-tasks`, with a single active consumer. Each start drains it and unbinds it and its dead letter queue, so nothing new lands there. A later release deletes them.
+
+## Order
+
+- The events of one space apply one at a time: each handler locks the space's row first. Events of different spaces run in parallel.
+- A space keeps the time of the last event applied to it. An older event is skipped, except a deletion, which always applies. Events with the same time apply in the order they are handled.
+- A member event for a deleted space adds or removes no one.
+- Account deletions and settings updates do not depend on order: a deletion only removes, and a settings update older than the one held is ignored. A space member event handled after its person's deletion still adds them to the space's project, until a space sync or the nightly space repair no longer lists them.
+
+## Parked events
+
+- An update, member event or deletion for a space Tasks does not know yet is parked: stored in the `parked_events` table and acknowledged. The space's `twake.space.created` may only be late.
+- One replica at a time retries the parked events in the order they arrived, 5 seconds after its previous pass ended. An event whose space is now known leaves the table, whatever its outcome. One whose retry fails stays for the next pass.
+- An event still parked after 30 minutes, RabbitMQ's default `consumer_timeout`, is published to `twake-tasks.dlx` with its message id and the headers `x-twake-tasks-exchange`, `x-twake-tasks-routing-key` and `x-twake-tasks-reason`. It stays parked while that publish fails.
+- `twake.space.synced` is never parked, since it carries the whole space and creates it when missing.
 
 ## Consumed
 
