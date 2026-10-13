@@ -48,9 +48,51 @@ export function tenantPolicy(
   })
 }
 
-export function createDb(url: string) {
+function connect(url: string) {
   const client = postgres(url, { onnotice: () => undefined })
   return { sql: client, db: drizzle({ client }) }
+}
+
+export type Db = ReturnType<typeof connect>['db']
+export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
+type Transaction = Db['transaction']
+
+const commitHooks = new WeakMap<Tx, (() => void)[]>()
+
+// Drizzle has no commit hook. A savepoint hands its hooks to its transaction
+// once it is released, so one that rolls back alone drops them.
+function runHooksOnCommit(
+  target: { transaction: Transaction },
+  outer?: (() => void)[]
+) {
+  const transaction = target.transaction.bind(target)
+  target.transaction = (async (
+    body: (tx: Tx) => Promise<unknown>,
+    config?: Parameters<Transaction>[1]
+  ) => {
+    const hooks: (() => void)[] = []
+    const result = await transaction(tx => {
+      commitHooks.set(tx, hooks)
+      runHooksOnCommit(tx, hooks)
+      return body(tx)
+    }, config)
+    if (outer) outer.push(...hooks)
+    else for (const hook of hooks) hook()
+    return result
+  }) as Transaction
+}
+
+export function createDb(url: string) {
+  const { sql, db } = connect(url)
+  runHooksOnCommit(db)
+  return { sql, db }
+}
+
+/** Runs `hook` once the transaction commits, and never if it rolls back. */
+export function afterCommit(tx: Tx, hook: () => void): void {
+  const hooks = commitHooks.get(tx)
+  if (!hooks) throw new Error('not in a transaction')
+  hooks.push(hook)
 }
 
 // Socket errors from Node, and postgres.js's own connection errors.
@@ -81,9 +123,6 @@ export function isTransient(error: unknown): boolean {
   }
   return false
 }
-
-export type Db = ReturnType<typeof createDb>['db']
-export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
 interface TenantIdentity {
   organizationId: string | null
