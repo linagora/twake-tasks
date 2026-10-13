@@ -25,6 +25,11 @@
       "board": "Ihr Board wird geöffnet…"
     },
     "slow": "Verbindung zu Ihrem Konto wird noch hergestellt…",
+    "signedOut": {
+      "title": "Bei Twake Project anmelden",
+      "hint": "Melden Sie sich an, um fortzufahren."
+    },
+    "signIn": "Anmelden",
     "failed": {
       "title": "Wir konnten Sie nicht anmelden",
       "hint": "Beim Verbinden mit Ihrem Konto ist ein Fehler aufgetreten."

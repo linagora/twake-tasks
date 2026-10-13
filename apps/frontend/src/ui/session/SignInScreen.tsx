@@ -5,7 +5,7 @@ import projectIcon from '@/assets/project.svg'
 import workplaceLogo from '@/assets/twake-workplace.svg'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-export type SignInPhase = 'waiting' | 'failed' | 'timeout'
+export type SignInPhase = 'waiting' | 'signedOut' | 'failed' | 'timeout'
 
 export interface SignInScreenProps {
   phase: SignInPhase
@@ -57,12 +57,20 @@ export function SignInScreen({
           <h1 className="splash-title">{t(`session.${phase}.title`)}</h1>
           <p className="splash-hint">{t(`session.${phase}.hint`)}</p>
           <div className="splash-actions">
-            <Button variant="contained" onClick={onRetry}>
-              {t('session.retry')}
-            </Button>
-            <Button variant="text" onClick={onSignIn}>
-              {t('session.backToSignIn')}
-            </Button>
+            {phase === 'signedOut' ? (
+              <Button variant="contained" onClick={onSignIn}>
+                {t('session.signIn')}
+              </Button>
+            ) : (
+              <>
+                <Button variant="contained" onClick={onRetry}>
+                  {t('session.retry')}
+                </Button>
+                <Button variant="text" onClick={onSignIn}>
+                  {t('session.backToSignIn')}
+                </Button>
+              </>
+            )}
           </div>
         </>
       )}

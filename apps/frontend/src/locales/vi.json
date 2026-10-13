@@ -25,6 +25,11 @@
       "board": "Đang mở bảng của bạn…"
     },
     "slow": "Vẫn đang kết nối với tài khoản của bạn…",
+    "signedOut": {
+      "title": "Đăng nhập vào Twake Project",
+      "hint": "Đăng nhập để tiếp tục."
+    },
+    "signIn": "Đăng nhập",
     "failed": {
       "title": "Không thể đăng nhập",
       "hint": "Đã xảy ra lỗi khi kết nối với tài khoản của bạn."

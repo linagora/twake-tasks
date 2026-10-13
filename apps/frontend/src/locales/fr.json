@@ -25,6 +25,11 @@
       "board": "Ouverture de votre tableau…"
     },
     "slow": "Connexion à votre compte toujours en cours…",
+    "signedOut": {
+      "title": "Connectez-vous à Twake Project",
+      "hint": "Connectez-vous pour continuer."
+    },
+    "signIn": "Se connecter",
     "failed": {
       "title": "Impossible de vous connecter",
       "hint": "Un problème est survenu lors de la connexion à votre compte."

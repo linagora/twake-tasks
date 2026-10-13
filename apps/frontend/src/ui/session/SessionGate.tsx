@@ -31,6 +31,7 @@ export function useSession(): Session {
 
 type GateState =
   | { status: 'pending' }
+  | { status: 'signedOut' }
   | { status: 'failed' }
   | { status: 'signedIn'; user: User; sdk: Sdk | null }
 
@@ -50,6 +51,11 @@ const sinceNavigation = (): number =>
   performance.getEntriesByType('navigation').length > 0
     ? performance.now()
     : 0
+
+const isSignedOut = (error: unknown): boolean =>
+  error instanceof Error &&
+  (error.message === 'login_required' ||
+    error.message === 'interaction_required')
 
 // The platform exchanges the id token for a token of its own, once per sign-in
 const signedInWith = (user: User): GateState => {
@@ -86,10 +92,13 @@ export function SessionGate({
         if (user) setState(signedInWith(user))
       },
       (error: unknown) => {
-        console.error('Sign-in failed:', error)
+        const signedOut = isSignedOut(error)
+        if (!signedOut) console.error('Sign-in failed:', error)
         // The timeout screen offers to sign in again before the start gives up
         setState(current =>
-          current.status === 'signedIn' ? current : { status: 'failed' }
+          current.status === 'signedIn'
+            ? current
+            : { status: signedOut ? 'signedOut' : 'failed' }
         )
       }
     )
@@ -160,11 +169,13 @@ export function SessionGate({
       {!screenGone && (
         <SignInScreen
           phase={
-            !signedIn && wait === 'timeout'
-              ? 'timeout'
-              : state.status === 'failed'
-                ? 'failed'
-                : 'waiting'
+            state.status === 'signedOut'
+              ? 'signedOut'
+              : !signedIn && wait === 'timeout'
+                ? 'timeout'
+                : state.status === 'failed'
+                  ? 'failed'
+                  : 'waiting'
           }
           status={status}
           leaving={signedIn}

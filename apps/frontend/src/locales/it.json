@@ -25,6 +25,11 @@
       "board": "Apertura della tua bacheca…"
     },
     "slow": "Connessione al tuo account ancora in corso…",
+    "signedOut": {
+      "title": "Accedi a Twake Project",
+      "hint": "Accedi per continuare."
+    },
+    "signIn": "Accedi",
     "failed": {
       "title": "Non è stato possibile farti accedere",
       "hint": "Si è verificato un errore durante la connessione al tuo account."
