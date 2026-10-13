@@ -135,6 +135,28 @@ describe('Reminders', () => {
     )
   })
 
+  it('drops the past-time message once the reminder is changed', async () => {
+    const { boardsApi, openEditor } = await openLogo('2026-11-02')
+    boardsApi.addReminder.mockRejectedValueOnce(
+      new ApiError(400, 'invalid_reminder')
+    )
+
+    const editor = await openEditor()
+    const remindMe = editor.getByRole('combobox', { name: 'Remind me' })
+    fireEvent.change(remindMe, { target: { value: 'at' } })
+    fireEvent.change(editor.getByDisplayValue(''), {
+      target: { value: '11/02/2020 08:00' }
+    })
+    fireEvent.click(editor.getByRole('button', { name: 'Save reminder' }))
+    expect(await editor.findByRole('alert')).toHaveTextContent(
+      'Pick a time in the future.'
+    )
+
+    fireEvent.change(remindMe, { target: { value: '15' } })
+
+    expect(editor.queryByRole('alert')).toBeNull()
+  })
+
   it('deletes a reminder', async () => {
     const { reminders, openEditor } = await openLogo('2026-11-02')
     const editor = await openEditor()
