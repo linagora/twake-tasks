@@ -16,10 +16,26 @@ describe('the RabbitMQ names', () => {
       RABBITMQ_B2B_EXCHANGE: 'b2b',
       RABBITMQ_AUTH_EXCHANGE: 'auth',
       RABBITMQ_ACTIVITY_EXCHANGE: 'activity',
-      RABBITMQ_QUEUE: 'platform.all.twake-tasks',
+      RABBITMQ_QUEUE: 'twake-tasks',
+      RABBITMQ_OLD_QUEUE: 'platform.all.twake-tasks',
+      RABBITMQ_CONCURRENCY: 5,
       RABBITMQ_DEAD_LETTER_EXCHANGE: 'twake-tasks.dlx',
-      RABBITMQ_LIVE_EXCHANGE: 'twake-tasks.live'
+      RABBITMQ_LIVE_EXCHANGE: 'twake-tasks.live',
+      DATABASE_POOL_MAX: 20
     })
+  })
+
+  it('refuse to consume from the queue of older versions', () => {
+    expect(() =>
+      loadConfig({ ...required, RABBITMQ_QUEUE: 'platform.all.twake-tasks' })
+    ).toThrow(/RABBITMQ_QUEUE must differ from RABBITMQ_OLD_QUEUE/)
+    expect(() =>
+      loadConfig({
+        ...required,
+        RABBITMQ_QUEUE: 'staging.tasks',
+        RABBITMQ_OLD_QUEUE: 'staging.tasks'
+      })
+    ).toThrow(/RABBITMQ_OLD_QUEUE/)
   })
 
   it('can be renamed, but not emptied', () => {

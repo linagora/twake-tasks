@@ -48,8 +48,11 @@ export function tenantPolicy(
   })
 }
 
-function connect(url: string) {
-  const client = postgres(url, { onnotice: () => undefined })
+function connect(url: string, max?: number) {
+  const client = postgres(url, {
+    onnotice: () => undefined,
+    ...(max !== undefined && { max })
+  })
   return { sql: client, db: drizzle({ client }) }
 }
 
@@ -96,8 +99,12 @@ function runHooksOnCommit(
   }) as Transaction
 }
 
-export function createDb(url: string, log: HookLog = console) {
-  const { sql, db } = connect(url)
+export function createDb(
+  url: string,
+  log: HookLog = console,
+  options: { poolMax?: number } = {}
+) {
+  const { sql, db } = connect(url, options.poolMax)
   runHooksOnCommit(db, log)
   return { sql, db }
 }

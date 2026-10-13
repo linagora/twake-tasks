@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { eq, sql as raw } from 'drizzle-orm'
+import { pino } from 'pino'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { outbox } from '../../events/schema.ts'
@@ -64,7 +65,7 @@ function deliver(routingKey: string, body: object) {
     messageId: randomUUID(),
     body: { timestamp: new Date().toISOString(), ...body }
   }
-  return db.transaction(tx => handler(event, tx))
+  return db.transaction(tx => handler(event, tx, pino({ level: 'silent' })))
 }
 
 describe('reconciling a space', () => {

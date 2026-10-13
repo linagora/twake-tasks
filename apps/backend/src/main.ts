@@ -3,6 +3,7 @@ import { buildApp } from './app.ts'
 import { loadConfig } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
 import { createRelay } from './events/outbox.ts'
+import { parkedRetries, parkIn } from './events/parking.ts'
 import { createMessageHandler } from './events/router.ts'
 import { createChanges } from './infra/changes.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
@@ -41,7 +42,9 @@ const config = loadConfig()
 const logger = pino({ level: config.LOG_LEVEL })
 const spaces = config.SPACE_INTEGRATION === 'true'
 
-const { sql, db } = createDb(config.DATABASE_URL, logger)
+const { sql, db } = createDb(config.DATABASE_URL, logger, {
+  poolMax: config.DATABASE_POOL_MAX
+})
 await assertRowLevelSecurity(sql)
 await migrateDb(db)
 
@@ -76,6 +79,18 @@ const publisher = await startPublisher(
   config.RABBITMQ_ACTIVITY_EXCHANGE,
   logger
 )
+const handle = createMessageHandler({
+  // The queue stays bound to space events either way, since its first binding
+  // fixes its dead letter key; without the integration they find no route.
+  routes: new Map([
+    ...(spaces ? spaceRoutes() : []),
+    ...accountRoutes,
+    ...settingsRoutes
+  ]),
+  dedupe: postgresDeduplicator(db, 'twake-tasks'),
+  park: parkIn(db),
+  logger
+})
 const consumer = await startConsumer(
   config.RABBITMQ_URL,
   {
@@ -84,21 +99,19 @@ const consumer = await startConsumer(
     authExchange: config.RABBITMQ_AUTH_EXCHANGE,
     settingsExchange: config.RABBITMQ_SETTINGS_EXCHANGE,
     queue: config.RABBITMQ_QUEUE,
+    oldQueue: config.RABBITMQ_OLD_QUEUE,
     deadLetterExchange: config.RABBITMQ_DEAD_LETTER_EXCHANGE
   },
   logger,
-  // The queue stays bound to space events either way, since its first binding
-  // fixes its dead letter key; without the integration they find no route.
-  createMessageHandler({
-    routes: new Map([
-      ...(spaces ? spaceRoutes() : []),
-      ...accountRoutes,
-      ...settingsRoutes
-    ]),
-    dedupe: postgresDeduplicator(db, 'twake-tasks'),
-    logger
-  })
+  handle,
+  { concurrency: config.RABBITMQ_CONCURRENCY }
 )
+const stopParkedRetries = parkedRetries({
+  db,
+  logger,
+  handle,
+  deadLetter: (delivery, reason) => consumer.deadLetter(delivery, reason)
+}).start()
 // A sync request fans out to every app and every space, so it is sent only
 // while no space is known, once the queue is bound to receive the answers.
 // The nightly sync repairs what a failed request misses, so it never stops
@@ -159,6 +172,8 @@ async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, 'shutting down')
   try {
     await stopScheduler()
+    // A retry pass may still dead letter through the consumer's connection.
+    await stopParkedRetries()
     await consumer.close()
     await stopRelay()
     await publisher.close()

@@ -5,7 +5,7 @@ import type { Delivery } from '../infra/rabbitmq.ts'
 import type { Deduplicator } from './dedupe.ts'
 import { parsePlatformEvent, type PlatformEvent } from './envelope.ts'
 
-export type Handler<E> = (event: E, tx: Tx) => Promise<void>
+export type Handler<E> = (event: E, tx: Tx, log: Logger) => Promise<void>
 
 // Thrown by a handler for an event it can never process, so it is dropped.
 export class MalformedEventError extends Error {}
@@ -13,6 +13,23 @@ export class MalformedEventError extends Error {}
 // Thrown by a handler for a well-formed event that contradicts the copy; kept on
 // the dead letter queue to be looked at and replayed.
 export class RejectedEventError extends Error {}
+
+// Thrown for an event about a space Tasks does not hold yet: the event that
+// brings it may only be late.
+export class NotYetKnownError extends Error {
+  readonly spaceId: string
+
+  constructor(spaceId: string) {
+    super(`space ${spaceId} not known yet`)
+    this.spaceId = spaceId
+  }
+}
+
+export type Park = (
+  delivery: Delivery & { messageId: string },
+  spaceId: string,
+  reason: string
+) => Promise<void>
 
 export function parseOrDrop<T extends z.ZodType>(
   schema: T,
@@ -27,14 +44,15 @@ export function parseOrDrop<T extends z.ZodType>(
 }
 
 export type Outcome =
-  'processed' | 'duplicate' | 'unrouted' | 'malformed' | 'rejected'
+  'processed' | 'duplicate' | 'unrouted' | 'malformed' | 'rejected' | 'parked'
 
 export function createMessageHandler(deps: {
   routes: ReadonlyMap<string, Handler<PlatformEvent>>
   dedupe: Deduplicator
+  park: Park
   logger: Logger
 }) {
-  const { routes, dedupe, logger } = deps
+  const { routes, dedupe, park, logger } = deps
 
   return async (delivery: Delivery): Promise<Outcome> => {
     const context = {
@@ -59,9 +77,18 @@ export function createMessageHandler(deps: {
     try {
       processed = await dedupe.once(
         { source: 'amqp', id: event.messageId },
-        tx => handler(event, tx)
+        tx => handler(event, tx, logger.child(context))
       )
     } catch (error) {
+      if (error instanceof NotYetKnownError) {
+        await park(
+          { ...delivery, messageId: event.messageId },
+          error.spaceId,
+          error.message
+        )
+        logger.info({ ...context, reason: error.message }, 'event parked')
+        return 'parked'
+      }
       if (error instanceof RejectedEventError) {
         logger.warn(
           { ...context, reason: error.message },

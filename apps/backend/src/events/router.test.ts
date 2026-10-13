@@ -7,8 +7,10 @@ import type { PlatformEvent } from './envelope.ts'
 import {
   createMessageHandler,
   MalformedEventError,
+  NotYetKnownError,
   RejectedEventError,
-  type Handler
+  type Handler,
+  type Park
 } from './router.ts'
 
 const tx = {} as Tx
@@ -32,15 +34,18 @@ function memoryDeduplicator(): Deduplicator & { keys: EventKey[] } {
 function setup() {
   const handler = vi.fn<Handler<PlatformEvent>>().mockResolvedValue()
   const dedupe = memoryDeduplicator()
+  const park = vi.fn<Park>().mockResolvedValue()
   const handle = createMessageHandler({
     routes: new Map([['twake.space.created', handler]]),
     dedupe,
+    park,
     logger: pino({ level: 'silent' })
   })
-  return { handle, handler, dedupe }
+  return { handle, handler, dedupe, park }
 }
 
 const delivery = (overrides: Partial<Delivery> = {}): Delivery => ({
+  exchange: 'space',
   routingKey: 'twake.space.created',
   messageId: 'm-1',
   body: { id: 's1' },
@@ -58,7 +63,8 @@ describe('createMessageHandler', () => {
         messageId: 'm-1',
         body: { id: 's1' }
       },
-      tx
+      tx,
+      expect.anything()
     )
     expect(dedupe.keys).toEqual([{ source: 'amqp', id: 'm-1' }])
   })
@@ -100,6 +106,19 @@ describe('createMessageHandler', () => {
     handler.mockRejectedValueOnce(new RejectedEventError('unknown space'))
 
     expect(await handle(delivery())).toBe('rejected')
+    expect(dedupe.keys).toEqual([])
+  })
+
+  it('parks an event about a space not known yet, without marking it processed', async () => {
+    const { handle, handler, dedupe, park } = setup()
+    handler.mockRejectedValueOnce(new NotYetKnownError('s1'))
+
+    expect(await handle(delivery())).toBe('parked')
+    expect(park).toHaveBeenCalledWith(
+      delivery(),
+      's1',
+      'space s1 not known yet'
+    )
     expect(dedupe.keys).toEqual([])
   })
 

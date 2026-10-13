@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto'
+import { pino } from 'pino'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { inject } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
-import { MalformedEventError } from '../../events/router.ts'
+import { MalformedEventError, NotYetKnownError } from '../../events/router.ts'
 import { eq, sql as raw } from 'drizzle-orm'
+import { accountRoutes } from '../boards/accounts.ts'
 import { asOrganization, createDb } from '../../infra/db.ts'
-import { boards } from '../boards/schema.ts'
+import { boards, projectMembers, projects } from '../boards/schema.ts'
 import {
   aUser,
   followersOf,
@@ -20,10 +22,12 @@ import {
   purgeSpace,
   spaceRoutes
 } from './events.ts'
+import { spaces } from './schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
-const routes = spaceRoutes()
+const routes = new Map([...spaceRoutes(), ...accountRoutes])
+const quiet = pino({ level: 'silent' })
 
 beforeAll(async () => {
   api = await startApp()
@@ -42,8 +46,34 @@ function deliver(routingKey: string, body: object) {
     messageId: randomUUID(),
     body: { timestamp: new Date().toISOString(), ...body }
   }
-  return db.transaction(tx => handler(event, tx))
+  return db.transaction(tx => handler(event, tx, quiet))
 }
+
+// Handles the event, and commits only once released.
+function deliverHeld(routingKey: string, body: object) {
+  const handler = routes.get(routingKey)
+  if (!handler) throw new Error(`no handler for ${routingKey}`)
+  let release = () => {}
+  const released = new Promise<void>(resolve => (release = resolve))
+  let handled = () => {}
+  const ready = new Promise<void>(resolve => (handled = resolve))
+  const done = db.transaction(async tx => {
+    await handler({ routingKey, messageId: randomUUID(), body }, tx, quiet)
+    handled()
+    await released
+  })
+  return { ready, release, done }
+}
+
+const settled = (promise: Promise<unknown>, ms = 300) =>
+  Promise.race([
+    promise.then(() => true),
+    new Promise<boolean>(resolve =>
+      setTimeout(() => {
+        resolve(false)
+      }, ms)
+    )
+  ])
 
 const at = (minute: number) =>
   new Date(Date.UTC(2026, 9, 6, 9, minute)).toISOString()
@@ -351,6 +381,29 @@ describe('twake.space.deleted', () => {
     expect(remaining).toEqual([])
   })
 
+  it('keeps its project without members when they are added after', async () => {
+    const admin = aUser()
+    const late = aUser({ organizationId: admin.organizationId })
+    const { space } = await aSpaceWithATask(admin, [])
+    const [board] = await spaceBoards(admin)
+    await deliver('twake.space.deleted', { ...space, timestamp: at(10) })
+
+    await deliver('twake.space.member.added', {
+      ...space,
+      members: [member(late, 'editor')],
+      timestamp: at(20)
+    })
+
+    const members = await db.transaction(async tx => {
+      await asOrganization(tx, space.organizationId)
+      return tx
+        .select({ userId: projectMembers.userId })
+        .from(projectMembers)
+        .where(eq(projectMembers.projectId, board?.project.id ?? ''))
+    })
+    expect(members).toEqual([{ userId: admin.userId }])
+  })
+
   it('applies even when older than the last event of the space', async () => {
     const admin = aUser()
     const { space } = await aSpaceWithATask(admin, [])
@@ -363,6 +416,183 @@ describe('twake.space.deleted', () => {
     await deliver('twake.space.deleted', { ...space, timestamp: at(10) })
 
     expect(await spaceBoards(admin)).toEqual([])
+  })
+})
+
+describe('deletions', () => {
+  const spaceRows = (space: { organizationId: string; id: string }) =>
+    db.transaction(async tx => {
+      await asOrganization(tx, space.organizationId)
+      return tx.select().from(spaces).where(eq(spaces.id, space.id))
+    })
+
+  const membersOf = (space: { organizationId: string; id: string }) =>
+    db.transaction(async tx => {
+      await asOrganization(tx, space.organizationId)
+      return (
+        await tx
+          .select({ userId: projectMembers.userId })
+          .from(projectMembers)
+          .innerJoin(spaces, eq(spaces.projectId, projectMembers.projectId))
+          .where(eq(spaces.id, space.id))
+      ).map(m => m.userId)
+    })
+
+  async function aSpaceAt(admin: TestUser, minute: number) {
+    if (!admin.organizationId) throw new Error('spaces are B2B')
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+    await deliver('twake.space.created', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(minute)
+    })
+    return space
+  }
+
+  it('of an organization drop the creations and syncs dated before', async () => {
+    const admin = aUser()
+    const organizationId = admin.organizationId
+    if (!organizationId) throw new Error('spaces are B2B')
+    await deliver('domain.organization.deleted', {
+      organizationId,
+      timestamp: at(30)
+    })
+    const created = { organizationId, id: randomUUID() }
+    const synced = { organizationId, id: randomUUID() }
+
+    for (const [key, space] of [
+      ['twake.space.created', created],
+      ['twake.space.synced', synced]
+    ] as const) {
+      await deliver(key, {
+        ...space,
+        name: 'Ops',
+        members: [member(admin, 'admin')],
+        timestamp: at(20)
+      })
+    }
+
+    expect(await spaceRows(created)).toEqual([])
+    expect(await spaceRows(synced)).toEqual([])
+  })
+
+  it('of an organization erase its spaces, whose later events are dropped', async () => {
+    const admin = aUser()
+    const space = await aSpaceAt(admin, 0)
+    await deliver('domain.organization.deleted', {
+      organizationId: space.organizationId,
+      timestamp: at(30)
+    })
+
+    await deliver('twake.space.updated', {
+      ...space,
+      name: 'Late',
+      timestamp: at(20)
+    })
+
+    expect(await spaceRows(space)).toEqual([])
+  })
+
+  it('of a purged space drop its later events instead of parking them', async () => {
+    const admin = aUser()
+    const late = aUser({ organizationId: admin.organizationId })
+    const space = await aSpaceAt(admin, 0)
+    await deliver('twake.space.deleted', { ...space, timestamp: at(10) })
+    const [job] = await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.key, `${PURGE_SPACE_JOB}:${space.id}`))
+    if (!job) throw new Error('no purge job')
+    await db.transaction(tx => purgeSpace(job.payload, tx))
+
+    await deliver('twake.space.member.added', {
+      ...space,
+      members: [member(late, 'editor')],
+      timestamp: at(20)
+    })
+    await deliver('twake.space.created', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(0)
+    })
+
+    expect(await spaceRows(space)).toEqual([])
+  })
+
+  it('leave an event about a space never seen to be parked', async () => {
+    const admin = aUser()
+
+    await expect(
+      deliver('twake.space.member.added', {
+        organizationId: admin.organizationId,
+        id: randomUUID(),
+        members: [member(admin, 'editor')]
+      })
+    ).rejects.toThrow(NotYetKnownError)
+  })
+
+  it('of a person keep them out of the member events dated before', async () => {
+    const admin = aUser()
+    const byUuid = aUser({ organizationId: admin.organizationId })
+    const byEmail = aUser({ organizationId: admin.organizationId })
+    const space = await aSpaceAt(admin, 0)
+    await deliver('domain.user.deleted', {
+      organizationId: space.organizationId,
+      uuid: byUuid.userId,
+      timestamp: at(30)
+    })
+    await deliver('domain.user.deleted', {
+      organizationId: space.organizationId,
+      internalEmail: byEmail.email,
+      timestamp: at(30)
+    })
+
+    await deliver('twake.space.member.added', {
+      ...space,
+      members: [member(byUuid, 'editor'), member(byEmail, 'editor')],
+      timestamp: at(10)
+    })
+    expect(await membersOf(space)).toEqual([admin.userId])
+
+    await deliver('twake.space.member.role.changed', {
+      ...space,
+      members: [member(byUuid, 'viewer'), member(byEmail, 'viewer')],
+      timestamp: at(15)
+    })
+    expect(await membersOf(space)).toEqual([admin.userId])
+
+    await deliver('twake.space.synced', {
+      ...space,
+      name: 'Ops',
+      members: [
+        member(admin, 'admin'),
+        member(byUuid, 'editor'),
+        member(byEmail, 'editor')
+      ],
+      timestamp: at(20)
+    })
+    expect(await membersOf(space)).toEqual([admin.userId])
+  })
+
+  it('of a person by uuid keep them out of member events dated after too', async () => {
+    const admin = aUser()
+    const gone = aUser({ organizationId: admin.organizationId })
+    const space = await aSpaceAt(admin, 0)
+    await deliver('domain.user.deleted', {
+      organizationId: space.organizationId,
+      uuid: gone.userId,
+      timestamp: at(10)
+    })
+
+    await deliver('twake.space.member.added', {
+      ...space,
+      members: [member(gone, 'editor')],
+      timestamp: at(20)
+    })
+
+    expect(await membersOf(space)).toEqual([admin.userId])
   })
 })
 
@@ -498,8 +728,135 @@ describe('the order of space events', () => {
     }
 
     await expect(
-      db.transaction(tx => handler?.(event, tx) ?? Promise.resolve())
+      db.transaction(tx => handler?.(event, tx, quiet) ?? Promise.resolve())
     ).rejects.toThrow(MalformedEventError)
+  })
+})
+
+describe('concurrent space events', () => {
+  it('apply one at a time per space, in timestamp order', async () => {
+    const admin = aUser()
+    const other = aUser({ organizationId: admin.organizationId })
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+    await deliver('twake.space.created', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(0)
+    })
+    const newer = deliverHeld('twake.space.member.added', {
+      ...space,
+      members: [member(other, 'editor')],
+      timestamp: at(20)
+    })
+    await newer.ready
+
+    const older = deliver('twake.space.member.added', {
+      ...space,
+      members: [member(other, 'viewer')],
+      timestamp: at(10)
+    })
+    expect(await settled(older)).toBe(false)
+    newer.release()
+    await Promise.all([newer.done, older])
+
+    expect(await spaceBoards(other)).toEqual([
+      expect.objectContaining({ role: 'editor' })
+    ])
+  })
+
+  it('of different spaces do not wait for each other', async () => {
+    const admin = aUser()
+    const busy = { organizationId: admin.organizationId, id: randomUUID() }
+    const free = { organizationId: admin.organizationId, id: randomUUID() }
+    for (const space of [busy, free]) {
+      await deliver('twake.space.created', {
+        ...space,
+        name: 'Ops',
+        members: [member(admin, 'admin')],
+        timestamp: at(0)
+      })
+    }
+    const held = deliverHeld('twake.space.updated', {
+      ...busy,
+      name: 'Busy',
+      timestamp: at(10)
+    })
+    await held.ready
+
+    try {
+      expect(
+        await settled(
+          deliver('twake.space.updated', {
+            ...free,
+            name: 'Free',
+            timestamp: at(10)
+          })
+        )
+      ).toBe(true)
+    } finally {
+      held.release()
+      await held.done
+    }
+  })
+
+  it('create a space once when its creation arrives twice at the same time', async () => {
+    const admin = aUser()
+    const created = {
+      organizationId: admin.organizationId,
+      id: randomUUID(),
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(0)
+    }
+    const first = deliverHeld('twake.space.created', created)
+    await first.ready
+
+    const second = deliver('twake.space.created', created)
+    expect(await settled(second)).toBe(false)
+    first.release()
+    await Promise.all([first.done, second])
+
+    expect(await spaceBoards(admin)).toHaveLength(1)
+  })
+
+  it('wait for a deletion of their project in flight, then add no one', async () => {
+    const admin = aUser()
+    const late = aUser({ organizationId: admin.organizationId })
+    const { space } = await aSpaceWithATask(admin, [])
+    const [board] = await spaceBoards(admin)
+    const projectId = board?.project.id ?? ''
+    let release = () => {}
+    const released = new Promise<void>(resolve => (release = resolve))
+    let deleting = () => {}
+    const deleted = new Promise<void>(resolve => (deleting = resolve))
+    const deletion = db.transaction(async tx => {
+      await asOrganization(tx, space.organizationId)
+      await tx
+        .update(projects)
+        .set({ deletedAt: new Date() })
+        .where(eq(projects.id, projectId))
+      deleting()
+      await released
+    })
+    await deleted
+
+    const added = deliver('twake.space.member.added', {
+      ...space,
+      members: [member(late, 'editor')]
+    })
+    expect(await settled(added)).toBe(false)
+    release()
+    await Promise.all([deletion, added])
+
+    const members = await db.transaction(async tx => {
+      await asOrganization(tx, space.organizationId)
+      return tx
+        .select({ userId: projectMembers.userId })
+        .from(projectMembers)
+        .where(eq(projectMembers.projectId, projectId))
+    })
+    expect(members).toEqual([{ userId: admin.userId }])
   })
 })
 

@@ -28,6 +28,10 @@ Email:
 - `SMTP_URL`: an `smtp://` or `smtps://` URL. Without it, nothing is emailed.
 - `MAIL_FROM` (`Twake Project <tasks@twake.app>`).
 
+RabbitMQ:
+
+- `RABBITMQ_CONCURRENCY` (`5`): how many events each replica handles at once. Each holds a database connection, so keep it well under `DATABASE_POOL_MAX`.
+
 RabbitMQ names, when the broker's differ:
 
 - `RABBITMQ_SPACE_EXCHANGE` (`space`)
@@ -35,9 +39,14 @@ RabbitMQ names, when the broker's differ:
 - `RABBITMQ_AUTH_EXCHANGE` (`auth`)
 - `RABBITMQ_SETTINGS_EXCHANGE` (`settings`)
 - `RABBITMQ_ACTIVITY_EXCHANGE` (`activity`)
-- `RABBITMQ_QUEUE` (`platform.all.twake-tasks`)
+- `RABBITMQ_QUEUE` (`twake-tasks`), whose dead letter queue is `<queue>.dlq`
+- `RABBITMQ_OLD_QUEUE` (`platform.all.twake-tasks`), the queue of older versions, drained at start (see [events](events.md#the-queue)). The backend refuses to start when it equals `RABBITMQ_QUEUE`.
 - `RABBITMQ_DEAD_LETTER_EXCHANGE` (`twake-tasks.dlx`)
 - `RABBITMQ_LIVE_EXCHANGE` (`twake-tasks.live`), for [live updates](events.md#live-updates) between replicas
+
+Database:
+
+- `DATABASE_POOL_MAX` (`20`): how many connections each replica keeps at most.
 
 Server:
 

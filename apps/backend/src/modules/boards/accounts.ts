@@ -3,6 +3,13 @@ import { alias } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import {
+  deletedEmailKey,
+  deletedOrganizationKey,
+  deletedUserKey,
+  lockOrganization,
+  recordDeletion
+} from '../../events/lastChanges.ts'
+import {
   parseOrDrop,
   RejectedEventError,
   type Handler
@@ -10,6 +17,7 @@ import {
 import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { userSettings } from '../settings/schema.ts'
+import { spaces } from '../spaces/schema.ts'
 import {
   inviteEmails,
   projectMembers,
@@ -19,20 +27,30 @@ import {
   taskFollowers
 } from './schema.ts'
 
+// An unreadable time must not drop a deletion, which then counts from now.
+const timestamp = z.iso
+  .datetime({ offset: true })
+  .optional()
+  .catch(undefined)
+  .transform(at => (at === undefined ? new Date() : new Date(at)))
+
 // ldap-rest names B2B users by email until it sends their entryUUID.
 const b2bDeleted = z.looseObject({
   organizationId: z.string().min(1).optional(),
   uuid: z.uuid().optional(),
-  internalEmail: z.email().optional()
+  internalEmail: z.email().optional(),
+  timestamp
 })
 
 const organizationDeleted = z.looseObject({
-  organizationId: z.string().min(1).optional()
+  organizationId: z.string().min(1).optional(),
+  timestamp
 })
 
 const b2cDeleted = z.looseObject({
   uuid: z.uuid().optional(),
-  internalEmail: z.email().optional()
+  internalEmail: z.email().optional(),
+  timestamp
 })
 
 // A B2C membership is visible only to its own user, so finding one by email
@@ -110,39 +128,61 @@ async function handOnProjects(tx: Tx, userId: string) {
   }
 }
 
-// Runs as the user, so a B2C tenant shows the projects they belong to; their
-// memberships go last, since they are what makes those projects visible.
-async function forget(tx: Tx, organizationId: string | null, userId: string) {
-  await asTenant(tx, { organizationId, userId, email: '' })
-  await tx.delete(userSettings).where(
-    inArray(
-      userSettings.email,
-      tx
-        .select({ email: sql<string>`lower(${projectMembers.email})` })
-        .from(projectMembers)
-        .where(eq(projectMembers.userId, userId))
-    )
+interface Person {
+  userId: string | undefined
+  email: string | undefined
+}
+
+// Found by uuid and email, not through memberships, which are gone once the
+// organization's deletion ran first. Runs as the user, so a B2C tenant shows
+// the projects they belong to; their memberships go last, since they are what
+// makes those projects visible.
+async function forget(
+  tx: Tx,
+  organizationId: string | null,
+  person: Person,
+  at: Date
+) {
+  const { userId } = person
+  await recordDeletion(
+    tx,
+    [
+      ...(userId ? [deletedUserKey(userId)] : []),
+      ...(person.email ? [deletedEmailKey(person.email)] : [])
+    ],
+    at
   )
-  await tx.delete(inviteEmails).where(
-    or(
-      eq(inviteEmails.invitedBy, userId),
-      inArray(
-        inviteEmails.email,
-        tx
-          .select({ email: sql<string>`lower(${projectMembers.email})` })
-          .from(projectMembers)
-          .where(eq(projectMembers.userId, userId))
+  await asTenant(tx, { organizationId, userId: userId ?? '', email: '' })
+  const emails = [
+    ...(person.email ? [person.email.toLowerCase()] : []),
+    ...(userId
+      ? (
+          await tx
+            .select({ email: sql<string>`lower(${projectMembers.email})` })
+            .from(projectMembers)
+            .where(eq(projectMembers.userId, userId))
+        ).map(m => m.email)
+      : [])
+  ]
+  await tx.delete(userSettings).where(inArray(userSettings.email, emails))
+  await tx
+    .delete(inviteEmails)
+    .where(
+      or(
+        userId ? eq(inviteEmails.invitedBy, userId) : undefined,
+        inArray(inviteEmails.email, emails)
       )
     )
-  )
-  await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
-  await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
-  await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
-  await tx
-    .delete(projects)
-    .where(and(eq(projects.createdBy, userId), eq(projects.personal, true)))
-  await handOnProjects(tx, userId)
-  await tx.delete(projectMembers).where(eq(projectMembers.userId, userId))
+  if (userId) {
+    await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
+    await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
+    await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
+    await tx
+      .delete(projects)
+      .where(and(eq(projects.createdBy, userId), eq(projects.personal, true)))
+    await handOnProjects(tx, userId)
+    await tx.delete(projectMembers).where(eq(projectMembers.userId, userId))
+  }
 }
 
 const onB2bDeleted: Handler<PlatformEvent> = async (event, tx) => {
@@ -159,7 +199,12 @@ const onB2bDeleted: Handler<PlatformEvent> = async (event, tx) => {
     (account.internalEmail
       ? await userIdByEmail(tx, account.internalEmail)
       : undefined)
-  if (userId) await forget(tx, account.organizationId, userId)
+  await forget(
+    tx,
+    account.organizationId,
+    { userId, email: account.internalEmail },
+    account.timestamp
+  )
 }
 
 const onB2cDeleted: Handler<PlatformEvent> = async (event, tx) => {
@@ -172,18 +217,32 @@ const onB2cDeleted: Handler<PlatformEvent> = async (event, tx) => {
     (account.internalEmail
       ? await b2cUserIdByEmail(tx, account.internalEmail)
       : undefined)
-  if (userId) await forget(tx, null, userId)
+  await forget(
+    tx,
+    null,
+    { userId, email: account.internalEmail },
+    account.timestamp
+  )
 }
 
-// Arrives after every member's domain.user.deleted, and may be replayed.
+// May be replayed, and may arrive before its members' domain.user.deleted.
 const onOrganizationDeleted: Handler<PlatformEvent> = async (event, tx) => {
-  const { organizationId } = parseOrDrop(
-    organizationDeleted,
-    event.body,
-    event.routingKey
-  )
+  const deleted = parseOrDrop(organizationDeleted, event.body, event.routingKey)
+  const { organizationId } = deleted
   if (!organizationId) throw new RejectedEventError('no organizationId')
+  await lockOrganization(tx, organizationId, 'exclusive')
+  await recordDeletion(
+    tx,
+    [deletedOrganizationKey(organizationId)],
+    deleted.timestamp
+  )
   await asOrganization(tx, organizationId)
+  // Spaces before projects, the order every space handler locks them in.
+  await tx
+    .select({ id: spaces.id })
+    .from(spaces)
+    .orderBy(spaces.id)
+    .for('update')
   await tx.execute(
     sql`select set_config('app.erasing_organization', 'on', true)`
   )
