@@ -55,6 +55,26 @@ describe('QuickAdd', () => {
     expect(design.tasks).toEqual([])
   })
 
+  it('drops a refusal once the line is edited', async () => {
+    const { dialog, type, add } = await openQuickAdd()
+    add('Logo #Marketing')
+    expect(await dialog.findByRole('alert')).toBeVisible()
+
+    type('Logo')
+
+    expect(dialog.queryByRole('alert')).toBeNull()
+  })
+
+  it('drops the success notice once the next line is typed', async () => {
+    const { dialog, type, add } = await openQuickAdd()
+    add('Logo #DES')
+    expect(await dialog.findByText('DES-1 added.')).toBeVisible()
+
+    type('Next')
+
+    expect(dialog.queryByText('DES-1 added.')).toBeNull()
+  })
+
   it('shows what it understood as you type', async () => {
     const { dialog, type } = await openQuickAdd()
 

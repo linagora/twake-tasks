@@ -65,7 +65,9 @@ export async function quickAdd(
   const { section: sectionName } = parsed
   const section =
     sectionName === undefined
-      ? null
+      ? (board.sections.find(each => each.category === 'unstarted') ??
+        board.sections[0] ??
+        null)
       : board.sections.find(each => same(sectionName, each.name))
   if (section === undefined) {
     throw new QuickAddError('unknown_section', sectionName)

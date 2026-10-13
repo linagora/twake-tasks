@@ -290,6 +290,7 @@ export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
   }, [line])
 
   const type = (value: string, at: number) => {
+    if (!add.isIdle) add.reset()
     setLine(value)
     setCaret(at)
     setActive(0)
