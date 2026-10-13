@@ -142,14 +142,31 @@ describe('project invite emails', () => {
     expect(mailbox.sent.filter(mail => mail.text.includes(boardId))).toEqual([])
   })
 
-  it('sends nothing for an invite claimed before delivery', async () => {
-    const alice = aUser()
+  it('still emails an invite claimed before delivery, with the role it became', async () => {
+    const alice = aUser({ name: 'Alice Martin' })
     const bob = aUser({ organizationId: alice.organizationId })
     const boardId = await aSharedBoard(alice)
     const mailbox = aMailbox()
     await invite(alice, boardId, bob.email, 'editor')
 
     await api.as(bob).get('/boards')
+    await mailbox.deliver()
+
+    const sent = mailbox.sent.filter(mail => mail.text.includes(boardId))
+    expect(sent).toHaveLength(1)
+    expect(sent[0]?.to).toBe(bob.email.toLowerCase())
+    expect(sent[0]?.text).toContain('as editor')
+  })
+
+  it('sends nothing for an invite claimed, then removed, before delivery', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const boardId = await aSharedBoard(alice)
+    const mailbox = aMailbox()
+    await invite(alice, boardId, bob.email, 'editor')
+    await api.as(bob).get('/boards')
+
+    await api.as(alice).delete(`/boards/${boardId}/members/${bob.userId}`)
     await mailbox.deliver()
 
     expect(mailbox.sent.filter(mail => mail.text.includes(boardId))).toEqual([])
