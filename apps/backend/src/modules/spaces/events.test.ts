@@ -5,7 +5,7 @@ import type { PlatformEvent } from '../../events/envelope.ts'
 import { MalformedEventError } from '../../events/router.ts'
 import { eq, sql as raw } from 'drizzle-orm'
 import { asOrganization, createDb } from '../../infra/db.ts'
-import { boards } from '../boards/schema.ts'
+import { boards, projectMembers } from '../boards/schema.ts'
 import {
   aUser,
   followersOf,
@@ -44,6 +44,32 @@ function deliver(routingKey: string, body: object) {
   }
   return db.transaction(tx => handler(event, tx))
 }
+
+// Handles the event, and commits only once released.
+function deliverHeld(routingKey: string, body: object) {
+  const handler = routes.get(routingKey)
+  if (!handler) throw new Error(`no handler for ${routingKey}`)
+  let release = () => {}
+  const released = new Promise<void>(resolve => (release = resolve))
+  let handled = () => {}
+  const ready = new Promise<void>(resolve => (handled = resolve))
+  const done = db.transaction(async tx => {
+    await handler({ routingKey, messageId: randomUUID(), body }, tx)
+    handled()
+    await released
+  })
+  return { ready, release, done }
+}
+
+const settled = (promise: Promise<unknown>, ms = 300) =>
+  Promise.race([
+    promise.then(() => true),
+    new Promise<boolean>(resolve =>
+      setTimeout(() => {
+        resolve(false)
+      }, ms)
+    )
+  ])
 
 const at = (minute: number) =>
   new Date(Date.UTC(2026, 9, 6, 9, minute)).toISOString()
@@ -351,6 +377,29 @@ describe('twake.space.deleted', () => {
     expect(remaining).toEqual([])
   })
 
+  it('keeps its project without members when they are added after', async () => {
+    const admin = aUser()
+    const late = aUser({ organizationId: admin.organizationId })
+    const { space } = await aSpaceWithATask(admin, [])
+    const [board] = await spaceBoards(admin)
+    await deliver('twake.space.deleted', { ...space, timestamp: at(10) })
+
+    await deliver('twake.space.member.added', {
+      ...space,
+      members: [member(late, 'editor')],
+      timestamp: at(20)
+    })
+
+    const members = await db.transaction(async tx => {
+      await asOrganization(tx, space.organizationId)
+      return tx
+        .select({ userId: projectMembers.userId })
+        .from(projectMembers)
+        .where(eq(projectMembers.projectId, board?.project.id ?? ''))
+    })
+    expect(members).toEqual([{ userId: admin.userId }])
+  })
+
   it('applies even when older than the last event of the space', async () => {
     const admin = aUser()
     const { space } = await aSpaceWithATask(admin, [])
@@ -500,6 +549,94 @@ describe('the order of space events', () => {
     await expect(
       db.transaction(tx => handler?.(event, tx) ?? Promise.resolve())
     ).rejects.toThrow(MalformedEventError)
+  })
+})
+
+describe('concurrent space events', () => {
+  it('apply one at a time per space, in timestamp order', async () => {
+    const admin = aUser()
+    const other = aUser({ organizationId: admin.organizationId })
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+    await deliver('twake.space.created', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(0)
+    })
+    const newer = deliverHeld('twake.space.member.added', {
+      ...space,
+      members: [member(other, 'editor')],
+      timestamp: at(20)
+    })
+    await newer.ready
+
+    const older = deliver('twake.space.member.added', {
+      ...space,
+      members: [member(other, 'viewer')],
+      timestamp: at(10)
+    })
+    expect(await settled(older)).toBe(false)
+    newer.release()
+    await Promise.all([newer.done, older])
+
+    expect(await spaceBoards(other)).toEqual([
+      expect.objectContaining({ role: 'editor' })
+    ])
+  })
+
+  it('of different spaces do not wait for each other', async () => {
+    const admin = aUser()
+    const busy = { organizationId: admin.organizationId, id: randomUUID() }
+    const free = { organizationId: admin.organizationId, id: randomUUID() }
+    for (const space of [busy, free]) {
+      await deliver('twake.space.created', {
+        ...space,
+        name: 'Ops',
+        members: [member(admin, 'admin')],
+        timestamp: at(0)
+      })
+    }
+    const held = deliverHeld('twake.space.updated', {
+      ...busy,
+      name: 'Busy',
+      timestamp: at(10)
+    })
+    await held.ready
+
+    try {
+      expect(
+        await settled(
+          deliver('twake.space.updated', {
+            ...free,
+            name: 'Free',
+            timestamp: at(10)
+          })
+        )
+      ).toBe(true)
+    } finally {
+      held.release()
+      await held.done
+    }
+  })
+
+  it('create a space once when its creation arrives twice at the same time', async () => {
+    const admin = aUser()
+    const created = {
+      organizationId: admin.organizationId,
+      id: randomUUID(),
+      name: 'Ops',
+      members: [member(admin, 'admin')],
+      timestamp: at(0)
+    }
+    const first = deliverHeld('twake.space.created', created)
+    await first.ready
+
+    const second = deliver('twake.space.created', created)
+    expect(await settled(second)).toBe(false)
+    first.release()
+    await Promise.all([first.done, second])
+
+    expect(await spaceBoards(admin)).toHaveLength(1)
   })
 })
 

@@ -120,6 +120,27 @@ export async function knowsAnySpace(db: Db): Promise<boolean> {
   })
 }
 
+interface LockedSpace {
+  projectId: string
+  deleted: boolean
+}
+
+// Held until the transaction ends, so two events of a space never interleave
+// while other spaces go on. A space still being inserted by another
+// transaction is not seen.
+async function lockSpace(
+  tx: Tx,
+  space: SpaceRef
+): Promise<LockedSpace | undefined> {
+  const [row] = await tx
+    .select({ projectId: spaces.projectId, deletedAt: projects.deletedAt })
+    .from(spaces)
+    .innerJoin(projects, eq(projects.id, spaces.projectId))
+    .where(eq(spaces.id, space.id))
+    .for('update', { of: spaces })
+  return row && { projectId: row.projectId, deleted: row.deletedAt !== null }
+}
+
 /** The project kept for the space, deleted or not. */
 async function projectOf(tx: Tx, space: SpaceRef): Promise<string | undefined> {
   const [row] = await tx
@@ -272,14 +293,13 @@ async function removeMembers(
 
 /** Hides the space's project now, and purges it after 30 days. */
 export async function deleteSpace(tx: Tx, space: SpaceRef): Promise<void> {
-  const projectId = await projectOf(tx, space)
-  if (!projectId) return
-  const [deleted] = await tx
+  const locked = await lockSpace(tx, space)
+  if (!locked || locked.deleted) return
+  const { projectId } = locked
+  await tx
     .update(projects)
     .set({ deletedAt: sql`now()` })
-    .where(and(eq(projects.id, projectId), isNull(projects.deletedAt)))
-    .returning({ id: projects.id })
-  if (!deleted) return
+    .where(eq(projects.id, projectId))
   await schedule(tx, {
     kind: PURGE_SPACE_JOB,
     key: `${PURGE_SPACE_JOB}:${space.id}`,
@@ -296,15 +316,9 @@ export async function matchSpace(
   tx: Tx,
   space: SpaceRef & { name: string; members: z.infer<typeof member>[] }
 ): Promise<void> {
-  const projectId = await projectOf(tx, space)
-  if (projectId) {
-    const [project] = await tx
-      .select({ deletedAt: projects.deletedAt })
-      .from(projects)
-      .where(eq(projects.id, projectId))
-    if (project?.deletedAt) return
-  }
   await provisionSpace(tx, space)
+  const locked = await lockSpace(tx, space)
+  if (!locked || locked.deleted) return
   // Every time, so TwakeSpace learns the project even if an earlier event was
   // lost; it ignores the repeats, which share the event id.
   await enqueue(tx, await provisioned(tx, space))
@@ -326,25 +340,27 @@ export async function matchSpace(
 
 function inOrder<S extends z.ZodType<TimedSpace>>(
   schema: S,
-  apply: (tx: Tx, space: z.output<S>) => Promise<void>
+  apply: (tx: Tx, space: z.output<S>, locked: LockedSpace) => Promise<void>
 ): Handler<PlatformEvent> {
   return async (event, tx) => {
     const space = parseOrDrop(schema, event.body, event.routingKey)
     await asOrganization(tx, space.organizationId)
-    if (await isStale(tx, space)) return
-    await apply(tx, space)
+    const locked = await lockSpace(tx, space)
+    if (!locked || (await isStale(tx, space))) return
+    await apply(tx, space, locked)
     await applied(tx, space)
   }
 }
 
 export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
-  // A replay creates nothing, and publishes the same event again.
+  // A replay creates nothing, and publishes the same event again. Inserting
+  // first makes a concurrent duplicate wait for this one, then lock its row.
   const onCreated: Handler<PlatformEvent> = async (event, tx) => {
     const space = parseOrDrop(spaceCreated, event.body, event.routingKey)
     await asOrganization(tx, space.organizationId)
-    const stale = await isStale(tx, space)
     await provisionSpace(tx, space)
-    if (!stale) {
+    await lockSpace(tx, space)
+    if (!(await isStale(tx, space))) {
       await upsertMembers(tx, space, space.members)
       await applied(tx, space)
     }
@@ -355,24 +371,40 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
     if (space.name !== undefined) await renameSpace(tx, space, space.name)
   })
 
-  const onMembersChanged = inOrder(membersChanged, (tx, space) =>
-    upsertMembers(tx, space, space.members)
+  // A deleted space stays without members, whatever arrives after.
+  const onMembersChanged = inOrder(
+    membersChanged,
+    async (tx, space, locked) => {
+      if (!locked.deleted) await upsertMembers(tx, space, space.members)
+    }
   )
 
-  const onMembersRemoved = inOrder(membersRemoved, async (tx, space) => {
-    const uuids = space.members.flatMap(p => (p.uuid ? [p.uuid] : []))
-    const emails = space.members.flatMap(p => (p.email ? [p.email] : []))
-    await removeMembers(
-      tx,
-      space,
-      or(
-        inArray(projectMembers.userId, uuids),
-        inArray(projectMembers.email, emails)
+  const onMembersRemoved = inOrder(
+    membersRemoved,
+    async (tx, space, locked) => {
+      if (locked.deleted) return
+      const uuids = space.members.flatMap(p => (p.uuid ? [p.uuid] : []))
+      const emails = space.members.flatMap(p => (p.email ? [p.email] : []))
+      await removeMembers(
+        tx,
+        space,
+        or(
+          inArray(projectMembers.userId, uuids),
+          inArray(projectMembers.email, emails)
+        )
       )
-    )
-  })
+    }
+  )
 
-  const onSynced = inOrder(spaceCreated, matchSpace)
+  const onSynced: Handler<PlatformEvent> = async (event, tx) => {
+    const space = parseOrDrop(spaceCreated, event.body, event.routingKey)
+    await asOrganization(tx, space.organizationId)
+    await provisionSpace(tx, space)
+    await lockSpace(tx, space)
+    if (await isStale(tx, space)) return
+    await matchSpace(tx, space)
+    await applied(tx, space)
+  }
 
   // Applied whatever its timestamp, since a space id is never reused.
   const onDeleted: Handler<PlatformEvent> = async (event, tx) => {
@@ -401,6 +433,9 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
           )
         )
       )
+      // In one order, so two of these cannot deadlock.
+      .orderBy(spaces.id)
+      .for('update', { of: spaces })
     for (const { id } of gone) {
       await deleteSpace(tx, { organizationId: sync.organizationId, id })
     }
