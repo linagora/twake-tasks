@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { followZone, localZone } from '@/ui/boards/dueLabel'
@@ -115,6 +116,23 @@ describe('Reminders', () => {
     expect(boardsApi.addReminder).toHaveBeenCalledWith(board.id, logo.id, {
       at: '2026-11-01T23:00:00.000Z'
     })
+  })
+
+  it('says when the set time is in the past', async () => {
+    const { boardsApi, openEditor } = await openLogo(null)
+    boardsApi.addReminder.mockRejectedValueOnce(
+      new ApiError(400, 'invalid_reminder')
+    )
+
+    const editor = await openEditor()
+    fireEvent.change(editor.getByDisplayValue(''), {
+      target: { value: '11/02/2020 08:00' }
+    })
+    fireEvent.click(editor.getByRole('button', { name: 'Save reminder' }))
+
+    expect(await editor.findByRole('alert')).toHaveTextContent(
+      'Pick a time in the future.'
+    )
   })
 
   it('deletes a reminder', async () => {

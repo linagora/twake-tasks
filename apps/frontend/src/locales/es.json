@@ -310,7 +310,8 @@
     "add": "Añadir recordatorio",
     "save": "Guardar recordatorio",
     "delete": "Eliminar recordatorio",
-    "failed": "No se pudo guardar el recordatorio."
+    "failed": "No se pudo guardar el recordatorio.",
+    "past": "Elige una hora futura."
   },
   "quickAdd": {
     "title": "Añadir rápido",

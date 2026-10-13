@@ -310,7 +310,8 @@
     "add": "Aggiungi promemoria",
     "save": "Salva promemoria",
     "delete": "Elimina promemoria",
-    "failed": "Impossibile salvare il promemoria."
+    "failed": "Impossibile salvare il promemoria.",
+    "past": "Scegli un orario futuro."
   },
   "quickAdd": {
     "title": "Aggiunta rapida",
