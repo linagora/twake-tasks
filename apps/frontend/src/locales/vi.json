@@ -291,6 +291,7 @@
     "tasksTo": "Chuyển công việc của mục này sang",
     "moveFailed": "Không thể di chuyển mục.",
     "saveFailed": "Không thể lưu mục.",
+    "nameTaken": "Đã có mục tên %{name}.",
     "deleteFailed": "Không thể xóa mục.",
     "category": {
       "backlog": "Tồn đọng",

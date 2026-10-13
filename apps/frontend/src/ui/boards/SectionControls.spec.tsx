@@ -18,6 +18,27 @@ async function openNewSection() {
   return within(screen.getByRole('dialog', { name: 'New section' }))
 }
 
+describe('section name', () => {
+  it('refuses a name already on the board, in any case, and clears on typing', async () => {
+    const dialog = await openNewSection()
+    const name = dialog.getByRole('textbox', { name: 'Name' })
+
+    fireEvent.change(name, { target: { value: 'to do' } })
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+
+    expect(
+      await dialog.findByText('A section named to do already exists.')
+    ).toBeInTheDocument()
+    expect(name).toBeInvalid()
+    expect(dialog.queryByRole('alert')).not.toBeInTheDocument()
+
+    fireEvent.change(name, { target: { value: 'Review' } })
+    expect(
+      dialog.queryByText('A section named to do already exists.')
+    ).not.toBeInTheDocument()
+  })
+})
+
 describe('section type help', () => {
   it('labels the field and explains the default type', async () => {
     const dialog = await openNewSection()
