@@ -27,25 +27,30 @@ function SectionSelect({
   onChange
 }: {
   boardId: string
-  value: string
-  onChange: (sectionId: string) => void
-}): ReactElement {
+  value: string | null | undefined
+  onChange: (sectionId: string | null) => void
+}): ReactElement | null {
   const { t } = useI18n()
-  const board = useBoard(boardId)
+  const sections = useBoard(boardId).data?.sections
+  const first = sections?.[0]?.id ?? null
+  useEffect(() => {
+    if (sections && value === undefined) onChange(first)
+  }, [sections, value, first, onChange])
+  if (!sections || value === undefined) return null
   return (
     <TextField
       select
       size="small"
       className="u-mr-1"
       label={t('transfer.section')}
-      value={value}
+      value={value ?? ''}
       onChange={event => {
-        onChange(event.target.value)
+        onChange(event.target.value === '' ? null : event.target.value)
       }}
       slotProps={{ select: { native: true } }}
     >
       <option value="">{t('board.noSection')}</option>
-      {board.data?.sections.map(section => (
+      {sections.map(section => (
         <option key={section.id} value={section.id}>
           {section.name}
         </option>
@@ -161,7 +166,8 @@ export function TransferTask({
   const { t } = useI18n()
   const boards = useBoards()
   const [target, setTarget] = useState('')
-  const [sectionId, setSectionId] = useState('')
+  // Undefined until the target board loads and its first section is chosen.
+  const [sectionId, setSectionId] = useState<string | null>()
   const [preview, setPreview] = useState<TransferPreview | null>(null)
   const [removed, setRemoved] = useState<TransferPreview | null>(null)
   const { transfer, refresh } = useTransferTask(boardId, task.id)
@@ -189,23 +195,21 @@ export function TransferTask({
     void refresh()
     onMoved()
   }
+  const to = { boardId: target, sectionId: sectionId ?? null }
   // `expected` is what the person was told, so a difference is worth saying.
   const move = (expected: TransferPreview) => {
-    transfer.mutate(
-      { boardId: target, sectionId: sectionId || null },
-      {
-        onSuccess: result => {
-          stale.current = true
-          setPreview(null)
-          const told = new Set(expected.droppedAssignees.map(p => p.userId))
-          const same =
-            result.droppedAssignees.length === told.size &&
-            result.droppedAssignees.every(p => told.has(p.userId))
-          if (same || result.droppedAssignees.length === 0) finish()
-          else setRemoved(result)
-        }
+    transfer.mutate(to, {
+      onSuccess: result => {
+        stale.current = true
+        setPreview(null)
+        const told = new Set(expected.droppedAssignees.map(p => p.userId))
+        const same =
+          result.droppedAssignees.length === told.size &&
+          result.droppedAssignees.every(p => told.has(p.userId))
+        if (same || result.droppedAssignees.length === 0) finish()
+        else setRemoved(result)
       }
-    )
+    })
   }
   const targets =
     boards.data?.filter(
@@ -220,18 +224,15 @@ export function TransferTask({
       className="u-flex u-flex-items-center u-mt-1"
       onSubmit={event => {
         event.preventDefault()
-        check.mutate(
-          { boardId: target, sectionId: sectionId || null },
-          {
-            onSuccess: result => {
-              if (result.droppedAssignees.length === 0) move(result)
-              else {
-                transfer.reset()
-                setPreview(result)
-              }
+        check.mutate(to, {
+          onSuccess: result => {
+            if (result.droppedAssignees.length === 0) move(result)
+            else {
+              transfer.reset()
+              setPreview(result)
             }
           }
-        )
+        })
       }}
     >
       <TextField
@@ -242,7 +243,7 @@ export function TransferTask({
         value={target}
         onChange={event => {
           setTarget(event.target.value)
-          setSectionId('')
+          setSectionId(undefined)
         }}
         slotProps={{ select: { native: true } }}
       >
@@ -262,7 +263,12 @@ export function TransferTask({
       )}
       <Button
         type="submit"
-        disabled={!target || check.isPending || transfer.isPending || !!removed}
+        disabled={
+          sectionId === undefined ||
+          check.isPending ||
+          transfer.isPending ||
+          !!removed
+        }
       >
         {t('transfer.move')}
       </Button>
