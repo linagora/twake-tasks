@@ -8,6 +8,7 @@ import {
 } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 
+import { ApiError } from '@/application/boards'
 import { Row } from '@/ds/Columns'
 import { EditorActions, EditorPopover, MomentField } from '@/ds/Pickers'
 import { Chips } from '@/ds/SidePanel'
@@ -149,7 +150,11 @@ export function Reminders({
         )}
         {add.isError && (
           <Typography role="alert" variant="caption" color="error">
-            {t('reminders.failed')}
+            {fixed &&
+            add.error instanceof ApiError &&
+            add.error.code === 'invalid_reminder'
+              ? t('reminders.past')
+              : t('reminders.failed')}
           </Typography>
         )}
         <EditorActions>

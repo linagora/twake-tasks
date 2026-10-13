@@ -310,7 +310,8 @@
     "add": "Ajouter un rappel",
     "save": "Enregistrer le rappel",
     "delete": "Supprimer le rappel",
-    "failed": "Le rappel n'a pas pu être enregistré."
+    "failed": "Le rappel n'a pas pu être enregistré.",
+    "past": "Choisissez une heure dans le futur."
   },
   "quickAdd": {
     "title": "Ajout rapide",

@@ -310,7 +310,8 @@
     "add": "Thêm lời nhắc",
     "save": "Lưu lời nhắc",
     "delete": "Xóa lời nhắc",
-    "failed": "Không thể lưu lời nhắc."
+    "failed": "Không thể lưu lời nhắc.",
+    "past": "Hãy chọn một thời điểm trong tương lai."
   },
   "quickAdd": {
     "title": "Thêm nhanh",

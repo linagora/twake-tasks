@@ -310,7 +310,8 @@
     "add": "Erinnerung hinzufügen",
     "save": "Erinnerung speichern",
     "delete": "Erinnerung löschen",
-    "failed": "Die Erinnerung konnte nicht gespeichert werden."
+    "failed": "Die Erinnerung konnte nicht gespeichert werden.",
+    "past": "Wählen Sie einen Zeitpunkt in der Zukunft."
   },
   "quickAdd": {
     "title": "Schnell hinzufügen",
