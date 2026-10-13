@@ -183,4 +183,45 @@ describe('saved filters', () => {
 
     expect(response.json()).toEqual({ labels: ['client', 'urgent'] })
   })
+
+  it('names the parent of a sub-task', async () => {
+    const owner = aUser()
+    const board = (
+      await api.as(owner).post('/boards', { name: 'Design', keyPrefix: 'DES' })
+    ).json<{ id: string; sections: { id: string; category: string }[] }>()
+    const started = board.sections.find(each => each.category === 'started')
+    const path = `/boards/${board.id}/tasks`
+    const parent = (
+      await api
+        .as(owner)
+        .post(path, { sectionId: started?.id, title: 'Parent task' })
+    ).json<{ id: string }>()
+    await api.as(owner).post(path, { parentId: parent.id, title: 'Step 1' })
+    const { id } = (
+      await api.as(owner).post('/filters', { name: 'All', criteria: {} })
+    ).json<{ id: string }>()
+
+    const { tasks } = (
+      await api.as(owner).get(`/filters/${id}/tasks?zone=${zone}`)
+    ).json<{
+      tasks: {
+        title: string
+        category: string | null
+        parentTitle: string | null
+      }[]
+    }>()
+
+    expect(tasks).toEqual([
+      expect.objectContaining({
+        title: 'Parent task',
+        category: 'started',
+        parentTitle: null
+      }),
+      expect.objectContaining({
+        title: 'Step 1',
+        category: null,
+        parentTitle: 'Parent task'
+      })
+    ])
+  })
 })

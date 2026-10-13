@@ -125,6 +125,7 @@ export type AgendaTask = Task & {
   completable: boolean
   boardId: string
   boardName: string
+  parentTitle: string | null
 }
 
 /** `excerpt` quotes the description around the match when the title does not match. */
