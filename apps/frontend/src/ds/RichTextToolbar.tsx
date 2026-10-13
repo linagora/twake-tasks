@@ -111,7 +111,11 @@ export function Toolbar({
       >
         <Box
           component="span"
-          sx={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}
+          sx={{
+            fontFamily: 'ui-monospace, monospace',
+            fontSize: 12,
+            whiteSpace: 'nowrap'
+          }}
         >
           {'</>'}
         </Box>
