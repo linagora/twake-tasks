@@ -15,14 +15,20 @@ export interface ConsumerNames {
 }
 
 export interface Delivery {
+  exchange: string
   routingKey: string
   messageId: string | undefined
   body: unknown
 }
 
 export interface Consumer {
+  deadLetter(delivery: Delivery, reason: string): Promise<void>
   close(): Promise<void>
 }
+
+const SPACE_EVENTS = 'twake.space.#'
+// The client binds the dead letter queue with the queue's first routing key.
+const DEAD_LETTER_KEY = `${SPACE_EVENTS}.dead`
 
 const MAX_ATTEMPTS = 5
 
@@ -48,22 +54,24 @@ export async function startConsumer(
     url,
     logger,
     prefetch: 1,
-    retryDelay: options.retryDelayMs ?? 1000
+    retryDelay: options.retryDelayMs ?? 1000,
+    // Only dead letters are published here, and the next pass retries them.
+    publishMaxAttempts: 1
   })
   await client.init()
   // prefetch 1: only one message is ever being retried.
   let failing = { messageId: undefined as string | undefined, attempts: 0 }
   await client.subscribe(
     names.spaceExchange,
-    'twake.space.#',
+    SPACE_EVENTS,
     names.queue,
-    async (body, { routingKey, messageId: sentId }) => {
+    async (body, { exchange, routingKey, messageId: sentId }) => {
       const messageId =
         sentId ??
         (routingKey === 'user.settings.updated' ? contentId(body) : undefined)
       let outcome: Outcome
       try {
-        outcome = await handle({ routingKey, messageId, body })
+        outcome = await handle({ exchange, routingKey, messageId, body })
       } catch (error) {
         if (isTransient(error)) throw error
         if (failing.messageId !== messageId)
@@ -99,7 +107,27 @@ export async function startConsumer(
       maxRetryDelay: 60_000
     }
   )
-  return { close: () => client.close() }
+  return {
+    // An unroutable publish fails, so the caller keeps the event.
+    deadLetter: (delivery, reason) =>
+      client.publish(
+        names.deadLetterExchange,
+        DEAD_LETTER_KEY,
+        delivery.body as Record<string, unknown>,
+        {
+          ...(delivery.messageId !== undefined && {
+            messageId: delivery.messageId
+          }),
+          mandatory: true,
+          headers: {
+            'x-twake-tasks-exchange': delivery.exchange,
+            'x-twake-tasks-routing-key': delivery.routingKey,
+            'x-twake-tasks-reason': reason
+          }
+        }
+      ),
+    close: () => client.close()
+  }
 }
 
 // With no organizationId, ldap-rest answers with a twake.space.synced for every

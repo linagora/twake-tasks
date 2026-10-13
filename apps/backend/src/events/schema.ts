@@ -30,3 +30,18 @@ export const processedEvents = pgTable(
   },
   table => [primaryKey({ columns: [table.consumer, table.source, table.id] })]
 )
+
+// Events about a space not known yet, set aside so the queue goes on. Retried
+// across organizations, so outside row level security.
+export const parkedEvents = pgTable(
+  'parked_events',
+  {
+    messageId: text('message_id').primaryKey(),
+    exchange: text().notNull(),
+    routingKey: text('routing_key').notNull(),
+    body: jsonb().notNull(),
+    reason: text().notNull(),
+    parkedAt: timestamptz('parked_at').notNull().defaultNow()
+  },
+  table => [index().on(table.parkedAt)]
+)

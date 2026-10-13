@@ -13,7 +13,11 @@ import {
 import { z } from 'zod'
 import type { OutgoingEvent, PlatformEvent } from '../../events/envelope.ts'
 import { enqueue } from '../../events/outbox.ts'
-import { parseOrDrop, type Handler } from '../../events/router.ts'
+import {
+  NotYetKnownError,
+  parseOrDrop,
+  type Handler
+} from '../../events/router.ts'
 import { asOrganization, type Db, type Tx } from '../../infra/db.ts'
 import {
   schedule,
@@ -338,6 +342,13 @@ export async function matchSpace(
   )
 }
 
+// Only twake.space.created and a sync bring a space.
+async function lockKnownSpace(tx: Tx, space: SpaceRef): Promise<LockedSpace> {
+  const locked = await lockSpace(tx, space)
+  if (!locked) throw new NotYetKnownError(`space ${space.id} not known yet`)
+  return locked
+}
+
 function inOrder<S extends z.ZodType<TimedSpace>>(
   schema: S,
   apply: (tx: Tx, space: z.output<S>, locked: LockedSpace) => Promise<void>
@@ -345,8 +356,8 @@ function inOrder<S extends z.ZodType<TimedSpace>>(
   return async (event, tx) => {
     const space = parseOrDrop(schema, event.body, event.routingKey)
     await asOrganization(tx, space.organizationId)
-    const locked = await lockSpace(tx, space)
-    if (!locked || (await isStale(tx, space))) return
+    const locked = await lockKnownSpace(tx, space)
+    if (await isStale(tx, space)) return
     await apply(tx, space, locked)
     await applied(tx, space)
   }
@@ -410,6 +421,7 @@ export function spaceRoutes(): ReadonlyMap<string, Handler<PlatformEvent>> {
   const onDeleted: Handler<PlatformEvent> = async (event, tx) => {
     const space = parseOrDrop(spaceEvent, event.body, event.routingKey)
     await asOrganization(tx, space.organizationId)
+    await lockKnownSpace(tx, space)
     await deleteSpace(tx, space)
     await applied(tx, space)
   }

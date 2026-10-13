@@ -14,6 +14,15 @@ export class MalformedEventError extends Error {}
 // the dead letter queue to be looked at and replayed.
 export class RejectedEventError extends Error {}
 
+// Thrown for an event about a space Tasks does not hold yet: the event that
+// brings it may only be late.
+export class NotYetKnownError extends Error {}
+
+export type Park = (
+  delivery: Delivery & { messageId: string },
+  reason: string
+) => Promise<void>
+
 export function parseOrDrop<T extends z.ZodType>(
   schema: T,
   value: unknown,
@@ -27,14 +36,15 @@ export function parseOrDrop<T extends z.ZodType>(
 }
 
 export type Outcome =
-  'processed' | 'duplicate' | 'unrouted' | 'malformed' | 'rejected'
+  'processed' | 'duplicate' | 'unrouted' | 'malformed' | 'rejected' | 'parked'
 
 export function createMessageHandler(deps: {
   routes: ReadonlyMap<string, Handler<PlatformEvent>>
   dedupe: Deduplicator
+  park: Park
   logger: Logger
 }) {
-  const { routes, dedupe, logger } = deps
+  const { routes, dedupe, park, logger } = deps
 
   return async (delivery: Delivery): Promise<Outcome> => {
     const context = {
@@ -62,6 +72,11 @@ export function createMessageHandler(deps: {
         tx => handler(event, tx)
       )
     } catch (error) {
+      if (error instanceof NotYetKnownError) {
+        await park({ ...delivery, messageId: event.messageId }, error.message)
+        logger.info({ ...context, reason: error.message }, 'event parked')
+        return 'parked'
+      }
       if (error instanceof RejectedEventError) {
         logger.warn(
           { ...context, reason: error.message },

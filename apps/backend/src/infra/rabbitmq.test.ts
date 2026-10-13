@@ -109,6 +109,7 @@ describe('startConsumer', () => {
 
     await vi.waitFor(() => {
       expect(handle).toHaveBeenCalledWith({
+        exchange: 'space',
         routingKey: 'twake.space.created',
         messageId: 'm-1',
         body: { key: 'twake.space.created' }
@@ -209,6 +210,33 @@ describe('startConsumer', () => {
       expect(await ready(DEAD_LETTER_QUEUE)).toBe(1)
     })
     expect(await ready(QUEUE)).toBe(0)
+  })
+
+  it('dead letters a parked event with where it came from and why', async () => {
+    await consume(() => Promise.resolve('processed'))
+
+    await consumer?.deadLetter(
+      {
+        exchange: 'space',
+        routingKey: 'twake.space.member.added',
+        messageId: 'm-1',
+        body: { id: 's1' }
+      },
+      'space s1 not known yet'
+    )
+
+    const message = await vi.waitFor(async () => {
+      const got = await channel.get(DEAD_LETTER_QUEUE, { noAck: true })
+      if (!got) throw new Error('nothing yet')
+      return got
+    })
+    expect(message.properties.messageId).toBe('m-1')
+    expect(message.properties.headers).toMatchObject({
+      'x-twake-tasks-exchange': 'space',
+      'x-twake-tasks-routing-key': 'twake.space.member.added',
+      'x-twake-tasks-reason': 'space s1 not known yet'
+    })
+    expect(JSON.parse(message.content.toString())).toEqual({ id: 's1' })
   })
 
   it('dead letters a message that is not JSON', async () => {
