@@ -309,7 +309,7 @@
     "daysBefore": "%{smart_count} day before |||| %{smart_count} days before",
     "add": "Add reminder",
     "save": "Save reminder",
-    "delete": "Delete reminder %{reminder}",
+    "delete": "Delete reminder: %{reminder}",
     "failed": "The reminder could not be saved.",
     "past": "Pick a time in the future."
   },

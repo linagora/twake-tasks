@@ -162,8 +162,10 @@ export const BarNavItem = styled(NavItem)(({ theme }) => ({
     flex: '1 1 0',
     minWidth: 0,
     margin: 0,
-    overflow: 'hidden',
-    '& span': { overflow: 'hidden', textOverflow: 'ellipsis' }
+    '& a > div > span:not(.MuiBadge-root)': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
   }
 }))
 

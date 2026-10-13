@@ -309,7 +309,7 @@
     "daysBefore": "%{smart_count} giorno prima |||| %{smart_count} giorni prima",
     "add": "Aggiungi promemoria",
     "save": "Salva promemoria",
-    "delete": "Elimina promemoria %{reminder}",
+    "delete": "Elimina promemoria: %{reminder}",
     "failed": "Impossibile salvare il promemoria.",
     "past": "Scegli un orario futuro."
   },
