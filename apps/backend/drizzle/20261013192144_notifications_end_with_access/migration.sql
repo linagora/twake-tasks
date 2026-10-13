@@ -1,0 +1,2 @@
+ALTER POLICY "own_select" ON "notifications" TO public USING ("notifications"."user_id" = nullif(current_setting('app.user_id', true), '')::uuid or current_setting('app.revoking_access', true) = 'on');--> statement-breakpoint
+ALTER POLICY "own_delete" ON "notifications" TO public USING ("notifications"."user_id" = nullif(current_setting('app.user_id', true), '')::uuid or current_setting('app.revoking_access', true) = 'on');

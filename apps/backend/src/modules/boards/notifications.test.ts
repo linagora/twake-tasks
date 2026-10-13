@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
-import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
+import {
+  aB2cUser,
+  aUser,
+  joinBoard,
+  startApp,
+  type TestUser
+} from '../../testing/app.ts'
 
 interface Notification {
   id: string
@@ -21,16 +27,17 @@ afterAll(async () => {
   await sql.end()
 })
 
-async function aTeam() {
-  const alice = aUser({ email: 'alice@example.com' })
-  const bob = aUser({
-    organizationId: alice.organizationId,
-    email: 'bob@example.com'
-  })
-  const carol = aUser({
-    organizationId: alice.organizationId,
-    email: 'carol@example.com'
-  })
+async function aTeam(b2c = false) {
+  const alice = b2c ? aB2cUser() : aUser({ email: 'alice@example.com' })
+  const bob = b2c
+    ? aB2cUser()
+    : aUser({ organizationId: alice.organizationId, email: 'bob@example.com' })
+  const carol = b2c
+    ? aB2cUser()
+    : aUser({
+        organizationId: alice.organizationId,
+        email: 'carol@example.com'
+      })
   const board = (
     await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
   ).json<{ id: string }>()
@@ -262,21 +269,35 @@ describe('following and notifications', () => {
   })
 
   describe('when the person loses access to the task', () => {
-    async function anAssignedBob() {
-      const team = await aTeam()
-      await api
-        .as(team.alice)
-        .put(`${team.path}/assignees`, { userIds: [team.bob.userId] })
+    async function anAssignedBob(b2c = false) {
+      const team = await aTeam(b2c)
+      const boardId = team.path.split('/')[2] ?? ''
+      const assignBob = async () => {
+        await api.as(team.alice).put(`${team.path}/assignees`, { userIds: [] })
+        await api
+          .as(team.alice)
+          .put(`${team.path}/assignees`, { userIds: [team.bob.userId] })
+      }
+      await assignBob()
       const unread = async () =>
         (await api.as(team.bob).get('/notifications/unread')).json<{
           projects: unknown[]
         }>().projects
-      return { ...team, unread }
+      return { ...team, boardId, assignBob, unread }
     }
 
-    async function moveToAnotherProject(
-      team: Awaited<ReturnType<typeof anAssignedBob>>
-    ) {
+    type Team = Awaited<ReturnType<typeof anAssignedBob>>
+
+    async function expectAFreshStart(team: Team) {
+      expect(await team.inbox(team.bob)).toEqual([])
+      expect(await team.unread()).toEqual([])
+      await team.assignBob()
+      expect(await team.inbox(team.bob)).toMatchObject([
+        { reason: 'assigned', readAt: null }
+      ])
+    }
+
+    async function moveToAnotherProject(team: Team) {
       const secret = (
         await api
           .as(team.alice)
@@ -302,33 +323,71 @@ describe('following and notifications', () => {
 
     it('hides the notifications of a task once removed from its project', async () => {
       const team = await anAssignedBob()
-      const boardId = team.path.split('/')[2] ?? ''
 
       await api
         .as(team.alice)
-        .delete(`/boards/${boardId}/members/${team.bob.userId}`)
+        .delete(`/boards/${team.boardId}/members/${team.bob.userId}`)
 
       expect(await team.inbox(team.bob)).toEqual([])
       expect(await team.unread()).toEqual([])
     })
 
-    it('leaves the notifications of a task out of reach alone when marking read', async () => {
+    it('starts afresh once a task moved out of reach comes back', async () => {
       const team = await anAssignedBob()
-      const boardId = team.path.split('/')[2] ?? ''
       const secret = await moveToAnotherProject(team)
 
-      await api.as(team.bob).post('/notifications/read', {})
       await api
         .as(team.alice)
         .post(`/boards/${secret}/tasks/${team.taskId}/transfer`, {
-          boardId,
+          boardId: team.boardId,
           sectionId: null
         })
+
+      await expectAFreshStart(team)
+    })
+
+    it('starts afresh once someone removed from the project is back', async () => {
+      const team = await anAssignedBob()
+
       await api
         .as(team.alice)
-        .put(`${team.path}/assignees`, { userIds: [team.bob.userId] })
+        .delete(`/boards/${team.boardId}/members/${team.bob.userId}`)
+      await joinBoard(db, team.alice, team.boardId, team.bob, 'editor')
 
-      expect(await team.inbox(team.bob)).toMatchObject([{ readAt: null }])
+      await expectAFreshStart(team)
+    })
+
+    it.each([
+      { kind: 'B2B', b2c: false },
+      { kind: 'B2C', b2c: true }
+    ])(
+      'starts afresh once someone who left the project is back ($kind)',
+      async ({ b2c }) => {
+        const team = await anAssignedBob(b2c)
+
+        await api
+          .as(team.bob)
+          .delete(`/boards/${team.boardId}/members/${team.bob.userId}`)
+        await joinBoard(db, team.alice, team.boardId, team.bob, 'editor')
+
+        await expectAFreshStart(team)
+      }
+    )
+
+    it('starts afresh once the project a board moved to lets them in', async () => {
+      const team = await anAssignedBob()
+      const ops = (
+        await api
+          .as(team.alice)
+          .post('/boards', { name: 'Ops', keyPrefix: 'OPS' })
+      ).json<{ id: string; project: { id: string } }>()
+
+      await api
+        .as(team.alice)
+        .post(`/boards/${team.boardId}/move`, { projectId: ops.project.id })
+      await joinBoard(db, team.alice, ops.id, team.bob, 'editor')
+
+      await expectAFreshStart(team)
     })
   })
 })

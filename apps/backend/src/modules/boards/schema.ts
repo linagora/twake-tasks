@@ -632,12 +632,17 @@ export const notifications = pgTable.withRLS(
       foreignColumns: [tasks.tenant, tasks.id]
     }),
     tenantPolicy(table.organizationId, visibleTask(table.taskId)),
-    // Anyone who sees the task may notify someone of a change to it.
+    // Anyone who sees the task may notify someone of a change to it. Taking
+    // someone's access away drops their notifications through the flag, which
+    // a delete needs on select too.
     ...(['select', 'update', 'delete'] as const).map(command =>
       pgPolicy(`own_${command}`, {
         as: 'restrictive',
         for: command,
-        using: sql`${table.userId} = ${currentUser}`
+        using:
+          command === 'update'
+            ? sql`${table.userId} = ${currentUser}`
+            : sql`${table.userId} = ${currentUser} or current_setting('app.revoking_access', true) = 'on'`
       })
     )
   ]

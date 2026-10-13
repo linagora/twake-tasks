@@ -353,6 +353,33 @@ describe('twake.space.member.removed', () => {
 
     expect(await followersOf(db, admin, task.id)).toEqual([admin.userId])
   })
+
+  it('starts the notifications of someone removed afresh once they are back', async () => {
+    const admin = aUser()
+    const gone = aUser({ organizationId: admin.organizationId })
+    const { space, boardId } = await aSpaceWithATask(admin, [gone])
+    const task = await firstTaskOf(admin, boardId)
+    const inbox = async () =>
+      (await api.as(gone).get('/notifications')).json<{
+        notifications: { reason: string; readAt: string | null }[]
+      }>().notifications
+    expect(await inbox()).toHaveLength(1)
+
+    await deliver('twake.space.member.removed', {
+      ...space,
+      members: [{ uuid: gone.userId }]
+    })
+    await deliver('twake.space.member.added', {
+      ...space,
+      members: [member(gone, 'editor')]
+    })
+
+    expect(await inbox()).toEqual([])
+    await api.as(admin).put(`/boards/${boardId}/tasks/${task.id}/assignees`, {
+      userIds: [gone.userId]
+    })
+    expect(await inbox()).toMatchObject([{ reason: 'assigned', readAt: null }])
+  })
 })
 
 describe('twake.space.deleted', () => {
