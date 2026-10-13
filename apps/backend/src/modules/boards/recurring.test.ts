@@ -71,6 +71,26 @@ describe('recurring tasks', () => {
     ).toHaveLength(2)
   })
 
+  it('keeps the gap between the due date and the deadline', async () => {
+    const { edit, complete, read } = await aTaskOf(aUser(), false)
+
+    await edit({
+      dueDate: '2099-01-10',
+      deadline: '2099-01-20',
+      recurrence: { every: 1, unit: 'weeks', fromCompletion: false }
+    })
+    expect((await complete()).statusCode).toBe(204)
+    expect(await read()).toMatchObject({
+      dueDate: '2099-01-17',
+      deadline: '2099-01-27'
+    })
+    expect((await complete()).statusCode).toBe(204)
+    expect(await read()).toMatchObject({
+      dueDate: '2099-01-24',
+      deadline: '2099-02-03'
+    })
+  })
+
   it('skips past occurrences of an overdue task', async () => {
     const { edit, complete, read } = await aTaskOf(aUser(), false)
 

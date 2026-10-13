@@ -21,6 +21,12 @@ export function shift(day: string, amount: number, unit: Unit): string {
   return last.toISOString().slice(0, 10)
 }
 
+export function daysBetween(from: string, to: string): number {
+  return Math.round(
+    (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 864e5
+  )
+}
+
 export function todayIn(zone: string | null): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: zone ?? 'UTC' }).format(
     new Date()
