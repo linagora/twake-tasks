@@ -141,6 +141,9 @@ export function fakeBoardsApi(boards: Board[] = []) {
     category:
       board.sections.find(section => section.id === task.sectionId)?.category ??
       null,
+    completable:
+      task.sectionId === null ||
+      board.sections.some(section => section.category === 'completed'),
     boardId: board.id,
     boardName: board.name
   })

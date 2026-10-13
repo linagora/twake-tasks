@@ -81,7 +81,12 @@ function AgendaRow({
         <Checkbox
           size="small"
           checked={done || complete.isPending || complete.isSuccess}
-          disabled={done || task.canceledAt !== null || complete.isPending}
+          disabled={
+            done ||
+            task.canceledAt !== null ||
+            !task.completable ||
+            complete.isPending
+          }
           slotProps={{
             input: {
               'aria-label': t('layout.complete', { title: task.title })
