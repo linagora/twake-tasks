@@ -509,6 +509,7 @@
     }
   },
   "agenda": {
+    "subtaskOf": "Teilaufgabe von %{title}",
     "today": "Heute",
     "upcoming": "Demnächst",
     "mine": "Meine Aufgaben",

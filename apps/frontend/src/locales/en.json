@@ -509,6 +509,7 @@
     }
   },
   "agenda": {
+    "subtaskOf": "Sub-task of %{title}",
     "today": "Today",
     "upcoming": "Upcoming",
     "mine": "My tasks",

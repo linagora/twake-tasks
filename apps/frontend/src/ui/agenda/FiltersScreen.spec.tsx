@@ -98,6 +98,23 @@ describe('FiltersScreen', () => {
     ).toBeVisible()
   })
 
+  it('names the parent of a sub-task', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    const parent = aTask(null, { key: 'DES-1', title: 'Logo' })
+    design.tasks = [
+      parent,
+      aTask(null, { key: 'DES-2', title: 'Sketch', parentId: parent.id })
+    ]
+    const boardsApi = fakeBoardsApi([design])
+    const { id } = await boardsApi.createFilter({ name: 'All', criteria: {} })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    expect(await screen.findByText('Logo')).toBeVisible()
+    expect(screen.getByText('DES-2 · Design · Sub-task of Logo')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Board' }))
+    expect(screen.getByText('DES-2 · Design · Sub-task of Logo')).toBeVisible()
+  })
+
   it('says so when the filter does not exist, with a way back to the filters', async () => {
     renderRoute('/filters/unknown', { boardsApi: boards() })
 

@@ -58,6 +58,7 @@ describe('SearchScreen', () => {
         completable: true,
         boardId: design.id,
         boardName: design.name,
+        parentTitle: null,
         excerpt: '…for the spring fair in Lyon'
       }
     ])

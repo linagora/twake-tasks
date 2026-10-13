@@ -509,6 +509,7 @@
     }
   },
   "agenda": {
+    "subtaskOf": "Sottoattività di %{title}",
     "today": "Oggi",
     "upcoming": "In arrivo",
     "mine": "Le mie attività",

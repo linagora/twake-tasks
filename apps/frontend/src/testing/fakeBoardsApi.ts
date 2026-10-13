@@ -145,7 +145,10 @@ export function fakeBoardsApi(boards: Board[] = []) {
       task.sectionId === null ||
       board.sections.some(section => section.category === 'completed'),
     boardId: board.id,
-    boardName: board.name
+    boardName: board.name,
+    parentTitle:
+      board.tasks.find(candidate => candidate.id === task.parentId)?.title ??
+      null
   })
 
   const filters: SavedFilter[] = []

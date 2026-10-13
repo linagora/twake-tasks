@@ -509,6 +509,7 @@
     }
   },
   "agenda": {
+    "subtaskOf": "Sous-tâche de %{title}",
     "today": "Aujourd'hui",
     "upcoming": "À venir",
     "mine": "Mes tâches",

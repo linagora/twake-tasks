@@ -30,9 +30,18 @@ import {
   useFilters,
   type AgendaView
 } from '@/ui/boards/queries'
-import { useI18n } from '@/ui/i18n/useI18n'
+import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
 import { NotFoundScreen } from '@/ui/shell/Problems'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
+
+const contextOf = (task: AgendaTask, t: I18nApi['t']): string =>
+  [
+    task.key,
+    task.boardName,
+    task.parentTitle && t('agenda.subtaskOf', { title: task.parentTitle })
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
 export function Group({
   label,
@@ -105,7 +114,7 @@ function AgendaRow({
           <Highlight text={task.title} query={highlight} />
         </Link>
       }
-      context={`${task.key} · ${task.boardName}`}
+      context={contextOf(task, t)}
       excerpt={
         'excerpt' in task &&
         task.excerpt && <Highlight text={task.excerpt} query={highlight} />
@@ -220,10 +229,11 @@ function ByStatus({ tasks }: { tasks: AgendaTask[] }): ReactElement {
 }
 
 function FilterCard({ task }: { task: AgendaTask }): ReactElement {
+  const { t } = useI18n()
   return (
     <Card label={`${task.key} ${task.title}`}>
       <Typography variant="caption" color="textSecondary">
-        {`${task.key} · ${task.boardName}`}
+        {contextOf(task, t)}
       </Typography>
       <CardTitle>
         <Link

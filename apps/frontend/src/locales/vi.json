@@ -509,6 +509,7 @@
     }
   },
   "agenda": {
+    "subtaskOf": "Việc con của %{title}",
     "today": "Hôm nay",
     "upcoming": "Sắp tới",
     "mine": "Việc của tôi",
