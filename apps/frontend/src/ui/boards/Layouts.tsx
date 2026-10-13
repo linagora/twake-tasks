@@ -1,8 +1,9 @@
 import { CalendarToday, Icon, List, Mosaic } from '@linagora/twake-icons'
 import { ToggleButton, useMediaQuery, useTheme } from '@linagora/twake-mui'
 import dayjs from 'dayjs'
-import localeData from 'dayjs/plugin/localeData'
 import { useState, type ReactElement, type ReactNode } from 'react'
+
+import '@/ds/dayjsLocales'
 
 import {
   CalendarBody,
@@ -119,8 +120,6 @@ export function ListLayout({
     </>
   )
 }
-
-dayjs.extend(localeData)
 
 const addDays = (day: string, amount: number) => {
   const date = new Date(`${day}T00:00:00Z`)

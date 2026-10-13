@@ -1,9 +1,4 @@
-import 'dayjs/locale/de'
-import 'dayjs/locale/es'
-import 'dayjs/locale/fr'
-import 'dayjs/locale/it'
-import 'dayjs/locale/ru'
-import 'dayjs/locale/vi'
+import '@/ds/dayjsLocales'
 
 import { Box, Popover } from '@linagora/twake-mui'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
