@@ -172,7 +172,19 @@ export function Toolbar({
             event.preventDefault()
             event.stopPropagation()
             const href = url.trim()
-            if (href) chain().extendMarkRange('link').setLink({ href }).run()
+            if (href && editor.state.selection.empty) {
+              // The link mark is inclusive, so drop it or the next typed text joins the link.
+              chain()
+                .insertContent({
+                  type: 'text',
+                  text: href,
+                  marks: [{ type: 'link', attrs: { href } }]
+                })
+                .unsetMark('link')
+                .run()
+            } else if (href) {
+              chain().extendMarkRange('link').setLink({ href }).run()
+            }
             setLinkAnchor(null)
           }}
         >

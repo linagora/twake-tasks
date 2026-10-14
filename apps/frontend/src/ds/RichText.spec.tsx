@@ -114,6 +114,34 @@ describe('link tool', () => {
     expect(submit).not.toHaveBeenCalled()
   })
 
+  it('inserts the address as a link when no text is selected', async () => {
+    const onChange = vi.fn()
+    renderWithProviders(
+      <RichTextEditor
+        label="Description"
+        initial="Website"
+        labels={LABELS}
+        onChange={onChange}
+      />
+    )
+
+    await screen.findByRole('textbox', { name: 'Description' })
+    fireEvent.click(screen.getByRole('button', { name: 'Link' }))
+    fireEvent.change(await screen.findByRole('textbox', { name: 'URL' }), {
+      target: { value: 'https://example.com/flowers' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(
+      await screen.findByRole('link', { name: 'https://example.com/flowers' })
+    ).toHaveAttribute('href', 'https://example.com/flowers')
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.stringContaining(
+        '[https://example.com/flowers](https://example.com/flowers)'
+      )
+    )
+  })
+
   it('does not send the comment on Ctrl+Enter in the link field', async () => {
     const onSubmit = vi.fn()
     renderWithProviders(
