@@ -154,6 +154,17 @@ describe('the embedded view', () => {
     })
   })
 
+  it('pads the trash once, in the frame', async () => {
+    const board = aBoard({ name: 'Roadmap', project: roadmap })
+    renderRoute(`/embed/projects/${roadmap.id}/boards/${board.id}/trash`, {
+      boardsApi: projectBoardsApi([board])
+    })
+
+    const main = (await findEmptyState('The trash is empty')).closest('main')
+    expect(main).not.toHaveClass('u-p-2')
+    expect(main?.parentElement).toHaveStyle({ paddingLeft: '16px' })
+  })
+
   it('opens a board inside the project embed and comes back', async () => {
     const board = aBoard({ name: 'Roadmap', project: roadmap })
     const { router } = renderRoute(`/embed/projects/${roadmap.id}`, {
