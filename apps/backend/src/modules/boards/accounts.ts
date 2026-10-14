@@ -18,6 +18,7 @@ import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { userSettings } from '../settings/schema.ts'
 import { spaces } from '../spaces/schema.ts'
+import { bumpProjects } from './access.ts'
 import {
   inviteEmails,
   notifications,
@@ -175,6 +176,16 @@ async function forget(
       )
     )
   if (userId) {
+    // While the boards are still visible through a B2C membership.
+    await bumpProjects(
+      tx,
+      (
+        await tx
+          .select({ projectId: projectMembers.projectId })
+          .from(projectMembers)
+          .where(eq(projectMembers.userId, userId))
+      ).map(m => m.projectId)
+    )
     await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
     await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
     await tx.delete(notifications).where(eq(notifications.userId, userId))

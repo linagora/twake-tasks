@@ -17,6 +17,7 @@ import { schedule } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
 import { userSettings } from '../settings/schema.ts'
 import {
+  bumpProjects,
   memberLooks,
   membersOf,
   roleIn,
@@ -303,6 +304,7 @@ export function createSharingStore(db: Db) {
           )
           .returning({ userId: projectMembers.userId })
         if (updated.length === 0) throw new Refused('not_found')
+        await bumpProjects(tx, [project.id])
       })
     },
 
@@ -421,9 +423,10 @@ export function createSharingStore(db: Db) {
           project = await sharingToChange(tx, identity, boardId)
         }
         await keepAnAdmin(tx, project.id, userId)
-        // Before the membership goes: in a B2C tenant the tasks, and so their
-        // assignees, followers and notifications, stop being visible to a
-        // member who has left.
+        // Before the membership goes: in a B2C tenant the boards, their tasks,
+        // and so their assignees, followers and notifications, stop being
+        // visible to a member who has left.
+        await bumpProjects(tx, [project.id])
         await revokeProject(tx, [userId], project.id)
         await tx
           .delete(taskAssignees)

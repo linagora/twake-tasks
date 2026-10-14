@@ -239,6 +239,39 @@ describe('space members and name', () => {
     ).toEqual([expect.objectContaining({ name: 'Operations', managed: true })])
   })
 
+  it('makes the open board reload on a membership change, not on a repeat', async () => {
+    const admin = aUser()
+    const newcomer = aUser({ organizationId: admin.organizationId })
+    const space = { organizationId: admin.organizationId, id: randomUUID() }
+    await deliver('twake.space.created', {
+      ...space,
+      name: 'Ops',
+      members: [member(admin, 'admin')]
+    })
+    const [board] = await spaceBoards(admin)
+    const version = async () =>
+      (await api.as(admin).get(`/boards/${board?.id ?? ''}`)).json<{
+        version: number
+      }>().version
+    const first = await version()
+
+    const added = { ...space, members: [member(newcomer, 'viewer')] }
+    await deliver('twake.space.member.added', added)
+    const afterAdd = await version()
+    await deliver('twake.space.member.added', added)
+    const afterRepeat = await version()
+    await deliver('twake.space.member.removed', {
+      ...space,
+      members: [{ uuid: newcomer.userId }]
+    })
+
+    expect([afterAdd, afterRepeat, await version()]).toEqual([
+      first + 1,
+      first + 1,
+      first + 2
+    ])
+  })
+
   it('shows a member added to a space by the name they already signed in with', async () => {
     const admin = aUser()
     const newcomer = aUser({ organizationId: admin.organizationId })

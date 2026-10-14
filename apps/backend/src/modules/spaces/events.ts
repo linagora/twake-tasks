@@ -33,6 +33,7 @@ import {
   schedule,
   type Handler as JobHandler
 } from '../../scheduler/scheduler.ts'
+import { bumpProjects } from '../boards/access.ts'
 import { revokeProject } from '../boards/followers.ts'
 import {
   boards,
@@ -268,13 +269,16 @@ async function upsertMembers(
     )
   )
   if (byUser.size === 0) return
-  await tx
+  const changed = await tx
     .insert(projectMembers)
     .values([...byUser.values()])
     .onConflictDoUpdate({
       target: [projectMembers.projectId, projectMembers.userId],
-      set: { email: sql`excluded.email`, role: sql`excluded.role` }
+      set: { email: sql`excluded.email`, role: sql`excluded.role` },
+      setWhere: sql`(${projectMembers.email}, ${projectMembers.role}) is distinct from (excluded.email, excluded.role)`
     })
+    .returning({ userId: projectMembers.userId })
+  if (changed.length > 0) await bumpProjects(tx, [projectId])
 }
 
 function provisioned(space: SpaceRef, projectId: string): OutgoingEvent {
@@ -345,6 +349,7 @@ async function removeMembers(
     .where(and(eq(projectMembers.projectId, projectId), which))
     .returning({ userId: projectMembers.userId })
   if (removed.length === 0) return
+  await bumpProjects(tx, [projectId])
   await revokeProject(
     tx,
     removed.map(m => m.userId),

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb, inTenant } from '../../infra/db.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { aB2cUser, aUser, startApp, type TestUser } from '../../testing/app.ts'
 import { openStream } from '../../testing/stream.ts'
 import { bumpBoard } from './tasks.ts'
 
@@ -109,6 +109,31 @@ describe('live board updates', () => {
       first + 1,
       first + 2
     ])
+    stream.close()
+  })
+
+  it('tells of a guest who joined, changed role, then left', async () => {
+    const alice = aB2cUser()
+    const guest = aB2cUser()
+    const board = await aBoardOf(alice)
+    await api.as(alice).post(`/boards/${board.id}/invites`, {
+      email: guest.email,
+      role: 'editor'
+    })
+    const stream = openBoardStream(alice, board.id)
+    const first = await nextVersion(stream)
+
+    await api.as(guest).get('/boards')
+    await api
+      .as(alice)
+      .put(`/boards/${board.id}/members/${guest.userId}`, { role: 'viewer' })
+    await api.as(guest).delete(`/boards/${board.id}/members/${guest.userId}`)
+
+    expect([
+      await nextVersion(stream),
+      await nextVersion(stream),
+      await nextVersion(stream)
+    ]).toEqual([first + 1, first + 2, first + 3])
     stream.close()
   })
 
