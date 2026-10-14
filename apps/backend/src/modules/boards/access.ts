@@ -1,7 +1,8 @@
-import { and, asc, eq, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Tx } from '../../infra/db.ts'
 import { userSettings } from '../settings/schema.ts'
 import { boards, projectMembers, projects } from './schema.ts'
+import { bumpBoards } from './tasks.ts'
 
 export type Role = 'viewer' | 'editor' | 'admin'
 
@@ -26,7 +27,19 @@ export function accessibleBoards(tx: Tx, userId: string) {
 }
 
 export async function claimInvites(tx: Tx) {
-  await tx.execute(sql`select app_claim_invites()`)
+  const joined = await tx.execute<{ projectId: string }>(
+    sql`select app_claim_invites() as "projectId"`
+  )
+  await bumpProjects(
+    tx,
+    joined.map(row => row.projectId)
+  )
+}
+
+/** Their open boards reload, members and roles included. */
+export async function bumpProjects(tx: Tx, projectIds: string[]) {
+  if (projectIds.length === 0) return
+  await bumpBoards(tx, inArray(boards.projectId, projectIds))
 }
 
 export interface Member {
