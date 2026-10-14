@@ -64,15 +64,7 @@ function formatDue(lang: Language, value: unknown): string | null {
   if (!match?.[1]) return null
   const [, day, time, zone] = match
   if (!time) return formatDay(lang, day)
-  const wallClock = new Intl.DateTimeFormat(lang, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-    hourCycle: 'h23',
-    timeZone: 'UTC'
-  }).format(new Date(`${day}T${time}:00Z`))
+  const wallClock = formatInstant(lang, new Date(`${day}T${time}:00Z`), 'UTC')
   return zone ? `${wallClock} ${zone}` : wallClock
 }
 
@@ -98,6 +90,7 @@ function formatInstant(lang: Language, at: Date, zone: string): string {
     month: 'short',
     hour: 'numeric',
     minute: '2-digit',
+    hourCycle: 'h23',
     timeZone
   }).format(at)
 }
