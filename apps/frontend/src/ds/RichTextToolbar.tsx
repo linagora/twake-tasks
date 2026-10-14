@@ -172,7 +172,10 @@ export function Toolbar({
             event.preventDefault()
             event.stopPropagation()
             const href = url.trim()
-            if (href && editor.state.selection.empty) {
+            setLinkAnchor(null)
+            // setLink checks the protocol and that a link fits where the caret is
+            if (!href || !editor.can().setLink({ href })) return
+            if (editor.state.selection.empty) {
               // The link mark is inclusive, so drop it or the next typed text joins the link.
               chain()
                 .insertContent({
@@ -182,10 +185,9 @@ export function Toolbar({
                 })
                 .unsetMark('link')
                 .run()
-            } else if (href) {
+            } else {
               chain().extendMarkRange('link').setLink({ href }).run()
             }
-            setLinkAnchor(null)
           }}
         >
           <InputBase

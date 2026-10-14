@@ -142,6 +142,27 @@ describe('link tool', () => {
     )
   })
 
+  it('does not insert an address with a script protocol', async () => {
+    const onChange = vi.fn()
+    renderWithProviders(
+      <RichTextEditor
+        label="Description"
+        initial="Website"
+        labels={LABELS}
+        onChange={onChange}
+      />
+    )
+
+    await screen.findByRole('textbox', { name: 'Description' })
+    fireEvent.click(screen.getByRole('button', { name: 'Link' }))
+    fireEvent.change(await screen.findByRole('textbox', { name: 'URL' }), {
+      target: { value: 'javascript:alert(1)' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   it('does not send the comment on Ctrl+Enter in the link field', async () => {
     const onSubmit = vi.fn()
     renderWithProviders(
