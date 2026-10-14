@@ -19,7 +19,7 @@ export function EmptyState({
   illustrated?: boolean
   tone?: 'default' | 'error'
 }): ReactElement {
-  const badge = illustrated ? 200 : compact ? 40 : 64
+  const badge = illustrated ? 160 : compact ? 40 : 64
   return (
     <Empty
       role={tone === 'error' ? 'alert' : 'status'}
@@ -44,7 +44,7 @@ export function EmptyState({
               : undefined
           }}
         >
-          <Icon icon={icon} size={illustrated ? 124 : compact ? 18 : 28} />
+          <Icon icon={icon} size={illustrated ? 100 : compact ? 18 : 28} />
         </Box>
       }
       title={title}
