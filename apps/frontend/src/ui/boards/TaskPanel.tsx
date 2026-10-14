@@ -45,6 +45,7 @@ export function TaskPanel({
   editable,
   depth,
   notice,
+  shelved = false,
   onClose
 }: {
   task: Task
@@ -52,6 +53,7 @@ export function TaskPanel({
   editable: boolean
   depth: number
   notice?: ReactNode
+  shelved?: boolean
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
@@ -166,7 +168,7 @@ export function TaskPanel({
               boardId={boardId}
               members={board?.members ?? []}
               tasks={board?.tasks ?? []}
-              archived={board?.archived ?? false}
+              archived={shelved || (board?.archived ?? false)}
             />
           ) : (
             <History task={task} boardId={boardId} />

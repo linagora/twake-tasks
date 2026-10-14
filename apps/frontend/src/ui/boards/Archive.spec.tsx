@@ -123,6 +123,7 @@ describe('archive and trash', () => {
     expect(
       panel.getByText('In the trash, deleted for good in 30 days.')
     ).toBeVisible()
+    expect(panel.queryByRole('button', { name: 'Send' })).toBeNull()
     fireEvent.click(panel.getByRole('button', { name: 'Restore DES-1' }))
 
     expect(await findEmptyState('The trash is empty')).toBeVisible()

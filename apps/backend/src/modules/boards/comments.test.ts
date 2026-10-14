@@ -91,6 +91,20 @@ describe('task comments', () => {
     ).toEqual(['Before'])
   })
 
+  it('refuses a comment on an archived or trashed task', async () => {
+    const alice = aUser()
+    const { boardId, taskId } = await aTaskOf(alice)
+    const task = `/boards/${boardId}/tasks/${taskId}`
+    const comment = () =>
+      api.as(alice).post(`${task}/comments`, { body: 'Shelved' })
+
+    await api.as(alice).post(`${task}/archive`, {})
+    expect((await comment()).statusCode).toBe(409)
+    await api.as(alice).post(`${task}/restore`, {})
+    await api.as(alice).delete(task)
+    expect((await comment()).statusCode).toBe(409)
+  })
+
   it('counts the comments of each task on the board', async () => {
     const alice = aUser()
     const { boardId, taskId } = await aTaskOf(alice)
