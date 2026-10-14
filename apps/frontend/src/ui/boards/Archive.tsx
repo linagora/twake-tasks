@@ -459,6 +459,7 @@ function ShelfTask({
           task={task}
           boardId={board.id}
           editable={false}
+          shelved
           depth={1}
           notice={
             <Alert

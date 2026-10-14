@@ -53,7 +53,9 @@ export function createCommentStore(db: Db) {
           .select({ archivedAt: boards.archivedAt })
           .from(boards)
           .where(eq(boards.id, boardId))
-        if (board?.archivedAt) throw new Refused('archived')
+        if (board?.archivedAt || task.archivedAt || task.deletedAt) {
+          throw new Refused('archived')
+        }
         const [comment] = await tx
           .insert(comments)
           .values({
