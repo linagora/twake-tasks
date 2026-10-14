@@ -160,7 +160,13 @@ const daysLeft = (at: string) =>
 
 const SHELF_ICONS = { archived: Archive, trash: Trash } as const
 
-export function ShelfScreen({ shelf }: { shelf: Shelf }): ReactElement {
+export function ShelfScreen({
+  shelf,
+  flush = false
+}: {
+  shelf: Shelf
+  flush?: boolean
+}): ReactElement {
   const { t } = useI18n()
   const { boardId = '' } = useParams()
   const board = useBoard(boardId)
@@ -171,7 +177,7 @@ export function ShelfScreen({ shelf }: { shelf: Shelf }): ReactElement {
   const missing = board.error instanceof ApiError && board.error.status === 404
 
   return (
-    <main className="u-p-2">
+    <main className={flush ? undefined : 'u-p-2'}>
       {missing && (
         <EmptyState
           icon={Compass}

@@ -55,11 +55,11 @@ export const routes: RouteObject[] = [
           { path: 'boards/:boardId', element: <EmbedBoardScreen /> },
           {
             path: 'boards/:boardId/archived',
-            element: <ShelfScreen shelf="archived" />
+            element: <ShelfScreen shelf="archived" flush />
           },
           {
             path: 'boards/:boardId/trash',
-            element: <ShelfScreen shelf="trash" />
+            element: <ShelfScreen shelf="trash" flush />
           }
         ]
       }
