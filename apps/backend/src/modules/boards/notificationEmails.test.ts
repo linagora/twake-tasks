@@ -186,6 +186,8 @@ describe('notification emails', () => {
     expect(mail?.text.split('\n')[0]).toBe(
       'Alice Martin set the due date to Tue, Oct 13, 15:00'
     )
+    expect(mail?.text).toContain('Due Tue, Oct 13, 15:00')
+    expect(mail?.html).toContain('Due Tue, Oct 13, 15:00')
   })
 
   it('shows the time of a due date in the zone it was set in', async () => {
