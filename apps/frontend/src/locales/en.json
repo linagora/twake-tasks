@@ -154,7 +154,8 @@
     "addFailed": "The task could not be added.",
     "rename": "Rename board",
     "renameName": "Board name",
-    "renameFailed": "The board could not be renamed."
+    "renameFailed": "The board could not be renamed.",
+    "breadcrumb": "Where the board is"
   },
   "task": {
     "description": "Description",

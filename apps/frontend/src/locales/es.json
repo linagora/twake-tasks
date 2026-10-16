@@ -154,7 +154,8 @@
     "addFailed": "No se pudo añadir la tarea.",
     "rename": "Renombrar tablero",
     "renameName": "Nombre del tablero",
-    "renameFailed": "No se pudo renombrar el tablero."
+    "renameFailed": "No se pudo renombrar el tablero.",
+    "breadcrumb": "Ubicación del tablero"
   },
   "task": {
     "description": "Descripción",

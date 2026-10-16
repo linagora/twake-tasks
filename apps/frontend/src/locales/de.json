@@ -154,7 +154,8 @@
     "addFailed": "Die Aufgabe konnte nicht hinzugefügt werden.",
     "rename": "Board umbenennen",
     "renameName": "Board-Name",
-    "renameFailed": "Das Board konnte nicht umbenannt werden."
+    "renameFailed": "Das Board konnte nicht umbenannt werden.",
+    "breadcrumb": "Ort des Boards"
   },
   "task": {
     "description": "Beschreibung",

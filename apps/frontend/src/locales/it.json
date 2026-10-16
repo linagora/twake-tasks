@@ -154,7 +154,8 @@
     "addFailed": "Impossibile aggiungere l’attività.",
     "rename": "Rinomina bacheca",
     "renameName": "Nome della bacheca",
-    "renameFailed": "Impossibile rinominare la bacheca."
+    "renameFailed": "Impossibile rinominare la bacheca.",
+    "breadcrumb": "Posizione della bacheca"
   },
   "task": {
     "description": "Descrizione",

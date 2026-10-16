@@ -112,8 +112,9 @@ export function SidePanel({
             overflowY: { md: 'auto' },
             px: { xs: 2, sm: 3 },
             py: 2,
-            borderTop: { xs: 1, md: 0 },
-            borderLeft: { md: 1 },
+            // A hairline: half a pixel, one on sharp screens.
+            borderTop: { xs: '0.5px solid', md: 0 },
+            borderLeft: { md: '0.5px solid' },
             borderColor: 'divider',
             display: 'flex',
             flexDirection: 'column',
@@ -388,17 +389,33 @@ export function FeedItem({
 
 export function PanelSection({
   title,
+  hideTitle = false,
   action,
   children
 }: {
   title: string
+  /** Kept for screen readers only, when the content speaks for itself. */
+  hideTitle?: boolean
   action?: ReactNode
   children: ReactNode
 }): ReactElement {
   return (
     <Box component="section" aria-label={title}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1 }}>
-        <Typography variant="subtitle1" component="h3" sx={{ flex: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          mb: hideTitle && !action ? 0 : 1,
+          gap: 1
+        }}
+      >
+        <Typography
+          variant="subtitle1"
+          component="h3"
+          className={hideTitle ? 'u-visuallyhidden' : undefined}
+          sx={{ flex: 1 }}
+        >
           {title}
         </Typography>
         {action}

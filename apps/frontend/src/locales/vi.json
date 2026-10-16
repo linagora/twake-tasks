@@ -154,7 +154,8 @@
     "addFailed": "Không thể thêm công việc.",
     "rename": "Đổi tên bảng",
     "renameName": "Tên bảng",
-    "renameFailed": "Không thể đổi tên bảng."
+    "renameFailed": "Không thể đổi tên bảng.",
+    "breadcrumb": "Vị trí của bảng"
   },
   "task": {
     "description": "Mô tả",

@@ -1,9 +1,8 @@
-import { Home, Icon } from '@linagora/twake-icons'
-import { Breadcrumbs, Link, Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
-import { Link as RouterLink, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
 
 import type { Board, Task } from '@/domain/board'
+import { Crumbs } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 /**
@@ -35,40 +34,17 @@ export function TaskBreadcrumb({
   }
 
   return (
-    <Breadcrumbs aria-label={t('task.breadcrumb')} className="u-miw-0">
-      <Link
-        component={RouterLink}
-        to={home}
-        color="inherit"
-        aria-label={t('boards.title')}
-        className="u-flex"
-      >
-        <Icon icon={Home} size={16} />
-      </Link>
-      <Link
-        component={RouterLink}
-        to={boardPath}
-        color="inherit"
-        underline="hover"
-        variant="body2"
-      >
-        {board?.name ?? '…'}
-      </Link>
-      {ancestors.map(parent => (
-        <Link
-          key={parent.id}
-          component={RouterLink}
-          to={`${boardPath}?task=${encodeURIComponent(parent.key)}`}
-          color="inherit"
-          underline="hover"
-          variant="body2"
-        >
-          {parent.key}
-        </Link>
-      ))}
-      <Typography variant="body2" color="textPrimary" aria-current="page">
-        {task.key}
-      </Typography>
-    </Breadcrumbs>
+    <Crumbs
+      label={t('task.breadcrumb')}
+      home={{ to: home, label: t('board.back') }}
+      steps={[
+        { to: boardPath, label: board?.name ?? '…' },
+        ...ancestors.map(parent => ({
+          to: `${boardPath}?task=${encodeURIComponent(parent.key)}`,
+          label: parent.key
+        }))
+      ]}
+      current={task.key}
+    />
   )
 }

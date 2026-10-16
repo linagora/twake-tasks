@@ -1,21 +1,15 @@
-import { Compass, Icon, Left, Plus, Share } from '@linagora/twake-icons'
+import { Compass, Icon, Plus, Share } from '@linagora/twake-icons'
 import {
   Alert,
   Button,
   ClickAwayListener,
-  Link,
   TextField,
   Tooltip,
   Typography,
   useAlert
 } from '@linagora/twake-mui'
 import { useEffect, useRef, useState, type ReactElement } from 'react'
-import {
-  Link as RouterLink,
-  useNavigate,
-  useParams,
-  useSearchParams
-} from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 
 import { ApiError, type Shelf } from '@/application/boards'
 import {
@@ -45,6 +39,7 @@ import { localToday } from '@/ui/boards/dueLabel'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
 import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
+import { BoardCrumbs } from '@/ui/boards/Crumbs'
 import { NewDatedTask } from '@/ui/boards/NewDatedTask'
 import {
   useBoard,
@@ -79,7 +74,7 @@ export function BoardScreen({
 
   return (
     <main className={flush ? undefined : 'u-p-2'}>
-      {!board.data && back && <BackLink />}
+      {!board.data && back && <BoardCrumbs name="…" />}
       {missing && (
         <EmptyState
           icon={Compass}
@@ -166,24 +161,6 @@ function LinkedTask({
         />
       )}
     </>
-  )
-}
-
-function BackLink(): ReactElement {
-  const { t } = useI18n()
-  return (
-    <Link
-      component={RouterLink}
-      to="../.."
-      relative="path"
-      variant="body2"
-      color="textSecondary"
-      underline="hover"
-      className="u-flex u-flex-items-center"
-    >
-      <Icon icon={Left} size={12} className="u-mr-half" />
-      {t('board.back')}
-    </Link>
   )
 }
 
@@ -283,7 +260,7 @@ function BoardColumns({
   return (
     <RemovalNotices.Provider value={setRemoval}>
       <PageHeader
-        back={back && <BackLink />}
+        back={back && <BoardCrumbs name={board.name} />}
         title={
           <BoardTitle
             board={board}

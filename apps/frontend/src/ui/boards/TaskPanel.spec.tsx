@@ -31,6 +31,10 @@ describe('TaskPanel', () => {
     const panel = await openLogo()
 
     expect(await panel.findByText('new', { selector: 'strong' })).toBeVisible()
+    // A filled description needs no title on screen, only for screen readers.
+    expect(panel.getByRole('heading', { name: 'Description' })).toHaveClass(
+      'u-visuallyhidden'
+    )
   })
 
   it('edits the description from the version it started from', async () => {
@@ -301,10 +305,9 @@ describe('TaskPanel', () => {
       const crumbs = within(
         panel.getByRole('navigation', { name: 'Where the task is' })
       )
-      expect(crumbs.getByRole('link', { name: 'Boards' })).toHaveAttribute(
-        'href',
-        '/'
-      )
+      expect(
+        crumbs.getByRole('link', { name: 'Back to boards' })
+      ).toHaveAttribute('href', '/')
       expect(crumbs.getByRole('link', { name: board.name })).toHaveAttribute(
         'href',
         `/boards/${board.id}`

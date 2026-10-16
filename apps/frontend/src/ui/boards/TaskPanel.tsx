@@ -326,6 +326,7 @@ function Description({
   return (
     <PanelSection
       title={t('task.description')}
+      hideTitle={Boolean(description.data?.markdown.trim())}
       action={
         editable &&
         description.data &&

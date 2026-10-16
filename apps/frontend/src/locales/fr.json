@@ -154,7 +154,8 @@
     "addFailed": "La tâche n'a pas pu être ajoutée.",
     "rename": "Renommer le tableau",
     "renameName": "Nom du tableau",
-    "renameFailed": "Le tableau n'a pas pu être renommé."
+    "renameFailed": "Le tableau n'a pas pu être renommé.",
+    "breadcrumb": "Emplacement du tableau"
   },
   "task": {
     "description": "Description",
