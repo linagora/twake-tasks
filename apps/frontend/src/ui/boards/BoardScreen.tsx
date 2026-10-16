@@ -6,7 +6,8 @@ import {
   Link,
   TextField,
   Tooltip,
-  Typography
+  Typography,
+  useAlert
 } from '@linagora/twake-mui'
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import {
@@ -31,7 +32,6 @@ import { PageHeader, PageTitle, UnavailableButton } from '@/ds/PageHeader'
 import { Inline } from '@/ds/SidePanel'
 import { DropColumn, SortableList } from '@/ds/Sortable'
 import { TitleButton } from '@/ds/TitleButton'
-import { Toast } from '@/ds/Toast'
 import type { Board, Section, Task } from '@/domain/board'
 import {
   RemovalNotice,
@@ -134,8 +134,15 @@ function LinkedTask({
     }
   }
 
+  // Twake's alert says the task is gone, as other apps say theirs.
+  const { showAlert } = useAlert()
   useEffect(() => {
     if (lost === null || shown !== lost) return
+    showAlert({
+      message: t('board.taskNotFound'),
+      severity: 'warning',
+      duration: 8000
+    })
     setParams(
       current => {
         const next = new URLSearchParams(current)
@@ -144,7 +151,7 @@ function LinkedTask({
       },
       { replace: true }
     )
-  }, [lost, shown, setParams])
+  }, [lost, shown, setParams, showAlert, t])
 
   return (
     <>
@@ -158,15 +165,6 @@ function LinkedTask({
           depth={1}
         />
       )}
-      <Toast
-        open={lost !== null}
-        autoHideDuration={8000}
-        onClose={(_, reason) => {
-          if (reason !== 'clickaway') setLost(null)
-        }}
-      >
-        <Alert severity="warning">{t('board.taskNotFound')}</Alert>
-      </Toast>
     </>
   )
 }

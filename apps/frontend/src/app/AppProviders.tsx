@@ -1,6 +1,7 @@
 import {
   overlayThemeOptions,
   SpaceOverlayProvider,
+  AlertProvider,
   TwakeMuiThemeProvider,
   type SpaceOverlay
 } from '@linagora/twake-mui'
@@ -36,7 +37,7 @@ export function AppProviders({
         <I18nProvider lang={lang}>
           <PickersProvider lang={lang}>
             <QueryClientProvider client={queryClient}>
-              {children}
+              <AlertProvider>{children}</AlertProvider>
             </QueryClientProvider>
           </PickersProvider>
         </I18nProvider>
