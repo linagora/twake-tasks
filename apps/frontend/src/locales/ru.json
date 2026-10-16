@@ -191,7 +191,10 @@
     "changeFailed": "Не удалось сохранить изменение.",
     "edit": "Изменить",
     "addLabels": "Добавить метки",
-    "removeLabel": "Убрать метку %{name}"
+    "removeLabel": "Убрать метку %{name}",
+    "addAssignees": "Добавить исполнителей",
+    "unassign": "Снять %{name}",
+    "breadcrumb": "Расположение задачи"
   },
   "editor": {
     "toolbar": "Форматирование",

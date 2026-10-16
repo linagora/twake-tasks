@@ -30,6 +30,7 @@ import {
   useSetDescription
 } from '@/ui/boards/queries'
 import { Subtasks } from '@/ui/boards/Subtasks'
+import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
@@ -69,9 +70,7 @@ export function TaskPanel({
       onClose={onClose}
       header={
         <>
-          <Typography variant="body2" color="textSecondary">
-            {task.key}
-          </Typography>
+          <TaskBreadcrumb task={task} boardId={boardId} board={board} />
           <Grow />
           <FollowButton task={task} boardId={boardId} />
           <CopyLinkButton boardId={boardId} taskKey={task.key} />

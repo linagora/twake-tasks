@@ -191,7 +191,10 @@
     "changeFailed": "Impossibile salvare la modifica.",
     "edit": "Modifica",
     "addLabels": "Aggiungi etichette",
-    "removeLabel": "Rimuovi l’etichetta %{name}"
+    "removeLabel": "Rimuovi l’etichetta %{name}",
+    "addAssignees": "Aggiungi assegnatari",
+    "unassign": "Rimuovi %{name}",
+    "breadcrumb": "Posizione dell’attività"
   },
   "editor": {
     "toolbar": "Formattazione",

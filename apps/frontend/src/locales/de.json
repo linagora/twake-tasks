@@ -191,7 +191,10 @@
     "changeFailed": "Die Änderung konnte nicht gespeichert werden.",
     "edit": "Bearbeiten",
     "addLabels": "Labels hinzufügen",
-    "removeLabel": "Label %{name} entfernen"
+    "removeLabel": "Label %{name} entfernen",
+    "addAssignees": "Zuständige hinzufügen",
+    "unassign": "%{name} entfernen",
+    "breadcrumb": "Ort der Aufgabe"
   },
   "editor": {
     "toolbar": "Formatierung",

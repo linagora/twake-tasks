@@ -191,7 +191,10 @@
     "changeFailed": "La modification n'a pas pu être enregistrée.",
     "edit": "Modifier",
     "addLabels": "Ajouter des étiquettes",
-    "removeLabel": "Retirer l’étiquette %{name}"
+    "removeLabel": "Retirer l’étiquette %{name}",
+    "addAssignees": "Ajouter des responsables",
+    "unassign": "Retirer %{name}",
+    "breadcrumb": "Emplacement de la tâche"
   },
   "editor": {
     "toolbar": "Mise en forme",

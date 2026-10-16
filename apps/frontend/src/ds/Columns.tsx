@@ -454,3 +454,63 @@ export function Row({ children }: { children: ReactNode }): ReactElement {
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{children}</Box>
   )
 }
+
+/** A person on a task, as a chip with its avatar, and a cross to take it off. */
+export function PersonChip({
+  avatar,
+  name,
+  remove
+}: {
+  avatar: ReactNode
+  name: string
+  remove?:
+    { label: string; onClick: () => void; disabled?: boolean } | undefined
+}): ReactElement {
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.75,
+        height: 28,
+        maxWidth: '100%',
+        pl: 0.25,
+        pr: remove ? 0.5 : 1.25,
+        borderRadius: 14,
+        bgcolor: 'action.hover',
+        typography: 'body2',
+        whiteSpace: 'nowrap'
+      }}
+    >
+      {avatar}
+      <Box
+        component="span"
+        sx={{ overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}
+      >
+        {name}
+      </Box>
+      {remove && (
+        <ButtonBase
+          aria-label={remove.label}
+          title={remove.label}
+          disabled={remove.disabled}
+          onClick={remove.onClick}
+          sx={{
+            width: 18,
+            height: 18,
+            flex: 'none',
+            borderRadius: '50%',
+            color: 'text.secondary',
+            '&:hover, &:focus-visible': {
+              color: 'text.primary',
+              bgcolor: 'action.selected'
+            }
+          }}
+        >
+          <Icon icon={Cross} size={8} />
+        </ButtonBase>
+      )}
+    </Box>
+  )
+}

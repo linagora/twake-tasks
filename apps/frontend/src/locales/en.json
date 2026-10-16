@@ -191,7 +191,10 @@
     "changeFailed": "The change could not be saved.",
     "edit": "Edit",
     "addLabels": "Add labels",
-    "removeLabel": "Remove the label %{name}"
+    "removeLabel": "Remove the label %{name}",
+    "addAssignees": "Add assignees",
+    "unassign": "Unassign %{name}",
+    "breadcrumb": "Where the task is"
   },
   "editor": {
     "toolbar": "Formatting",

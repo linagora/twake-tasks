@@ -191,7 +191,10 @@
     "changeFailed": "No se pudo guardar el cambio.",
     "edit": "Editar",
     "addLabels": "Añadir etiquetas",
-    "removeLabel": "Quitar la etiqueta %{name}"
+    "removeLabel": "Quitar la etiqueta %{name}",
+    "addAssignees": "Añadir responsables",
+    "unassign": "Quitar a %{name}",
+    "breadcrumb": "Ubicación de la tarea"
   },
   "editor": {
     "toolbar": "Formato",

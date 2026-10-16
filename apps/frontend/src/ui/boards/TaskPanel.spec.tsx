@@ -175,7 +175,7 @@ describe('TaskPanel', () => {
     expect(panel.getByText('ann@example.com')).toBeVisible()
     expect(panel.getByText('Urgent')).toBeVisible()
     expect(
-      panel.getByRole('button', { name: 'Edit assignees' })
+      panel.getByRole('button', { name: 'Add assignees' })
     ).toBeInTheDocument()
     expect(
       panel.getByRole('button', { name: 'Add labels' })
@@ -210,7 +210,7 @@ describe('TaskPanel', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const panel = await openLogo()
-    fireEvent.click(panel.getByRole('button', { name: 'Edit assignees' }))
+    fireEvent.click(panel.getByRole('button', { name: 'Add assignees' }))
     fireEvent.click(
       within(
         await screen.findByRole('dialog', { name: 'Assign DES-1' })
@@ -286,15 +286,52 @@ describe('TaskPanel', () => {
       renderRoute(`/boards/${board.id}`, { boardsApi })
 
       const panel = await openLogo()
-      expect(
-        within(screen.getByRole('navigation')).getByRole('link', {
-          name: 'My tasks'
-        })
-      ).toBeVisible()
+      expect(screen.getByRole('link', { name: 'My tasks' })).toBeVisible()
       const aside = within(panel.getByRole('complementary'))
       expect(aside.getByText('Assignees')).toBeVisible()
       expect(aside.queryByText('Description')).toBeNull()
       expect(panel.getByText('Description')).toBeVisible()
+    })
+
+    it('shows where the task is, from the boards to its key', async () => {
+      const { board, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      const crumbs = within(
+        panel.getByRole('navigation', { name: 'Where the task is' })
+      )
+      expect(crumbs.getByRole('link', { name: 'Boards' })).toHaveAttribute(
+        'href',
+        '/'
+      )
+      expect(crumbs.getByRole('link', { name: board.name })).toHaveAttribute(
+        'href',
+        `/boards/${board.id}`
+      )
+      expect(crumbs.getByText('DES-1')).toHaveAttribute('aria-current', 'page')
+    })
+
+    it('unassigns with the cross of a person’s chip', async () => {
+      const { board, logo, boardsApi } = logoBoard()
+      Object.assign(logo, {
+        assignees: [
+          { userId: 'ann', email: 'ann@example.com', name: null },
+          { userId: 'bob', email: 'bob@example.com', name: null }
+        ]
+      })
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      fireEvent.click(
+        panel.getByRole('button', { name: 'Unassign ann@example.com' })
+      )
+
+      await waitFor(() => {
+        expect(boardsApi.setAssignees).toHaveBeenCalledWith(board.id, logo.id, [
+          'bob'
+        ])
+      })
     })
 
     it('copies the link of the task and says so', async () => {

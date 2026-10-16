@@ -191,7 +191,10 @@
     "changeFailed": "Không thể lưu thay đổi.",
     "edit": "Sửa",
     "addLabels": "Thêm nhãn",
-    "removeLabel": "Bỏ nhãn %{name}"
+    "removeLabel": "Bỏ nhãn %{name}",
+    "addAssignees": "Thêm người phụ trách",
+    "unassign": "Bỏ %{name}",
+    "breadcrumb": "Vị trí của công việc"
   },
   "editor": {
     "toolbar": "Định dạng",
