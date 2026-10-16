@@ -1,4 +1,12 @@
-import { Box, Button, Skeleton, styled, Typography } from '@linagora/twake-mui'
+import { Cross, Icon } from '@linagora/twake-icons'
+import {
+  Box,
+  Button,
+  ButtonBase,
+  Skeleton,
+  styled,
+  Typography
+} from '@linagora/twake-mui'
 import {
   useId,
   type HTMLAttributes,
@@ -325,11 +333,15 @@ function hueOf(name: string): number {
 export function LabelChip({
   name,
   color = null,
-  highlight = ''
+  highlight = '',
+  remove
 }: {
   name: string
   color?: string | null | undefined
   highlight?: string
+  /** A small cross in the chip takes the label off. */
+  remove?:
+    { label: string; onClick: () => void; disabled?: boolean } | undefined
 }): ReactElement {
   const hue = hueOf(name)
   return (
@@ -357,10 +369,32 @@ export function LabelChip({
         maxWidth: '100%',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        ...(remove && { pr: 0.25, gap: 0.25 })
       })}
     >
       <Highlight text={name} query={highlight} />
+      {remove && (
+        <ButtonBase
+          aria-label={remove.label}
+          title={remove.label}
+          disabled={remove.disabled}
+          onClick={remove.onClick}
+          sx={{
+            width: 16,
+            height: 16,
+            borderRadius: '50%',
+            color: 'inherit',
+            opacity: 0.75,
+            '&:hover, &:focus-visible': {
+              opacity: 1,
+              bgcolor: 'rgba(0, 0, 0, 0.12)'
+            }
+          }}
+        >
+          <Icon icon={Cross} size={8} />
+        </ButtonBase>
+      )}
     </Box>
   )
 }

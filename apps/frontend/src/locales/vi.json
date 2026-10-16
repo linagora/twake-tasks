@@ -81,7 +81,12 @@
     "color": "Màu",
     "noColor": "Không màu",
     "create": "Tạo",
-    "editFailed": "Không thể lưu nhãn."
+    "editFailed": "Không thể lưu nhãn.",
+    "close": "Đóng",
+    "pickColor": "Chọn màu",
+    "back": "Quay lại",
+    "colorHint": "Chọn màu của nhãn",
+    "apply": "Áp dụng"
   },
   "labelColors": {
     "navyBlue": "Xanh hải quân",
@@ -184,7 +189,9 @@
     "subtasks": "Công việc con",
     "noDescription": "Chưa có mô tả.",
     "changeFailed": "Không thể lưu thay đổi.",
-    "edit": "Sửa"
+    "edit": "Sửa",
+    "addLabels": "Thêm nhãn",
+    "removeLabel": "Bỏ nhãn %{name}"
   },
   "editor": {
     "toolbar": "Định dạng",

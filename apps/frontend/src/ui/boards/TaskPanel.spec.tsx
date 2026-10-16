@@ -178,8 +178,30 @@ describe('TaskPanel', () => {
       panel.getByRole('button', { name: 'Edit assignees' })
     ).toBeInTheDocument()
     expect(
-      panel.getByRole('button', { name: 'Edit labels' })
+      panel.getByRole('button', { name: 'Add labels' })
     ).toBeInTheDocument()
+  })
+
+  it('takes a label off with the cross of its chip', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    Object.assign(logo, {
+      labels: [
+        { id: 'l1', name: 'Urgent', color: null },
+        { id: 'l2', name: 'Client', color: null }
+      ]
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(
+      panel.getByRole('button', { name: 'Remove the label Urgent' })
+    )
+
+    await waitFor(() => {
+      expect(boardsApi.setLabels).toHaveBeenCalledWith(board.id, logo.id, [
+        'l2'
+      ])
+    })
   })
 
   it('assigns from the panel without a save step', async () => {

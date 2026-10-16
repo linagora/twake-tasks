@@ -81,7 +81,12 @@
     "color": "Colore",
     "noColor": "Nessun colore",
     "create": "Crea",
-    "editFailed": "Impossibile salvare l’etichetta."
+    "editFailed": "Impossibile salvare l’etichetta.",
+    "close": "Chiudi",
+    "pickColor": "Scegli il colore",
+    "back": "Indietro",
+    "colorHint": "Scegli il colore dell’etichetta",
+    "apply": "Applica"
   },
   "labelColors": {
     "navyBlue": "Blu navy",
@@ -184,7 +189,9 @@
     "subtasks": "Sotto-attività",
     "noDescription": "Nessuna descrizione.",
     "changeFailed": "Impossibile salvare la modifica.",
-    "edit": "Modifica"
+    "edit": "Modifica",
+    "addLabels": "Aggiungi etichette",
+    "removeLabel": "Rimuovi l’etichetta %{name}"
   },
   "editor": {
     "toolbar": "Formattazione",

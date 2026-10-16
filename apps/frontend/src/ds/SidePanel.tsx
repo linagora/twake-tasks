@@ -65,6 +65,22 @@ export function SidePanel({
       {header}
     </Box>
   )
+  const main = (
+    <Box
+      sx={{
+        minWidth: 0,
+        px: { xs: 2, sm: 3 },
+        py: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 3
+      }}
+    >
+      {children}
+    </Box>
+  )
+  // The header tops the content only: the bar of properties runs from the
+  // top, all on the same white.
   const body = (
     <Box
       sx={{
@@ -78,15 +94,15 @@ export function SidePanel({
       <Box
         sx={{
           minWidth: 0,
-          overflowY: { md: 'auto' },
-          px: { xs: 2, sm: 3 },
-          py: 2,
+          minHeight: 0,
           display: 'flex',
-          flexDirection: 'column',
-          gap: 3
+          flexDirection: 'column'
         }}
       >
-        {children}
+        {top}
+        <Box sx={{ flex: 1, minHeight: 0, overflowY: { md: 'auto' } }}>
+          {main}
+        </Box>
       </Box>
       {aside && (
         <Box
@@ -99,7 +115,6 @@ export function SidePanel({
             borderTop: { xs: 1, md: 0 },
             borderLeft: { md: 1 },
             borderColor: 'divider',
-            bgcolor: 'background.default',
             display: 'flex',
             flexDirection: 'column',
             gap: 3
@@ -134,7 +149,6 @@ export function SidePanel({
           }
         }}
       >
-        {top}
         {body}
       </Drawer>
     )
@@ -159,7 +173,6 @@ export function SidePanel({
         outline: 'none'
       }}
     >
-      {top}
       {body}
     </Box>,
     host

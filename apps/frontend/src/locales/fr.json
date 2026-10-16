@@ -81,7 +81,12 @@
     "color": "Couleur",
     "noColor": "Sans couleur",
     "create": "Créer",
-    "editFailed": "L'étiquette n'a pas pu être enregistrée."
+    "editFailed": "L'étiquette n'a pas pu être enregistrée.",
+    "close": "Fermer",
+    "pickColor": "Choisir la couleur",
+    "back": "Retour",
+    "colorHint": "Choisissez la couleur de l’étiquette",
+    "apply": "Appliquer"
   },
   "labelColors": {
     "navyBlue": "Bleu marine",
@@ -184,7 +189,9 @@
     "subtasks": "Sous-tâches",
     "noDescription": "Aucune description.",
     "changeFailed": "La modification n'a pas pu être enregistrée.",
-    "edit": "Modifier"
+    "edit": "Modifier",
+    "addLabels": "Ajouter des étiquettes",
+    "removeLabel": "Retirer l’étiquette %{name}"
   },
   "editor": {
     "toolbar": "Mise en forme",

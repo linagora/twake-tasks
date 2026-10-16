@@ -6,7 +6,8 @@ import {
   Label,
   Mosaic,
   Pen,
-  People
+  People,
+  Plus
 } from '@linagora/twake-icons'
 import { IconButton, Typography } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement } from 'react'
@@ -45,6 +46,9 @@ export function TaskProperties({
   const { t } = useI18n()
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
   const [labeling, setLabeling] = useState<HTMLElement | null>(null)
+  const unlabel = useBoardChange(boardId, (api, labelIds: string[]) =>
+    api.setLabels(boardId, task.id, labelIds)
+  )
 
   return (
     <>
@@ -87,7 +91,26 @@ export function TaskProperties({
         </Property>
         <Property icon={<Icon icon={Label} />} label={t('task.labels')}>
           {task.labels.map(label => (
-            <LabelChip key={label.id} name={label.name} color={label.color} />
+            <LabelChip
+              key={label.id}
+              name={label.name}
+              color={label.color}
+              remove={
+                editable && board
+                  ? {
+                      label: t('task.removeLabel', { name: label.name }),
+                      disabled: unlabel.isPending,
+                      onClick: () => {
+                        unlabel.mutate(
+                          task.labels
+                            .filter(each => each.id !== label.id)
+                            .map(each => each.id)
+                        )
+                      }
+                    }
+                  : undefined
+              }
+            />
           ))}
           {task.labels.length === 0 && (
             <Typography variant="body2" color="textSecondary">
@@ -97,12 +120,12 @@ export function TaskProperties({
           {editable && board && (
             <IconButton
               size="small"
-              aria-label={t('task.editLabels')}
+              aria-label={t('task.addLabels')}
               onClick={event => {
                 setLabeling(event.currentTarget)
               }}
             >
-              <Icon icon={Pen} size={14} />
+              <Icon icon={Plus} size={14} />
             </IconButton>
           )}
         </Property>

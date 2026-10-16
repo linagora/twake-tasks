@@ -81,7 +81,12 @@
     "color": "Farbe",
     "noColor": "Keine Farbe",
     "create": "Erstellen",
-    "editFailed": "Das Label konnte nicht gespeichert werden."
+    "editFailed": "Das Label konnte nicht gespeichert werden.",
+    "close": "Schließen",
+    "pickColor": "Farbe wählen",
+    "back": "Zurück",
+    "colorHint": "Wählen Sie die Farbe des Labels",
+    "apply": "Übernehmen"
   },
   "labelColors": {
     "navyBlue": "Marineblau",
@@ -184,7 +189,9 @@
     "subtasks": "Unteraufgaben",
     "noDescription": "Keine Beschreibung.",
     "changeFailed": "Die Änderung konnte nicht gespeichert werden.",
-    "edit": "Bearbeiten"
+    "edit": "Bearbeiten",
+    "addLabels": "Labels hinzufügen",
+    "removeLabel": "Label %{name} entfernen"
   },
   "editor": {
     "toolbar": "Formatierung",

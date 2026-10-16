@@ -81,7 +81,12 @@
     "color": "Color",
     "noColor": "No color",
     "create": "Create",
-    "editFailed": "The label could not be saved."
+    "editFailed": "The label could not be saved.",
+    "close": "Close",
+    "pickColor": "Choose the color",
+    "back": "Back",
+    "colorHint": "Choose the label’s color",
+    "apply": "Apply"
   },
   "labelColors": {
     "navyBlue": "Navy blue",
@@ -184,7 +189,9 @@
     "subtasks": "Sub-tasks",
     "noDescription": "No description.",
     "changeFailed": "The change could not be saved.",
-    "edit": "Edit"
+    "edit": "Edit",
+    "addLabels": "Add labels",
+    "removeLabel": "Remove the label %{name}"
   },
   "editor": {
     "toolbar": "Formatting",
