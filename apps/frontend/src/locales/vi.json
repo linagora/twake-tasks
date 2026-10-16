@@ -16,7 +16,8 @@
   },
   "app": {
     "name": "Twake Project",
-    "loading": "Đang tải"
+    "loading": "Đang tải",
+    "mainMenu": "Menu chính"
   },
   "session": {
     "signingIn": "Đang đăng nhập…",
@@ -543,5 +544,8 @@
   },
   "members": {
     "count": "%{smart_count} thành viên"
+  },
+  "page": {
+    "breadcrumb": "Vị trí của trang"
   }
 }

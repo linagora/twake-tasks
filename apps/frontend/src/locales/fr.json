@@ -16,7 +16,8 @@
   },
   "app": {
     "name": "Twake Project",
-    "loading": "Chargement"
+    "loading": "Chargement",
+    "mainMenu": "Menu principal"
   },
   "session": {
     "signingIn": "Connexion en cours…",
@@ -543,5 +544,8 @@
   },
   "members": {
     "count": "%{smart_count} membre |||| %{smart_count} membres"
+  },
+  "page": {
+    "breadcrumb": "Emplacement de la page"
   }
 }

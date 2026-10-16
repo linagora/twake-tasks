@@ -23,17 +23,27 @@ function boards() {
 }
 
 describe('AgendaScreen', () => {
-  it('shows overdue and today’s tasks, each opening in its board', async () => {
-    const { design, boardsApi } = boards()
+  it('shows overdue and today’s tasks, each opening over Today', async () => {
+    const { boardsApi } = boards()
     renderRoute('/today', { boardsApi })
 
     const overdue = within(
       await screen.findByRole('region', { name: 'Overdue' })
     )
-    expect(overdue.getByRole('link', { name: /Poster/ })).toHaveAttribute(
-      'href',
-      `/boards/${design.id}?task=DES-2`
+    fireEvent.click(overdue.getByRole('button', { name: 'Poster' }))
+    // The task opens over Today, which its breadcrumb starts from.
+    const panel = within(
+      await screen.findByRole('dialog', { name: /^DES-2 Poster/ })
     )
+    const crumbs = within(
+      panel.getByRole('navigation', { name: 'Where the task is' })
+    )
+    expect(crumbs.getByRole('link', { name: 'Today' })).toHaveAttribute(
+      'href',
+      '/today'
+    )
+    expect(crumbs.getByText('DES-2')).toHaveAttribute('aria-current', 'page')
+    fireEvent.click(panel.getByRole('button', { name: 'Close' }))
     const today = within(screen.getByRole('region', { name: 'Today' }))
     expect(today.getByText('Logo')).toBeVisible()
     expect(screen.queryByText('Flyer')).not.toBeInTheDocument()
@@ -143,9 +153,12 @@ describe('AgendaScreen', () => {
     renderRoute('/today', { boardsApi })
 
     fireEvent.click(
-      within(await screen.findByRole('navigation')).getByRole('link', {
-        name: 'Upcoming'
-      })
+      within(await screen.findByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        {
+          name: 'Upcoming'
+        }
+      )
     )
 
     expect(await screen.findByText('Flyer')).toBeVisible()
@@ -174,9 +187,12 @@ describe('AgendaScreen', () => {
     expect(screen.getByText('Mockups')).toBeVisible()
     expect(screen.queryByText('Logo')).not.toBeInTheDocument()
     expect(
-      within(screen.getByRole('navigation')).getByRole('link', {
-        name: 'My tasks'
-      })
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        {
+          name: 'My tasks'
+        }
+      )
     ).toHaveAttribute('href', '/mine')
   })
 

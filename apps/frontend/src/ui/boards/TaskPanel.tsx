@@ -70,7 +70,7 @@ export function TaskPanel({
       onClose={onClose}
       header={
         <>
-          <TaskBreadcrumb task={task} boardId={boardId} board={board} />
+          <TaskBreadcrumb task={task} board={board} />
           <Grow />
           <FollowButton task={task} boardId={boardId} />
           <CopyLinkButton boardId={boardId} taskKey={task.key} />

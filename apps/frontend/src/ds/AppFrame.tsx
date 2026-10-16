@@ -15,6 +15,7 @@ import {
 } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 
+import { CRUMB_BAR, CrumbHostContext } from '@/ds/CrumbBar'
 import { PanelHostContext } from '@/ds/SidePanel'
 
 export const TOP_BAR_HEIGHT = 64
@@ -47,32 +48,38 @@ export function AppFrame({
   children: ReactNode
 }): ReactElement {
   const [panelHost, setPanelHost] = useState<HTMLElement | null>(null)
+  const [crumbHost, setCrumbHost] = useState<HTMLElement | null>(null)
   return (
-    <PanelHostContext value={panelHost}>
-      <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-        {topBar}
-        <FrameLayout withTopBar={false}>
-          <Sidebar>{sidebar}</Sidebar>
-          <FrameContent role={undefined}>
-            <Box sx={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto' }}>
-              {children}
-            </Box>
-            {/* An open task covers the content, and only it. */}
-            <Box
-              ref={setPanelHost}
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                pointerEvents: 'none',
-                borderRadius: 'inherit',
-                overflow: 'hidden',
-                '& > *': { pointerEvents: 'auto' }
-              }}
-            />
-          </FrameContent>
-        </FrameLayout>
-      </Box>
-    </PanelHostContext>
+    <CrumbHostContext value={crumbHost}>
+      <PanelHostContext value={panelHost}>
+        <Box
+          sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}
+        >
+          {topBar}
+          <FrameLayout withTopBar={false}>
+            <Sidebar>{sidebar}</Sidebar>
+            <FrameContent role={undefined}>
+              <Box ref={setCrumbHost} sx={CRUMB_BAR} />
+              <Box sx={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto' }}>
+                {children}
+              </Box>
+              {/* An open task covers the content, and only it. */}
+              <Box
+                ref={setPanelHost}
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  pointerEvents: 'none',
+                  borderRadius: 'inherit',
+                  overflow: 'hidden',
+                  '& > *': { pointerEvents: 'auto' }
+                }}
+              />
+            </FrameContent>
+          </FrameLayout>
+        </Box>
+      </PanelHostContext>
+    </CrumbHostContext>
   )
 }
 

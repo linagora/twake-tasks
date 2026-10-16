@@ -45,6 +45,24 @@ export type AgendaView = 'today' | 'upcoming' | 'mine' | { filterId: string }
 
 const AGENDA_DAYS = { today: 1, upcoming: 7 } as const
 
+// A list of tasks of many boards, whose changes refresh their board only:
+// any change made while it shows refreshes it too.
+export function useRefreshOnChange(view: AgendaView): void {
+  const queryClient = useQueryClient()
+  const key = JSON.stringify(view)
+  useEffect(
+    () =>
+      queryClient.getMutationCache().subscribe(event => {
+        if (event.type === 'updated' && event.action.type === 'success') {
+          void queryClient.invalidateQueries({
+            queryKey: ['agenda', JSON.parse(key) as AgendaView]
+          })
+        }
+      }),
+    [queryClient, key]
+  )
+}
+
 export function useAgenda(view: AgendaView): UseQueryResult<Agenda> {
   const api = useBoardsApi()
   return useQuery({

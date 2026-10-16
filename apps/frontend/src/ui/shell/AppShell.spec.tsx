@@ -152,7 +152,7 @@ describe('AppShell', () => {
   it('lists the views in the sidebar and marks the current one', async () => {
     renderRoute('/upcoming')
 
-    const nav = within(await screen.findByRole('navigation'))
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
     expect(
       nav.getAllByRole('link').map(link => link.getAttribute('href'))
     ).toEqual([
@@ -203,7 +203,7 @@ describe('AppShell', () => {
     })
     renderRoute('/today', { boardsApi })
 
-    const nav = within(await screen.findByRole('navigation'))
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
     const link = await nav.findByRole('link', {
       name: 'Notifications, 1 unread'
     })

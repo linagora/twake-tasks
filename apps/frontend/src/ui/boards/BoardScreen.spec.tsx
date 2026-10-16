@@ -496,11 +496,12 @@ describe('BoardScreen', () => {
       await screen.findByText('Design', { selector: '[aria-current="page"]' })
     ).toBeVisible()
     const crumbs = within(
-      screen.getByRole('navigation', { name: 'Where the board is' })
+      screen.getByRole('navigation', { name: 'Where the page is' })
     )
-    expect(
-      crumbs.getByRole('link', { name: 'Back to boards' })
-    ).toHaveAttribute('href', '/')
+    expect(crumbs.getByRole('link', { name: 'Boards' })).toHaveAttribute(
+      'href',
+      '/'
+    )
   })
 
   it('says when the board does not exist', async () => {
@@ -512,7 +513,9 @@ describe('BoardScreen', () => {
       await screen.findByText("This board doesn't exist, or you can't open it.")
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: 'Back to boards' })
+      within(
+        screen.getByRole('navigation', { name: 'Where the page is' })
+      ).getByRole('link', { name: 'Boards' })
     ).toHaveAttribute('href', '/')
   })
 

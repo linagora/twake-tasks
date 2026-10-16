@@ -15,6 +15,8 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 
+import { CRUMB_BAR } from '@/ds/CrumbBar'
+
 function inField(element: Element | null): boolean {
   return element?.matches('input, textarea, [contenteditable]') ?? false
 }
@@ -50,18 +52,7 @@ export function SidePanel({
 }): ReactElement {
   const host = useContext(PanelHostContext)
   const top = (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 0.5,
-        flex: '0 0 auto',
-        minHeight: 56,
-        px: { xs: 2, sm: 3 },
-        borderBottom: 1,
-        borderColor: 'divider'
-      }}
-    >
+    <Box sx={{ ...CRUMB_BAR, borderBottom: 1, borderColor: 'divider' }}>
       {header}
     </Box>
   )

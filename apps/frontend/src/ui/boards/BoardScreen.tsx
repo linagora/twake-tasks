@@ -39,7 +39,12 @@ import { localToday } from '@/ui/boards/dueLabel'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
 import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
-import { BoardCrumbs } from '@/ui/boards/Crumbs'
+import {
+  BoardStepContext,
+  OriginContext,
+  PageCrumbs,
+  useBoardsOrigin
+} from '@/ui/boards/Crumbs'
 import { NewDatedTask } from '@/ui/boards/NewDatedTask'
 import {
   useBoard,
@@ -69,35 +74,47 @@ export function BoardScreen({
   const { t } = useI18n()
   const { boardId = '' } = useParams()
   const board = useBoard(boardId)
+  const boardsOrigin = {
+    ...useBoardsOrigin(),
+    to: '../..',
+    relative: true
+  }
   useDocumentTitle(board.data?.name ?? null)
   const missing = board.error instanceof ApiError && board.error.status === 404
 
   return (
-    <main className={flush ? undefined : 'u-p-2'}>
-      {!board.data && back && <BoardCrumbs name="…" />}
-      {missing && (
-        <EmptyState
-          icon={Compass}
-          title={t('board.notFound')}
-          text={t('problems.notFoundHint')}
-        />
-      )}
-      {board.isError && !missing && (
-        <Typography role="alert" className="u-mt-2">
-          {t('board.loadFailed')}
-        </Typography>
-      )}
-      {(board.isPending || (waiting && !board.isError)) && (
-        <ColumnsSkeleton label={t('app.loading')} />
-      )}
-      {board.data && !waiting && (
-        <BoardColumns
-          board={board.data}
-          back={back}
-          settled={!board.isFetching}
-        />
-      )}
-    </main>
+    <OriginContext value={boardsOrigin}>
+      <BoardStepContext
+        value={{ to: '.', label: board.data?.name ?? '…', relative: true }}
+      >
+        <main className={flush ? undefined : 'u-p-2'}>
+          {back && (
+            <PageCrumbs
+              origin={boardsOrigin}
+              current={board.data?.name ?? '…'}
+            />
+          )}
+          {missing && (
+            <EmptyState
+              icon={Compass}
+              title={t('board.notFound')}
+              text={t('problems.notFoundHint')}
+            />
+          )}
+          {board.isError && !missing && (
+            <Typography role="alert" className="u-mt-2">
+              {t('board.loadFailed')}
+            </Typography>
+          )}
+          {(board.isPending || (waiting && !board.isError)) && (
+            <ColumnsSkeleton label={t('app.loading')} />
+          )}
+          {board.data && !waiting && (
+            <BoardColumns board={board.data} settled={!board.isFetching} />
+          )}
+        </main>
+      </BoardStepContext>
+    </OriginContext>
   )
 }
 
@@ -166,11 +183,9 @@ function LinkedTask({
 
 function BoardColumns({
   board,
-  back,
   settled
 }: {
   board: Board
-  back: boolean
   settled: boolean
 }): ReactElement {
   const { t } = useI18n()
@@ -260,7 +275,6 @@ function BoardColumns({
   return (
     <RemovalNotices.Provider value={setRemoval}>
       <PageHeader
-        back={back && <BoardCrumbs name={board.name} />}
         title={
           <BoardTitle
             board={board}

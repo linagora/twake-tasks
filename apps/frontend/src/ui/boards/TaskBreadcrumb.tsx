@@ -2,45 +2,50 @@ import type { ReactElement } from 'react'
 import { useLocation } from 'react-router'
 
 import type { Board, Task } from '@/domain/board'
-import { Crumbs } from '@/ui/boards/Crumbs'
+import {
+  Crumbs,
+  useBoardStep,
+  useBoardsOrigin,
+  useOrigin
+} from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 /**
- * Where an open task sits: the boards, its board, the tasks it is a sub-task
- * of, then its key. The links stay in the page's own tree, also in an embed.
+ * Where a task was opened from: the page (Today, My tasks, Boards…), its
+ * board and the tasks it is a sub-task of when opened in its board, then its
+ * key.
  */
 export function TaskBreadcrumb({
   task,
-  boardId,
   board
 }: {
   task: Task
-  boardId: string
   board: Board | undefined
 }): ReactElement {
   const { t } = useI18n()
   const { pathname } = useLocation()
-  const at = pathname.indexOf('/boards/')
-  const home = at < 0 ? pathname : pathname.slice(0, at) || '/'
-  const boardPath =
-    at < 0 ? pathname : `${pathname.slice(0, at)}/boards/${boardId}`
+  const boards = useBoardsOrigin()
+  const origin = useOrigin() ?? boards
+  const boardStep = useBoardStep()
   const ancestors: Task[] = []
-  for (
-    let parent = board?.tasks.find(each => each.id === task.parentId);
-    parent;
-    parent = board?.tasks.find(each => each.id === parent.parentId)
-  ) {
-    ancestors.unshift(parent)
+  if (boardStep) {
+    for (
+      let parent = board?.tasks.find(each => each.id === task.parentId);
+      parent;
+      parent = board?.tasks.find(each => each.id === parent.parentId)
+    ) {
+      ancestors.unshift(parent)
+    }
   }
 
   return (
     <Crumbs
       label={t('task.breadcrumb')}
-      home={{ to: home, label: t('board.back') }}
+      origin={origin}
       steps={[
-        { to: boardPath, label: board?.name ?? '…' },
+        ...(boardStep ? [boardStep] : []),
         ...ancestors.map(parent => ({
-          to: `${boardPath}?task=${encodeURIComponent(parent.key)}`,
+          to: `${pathname}?task=${encodeURIComponent(parent.key)}`,
           label: parent.key
         }))
       ]}

@@ -4,6 +4,7 @@ import { useEffect, type ReactElement } from 'react'
 import { Link as RouterLink, useRouteError } from 'react-router'
 
 import { EmptyState } from '@/ds/EmptyState'
+import { PageCrumbs, useBoardsOrigin } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useReporting } from '@/ui/reporting/ReportingProvider'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -16,10 +17,12 @@ export function NotFoundScreen({
   back?: { to: string; label: string }
 }): ReactElement {
   const { t } = useI18n()
+  const origin = useBoardsOrigin()
   useDocumentTitle(t('problems.notFound'))
   const { to, label } = back ?? { to: '/', label: t('board.back') }
   return (
     <main className="u-p-2">
+      <PageCrumbs origin={origin} current={t('problems.notFound')} />
       <EmptyState
         icon={Compass}
         title={title ?? t('problems.notFound')}

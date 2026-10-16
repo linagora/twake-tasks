@@ -20,6 +20,7 @@ import {
   useNotifications,
   useSetFollowing
 } from '@/ui/boards/queries'
+import { PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -80,6 +81,13 @@ export function NotificationsScreen(): ReactElement {
 
   return (
     <main className="u-p-2">
+      <PageCrumbs
+        origin={{
+          icon: Bell,
+          label: t('notifications.title'),
+          to: '/notifications'
+        }}
+      />
       <Typography variant="h3" component="h1" className="u-mb-2">
         {t('notifications.title')}
       </Typography>

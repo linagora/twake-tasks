@@ -1,7 +1,13 @@
-import { CheckCircle, Profile } from '@linagora/twake-icons'
+import {
+  Calendar,
+  CalendarToday,
+  CheckCircle,
+  Filter,
+  Profile
+} from '@linagora/twake-icons'
 import { Checkbox, Link, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
-import { Link as RouterLink, useParams } from 'react-router'
+import { useParams } from 'react-router'
 
 import {
   ApiError,
@@ -28,11 +34,15 @@ import {
   useAgenda,
   useCompleteAgendaTask,
   useFilters,
+  useRefreshOnChange,
   type AgendaView
 } from '@/ui/boards/queries'
 import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
 import { NotFoundScreen } from '@/ui/shell/Problems'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
+import { AgendaTaskPanel } from '@/ui/agenda/AgendaTaskPanel'
+import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
+import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 
 const contextOf = (task: AgendaTask, t: I18nApi['t']): string =>
   [
@@ -81,6 +91,7 @@ function AgendaRow({
 }): ReactElement {
   const { t } = useI18n()
   const complete = useCompleteAgendaTask()
+  const panel = useTaskPanel(task.key)
   const done = task.completedAt !== null
 
   return (
@@ -107,12 +118,19 @@ function AgendaRow({
         />
       }
       title={
-        <Link
-          component={RouterLink}
-          to={`/boards/${task.boardId}?task=${task.key}`}
-        >
-          <Highlight text={task.title} query={highlight} />
-        </Link>
+        <>
+          <Link
+            component="button"
+            variant="body2"
+            className="u-ta-left"
+            onClick={() => {
+              panel.show()
+            }}
+          >
+            <Highlight text={task.title} query={highlight} />
+          </Link>
+          {panel.open && <AgendaTaskPanel task={task} onClose={panel.close} />}
+        </>
       }
       context={contextOf(task, t)}
       excerpt={
@@ -188,6 +206,7 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
     <AgendaScreen
       view={{ filterId }}
       title={filters.data?.find(filter => filter.id === filterId)?.name ?? ''}
+      origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
       actions={
         <LayoutToggle
           layouts={FILTER_LAYOUTS}
@@ -230,6 +249,7 @@ function ByStatus({ tasks }: { tasks: AgendaTask[] }): ReactElement {
 
 function FilterCard({ task }: { task: AgendaTask }): ReactElement {
   const { t } = useI18n()
+  const panel = useTaskPanel(task.key)
   return (
     <Card label={`${task.key} ${task.title}`}>
       <Typography variant="caption" color="textSecondary">
@@ -237,13 +257,17 @@ function FilterCard({ task }: { task: AgendaTask }): ReactElement {
       </Typography>
       <CardTitle>
         <Link
-          component={RouterLink}
-          to={`/boards/${task.boardId}?task=${task.key}`}
+          component="button"
           color="inherit"
           underline="none"
+          className="u-ta-left"
+          onClick={() => {
+            panel.show()
+          }}
         >
           {task.title}
         </Link>
+        {panel.open && <AgendaTaskPanel task={task} onClose={panel.close} />}
       </CardTitle>
       {(task.priority !== null ||
         task.dueDate !== null ||
@@ -262,12 +286,19 @@ function FilterCard({ task }: { task: AgendaTask }): ReactElement {
   )
 }
 
+const AGENDA_ICONS = {
+  today: CalendarToday,
+  upcoming: Calendar,
+  mine: Profile
+} as const
+
 export function AgendaScreen(
   props:
     | { view: 'today' | 'upcoming' | 'mine' }
     | {
         view: AgendaView
         title: string
+        origin: Origin
         actions?: ReactNode
         body?: ((tasks: AgendaTask[]) => ReactNode) | undefined
       }
@@ -278,48 +309,63 @@ export function AgendaScreen(
   const title = 'title' in props ? props.title : t(`agenda.${props.view}`)
   const actions = 'actions' in props ? props.actions : undefined
   const body = 'body' in props ? props.body : undefined
+  const origin: Origin =
+    'origin' in props
+      ? props.origin
+      : {
+          icon: AGENDA_ICONS[props.view],
+          label: t(`agenda.${props.view}`),
+          to: `/${props.view}`
+        }
   useDocumentTitle(title || null)
+  useRefreshOnChange(view)
 
   const tasks = agenda.data?.tasks ?? []
   const empty = agenda.isSuccess && tasks.length === 0
 
   return (
-    <main className="u-p-2">
-      <PageHeader
-        title={
-          <Typography variant="h3" component="h1">
-            {title}
-          </Typography>
-        }
-        actions={actions}
-      />
-      {agenda.isError && (
-        <Typography role="alert">{t('agenda.loadFailed')}</Typography>
-      )}
-      {agenda.isPending && <ListSkeleton label={t('app.loading')} />}
-      {empty &&
-        (view === 'mine' ? (
-          <EmptyState
-            icon={Profile}
-            title={t('agenda.mineEmpty')}
-            text={t('agenda.mineEmptyHint')}
-          />
-        ) : (
-          <EmptyState
-            icon={CheckCircle}
-            illustrated
-            title={t('agenda.empty')}
-            text={t('agenda.emptyHint')}
-          />
-        ))}
-      {agenda.data &&
-        !empty &&
-        (body ? (
-          body(tasks)
-        ) : (
-          <ByDay today={agenda.data.today} tasks={tasks} />
-        ))}
-    </main>
+    <OriginContext value={origin}>
+      <main className="u-p-2">
+        <PageCrumbs
+          origin={origin}
+          current={'origin' in props ? title || '…' : undefined}
+        />
+        <PageHeader
+          title={
+            <Typography variant="h3" component="h1">
+              {title}
+            </Typography>
+          }
+          actions={actions}
+        />
+        {agenda.isError && (
+          <Typography role="alert">{t('agenda.loadFailed')}</Typography>
+        )}
+        {agenda.isPending && <ListSkeleton label={t('app.loading')} />}
+        {empty &&
+          (view === 'mine' ? (
+            <EmptyState
+              icon={Profile}
+              title={t('agenda.mineEmpty')}
+              text={t('agenda.mineEmptyHint')}
+            />
+          ) : (
+            <EmptyState
+              icon={CheckCircle}
+              illustrated
+              title={t('agenda.empty')}
+              text={t('agenda.emptyHint')}
+            />
+          ))}
+        {agenda.data &&
+          !empty &&
+          (body ? (
+            body(tasks)
+          ) : (
+            <ByDay today={agenda.data.today} tasks={tasks} />
+          ))}
+      </main>
+    </OriginContext>
   )
 }
 

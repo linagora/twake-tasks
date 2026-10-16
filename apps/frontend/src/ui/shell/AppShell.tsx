@@ -269,7 +269,7 @@ function AppNav(): ReactElement {
   const unread = useUnreadNotifications().data ?? 0
 
   return (
-    <Nav>
+    <Nav aria-label={t('app.mainMenu')}>
       <AppNavLink to="/" end icon={Home} label={t('boards.title')} />
       <AppNavLink to="/today" icon={CalendarToday} label={t('agenda.today')} />
       <AppNavLink to="/upcoming" icon={Calendar} label={t('agenda.upcoming')} />

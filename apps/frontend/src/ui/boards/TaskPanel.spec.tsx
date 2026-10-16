@@ -305,9 +305,10 @@ describe('TaskPanel', () => {
       const crumbs = within(
         panel.getByRole('navigation', { name: 'Where the task is' })
       )
-      expect(
-        crumbs.getByRole('link', { name: 'Back to boards' })
-      ).toHaveAttribute('href', '/')
+      expect(crumbs.getByRole('link', { name: 'Boards' })).toHaveAttribute(
+        'href',
+        '/'
+      )
       expect(crumbs.getByRole('link', { name: board.name })).toHaveAttribute(
         'href',
         `/boards/${board.id}`

@@ -16,7 +16,8 @@
   },
   "app": {
     "name": "Twake Project",
-    "loading": "Wird geladen"
+    "loading": "Wird geladen",
+    "mainMenu": "Hauptmenü"
   },
   "session": {
     "signingIn": "Sie werden angemeldet…",
@@ -543,5 +544,8 @@
   },
   "members": {
     "count": "%{smart_count} Mitglied |||| %{smart_count} Mitglieder"
+  },
+  "page": {
+    "breadcrumb": "Ort der Seite"
   }
 }
