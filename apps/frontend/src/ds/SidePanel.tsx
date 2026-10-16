@@ -7,62 +7,78 @@ import {
   styled,
   Typography
 } from '@linagora/twake-mui'
-import type { ReactElement, ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  type ReactElement,
+  type ReactNode
+} from 'react'
+import { createPortal } from 'react-dom'
 
 function inField(element: Element | null): boolean {
   return element?.matches('input, textarea, [contenteditable]') ?? false
 }
 
+/**
+ * Where a task opens: the content area of the frame, under the top bar and
+ * beside the sidebar, which stay in reach. Without it, as in an embed, the
+ * task opens in a drawer.
+ */
+export const PanelHostContext = createContext<HTMLElement | null>(null)
+
+// A stable callback ref: an inline one would steal the focus on every render.
+const focusOnMount = (element: HTMLElement | null): void => {
+  element?.focus()
+}
+
+/**
+ * An open task: its header over two columns, the content (two thirds) and a
+ * bar of properties (one third), one under the other on narrow screens.
+ */
 export function SidePanel({
   label,
   onClose,
   header,
+  aside,
   children
 }: {
   label: string
   onClose: () => void
   header: ReactNode
+  aside?: ReactNode
   children: ReactNode
 }): ReactElement {
-  return (
-    <Drawer
-      open
-      anchor="right"
-      onClose={(_event, reason) => {
-        if (reason === 'escapeKeyDown' && inField(document.activeElement))
-          return
-        onClose()
+  const host = useContext(PanelHostContext)
+  const top = (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        flex: '0 0 auto',
+        minHeight: 56,
+        px: { xs: 2, sm: 3 },
+        borderBottom: 1,
+        borderColor: 'divider'
       }}
-      slotProps={{
-        paper: {
-          role: 'dialog',
-          'aria-label': label,
-          'aria-modal': true,
-          sx: {
-            width: { xs: '100%', sm: 600 },
-            display: 'flex',
-            flexDirection: 'column'
-          }
-        }
+    >
+      {header}
+    </Box>
+  )
+  const body = (
+    <Box
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: aside ? '2fr 1fr' : '1fr' },
+        overflowY: { xs: 'auto', md: 'hidden' }
       }}
     >
       <Box
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-          minHeight: 56,
-          px: { xs: 2, sm: 3 },
-          borderBottom: 1,
-          borderColor: 'divider'
-        }}
-      >
-        {header}
-      </Box>
-      <Box
-        sx={{
-          flex: 1,
-          overflowY: 'auto',
+          minWidth: 0,
+          overflowY: { md: 'auto' },
           px: { xs: 2, sm: 3 },
           py: 2,
           display: 'flex',
@@ -72,7 +88,81 @@ export function SidePanel({
       >
         {children}
       </Box>
-    </Drawer>
+      {aside && (
+        <Box
+          component="aside"
+          sx={{
+            minWidth: 0,
+            overflowY: { md: 'auto' },
+            px: { xs: 2, sm: 3 },
+            py: 2,
+            borderTop: { xs: 1, md: 0 },
+            borderLeft: { md: 1 },
+            borderColor: 'divider',
+            bgcolor: 'background.default',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3
+          }}
+        >
+          {aside}
+        </Box>
+      )}
+    </Box>
+  )
+
+  if (!host) {
+    return (
+      <Drawer
+        open
+        anchor="right"
+        onClose={(_event, reason) => {
+          if (reason === 'escapeKeyDown' && inField(document.activeElement))
+            return
+          onClose()
+        }}
+        slotProps={{
+          paper: {
+            role: 'dialog',
+            'aria-label': label,
+            'aria-modal': true,
+            sx: {
+              width: { xs: '100%', sm: 600 },
+              display: 'flex',
+              flexDirection: 'column'
+            }
+          }
+        }}
+      >
+        {top}
+        {body}
+      </Drawer>
+    )
+  }
+  return createPortal(
+    <Box
+      ref={focusOnMount}
+      role="dialog"
+      aria-label={label}
+      tabIndex={-1}
+      onKeyDown={event => {
+        if (event.key !== 'Escape' || inField(document.activeElement)) return
+        event.stopPropagation()
+        onClose()
+      }}
+      sx={{
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.paper',
+        outline: 'none'
+      }}
+    >
+      {top}
+      {body}
+    </Box>,
+    host
   )
 }
 
@@ -179,7 +269,7 @@ export function Properties({
       sx={{
         m: 0,
         display: 'grid',
-        gridTemplateColumns: { xs: '6.5rem 1fr', sm: '9rem 1fr' },
+        gridTemplateColumns: { xs: '6.5rem 1fr', sm: '8rem 1fr' },
         columnGap: 2,
         rowGap: 0.5,
         alignItems: 'center'

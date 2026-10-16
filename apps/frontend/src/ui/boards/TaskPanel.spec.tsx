@@ -259,6 +259,22 @@ describe('TaskPanel', () => {
       })
     }
 
+    it('opens in the content, its properties in a bar beside it', async () => {
+      const { board, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      expect(
+        within(screen.getByRole('navigation')).getByRole('link', {
+          name: 'My tasks'
+        })
+      ).toBeVisible()
+      const aside = within(panel.getByRole('complementary'))
+      expect(aside.getByText('Assignees')).toBeVisible()
+      expect(aside.queryByText('Description')).toBeNull()
+      expect(panel.getByText('Description')).toBeVisible()
+    })
+
     it('copies the link of the task and says so', async () => {
       const writeText = vi.fn(() => Promise.resolve())
       stubClipboard(writeText)
@@ -273,7 +289,11 @@ describe('TaskPanel', () => {
           `${window.location.origin}/boards/${board.id}?task=DES-1`
         )
       })
-      expect(await screen.findByRole('status')).toHaveTextContent('Link copied')
+      expect(
+        (await screen.findAllByRole('status')).some(status =>
+          status.textContent.includes('Link copied')
+        )
+      ).toBe(true)
     })
 
     it('writes with the clipboard of the window that was clicked', async () => {

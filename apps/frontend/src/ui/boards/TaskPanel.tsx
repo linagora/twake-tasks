@@ -87,15 +87,17 @@ export function TaskPanel({
           </IconButton>
         </>
       }
+      aside={
+        <TaskProperties
+          task={task}
+          boardId={boardId}
+          board={board}
+          editable={editable}
+        />
+      }
     >
       {notice}
       <Title task={task} boardId={boardId} editable={editable} />
-      <TaskProperties
-        task={task}
-        boardId={boardId}
-        board={board}
-        editable={editable}
-      />
       <Description task={task} boardId={boardId} editable={editable} />
       {(children.length > 0 || (editable && depth < MAX_TASK_DEPTH)) && (
         <PanelSection

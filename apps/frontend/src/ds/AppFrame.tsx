@@ -13,7 +13,9 @@ import {
   Typography,
   type Theme
 } from '@linagora/twake-mui'
-import type { ReactElement, ReactNode } from 'react'
+import { useState, type ReactElement, type ReactNode } from 'react'
+
+import { PanelHostContext } from '@/ds/SidePanel'
 
 export const TOP_BAR_HEIGHT = 64
 
@@ -29,7 +31,9 @@ const FrameLayout = styled(Layout)(({ theme }) => ({
 
 // Content is `height: 100%` plus a 16px margin on wide screens, which
 // overflows the window; stretching it in the flex row keeps the margin inside.
+// The content scrolls inside, under the layer an open task takes.
 const FrameContent = styled(Content)(({ theme }) => ({
+  overflow: 'hidden',
   [theme.breakpoints.up('lg')]: { height: 'auto' }
 }))
 
@@ -42,14 +46,33 @@ export function AppFrame({
   sidebar: ReactNode
   children: ReactNode
 }): ReactElement {
+  const [panelHost, setPanelHost] = useState<HTMLElement | null>(null)
   return (
-    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      {topBar}
-      <FrameLayout withTopBar={false}>
-        <Sidebar>{sidebar}</Sidebar>
-        <FrameContent role={undefined}>{children}</FrameContent>
-      </FrameLayout>
-    </Box>
+    <PanelHostContext value={panelHost}>
+      <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        {topBar}
+        <FrameLayout withTopBar={false}>
+          <Sidebar>{sidebar}</Sidebar>
+          <FrameContent role={undefined}>
+            <Box sx={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto' }}>
+              {children}
+            </Box>
+            {/* An open task covers the content, and only it. */}
+            <Box
+              ref={setPanelHost}
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                pointerEvents: 'none',
+                borderRadius: 'inherit',
+                overflow: 'hidden',
+                '& > *': { pointerEvents: 'auto' }
+              }}
+            />
+          </FrameContent>
+        </FrameLayout>
+      </Box>
+    </PanelHostContext>
   )
 }
 
