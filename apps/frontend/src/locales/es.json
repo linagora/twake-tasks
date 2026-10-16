@@ -366,7 +366,21 @@
   "shortcuts": {
     "title": "Atajos de teclado",
     "then": "g y luego %{key}",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "withKey": "%{label} (%{key})",
+    "go": "Ir a",
+    "inList": "En un tablero o una lista",
+    "inTask": "En una tarea abierta",
+    "next": "Tarea siguiente",
+    "previous": "Tarea anterior",
+    "open": "Abrir la tarea",
+    "closeTask": "Cerrar la tarea",
+    "assign": "Añadir responsables",
+    "label": "Añadir etiquetas",
+    "describe": "Editar la descripción",
+    "comment": "Escribir un comentario",
+    "complete": "Terminar o reabrir la tarea",
+    "move": "Mover a otro tablero"
   },
   "transfer": {
     "title": "Mover a otro tablero",

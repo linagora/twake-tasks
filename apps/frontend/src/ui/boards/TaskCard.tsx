@@ -69,6 +69,7 @@ export function TaskCard({
       </Meta>
       <CardTitle>
         <Link
+          data-task-opener
           component="button"
           variant="body2"
           color="textPrimary"

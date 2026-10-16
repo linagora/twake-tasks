@@ -366,7 +366,21 @@
   "shortcuts": {
     "title": "Scorciatoie da tastiera",
     "then": "g poi %{key}",
-    "close": "Chiudi"
+    "close": "Chiudi",
+    "withKey": "%{label} (%{key})",
+    "go": "Vai a",
+    "inList": "In una bacheca o una lista",
+    "inTask": "In un’attività aperta",
+    "next": "Attività successiva",
+    "previous": "Attività precedente",
+    "open": "Apri l’attività",
+    "closeTask": "Chiudi l’attività",
+    "assign": "Aggiungi assegnatari",
+    "label": "Aggiungi etichette",
+    "describe": "Modifica la descrizione",
+    "comment": "Scrivi un commento",
+    "complete": "Completa o riapri l’attività",
+    "move": "Sposta in un’altra bacheca"
   },
   "transfer": {
     "title": "Sposta in un’altra bacheca",

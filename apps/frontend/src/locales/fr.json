@@ -366,7 +366,21 @@
   "shortcuts": {
     "title": "Raccourcis clavier",
     "then": "g puis %{key}",
-    "close": "Fermer"
+    "close": "Fermer",
+    "withKey": "%{label} (%{key})",
+    "go": "Aller à",
+    "inList": "Dans un tableau ou une liste",
+    "inTask": "Dans une tâche ouverte",
+    "next": "Tâche suivante",
+    "previous": "Tâche précédente",
+    "open": "Ouvrir la tâche",
+    "closeTask": "Fermer la tâche",
+    "assign": "Ajouter des responsables",
+    "label": "Ajouter des étiquettes",
+    "describe": "Modifier la description",
+    "comment": "Écrire un commentaire",
+    "complete": "Terminer ou rouvrir la tâche",
+    "move": "Déplacer vers un autre tableau"
   },
   "transfer": {
     "title": "Déplacer vers un autre tableau",

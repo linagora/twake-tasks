@@ -8,8 +8,8 @@ import {
   People,
   Plus
 } from '@linagora/twake-icons'
-import { IconButton, Typography } from '@linagora/twake-mui'
-import { useId, useState, type ReactElement } from 'react'
+import { IconButton, Tooltip, Typography } from '@linagora/twake-mui'
+import { useId, useRef, useState, type ReactElement } from 'react'
 
 import { LabelChip, PersonChip } from '@/ds/Columns'
 import {
@@ -26,6 +26,11 @@ import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoardChange, useMoveTask } from '@/ui/boards/queries'
 import { Reminders } from '@/ui/boards/Reminders'
+import {
+  keyOf,
+  useTaskShortcut,
+  type TaskAction
+} from '@/ui/boards/taskShortcuts'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const PRIORITIES = [1, 2, 3, 4] as const
@@ -44,6 +49,16 @@ export function TaskProperties({
   const { t } = useI18n()
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
   const [labeling, setLabeling] = useState<HTMLElement | null>(null)
+  const assignButton = useRef<HTMLButtonElement>(null)
+  const labelButton = useRef<HTMLButtonElement>(null)
+  const withKey = (label: string, action: TaskAction) =>
+    t('shortcuts.withKey', { label, key: keyOf(action) })
+  useTaskShortcut('assign', () => {
+    if (editable && board) setAssigning(assignButton.current)
+  })
+  useTaskShortcut('label', () => {
+    if (editable && board) setLabeling(labelButton.current)
+  })
   const unassign = useBoardChange(boardId, (api, userIds: string[]) =>
     api.setAssignees(boardId, task.id, userIds)
   )
@@ -97,15 +112,19 @@ export function TaskProperties({
             </Typography>
           )}
           {editable && board && (
-            <IconButton
-              size="small"
-              aria-label={t('task.addAssignees')}
-              onClick={event => {
-                setAssigning(event.currentTarget)
-              }}
-            >
-              <Icon icon={Plus} size={14} />
-            </IconButton>
+            <Tooltip title={withKey(t('task.addAssignees'), 'assign')}>
+              <IconButton
+                ref={assignButton}
+                size="small"
+                aria-label={t('task.addAssignees')}
+                aria-keyshortcuts={keyOf('assign')}
+                onClick={event => {
+                  setAssigning(event.currentTarget)
+                }}
+              >
+                <Icon icon={Plus} size={14} />
+              </IconButton>
+            </Tooltip>
           )}
         </Property>
         <Property icon={<Icon icon={Label} />} label={t('task.labels')}>
@@ -137,15 +156,19 @@ export function TaskProperties({
             </Typography>
           )}
           {editable && board && (
-            <IconButton
-              size="small"
-              aria-label={t('task.addLabels')}
-              onClick={event => {
-                setLabeling(event.currentTarget)
-              }}
-            >
-              <Icon icon={Plus} size={14} />
-            </IconButton>
+            <Tooltip title={withKey(t('task.addLabels'), 'label')}>
+              <IconButton
+                ref={labelButton}
+                size="small"
+                aria-label={t('task.addLabels')}
+                aria-keyshortcuts={keyOf('label')}
+                onClick={event => {
+                  setLabeling(event.currentTarget)
+                }}
+              >
+                <Icon icon={Plus} size={14} />
+              </IconButton>
+            </Tooltip>
           )}
         </Property>
         <PriorityRow task={task} boardId={boardId} editable={editable} />
