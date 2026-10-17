@@ -411,8 +411,12 @@ export function PanelSection({
           justifyContent: 'flex-end',
           gap: 1,
           // Without its title, the action floats beside the content rather
-          // than taking a line over it.
-          ...(hideTitle ? { float: 'right', ml: 1 } : { mb: 1 })
+          // than taking a line over it, raised over the content: ProseMirror
+          // positions its text, which would paint over the float and take
+          // its clicks.
+          ...(hideTitle
+            ? { float: 'right', ml: 1, position: 'relative', zIndex: 1 }
+            : { mb: 1 })
         }}
       >
         <Typography

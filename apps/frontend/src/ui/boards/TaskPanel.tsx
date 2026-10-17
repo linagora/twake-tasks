@@ -9,6 +9,7 @@ import {
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import {
@@ -416,22 +417,23 @@ function Description({
         editable &&
         description.data &&
         draft === null && (
-          <Button
-            variant="text"
-            size="small"
-            startIcon={<Icon icon={Pen} size={14} />}
-            aria-label={t('task.editDescription')}
-            aria-keyshortcuts={keyOf('describe')}
+          <Tooltip
             title={t('shortcuts.withKey', {
               label: t('task.editDescription'),
               key: keyOf('describe')
             })}
-            onClick={() => {
-              setDraft(description.data.markdown)
-            }}
           >
-            {t('task.edit')}
-          </Button>
+            <IconButton
+              size="small"
+              aria-label={t('task.editDescription')}
+              aria-keyshortcuts={keyOf('describe')}
+              onClick={() => {
+                setDraft(description.data.markdown)
+              }}
+            >
+              <Icon icon={Pen} size={14} />
+            </IconButton>
+          </Tooltip>
         )
       }
     >

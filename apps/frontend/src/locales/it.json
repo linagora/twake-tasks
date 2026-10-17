@@ -191,7 +191,6 @@
     "subtasks": "Sotto-attività",
     "noDescription": "Nessuna descrizione.",
     "changeFailed": "Impossibile salvare la modifica.",
-    "edit": "Modifica",
     "addLabels": "Aggiungi etichette",
     "removeLabel": "Rimuovi l’etichetta %{name}",
     "addAssignees": "Aggiungi assegnatari",

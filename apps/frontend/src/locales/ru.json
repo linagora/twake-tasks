@@ -191,7 +191,6 @@
     "subtasks": "Подзадачи",
     "noDescription": "Нет описания.",
     "changeFailed": "Не удалось сохранить изменение.",
-    "edit": "Изменить",
     "addLabels": "Добавить метки",
     "removeLabel": "Убрать метку %{name}",
     "addAssignees": "Добавить исполнителей",

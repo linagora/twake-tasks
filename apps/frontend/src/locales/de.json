@@ -191,7 +191,6 @@
     "subtasks": "Unteraufgaben",
     "noDescription": "Keine Beschreibung.",
     "changeFailed": "Die Änderung konnte nicht gespeichert werden.",
-    "edit": "Bearbeiten",
     "addLabels": "Labels hinzufügen",
     "removeLabel": "Label %{name} entfernen",
     "addAssignees": "Zuständige hinzufügen",
