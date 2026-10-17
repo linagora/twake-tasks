@@ -520,5 +520,8 @@
   },
   "page": {
     "breadcrumb": "Ubicación de la página"
+  },
+  "viewTask": {
+    "board": "Tablero"
   }
 }

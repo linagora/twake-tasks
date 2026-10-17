@@ -520,5 +520,8 @@
   },
   "page": {
     "breadcrumb": "Posizione della pagina"
+  },
+  "viewTask": {
+    "board": "Bacheca"
   }
 }

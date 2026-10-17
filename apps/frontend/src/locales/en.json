@@ -520,5 +520,8 @@
   },
   "page": {
     "breadcrumb": "Where the page is"
+  },
+  "viewTask": {
+    "board": "Board"
   }
 }

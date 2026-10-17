@@ -63,13 +63,16 @@ export function SidePanel({
   onClose,
   header,
   aside,
-  children
+  children,
+  instant = false
 }: {
   label: string
   onClose: () => void
   header: ReactNode
   aside?: ReactNode
   children: ReactNode
+  /** Shows at once, as when the panel stays on a task that moved. */
+  instant?: boolean
 }): ReactElement {
   const host = useContext(PanelHostContext)
   const focused = useFocusWhileOpen(host)
@@ -148,6 +151,7 @@ export function SidePanel({
       <Drawer
         open
         anchor="right"
+        transitionDuration={instant ? 0 : undefined}
         onClose={(_event, reason) => {
           if (reason === 'escapeKeyDown' && inField(document.activeElement))
             return

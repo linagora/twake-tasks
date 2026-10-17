@@ -243,6 +243,17 @@ export function useBoard(boardId: string): UseQueryResult<Board> {
   })
 }
 
+/** Reads a board, from the cache when it holds it. */
+export function useLoadBoard(): (boardId: string) => Promise<Board> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return (boardId: string) =>
+    queryClient.query({
+      queryKey: boardKey(boardId),
+      queryFn: () => api.getBoard(boardId)
+    })
+}
+
 export function useCreateTask(
   boardId: string
 ): UseMutationResult<unknown, Error, NewTask> {
@@ -284,13 +295,23 @@ export function useTransferTask(
     { boardId: string; sectionId: string | null }
   >
   refresh: () => Promise<void>
+  /** Loads the board the task went to, so its new card is there to show. */
+  arrive: (to: string) => Promise<void>
 } {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   // Exact: the moved task's comments, reminders and the rest now 404 under the
   // old board, and its panel is still open while it closes.
   const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: boardKey(boardId), exact: true })
+    Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: boardKey(boardId),
+        exact: true
+      }),
+      queryClient.invalidateQueries({ queryKey: ['agenda'] })
+    ]).then(() => undefined)
+  const arrive = (to: string) =>
+    queryClient.refetchQueries({ queryKey: boardKey(to) })
   // A move that ends after the form is gone has nobody left to refresh.
   const mounted = useRef(true)
   useEffect(() => {
@@ -307,7 +328,7 @@ export function useTransferTask(
     },
     onError: refresh
   })
-  return { transfer, refresh }
+  return { transfer, refresh, arrive }
 }
 
 export function useMoveTask(

@@ -1,6 +1,7 @@
 import {
   Bell,
   CalendarToday,
+  Dashboard,
   Flag,
   Icon,
   Label,
@@ -18,14 +19,25 @@ import {
   PropertySelect,
   TitleInput
 } from '@/ds/SidePanel'
+import type { TransferPreview } from '@/application/boards'
+import { keptSection } from '@/application/viewTask'
 import type { Board, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
 import { Dates } from '@/ui/boards/Dates'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useBoardChange, useMoveTask } from '@/ui/boards/queries'
+import {
+  useBoardChange,
+  useBoards,
+  useLoadBoard,
+  useMoveTask,
+  usePreviewTransfer,
+  useTransferTask
+} from '@/ui/boards/queries'
 import { Reminders } from '@/ui/boards/Reminders'
+import { ConfirmTransfer } from '@/ui/boards/TransferTask'
+import { useFollowMovedTask } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const PRIORITIES = [1, 2, 3, 4] as const
@@ -54,6 +66,13 @@ export function TaskProperties({
   return (
     <>
       <Properties>
+        {board && (
+          <BoardRow
+            task={task}
+            board={board}
+            editable={editable && task.parentId === null}
+          />
+        )}
         {board && task.parentId === null && (
           <SectionRow
             task={task}
@@ -267,10 +286,9 @@ function SectionRow({
         <PropertySelect
           labelId={labelId}
           value={task.sectionId ?? ''}
+          // A task can always go back to no status.
           options={[
-            ...(task.sectionId === null
-              ? [{ value: '', label: t('board.noSection') }]
-              : []),
+            { value: '', label: t('board.noSection') },
             ...sections.map(section => ({
               value: section.id,
               label: section.name
@@ -331,6 +349,106 @@ function PriorityRow({
         />
       ) : (
         <Typography variant="body2">{name(task.priority)}</Typography>
+      )}
+    </Property>
+  )
+}
+
+// A task's board is one of its properties: changing it moves the task, as
+// "Move to another board" does, into the status of the same name there, else
+// its first open one, and the panel follows the task for its status to be
+// picked.
+function BoardRow({
+  task,
+  board,
+  editable
+}: {
+  task: Task
+  board: Board
+  editable: boolean
+}): ReactElement {
+  const { t } = useI18n()
+  const labelId = useId()
+  const boards = useBoards()
+  const loadBoard = useLoadBoard()
+  const follow = useFollowMovedTask()
+  const { transfer, refresh, arrive } = useTransferTask(board.id, task.id)
+  const check = usePreviewTransfer(board.id, task.id)
+  const [confirming, setConfirming] = useState<{
+    to: { boardId: string; sectionId: string | null }
+    preview: TransferPreview
+  } | null>(null)
+  const targets = (boards.data ?? []).filter(
+    each => each.id === board.id || (each.role !== 'viewer' && !each.archived)
+  )
+  const move = (to: { boardId: string; sectionId: string | null }) => {
+    transfer.mutate(to, {
+      // The new board first, then the panel, then the lists the task left:
+      // the panel stays open all along.
+      onSuccess: result => {
+        setConfirming(null)
+        void arrive(to.boardId).then(() => {
+          follow(board.id, to.boardId, result.key)
+          void refresh()
+        })
+      }
+    })
+  }
+
+  return (
+    <Property
+      id={labelId}
+      icon={<Icon icon={Dashboard} />}
+      label={t('viewTask.board')}
+    >
+      {editable && targets.length > 1 ? (
+        <PropertySelect
+          labelId={labelId}
+          value={board.id}
+          options={targets.map(each => ({ value: each.id, label: each.name }))}
+          onChange={(value: string) => {
+            if (value === board.id) return
+            void loadBoard(value).then(target => {
+              const to = {
+                boardId: value,
+                sectionId:
+                  keptSection(board.sections, task.sectionId, target.sections)
+                    ?.id ?? null
+              }
+              check.mutate(to, {
+                onSuccess: preview => {
+                  if (preview.droppedAssignees.length === 0) move(to)
+                  else setConfirming({ to, preview })
+                }
+              })
+            })
+          }}
+        />
+      ) : (
+        <Typography variant="body2">{board.name}</Typography>
+      )}
+      {(check.isError || (transfer.isError && !confirming)) && (
+        <Typography role="alert" variant="caption" color="error">
+          {t('transfer.failed')}
+        </Typography>
+      )}
+      {confirming && (
+        <ConfirmTransfer
+          task={task}
+          board={
+            targets.find(each => each.id === confirming.to.boardId)?.name ?? ''
+          }
+          preview={confirming.preview}
+          busy={transfer.isPending}
+          failed={transfer.isError}
+          onCancel={() => {
+            transfer.reset()
+            setConfirming(null)
+          }}
+          onConfirm={() => {
+            move(confirming.to)
+          }}
+        />
       )}
     </Property>
   )
