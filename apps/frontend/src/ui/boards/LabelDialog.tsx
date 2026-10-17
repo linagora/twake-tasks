@@ -1,9 +1,11 @@
+import { Icon, Label as LabelIcon } from '@linagora/twake-icons'
 import {
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   Divider,
+  InputAdornment,
   Stack,
   TextField,
   Typography
@@ -11,10 +13,9 @@ import {
 import { useId, useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
-import { ColorGrid, ColorPreview } from '@/ds/ColorPicker'
+import { ColorField, leastUsedColor } from '@/ds/ColorPicker'
 import { DialogHeader } from '@/ds/DialogHeader'
 import { labelName, type Label } from '@/domain/board'
-import { defaultLabelColor, LABEL_COLORS } from '@/domain/labelColors'
 import { useBoardChange } from '@/ui/boards/queries'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -22,9 +23,9 @@ import { useI18n } from '@/ui/i18n/useI18n'
 type Draft = Pick<Label, 'name' | 'color'>
 
 /**
- * A label's name and color in one dialog, as a team is made in the admin
- * panel: the label's preview on top, then its name, then the swatches. A new
- * label starts with the swatch the board uses the least.
+ * A label's name and color, as a team is made in the admin panel: the name's
+ * field with the square of its color beside it. A new label starts with the
+ * swatch the board uses the least.
  */
 export function LabelDialog({
   boardId,
@@ -45,11 +46,9 @@ export function LabelDialog({
 }): ReactElement {
   const { t } = useI18n()
   const titleId = useId()
-  const nameId = useId()
-  const colorId = useId()
   const [name, setName] = useState(label?.name ?? initialName)
   const [color, setColor] = useState<string | null>(() =>
-    label ? label.color : defaultLabelColor(usedColors)
+    label ? label.color : leastUsedColor(usedColors)
   )
   const save = useBoardChange(boardId, (api, draft: Draft) =>
     label
@@ -81,45 +80,40 @@ export function LabelDialog({
           close={{ label: t('labelDialog.close'), onClick: onClose }}
         />
         <DialogContent className="u-pb-1-half">
-          <Stack spacing={3}>
-            <Stack className="u-flex-items-center">
-              <ColorPreview name={trimmed} color={color} size={72} />
-            </Stack>
-            <Stack spacing={1}>
-              <Typography component="label" htmlFor={nameId} variant="body2">
-                {t('labelDialog.name')}
-              </Typography>
-              <TextField
-                id={nameId}
-                value={name}
-                onChange={event => {
-                  setName(event.target.value)
-                  save.reset()
-                }}
-                required
-                fullWidth
-                size="small"
-                inputRef={focusOnMount}
-                error={taken}
-                helperText={taken && t('board.labelTaken', { name: trimmed })}
-                slotProps={{ htmlInput: { maxLength: 50 } }}
-              />
-            </Stack>
-            <Stack spacing={1.5}>
-              <Typography id={colorId} variant="body2">
-                {t('labelDialog.color')}
-              </Typography>
-              <ColorGrid
-                labelledBy={colorId}
-                none={t('labelDialog.noColor')}
-                swatches={LABEL_COLORS.map(swatch => ({
-                  value: swatch.value,
-                  label: t(`labelColors.${swatch.name}`)
-                }))}
-                value={color}
-                onChange={setColor}
-              />
-            </Stack>
+          <Stack direction="row" spacing={2} className="u-flex-items-start">
+            <TextField
+              label={t(label ? 'labelDialog.editName' : 'labelDialog.newName')}
+              placeholder={t('labelDialog.name')}
+              value={name}
+              onChange={event => {
+                setName(event.target.value)
+                save.reset()
+              }}
+              required
+              fullWidth
+              inputRef={focusOnMount}
+              error={taken}
+              helperText={taken && t('board.labelTaken', { name: trimmed })}
+              slotProps={{
+                inputLabel: { shrink: true, required: false },
+                htmlInput: { maxLength: 50 },
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Icon icon={LabelIcon} size={16} />
+                    </InputAdornment>
+                  )
+                }
+              }}
+            />
+            <ColorField
+              label={t('labelDialog.pickColor')}
+              customLabel={t('labelDialog.customColor')}
+              cancelLabel={t('board.cancel')}
+              saveLabel={t('board.save')}
+              value={color}
+              onChange={setColor}
+            />
           </Stack>
           {save.isError && !taken && (
             <Typography role="alert" color="error" className="u-mt-1">

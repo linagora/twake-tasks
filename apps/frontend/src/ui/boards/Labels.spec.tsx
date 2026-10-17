@@ -40,10 +40,15 @@ const logoCard = async () =>
     await screen.findByRole('article', { name: 'DES-1 Logo', hidden: true })
   )
 
-// The swatches are in the dialog, under the name.
-function pickColor(name: string) {
-  const colors = within(screen.getByRole('radiogroup', { name: 'Color' }))
-  fireEvent.click(colors.getByRole('radio', { name }))
+// twake-mui's swatches have no names: the one at `index` of its COLORS.
+function pickColor(index: number) {
+  fireEvent.click(screen.getByRole('button', { name: 'Choose the color' }))
+  const colors = within(
+    screen.getByRole('dialog', { name: 'Choose the color' })
+  )
+  const swatch = colors.getAllByRole('button')[index]
+  if (!swatch) throw new Error(`No swatch at ${String(index)}`)
+  fireEvent.click(swatch)
 }
 
 describe('Labels', () => {
@@ -98,8 +103,10 @@ describe('Labels', () => {
     const dialog = within(
       await screen.findByRole('dialog', { name: 'New label' })
     )
-    expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('Later')
-    pickColor('Purple')
+    expect(
+      dialog.getByRole('textbox', { name: 'Enter a new label name' })
+    ).toHaveValue('Later')
+    pickColor(1)
     fireEvent.click(
       within(screen.getByRole('dialog', { name: 'New label' })).getByRole(
         'button',
@@ -136,7 +143,6 @@ describe('Labels', () => {
     const dialog = within(
       await screen.findByRole('dialog', { name: 'New label' })
     )
-    expect(dialog.getByRole('radio', { name: 'Purple' })).toBeChecked()
     fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
 
     await waitFor(() => {
@@ -147,7 +153,7 @@ describe('Labels', () => {
     })
   })
 
-  it('creates a label without a color when none is chosen', async () => {
+  it('creates a label in a color of its own', async () => {
     const { board, boardsApi } = labeledBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
@@ -155,7 +161,12 @@ describe('Labels', () => {
     search(picker, 'Later')
     fireEvent.click(picker.getByRole('menuitem', { name: 'Create “Later”' }))
     await screen.findByRole('dialog', { name: 'New label' })
-    pickColor('No color')
+    pickColor(20)
+    const custom = within(screen.getByRole('dialog', { name: 'Custom color' }))
+    fireEvent.change(custom.getByRole('textbox', { name: 'Hex' }), {
+      target: { value: '123abc' }
+    })
+    fireEvent.click(custom.getByRole('button', { name: 'Save' }))
     fireEvent.click(
       within(screen.getByRole('dialog', { name: 'New label' })).getByRole(
         'button',
@@ -166,7 +177,7 @@ describe('Labels', () => {
     await waitFor(() => {
       expect(boardsApi.createLabel).toHaveBeenCalledWith(board.id, {
         name: 'Later',
-        color: null
+        color: '#123ABC'
       })
     })
   })
@@ -180,7 +191,9 @@ describe('Labels', () => {
     const dialog = within(
       await screen.findByRole('dialog', { name: 'New label' })
     )
-    expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('')
+    expect(
+      dialog.getByRole('textbox', { name: 'Enter a new label name' })
+    ).toHaveValue('')
     expect(dialog.getByRole('button', { name: 'Create' })).toBeDisabled()
   })
 
@@ -193,10 +206,10 @@ describe('Labels', () => {
     const dialog = within(
       await screen.findByRole('dialog', { name: 'Edit label' })
     )
-    fireEvent.change(dialog.getByRole('textbox', { name: 'Name' }), {
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Label name' }), {
       target: { value: 'Blocker' }
     })
-    pickColor('Red')
+    pickColor(10)
     fireEvent.click(
       within(screen.getByRole('dialog', { name: 'Edit label' })).getByRole(
         'button',

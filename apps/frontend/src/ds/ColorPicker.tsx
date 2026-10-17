@@ -1,114 +1,221 @@
-import { Check, Icon, Palette } from '@linagora/twake-icons'
+import { Icon, Palette } from '@linagora/twake-icons'
 import {
   Avatar,
   Box,
-  Radio,
-  RadioGroup,
-  getInitials,
-  radioClasses
+  Button,
+  ButtonBase,
+  COLORS,
+  ColorList,
+  Popover,
+  TextField,
+  Typography,
+  type InputBaseComponentProps
 } from '@linagora/twake-mui'
-import type { ReactElement } from 'react'
+import { useState, type ChangeEvent, type ReactElement } from 'react'
+import { HexColorInput, HexColorPicker } from 'react-colorful'
 
 /**
- * What a thing will look like in its color, its initials on it, or a palette
- * while it has none: Twake Space's preview of a new space.
+ * The first of twake-mui's swatches that `used` holds the least, so things
+ * made one after another each get their own color.
  */
-export function ColorPreview({
-  name,
-  color,
-  size
+export function leastUsedColor(used: readonly (string | null)[]): string {
+  const count = (value: string) =>
+    used.filter(color => color?.toUpperCase() === value.toUpperCase()).length
+  let best = COLORS[0] ?? '#2D83FF'
+  for (const color of COLORS) {
+    if (count(color) < count(best)) best = color
+  }
+  return best
+}
+
+/**
+ * A color beside a text field, as the admin panel picks a team's: a square
+ * with the color in it, which opens twake-mui's swatches, then a picker of
+ * any color from the palette at their end.
+ */
+export function ColorField({
+  label,
+  customLabel,
+  cancelLabel,
+  saveLabel,
+  value,
+  onChange
 }: {
-  name: string
-  color: string | null
-  size: number
+  label: string
+  customLabel: string
+  cancelLabel: string
+  saveLabel: string
+  value: string | null
+  onChange: (color: string) => void
 }): ReactElement {
-  return color ? (
-    <Avatar size={size} color={color}>
-      {getInitials(name, '')}
-    </Avatar>
-  ) : (
-    <Avatar size={size} color="var(--twake-palette-background-default)">
-      <Icon icon={Palette} size={size / 3} color="#424244" />
-    </Avatar>
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const [custom, setCustom] = useState(false)
+  const close = () => {
+    setAnchor(null)
+    setCustom(false)
+  }
+
+  return (
+    <>
+      <ButtonBase
+        aria-label={label}
+        aria-haspopup="dialog"
+        onClick={event => {
+          setAnchor(event.currentTarget)
+        }}
+        sx={{
+          flex: 'none',
+          width: 56,
+          height: 56,
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 1,
+          '&:hover': { borderColor: 'text.primary' }
+        }}
+      >
+        {value ? (
+          <Avatar color={value} size={24}>
+            {' '}
+          </Avatar>
+        ) : (
+          <Icon icon={Palette} size={20} />
+        )}
+      </ButtonBase>
+      <Popover
+        open={anchor !== null}
+        anchorEl={anchor}
+        onClose={close}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            role: 'dialog',
+            'aria-label': custom ? customLabel : label,
+            sx: { p: 2, width: custom ? 246 : 'auto' }
+          }
+        }}
+      >
+        {custom ? (
+          <CustomColor
+            color={value ?? '#2D83FF'}
+            cancelLabel={cancelLabel}
+            saveLabel={saveLabel}
+            onCancel={() => {
+              setCustom(false)
+            }}
+            onSave={color => {
+              onChange(color)
+              close()
+            }}
+          />
+        ) : (
+          <ColorList
+            size="small"
+            {...(value && { selectedColor: value.toUpperCase() })}
+            onClick={color => {
+              onChange(color)
+              close()
+            }}
+            customColorProps={{
+              enabled: true,
+              onClick: () => {
+                setCustom(true)
+              }
+            }}
+            sx={{ width: 200 }}
+          />
+        )}
+      </Popover>
+    </>
   )
 }
 
-function Swatch({
+/** cozy-ui's custom color, which twake-mui has not yet. */
+function CustomColor({
   color,
-  checked
+  cancelLabel,
+  saveLabel,
+  onCancel,
+  onSave
 }: {
-  color: string | null
-  checked: boolean
+  color: string
+  cancelLabel: string
+  saveLabel: string
+  onCancel: () => void
+  onSave: (color: string) => void
 }): ReactElement {
+  const [picked, setPicked] = useState(color.toUpperCase())
   return (
     <Box
-      component="span"
       sx={{
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 25,
-        height: 25,
-        borderRadius: '50%',
-        boxSizing: 'border-box',
-        bgcolor: color ?? 'background.paper',
-        border: color ? 0 : 1,
-        borderColor: 'divider',
-        color: color ? '#fff' : 'text.primary'
+        flexDirection: 'column',
+        gap: 2,
+        '& .react-colorful': { width: '100%' }
       }}
     >
-      {checked && <Icon icon={Check} size={12} />}
+      <HexColorPicker
+        color={picked}
+        onChange={next => {
+          setPicked(next.toUpperCase())
+        }}
+      />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography variant="subtitle2" component="span">
+          Hex
+        </Typography>
+        <TextField
+          variant="standard"
+          size="small"
+          value={picked}
+          slotProps={{
+            input: { inputComponent: HexInput },
+            htmlInput: { 'aria-label': 'Hex' }
+          }}
+          onChange={event => {
+            setPicked(event.target.value.toUpperCase())
+          }}
+        />
+      </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+        <Button variant="text" onClick={onCancel}>
+          {cancelLabel}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            onSave(picked)
+          }}
+        >
+          {saveLabel}
+        </Button>
+      </Box>
     </Box>
   )
 }
 
-/** Twake Space's round swatches, each one named, filling the line. */
-export function ColorGrid({
-  labelledBy,
-  swatches,
-  none,
+// HexColorInput takes `color` and calls back with a string, where MUI gives
+// an input `value` and expects an event.
+function HexInput({
+  id,
+  className,
   value,
-  onChange
-}: {
-  /** The id of the text naming the grid */
-  labelledBy: string
-  swatches: readonly { value: string; label: string }[]
-  /** The name of the swatch with no color, when the color may be none. */
-  none?: string | undefined
-  value: string | null
-  onChange: (color: string | null) => void
-}): ReactElement {
-  const options = [
-    ...(none === undefined ? [] : [{ value: '', label: none }]),
-    ...swatches
-  ]
+  onChange,
+  onFocus,
+  onBlur,
+  'aria-label': ariaLabel
+}: InputBaseComponentProps): ReactElement {
   return (
-    <RadioGroup
-      aria-labelledby={labelledBy}
-      value={value ?? ''}
-      onChange={(_event, color) => {
-        onChange(color || null)
+    <HexColorInput
+      id={id}
+      className={className}
+      aria-label={ariaLabel}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      prefixed
+      color={typeof value === 'string' ? value : ''}
+      onChange={next => {
+        onChange?.({ target: { value: next } } as ChangeEvent<HTMLInputElement>)
       }}
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, 25px)',
-        gap: '12px 10px'
-      }}
-    >
-      {options.map(option => (
-        <Radio
-          key={option.value || 'none'}
-          value={option.value}
-          icon={<Swatch color={option.value || null} checked={false} />}
-          checkedIcon={<Swatch color={option.value || null} checked />}
-          slotProps={{ input: { 'aria-label': option.label } }}
-          sx={{
-            p: 0,
-            '& svg': { fill: 'currentColor' },
-            [`&.${radioClasses.checked} svg`]: { fill: 'currentColor' }
-          }}
-        />
-      ))}
-    </RadioGroup>
+    />
   )
 }
