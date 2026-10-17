@@ -79,7 +79,6 @@
     "createTitle": "Nuova etichetta",
     "editTitle": "Modifica etichetta",
     "name": "Nome",
-    "color": "Colore",
     "newName": "Inserisci il nome della nuova etichetta",
     "editName": "Nome dell’etichetta",
     "pickColor": "Scegli il colore",
@@ -133,8 +132,7 @@
     "addFailed": "Impossibile aggiungere l’attività.",
     "rename": "Rinomina bacheca",
     "renameName": "Nome della bacheca",
-    "renameFailed": "Impossibile rinominare la bacheca.",
-    "breadcrumb": "Posizione della bacheca"
+    "renameFailed": "Impossibile rinominare la bacheca."
   },
   "task": {
     "description": "Descrizione",
@@ -159,10 +157,8 @@
     "priority": "Priorità",
     "noPriority": "Nessuna",
     "assignees": "Assegnatari",
-    "editAssignees": "Modifica assegnatari",
     "nobody": "Nessuno",
     "labels": "Etichette",
-    "editLabels": "Modifica etichette",
     "noLabels": "Nessuna",
     "dates": "Date",
     "reminders": "Promemoria",

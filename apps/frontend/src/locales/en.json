@@ -79,7 +79,6 @@
     "createTitle": "New label",
     "editTitle": "Edit label",
     "name": "Name",
-    "color": "Color",
     "newName": "Enter a new label name",
     "editName": "Label name",
     "pickColor": "Choose the color",
@@ -133,8 +132,7 @@
     "addFailed": "The task could not be added.",
     "rename": "Rename board",
     "renameName": "Board name",
-    "renameFailed": "The board could not be renamed.",
-    "breadcrumb": "Where the board is"
+    "renameFailed": "The board could not be renamed."
   },
   "task": {
     "description": "Description",
@@ -159,10 +157,8 @@
     "priority": "Priority",
     "noPriority": "None",
     "assignees": "Assignees",
-    "editAssignees": "Edit assignees",
     "nobody": "Nobody",
     "labels": "Labels",
-    "editLabels": "Edit labels",
     "noLabels": "None",
     "dates": "Dates",
     "reminders": "Reminders",

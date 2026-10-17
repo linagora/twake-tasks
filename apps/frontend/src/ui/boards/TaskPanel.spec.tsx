@@ -37,6 +37,19 @@ describe('TaskPanel', () => {
     )
   })
 
+  it('titles an empty description, which has nothing to show instead', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    boardsApi.descriptions.delete(logo.id)
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+
+    expect(await panel.findByText('No description.')).toBeVisible()
+    expect(panel.getByRole('heading', { name: 'Description' })).not.toHaveClass(
+      'u-visuallyhidden'
+    )
+  })
+
   it('edits the description from the version it started from', async () => {
     const { board, logo, boardsApi } = logoBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })

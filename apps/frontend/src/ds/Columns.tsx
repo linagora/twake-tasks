@@ -340,8 +340,7 @@ export function LabelChip({
   color?: string | null | undefined
   highlight?: string
   /** A small cross in the chip takes the label off. */
-  remove?:
-    { label: string; onClick: () => void; disabled?: boolean } | undefined
+  remove?: ChipRemoval | undefined
 }): ReactElement {
   const hue = hueOf(name)
   return (
@@ -374,27 +373,7 @@ export function LabelChip({
       })}
     >
       <Highlight text={name} query={highlight} />
-      {remove && (
-        <ButtonBase
-          aria-label={remove.label}
-          title={remove.label}
-          disabled={remove.disabled}
-          onClick={remove.onClick}
-          sx={{
-            width: 16,
-            height: 16,
-            borderRadius: '50%',
-            color: 'inherit',
-            opacity: 0.75,
-            '&:hover, &:focus-visible': {
-              opacity: 1,
-              bgcolor: 'rgba(0, 0, 0, 0.12)'
-            }
-          }}
-        >
-          <Icon icon={Cross} size={8} />
-        </ButtonBase>
-      )}
+      {remove && <ChipRemove {...remove} size={16} />}
     </Box>
   )
 }
@@ -455,6 +434,40 @@ export function Row({ children }: { children: ReactNode }): ReactElement {
   )
 }
 
+interface ChipRemoval {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+}
+
+/** The cross of a chip, in the chip's own colour, darker on hover. */
+function ChipRemove({
+  label,
+  onClick,
+  disabled = false,
+  size
+}: ChipRemoval & { size: number }): ReactElement {
+  return (
+    <ButtonBase
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      sx={{
+        width: size,
+        height: size,
+        flex: 'none',
+        borderRadius: '50%',
+        color: 'inherit',
+        opacity: 0.75,
+        '&:hover, &:focus-visible': { opacity: 1, bgcolor: 'action.selected' }
+      }}
+    >
+      <Icon icon={Cross} size={8} />
+    </ButtonBase>
+  )
+}
+
 /** A person on a task, as a chip with its avatar, and a cross to take it off. */
 export function PersonChip({
   avatar,
@@ -463,8 +476,7 @@ export function PersonChip({
 }: {
   avatar: ReactNode
   name: string
-  remove?:
-    { label: string; onClick: () => void; disabled?: boolean } | undefined
+  remove?: ChipRemoval | undefined
 }): ReactElement {
   return (
     <Box
@@ -490,27 +502,7 @@ export function PersonChip({
       >
         {name}
       </Box>
-      {remove && (
-        <ButtonBase
-          aria-label={remove.label}
-          title={remove.label}
-          disabled={remove.disabled}
-          onClick={remove.onClick}
-          sx={{
-            width: 18,
-            height: 18,
-            flex: 'none',
-            borderRadius: '50%',
-            color: 'text.secondary',
-            '&:hover, &:focus-visible': {
-              color: 'text.primary',
-              bgcolor: 'action.selected'
-            }
-          }}
-        >
-          <Icon icon={Cross} size={8} />
-        </ButtonBase>
-      )}
+      {remove && <ChipRemove {...remove} size={18} />}
     </Box>
   )
 }

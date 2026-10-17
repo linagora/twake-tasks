@@ -79,7 +79,6 @@
     "createTitle": "Neues Label",
     "editTitle": "Label bearbeiten",
     "name": "Name",
-    "color": "Farbe",
     "newName": "Namen für das neue Label eingeben",
     "editName": "Name des Labels",
     "pickColor": "Farbe wählen",
@@ -133,8 +132,7 @@
     "addFailed": "Die Aufgabe konnte nicht hinzugefügt werden.",
     "rename": "Board umbenennen",
     "renameName": "Board-Name",
-    "renameFailed": "Das Board konnte nicht umbenannt werden.",
-    "breadcrumb": "Ort des Boards"
+    "renameFailed": "Das Board konnte nicht umbenannt werden."
   },
   "task": {
     "description": "Beschreibung",
@@ -159,10 +157,8 @@
     "priority": "Priorität",
     "noPriority": "Keine",
     "assignees": "Zugewiesen",
-    "editAssignees": "Zuweisungen bearbeiten",
     "nobody": "Niemand",
     "labels": "Labels",
-    "editLabels": "Labels bearbeiten",
     "noLabels": "Keine",
     "dates": "Termine",
     "reminders": "Erinnerungen",

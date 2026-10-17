@@ -79,7 +79,6 @@
     "createTitle": "Nhãn mới",
     "editTitle": "Chỉnh sửa nhãn",
     "name": "Tên",
-    "color": "Màu",
     "newName": "Nhập tên nhãn mới",
     "editName": "Tên nhãn",
     "pickColor": "Chọn màu",
@@ -133,8 +132,7 @@
     "addFailed": "Không thể thêm công việc.",
     "rename": "Đổi tên bảng",
     "renameName": "Tên bảng",
-    "renameFailed": "Không thể đổi tên bảng.",
-    "breadcrumb": "Vị trí của bảng"
+    "renameFailed": "Không thể đổi tên bảng."
   },
   "task": {
     "description": "Mô tả",
@@ -159,10 +157,8 @@
     "priority": "Độ ưu tiên",
     "noPriority": "Không có",
     "assignees": "Người được giao",
-    "editAssignees": "Sửa người được giao",
     "nobody": "Chưa có ai",
     "labels": "Nhãn",
-    "editLabels": "Sửa nhãn",
     "noLabels": "Không có",
     "dates": "Ngày",
     "reminders": "Lời nhắc",

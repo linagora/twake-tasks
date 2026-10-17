@@ -27,6 +27,8 @@ import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Highlight } from '@/ds/Highlight'
 import { PageHeader } from '@/ds/PageHeader'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
+import { AgendaTaskPanel } from '@/ui/agenda/AgendaTaskPanel'
+import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
 import { formatDay } from '@/ui/boards/dueLabel'
 import { LayoutToggle } from '@/ui/boards/Layouts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
@@ -37,12 +39,10 @@ import {
   useRefreshOnChange,
   type AgendaView
 } from '@/ui/boards/queries'
+import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
 import { NotFoundScreen } from '@/ui/shell/Problems'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
-import { AgendaTaskPanel } from '@/ui/agenda/AgendaTaskPanel'
-import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
-import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 
 const contextOf = (task: AgendaTask, t: I18nApi['t']): string =>
   [
@@ -318,7 +318,7 @@ export function AgendaScreen(
           to: `/${props.view}`
         }
   useDocumentTitle(title || null)
-  useRefreshOnChange(view)
+  useRefreshOnChange()
 
   const tasks = agenda.data?.tasks ?? []
   const empty = agenda.isSuccess && tasks.length === 0

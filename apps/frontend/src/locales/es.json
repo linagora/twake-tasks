@@ -79,7 +79,6 @@
     "createTitle": "Nueva etiqueta",
     "editTitle": "Editar etiqueta",
     "name": "Nombre",
-    "color": "Color",
     "newName": "Escribe el nombre de la nueva etiqueta",
     "editName": "Nombre de la etiqueta",
     "pickColor": "Elegir el color",
@@ -133,8 +132,7 @@
     "addFailed": "No se pudo añadir la tarea.",
     "rename": "Renombrar tablero",
     "renameName": "Nombre del tablero",
-    "renameFailed": "No se pudo renombrar el tablero.",
-    "breadcrumb": "Ubicación del tablero"
+    "renameFailed": "No se pudo renombrar el tablero."
   },
   "task": {
     "description": "Descripción",
@@ -159,10 +157,8 @@
     "priority": "Prioridad",
     "noPriority": "Ninguna",
     "assignees": "Personas asignadas",
-    "editAssignees": "Editar personas asignadas",
     "nobody": "Nadie",
     "labels": "Etiquetas",
-    "editLabels": "Editar etiquetas",
     "noLabels": "Ninguna",
     "dates": "Fechas",
     "reminders": "Recordatorios",

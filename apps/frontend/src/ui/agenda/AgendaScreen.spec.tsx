@@ -50,6 +50,26 @@ describe('AgendaScreen', () => {
     expect(boardsApi.agenda).toHaveBeenCalledWith(localZone(), 1)
   })
 
+  it('refreshes Today after a change made in the task opened over it', async () => {
+    const { boardsApi } = boards()
+    renderRoute('/today', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Poster' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: /^DES-2 Poster/ })
+    )
+    await waitFor(() => {
+      expect(boardsApi.agenda).toHaveBeenCalledTimes(1)
+    })
+    const title = panel.getByRole('textbox', { name: 'Title' })
+    fireEvent.change(title, { target: { value: 'Big poster' } })
+    fireEvent.blur(title)
+
+    await waitFor(() => {
+      expect(boardsApi.agenda).toHaveBeenCalledTimes(2)
+    })
+  })
+
   it('shows the key, board, priority, assignees and labels of each task', async () => {
     const { design, boardsApi } = boards()
     design.tasks[0] = aTask(null, {

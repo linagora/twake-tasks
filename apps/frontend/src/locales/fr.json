@@ -79,7 +79,6 @@
     "createTitle": "Nouvelle étiquette",
     "editTitle": "Modifier l'étiquette",
     "name": "Nom",
-    "color": "Couleur",
     "newName": "Saisissez le nom de la nouvelle étiquette",
     "editName": "Nom de l’étiquette",
     "pickColor": "Choisir la couleur",
@@ -133,8 +132,7 @@
     "addFailed": "La tâche n'a pas pu être ajoutée.",
     "rename": "Renommer le tableau",
     "renameName": "Nom du tableau",
-    "renameFailed": "Le tableau n'a pas pu être renommé.",
-    "breadcrumb": "Emplacement du tableau"
+    "renameFailed": "Le tableau n'a pas pu être renommé."
   },
   "task": {
     "description": "Description",
@@ -159,10 +157,8 @@
     "priority": "Priorité",
     "noPriority": "Aucune",
     "assignees": "Responsables",
-    "editAssignees": "Modifier les responsables",
     "nobody": "Personne",
     "labels": "Étiquettes",
-    "editLabels": "Modifier les étiquettes",
     "noLabels": "Aucune",
     "dates": "Dates",
     "reminders": "Rappels",

@@ -14,6 +14,9 @@ import {
 import { useState, type ChangeEvent, type ReactElement } from 'react'
 import { HexColorInput, HexColorPicker } from 'react-colorful'
 
+// The blue of folders, which twake-mui's swatches hold.
+const FALLBACK_COLOR = '#2D83FF'
+
 /**
  * The first of twake-mui's swatches that `used` holds the least, so things
  * made one after another each get their own color.
@@ -21,7 +24,7 @@ import { HexColorInput, HexColorPicker } from 'react-colorful'
 export function leastUsedColor(used: readonly (string | null)[]): string {
   const count = (value: string) =>
     used.filter(color => color?.toUpperCase() === value.toUpperCase()).length
-  let best = COLORS[0] ?? '#2D83FF'
+  let best = COLORS[0] ?? FALLBACK_COLOR
   for (const color of COLORS) {
     if (count(color) < count(best)) best = color
   }
@@ -96,7 +99,7 @@ export function ColorField({
       >
         {custom ? (
           <CustomColor
-            color={value ?? '#2D83FF'}
+            color={value ?? FALLBACK_COLOR}
             cancelLabel={cancelLabel}
             saveLabel={saveLabel}
             onCancel={() => {
