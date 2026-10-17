@@ -189,6 +189,38 @@ describe('AppShell', () => {
     expect(favourites.queryByRole('link', { name: 'Design' })).toBeNull()
   })
 
+  it('keeps Boards lit on a board, but for one opened from its favourite', async () => {
+    const boardsApi = fakeBoardsApi([
+      { ...aBoard(), id: 'board-2', name: 'Launch' }
+    ])
+    await boardsApi.setFavorite('board-2', true)
+    renderRoute('/boards/board-2', { boardsApi })
+
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+    const favourites = within(
+      await screen.findByRole('list', { name: 'Favorites' })
+    )
+    const favourite = await favourites.findByRole('link', { name: 'Launch' })
+    expect(nav.getByRole('link', { name: 'Boards' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    )
+    expect(favourite).not.toHaveAttribute('aria-current')
+
+    fireEvent.click(favourite)
+    await waitFor(() => {
+      expect(favourite).toHaveAttribute('aria-current', 'page')
+    })
+    expect(nav.getByRole('link', { name: 'Boards' })).not.toHaveAttribute(
+      'aria-current'
+    )
+
+    fireEvent.click(nav.getByRole('link', { name: 'Today' }))
+    await waitFor(() => {
+      expect(favourite).not.toHaveAttribute('aria-current')
+    })
+  })
+
   it('counts unread notifications until they are opened', async () => {
     const boardsApi = fakeBoardsApi()
     boardsApi.notifications.push({

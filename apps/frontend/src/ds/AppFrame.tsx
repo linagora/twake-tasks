@@ -230,7 +230,9 @@ export const SidebarEntry = styled('div')(({ theme }) => ({
   // The bottom bar greys the entries that are not current, as twake-mui 10.0
   // did; its NavLink now keeps them in the primary text colour.
   [theme.breakpoints.down('lg')]: {
-    '& > a:not(.active) > div': { color: theme.vars.palette.text.secondary }
+    '& > a:not([aria-current="page"]) > div': {
+      color: theme.vars.palette.text.secondary
+    }
   }
 }))
 

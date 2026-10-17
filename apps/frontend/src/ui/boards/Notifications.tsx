@@ -1,12 +1,13 @@
 import {
   Bell,
-  Check,
   Clock,
   Comment,
+  Eye,
+  EyeClosed,
   Icon,
   People
 } from '@linagora/twake-icons'
-import { Button, Link, Tooltip, Typography } from '@linagora/twake-mui'
+import { IconButton, Link, Tooltip, Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
@@ -43,21 +44,31 @@ export function FollowButton({
   const set = useSetFollowing(boardId, task.id)
   const followed = set.isPending ? set.variables : following.data === true
 
+  // An eye, open and coloured while followed, as the "watch" of trackers.
+  const button = (
+    <IconButton
+      size="small"
+      color={followed ? 'primary' : 'default'}
+      aria-label={
+        followed ? t('notifications.followingTask') : t('notifications.follow')
+      }
+      aria-pressed={followed}
+      disabled={!following.isSuccess}
+      onClick={() => {
+        set.mutate(!followed)
+      }}
+    >
+      <Icon icon={followed ? Eye : EyeClosed} />
+    </IconButton>
+  )
+  // A disabled button gets no hover, so no tooltip until it is known.
+  if (!following.isSuccess) return button
   return (
-    <Tooltip title={followed ? t('notifications.unfollow') : ''} describeChild>
-      <Button
-        variant={followed ? 'primary' : 'secondary'}
-        size="small"
-        startIcon={<Icon icon={followed ? Check : Bell} size={16} />}
-        disabled={!following.isSuccess}
-        onClick={() => {
-          set.mutate(!followed)
-        }}
-      >
-        {followed
-          ? t('notifications.followingTask')
-          : t('notifications.follow')}
-      </Button>
+    <Tooltip
+      title={followed ? t('notifications.unfollow') : t('notifications.follow')}
+      describeChild={followed}
+    >
+      {button}
     </Tooltip>
   )
 }

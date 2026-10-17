@@ -40,7 +40,7 @@ describe('following a task', () => {
     )
   })
 
-  it('shows an unfollow tooltip only once the task is followed', async () => {
+  it('is an eye, with the action in its tooltip', async () => {
     const { board, boardsApi } = aBoardWithLogo()
     renderRoute(`/boards/${board.id}`, { boardsApi })
     fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
@@ -50,14 +50,16 @@ describe('following a task', () => {
 
     const follow = await panel.findByRole('button', { name: 'Follow' })
     fireEvent.mouseOver(follow)
-    expect(screen.queryByRole('tooltip')).toBeNull()
-    const bell = follow.querySelector('svg')?.innerHTML
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Follow')
+    expect(follow).toHaveAttribute('aria-pressed', 'false')
+    const closed = follow.querySelector('svg')?.innerHTML
     fireEvent.click(follow)
 
     const following = await panel.findByRole('button', {
       name: 'Following'
     })
-    expect(following.querySelector('svg')?.innerHTML).not.toBe(bell)
+    expect(following.querySelector('svg')?.innerHTML).not.toBe(closed)
+    expect(following).toHaveAttribute('aria-pressed', 'true')
     fireEvent.mouseOver(following)
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Unfollow')
     expect(following).toHaveAccessibleDescription('Unfollow')

@@ -23,7 +23,7 @@ import {
 
 import { ApiError } from '@/application/boards'
 import { RichText, RichTextEditor } from '@/ds/RichText'
-import { Grow, Inline, PanelSection, SidePanel } from '@/ds/SidePanel'
+import { Grow, Inline, PanelSection, SidePanel, TaskHead } from '@/ds/SidePanel'
 import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
 import { useRemoveTask } from '@/ui/boards/Archive'
 import { Comments } from '@/ui/boards/Comments'
@@ -170,8 +170,10 @@ export function TaskPanel({
         }
       >
         {notice}
-        <Title task={task} boardId={boardId} editable={editable} />
-        <Description task={task} boardId={boardId} editable={editable} />
+        <TaskHead>
+          <Title task={task} boardId={boardId} editable={editable} />
+          <Description task={task} boardId={boardId} editable={editable} />
+        </TaskHead>
         {(children.length > 0 || (editable && depth < MAX_TASK_DEPTH)) && (
           <PanelSection
             title={t('task.subtasks')}

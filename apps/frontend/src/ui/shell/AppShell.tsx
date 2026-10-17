@@ -65,6 +65,7 @@ export function AppShell(): ReactElement {
   const [help, setHelp] = useState(false)
   const search = useRef<HTMLInputElement>(null)
   const { t } = useI18n()
+  const lit = useLitEntry()
   const openQuickAdd = (): void => {
     setQuickAdd(true)
   }
@@ -89,8 +90,8 @@ export function AppShell(): ReactElement {
           >
             {t('quickAdd.title')}
           </SidebarButton>
-          <AppNav />
-          <Favorites />
+          <AppNav boardsLit={lit.boards} />
+          <Favorites lit={lit.favorite} onOpen={lit.openFavorite} />
         </>
       }
     >
@@ -264,13 +265,45 @@ function AccountMenu(): ReactElement {
   )
 }
 
-function AppNav(): ReactElement {
+/**
+ * The entry lit in the sidebar: a board keeps Boards lit, as the page it is
+ * opened from, but for a favorite clicked in the sidebar, which stays lit
+ * while its board is open.
+ */
+function useLitEntry(): {
+  boards: boolean
+  favorite: string | null
+  openFavorite: (boardId: string) => void
+} {
+  const { pathname } = useLocation()
+  const [favorite, setFavorite] = useState<string | null>(null)
+  const inBoard = (boardId: string) =>
+    pathname === `/boards/${boardId}` ||
+    pathname.startsWith(`/boards/${boardId}/`)
+  // Left the board: the next time it opens, it is from wherever it is.
+  if (favorite !== null && !inBoard(favorite)) setFavorite(null)
+  const onFavorite = favorite !== null && inBoard(favorite)
+
+  return {
+    boards:
+      pathname === '/' || (pathname.startsWith('/boards/') && !onFavorite),
+    favorite: onFavorite ? favorite : null,
+    openFavorite: setFavorite
+  }
+}
+
+function AppNav({ boardsLit }: { boardsLit: boolean }): ReactElement {
   const { t } = useI18n()
   const unread = useUnreadNotifications().data ?? 0
 
   return (
     <Nav aria-label={t('app.mainMenu')}>
-      <AppNavLink to="/" end icon={Home} label={t('boards.title')} />
+      <AppNavLink
+        to="/"
+        active={boardsLit}
+        icon={Home}
+        label={t('boards.title')}
+      />
       <AppNavLink to="/today" icon={CalendarToday} label={t('agenda.today')} />
       <AppNavLink to="/upcoming" icon={Calendar} label={t('agenda.upcoming')} />
       <AppNavLink to="/mine" icon={Profile} label={t('agenda.mine')} />
@@ -293,7 +326,7 @@ function AppNav(): ReactElement {
 
 function AppNavLink({
   to,
-  end = false,
+  active,
   icon,
   label,
   count = 0,
@@ -301,7 +334,7 @@ function AppNavLink({
   wideScreenOnly = false
 }: {
   to: string
-  end?: boolean
+  active?: boolean
   icon: ElementType
   label: string
   count?: number
@@ -311,7 +344,11 @@ function AppNavLink({
   const Item = wideScreenOnly ? WideScreenNavItem : BarNavItem
   return (
     <Item>
-      <SidebarLink to={to} end={end} label={count > 0 ? countLabel : undefined}>
+      <SidebarLink
+        to={to}
+        active={active}
+        label={count > 0 ? countLabel : undefined}
+      >
         <CountBadge count={count}>
           <NavIcon icon={icon} />
         </CountBadge>
@@ -321,7 +358,13 @@ function AppNavLink({
   )
 }
 
-function Favorites(): ReactElement | null {
+function Favorites({
+  lit,
+  onOpen
+}: {
+  lit: string | null
+  onOpen: (boardId: string) => void
+}): ReactElement | null {
   const { t } = useI18n()
   const favorites = (useBoards().data ?? []).filter(
     board => board.favorite && !board.archived
@@ -332,7 +375,13 @@ function Favorites(): ReactElement | null {
     <SidebarSection label={t('boards.favorites')}>
       {favorites.map(board => (
         <NavItem key={board.id}>
-          <SidebarLink to={`/boards/${board.id}`}>
+          <SidebarLink
+            to={`/boards/${board.id}`}
+            active={lit === board.id}
+            onClick={() => {
+              onOpen(board.id)
+            }}
+          >
             <NavIcon icon={Star} />
             <NavText>{board.name}</NavText>
           </SidebarLink>

@@ -103,10 +103,13 @@ export function SidePanel({
             overflowY: { md: 'auto' },
             px: { xs: 2, sm: 3 },
             py: 2,
-            // A hairline: half a pixel, one on sharp screens.
-            borderTop: { xs: '0.5px solid', md: 0 },
-            borderLeft: { md: '0.5px solid' },
+            // As thin and light as the header's line: widths only, since a
+            // `border` shorthand in a breakpoint resets the colour to the text.
+            borderStyle: 'solid',
             borderColor: 'divider',
+            borderWidth: 0,
+            borderTopWidth: { xs: '1px', md: 0 },
+            borderLeftWidth: { md: '1px' },
             display: 'flex',
             flexDirection: 'column',
             gap: 3
@@ -378,6 +381,15 @@ export function FeedItem({
   )
 }
 
+/** The title of a task and its description, close together. */
+export function TaskHead({ children }: { children: ReactNode }): ReactElement {
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      {children}
+    </Box>
+  )
+}
+
 export function PanelSection({
   title,
   hideTitle = false,
@@ -391,14 +403,16 @@ export function PanelSection({
   children: ReactNode
 }): ReactElement {
   return (
-    <Box component="section" aria-label={title}>
+    <Box component="section" aria-label={title} sx={{ display: 'flow-root' }}>
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'flex-end',
-          mb: hideTitle && !action ? 0 : 1,
-          gap: 1
+          gap: 1,
+          // Without its title, the action floats beside the content rather
+          // than taking a line over it.
+          ...(hideTitle ? { float: 'right', ml: 1 } : { mb: 1 })
         }}
       >
         <Typography
