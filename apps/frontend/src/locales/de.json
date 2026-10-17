@@ -365,21 +365,7 @@
   "shortcuts": {
     "title": "Tastenkürzel",
     "then": "g, dann %{key}",
-    "close": "Schließen",
-    "withKey": "%{label} (%{key})",
-    "go": "Gehe zu",
-    "inList": "In einem Board oder einer Liste",
-    "inTask": "In einer geöffneten Aufgabe",
-    "next": "Nächste Aufgabe",
-    "previous": "Vorherige Aufgabe",
-    "open": "Aufgabe öffnen",
-    "closeTask": "Aufgabe schließen",
-    "assign": "Zuständige hinzufügen",
-    "label": "Labels hinzufügen",
-    "describe": "Beschreibung bearbeiten",
-    "comment": "Kommentar schreiben",
-    "complete": "Aufgabe erledigen oder wieder öffnen",
-    "move": "In ein anderes Board verschieben"
+    "close": "Schließen"
   },
   "transfer": {
     "title": "In ein anderes Board verschieben",

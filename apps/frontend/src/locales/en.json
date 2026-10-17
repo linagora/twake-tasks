@@ -365,21 +365,7 @@
   "shortcuts": {
     "title": "Keyboard shortcuts",
     "then": "g then %{key}",
-    "close": "Close",
-    "withKey": "%{label} (%{key})",
-    "go": "Go to",
-    "inList": "In a board or a list",
-    "inTask": "In an open task",
-    "next": "Next task",
-    "previous": "Previous task",
-    "open": "Open the task",
-    "closeTask": "Close the task",
-    "assign": "Add assignees",
-    "label": "Add labels",
-    "describe": "Edit the description",
-    "comment": "Write a comment",
-    "complete": "Complete or reopen the task",
-    "move": "Move to another board"
+    "close": "Close"
   },
   "transfer": {
     "title": "Move to another board",

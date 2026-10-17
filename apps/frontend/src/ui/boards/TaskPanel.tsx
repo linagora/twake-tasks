@@ -12,15 +12,7 @@ import {
   Tooltip,
   Typography
 } from '@linagora/twake-mui'
-import {
-  useEffect,
-  useEffectEvent,
-  useId,
-  useRef,
-  useState,
-  type ReactElement,
-  type ReactNode
-} from 'react'
+import { useId, useState, type ReactElement, type ReactNode } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { RichText, RichTextEditor } from '@/ds/RichText'
@@ -33,10 +25,8 @@ import { History } from '@/ui/boards/History'
 import { FollowButton } from '@/ui/boards/Notifications'
 import {
   useBoard,
-  useBoardChange,
   useBoards,
   useCreateTask,
-  useMoveTask,
   useDescription,
   useSetDescription
 } from '@/ui/boards/queries'
@@ -45,17 +35,6 @@ import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
-import {
-  onTop,
-  openTask,
-  TASK_KEYS,
-  keyOf,
-  TaskShortcutsContext,
-  typing,
-  useTaskShortcut,
-  type TaskAction,
-  type TaskShortcuts
-} from '@/ui/boards/taskShortcuts'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -85,176 +64,122 @@ export function TaskPanel({
   const tabsId = useId()
   const children = board?.tasks.filter(each => each.parentId === task.id) ?? []
   const done = children.filter(each => each.completedAt !== null).length
-  const [shortcuts] = useState<TaskShortcuts>(() => new Map())
-  const [id] = useState(() => Symbol(task.key))
-  const comments = useRef<HTMLDivElement>(null)
-  const complete = useBoardChange(boardId, (api, completed: boolean) =>
-    api.completeTask(boardId, task.id, completed ? 'completed' : null)
-  )
-  const move = useMoveTask(boardId)
-  useEffect(() => openTask(id), [id])
-
-  // The keys of the task on top: a, l, e, c, x, m, offered by its parts.
-  const onKey = useEffectEvent((event: KeyboardEvent) => {
-    if (event.ctrlKey || event.metaKey || event.altKey) return
-    if (event.defaultPrevented || typing(event.target) || !onTop(id)) return
-    const action = TASK_KEYS[event.key as keyof typeof TASK_KEYS] as
-      TaskAction | undefined
-    if (action === 'comment') {
-      event.preventDefault()
-      setTab('comments')
-      setTimeout(() => {
-        comments.current
-          ?.querySelector<HTMLElement>('[contenteditable="true"]')
-          ?.focus()
-      }, 0)
-    } else if (action === 'complete' && editable) {
-      event.preventDefault()
-      const sections = board?.sections ?? []
-      const section = sections.find(each => each.id === task.sectionId)
-      if (!section) {
-        complete.mutate(task.completedAt === null)
-        return
-      }
-      const target = sections.find(each =>
-        section.category === 'completed'
-          ? each.category === 'unstarted'
-          : each.category === 'completed'
-      )
-      if (target) {
-        move.mutate({ taskId: task.id, move: { sectionId: target.id } })
-      }
-    } else if (action) {
-      const run = shortcuts.get(action)
-      if (!run) return
-      event.preventDefault()
-      run()
-    }
-  })
-  useEffect(() => {
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [])
 
   return (
-    <TaskShortcutsContext value={shortcuts}>
-      <SidePanel
-        label={`${task.key} ${task.title}`}
-        onClose={onClose}
-        header={
-          <>
-            <TaskBreadcrumb task={task} board={board} />
-            <Grow />
-            <FollowButton task={task} boardId={boardId} />
-            <CopyLinkButton boardId={boardId} taskKey={task.key} />
-            {editable && (
-              <TaskMenu task={task} boardId={boardId} onRemoved={onClose} />
-            )}
-            <IconButton
-              size="small"
-              aria-label={t('task.close')}
-              onClick={onClose}
-            >
-              <Icon icon={Cross} />
-            </IconButton>
-          </>
-        }
-        aside={
-          <TaskProperties
-            task={task}
-            boardId={boardId}
-            board={board}
-            editable={editable}
-          />
-        }
-      >
-        {notice}
-        <TaskHead>
-          <Title task={task} boardId={boardId} editable={editable} />
-          <Description task={task} boardId={boardId} editable={editable} />
-        </TaskHead>
-        {(children.length > 0 || (editable && depth < MAX_TASK_DEPTH)) && (
-          <PanelSection
-            title={t('task.subtasks')}
-            action={
-              children.length > 0 && (
-                <Inline>
-                  <Icon icon={CheckList} size={14} />
-                  <Typography variant="body2" color="textSecondary">
-                    {`${String(done)}/${String(children.length)}`}
-                  </Typography>
-                </Inline>
-              )
-            }
+    <SidePanel
+      label={`${task.key} ${task.title}`}
+      onClose={onClose}
+      header={
+        <>
+          <TaskBreadcrumb task={task} board={board} />
+          <Grow />
+          <FollowButton task={task} boardId={boardId} />
+          <CopyLinkButton boardId={boardId} taskKey={task.key} />
+          {editable && (
+            <TaskMenu task={task} boardId={boardId} onRemoved={onClose} />
+          )}
+          <IconButton
+            size="small"
+            aria-label={t('task.close')}
+            onClick={onClose}
           >
-            {board && (
-              <Subtasks
-                parentId={task.id}
-                tasks={board.tasks}
-                boardId={boardId}
-                editable={editable}
-                label={t('task.subtasks')}
-              />
-            )}
-            {editable && depth < MAX_TASK_DEPTH && (
-              <AddSubtask task={task} boardId={boardId} />
-            )}
-          </PanelSection>
-        )}
-        {board &&
-          children.map(child => (
-            <LinkedTaskPanel
-              key={child.id}
-              task={child}
+            <Icon icon={Cross} />
+          </IconButton>
+        </>
+      }
+      aside={
+        <TaskProperties
+          task={task}
+          boardId={boardId}
+          board={board}
+          editable={editable}
+        />
+      }
+    >
+      {notice}
+      <TaskHead>
+        <Title task={task} boardId={boardId} editable={editable} />
+        <Description task={task} boardId={boardId} editable={editable} />
+      </TaskHead>
+      {(children.length > 0 || (editable && depth < MAX_TASK_DEPTH)) && (
+        <PanelSection
+          title={t('task.subtasks')}
+          action={
+            children.length > 0 && (
+              <Inline>
+                <Icon icon={CheckList} size={14} />
+                <Typography variant="body2" color="textSecondary">
+                  {`${String(done)}/${String(children.length)}`}
+                </Typography>
+              </Inline>
+            )
+          }
+        >
+          {board && (
+            <Subtasks
+              parentId={task.id}
               tasks={board.tasks}
               boardId={boardId}
               editable={editable}
-              depth={depth + 1}
+              label={t('task.subtasks')}
             />
-          ))}
-        <div ref={comments}>
-          <Tabs
-            value={tab}
-            onChange={(_event, value: 'comments' | 'history') => {
-              setTab(value)
-            }}
-          >
-            <Tab
-              value="comments"
-              label={t('task.comments')}
-              id={`${tabsId}-comments`}
-              aria-controls={`${tabsId}-panel`}
+          )}
+          {editable && depth < MAX_TASK_DEPTH && (
+            <AddSubtask task={task} boardId={boardId} />
+          )}
+        </PanelSection>
+      )}
+      {board &&
+        children.map(child => (
+          <LinkedTaskPanel
+            key={child.id}
+            task={child}
+            tasks={board.tasks}
+            boardId={boardId}
+            editable={editable}
+            depth={depth + 1}
+          />
+        ))}
+      <div>
+        <Tabs
+          value={tab}
+          onChange={(_event, value: 'comments' | 'history') => {
+            setTab(value)
+          }}
+        >
+          <Tab
+            value="comments"
+            label={t('task.comments')}
+            id={`${tabsId}-comments`}
+            aria-controls={`${tabsId}-panel`}
+          />
+          <Tab
+            value="history"
+            label={t('history.heading')}
+            id={`${tabsId}-history`}
+            aria-controls={`${tabsId}-panel`}
+          />
+        </Tabs>
+        <div
+          role="tabpanel"
+          id={`${tabsId}-panel`}
+          aria-labelledby={`${tabsId}-${tab}`}
+          className="u-pt-1"
+        >
+          {tab === 'comments' ? (
+            <Comments
+              task={task}
+              boardId={boardId}
+              members={board?.members ?? []}
+              tasks={board?.tasks ?? []}
+              archived={shelved || (board?.archived ?? false)}
             />
-            <Tab
-              value="history"
-              label={t('history.heading')}
-              id={`${tabsId}-history`}
-              aria-controls={`${tabsId}-panel`}
-            />
-          </Tabs>
-          <div
-            role="tabpanel"
-            id={`${tabsId}-panel`}
-            aria-labelledby={`${tabsId}-${tab}`}
-            className="u-pt-1"
-          >
-            {tab === 'comments' ? (
-              <Comments
-                task={task}
-                boardId={boardId}
-                members={board?.members ?? []}
-                tasks={board?.tasks ?? []}
-                archived={shelved || (board?.archived ?? false)}
-              />
-            ) : (
-              <History task={task} boardId={boardId} />
-            )}
-          </div>
+          ) : (
+            <History task={task} boardId={boardId} />
+          )}
         </div>
-      </SidePanel>
-    </TaskShortcutsContext>
+      </div>
+    </SidePanel>
   )
 }
 
@@ -296,9 +221,6 @@ function TaskMenu({
   const { t } = useI18n()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const [moving, setMoving] = useState(false)
-  useTaskShortcut('move', () => {
-    if (movable) setMoving(true)
-  })
   const titleId = useId()
   const remove = useRemoveTask(boardId, task)
   const boards = useBoards()
@@ -401,11 +323,6 @@ function Description({
   const description = useDescription(boardId, task.id)
   const save = useSetDescription(boardId, task.id)
   const [draft, setDraft] = useState<string | null>(null)
-  useTaskShortcut('describe', () => {
-    if (editable && description.data && draft === null) {
-      setDraft(description.data.markdown)
-    }
-  })
   const stale =
     save.error instanceof ApiError && save.error.code === 'stale_version'
 
@@ -417,16 +334,10 @@ function Description({
         editable &&
         description.data &&
         draft === null && (
-          <Tooltip
-            title={t('shortcuts.withKey', {
-              label: t('task.editDescription'),
-              key: keyOf('describe')
-            })}
-          >
+          <Tooltip title={t('task.editDescription')}>
             <IconButton
               size="small"
               aria-label={t('task.editDescription')}
-              aria-keyshortcuts={keyOf('describe')}
               onClick={() => {
                 setDraft(description.data.markdown)
               }}

@@ -68,7 +68,6 @@ export function TaskListRow({
       done={done}
       title={
         <Link
-          data-task-opener
           component="button"
           variant="body2"
           color="inherit"

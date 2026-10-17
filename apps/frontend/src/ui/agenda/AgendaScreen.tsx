@@ -120,7 +120,6 @@ function AgendaRow({
       title={
         <>
           <Link
-            data-task-opener
             component="button"
             variant="body2"
             className="u-ta-left"
@@ -258,7 +257,6 @@ function FilterCard({ task }: { task: AgendaTask }): ReactElement {
       </Typography>
       <CardTitle>
         <Link
-          data-task-opener
           component="button"
           color="inherit"
           underline="none"

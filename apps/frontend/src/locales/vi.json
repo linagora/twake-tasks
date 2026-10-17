@@ -365,21 +365,7 @@
   "shortcuts": {
     "title": "Phím tắt",
     "then": "g rồi %{key}",
-    "close": "Đóng",
-    "withKey": "%{label} (%{key})",
-    "go": "Đi tới",
-    "inList": "Trong bảng hoặc danh sách",
-    "inTask": "Trong công việc đang mở",
-    "next": "Công việc tiếp theo",
-    "previous": "Công việc trước",
-    "open": "Mở công việc",
-    "closeTask": "Đóng công việc",
-    "assign": "Thêm người phụ trách",
-    "label": "Thêm nhãn",
-    "describe": "Sửa mô tả",
-    "comment": "Viết bình luận",
-    "complete": "Hoàn thành hoặc mở lại công việc",
-    "move": "Chuyển sang bảng khác"
+    "close": "Đóng"
   },
   "transfer": {
     "title": "Chuyển sang bảng khác",
