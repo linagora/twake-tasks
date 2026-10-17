@@ -83,11 +83,7 @@
     "noColor": "Keine Farbe",
     "create": "Erstellen",
     "editFailed": "Das Label konnte nicht gespeichert werden.",
-    "close": "Schließen",
-    "pickColor": "Farbe wählen",
-    "back": "Zurück",
-    "colorHint": "Wählen Sie die Farbe des Labels",
-    "apply": "Übernehmen"
+    "close": "Schließen"
   },
   "labelColors": {
     "navyBlue": "Marineblau",
@@ -145,8 +141,9 @@
     "searchPeople": "Personen suchen",
     "searchLabels": "Labels suchen",
     "createLabel": "„%{name}“ erstellen",
-    "labelsHint": "Geben Sie einen Namen ein, um ein Label zu erstellen.",
+    "newLabel": "Label erstellen",
     "noMatches": "Keine Treffer",
+    "noLabels": "Noch keine Labels.",
     "labelTaken": "Ein Label namens %{name} existiert bereits.",
     "labelFailed": "Das Label konnte nicht erstellt werden.",
     "labelsFailed": "Die Labels konnten nicht gespeichert werden.",

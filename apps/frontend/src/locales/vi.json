@@ -83,11 +83,7 @@
     "noColor": "Không màu",
     "create": "Tạo",
     "editFailed": "Không thể lưu nhãn.",
-    "close": "Đóng",
-    "pickColor": "Chọn màu",
-    "back": "Quay lại",
-    "colorHint": "Chọn màu của nhãn",
-    "apply": "Áp dụng"
+    "close": "Đóng"
   },
   "labelColors": {
     "navyBlue": "Xanh hải quân",
@@ -145,8 +141,9 @@
     "searchPeople": "Tìm người",
     "searchLabels": "Tìm nhãn",
     "createLabel": "Tạo “%{name}”",
-    "labelsHint": "Nhập tên để tạo nhãn.",
+    "newLabel": "Tạo nhãn",
     "noMatches": "Không có kết quả",
+    "noLabels": "Chưa có nhãn nào.",
     "labelTaken": "Đã có nhãn tên %{name}.",
     "labelFailed": "Không thể tạo nhãn.",
     "labelsFailed": "Không thể lưu nhãn.",

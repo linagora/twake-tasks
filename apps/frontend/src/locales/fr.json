@@ -83,11 +83,7 @@
     "noColor": "Sans couleur",
     "create": "Créer",
     "editFailed": "L'étiquette n'a pas pu être enregistrée.",
-    "close": "Fermer",
-    "pickColor": "Choisir la couleur",
-    "back": "Retour",
-    "colorHint": "Choisissez la couleur de l’étiquette",
-    "apply": "Appliquer"
+    "close": "Fermer"
   },
   "labelColors": {
     "navyBlue": "Bleu marine",
@@ -145,8 +141,9 @@
     "searchPeople": "Rechercher une personne",
     "searchLabels": "Rechercher une étiquette",
     "createLabel": "Créer « %{name} »",
-    "labelsHint": "Saisissez un nom pour créer une étiquette.",
+    "newLabel": "Créer une étiquette",
     "noMatches": "Aucun résultat",
+    "noLabels": "Aucune étiquette pour l’instant.",
     "labelTaken": "Une étiquette nommée %{name} existe déjà.",
     "labelFailed": "L'étiquette n'a pas pu être créée.",
     "labelsFailed": "Les étiquettes n'ont pas pu être enregistrées.",

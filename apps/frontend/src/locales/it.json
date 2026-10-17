@@ -83,11 +83,7 @@
     "noColor": "Nessun colore",
     "create": "Crea",
     "editFailed": "Impossibile salvare l’etichetta.",
-    "close": "Chiudi",
-    "pickColor": "Scegli il colore",
-    "back": "Indietro",
-    "colorHint": "Scegli il colore dell’etichetta",
-    "apply": "Applica"
+    "close": "Chiudi"
   },
   "labelColors": {
     "navyBlue": "Blu navy",
@@ -145,8 +141,9 @@
     "searchPeople": "Cerca persone",
     "searchLabels": "Cerca etichette",
     "createLabel": "Crea «%{name}»",
-    "labelsHint": "Digita un nome per creare un’etichetta.",
+    "newLabel": "Crea un’etichetta",
     "noMatches": "Nessun risultato",
+    "noLabels": "Ancora nessuna etichetta.",
     "labelTaken": "Esiste già un’etichetta chiamata %{name}.",
     "labelFailed": "Impossibile creare l’etichetta.",
     "labelsFailed": "Impossibile salvare le etichette.",

@@ -1,8 +1,7 @@
-import { Check, Icon, Palette, Pen } from '@linagora/twake-icons'
+import { Check, Icon, Palette } from '@linagora/twake-icons'
 import {
   Avatar,
   Box,
-  IconButton,
   Radio,
   RadioGroup,
   getInitials,
@@ -31,47 +30,6 @@ export function ColorPreview({
     <Avatar size={size} color="var(--twake-palette-background-default)">
       <Icon icon={Palette} size={size / 3} color="#424244" />
     </Avatar>
-  )
-}
-
-/** The preview with a pen on it, which opens the choice of color. */
-export function ColorPreviewButton({
-  name,
-  color,
-  label,
-  onClick
-}: {
-  name: string
-  color: string | null
-  label: string
-  onClick: () => void
-}): ReactElement {
-  return (
-    <Box sx={{ position: 'relative', flex: 'none' }}>
-      <IconButton aria-label={label} onClick={onClick} sx={{ p: 0 }}>
-        <ColorPreview name={name} color={color} size={72} />
-        <Box
-          component="span"
-          sx={{
-            position: 'absolute',
-            right: -1,
-            bottom: -1,
-            width: 30,
-            height: 30,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            border: 3,
-            borderColor: 'background.paper',
-            bgcolor: 'primary.main',
-            color: 'primary.contrastText'
-          }}
-        >
-          <Icon icon={Pen} size={12} />
-        </Box>
-      </IconButton>
-    </Box>
   )
 }
 
@@ -104,15 +62,16 @@ function Swatch({
   )
 }
 
-/** Twake Space's grid of colors: round swatches, each one named. */
+/** Twake Space's round swatches, each one named, filling the line. */
 export function ColorGrid({
-  label,
+  labelledBy,
   swatches,
   none,
   value,
   onChange
 }: {
-  label: string
+  /** The id of the text naming the grid */
+  labelledBy: string
   swatches: readonly { value: string; label: string }[]
   /** The name of the swatch with no color, when the color may be none. */
   none?: string | undefined
@@ -125,16 +84,15 @@ export function ColorGrid({
   ]
   return (
     <RadioGroup
-      aria-label={label}
+      aria-labelledby={labelledBy}
       value={value ?? ''}
       onChange={(_event, color) => {
         onChange(color || null)
       }}
       sx={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(8, 25px)',
-        gap: '15px 8px',
-        justifyContent: 'center'
+        gridTemplateColumns: 'repeat(auto-fill, 25px)',
+        gap: '12px 10px'
       }}
     >
       {options.map(option => (

@@ -83,11 +83,7 @@
     "noColor": "No color",
     "create": "Create",
     "editFailed": "The label could not be saved.",
-    "close": "Close",
-    "pickColor": "Choose the color",
-    "back": "Back",
-    "colorHint": "Choose the label’s color",
-    "apply": "Apply"
+    "close": "Close"
   },
   "labelColors": {
     "navyBlue": "Navy blue",
@@ -145,8 +141,9 @@
     "searchPeople": "Search people",
     "searchLabels": "Search labels",
     "createLabel": "Create “%{name}”",
-    "labelsHint": "Type a name to create a label.",
+    "newLabel": "Create a label",
     "noMatches": "No matches",
+    "noLabels": "No labels yet.",
     "labelTaken": "A label named %{name} already exists.",
     "labelFailed": "The label could not be created.",
     "labelsFailed": "The labels could not be saved.",

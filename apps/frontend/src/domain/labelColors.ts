@@ -22,3 +22,17 @@ export const LABEL_COLORS = [
   { name: 'darkGrey', value: '#2C2C42' },
   { name: 'grey', value: '#646580' }
 ] as const
+
+/**
+ * The color a new label starts with: the first swatch the board's labels use
+ * the least, so labels made one after another each get their own.
+ */
+export function defaultLabelColor(used: readonly (string | null)[]): string {
+  const count = (value: string) =>
+    used.filter(color => color?.toLowerCase() === value.toLowerCase()).length
+  let best: string = LABEL_COLORS[0].value
+  for (const swatch of LABEL_COLORS) {
+    if (count(swatch.value) < count(best)) best = swatch.value
+  }
+  return best
+}

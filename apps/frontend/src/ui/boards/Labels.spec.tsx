@@ -40,12 +40,10 @@ const logoCard = async () =>
     await screen.findByRole('article', { name: 'DES-1 Logo', hidden: true })
   )
 
-// The color is picked in a step of its own, then applied.
+// The swatches are in the dialog, under the name.
 function pickColor(name: string) {
-  fireEvent.click(screen.getByRole('button', { name: 'Choose the color' }))
-  const colors = within(screen.getByRole('dialog', { name: 'Color' }))
+  const colors = within(screen.getByRole('radiogroup', { name: 'Color' }))
   fireEvent.click(colors.getByRole('radio', { name }))
-  fireEvent.click(colors.getByRole('button', { name: 'Apply' }))
 }
 
 describe('Labels', () => {
@@ -124,24 +122,45 @@ describe('Labels', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('creates a label without a colour by default', async () => {
+  it('starts a new label with the color the board uses the least', async () => {
+    const { board, boardsApi } = labeledBoard()
+    board.labels = [
+      { id: 'urgent', name: 'Urgent', color: '#273891' },
+      { id: 'later', name: 'Later', color: null }
+    ]
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const picker = await openLabels()
+    search(picker, 'Soon')
+    fireEvent.click(picker.getByRole('menuitem', { name: 'Create “Soon”' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'New label' })
+    )
+    expect(dialog.getByRole('radio', { name: 'Purple' })).toBeChecked()
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createLabel).toHaveBeenCalledWith(board.id, {
+        name: 'Soon',
+        color: '#7E57E3'
+      })
+    })
+  })
+
+  it('creates a label without a color when none is chosen', async () => {
     const { board, boardsApi } = labeledBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const picker = await openLabels()
     search(picker, 'Later')
     fireEvent.click(picker.getByRole('menuitem', { name: 'Create “Later”' }))
-    const dialog = within(
-      await screen.findByRole('dialog', { name: 'New label' })
-    )
-    fireEvent.click(dialog.getByRole('button', { name: 'Choose the color' }))
-    const colors = within(await screen.findByRole('dialog', { name: 'Color' }))
-    expect(colors.getByRole('radio', { name: 'No color' })).toBeChecked()
-    fireEvent.click(colors.getByRole('button', { name: 'Back' }))
+    await screen.findByRole('dialog', { name: 'New label' })
+    pickColor('No color')
     fireEvent.click(
-      within(
-        await screen.findByRole('dialog', { name: 'New label' })
-      ).getByRole('button', { name: 'Create' })
+      within(screen.getByRole('dialog', { name: 'New label' })).getByRole(
+        'button',
+        { name: 'Create' }
+      )
     )
 
     await waitFor(() => {
@@ -150,6 +169,19 @@ describe('Labels', () => {
         color: null
       })
     })
+  })
+
+  it('offers to create a label before anything is typed', async () => {
+    const { board, boardsApi } = labeledBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const picker = await openLabels()
+    fireEvent.click(picker.getByRole('menuitem', { name: 'Create a label' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'New label' })
+    )
+    expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('')
+    expect(dialog.getByRole('button', { name: 'Create' })).toBeDisabled()
   })
 
   it('renames and recolours a label', async () => {
@@ -204,8 +236,11 @@ describe('Labels', () => {
       picker.getByRole('menuitemcheckbox', { name: 'Urgent' })
     ).toBeInTheDocument()
     expect(
-      picker.queryByRole('menuitem', { name: /^Create/ })
+      picker.queryByRole('menuitem', { name: /^Create “/ })
     ).not.toBeInTheDocument()
+    expect(
+      picker.getByRole('menuitem', { name: 'Create a label' })
+    ).toBeInTheDocument()
   })
 
   it('finds a label by a name with invisible characters', async () => {
@@ -219,7 +254,7 @@ describe('Labels', () => {
       picker.getByRole('menuitemcheckbox', { name: 'Urgent' })
     ).toBeInTheDocument()
     expect(
-      picker.queryByRole('menuitem', { name: /^Create/ })
+      picker.queryByRole('menuitem', { name: /^Create “/ })
     ).not.toBeInTheDocument()
   })
 
