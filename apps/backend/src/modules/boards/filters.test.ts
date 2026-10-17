@@ -21,6 +21,7 @@ async function aBoardOf(owner: TestUser, keyPrefix: string) {
   ).json<{ id: string }>()
   const path = `/boards/${board.id}`
   return {
+    id: board.id,
     label: async (name: string) =>
       (await api.as(owner).post(`${path}/labels`, { name })).json<{
         id: string
@@ -54,7 +55,7 @@ const keysOf = async (user: TestUser, filterId: string) =>
     .tasks.map(task => task.key)
 
 describe('saved filters', () => {
-  it('finds the matching open tasks across my boards', async () => {
+  it('finds the matching tasks across my boards', async () => {
     const owner = aUser()
     const design = await aBoardOf(owner, 'DES')
     const home = await aBoardOf(owner, 'HOM')
@@ -116,7 +117,17 @@ describe('saved filters', () => {
 
     expect(
       (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
-    ).toEqual({ filters: [{ id, name: 'Urgent', criteria: { priority: 1 } }] })
+    ).toEqual({
+      filters: [
+        {
+          id,
+          name: 'Urgent',
+          criteria: { priorities: [1] },
+          favorite: false,
+          icon: null
+        }
+      ]
+    })
     expect(
       (await api.as(other).get('/filters')).json<{ filters: unknown[] }>()
         .filters
@@ -160,6 +171,229 @@ describe('saved filters', () => {
       { key: 'DES-1', category: 'started' },
       { key: 'DES-2', category: null }
     ])
+  })
+
+  it('lists my favorite filters first', async () => {
+    const owner = aUser()
+    const other = aUser({ organizationId: owner.organizationId })
+    const save = async (name: string) =>
+      (await api.as(owner).post('/filters', { name, criteria: {} })).json<{
+        id: string
+      }>().id
+    const names = async () =>
+      (await api.as(owner).get('/filters'))
+        .json<{ filters: { name: string; favorite: boolean }[] }>()
+        .filters.map(filter => `${filter.name}${filter.favorite ? '*' : ''}`)
+    await save('Alpha')
+    const beta = await save('Beta')
+
+    expect(
+      (await api.as(owner).put(`/filters/${beta}/favorite`)).statusCode
+    ).toBe(204)
+    expect(await names()).toEqual(['Beta*', 'Alpha'])
+    expect(
+      (await api.as(other).put(`/filters/${beta}/favorite`)).statusCode
+    ).toBe(404)
+
+    expect(
+      (await api.as(owner).delete(`/filters/${beta}/favorite`)).statusCode
+    ).toBe(204)
+    expect(await names()).toEqual(['Alpha', 'Beta'])
+  })
+
+  it('keeps the icon of a view, and only an icon name', async () => {
+    const owner = aUser()
+    const save = (icon: unknown) =>
+      api.as(owner).post('/filters', { name: 'Bugs', criteria: {}, icon })
+
+    expect((await save('BugReport')).statusCode).toBe(201)
+    expect((await save(null)).statusCode).toBe(201)
+    expect((await save('<svg>')).statusCode).toBe(400)
+    expect((await save('🐛')).statusCode).toBe(400)
+    expect(
+      (await api.as(owner).get('/filters'))
+        .json<{ filters: { icon: string | null }[] }>()
+        .filters.map(filter => filter.icon)
+    ).toEqual(['BugReport', null])
+  })
+
+  it('edits a view, for the person who saved it only', async () => {
+    const owner = aUser()
+    const other = aUser({ organizationId: owner.organizationId })
+    const { id } = (
+      await api.as(owner).post('/filters', { name: 'Mine', criteria: {} })
+    ).json<{ id: string }>()
+    const edit = {
+      name: 'Urgent',
+      criteria: { priorities: [1] },
+      icon: 'Flag'
+    }
+
+    expect((await api.as(other).put(`/filters/${id}`, edit)).statusCode).toBe(
+      404
+    )
+    expect((await api.as(owner).put(`/filters/${id}`, edit)).statusCode).toBe(
+      204
+    )
+    expect(
+      (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
+        .filters
+    ).toEqual([{ id, favorite: false, ...edit }])
+    expect(
+      (await api.as(owner).put(`/filters/${id}`, { name: '' })).statusCode
+    ).toBe(400)
+  })
+
+  it('filters by board', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DSB')
+    const home = await aBoardOf(owner, 'HMB')
+    await design.add('Logo')
+    await home.add('Paint')
+    const { id } = (
+      await api.as(owner).post('/filters', {
+        name: 'Design',
+        criteria: { board: design.id }
+      })
+    ).json<{ id: string }>()
+
+    expect(await keysOf(owner, id)).toEqual(['DSB-1'])
+  })
+
+  it('matches a task with any of the values of a criterion, and every criterion', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'ORA')
+    const home = await aBoardOf(owner, 'ORB')
+    const client = await design.label('client')
+    const web = await design.label('web')
+    const print = await design.label('print')
+    await design.add('Client, urgent', { priority: 1 }, [client])
+    await design.add('Web, high', { priority: 2 }, [web])
+    await design.add('Print, urgent', { priority: 1 }, [print])
+    await design.add('Client, low', { priority: 4 }, [client])
+    await home.add('No label, urgent', { priority: 1 })
+    const save = async (criteria: object) =>
+      (await api.as(owner).post('/filters', { name: 'Some', criteria })).json<{
+        id: string
+      }>().id
+
+    expect(
+      await keysOf(
+        owner,
+        await save({ labels: ['CLIENT', 'web'], priorities: [1, 2] })
+      )
+    ).toEqual(['ORA-1', 'ORA-2'])
+    expect(
+      await keysOf(owner, await save({ boards: [design.id, home.id] }))
+    ).toHaveLength(5)
+    expect(
+      await keysOf(owner, await save({ dues: ['today', 'none'] }))
+    ).toHaveLength(5)
+  })
+
+  it('keeps to any of the people chosen, me, or nobody', async () => {
+    const owner = aUser()
+    const colleague = aUser({ organizationId: owner.organizationId })
+    const design = await aBoardOf(owner, 'PPL')
+    await api.as(owner).post(`/boards/${design.id}/invites`, {
+      email: colleague.email,
+      role: 'editor'
+    })
+    await api.as(colleague).get('/boards')
+    const mine = await design.add('Mine')
+    const theirs = await design.add('Theirs')
+    await design.add('Nobody’s')
+    await design.assign(mine.id, owner)
+    await design.assign(theirs.id, colleague)
+    const save = async (criteria: object) =>
+      (await api.as(owner).post('/filters', { name: 'Some', criteria })).json<{
+        id: string
+      }>().id
+
+    expect(
+      await keysOf(owner, await save({ assignees: [colleague.userId] }))
+    ).toEqual(['PPL-2'])
+    expect(
+      await keysOf(owner, await save({ assignees: ['me', 'nobody'] }))
+    ).toEqual(['PPL-1', 'PPL-3'])
+    expect(
+      (await api.as(owner).get('/people')).json<{ people: unknown[] }>()
+    ).toEqual({
+      people: [{ userId: colleague.userId, email: colleague.email, name: null }]
+    })
+  })
+
+  it('keeps to sections by name, in any board and any case', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'STA')
+    const home = await aBoardOf(owner, 'STB')
+    const sectionsOf = async (boardId: string) =>
+      (await api.as(owner).get(`/boards/${boardId}`)).json<{
+        sections: { id: string; name: string }[]
+      }>().sections
+    const [designToDo, designDoing] = await sectionsOf(design.id)
+    const [homeToDo] = await sectionsOf(home.id)
+    const place = (boardId: string, title: string, sectionId: string) =>
+      api.as(owner).post(`/boards/${boardId}/tasks`, { sectionId, title })
+    await place(design.id, 'Logo', designToDo?.id ?? '')
+    await place(design.id, 'Poster', designDoing?.id ?? '')
+    await place(home.id, 'Paint', homeToDo?.id ?? '')
+    const { id } = (
+      await api.as(owner).post('/filters', {
+        name: 'To do',
+        criteria: { statuses: [designToDo?.name.toUpperCase() ?? ''] }
+      })
+    ).json<{ id: string }>()
+
+    expect(await keysOf(owner, id)).toEqual(['STA-1', 'STB-1'])
+    expect(
+      (await api.as(owner).get('/statuses')).json<{ statuses: string[] }>()
+        .statuses
+    ).toEqual(expect.arrayContaining([designToDo?.name, designDoing?.name]))
+  })
+
+  it('keeps the done tasks that match, in their section', async () => {
+    const owner = aUser()
+    const board = await aBoardOf(owner, 'DON')
+    const client = await board.label('client')
+    const { sections } = (await api.as(owner).get(`/boards/${board.id}`)).json<{
+      sections: { id: string; name: string; category: string }[]
+    }>()
+    const done = sections.find(each => each.category === 'completed')
+    await board.add('Open', {}, [client])
+    const finished = await board.add('Finished', {}, [client])
+    await api.as(owner).post(`/boards/${board.id}/tasks/${finished.id}/move`, {
+      sectionId: done?.id
+    })
+    const view = async (criteria: object) =>
+      (
+        await api.as(owner).post('/filters', { name: 'Client', criteria })
+      ).json<{ id: string }>().id
+
+    expect(await keysOf(owner, await view({ labels: ['client'] }))).toEqual([
+      'DON-1',
+      'DON-2'
+    ])
+    expect(
+      await keysOf(owner, await view({ statuses: [done?.name ?? ''] }))
+    ).toEqual(['DON-2'])
+  })
+
+  it('gives the criteria of views saved with one value each as lists', async () => {
+    const owner = aUser()
+    await api.as(owner).post('/filters', {
+      name: 'Old',
+      criteria: { priority: 1, label: 'client' }
+    })
+
+    const { filters } = (await api.as(owner).get('/filters')).json<{
+      filters: { criteria: object }[]
+    }>()
+
+    expect(filters[0]?.criteria).toEqual({
+      priorities: [1],
+      labels: ['client']
+    })
   })
 
   it('refuses unknown criteria', async () => {

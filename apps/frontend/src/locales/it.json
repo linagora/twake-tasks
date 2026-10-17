@@ -470,28 +470,48 @@
     }
   },
   "filters": {
-    "title": "Filtri",
-    "empty": "Nessun filtro salvato",
+    "title": "Viste",
+    "empty": "Nessuna vista salvata",
     "emptyHint": "Salva i criteri che cerchi spesso, come le tue attività P1.",
-    "loadFailed": "Impossibile caricare i filtri.",
-    "notFound": "Questo filtro non esiste, oppure non puoi aprirlo.",
-    "back": "Torna ai filtri",
-    "delete": "Elimina %{name}",
-    "new": "Nuovo filtro",
-    "saved": "Filtri salvati",
+    "loadFailed": "Impossibile caricare le viste.",
+    "notFound": "Questa vista non esiste o non puoi aprirla.",
+    "edit": "Modifica la vista",
+    "backToView": "Torna alla vista",
+    "filtersSection": "Filtri",
+    "addFilter": "Aggiungi filtro",
+    "removeFilter": "Rimuovi il filtro %{name}",
+    "deleteView": "Elimina vista",
+    "deleteTitle": "Eliminare “%{name}”?",
+    "deleteText": "La vista viene eliminata definitivamente. Le sue attività restano dove sono.",
+    "deleteConfirm": "Elimina",
+    "deleteFailed": "Impossibile eliminare la vista.",
+    "nameRequired": "Il nome è obbligatorio.",
+    "menuOf": "Azioni di %{name}",
+    "saving": "Salvataggio…",
+    "changesSaved": "Modifiche salvate",
+    "back": "Torna alle viste",
+    "new": "Nuova vista",
+    "saved": "Viste salvate",
     "criterion": "%{name}: %{value}",
+    "or": " o ",
+    "and": " e ",
+    "anyValue": "Nessun criterio",
+    "editCriterion": "Modifica %{name}",
+    "addCriterion": "Aggiungi a %{name}",
+    "removeValue": "Rimuovi %{name}",
+    "search": "Cerca",
+    "noMatch": "Nessun risultato per “%{search}”",
     "everything": "Tutte le attività",
     "name": "Nome",
     "assignee": "Assegnatario",
     "priority": "Priorità",
     "label": "Etichetta",
     "due": "Scadenza",
-    "save": "Salva filtro",
-    "saveFailed": "Impossibile salvare il filtro.",
+    "save": "Crea",
+    "saveFailed": "Impossibile salvare la vista.",
     "assignees": {
-      "any": "Qualsiasi",
       "me": "Io",
-      "nobody": "Nessuno"
+      "unassigned": "Non assegnata"
     },
     "dues": {
       "any": "Qualsiasi",
@@ -521,7 +541,14 @@
   "page": {
     "breadcrumb": "Posizione della pagina"
   },
+  "icon": {
+    "change": "Cambia l’icona della vista",
+    "title": "Scegli un’icona",
+    "search": "Cerca un’icona",
+    "noResult": "Nessuna icona trovata"
+  },
   "viewTask": {
-    "board": "Bacheca"
+    "board": "Bacheca",
+    "status": "Stato"
   }
 }

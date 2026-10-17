@@ -470,28 +470,48 @@
     }
   },
   "filters": {
-    "title": "Filter",
-    "empty": "Keine gespeicherten Filter",
+    "title": "Ansichten",
+    "empty": "Keine gespeicherten Ansichten",
     "emptyHint": "Speichern Sie Kriterien, nach denen Sie oft suchen, z. B. Ihre P1-Aufgaben.",
-    "loadFailed": "Die Filter konnten nicht geladen werden.",
-    "notFound": "Dieser Filter existiert nicht, oder Sie können ihn nicht öffnen.",
-    "back": "Zurück zu den Filtern",
-    "delete": "%{name} löschen",
-    "new": "Neuer Filter",
-    "saved": "Gespeicherte Filter",
+    "loadFailed": "Die Ansichten konnten nicht geladen werden.",
+    "notFound": "Diese Ansicht existiert nicht, oder Sie können sie nicht öffnen.",
+    "edit": "Ansicht bearbeiten",
+    "backToView": "Zurück zur Ansicht",
+    "filtersSection": "Filter",
+    "addFilter": "Filter hinzufügen",
+    "removeFilter": "Filter %{name} entfernen",
+    "deleteView": "Ansicht löschen",
+    "deleteTitle": "„%{name}“ löschen?",
+    "deleteText": "Die Ansicht wird endgültig gelöscht. Ihre Aufgaben bleiben, wo sie sind.",
+    "deleteConfirm": "Löschen",
+    "deleteFailed": "Die Ansicht konnte nicht gelöscht werden.",
+    "nameRequired": "Ein Name ist erforderlich.",
+    "menuOf": "Aktionen für %{name}",
+    "saving": "Wird gespeichert…",
+    "changesSaved": "Änderungen gespeichert",
+    "back": "Zurück zu den Ansichten",
+    "new": "Neue Ansicht",
+    "saved": "Gespeicherte Ansichten",
     "criterion": "%{name}: %{value}",
+    "or": " oder ",
+    "and": " und ",
+    "anyValue": "Kein Kriterium",
+    "editCriterion": "%{name} ändern",
+    "addCriterion": "%{name} hinzufügen",
+    "removeValue": "%{name} entfernen",
+    "search": "Suchen",
+    "noMatch": "Nichts passt zu „%{search}“",
     "everything": "Alle Aufgaben",
     "name": "Name",
     "assignee": "Zugewiesen an",
     "priority": "Priorität",
     "label": "Label",
     "due": "Fällig",
-    "save": "Filter speichern",
-    "saveFailed": "Der Filter konnte nicht gespeichert werden.",
+    "save": "Erstellen",
+    "saveFailed": "Die Ansicht konnte nicht gespeichert werden.",
     "assignees": {
-      "any": "Beliebig",
       "me": "Mich",
-      "nobody": "Niemanden"
+      "unassigned": "Nicht zugewiesen"
     },
     "dues": {
       "any": "Beliebig",
@@ -521,7 +541,14 @@
   "page": {
     "breadcrumb": "Ort der Seite"
   },
+  "icon": {
+    "change": "Symbol der Ansicht ändern",
+    "title": "Symbol wählen",
+    "search": "Symbol suchen",
+    "noResult": "Kein Symbol gefunden"
+  },
   "viewTask": {
-    "board": "Board"
+    "board": "Board",
+    "status": "Status"
   }
 }

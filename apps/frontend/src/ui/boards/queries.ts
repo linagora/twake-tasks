@@ -19,6 +19,7 @@ import type {
   HistoryEntry,
   NewBoard,
   NewReminder,
+  NewSavedFilter,
   NewTask,
   Notification,
   Project,
@@ -133,15 +134,29 @@ export function useLabelNames(): UseQueryResult<string[]> {
   return useQuery({ queryKey: ['labels'], queryFn: () => api.labelNames() })
 }
 
+export function useStatusNames(): UseQueryResult<string[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: ['statuses'],
+    queryFn: () => api.statusNames()
+  })
+}
+
+export function usePeople(): UseQueryResult<Person[]> {
+  const api = useBoardsApi()
+  return useQuery({ queryKey: ['people'], queryFn: () => api.people() })
+}
+
 export function useCreateFilter(): UseMutationResult<
   { id: string },
   Error,
-  Omit<SavedFilter, 'id'>
+  NewSavedFilter
 > {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (filter: Omit<SavedFilter, 'id'>) => api.createFilter(filter),
+    mutationFn: (filter: NewSavedFilter) => api.createFilter(filter),
+    // Awaited, so that the new view is listed before its page opens.
     onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
   })
 }
@@ -152,6 +167,35 @@ export function useDeleteFilter(): UseMutationResult<void, Error, string> {
   return useMutation({
     mutationFn: (filterId: string) => api.deleteFilter(filterId),
     onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
+  })
+}
+
+export function useSetFilterFavorite(): UseMutationResult<
+  void,
+  Error,
+  { filterId: string; favorite: boolean }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ filterId, favorite }) =>
+      api.setFilterFavorite(filterId, favorite),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
+  })
+}
+
+export function useUpdateFilter(
+  filterId: string
+): UseMutationResult<void, Error, NewSavedFilter> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (filter: NewSavedFilter) => api.updateFilter(filterId, filter),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: filtersKey }),
+        queryClient.invalidateQueries({ queryKey: ['agenda', { filterId }] })
+      ])
   })
 }
 

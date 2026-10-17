@@ -470,28 +470,48 @@
     }
   },
   "filters": {
-    "title": "Filters",
-    "empty": "No saved filters",
+    "title": "Views",
+    "empty": "No saved views",
     "emptyHint": "Save the criteria you look for often, like your P1 tasks.",
-    "loadFailed": "Couldn’t load filters.",
-    "notFound": "This filter doesn't exist, or you can't open it.",
-    "back": "Back to filters",
-    "delete": "Delete %{name}",
-    "new": "New filter",
-    "saved": "Saved filters",
+    "loadFailed": "Couldn’t load views.",
+    "notFound": "This view doesn’t exist, or you can’t open it.",
+    "edit": "Edit view",
+    "backToView": "Back to the view",
+    "filtersSection": "Filters",
+    "addFilter": "Add filter",
+    "removeFilter": "Remove the %{name} filter",
+    "deleteView": "Delete view",
+    "deleteTitle": "Delete “%{name}”?",
+    "deleteText": "The view is deleted for good. Its tasks stay where they are.",
+    "deleteConfirm": "Delete",
+    "deleteFailed": "Couldn’t delete the view.",
+    "nameRequired": "A name is required.",
+    "menuOf": "Actions of %{name}",
+    "saving": "Saving…",
+    "changesSaved": "Changes saved",
+    "back": "Back to views",
+    "new": "New view",
+    "saved": "Saved views",
     "criterion": "%{name}: %{value}",
+    "or": " or ",
+    "and": " and ",
+    "anyValue": "No criteria",
+    "editCriterion": "Change %{name}",
+    "addCriterion": "Add to %{name}",
+    "removeValue": "Remove %{name}",
+    "search": "Search",
+    "noMatch": "Nothing matches “%{search}”",
     "everything": "All tasks",
     "name": "Name",
     "assignee": "Assignee",
     "priority": "Priority",
     "label": "Label",
     "due": "Due",
-    "save": "Save filter",
-    "saveFailed": "Couldn’t save the filter.",
+    "save": "Create",
+    "saveFailed": "Couldn’t save the view.",
     "assignees": {
-      "any": "Any",
       "me": "Me",
-      "nobody": "Nobody"
+      "unassigned": "Unassigned"
     },
     "dues": {
       "any": "Any",
@@ -521,7 +541,14 @@
   "page": {
     "breadcrumb": "Where the page is"
   },
+  "icon": {
+    "change": "Change the view’s icon",
+    "title": "Choose an icon",
+    "search": "Search for an icon",
+    "noResult": "No icon found"
+  },
   "viewTask": {
-    "board": "Board"
+    "board": "Board",
+    "status": "Status"
   }
 }

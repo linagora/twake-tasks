@@ -470,28 +470,48 @@
     }
   },
   "filters": {
-    "title": "Filtres",
-    "empty": "Aucun filtre enregistré",
+    "title": "Vues",
+    "empty": "Aucune vue enregistrée",
     "emptyHint": "Enregistrez les critères que vous utilisez souvent, comme vos tâches P1.",
-    "loadFailed": "Impossible de charger les filtres.",
-    "notFound": "Ce filtre n'existe pas, ou vous ne pouvez pas l'ouvrir.",
-    "back": "Retour aux filtres",
-    "delete": "Supprimer %{name}",
-    "new": "Nouveau filtre",
-    "saved": "Filtres enregistrés",
+    "loadFailed": "Impossible de charger les vues.",
+    "notFound": "Cette vue n’existe pas, ou vous ne pouvez pas l’ouvrir.",
+    "edit": "Modifier la vue",
+    "backToView": "Retour à la vue",
+    "filtersSection": "Filtres",
+    "addFilter": "Ajouter un filtre",
+    "removeFilter": "Retirer le filtre %{name}",
+    "deleteView": "Supprimer la vue",
+    "deleteTitle": "Supprimer « %{name} » ?",
+    "deleteText": "La vue est supprimée définitivement. Ses tâches restent où elles sont.",
+    "deleteConfirm": "Supprimer",
+    "deleteFailed": "Impossible de supprimer la vue.",
+    "nameRequired": "Le nom est obligatoire.",
+    "menuOf": "Actions de %{name}",
+    "saving": "Enregistrement…",
+    "changesSaved": "Modifications enregistrées",
+    "back": "Retour aux vues",
+    "new": "Nouvelle vue",
+    "saved": "Vues enregistrées",
     "criterion": "%{name} : %{value}",
+    "or": " ou ",
+    "and": " et ",
+    "anyValue": "Pas de critère",
+    "editCriterion": "Modifier : %{name}",
+    "addCriterion": "Ajouter : %{name}",
+    "removeValue": "Retirer %{name}",
+    "search": "Rechercher",
+    "noMatch": "Rien ne correspond à « %{search} »",
     "everything": "Toutes les tâches",
     "name": "Nom",
     "assignee": "Responsable",
     "priority": "Priorité",
     "label": "Étiquette",
     "due": "Échéance",
-    "save": "Enregistrer le filtre",
-    "saveFailed": "Impossible d’enregistrer le filtre.",
+    "save": "Créer",
+    "saveFailed": "Impossible d’enregistrer la vue.",
     "assignees": {
-      "any": "Tous",
       "me": "Moi",
-      "nobody": "Personne"
+      "unassigned": "Non attribué"
     },
     "dues": {
       "any": "Toutes",
@@ -521,7 +541,14 @@
   "page": {
     "breadcrumb": "Emplacement de la page"
   },
+  "icon": {
+    "change": "Changer l’icône de la vue",
+    "title": "Choisir une icône",
+    "search": "Rechercher une icône",
+    "noResult": "Aucune icône trouvée"
+  },
   "viewTask": {
-    "board": "Tableau"
+    "board": "Tableau",
+    "status": "Statut"
   }
 }

@@ -470,28 +470,48 @@
     }
   },
   "filters": {
-    "title": "Bộ lọc",
-    "empty": "Chưa có bộ lọc nào",
+    "title": "Chế độ xem",
+    "empty": "Chưa có chế độ xem nào",
     "emptyHint": "Lưu các tiêu chí bạn hay dùng, như các công việc P1 của bạn.",
-    "loadFailed": "Không thể tải bộ lọc.",
-    "notFound": "Bộ lọc này không tồn tại, hoặc bạn không thể mở nó.",
-    "back": "Quay lại danh sách bộ lọc",
-    "delete": "Xóa %{name}",
-    "new": "Bộ lọc mới",
-    "saved": "Bộ lọc đã lưu",
+    "loadFailed": "Không thể tải chế độ xem.",
+    "notFound": "Chế độ xem này không tồn tại hoặc bạn không thể mở nó.",
+    "edit": "Sửa chế độ xem",
+    "backToView": "Quay lại chế độ xem",
+    "filtersSection": "Bộ lọc",
+    "addFilter": "Thêm bộ lọc",
+    "removeFilter": "Xóa bộ lọc %{name}",
+    "deleteView": "Xóa chế độ xem",
+    "deleteTitle": "Xóa “%{name}”?",
+    "deleteText": "Chế độ xem sẽ bị xóa vĩnh viễn. Các công việc vẫn giữ nguyên.",
+    "deleteConfirm": "Xóa",
+    "deleteFailed": "Không thể xóa chế độ xem.",
+    "nameRequired": "Tên là bắt buộc.",
+    "menuOf": "Thao tác với %{name}",
+    "saving": "Đang lưu…",
+    "changesSaved": "Đã lưu thay đổi",
+    "back": "Quay lại chế độ xem",
+    "new": "Chế độ xem mới",
+    "saved": "Chế độ xem đã lưu",
     "criterion": "%{name}: %{value}",
+    "or": " hoặc ",
+    "and": " và ",
+    "anyValue": "Không có tiêu chí",
+    "editCriterion": "Đổi %{name}",
+    "addCriterion": "Thêm %{name}",
+    "removeValue": "Bỏ %{name}",
+    "search": "Tìm kiếm",
+    "noMatch": "Không có kết quả cho “%{search}”",
     "everything": "Tất cả công việc",
     "name": "Tên",
     "assignee": "Người được giao",
     "priority": "Độ ưu tiên",
     "label": "Nhãn",
     "due": "Hạn",
-    "save": "Lưu bộ lọc",
-    "saveFailed": "Không thể lưu bộ lọc.",
+    "save": "Tạo",
+    "saveFailed": "Không thể lưu chế độ xem.",
     "assignees": {
-      "any": "Bất kỳ",
       "me": "Tôi",
-      "nobody": "Không ai"
+      "unassigned": "Chưa giao"
     },
     "dues": {
       "any": "Bất kỳ",
@@ -521,7 +541,14 @@
   "page": {
     "breadcrumb": "Vị trí của trang"
   },
+  "icon": {
+    "change": "Đổi biểu tượng của chế độ xem",
+    "title": "Chọn biểu tượng",
+    "search": "Tìm biểu tượng",
+    "noResult": "Không tìm thấy biểu tượng"
+  },
   "viewTask": {
-    "board": "Bảng"
+    "board": "Bảng",
+    "status": "Trạng thái"
   }
 }

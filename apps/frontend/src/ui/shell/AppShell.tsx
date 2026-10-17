@@ -2,7 +2,7 @@ import {
   Bell,
   Calendar,
   CalendarToday,
-  Filter,
+  Eye,
   Home,
   Icon,
   Logout,
@@ -47,10 +47,15 @@ import {
   TopBarSpacer,
   WideScreenNavItem
 } from '@/ds/AppFrame'
+import { viewIcon } from '@/ds/viewIcons'
 import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useBoards, useUnreadNotifications } from '@/ui/boards/queries'
+import {
+  useBoards,
+  useFilters,
+  useUnreadNotifications
+} from '@/ui/boards/queries'
 import { AppFeedback } from '@/ui/shell/AppFeedback'
 import { PlatformBar } from '@/ui/shell/PlatformBar'
 import { QuickAdd } from '@/ui/shell/QuickAdd'
@@ -160,7 +165,7 @@ function Header({
                   to="/filters"
                   aria-label={t('filters.title')}
                 >
-                  <Icon icon={Filter} />
+                  <Icon icon={Eye} />
                 </IconButton>
               )}
               {quickAdd}
@@ -244,7 +249,7 @@ function AccountMenu(): ReactElement {
         {phone && (
           <MenuItem component={RouterLink} to="/filters" onClick={close}>
             <ListItemIcon>
-              <Icon icon={Filter} />
+              <Icon icon={Eye} />
             </ListItemIcon>
             <ListItemText>{t('filters.title')}</ListItemText>
           </MenuItem>
@@ -316,7 +321,7 @@ function AppNav({ boardsLit }: { boardsLit: boolean }): ReactElement {
       />
       <AppNavLink
         to="/filters"
-        icon={Filter}
+        icon={Eye}
         label={t('filters.title')}
         wideScreenOnly
       />
@@ -369,7 +374,8 @@ function Favorites({
   const favorites = (useBoards().data ?? []).filter(
     board => board.favorite && !board.archived
   )
-  if (favorites.length === 0) return null
+  const views = (useFilters().data ?? []).filter(filter => filter.favorite)
+  if (favorites.length === 0 && views.length === 0) return null
 
   return (
     <SidebarSection label={t('boards.favorites')}>
@@ -384,6 +390,14 @@ function Favorites({
           >
             <NavIcon icon={Star} />
             <NavText>{board.name}</NavText>
+          </SidebarLink>
+        </NavItem>
+      ))}
+      {views.map(filter => (
+        <NavItem key={filter.id}>
+          <SidebarLink to={`/filters/${filter.id}`}>
+            <NavIcon icon={viewIcon(filter.icon)} />
+            <NavText>{filter.name}</NavText>
           </SidebarLink>
         </NavItem>
       ))}

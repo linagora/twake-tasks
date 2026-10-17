@@ -470,28 +470,48 @@
     }
   },
   "filters": {
-    "title": "Filtros",
-    "empty": "No hay filtros guardados",
+    "title": "Vistas",
+    "empty": "No hay vistas guardadas",
     "emptyHint": "Guarda los criterios que buscas a menudo, como tus tareas P1.",
-    "loadFailed": "No se pudieron cargar los filtros.",
-    "notFound": "Este filtro no existe o no puedes abrirlo.",
-    "back": "Volver a los filtros",
-    "delete": "Eliminar %{name}",
-    "new": "Nuevo filtro",
-    "saved": "Filtros guardados",
+    "loadFailed": "No se pudieron cargar las vistas.",
+    "notFound": "Esta vista no existe o no puedes abrirla.",
+    "edit": "Editar la vista",
+    "backToView": "Volver a la vista",
+    "filtersSection": "Filtros",
+    "addFilter": "Añadir filtro",
+    "removeFilter": "Quitar el filtro %{name}",
+    "deleteView": "Eliminar vista",
+    "deleteTitle": "¿Eliminar «%{name}»?",
+    "deleteText": "La vista se elimina para siempre. Sus tareas se quedan donde están.",
+    "deleteConfirm": "Eliminar",
+    "deleteFailed": "No se pudo eliminar la vista.",
+    "nameRequired": "El nombre es obligatorio.",
+    "menuOf": "Acciones de %{name}",
+    "saving": "Guardando…",
+    "changesSaved": "Cambios guardados",
+    "back": "Volver a las vistas",
+    "new": "Nueva vista",
+    "saved": "Vistas guardadas",
     "criterion": "%{name}: %{value}",
+    "or": " o ",
+    "and": " y ",
+    "anyValue": "Sin criterio",
+    "editCriterion": "Cambiar %{name}",
+    "addCriterion": "Añadir a %{name}",
+    "removeValue": "Quitar %{name}",
+    "search": "Buscar",
+    "noMatch": "Nada coincide con «%{search}»",
     "everything": "Todas las tareas",
     "name": "Nombre",
     "assignee": "Asignada a",
     "priority": "Prioridad",
     "label": "Etiqueta",
     "due": "Vencimiento",
-    "save": "Guardar filtro",
-    "saveFailed": "No se pudo guardar el filtro.",
+    "save": "Crear",
+    "saveFailed": "No se pudo guardar la vista.",
     "assignees": {
-      "any": "Cualquiera",
       "me": "Mí",
-      "nobody": "Nadie"
+      "unassigned": "Sin asignar"
     },
     "dues": {
       "any": "Cualquiera",
@@ -521,7 +541,14 @@
   "page": {
     "breadcrumb": "Ubicación de la página"
   },
+  "icon": {
+    "change": "Cambiar el icono de la vista",
+    "title": "Elegir un icono",
+    "search": "Buscar un icono",
+    "noResult": "No se encontró ningún icono"
+  },
   "viewTask": {
-    "board": "Tablero"
+    "board": "Tablero",
+    "status": "Estado"
   }
 }
