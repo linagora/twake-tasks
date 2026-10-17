@@ -60,7 +60,16 @@ export function AppFrame({
             <Sidebar>{sidebar}</Sidebar>
             <FrameContent role={undefined}>
               <Box ref={setCrumbHost} sx={CRUMB_BAR} />
-              <Box sx={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto' }}>
+              {/* Its own stacking context: the raised checkboxes and
+                  buttons of the rows stay under an open task. */}
+              <Box
+                sx={{
+                  flex: '1 1 auto',
+                  minHeight: 0,
+                  overflow: 'auto',
+                  isolation: 'isolate'
+                }}
+              >
                 {children}
               </Box>
               {/* An open task covers the content, and only it. */}
