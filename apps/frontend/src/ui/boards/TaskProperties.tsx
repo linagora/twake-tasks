@@ -5,15 +5,14 @@ import {
   Icon,
   Label,
   Mosaic,
-  Pen,
-  People
+  People,
+  Plus
 } from '@linagora/twake-icons'
-import { IconButton, Typography } from '@linagora/twake-mui'
+import { IconButton, Tooltip, Typography } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement } from 'react'
 
-import { LabelChip } from '@/ds/Columns'
+import { LabelChip, PersonChip } from '@/ds/Columns'
 import {
-  Inline,
   Properties,
   Property,
   PropertySelect,
@@ -45,6 +44,12 @@ export function TaskProperties({
   const { t } = useI18n()
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
   const [labeling, setLabeling] = useState<HTMLElement | null>(null)
+  const unassign = useBoardChange(boardId, (api, userIds: string[]) =>
+    api.setAssignees(boardId, task.id, userIds)
+  )
+  const unlabel = useBoardChange(boardId, (api, labelIds: string[]) =>
+    api.setLabels(boardId, task.id, labelIds)
+  )
 
   return (
     <>
@@ -59,14 +64,32 @@ export function TaskProperties({
         )}
         <Property icon={<Icon icon={People} />} label={t('task.assignees')}>
           {task.assignees.map(person => (
-            <Inline key={person.userId}>
-              <PersonAvatar
-                email={person.email}
-                name={person.name}
-                avatar={person.avatar}
-              />
-              <Typography variant="body2">{displayName(person)}</Typography>
-            </Inline>
+            <PersonChip
+              key={person.userId}
+              avatar={
+                <PersonAvatar
+                  email={person.email}
+                  name={person.name}
+                  avatar={person.avatar}
+                />
+              }
+              name={displayName(person)}
+              remove={
+                editable && board
+                  ? {
+                      label: t('task.unassign', { name: displayName(person) }),
+                      disabled: unassign.isPending,
+                      onClick: () => {
+                        unassign.mutate(
+                          task.assignees
+                            .filter(each => each.userId !== person.userId)
+                            .map(each => each.userId)
+                        )
+                      }
+                    }
+                  : undefined
+              }
+            />
           ))}
           {task.assignees.length === 0 && (
             <Typography variant="body2" color="textSecondary">
@@ -74,20 +97,41 @@ export function TaskProperties({
             </Typography>
           )}
           {editable && board && (
-            <IconButton
-              size="small"
-              aria-label={t('task.editAssignees')}
-              onClick={event => {
-                setAssigning(event.currentTarget)
-              }}
-            >
-              <Icon icon={Pen} size={14} />
-            </IconButton>
+            <Tooltip title={t('task.addAssignees')}>
+              <IconButton
+                size="small"
+                aria-label={t('task.addAssignees')}
+                onClick={event => {
+                  setAssigning(event.currentTarget)
+                }}
+              >
+                <Icon icon={Plus} size={14} />
+              </IconButton>
+            </Tooltip>
           )}
         </Property>
         <Property icon={<Icon icon={Label} />} label={t('task.labels')}>
           {task.labels.map(label => (
-            <LabelChip key={label.id} name={label.name} color={label.color} />
+            <LabelChip
+              key={label.id}
+              name={label.name}
+              color={label.color}
+              remove={
+                editable && board
+                  ? {
+                      label: t('task.removeLabel', { name: label.name }),
+                      disabled: unlabel.isPending,
+                      onClick: () => {
+                        unlabel.mutate(
+                          task.labels
+                            .filter(each => each.id !== label.id)
+                            .map(each => each.id)
+                        )
+                      }
+                    }
+                  : undefined
+              }
+            />
           ))}
           {task.labels.length === 0 && (
             <Typography variant="body2" color="textSecondary">
@@ -95,15 +139,17 @@ export function TaskProperties({
             </Typography>
           )}
           {editable && board && (
-            <IconButton
-              size="small"
-              aria-label={t('task.editLabels')}
-              onClick={event => {
-                setLabeling(event.currentTarget)
-              }}
-            >
-              <Icon icon={Pen} size={14} />
-            </IconButton>
+            <Tooltip title={t('task.addLabels')}>
+              <IconButton
+                size="small"
+                aria-label={t('task.addLabels')}
+                onClick={event => {
+                  setLabeling(event.currentTarget)
+                }}
+              >
+                <Icon icon={Plus} size={14} />
+              </IconButton>
+            </Tooltip>
           )}
         </Property>
         <PriorityRow task={task} boardId={boardId} editable={editable} />

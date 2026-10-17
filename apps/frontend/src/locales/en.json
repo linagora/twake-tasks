@@ -16,7 +16,8 @@
   },
   "app": {
     "name": "Twake Project",
-    "loading": "Loading"
+    "loading": "Loading",
+    "mainMenu": "Main menu"
   },
   "session": {
     "signingIn": "Signing you in…",
@@ -78,32 +79,13 @@
     "createTitle": "New label",
     "editTitle": "Edit label",
     "name": "Name",
-    "color": "Color",
-    "noColor": "No color",
+    "newName": "Enter a new label name",
+    "editName": "Label name",
+    "pickColor": "Choose the color",
+    "customColor": "Custom color",
     "create": "Create",
-    "editFailed": "The label could not be saved."
-  },
-  "labelColors": {
-    "navyBlue": "Navy blue",
-    "purple": "Purple",
-    "lavender": "Lavender",
-    "indigo": "Indigo",
-    "blue": "Blue",
-    "petrolBlue": "Petrol blue",
-    "darkGreen": "Dark green",
-    "turquoise": "Turquoise",
-    "green": "Green",
-    "red": "Red",
-    "magenta": "Magenta",
-    "pink": "Pink",
-    "brown": "Brown",
-    "lightBrown": "Light brown",
-    "salmon": "Salmon",
-    "orange": "Orange",
-    "yellow": "Yellow",
-    "black": "Black",
-    "darkGrey": "Dark grey",
-    "grey": "Grey"
+    "editFailed": "The label could not be saved.",
+    "close": "Close"
   },
   "board": {
     "back": "Back to boards",
@@ -139,8 +121,9 @@
     "searchPeople": "Search people",
     "searchLabels": "Search labels",
     "createLabel": "Create “%{name}”",
-    "labelsHint": "Type a name to create a label.",
+    "newLabel": "Create a label",
     "noMatches": "No matches",
+    "noLabels": "No labels yet.",
     "labelTaken": "A label named %{name} already exists.",
     "labelFailed": "The label could not be created.",
     "labelsFailed": "The labels could not be saved.",
@@ -174,17 +157,19 @@
     "priority": "Priority",
     "noPriority": "None",
     "assignees": "Assignees",
-    "editAssignees": "Edit assignees",
     "nobody": "Nobody",
     "labels": "Labels",
-    "editLabels": "Edit labels",
     "noLabels": "None",
     "dates": "Dates",
     "reminders": "Reminders",
     "subtasks": "Sub-tasks",
     "noDescription": "No description.",
     "changeFailed": "The change could not be saved.",
-    "edit": "Edit"
+    "addLabels": "Add labels",
+    "removeLabel": "Remove the label %{name}",
+    "addAssignees": "Add assignees",
+    "unassign": "Unassign %{name}",
+    "breadcrumb": "Where the task is"
   },
   "editor": {
     "toolbar": "Formatting",
@@ -532,5 +517,8 @@
   },
   "members": {
     "count": "%{smart_count} member |||| %{smart_count} members"
+  },
+  "page": {
+    "breadcrumb": "Where the page is"
   }
 }

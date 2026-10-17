@@ -9,13 +9,14 @@ import {
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement, type ReactNode } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { RichText, RichTextEditor } from '@/ds/RichText'
-import { Grow, Inline, PanelSection, SidePanel } from '@/ds/SidePanel'
+import { Grow, Inline, PanelSection, SidePanel, TaskHead } from '@/ds/SidePanel'
 import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
 import { useRemoveTask } from '@/ui/boards/Archive'
 import { Comments } from '@/ui/boards/Comments'
@@ -30,6 +31,7 @@ import {
   useSetDescription
 } from '@/ui/boards/queries'
 import { Subtasks } from '@/ui/boards/Subtasks'
+import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
@@ -69,9 +71,7 @@ export function TaskPanel({
       onClose={onClose}
       header={
         <>
-          <Typography variant="body2" color="textSecondary">
-            {task.key}
-          </Typography>
+          <TaskBreadcrumb task={task} board={board} />
           <Grow />
           <FollowButton task={task} boardId={boardId} />
           <CopyLinkButton boardId={boardId} taskKey={task.key} />
@@ -87,16 +87,20 @@ export function TaskPanel({
           </IconButton>
         </>
       }
+      aside={
+        <TaskProperties
+          task={task}
+          boardId={boardId}
+          board={board}
+          editable={editable}
+        />
+      }
     >
       {notice}
-      <Title task={task} boardId={boardId} editable={editable} />
-      <TaskProperties
-        task={task}
-        boardId={boardId}
-        board={board}
-        editable={editable}
-      />
-      <Description task={task} boardId={boardId} editable={editable} />
+      <TaskHead>
+        <Title task={task} boardId={boardId} editable={editable} />
+        <Description task={task} boardId={boardId} editable={editable} />
+      </TaskHead>
       {(children.length > 0 || (editable && depth < MAX_TASK_DEPTH)) && (
         <PanelSection
           title={t('task.subtasks')}
@@ -325,21 +329,22 @@ function Description({
   return (
     <PanelSection
       title={t('task.description')}
+      hideTitle={Boolean(description.data?.markdown.trim())}
       action={
         editable &&
         description.data &&
         draft === null && (
-          <Button
-            variant="text"
-            size="small"
-            startIcon={<Icon icon={Pen} size={14} />}
-            aria-label={t('task.editDescription')}
-            onClick={() => {
-              setDraft(description.data.markdown)
-            }}
-          >
-            {t('task.edit')}
-          </Button>
+          <Tooltip title={t('task.editDescription')}>
+            <IconButton
+              size="small"
+              aria-label={t('task.editDescription')}
+              onClick={() => {
+                setDraft(description.data.markdown)
+              }}
+            >
+              <Icon icon={Pen} size={14} />
+            </IconButton>
+          </Tooltip>
         )
       }
     >

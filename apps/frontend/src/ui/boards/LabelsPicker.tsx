@@ -96,26 +96,25 @@ export function LabelsPicker({
             <LabelChip name={label.name} color={label.color} highlight={name} />
           </PickerOption>
         ))}
-        {creatable && (
-          <PickerCreate
-            onCreate={() => {
-              setEditing({})
-            }}
-          >
-            {t('board.createLabel', { name })}
-          </PickerCreate>
-        )}
-        {shown.length === 0 && !creatable && (
+        {shown.length === 0 && (
           <PickerEmpty>
-            {name ? t('board.noMatches') : t('board.labelsHint')}
+            {name ? t('board.noMatches') : t('board.noLabels')}
           </PickerEmpty>
         )}
+        <PickerCreate
+          onCreate={() => {
+            setEditing({})
+          }}
+        >
+          {creatable ? t('board.createLabel', { name }) : t('board.newLabel')}
+        </PickerCreate>
       </PickerPopover>
       {editing && (
         <LabelDialog
           boardId={boardId}
           label={editing.label}
-          initialName={name}
+          usedColors={labels.map(label => label.color)}
+          initialName={creatable ? name : ''}
           onClose={() => {
             setEditing(null)
           }}

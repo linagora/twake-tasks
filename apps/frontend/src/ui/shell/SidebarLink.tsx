@@ -1,6 +1,6 @@
 import { NavLink } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
-import { NavLink as RouterNavLink } from 'react-router'
+import { Link as RouterLink, NavLink as RouterNavLink } from 'react-router'
 
 import { SidebarEntry } from '@/ds/AppFrame'
 
@@ -9,27 +9,42 @@ import { SidebarEntry } from '@/ds/AppFrame'
 export function SidebarLink({
   to,
   end = false,
+  active,
   label,
+  onClick,
   children
 }: {
   to: string
   end?: boolean
+  /** Lit or not whatever the URL says, when the shell knows better. */
+  active?: boolean | undefined
   label?: string | undefined
+  onClick?: (() => void) | undefined
   children: ReactNode
 }): ReactElement {
+  const entry = (lit: boolean) => (
+    <NavLink selected={lit} role="presentation" tabIndex={-1}>
+      {children}
+    </NavLink>
+  )
+  const named = label ? { 'aria-label': label } : {}
+
   return (
     <SidebarEntry>
-      <RouterNavLink
-        to={to}
-        end={end}
-        {...(label ? { 'aria-label': label } : {})}
-      >
-        {({ isActive }) => (
-          <NavLink selected={isActive} role="presentation" tabIndex={-1}>
-            {children}
-          </NavLink>
-        )}
-      </RouterNavLink>
+      {active === undefined ? (
+        <RouterNavLink to={to} end={end} onClick={onClick} {...named}>
+          {({ isActive }) => entry(isActive)}
+        </RouterNavLink>
+      ) : (
+        <RouterLink
+          to={to}
+          onClick={onClick}
+          aria-current={active ? 'page' : undefined}
+          {...named}
+        >
+          {entry(active)}
+        </RouterLink>
+      )}
     </SidebarEntry>
   )
 }

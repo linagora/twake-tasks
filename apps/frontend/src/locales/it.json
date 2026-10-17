@@ -16,7 +16,8 @@
   },
   "app": {
     "name": "Twake Project",
-    "loading": "Caricamento"
+    "loading": "Caricamento",
+    "mainMenu": "Menu principale"
   },
   "session": {
     "signingIn": "Accesso in corso…",
@@ -78,32 +79,13 @@
     "createTitle": "Nuova etichetta",
     "editTitle": "Modifica etichetta",
     "name": "Nome",
-    "color": "Colore",
-    "noColor": "Nessun colore",
+    "newName": "Inserisci il nome della nuova etichetta",
+    "editName": "Nome dell’etichetta",
+    "pickColor": "Scegli il colore",
+    "customColor": "Colore personalizzato",
     "create": "Crea",
-    "editFailed": "Impossibile salvare l’etichetta."
-  },
-  "labelColors": {
-    "navyBlue": "Blu navy",
-    "purple": "Viola",
-    "lavender": "Lavanda",
-    "indigo": "Indaco",
-    "blue": "Blu",
-    "petrolBlue": "Blu petrolio",
-    "darkGreen": "Verde scuro",
-    "turquoise": "Turchese",
-    "green": "Verde",
-    "red": "Rosso",
-    "magenta": "Magenta",
-    "pink": "Rosa",
-    "brown": "Marrone",
-    "lightBrown": "Marrone chiaro",
-    "salmon": "Salmone",
-    "orange": "Arancione",
-    "yellow": "Giallo",
-    "black": "Nero",
-    "darkGrey": "Grigio scuro",
-    "grey": "Grigio"
+    "editFailed": "Impossibile salvare l’etichetta.",
+    "close": "Chiudi"
   },
   "board": {
     "back": "Torna alle bacheche",
@@ -139,8 +121,9 @@
     "searchPeople": "Cerca persone",
     "searchLabels": "Cerca etichette",
     "createLabel": "Crea «%{name}»",
-    "labelsHint": "Digita un nome per creare un’etichetta.",
+    "newLabel": "Crea un’etichetta",
     "noMatches": "Nessun risultato",
+    "noLabels": "Ancora nessuna etichetta.",
     "labelTaken": "Esiste già un’etichetta chiamata %{name}.",
     "labelFailed": "Impossibile creare l’etichetta.",
     "labelsFailed": "Impossibile salvare le etichette.",
@@ -174,17 +157,19 @@
     "priority": "Priorità",
     "noPriority": "Nessuna",
     "assignees": "Assegnatari",
-    "editAssignees": "Modifica assegnatari",
     "nobody": "Nessuno",
     "labels": "Etichette",
-    "editLabels": "Modifica etichette",
     "noLabels": "Nessuna",
     "dates": "Date",
     "reminders": "Promemoria",
     "subtasks": "Sotto-attività",
     "noDescription": "Nessuna descrizione.",
     "changeFailed": "Impossibile salvare la modifica.",
-    "edit": "Modifica"
+    "addLabels": "Aggiungi etichette",
+    "removeLabel": "Rimuovi l’etichetta %{name}",
+    "addAssignees": "Aggiungi assegnatari",
+    "unassign": "Rimuovi %{name}",
+    "breadcrumb": "Posizione dell’attività"
   },
   "editor": {
     "toolbar": "Formattazione",
@@ -532,5 +517,8 @@
   },
   "members": {
     "count": "%{smart_count} membro |||| %{smart_count} membri"
+  },
+  "page": {
+    "breadcrumb": "Posizione della pagina"
   }
 }

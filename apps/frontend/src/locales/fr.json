@@ -16,7 +16,8 @@
   },
   "app": {
     "name": "Twake Project",
-    "loading": "Chargement"
+    "loading": "Chargement",
+    "mainMenu": "Menu principal"
   },
   "session": {
     "signingIn": "Connexion en cours…",
@@ -78,32 +79,13 @@
     "createTitle": "Nouvelle étiquette",
     "editTitle": "Modifier l'étiquette",
     "name": "Nom",
-    "color": "Couleur",
-    "noColor": "Sans couleur",
+    "newName": "Saisissez le nom de la nouvelle étiquette",
+    "editName": "Nom de l’étiquette",
+    "pickColor": "Choisir la couleur",
+    "customColor": "Couleur personnalisée",
     "create": "Créer",
-    "editFailed": "L'étiquette n'a pas pu être enregistrée."
-  },
-  "labelColors": {
-    "navyBlue": "Bleu marine",
-    "purple": "Violet",
-    "lavender": "Lavande",
-    "indigo": "Indigo",
-    "blue": "Bleu",
-    "petrolBlue": "Bleu pétrole",
-    "darkGreen": "Vert foncé",
-    "turquoise": "Turquoise",
-    "green": "Vert",
-    "red": "Rouge",
-    "magenta": "Magenta",
-    "pink": "Rose",
-    "brown": "Marron",
-    "lightBrown": "Marron clair",
-    "salmon": "Saumon",
-    "orange": "Orange",
-    "yellow": "Jaune",
-    "black": "Noir",
-    "darkGrey": "Gris foncé",
-    "grey": "Gris"
+    "editFailed": "L'étiquette n'a pas pu être enregistrée.",
+    "close": "Fermer"
   },
   "board": {
     "back": "Retour aux tableaux",
@@ -139,8 +121,9 @@
     "searchPeople": "Rechercher une personne",
     "searchLabels": "Rechercher une étiquette",
     "createLabel": "Créer « %{name} »",
-    "labelsHint": "Saisissez un nom pour créer une étiquette.",
+    "newLabel": "Créer une étiquette",
     "noMatches": "Aucun résultat",
+    "noLabels": "Aucune étiquette pour l’instant.",
     "labelTaken": "Une étiquette nommée %{name} existe déjà.",
     "labelFailed": "L'étiquette n'a pas pu être créée.",
     "labelsFailed": "Les étiquettes n'ont pas pu être enregistrées.",
@@ -174,17 +157,19 @@
     "priority": "Priorité",
     "noPriority": "Aucune",
     "assignees": "Responsables",
-    "editAssignees": "Modifier les responsables",
     "nobody": "Personne",
     "labels": "Étiquettes",
-    "editLabels": "Modifier les étiquettes",
     "noLabels": "Aucune",
     "dates": "Dates",
     "reminders": "Rappels",
     "subtasks": "Sous-tâches",
     "noDescription": "Aucune description.",
     "changeFailed": "La modification n'a pas pu être enregistrée.",
-    "edit": "Modifier"
+    "addLabels": "Ajouter des étiquettes",
+    "removeLabel": "Retirer l’étiquette %{name}",
+    "addAssignees": "Ajouter des responsables",
+    "unassign": "Retirer %{name}",
+    "breadcrumb": "Emplacement de la tâche"
   },
   "editor": {
     "toolbar": "Mise en forme",
@@ -532,5 +517,8 @@
   },
   "members": {
     "count": "%{smart_count} membre |||| %{smart_count} membres"
+  },
+  "page": {
+    "breadcrumb": "Emplacement de la page"
   }
 }

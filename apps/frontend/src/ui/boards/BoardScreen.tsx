@@ -1,20 +1,15 @@
-import { Compass, Icon, Left, Plus, Share } from '@linagora/twake-icons'
+import { Compass, Icon, Plus, Share } from '@linagora/twake-icons'
 import {
   Alert,
   Button,
   ClickAwayListener,
-  Link,
   TextField,
   Tooltip,
-  Typography
+  Typography,
+  useAlert
 } from '@linagora/twake-mui'
 import { useEffect, useRef, useState, type ReactElement } from 'react'
-import {
-  Link as RouterLink,
-  useNavigate,
-  useParams,
-  useSearchParams
-} from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 
 import { ApiError, type Shelf } from '@/application/boards'
 import {
@@ -31,7 +26,6 @@ import { PageHeader, PageTitle, UnavailableButton } from '@/ds/PageHeader'
 import { Inline } from '@/ds/SidePanel'
 import { DropColumn, SortableList } from '@/ds/Sortable'
 import { TitleButton } from '@/ds/TitleButton'
-import { Toast } from '@/ds/Toast'
 import type { Board, Section, Task } from '@/domain/board'
 import {
   RemovalNotice,
@@ -45,6 +39,12 @@ import { localToday } from '@/ui/boards/dueLabel'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
 import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
+import {
+  BoardStepContext,
+  OriginContext,
+  PageCrumbs,
+  useBoardsOrigin
+} from '@/ui/boards/Crumbs'
 import { NewDatedTask } from '@/ui/boards/NewDatedTask'
 import {
   useBoard,
@@ -74,35 +74,47 @@ export function BoardScreen({
   const { t } = useI18n()
   const { boardId = '' } = useParams()
   const board = useBoard(boardId)
+  const boardsOrigin = {
+    ...useBoardsOrigin(),
+    to: '../..',
+    relative: true
+  }
   useDocumentTitle(board.data?.name ?? null)
   const missing = board.error instanceof ApiError && board.error.status === 404
 
   return (
-    <main className={flush ? undefined : 'u-p-2'}>
-      {!board.data && back && <BackLink />}
-      {missing && (
-        <EmptyState
-          icon={Compass}
-          title={t('board.notFound')}
-          text={t('problems.notFoundHint')}
-        />
-      )}
-      {board.isError && !missing && (
-        <Typography role="alert" className="u-mt-2">
-          {t('board.loadFailed')}
-        </Typography>
-      )}
-      {(board.isPending || (waiting && !board.isError)) && (
-        <ColumnsSkeleton label={t('app.loading')} />
-      )}
-      {board.data && !waiting && (
-        <BoardColumns
-          board={board.data}
-          back={back}
-          settled={!board.isFetching}
-        />
-      )}
-    </main>
+    <OriginContext value={boardsOrigin}>
+      <BoardStepContext
+        value={{ to: '.', label: board.data?.name ?? '…', relative: true }}
+      >
+        <main className={flush ? undefined : 'u-p-2'}>
+          {back && (
+            <PageCrumbs
+              origin={boardsOrigin}
+              current={board.data?.name ?? '…'}
+            />
+          )}
+          {missing && (
+            <EmptyState
+              icon={Compass}
+              title={t('board.notFound')}
+              text={t('problems.notFoundHint')}
+            />
+          )}
+          {board.isError && !missing && (
+            <Typography role="alert" className="u-mt-2">
+              {t('board.loadFailed')}
+            </Typography>
+          )}
+          {(board.isPending || (waiting && !board.isError)) && (
+            <ColumnsSkeleton label={t('app.loading')} />
+          )}
+          {board.data && !waiting && (
+            <BoardColumns board={board.data} settled={!board.isFetching} />
+          )}
+        </main>
+      </BoardStepContext>
+    </OriginContext>
   )
 }
 
@@ -134,8 +146,15 @@ function LinkedTask({
     }
   }
 
+  // Twake's alert says the task is gone, as other apps say theirs.
+  const { showAlert } = useAlert()
   useEffect(() => {
     if (lost === null || shown !== lost) return
+    showAlert({
+      message: t('board.taskNotFound'),
+      severity: 'warning',
+      duration: 8000
+    })
     setParams(
       current => {
         const next = new URLSearchParams(current)
@@ -144,7 +163,7 @@ function LinkedTask({
       },
       { replace: true }
     )
-  }, [lost, shown, setParams])
+  }, [lost, shown, setParams, showAlert, t])
 
   return (
     <>
@@ -158,44 +177,15 @@ function LinkedTask({
           depth={1}
         />
       )}
-      <Toast
-        open={lost !== null}
-        autoHideDuration={8000}
-        onClose={(_, reason) => {
-          if (reason !== 'clickaway') setLost(null)
-        }}
-      >
-        <Alert severity="warning">{t('board.taskNotFound')}</Alert>
-      </Toast>
     </>
-  )
-}
-
-function BackLink(): ReactElement {
-  const { t } = useI18n()
-  return (
-    <Link
-      component={RouterLink}
-      to="../.."
-      relative="path"
-      variant="body2"
-      color="textSecondary"
-      underline="hover"
-      className="u-flex u-flex-items-center"
-    >
-      <Icon icon={Left} size={12} className="u-mr-half" />
-      {t('board.back')}
-    </Link>
   )
 }
 
 function BoardColumns({
   board,
-  back,
   settled
 }: {
   board: Board
-  back: boolean
   settled: boolean
 }): ReactElement {
   const { t } = useI18n()
@@ -285,7 +275,6 @@ function BoardColumns({
   return (
     <RemovalNotices.Provider value={setRemoval}>
       <PageHeader
-        back={back && <BackLink />}
         title={
           <BoardTitle
             board={board}

@@ -82,10 +82,7 @@ describe('FiltersScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Board' }))
 
     const started = within(screen.getByRole('region', { name: 'In progress' }))
-    expect(started.getByRole('link', { name: 'Logo' })).toHaveAttribute(
-      'href',
-      `/boards/${design.id}?task=DES-1`
-    )
+    expect(started.getByRole('button', { name: 'Logo' })).toBeVisible()
     expect(started.getByText('DES-1 · Design')).toBeVisible()
     const unstarted = within(screen.getByRole('region', { name: 'To do' }))
     expect(unstarted.getByText('Poster')).toBeVisible()
@@ -159,7 +156,9 @@ describe('FiltersScreen', () => {
       'Save the criteria you look for often, like your P1 tasks.'
     )
     expect(
-      screen.getByRole('navigation').querySelector('a[href="/filters"]')
+      screen
+        .getByRole('list', { name: 'Main menu' })
+        .querySelector('a[href="/filters"]')
     ).not.toBeNull()
   })
 })

@@ -16,7 +16,8 @@
   },
   "app": {
     "name": "Twake Project",
-    "loading": "Đang tải"
+    "loading": "Đang tải",
+    "mainMenu": "Menu chính"
   },
   "session": {
     "signingIn": "Đang đăng nhập…",
@@ -78,32 +79,13 @@
     "createTitle": "Nhãn mới",
     "editTitle": "Chỉnh sửa nhãn",
     "name": "Tên",
-    "color": "Màu",
-    "noColor": "Không màu",
+    "newName": "Nhập tên nhãn mới",
+    "editName": "Tên nhãn",
+    "pickColor": "Chọn màu",
+    "customColor": "Màu tùy chỉnh",
     "create": "Tạo",
-    "editFailed": "Không thể lưu nhãn."
-  },
-  "labelColors": {
-    "navyBlue": "Xanh hải quân",
-    "purple": "Tím",
-    "lavender": "Tím oải hương",
-    "indigo": "Chàm",
-    "blue": "Xanh dương",
-    "petrolBlue": "Xanh cổ vịt",
-    "darkGreen": "Xanh lá đậm",
-    "turquoise": "Xanh ngọc",
-    "green": "Xanh lá",
-    "red": "Đỏ",
-    "magenta": "Hồng cánh sen",
-    "pink": "Hồng",
-    "brown": "Nâu",
-    "lightBrown": "Nâu nhạt",
-    "salmon": "Hồng cam",
-    "orange": "Cam",
-    "yellow": "Vàng",
-    "black": "Đen",
-    "darkGrey": "Xám đậm",
-    "grey": "Xám"
+    "editFailed": "Không thể lưu nhãn.",
+    "close": "Đóng"
   },
   "board": {
     "back": "Quay lại danh sách bảng",
@@ -139,8 +121,9 @@
     "searchPeople": "Tìm người",
     "searchLabels": "Tìm nhãn",
     "createLabel": "Tạo “%{name}”",
-    "labelsHint": "Nhập tên để tạo nhãn.",
+    "newLabel": "Tạo nhãn",
     "noMatches": "Không có kết quả",
+    "noLabels": "Chưa có nhãn nào.",
     "labelTaken": "Đã có nhãn tên %{name}.",
     "labelFailed": "Không thể tạo nhãn.",
     "labelsFailed": "Không thể lưu nhãn.",
@@ -174,17 +157,19 @@
     "priority": "Độ ưu tiên",
     "noPriority": "Không có",
     "assignees": "Người được giao",
-    "editAssignees": "Sửa người được giao",
     "nobody": "Chưa có ai",
     "labels": "Nhãn",
-    "editLabels": "Sửa nhãn",
     "noLabels": "Không có",
     "dates": "Ngày",
     "reminders": "Lời nhắc",
     "subtasks": "Công việc con",
     "noDescription": "Chưa có mô tả.",
     "changeFailed": "Không thể lưu thay đổi.",
-    "edit": "Sửa"
+    "addLabels": "Thêm nhãn",
+    "removeLabel": "Bỏ nhãn %{name}",
+    "addAssignees": "Thêm người phụ trách",
+    "unassign": "Bỏ %{name}",
+    "breadcrumb": "Vị trí của công việc"
   },
   "editor": {
     "toolbar": "Định dạng",
@@ -532,5 +517,8 @@
   },
   "members": {
     "count": "%{smart_count} thành viên"
+  },
+  "page": {
+    "breadcrumb": "Vị trí của trang"
   }
 }

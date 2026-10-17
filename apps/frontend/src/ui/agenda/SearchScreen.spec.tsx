@@ -15,8 +15,8 @@ function boards() {
 }
 
 describe('SearchScreen', () => {
-  it('lists the tasks matching a search, linked to their board', async () => {
-    const { design, boardsApi } = boards()
+  it('lists the tasks matching a search', async () => {
+    const { boardsApi } = boards()
     renderRoute('/', { boardsApi })
 
     fireEvent.change(
@@ -32,10 +32,9 @@ describe('SearchScreen', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Search' })
     ).toBeVisible()
-    expect(results.getByRole('link', { name: /New logo/ })).toHaveAttribute(
-      'href',
-      `/boards/${design.id}?task=DES-1`
-    )
+    expect(
+      results.getByRole('button', { name: /New logo/ })
+    ).toBeInTheDocument()
     expect(screen.queryByText('Poster')).not.toBeInTheDocument()
     expect(boardsApi.search).toHaveBeenCalledWith('logo')
   })
@@ -43,7 +42,7 @@ describe('SearchScreen', () => {
   it('highlights the part of each title that matches, inside a word too', async () => {
     renderRoute('/search?q=LOG', { boardsApi: boards().boardsApi })
 
-    const link = await screen.findByRole('link', { name: /New logo/ })
+    const link = await screen.findByRole('button', { name: /New logo/ })
     expect(
       [...link.querySelectorAll('mark')].map(mark => mark.textContent)
     ).toEqual(['log'])

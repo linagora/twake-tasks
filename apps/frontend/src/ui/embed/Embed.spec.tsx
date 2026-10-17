@@ -84,7 +84,7 @@ describe('the embedded view', () => {
       await screen.findByRole('heading', { name: 'Roadmap' })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('link', { name: 'Back to boards' })
+      screen.queryByRole('link', { name: 'Boards' })
     ).not.toBeInTheDocument()
   })
 
@@ -102,7 +102,7 @@ describe('the embedded view', () => {
     })
 
     expect(
-      await screen.findByRole('link', { name: 'Back to boards' })
+      await screen.findByRole('link', { name: 'Boards' })
     ).toBeInTheDocument()
   })
 
@@ -118,7 +118,7 @@ describe('the embedded view', () => {
       await screen.findByRole('heading', { name: 'Roadmap' })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('link', { name: 'Back to boards' })
+      screen.queryByRole('link', { name: 'Boards' })
     ).not.toBeInTheDocument()
   })
 
@@ -134,7 +134,7 @@ describe('the embedded view', () => {
       'The board could not be loaded.'
     )
     expect(
-      screen.queryByRole('link', { name: 'Back to boards' })
+      screen.queryByRole('link', { name: 'Boards' })
     ).not.toBeInTheDocument()
   })
 
@@ -179,7 +179,7 @@ describe('the embedded view', () => {
       `/embed/projects/${roadmap.id}/boards/${board.id}`
     )
 
-    fireEvent.click(await screen.findByRole('link', { name: 'Back to boards' }))
+    fireEvent.click(await screen.findByRole('link', { name: 'Boards' }))
     expect(router.state.location.pathname).toBe(`/embed/projects/${roadmap.id}`)
   })
 })
