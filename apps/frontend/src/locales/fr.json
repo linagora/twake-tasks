@@ -442,7 +442,8 @@
     "due": "Échéance",
     "complete": "Terminer %{title}",
     "today": "Aujourd’hui",
-    "nothingDue": "Rien à rendre ce jour-là."
+    "nothingDue": "Rien à rendre ce jour-là.",
+    "addOn": "Ajouter une tâche le %{day}"
   },
   "search": {
     "label": "Rechercher",
@@ -476,10 +477,18 @@
     "loadFailed": "Impossible de charger les vues.",
     "notFound": "Cette vue n’existe pas, ou vous ne pouvez pas l’ouvrir.",
     "edit": "Modifier la vue",
+    "layout": "Affichage",
     "backToView": "Retour à la vue",
     "filtersSection": "Filtres",
+    "allColumns": "Afficher toutes les colonnes",
+    "groupBy": "Regrouper par",
+    "noPriority": "Sans priorité",
+    "noLabel": "Sans étiquette",
+    "later": "Plus tard",
     "addFilter": "Ajouter un filtre",
+    "moreCriteria": "+%{count} autres",
     "removeFilter": "Retirer le filtre %{name}",
+    "display": "Affichage",
     "deleteView": "Supprimer la vue",
     "deleteTitle": "Supprimer « %{name} » ?",
     "deleteText": "La vue est supprimée définitivement. Ses tâches restent où elles sont.",
@@ -487,8 +496,14 @@
     "deleteFailed": "Impossible de supprimer la vue.",
     "nameRequired": "Le nom est obligatoire.",
     "menuOf": "Actions de %{name}",
+    "addFavorite": "Ajouter aux favoris",
+    "removeFavorite": "Retirer des favoris",
     "saving": "Enregistrement…",
     "changesSaved": "Modifications enregistrées",
+    "missingStatusTitle": "« %{board} » n’a pas de section « %{section} »",
+    "missingStatusText": "Une tâche ne peut être que dans une section de son tableau, et « %{board} » n’a pas « %{section} ». Ajoute-la au tableau pour y déplacer la tâche, ou annule pour la laisser où elle était.",
+    "addStatus": "Ajouter « %{section} » à « %{board} »",
+    "addStatusFailed": "Impossible d’ajouter la section.",
     "back": "Retour aux vues",
     "new": "Nouvelle vue",
     "saved": "Vues enregistrées",
@@ -548,7 +563,10 @@
     "noResult": "Aucune icône trouvée"
   },
   "viewTask": {
+    "title": "Titre",
     "board": "Tableau",
-    "status": "Statut"
+    "status": "Section",
+    "create": "Créer la tâche",
+    "failed": "Impossible de créer la tâche."
   }
 }

@@ -442,7 +442,8 @@
     "due": "Due",
     "complete": "Complete %{title}",
     "today": "Today",
-    "nothingDue": "Nothing due this day."
+    "nothingDue": "Nothing due this day.",
+    "addOn": "Add a task on %{day}"
   },
   "search": {
     "label": "Search",
@@ -476,10 +477,18 @@
     "loadFailed": "Couldn’t load views.",
     "notFound": "This view doesn’t exist, or you can’t open it.",
     "edit": "Edit view",
+    "layout": "Layout",
     "backToView": "Back to the view",
     "filtersSection": "Filters",
+    "allColumns": "Show all columns",
+    "groupBy": "Group by",
+    "noPriority": "No priority",
+    "noLabel": "No label",
+    "later": "Later",
     "addFilter": "Add filter",
+    "moreCriteria": "+%{count} more",
     "removeFilter": "Remove the %{name} filter",
+    "display": "Display",
     "deleteView": "Delete view",
     "deleteTitle": "Delete “%{name}”?",
     "deleteText": "The view is deleted for good. Its tasks stay where they are.",
@@ -487,8 +496,14 @@
     "deleteFailed": "Couldn’t delete the view.",
     "nameRequired": "A name is required.",
     "menuOf": "Actions of %{name}",
+    "addFavorite": "Add to favorites",
+    "removeFavorite": "Remove from favorites",
     "saving": "Saving…",
     "changesSaved": "Changes saved",
+    "missingStatusTitle": "“%{board}” has no “%{section}” section",
+    "missingStatusText": "A task can only be in a section of its own board, and “%{board}” has no “%{section}”. Add it to the board to move the task there, or cancel to leave the task where it was.",
+    "addStatus": "Add “%{section}” to “%{board}”",
+    "addStatusFailed": "Couldn’t add the section.",
     "back": "Back to views",
     "new": "New view",
     "saved": "Saved views",
@@ -548,7 +563,10 @@
     "noResult": "No icon found"
   },
   "viewTask": {
+    "title": "Title",
     "board": "Board",
-    "status": "Status"
+    "status": "Section",
+    "create": "Create task",
+    "failed": "Couldn’t create the task."
   }
 }

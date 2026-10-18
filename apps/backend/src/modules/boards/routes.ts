@@ -13,6 +13,7 @@ import { createSharingStore } from './sharing.ts'
 import { createReminderStore } from './reminders.ts'
 import {
   durationUnit,
+  GROUPINGS,
   LAYOUTS,
   memberRole,
   recurrenceUnit,
@@ -121,13 +122,26 @@ const newFilter = z.object({
     .string()
     .regex(/^[A-Z][A-Za-z0-9]{0,39}$/)
     .nullable()
-    .optional()
+    .optional(),
+  layout: z.enum(LAYOUTS).optional(),
+  groupBy: z.enum(GROUPINGS).optional(),
+  allColumns: z.boolean().optional()
 })
 
-const viewOf = ({ name, criteria, icon }: z.infer<typeof newFilter>): View => ({
+const viewOf = ({
+  name,
+  criteria,
+  icon,
+  layout,
+  groupBy,
+  allColumns
+}: z.infer<typeof newFilter>): View => ({
   name,
   criteria: criteriaOf(criteria),
-  icon: icon ?? null
+  icon: icon ?? null,
+  layout: layout ?? 'list',
+  groupBy: groupBy ?? 'status',
+  allColumns: allColumns ?? false
 })
 
 const filterParams = z.object({ filterId: z.uuid() })

@@ -442,7 +442,8 @@
     "due": "Hạn",
     "complete": "Hoàn thành %{title}",
     "today": "Hôm nay",
-    "nothingDue": "Không có việc nào đến hạn hôm đó."
+    "nothingDue": "Không có việc nào đến hạn hôm đó.",
+    "addOn": "Thêm công việc vào %{day}"
   },
   "search": {
     "label": "Tìm kiếm",
@@ -476,10 +477,18 @@
     "loadFailed": "Không thể tải chế độ xem.",
     "notFound": "Chế độ xem này không tồn tại hoặc bạn không thể mở nó.",
     "edit": "Sửa chế độ xem",
+    "layout": "Bố cục",
     "backToView": "Quay lại chế độ xem",
     "filtersSection": "Bộ lọc",
+    "allColumns": "Hiện tất cả các cột",
+    "groupBy": "Nhóm theo",
+    "noPriority": "Không có ưu tiên",
+    "noLabel": "Không có nhãn",
+    "later": "Sau này",
     "addFilter": "Thêm bộ lọc",
+    "moreCriteria": "+%{count} khác",
     "removeFilter": "Xóa bộ lọc %{name}",
+    "display": "Hiển thị",
     "deleteView": "Xóa chế độ xem",
     "deleteTitle": "Xóa “%{name}”?",
     "deleteText": "Chế độ xem sẽ bị xóa vĩnh viễn. Các công việc vẫn giữ nguyên.",
@@ -487,8 +496,14 @@
     "deleteFailed": "Không thể xóa chế độ xem.",
     "nameRequired": "Tên là bắt buộc.",
     "menuOf": "Thao tác với %{name}",
+    "addFavorite": "Thêm vào mục yêu thích",
+    "removeFavorite": "Xóa khỏi mục yêu thích",
     "saving": "Đang lưu…",
     "changesSaved": "Đã lưu thay đổi",
+    "missingStatusTitle": "“%{board}” không có mục “%{section}”",
+    "missingStatusText": "Công việc chỉ có thể ở một mục của bảng của nó, và “%{board}” không có “%{section}”. Thêm mục vào bảng để chuyển công việc tới đó, hoặc hủy để giữ nguyên.",
+    "addStatus": "Thêm “%{section}” vào “%{board}”",
+    "addStatusFailed": "Không thể thêm mục.",
     "back": "Quay lại chế độ xem",
     "new": "Chế độ xem mới",
     "saved": "Chế độ xem đã lưu",
@@ -548,7 +563,10 @@
     "noResult": "Không tìm thấy biểu tượng"
   },
   "viewTask": {
+    "title": "Tiêu đề",
     "board": "Bảng",
-    "status": "Trạng thái"
+    "status": "Mục",
+    "create": "Tạo công việc",
+    "failed": "Không thể tạo công việc."
   }
 }

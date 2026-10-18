@@ -216,6 +216,7 @@ function BoardColumns({
   }
   const [removal, setRemoval] = useState<Removal | null>(null)
   const [adding, setAdding] = useState<string | null>(null)
+  const [addingOn, setAddingOn] = useState<string | null>(null)
   const stopAdding = (key: string): void => {
     setAdding(current => (current === key ? null : current))
   }
@@ -411,6 +412,7 @@ function BoardColumns({
           }}
           onMove={(taskId, to) => {
             move.mutate({ taskId, move: to })
+            return true
           }}
           preview={id => {
             const task = byId.get(id)
@@ -484,15 +486,24 @@ function BoardColumns({
         <CalendarLayout
           tasks={topLevel}
           item={task => <CalendarTask key={task.id} task={task} />}
+          onAddOn={
+            editable && first
+              ? day => {
+                  setAddingOn(day)
+                  setAdding(columnKey(first))
+                }
+              : undefined
+          }
         />
       )}
       {board.layout === 'calendar' && first && adding !== null && (
         <NewDatedTask
           boardId={board.id}
           sectionId={first.id}
-          day={localToday()}
+          day={addingOn ?? localToday()}
           onClose={() => {
             setAdding(null)
+            setAddingOn(null)
           }}
         />
       )}

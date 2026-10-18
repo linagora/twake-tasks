@@ -297,7 +297,10 @@ export function fakeBoardsApi(boards: Board[] = []) {
           name: filter.name,
           criteria: structuredClone(filter.criteria),
           favorite: false,
-          icon: filter.icon ?? null
+          icon: filter.icon ?? null,
+          layout: filter.layout ?? 'list',
+          groupBy: filter.groupBy ?? 'status',
+          allColumns: filter.allColumns ?? false
         })
         return { id }
       })
@@ -317,7 +320,10 @@ export function fakeBoardsApi(boards: Board[] = []) {
         Object.assign(filter, {
           name: edit.name,
           criteria: structuredClone(edit.criteria),
-          icon: edit.icon ?? null
+          icon: edit.icon ?? null,
+          layout: edit.layout ?? 'list',
+          groupBy: edit.groupBy ?? 'status',
+          allColumns: edit.allColumns ?? false
         })
       })
     ),

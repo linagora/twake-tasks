@@ -9,7 +9,15 @@ import {
 import { CheckList, Comment, Dots, Icon } from '@linagora/twake-icons'
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
 
-import { Card, CardTitle, LabelChip, Meta, MetaChip } from '@/ds/Columns'
+import { shownLabels } from '@/application/hiddenFacts'
+import {
+  BoardChip,
+  Card,
+  CardTitle,
+  LabelChip,
+  Meta,
+  MetaChip
+} from '@/ds/Columns'
 import { SortableCard } from '@/ds/Sortable'
 import type { Label, Person, Section, Task } from '@/domain/board'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
@@ -17,6 +25,7 @@ import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { Subtasks } from '@/ui/boards/Subtasks'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
+import { useHiddenFacts } from '@/ui/boards/HiddenFacts'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function TaskCard({
@@ -27,7 +36,9 @@ export function TaskCard({
   labels,
   destinations,
   onMove,
-  sortable = false
+  sortable = false,
+  boardName,
+  parentTitle = null
 }: {
   task: Task
   tasks: Task[]
@@ -37,12 +48,17 @@ export function TaskCard({
   destinations: { id: string | null; name: string }[]
   onMove: ((sectionId: Section['id'] | null) => void) | undefined
   sortable?: boolean
+  /** Shown where the tasks of many boards meet. */
+  boardName?: string
+  /** A sub-task's parent, named where it shows without it. */
+  parentTitle?: string | null
 }): ReactElement {
   const { t } = useI18n()
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
   const [labeling, setLabeling] = useState<HTMLElement | null>(null)
   const panel = useTaskPanel(task.key)
+  const hidden = useHiddenFacts()
   const editable = onMove !== undefined
   const [showSubtasks, setShowSubtasks] = useState(false)
   const children = tasks.filter(each => each.parentId === task.id)
@@ -61,9 +77,12 @@ export function TaskCard({
     <>
       <Meta>
         <Typography variant="caption" color="textSecondary">
-          {task.key}
+          {parentTitle === null
+            ? task.key
+            : `${task.key} · ${t('agenda.subtaskOf', { title: parentTitle })}`}
         </Typography>
-        {task.labels.map(label => (
+        {boardName && !hidden.board && <BoardChip name={boardName} />}
+        {shownLabels(task.labels, hidden).map(label => (
           <LabelChip key={label.id} name={label.name} color={label.color} />
         ))}
       </Meta>
@@ -83,8 +102,10 @@ export function TaskCard({
       </CardTitle>
       {(facts || task.assignees.length > 0) && (
         <Meta>
-          {task.priority !== null && <PriorityChip priority={task.priority} />}
-          <DueChip task={task} />
+          {task.priority !== null && !hidden.priority && (
+            <PriorityChip priority={task.priority} />
+          )}
+          {!hidden.due && <DueChip task={task} />}
           {children.length > 0 && (
             <Button
               variant="text"
@@ -112,7 +133,9 @@ export function TaskCard({
               {task.commentCount}
             </MetaChip>
           )}
-          {task.assignees.length > 0 && <Assignees people={task.assignees} />}
+          {task.assignees.length > 0 && !hidden.assignees && (
+            <Assignees people={task.assignees} />
+          )}
         </Meta>
       )}
       {showSubtasks && (

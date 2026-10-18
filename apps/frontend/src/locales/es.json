@@ -442,7 +442,8 @@
     "due": "Vencimiento",
     "complete": "Completar %{title}",
     "today": "Hoy",
-    "nothingDue": "Nada vence este día."
+    "nothingDue": "Nada vence este día.",
+    "addOn": "Añadir una tarea el %{day}"
   },
   "search": {
     "label": "Buscar",
@@ -476,10 +477,18 @@
     "loadFailed": "No se pudieron cargar las vistas.",
     "notFound": "Esta vista no existe o no puedes abrirla.",
     "edit": "Editar la vista",
+    "layout": "Presentación",
     "backToView": "Volver a la vista",
     "filtersSection": "Filtros",
+    "allColumns": "Mostrar todas las columnas",
+    "groupBy": "Agrupar por",
+    "noPriority": "Sin prioridad",
+    "noLabel": "Sin etiqueta",
+    "later": "Más tarde",
     "addFilter": "Añadir filtro",
+    "moreCriteria": "+%{count} más",
     "removeFilter": "Quitar el filtro %{name}",
+    "display": "Visualización",
     "deleteView": "Eliminar vista",
     "deleteTitle": "¿Eliminar «%{name}»?",
     "deleteText": "La vista se elimina para siempre. Sus tareas se quedan donde están.",
@@ -487,8 +496,14 @@
     "deleteFailed": "No se pudo eliminar la vista.",
     "nameRequired": "El nombre es obligatorio.",
     "menuOf": "Acciones de %{name}",
+    "addFavorite": "Añadir a favoritos",
+    "removeFavorite": "Quitar de favoritos",
     "saving": "Guardando…",
     "changesSaved": "Cambios guardados",
+    "missingStatusTitle": "«%{board}» no tiene la sección «%{section}»",
+    "missingStatusText": "Una tarea solo puede estar en una sección de su tablero, y «%{board}» no tiene «%{section}». Añádela al tablero para mover la tarea allí, o cancela para dejarla donde estaba.",
+    "addStatus": "Añadir «%{section}» a «%{board}»",
+    "addStatusFailed": "No se pudo añadir la sección.",
     "back": "Volver a las vistas",
     "new": "Nueva vista",
     "saved": "Vistas guardadas",
@@ -548,7 +563,10 @@
     "noResult": "No se encontró ningún icono"
   },
   "viewTask": {
+    "title": "Título",
     "board": "Tablero",
-    "status": "Estado"
+    "status": "Sección",
+    "create": "Crear la tarea",
+    "failed": "No se pudo crear la tarea."
   }
 }

@@ -52,6 +52,18 @@ export const LAYOUTS = ['board', 'list', 'calendar'] as const
 
 export const boardLayout = pgEnum('board_layout', LAYOUTS)
 
+/** What the columns of a view are: its tasks' statuses unless chosen. */
+export const GROUPINGS = [
+  'status',
+  'board',
+  'assignee',
+  'priority',
+  'label',
+  'due'
+] as const
+
+export const viewGrouping = pgEnum('view_grouping', GROUPINGS)
+
 const id = () =>
   uuid()
     .primaryKey()
@@ -516,6 +528,10 @@ export const savedFilters = pgTable.withRLS(
     criteria: jsonb().notNull(),
     favorite: boolean().notNull().default(false),
     icon: text(),
+    layout: boardLayout().notNull().default('list'),
+    groupBy: viewGrouping('group_by').notNull().default('status'),
+    // Columns of statuses no task is in show too.
+    allColumns: boolean('all_columns').notNull().default(false),
     createdAt: timestamptz('created_at').notNull().defaultNow()
   },
   table => [

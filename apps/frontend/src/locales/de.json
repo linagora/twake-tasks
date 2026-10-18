@@ -442,7 +442,8 @@
     "due": "Fällig",
     "complete": "%{title} erledigen",
     "today": "Heute",
-    "nothingDue": "An diesem Tag ist nichts fällig."
+    "nothingDue": "An diesem Tag ist nichts fällig.",
+    "addOn": "Aufgabe am %{day} hinzufügen"
   },
   "search": {
     "label": "Suchen",
@@ -476,10 +477,18 @@
     "loadFailed": "Die Ansichten konnten nicht geladen werden.",
     "notFound": "Diese Ansicht existiert nicht, oder Sie können sie nicht öffnen.",
     "edit": "Ansicht bearbeiten",
+    "layout": "Darstellung",
     "backToView": "Zurück zur Ansicht",
     "filtersSection": "Filter",
+    "allColumns": "Alle Spalten anzeigen",
+    "groupBy": "Gruppieren nach",
+    "noPriority": "Keine Priorität",
+    "noLabel": "Kein Label",
+    "later": "Später",
     "addFilter": "Filter hinzufügen",
+    "moreCriteria": "+%{count} weitere",
     "removeFilter": "Filter %{name} entfernen",
+    "display": "Anzeige",
     "deleteView": "Ansicht löschen",
     "deleteTitle": "„%{name}“ löschen?",
     "deleteText": "Die Ansicht wird endgültig gelöscht. Ihre Aufgaben bleiben, wo sie sind.",
@@ -487,8 +496,14 @@
     "deleteFailed": "Die Ansicht konnte nicht gelöscht werden.",
     "nameRequired": "Ein Name ist erforderlich.",
     "menuOf": "Aktionen für %{name}",
+    "addFavorite": "Zu Favoriten hinzufügen",
+    "removeFavorite": "Aus Favoriten entfernen",
     "saving": "Wird gespeichert…",
     "changesSaved": "Änderungen gespeichert",
+    "missingStatusTitle": "„%{board}“ hat keinen Abschnitt „%{section}“",
+    "missingStatusText": "Eine Aufgabe kann nur in einem Abschnitt ihres Boards sein, und „%{board}“ hat kein „%{section}“. Füge ihn dem Board hinzu, um die Aufgabe dorthin zu verschieben, oder brich ab, damit sie bleibt, wo sie war.",
+    "addStatus": "„%{section}“ zu „%{board}“ hinzufügen",
+    "addStatusFailed": "Der Abschnitt konnte nicht hinzugefügt werden.",
     "back": "Zurück zu den Ansichten",
     "new": "Neue Ansicht",
     "saved": "Gespeicherte Ansichten",
@@ -548,7 +563,10 @@
     "noResult": "Kein Symbol gefunden"
   },
   "viewTask": {
+    "title": "Titel",
     "board": "Board",
-    "status": "Status"
+    "status": "Abschnitt",
+    "create": "Aufgabe erstellen",
+    "failed": "Die Aufgabe konnte nicht erstellt werden."
   }
 }

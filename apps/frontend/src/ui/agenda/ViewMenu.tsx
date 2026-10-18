@@ -1,4 +1,11 @@
-import { Dots, Icon, Pen, Trash } from '@linagora/twake-icons'
+import {
+  Dots,
+  Icon,
+  Pen,
+  Star,
+  StarOutline,
+  Trash
+} from '@linagora/twake-icons'
 import {
   Button,
   Dialog,
@@ -16,25 +23,29 @@ import { useId, useState, type ReactElement } from 'react'
 import { useNavigate } from 'react-router'
 
 import type { SavedFilter } from '@/application/boards'
-import { useDeleteFilter } from '@/ui/boards/queries'
+import { useDeleteFilter, useSetFilterFavorite } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 /**
  * The actions of a view, open or in the list of views: to change its
- * settings, or delete it once a dialog has asked, after which the list of
- * views shows.
+ * settings, star it, or delete it once a dialog has asked, after which the
+ * list of views shows.
  */
 export function ViewMenu({
   view,
-  from = `/filters/${view.id}`
+  from = `/filters/${view.id}`,
+  starrable = false
 }: {
   view: SavedFilter
   /** Where its settings go back to. */
   from?: string
+  /** Stars it too, where no star shows by it, as in the open view. */
+  starrable?: boolean
 }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
   const remove = useDeleteFilter()
+  const setFavorite = useSetFilterFavorite()
   const titleId = useId()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const [confirming, setConfirming] = useState(false)
@@ -74,6 +85,26 @@ export function ViewMenu({
           </ListItemIcon>
           <ListItemText>{t('filters.edit')}</ListItemText>
         </MenuItem>
+        {starrable && (
+          <MenuItem
+            onClick={() => {
+              close()
+              setFavorite.mutate({
+                filterId: view.id,
+                favorite: !view.favorite
+              })
+            }}
+          >
+            <ListItemIcon>
+              <Icon icon={view.favorite ? Star : StarOutline} />
+            </ListItemIcon>
+            <ListItemText>
+              {t(
+                view.favorite ? 'filters.removeFavorite' : 'filters.addFavorite'
+              )}
+            </ListItemText>
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             close()

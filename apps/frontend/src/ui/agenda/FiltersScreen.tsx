@@ -1,8 +1,14 @@
 import {
+  CalendarToday,
+  Dashboard,
   Eye,
   Filter,
+  Flag,
   Icon,
+  Label,
   Left,
+  Mosaic,
+  People,
   Plus,
   Star,
   StarOutline
@@ -13,10 +19,12 @@ import {
   IconButton,
   Link,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemSecondaryAction,
   ListItemText,
+  Switch,
   TextField,
   Typography
 } from '@linagora/twake-mui'
@@ -48,11 +56,15 @@ import type {
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { FieldRow, PlainForm } from '@/ds/FormPanel'
 import { IconPicker } from '@/ds/IconPicker'
+import { ListSection } from '@/ds/ListSection'
 import { PageHeader } from '@/ds/PageHeader'
-import { DEFAULT_VIEW_ICON, viewIcon } from '@/ds/viewIcons'
+import { DEFAULT_VIEW_ICON, viewIcon, type IconComponent } from '@/ds/viewIcons'
+import { GROUPINGS, LAYOUTS, type Grouping, type Layout } from '@/domain/board'
 import { CriteriaFields } from '@/ui/agenda/CriteriaFields'
+import { SettingPicker } from '@/ui/agenda/SettingPicker'
 import { useCriteriaSummary } from '@/ui/agenda/useCriteriaSummary'
 import { ViewMenu } from '@/ui/agenda/ViewMenu'
+import { LAYOUT_ICONS } from '@/ui/boards/Layouts'
 import {
   useCreateFilter,
   useFilters,
@@ -252,12 +264,22 @@ export function EditViewScreen(): ReactElement {
   )
 }
 
+// What a view's columns can be, named and drawn as the criteria are.
+const GROUPINGS_SHOWN = {
+  status: { name: 'viewTask.status', icon: Mosaic },
+  board: { name: 'viewTask.board', icon: Dashboard },
+  assignee: { name: 'filters.assignee', icon: People },
+  priority: { name: 'filters.priority', icon: Flag },
+  label: { name: 'filters.label', icon: Label },
+  due: { name: 'filters.due', icon: CalendarToday }
+} as const satisfies Record<Grouping, { name: string; icon: IconComponent }>
+
 // A view's edits are saved a moment after the last one, or on leaving.
 const AUTOSAVE_DELAY = 600
 
-// The page that creates a view or edits one: its icon, name and criteria. A
-// view is created with a button; once it is, each change is saved as it is
-// made.
+// The page that creates a view or edits one: its icon, name, layout, grouping
+// and criteria. A view is created with a button; once it is, each change is
+// saved as it is made.
 function ViewForm({
   title,
   back,
@@ -280,14 +302,25 @@ function ViewForm({
   onSave: (view: NewSavedFilter) => void
 }): ReactElement {
   const { t } = useI18n()
+  const allColumnsId = useId()
   const formId = useId()
   const creating = initial === undefined
   const [icon, setIcon] = useState(initial?.icon ?? DEFAULT_VIEW_ICON)
   const [name, setName] = useState(initial?.name ?? '')
+  const [layout, setLayout] = useState<Layout>(initial?.layout ?? 'list')
+  const [groupBy, setGroupBy] = useState<Grouping>(initial?.groupBy ?? 'status')
+  const [allColumns, setAllColumns] = useState(initial?.allColumns ?? false)
   const [criteria, setCriteria] = useState<FilterCriteria>(
     initial?.criteria ?? {}
   )
-  const view = { name: name.trim(), criteria, icon }
+  const view = {
+    name: name.trim(),
+    criteria,
+    icon,
+    layout,
+    groupBy,
+    allColumns
+  }
   const nameInput = useRef<HTMLInputElement | null>(null)
   // Stable, as focusOnMount is, so that it focuses on mount only.
   const nameRef = useCallback((node: HTMLInputElement | null) => {
@@ -420,6 +453,53 @@ function ViewForm({
             slotProps={{ htmlInput: { maxLength: 100 } }}
           />
         </FieldRow>
+        <ListSection title={t('filters.display')}>
+          <SettingPicker
+            label={t('filters.layout')}
+            value={layout}
+            choices={LAYOUTS.map(each => ({
+              value: each,
+              name: t(`layout.${each}`),
+              icon: LAYOUT_ICONS[each]
+            }))}
+            iconInButton
+            onChange={setLayout}
+          />
+          {/* A calendar puts tasks on their days, so it has no groups. */}
+          {layout !== 'calendar' && (
+            <SettingPicker
+              label={t('filters.groupBy')}
+              value={groupBy}
+              choices={GROUPINGS.map(each => ({
+                value: each,
+                name: t(GROUPINGS_SHOWN[each].name),
+                icon: GROUPINGS_SHOWN[each].icon
+              }))}
+              onChange={setGroupBy}
+            />
+          )}
+          {/* Only statuses have columns no task is in. */}
+          {layout !== 'calendar' && groupBy === 'status' && (
+            <ListItem disableGutters ellipsis={false}>
+              <ListItemIcon>
+                <Icon icon={Eye} />
+              </ListItemIcon>
+              <ListItemText
+                primary={t('filters.allColumns')}
+                id={allColumnsId}
+              />
+              <Switch
+                checked={allColumns}
+                slotProps={{
+                  input: { 'aria-labelledby': allColumnsId }
+                }}
+                onChange={event => {
+                  setAllColumns(event.target.checked)
+                }}
+              />
+            </ListItem>
+          )}
+        </ListSection>
         <CriteriaFields criteria={criteria} onChange={setCriteria} />
       </PlainForm>
     </main>

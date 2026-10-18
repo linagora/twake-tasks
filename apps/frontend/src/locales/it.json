@@ -442,7 +442,8 @@
     "due": "Scadenza",
     "complete": "Completa %{title}",
     "today": "Oggi",
-    "nothingDue": "Nessuna scadenza in questo giorno."
+    "nothingDue": "Nessuna scadenza in questo giorno.",
+    "addOn": "Aggiungi un’attività il %{day}"
   },
   "search": {
     "label": "Cerca",
@@ -476,10 +477,18 @@
     "loadFailed": "Impossibile caricare le viste.",
     "notFound": "Questa vista non esiste o non puoi aprirla.",
     "edit": "Modifica la vista",
+    "layout": "Visualizzazione",
     "backToView": "Torna alla vista",
     "filtersSection": "Filtri",
+    "allColumns": "Mostra tutte le colonne",
+    "groupBy": "Raggruppa per",
+    "noPriority": "Nessuna priorità",
+    "noLabel": "Nessuna etichetta",
+    "later": "Più tardi",
     "addFilter": "Aggiungi filtro",
+    "moreCriteria": "+%{count} altri",
     "removeFilter": "Rimuovi il filtro %{name}",
+    "display": "Visualizzazione",
     "deleteView": "Elimina vista",
     "deleteTitle": "Eliminare “%{name}”?",
     "deleteText": "La vista viene eliminata definitivamente. Le sue attività restano dove sono.",
@@ -487,8 +496,14 @@
     "deleteFailed": "Impossibile eliminare la vista.",
     "nameRequired": "Il nome è obbligatorio.",
     "menuOf": "Azioni di %{name}",
+    "addFavorite": "Aggiungi ai preferiti",
+    "removeFavorite": "Rimuovi dai preferiti",
     "saving": "Salvataggio…",
     "changesSaved": "Modifiche salvate",
+    "missingStatusTitle": "“%{board}” non ha la sezione “%{section}”",
+    "missingStatusText": "Un’attività può stare solo in una sezione della sua bacheca, e “%{board}” non ha “%{section}”. Aggiungila alla bacheca per spostarvi l’attività, o annulla per lasciarla dov’era.",
+    "addStatus": "Aggiungi “%{section}” a “%{board}”",
+    "addStatusFailed": "Impossibile aggiungere la sezione.",
     "back": "Torna alle viste",
     "new": "Nuova vista",
     "saved": "Viste salvate",
@@ -548,7 +563,10 @@
     "noResult": "Nessuna icona trovata"
   },
   "viewTask": {
+    "title": "Titolo",
     "board": "Bacheca",
-    "status": "Stato"
+    "status": "Sezione",
+    "create": "Crea l’attività",
+    "failed": "Impossibile creare l’attività."
   }
 }

@@ -111,6 +111,18 @@ export const LAYOUTS = ['board', 'list', 'calendar'] as const
 
 export type Layout = (typeof LAYOUTS)[number]
 
+/** What the columns of a view are: its tasks' statuses unless chosen. */
+export const GROUPINGS = [
+  'status',
+  'board',
+  'assignee',
+  'priority',
+  'label',
+  'due'
+] as const
+
+export type Grouping = (typeof GROUPINGS)[number]
+
 export interface Board {
   id: string
   name: string

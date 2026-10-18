@@ -24,10 +24,12 @@ import {
   projects,
   savedFilters,
   sections,
+  type GROUPINGS,
   taskAssignees,
   taskLabels,
   tasks
 } from './schema.ts'
+import type { Layout } from './layouts.ts'
 import { liveTasksOf } from './store.ts'
 import { Refused, writeOrRefuse } from './tasks.ts'
 
@@ -170,11 +172,14 @@ function matching(tx: Tx, userId: string, criteria: Criteria, today: string) {
   )
 }
 
-/** What a person sets of a view: its name, icon and criteria. */
+/** What a person sets of a view: its name, icon, layout, grouping and criteria. */
 export interface View {
   name: string
   criteria: Criteria
   icon: string | null
+  layout: Layout
+  groupBy: (typeof GROUPINGS)[number]
+  allColumns: boolean
 }
 
 export function createFilterStore(db: Db) {
@@ -187,7 +192,10 @@ export function createFilterStore(db: Db) {
             name: savedFilters.name,
             criteria: savedFilters.criteria,
             favorite: savedFilters.favorite,
-            icon: savedFilters.icon
+            icon: savedFilters.icon,
+            layout: savedFilters.layout,
+            groupBy: savedFilters.groupBy,
+            allColumns: savedFilters.allColumns
           })
           .from(savedFilters)
           .orderBy(

@@ -124,7 +124,10 @@ describe('saved filters', () => {
           name: 'Urgent',
           criteria: { priorities: [1] },
           favorite: false,
-          icon: null
+          icon: null,
+          layout: 'list',
+          groupBy: 'status',
+          allColumns: false
         }
       ]
     })
@@ -217,6 +220,48 @@ describe('saved filters', () => {
     ).toEqual(['BugReport', null])
   })
 
+  it('creates a view in the layout chosen, a list unless said', async () => {
+    const owner = aUser()
+    const layouts = async () =>
+      (await api.as(owner).get('/filters'))
+        .json<{ filters: { name: string; layout: string }[] }>()
+        .filters.map(filter => `${filter.name}:${filter.layout}`)
+    await api.as(owner).post('/filters', { name: 'A', criteria: {} })
+    await api
+      .as(owner)
+      .post('/filters', { name: 'B', criteria: {}, layout: 'calendar' })
+
+    expect(await layouts()).toEqual(['A:list', 'B:calendar'])
+    expect(
+      (
+        await api
+          .as(owner)
+          .post('/filters', { name: 'C', criteria: {}, layout: 'grid' })
+      ).statusCode
+    ).toBe(400)
+  })
+
+  it('groups a view by the criterion chosen, its statuses unless said', async () => {
+    const owner = aUser()
+    const groupings = async () =>
+      (await api.as(owner).get('/filters'))
+        .json<{ filters: { name: string; groupBy: string }[] }>()
+        .filters.map(filter => `${filter.name}:${filter.groupBy}`)
+    await api.as(owner).post('/filters', { name: 'A', criteria: {} })
+    await api
+      .as(owner)
+      .post('/filters', { name: 'B', criteria: {}, groupBy: 'label' })
+
+    expect(await groupings()).toEqual(['A:status', 'B:label'])
+    expect(
+      (
+        await api
+          .as(owner)
+          .post('/filters', { name: 'C', criteria: {}, groupBy: 'colour' })
+      ).statusCode
+    ).toBe(400)
+  })
+
   it('edits a view, for the person who saved it only', async () => {
     const owner = aUser()
     const other = aUser({ organizationId: owner.organizationId })
@@ -226,7 +271,10 @@ describe('saved filters', () => {
     const edit = {
       name: 'Urgent',
       criteria: { priorities: [1] },
-      icon: 'Flag'
+      icon: 'Flag',
+      layout: 'board',
+      groupBy: 'priority',
+      allColumns: true
     }
 
     expect((await api.as(other).put(`/filters/${id}`, edit)).statusCode).toBe(

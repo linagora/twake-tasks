@@ -22,7 +22,7 @@ import { formatDay, localToday } from '@/ui/boards/dueLabel'
 import { useSetLayout } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-const LAYOUT_ICONS = {
+export const LAYOUT_ICONS = {
   board: Mosaic,
   list: List,
   calendar: Calendar
@@ -75,12 +75,12 @@ export function LayoutToggle<L extends Layout>({
   )
 }
 
-export function ListLayout({
+export function ListLayout<T extends Task>({
   columns,
   row
 }: {
-  columns: { key: string; name: string; tasks: Task[]; footer: ReactNode }[]
-  row: (task: Task) => ReactElement
+  columns: { key: string; name: string; tasks: T[]; footer: ReactNode }[]
+  row: (task: T) => ReactElement
 }): ReactElement {
   const { t } = useI18n()
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
@@ -149,12 +149,15 @@ const shiftMonth = (month: string, amount: number) => {
 
 // Phones get a grid of day buttons with the picked day's tasks below it,
 // since seven columns leave no room for titles.
-export function CalendarLayout({
+export function CalendarLayout<T extends Task>({
   tasks,
-  item
+  item,
+  onAddOn
 }: {
-  tasks: Task[]
-  item: (task: Task) => ReactElement
+  tasks: T[]
+  item: (task: T) => ReactElement
+  /** Adds a task due on the day; the calendar is read only without it. */
+  onAddOn?: ((day: string) => void) | undefined
 }): ReactElement {
   const { t, lang } = useI18n()
   const theme = useTheme()
@@ -235,6 +238,13 @@ export function CalendarLayout({
                 number={Number(day.slice(8))}
                 outside={!day.startsWith(month)}
                 today={day === today}
+                addLabel={t('layout.addOn', { day: formatDay(day, lang) })}
+                onAdd={
+                  onAddOn &&
+                  (() => {
+                    onAddOn(day)
+                  })
+                }
               >
                 <ChipList>{dueOn(day).map(item)}</ChipList>
               </DayCell>
@@ -245,6 +255,13 @@ export function CalendarLayout({
           <DayAgenda
             label={formatDay(picked, lang)}
             empty={t('layout.nothingDue')}
+            addLabel={t('layout.addOn', { day: formatDay(picked, lang) })}
+            onAdd={
+              onAddOn &&
+              (() => {
+                onAddOn(picked)
+              })
+            }
           >
             {dueOn(picked).map(item)}
           </DayAgenda>

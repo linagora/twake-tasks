@@ -2,6 +2,7 @@ import {
   keepPreviousData,
   skipToken,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
   type UseMutationResult,
@@ -31,9 +32,16 @@ import type {
   TaskMove,
   TransferPreview
 } from '@/application/boards'
-import type { Board, BoardSummary, Layout, Person } from '@/domain/board'
+import type {
+  Board,
+  BoardSummary,
+  Layout,
+  Person,
+  Section
+} from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
 import { findBoard, quickAdd } from '@/application/quickAdd'
+import { createViewTask, type ViewTask } from '@/application/viewTask'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
 
@@ -287,6 +295,70 @@ export function useBoard(boardId: string): UseQueryResult<Board> {
   })
 }
 
+/** The boards given, loaded side by side; a board not loaded yet is left out. */
+export function useBoardsOf(boardIds: readonly string[]): Board[] {
+  const api = useBoardsApi()
+  return useQueries({
+    queries: boardIds.map(boardId => ({
+      queryKey: boardKey(boardId),
+      queryFn: () => api.getBoard(boardId)
+    })),
+    combine: results => results.flatMap(result => result.data ?? [])
+  })
+}
+
+/** Moves a task of a view, in its own board. */
+export function useMoveViewTask(): UseMutationResult<
+  void,
+  Error,
+  { boardId: string; taskId: string; move: TaskMove }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ boardId, taskId, move }) =>
+      api.moveTask(boardId, taskId, move),
+    onSettled: (_result, _error, { boardId }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: boardKey(boardId) }),
+        queryClient.invalidateQueries({ queryKey: ['agenda'] })
+      ])
+  })
+}
+
+/**
+ * Adds a status to a task's board, then moves the task into it, as a view
+ * does when a task is dropped in a column its board has not.
+ */
+export function useAddStatusAndMove(): UseMutationResult<
+  void,
+  Error,
+  {
+    boardId: string
+    taskId: string
+    status: Omit<Section, 'id'>
+    neighbours: Omit<TaskMove, 'sectionId'>
+  }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ boardId, taskId, status, neighbours }) => {
+      const section = await api.createSection(boardId, status)
+      await api.moveTask(boardId, taskId, {
+        sectionId: section.id,
+        ...neighbours
+      })
+    },
+    onSettled: (_result, _error, { boardId }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: boardKey(boardId) }),
+        queryClient.invalidateQueries({ queryKey: ['agenda'] }),
+        queryClient.invalidateQueries({ queryKey: ['statuses'] })
+      ])
+  })
+}
+
 /** Reads a board, from the cache when it holds it. */
 export function useLoadBoard(): (boardId: string) => Promise<Board> {
   const api = useBoardsApi()
@@ -296,6 +368,33 @@ export function useLoadBoard(): (boardId: string) => Promise<Board> {
       queryKey: boardKey(boardId),
       queryFn: () => api.getBoard(boardId)
     })
+}
+
+export function useCreateViewTask(): UseMutationResult<
+  { key: string },
+  Error,
+  { task: ViewTask; myEmail: string | null }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ task, myEmail }) =>
+      createViewTask(
+        api,
+        task,
+        await queryClient.query({
+          queryKey: boardKey(task.boardId),
+          queryFn: () => api.getBoard(task.boardId)
+        }),
+        myEmail
+      ),
+    onSettled: (_result, _error, { task }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: boardKey(task.boardId) }),
+        queryClient.invalidateQueries({ queryKey: boardsKey, exact: true }),
+        queryClient.invalidateQueries({ queryKey: ['agenda'] })
+      ])
+  })
 }
 
 export function useCreateTask(

@@ -1,4 +1,4 @@
-import { Bottom, Icon, Left, Right } from '@linagora/twake-icons'
+import { Bottom, Icon, Left, Plus, Right } from '@linagora/twake-icons'
 import {
   Box,
   Button,
@@ -149,12 +149,17 @@ export function DayCell({
   number,
   outside,
   today,
+  addLabel,
+  onAdd,
   children
 }: {
   label: string
   number: number
   outside: boolean
   today: boolean
+  /** A task can be added on the day, with a button shown on hover or focus. */
+  addLabel?: string | undefined
+  onAdd?: (() => void) | undefined
   children: ReactNode
 }): ReactElement {
   return (
@@ -169,10 +174,25 @@ export function DayCell({
         p: 0.5,
         display: 'grid',
         alignContent: 'start',
-        gap: 0.5
+        gap: 0.5,
+        '&:hover .day-add, & .day-add:focus-visible': { opacity: 1 }
       }}
     >
-      <DayNumber number={number} today={today} />
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <DayNumber number={number} today={today} />
+        {onAdd && (
+          <IconButton
+            size="small"
+            className="day-add"
+            aria-label={addLabel}
+            title={addLabel}
+            onClick={onAdd}
+            sx={{ ml: 'auto', p: 0.25, opacity: 0, color: 'text.secondary' }}
+          >
+            <Icon icon={Plus} size={14} />
+          </IconButton>
+        )}
+      </Box>
       {children}
     </Box>
   )
@@ -334,17 +354,33 @@ export function CalendarTray({
 export function DayAgenda({
   label,
   empty,
+  addLabel,
+  onAdd,
   children
 }: {
   label: string
   empty: string
+  addLabel?: string | undefined
+  onAdd?: (() => void) | undefined
   children: ReactNode[]
 }): ReactElement {
   return (
     <Box component="section" aria-label={label} sx={{ mt: 2 }}>
-      <Typography variant="subtitle2" component="h3" sx={{ mb: 1 }}>
-        {label}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        <Typography variant="subtitle2" component="h3">
+          {label}
+        </Typography>
+        {onAdd && (
+          <IconButton
+            size="small"
+            aria-label={addLabel}
+            onClick={onAdd}
+            sx={{ ml: 'auto' }}
+          >
+            <Icon icon={Plus} size={16} />
+          </IconButton>
+        )}
+      </Box>
       {children.length > 0 ? (
         <ChipList roomy>{children}</ChipList>
       ) : (

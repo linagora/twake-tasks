@@ -1,6 +1,7 @@
 import type {
   Board,
   BoardSummary,
+  Grouping,
   Label,
   Layout,
   Person,
@@ -160,10 +161,17 @@ export interface SavedFilter {
   criteria: FilterCriteria
   favorite: boolean
   icon: string | null
+  layout: Layout
+  groupBy: Grouping
+  /** Columns of statuses no task is in show too. */
+  allColumns: boolean
 }
 
 export type NewSavedFilter = Pick<SavedFilter, 'name' | 'criteria'> & {
   icon?: string | null
+  layout?: Layout
+  groupBy?: Grouping
+  allColumns?: boolean
 }
 
 export interface Sharing {
