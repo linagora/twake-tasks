@@ -41,7 +41,11 @@ import type {
 } from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
 import { findBoard, quickAdd } from '@/application/quickAdd'
-import { createViewTask, type ViewTask } from '@/application/viewTask'
+import {
+  createViewTask,
+  type ViewTask,
+  type ViewTaskFact
+} from '@/application/viewTask'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
 
@@ -371,7 +375,7 @@ export function useLoadBoard(): (boardId: string) => Promise<Board> {
 }
 
 export function useCreateViewTask(): UseMutationResult<
-  { key: string },
+  { key: string; unset: ViewTaskFact[] },
   Error,
   { task: ViewTask; myEmail: string | null }
 > {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   createViewTask,
@@ -203,5 +203,48 @@ describe('createViewTask', () => {
     expect(inbox.tasks.find(each => each.title === 'Test')).toMatchObject({
       sectionId: section?.id
     })
+  })
+
+  const viewTask = {
+    title: 'Test',
+    sectionId: null,
+    mine: true,
+    priority: 2,
+    label: 'design',
+    dueDate: '2026-10-16'
+  } as const
+
+  it('says what the task could not be given, once created', async () => {
+    const me = { userId: 'u1', email: 'me@example.com', name: 'Me' }
+    const board = aBoard({ members: [me] })
+    const api = fakeBoardsApi([board])
+    vi.mocked(api.editTask).mockRejectedValueOnce(new Error('refused'))
+
+    const created = await createViewTask(
+      api,
+      { ...viewTask, boardId: board.id },
+      board,
+      'Me@example.com'
+    )
+
+    expect(created.unset).toEqual(['priority', 'dueDate'])
+    expect(board.tasks.find(each => each.key === created.key)).toMatchObject({
+      labels: [{ name: 'design' }],
+      assignees: [me]
+    })
+  })
+
+  it('says it is not mine when I am not a member of its board', async () => {
+    const board = aBoard()
+    const api = fakeBoardsApi([board])
+
+    const created = await createViewTask(
+      api,
+      { ...viewTask, boardId: board.id },
+      board,
+      'me@example.com'
+    )
+
+    expect(created.unset).toEqual(['me'])
   })
 })

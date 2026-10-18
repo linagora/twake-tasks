@@ -265,6 +265,37 @@ describe('ViewScreen', () => {
     )
   })
 
+  it('says what a task was created without, and does not make it twice', async () => {
+    const inbox = aBoard({ name: 'Inbox', keyPrefix: 'INB', inbox: true })
+    const boardsApi = fakeBoardsApi([inbox])
+    boardsApi.editTask.mockRejectedValueOnce(new Error('refused'))
+    const { id } = await boardsApi.createFilter({
+      name: 'Mine',
+      criteria: { priorities: [1], assignees: ['me'] },
+      layout: 'list'
+    })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add task' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    fireEvent.change(dialog.getByLabelText('Title'), {
+      target: { value: 'Call the printer' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Create task' }))
+
+    expect(
+      await dialog.findByText(
+        /^INB-\d+ is created, without its priority and you as its assignee, not being a member of its board\. It may not show in this view\.$/
+      )
+    ).toBeVisible()
+    expect(dialog.queryByRole('button', { name: 'Create task' })).toBeNull()
+    fireEvent.click(dialog.getByRole('button', { name: 'Close' }))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(boardsApi.createTask).toHaveBeenCalledTimes(1)
+  })
+
   it('offers the board as a filter of the view', async () => {
     const { boardsApi, id } = await aView()
     renderRoute(`/filters/${id}/edit`, { boardsApi })

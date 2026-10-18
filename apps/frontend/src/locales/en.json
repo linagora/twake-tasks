@@ -567,6 +567,14 @@
     "board": "Board",
     "status": "Section",
     "create": "Create task",
-    "failed": "Couldn’t create the task."
+    "failed": "Couldn’t create the task.",
+    "created": "%{task} is created, without %{facts}. It may not show in this view.",
+    "unset": {
+      "priority": "its priority",
+      "dueDate": "its due date",
+      "label": "its label",
+      "me": "you as its assignee, not being a member of its board"
+    },
+    "close": "Close"
   }
 }

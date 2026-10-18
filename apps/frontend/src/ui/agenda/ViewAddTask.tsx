@@ -10,6 +10,7 @@ import { useRef, useState, type ReactElement } from 'react'
 import type { ViewTask } from '@/application/viewTask'
 import { ColumnAddButton } from '@/ds/Columns'
 import { Inline } from '@/ds/SidePanel'
+import { UnsetMessage } from '@/ui/agenda/UnsetMessage'
 import { useCreateViewTask } from '@/ui/boards/queries'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -56,7 +57,10 @@ export function ViewAddTask({
         variant="text"
         fullWidth
         startIcon={<Icon icon={Plus} />}
-        onClick={onOpen}
+        onClick={() => {
+          create.reset()
+          onOpen()
+        }}
         aria-label={t('board.addTask', { section: sectionName })}
       >
         {t('board.newTask')}
@@ -97,6 +101,7 @@ export function ViewAddTask({
             {t('board.addFailed')}
           </Typography>
         )}
+        <UnsetMessage created={create.data} />
         <Inline>
           <Button
             type="submit"

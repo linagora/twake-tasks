@@ -17,6 +17,7 @@ import {
   type ViewTask
 } from '@/application/viewTask'
 import { FieldGrid, FullWidth } from '@/ds/FormPanel'
+import { UnsetMessage } from '@/ui/agenda/UnsetMessage'
 import { localToday } from '@/ui/boards/dueLabel'
 import { useBoard, useBoards, useCreateViewTask } from '@/ui/boards/queries'
 import { focusOnMount } from '@/ui/focusOnMount'
@@ -95,7 +96,15 @@ export function NewViewTask({
             label,
             dueDate
           }
-          create.mutate({ task, myEmail: user.email }, { onSuccess: onClose })
+          // Created without what the view asks, it stays open to say so.
+          create.mutate(
+            { task, myEmail: user.email },
+            {
+              onSuccess: created => {
+                if (created.unset.length === 0) onClose()
+              }
+            }
+          )
         }}
       >
         <DialogTitle id={titleId}>{t('board.newTask')}</DialogTitle>
@@ -154,16 +163,23 @@ export function NewViewTask({
               {t('viewTask.failed')}
             </Typography>
           )}
-          <Button variant="text" onClick={onClose}>
-            {t('board.cancel')}
-          </Button>
-          <Button
-            type="submit"
-            startIcon={<Icon icon={Plus} />}
-            disabled={create.isPending || !title.trim() || !chosenBoard}
-          >
-            {t('viewTask.create')}
-          </Button>
+          <UnsetMessage created={create.data} />
+          {create.data ? (
+            <Button onClick={onClose}>{t('viewTask.close')}</Button>
+          ) : (
+            <>
+              <Button variant="text" onClick={onClose}>
+                {t('board.cancel')}
+              </Button>
+              <Button
+                type="submit"
+                startIcon={<Icon icon={Plus} />}
+                disabled={create.isPending || !title.trim() || !chosenBoard}
+              >
+                {t('viewTask.create')}
+              </Button>
+            </>
+          )}
         </DialogActions>
       </form>
     </Dialog>

@@ -567,6 +567,14 @@
     "board": "Bảng",
     "status": "Mục",
     "create": "Tạo công việc",
-    "failed": "Không thể tạo công việc."
+    "failed": "Không thể tạo công việc.",
+    "created": "Đã tạo %{task}, nhưng thiếu %{facts}. Công việc có thể không hiển thị trong chế độ xem này.",
+    "unset": {
+      "priority": "độ ưu tiên",
+      "dueDate": "hạn",
+      "label": "nhãn",
+      "me": "bạn là người được giao, vì bạn không phải thành viên của bảng"
+    },
+    "close": "Đóng"
   }
 }

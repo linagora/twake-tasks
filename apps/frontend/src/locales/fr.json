@@ -567,6 +567,14 @@
     "board": "Tableau",
     "status": "Section",
     "create": "Créer la tâche",
-    "failed": "Impossible de créer la tâche."
+    "failed": "Impossible de créer la tâche.",
+    "created": "%{task} est créée, sans %{facts}. Elle peut ne pas apparaître dans cette vue.",
+    "unset": {
+      "priority": "sa priorité",
+      "dueDate": "son échéance",
+      "label": "son étiquette",
+      "me": "vous comme responsable, faute d’être membre de son tableau"
+    },
+    "close": "Fermer"
   }
 }

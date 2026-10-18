@@ -567,6 +567,14 @@
     "board": "Board",
     "status": "Abschnitt",
     "create": "Aufgabe erstellen",
-    "failed": "Die Aufgabe konnte nicht erstellt werden."
+    "failed": "Die Aufgabe konnte nicht erstellt werden.",
+    "created": "%{task} wurde erstellt, ohne %{facts}. Sie wird in dieser Ansicht eventuell nicht angezeigt.",
+    "unset": {
+      "priority": "ihre Priorität",
+      "dueDate": "ihr Fälligkeitsdatum",
+      "label": "ihr Label",
+      "me": "Sie als zuständige Person, da Sie kein Mitglied ihres Boards sind"
+    },
+    "close": "Schließen"
   }
 }

@@ -567,6 +567,14 @@
     "board": "Tablero",
     "status": "Sección",
     "create": "Crear la tarea",
-    "failed": "No se pudo crear la tarea."
+    "failed": "No se pudo crear la tarea.",
+    "created": "%{task} se ha creado, sin %{facts}. Puede que no aparezca en esta vista.",
+    "unset": {
+      "priority": "su prioridad",
+      "dueDate": "su fecha de vencimiento",
+      "label": "su etiqueta",
+      "me": "ti como persona asignada, al no ser miembro de su tablero"
+    },
+    "close": "Cerrar"
   }
 }

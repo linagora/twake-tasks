@@ -567,6 +567,14 @@
     "board": "Bacheca",
     "status": "Sezione",
     "create": "Crea l’attività",
-    "failed": "Impossibile creare l’attività."
+    "failed": "Impossibile creare l’attività.",
+    "created": "%{task} è stata creata, senza %{facts}. Potrebbe non apparire in questa vista.",
+    "unset": {
+      "priority": "la sua priorità",
+      "dueDate": "la sua data di scadenza",
+      "label": "la sua etichetta",
+      "me": "te come assegnatario, non essendo membro della sua bacheca"
+    },
+    "close": "Chiudi"
   }
 }

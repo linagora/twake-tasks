@@ -86,16 +86,23 @@ export function keptSection(
   return same ?? openSection(to)
 }
 
+/** What a task made from a view may be left without, once it is created. */
+export const VIEW_TASK_FACTS = ['priority', 'dueDate', 'label', 'me'] as const
+
+export type ViewTaskFact = (typeof VIEW_TASK_FACTS)[number]
+
 /**
  * Creates the task, then gives it what the view asks; a missing section or
- * label is made.
+ * label is made. Once the task is created, what it could not be given is
+ * said rather than thrown, so that it is not made twice: me too when I am
+ * not a member of its board.
  */
 export async function createViewTask(
   api: BoardsApi,
   task: ViewTask,
   board: Board,
   myEmail: string | null
-): Promise<{ key: string }> {
+): Promise<{ key: string; unset: ViewTaskFact[] }> {
   const sectionId =
     task.newSection === undefined
       ? task.sectionId
@@ -109,30 +116,53 @@ export async function createViewTask(
     title: task.title,
     sectionId
   })
+  const unset: ViewTaskFact[] = []
+  const given = async (facts: ViewTaskFact[], give: () => Promise<unknown>) => {
+    try {
+      await give()
+    } catch {
+      unset.push(...facts)
+    }
+  }
   if (task.priority !== null || task.dueDate !== null) {
-    await api.editTask(board.id, created.id, {
-      ...(task.priority !== null && { priority: task.priority }),
-      ...(task.dueDate !== null && { dueDate: task.dueDate })
-    })
+    await given(
+      [
+        ...(task.priority !== null ? (['priority'] as const) : []),
+        ...(task.dueDate !== null ? (['dueDate'] as const) : [])
+      ],
+      () =>
+        api.editTask(board.id, created.id, {
+          ...(task.priority !== null && { priority: task.priority }),
+          ...(task.dueDate !== null && { dueDate: task.dueDate })
+        })
+    )
   }
   const { label } = task
   if (label !== null) {
-    const found =
-      board.labels.find(
-        each => each.name.toLocaleLowerCase() === label.toLocaleLowerCase()
-      ) ?? (await api.createLabel(board.id, { name: label }))
-    await api.setLabels(board.id, created.id, [found.id])
+    await given(['label'], async () => {
+      const found =
+        board.labels.find(
+          each => each.name.toLocaleLowerCase() === label.toLocaleLowerCase()
+        ) ?? (await api.createLabel(board.id, { name: label }))
+      await api.setLabels(board.id, created.id, [found.id])
+    })
   }
-  const me =
-    myEmail === null
-      ? undefined
-      : board.members.find(
-          member => member.email.toLowerCase() === myEmail.toLowerCase()
-        )
-  if (task.mine && me) {
-    await api.setAssignees(board.id, created.id, [me.userId])
+  if (task.mine) {
+    const me =
+      myEmail === null
+        ? undefined
+        : board.members.find(
+            member => member.email.toLowerCase() === myEmail.toLowerCase()
+          )
+    if (me) {
+      await given(['me'], () =>
+        api.setAssignees(board.id, created.id, [me.userId])
+      )
+    } else {
+      unset.push('me')
+    }
   }
-  return { key: created.key }
+  return { key: created.key, unset }
 }
 
 /**
