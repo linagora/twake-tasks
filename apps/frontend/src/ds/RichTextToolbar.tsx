@@ -34,6 +34,8 @@ const hrefOf = (typed: string): string =>
     link => link.isLink && link.value === typed
   )?.href ?? (!typed || SCHEME_OR_PATH.test(typed) ? typed : `https://${typed}`)
 
+import { EmojiPicker, type EmojiPickerOptions } from '@/ds/EmojiPicker'
+
 export interface RichTextLabels {
   toolbar: string
   bold: string
@@ -57,13 +59,16 @@ export interface LinkPicker {
 export function Toolbar({
   editor,
   labels,
-  linkPicker
+  linkPicker,
+  emoji
 }: {
   editor: Editor
   labels: RichTextLabels
   linkPicker?: LinkPicker | undefined
+  emoji?: EmojiPickerOptions | undefined
 }): ReactElement {
   const [linkAnchor, setLinkAnchor] = useState<HTMLElement | null>(null)
+  const [emojiAnchor, setEmojiAnchor] = useState<HTMLElement | null>(null)
   const [url, setUrl] = useState('')
   const active = useEditorState({
     editor,
@@ -259,6 +264,30 @@ export function Toolbar({
           </Button>
         </Box>
       </Popover>
+      {emoji && (
+        <>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+          <Tool
+            label={emoji.labels.open}
+            pressed={emojiAnchor !== null}
+            onClick={event => {
+              setEmojiAnchor(event.currentTarget)
+            }}
+          >
+            <span aria-hidden>🙂</span>
+          </Tool>
+          <EmojiPicker
+            anchor={emojiAnchor}
+            options={emoji}
+            onPick={picked => {
+              chain().insertContent(picked.unicode).run()
+            }}
+            onClose={() => {
+              setEmojiAnchor(null)
+            }}
+          />
+        </>
+      )}
     </Box>
   )
 }

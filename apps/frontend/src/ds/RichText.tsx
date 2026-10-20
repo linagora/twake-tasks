@@ -20,6 +20,7 @@ import {
   type ReactNode
 } from 'react'
 
+import type { EmojiPickerOptions } from '@/ds/EmojiPicker'
 import { mentionExtension } from '@/ds/Mention'
 import {
   Toolbar,
@@ -221,6 +222,7 @@ export function RichTextEditor({
   suggestions,
   mentions,
   linkPicker,
+  emoji,
   footer
 }: {
   label: string
@@ -234,6 +236,8 @@ export function RichTextEditor({
   suggestions?: Suggestions[]
   mentions?: Record<string, string>
   linkPicker?: LinkPicker | undefined
+  /** Adds a button that inserts an emoji. */
+  emoji?: EmojiPickerOptions
   footer?: ReactNode
 }): ReactElement {
   // The editor keeps the callbacks it was created with, so it reads the latest ones here.
@@ -374,7 +378,12 @@ export function RichTextEditor({
         }
       })}
     >
-      <Toolbar editor={editor} labels={labels} linkPicker={linkPicker} />
+      <Toolbar
+        editor={editor}
+        labels={labels}
+        linkPicker={linkPicker}
+        emoji={emoji}
+      />
       <Box
         sx={theme => ({
           ...prose(theme),

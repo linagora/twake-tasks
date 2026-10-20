@@ -203,7 +203,11 @@
     "descriptionPlaceholder": "Thêm chi tiết, các bước hoặc liên kết…",
     "sendHint": "Ctrl+Enter để gửi",
     "mentionsLabel": "Người có thể nhắc đến",
-    "drive": "Liên kết tệp từ Twake Drive"
+    "drive": "Liên kết tệp từ Twake Drive",
+    "emoji": "Biểu tượng cảm xúc",
+    "emojiSearch": "Tìm biểu tượng cảm xúc",
+    "emojiList": "Biểu tượng cảm xúc",
+    "emojiNone": "Không tìm thấy biểu tượng cảm xúc"
   },
   "drive": {
     "title": "Twake Drive",
