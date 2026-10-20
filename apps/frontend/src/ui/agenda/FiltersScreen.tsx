@@ -4,12 +4,14 @@ import {
   Dashboard,
   Eye,
   Flag,
+  Grid,
+  GroupList,
   Icon,
   Label,
-  Mosaic,
   People,
   Plus,
   Right,
+  Stack as StackIcon,
   Star,
   StarOutline
 } from '@linagora/twake-icons'
@@ -361,7 +363,7 @@ export function EditViewScreen(): ReactElement {
 
 // What a view's columns can be, named and drawn as the criteria are.
 const GROUPINGS_SHOWN = {
-  status: { name: 'viewTask.status', icon: Mosaic },
+  status: { name: 'viewTask.status', icon: GroupList },
   board: { name: 'viewTask.board', icon: Dashboard },
   assignee: { name: 'filters.assignee', icon: People },
   priority: { name: 'filters.priority', icon: Flag },
@@ -468,6 +470,7 @@ function ViewSettings({ draft }: { draft: ViewDraft }): ReactElement {
     <>
       <ListSection title={t('filters.display')}>
         <SettingPicker
+          icon={Grid}
           label={t('filters.layout')}
           value={layout}
           choices={LAYOUTS.map(each => ({
@@ -481,6 +484,7 @@ function ViewSettings({ draft }: { draft: ViewDraft }): ReactElement {
         {/* A calendar puts tasks on their days, so it has no groups. */}
         {layout !== 'calendar' && (
           <SettingPicker
+            icon={StackIcon}
             label={t('filters.groupBy')}
             value={groupBy}
             choices={GROUPINGS.map(each => ({

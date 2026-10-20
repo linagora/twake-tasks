@@ -20,16 +20,19 @@ export interface SettingChoice<T extends string> {
 
 /**
  * A row of a view's settings that picks one of a few choices, as its layout
- * or grouping: the choice's icon and the setting's name, then a Twake
- * dropdown whose menu checks the choice.
+ * or grouping: the setting's icon and name, then a Twake dropdown whose menu
+ * checks the choice.
  */
 export function SettingPicker<T extends string>({
+  icon,
   label,
   value,
   choices,
   iconInButton = false,
   onChange
 }: {
+  /** The setting's own, so that no choice's icon stands for it. */
+  icon: IconComponent
   label: string
   value: T
   choices: readonly SettingChoice<T>[]
@@ -46,7 +49,9 @@ export function SettingPicker<T extends string>({
 
   return (
     <ListItem disableGutters ellipsis={false}>
-      <ListItemIcon>{chosen && <Icon icon={chosen.icon} />}</ListItemIcon>
+      <ListItemIcon>
+        <Icon icon={icon} />
+      </ListItemIcon>
       <ListItemText primary={label} />
       <DropdownButton
         textVariant="body2"
