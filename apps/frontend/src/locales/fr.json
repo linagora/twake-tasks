@@ -520,5 +520,30 @@
   },
   "page": {
     "breadcrumb": "Emplacement de la page"
+  },
+  "files": {
+    "title": "Fichiers",
+    "add": "Ajouter un fichier",
+    "fromDrive": "Depuis Twake Drive",
+    "fromComputer": "Depuis mon ordinateur",
+    "open": "Ouvrir %{name}",
+    "remove": "Retirer %{name}",
+    "pickerTitle": "Choisir des fichiers dans Twake Drive",
+    "pickerAdd": "Ajouter à la tâche",
+    "close": "Fermer",
+    "uploadTitle": "Ajout des fichiers",
+    "uploadToDrive": "Vos fichiers vont être envoyés dans le dossier Project de votre Twake Drive et ajoutés à la tâche sous forme de",
+    "uploadToSpace": "Vos fichiers vont être envoyés dans le dossier Project du drive du space et ajoutés à la tâche sous forme de",
+    "asLinks": "liens.",
+    "cancel": "Annuler",
+    "cancelAll": "Annuler",
+    "done": "Terminé",
+    "failed": "Échec",
+    "cancelled": "Annulé",
+    "addFailed": "Certains fichiers n’ont pas pu être ajoutés à la tâche.",
+    "pickFailed": "Twake Drive n’a pas pu être ouvert.",
+    "removeFailed": "Le fichier n’a pas pu être retiré.",
+    "tooMany": "Une tâche contient au plus 50 fichiers.",
+    "loadFailed": "Les fichiers n’ont pas pu être chargés."
   }
 }

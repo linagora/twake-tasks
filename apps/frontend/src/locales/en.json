@@ -520,5 +520,30 @@
   },
   "page": {
     "breadcrumb": "Where the page is"
+  },
+  "files": {
+    "title": "Files",
+    "add": "Add a file",
+    "fromDrive": "From Twake Drive",
+    "fromComputer": "From my computer",
+    "open": "Open %{name}",
+    "remove": "Remove %{name}",
+    "pickerTitle": "Pick files in Twake Drive",
+    "pickerAdd": "Add to the task",
+    "close": "Close",
+    "uploadTitle": "Adding files",
+    "uploadToDrive": "Your files will be uploaded to the Project folder of your Twake Drive and added to the task as",
+    "uploadToSpace": "Your files will be uploaded to the Project folder of the space's drive and added to the task as",
+    "asLinks": "links.",
+    "cancel": "Cancel",
+    "cancelAll": "Cancel",
+    "done": "Done",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "addFailed": "Some files could not be added to the task.",
+    "pickFailed": "Twake Drive could not be opened.",
+    "removeFailed": "The file could not be removed.",
+    "tooMany": "A task holds up to 50 files.",
+    "loadFailed": "The files could not be loaded."
   }
 }

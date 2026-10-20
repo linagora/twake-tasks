@@ -31,11 +31,19 @@
       "verbs": ["GET"]
     },
     "files": {
-      "description": "Required to get shortcuts",
+      "description": "Required to get shortcuts, to pick the files of Twake Drive linked to a task, and to put there the files added to a task",
       "type": "io.cozy.files",
-      "verbs": ["GET"],
-      "selector": "name",
-      "values": ["Home"]
+      "verbs": ["GET", "POST"]
+    },
+    "sharings": {
+      "description": "Required to put the files of a space's tasks in its team drive",
+      "type": "io.cozy.sharings",
+      "verbs": ["GET"]
+    },
+    "permissions": {
+      "description": "Required to share the files added to a task by a link",
+      "type": "io.cozy.permissions",
+      "verbs": ["POST"]
     }
   }
 }

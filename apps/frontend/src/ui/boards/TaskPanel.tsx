@@ -22,6 +22,7 @@ import { useRemoveTask } from '@/ui/boards/Archive'
 import { Comments } from '@/ui/boards/Comments'
 import { CopyLinkButton } from '@/ui/boards/CopyLink'
 import { History } from '@/ui/boards/History'
+import { TaskFiles } from '@/ui/boards/TaskFiles'
 import { FollowButton } from '@/ui/boards/Notifications'
 import {
   useBoard,
@@ -101,6 +102,12 @@ export function TaskPanel({
         <Title task={task} boardId={boardId} editable={editable} />
         <Description task={task} boardId={boardId} editable={editable} />
       </TaskHead>
+      <TaskFiles
+        task={task}
+        boardId={boardId}
+        editable={editable}
+        teamDriveId={board?.teamDriveId ?? null}
+      />
       {(children.length > 0 || (editable && depth < MAX_TASK_DEPTH)) && (
         <PanelSection
           title={t('task.subtasks')}

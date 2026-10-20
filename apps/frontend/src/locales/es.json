@@ -520,5 +520,30 @@
   },
   "page": {
     "breadcrumb": "Ubicación de la página"
+  },
+  "files": {
+    "title": "Archivos",
+    "add": "Añadir un archivo",
+    "fromDrive": "Desde Twake Drive",
+    "fromComputer": "Desde mi ordenador",
+    "open": "Abrir %{name}",
+    "remove": "Quitar %{name}",
+    "pickerTitle": "Elegir archivos en Twake Drive",
+    "pickerAdd": "Añadir a la tarea",
+    "close": "Cerrar",
+    "uploadTitle": "Añadiendo archivos",
+    "uploadToDrive": "Tus archivos se subirán a la carpeta Project de tu Twake Drive y se añadirán a la tarea como",
+    "uploadToSpace": "Tus archivos se subirán a la carpeta Project del drive del space y se añadirán a la tarea como",
+    "asLinks": "enlaces.",
+    "cancel": "Cancelar",
+    "cancelAll": "Cancelar",
+    "done": "Hecho",
+    "failed": "Error",
+    "cancelled": "Cancelado",
+    "addFailed": "Algunos archivos no se pudieron añadir a la tarea.",
+    "pickFailed": "No se pudo abrir Twake Drive.",
+    "removeFailed": "No se pudo quitar el archivo.",
+    "tooMany": "Una tarea contiene como máximo 50 archivos.",
+    "loadFailed": "No se pudieron cargar los archivos."
   }
 }

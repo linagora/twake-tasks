@@ -26,11 +26,13 @@ import type {
   Reminder,
   SavedFilter,
   Sharing,
+  TaskFile,
   Shelf,
   TaskMove,
   TransferPreview
 } from '@/application/boards'
 import type { Board, BoardSummary, Layout, Person } from '@/domain/board'
+import type { DriveFile } from '@/application/drive'
 import { applyMove } from '@/application/moveTask'
 import { findBoard, quickAdd } from '@/application/quickAdd'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
@@ -424,6 +426,46 @@ export function useAddComment(
           exact: true
         })
       ])
+  })
+}
+
+const filesKey = (boardId: string, taskId: string) =>
+  ['boards', boardId, 'tasks', taskId, 'files'] as const
+
+export function useTaskFiles(
+  boardId: string,
+  taskId: string
+): UseQueryResult<TaskFile[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: filesKey(boardId, taskId),
+    queryFn: () => api.listFiles(boardId, taskId)
+  })
+}
+
+export function useAddFiles(
+  boardId: string,
+  taskId: string
+): UseMutationResult<TaskFile[], Error, DriveFile[]> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (files: DriveFile[]) => api.addFiles(boardId, taskId, files),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: filesKey(boardId, taskId) })
+  })
+}
+
+export function useRemoveFile(
+  boardId: string,
+  taskId: string
+): UseMutationResult<void, Error, string> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (fileId: string) => api.removeFile(boardId, taskId, fileId),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: filesKey(boardId, taskId) })
   })
 }
 

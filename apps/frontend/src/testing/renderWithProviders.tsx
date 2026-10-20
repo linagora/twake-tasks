@@ -7,6 +7,7 @@ import {
 } from 'react-router'
 
 import type { BoardsApi } from '@/application/boards'
+import type { Drive } from '@/application/drive'
 import { noReporting, type Reporting } from '@/application/reporting'
 import type { SessionService } from '@/application/session'
 import { AppProviders } from '@/app/AppProviders'
@@ -15,6 +16,7 @@ import { routes } from '@/app/routes'
 import { fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { fakeSession } from '@/testing/fakeSession'
 import { BoardsApiProvider } from '@/ui/boards/BoardsApiProvider'
+import { DriveProvider } from '@/ui/drive/DriveProvider'
 import type { SupportedLanguage } from '@/ui/i18n/languages'
 import { ReportingProvider } from '@/ui/reporting/ReportingProvider'
 import { SessionGate } from '@/ui/session/SessionGate'
@@ -24,6 +26,8 @@ interface Options {
   session?: SessionService
   boardsApi?: BoardsApi
   reporting?: Reporting
+  /** Null by default, as without a Twake Workplace platform. */
+  drive?: Drive | null
 }
 
 export function renderWithProviders(
@@ -32,14 +36,17 @@ export function renderWithProviders(
     lang = 'en',
     session = fakeSession(),
     boardsApi = fakeBoardsApi(),
-    reporting = noReporting
+    reporting = noReporting,
+    drive = null
   }: Options = {}
 ): RenderResult {
   return render(
     <AppProviders lang={lang} queryClient={makeQueryClient()}>
       <ReportingProvider reporting={reporting}>
         <SessionGate session={session}>
-          <BoardsApiProvider api={boardsApi}>{ui}</BoardsApiProvider>
+          <BoardsApiProvider api={boardsApi}>
+            <DriveProvider source={{ drive }}>{ui}</DriveProvider>
+          </BoardsApiProvider>
         </SessionGate>
       </ReportingProvider>
     </AppProviders>

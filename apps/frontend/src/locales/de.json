@@ -520,5 +520,30 @@
   },
   "page": {
     "breadcrumb": "Ort der Seite"
+  },
+  "files": {
+    "title": "Dateien",
+    "add": "Datei hinzufügen",
+    "fromDrive": "Aus Twake Drive",
+    "fromComputer": "Von meinem Computer",
+    "open": "%{name} öffnen",
+    "remove": "%{name} entfernen",
+    "pickerTitle": "Dateien in Twake Drive auswählen",
+    "pickerAdd": "Zur Aufgabe hinzufügen",
+    "close": "Schließen",
+    "uploadTitle": "Dateien werden hinzugefügt",
+    "uploadToDrive": "Ihre Dateien werden in den Ordner Project Ihres Twake Drive hochgeladen und der Aufgabe hinzugefügt als",
+    "uploadToSpace": "Ihre Dateien werden in den Ordner Project des Drives des Space hochgeladen und der Aufgabe hinzugefügt als",
+    "asLinks": "Links.",
+    "cancel": "Abbrechen",
+    "cancelAll": "Abbrechen",
+    "done": "Fertig",
+    "failed": "Fehlgeschlagen",
+    "cancelled": "Abgebrochen",
+    "addFailed": "Einige Dateien konnten der Aufgabe nicht hinzugefügt werden.",
+    "pickFailed": "Twake Drive konnte nicht geöffnet werden.",
+    "removeFailed": "Die Datei konnte nicht entfernt werden.",
+    "tooMany": "Eine Aufgabe enthält höchstens 50 Dateien.",
+    "loadFailed": "Die Dateien konnten nicht geladen werden."
   }
 }

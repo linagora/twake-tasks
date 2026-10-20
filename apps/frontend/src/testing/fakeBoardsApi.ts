@@ -5,6 +5,7 @@ import {
   type AgendaTask,
   type BoardsApi,
   type Comment,
+  type TaskFile,
   type Description,
   type HistoryEntry,
   type Notification,
@@ -50,6 +51,7 @@ export function aBoard(overrides: Partial<Board> = {}): Board {
     project: aProject(),
     inbox: false,
     archived: false,
+    teamDriveId: null,
     version: 1,
     role: 'admin',
     layout: 'board',
@@ -126,6 +128,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
   const favorites = new Set<string>()
   const descriptions = new Map<string, Description>()
   const comments = new Map<string, Comment[]>()
+  const files = new Map<string, TaskFile[]>()
   const history = new Map<string, HistoryEntry[]>()
   const reminders = new Map<string, Reminder[]>()
   const followed = new Set<string>()
@@ -580,6 +583,37 @@ export function fakeBoardsApi(boards: Board[] = []) {
         return structuredClone(comments.get(taskId) ?? [])
       })
     ),
+    listFiles: vi.fn<BoardsApi['listFiles']>((boardId, taskId) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        return structuredClone(files.get(taskId) ?? [])
+      })
+    ),
+    addFiles: vi.fn<BoardsApi['addFiles']>((boardId, taskId, added) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        const linked = added.map(file => ({
+          id: nextId(),
+          url: file.url,
+          name: file.name,
+          mimeType: file.mimeType,
+          size: file.size,
+          addedBy: 'me',
+          createdAt: new Date().toISOString()
+        }))
+        files.set(taskId, [...(files.get(taskId) ?? []), ...linked])
+        return structuredClone(linked)
+      })
+    ),
+    removeFile: vi.fn<BoardsApi['removeFile']>((boardId, taskId, fileId) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        files.set(
+          taskId,
+          (files.get(taskId) ?? []).filter(file => file.id !== fileId)
+        )
+      })
+    ),
     addComment: vi.fn<BoardsApi['addComment']>((boardId, taskId, body) =>
       Promise.resolve().then(() => {
         findTask(boardId, taskId).commentCount += 1
@@ -731,6 +765,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
     descriptions,
     notifications,
     comments,
+    files,
     history,
     sharings,
     projects,

@@ -8,6 +8,7 @@ import {
   type Project,
   type BoardsApi,
   type Comment,
+  type TaskFile,
   type Reminder,
   type HistoryEntry,
   type SearchResult
@@ -236,6 +237,27 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       await call('POST', route`/boards/${boardId}/tasks/${taskId}/comments`, {
         body
       })
+    },
+    listFiles: async (boardId, taskId) =>
+      (
+        await call<{ files: TaskFile[] }>(
+          'GET',
+          route`/boards/${boardId}/tasks/${taskId}/files`
+        )
+      ).files,
+    addFiles: async (boardId, taskId, files) =>
+      (
+        await call<{ files: TaskFile[] }>(
+          'POST',
+          route`/boards/${boardId}/tasks/${taskId}/files`,
+          { files }
+        )
+      ).files,
+    removeFile: async (boardId, taskId, fileId) => {
+      await call(
+        'DELETE',
+        route`/boards/${boardId}/tasks/${taskId}/files/${fileId}`
+      )
     },
     listReminders: async (boardId, taskId) =>
       (
