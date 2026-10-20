@@ -1,9 +1,14 @@
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq, inArray } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { looksOn, roleOn } from './access.ts'
-import { boards, comments } from './schema.ts'
+import { boards, commentReactions, comments } from './schema.ts'
 import { Refused, taskOf, writeOrRefuse } from './tasks.ts'
+
+interface Reactor {
+  userId: string
+  email: string
+}
 
 async function visibleTask(
   tx: Tx,
@@ -17,6 +22,33 @@ async function visibleTask(
   return taskOf(tx, boardId, taskId)
 }
 
+// Reacting, like commenting, is for a task that is still open on an open board.
+async function openTask(
+  tx: Tx,
+  identity: Identity,
+  boardId: string,
+  taskId: string
+) {
+  const task = await visibleTask(tx, identity, boardId, taskId)
+  const [board] = await tx
+    .select({ archivedAt: boards.archivedAt })
+    .from(boards)
+    .where(eq(boards.id, boardId))
+  if (board?.archivedAt || task.archivedAt || task.deletedAt) {
+    throw new Refused('archived')
+  }
+  return task
+}
+
+async function commentOf(tx: Tx, taskId: string, commentId: string) {
+  const [comment] = await tx
+    .select({ id: comments.id, organizationId: comments.organizationId })
+    .from(comments)
+    .where(and(eq(comments.id, commentId), eq(comments.taskId, taskId)))
+  if (!comment) throw new Refused('not_found')
+  return comment
+}
+
 export function createCommentStore(db: Db) {
   return {
     listComments(identity: Identity, boardId: string, taskId: string) {
@@ -28,6 +60,32 @@ export function createCommentStore(db: Db) {
           .where(eq(comments.taskId, taskId))
           .orderBy(asc(comments.createdAt), asc(comments.id))
         const looksOf = await looksOn(tx, boardId)
+        const reactions =
+          rows.length === 0
+            ? []
+            : await tx
+                .select()
+                .from(commentReactions)
+                .where(
+                  inArray(
+                    commentReactions.commentId,
+                    rows.map(row => row.id)
+                  )
+                )
+                .orderBy(
+                  asc(commentReactions.createdAt),
+                  asc(commentReactions.userId)
+                )
+        // Each emoji once per comment, in the order it was first given.
+        const byComment = new Map<string, Map<string, Reactor[]>>()
+        for (const reaction of reactions) {
+          const emojis =
+            byComment.get(reaction.commentId) ?? new Map<string, Reactor[]>()
+          byComment.set(reaction.commentId, emojis)
+          const people = emojis.get(reaction.emoji) ?? []
+          emojis.set(reaction.emoji, people)
+          people.push({ userId: reaction.userId, email: reaction.userEmail })
+        }
         return rows.map(row => ({
           id: row.id,
           author: {
@@ -36,7 +94,16 @@ export function createCommentStore(db: Db) {
             ...looksOf(row.authorId)
           },
           body: row.body,
-          createdAt: row.createdAt
+          createdAt: row.createdAt,
+          reactions: [...(byComment.get(row.id) ?? [])].map(
+            ([emoji, people]) => ({
+              emoji,
+              people: people.map(person => ({
+                ...person,
+                ...looksOf(person.userId)
+              }))
+            })
+          )
         }))
       })
     },
@@ -48,14 +115,7 @@ export function createCommentStore(db: Db) {
       body: string
     ) {
       return writeOrRefuse(db, identity, async tx => {
-        const task = await visibleTask(tx, identity, boardId, taskId)
-        const [board] = await tx
-          .select({ archivedAt: boards.archivedAt })
-          .from(boards)
-          .where(eq(boards.id, boardId))
-        if (board?.archivedAt || task.archivedAt || task.deletedAt) {
-          throw new Refused('archived')
-        }
+        const task = await openTask(tx, identity, boardId, taskId)
         const [comment] = await tx
           .insert(comments)
           .values({
@@ -68,6 +128,51 @@ export function createCommentStore(db: Db) {
           .returning({ id: comments.id, createdAt: comments.createdAt })
         if (!comment) throw new Error('comment insert returned nothing')
         return comment
+      })
+    },
+
+    addReaction(
+      identity: Identity,
+      boardId: string,
+      taskId: string,
+      commentId: string,
+      emoji: string
+    ) {
+      return writeOrRefuse(db, identity, async tx => {
+        await openTask(tx, identity, boardId, taskId)
+        const comment = await commentOf(tx, taskId, commentId)
+        await tx
+          .insert(commentReactions)
+          .values({
+            commentId,
+            organizationId: comment.organizationId,
+            userId: identity.userId,
+            userEmail: identity.email,
+            emoji
+          })
+          .onConflictDoNothing()
+      })
+    },
+
+    removeReaction(
+      identity: Identity,
+      boardId: string,
+      taskId: string,
+      commentId: string,
+      emoji: string
+    ) {
+      return writeOrRefuse(db, identity, async tx => {
+        await openTask(tx, identity, boardId, taskId)
+        await commentOf(tx, taskId, commentId)
+        await tx
+          .delete(commentReactions)
+          .where(
+            and(
+              eq(commentReactions.commentId, commentId),
+              eq(commentReactions.userId, identity.userId),
+              eq(commentReactions.emoji, emoji)
+            )
+          )
       })
     }
   }

@@ -181,6 +181,22 @@ const labeling = z.object({ labelIds: z.array(z.uuid()).max(50) })
 
 const newComment = z.object({ body: z.string().trim().min(1).max(10_000) })
 
+const reactionParams = taskParams.extend({
+  commentId: z.uuid(),
+  emoji: z.string()
+})
+
+const graphemes = new Intl.Segmenter('en', { granularity: 'grapheme' })
+
+// One emoji, possibly a sequence of them joined into one: nothing else.
+const reactionEmoji = z
+  .string()
+  .max(32)
+  .regex(
+    /^(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}])(?:[\p{Extended_Pictographic}\p{Regional_Indicator}\p{Emoji_Modifier}\u{E0020}-\u{E007F}]|\u200D|\uFE0F|\u20E3)+$/u
+  )
+  .refine(text => [...graphemes.segment(text)].length === 1)
+
 const newReminder = z.union([
   z.strictObject({
     at: z.iso.datetime({ offset: true }).pipe(z.coerce.date())
@@ -1148,6 +1164,33 @@ export function registerBoards(
       return reply.code(201).send(result.value)
     }
   )
+
+  for (const method of ['put', 'delete'] as const) {
+    app[method](
+      '/boards/:boardId/tasks/:taskId/comments/:commentId/reactions/:emoji',
+      { preHandler: deps.requireIdentity },
+      async (request, reply) => {
+        const identity = request.identity
+        if (!identity) return reply.code(401).send()
+        const params = reactionParams.safeParse(request.params)
+        if (!params.success) {
+          return reply.code(404).send({ error: 'not_found' })
+        }
+        const { boardId, taskId, commentId } = params.data
+        const emoji = reactionEmoji.safeParse(params.data.emoji)
+        if (!emoji.success) {
+          return reply.code(400).send({ error: 'invalid_request' })
+        }
+        const args = [identity, boardId, taskId, commentId, emoji.data] as const
+        const result =
+          method === 'put'
+            ? await commentStore.addReaction(...args)
+            : await commentStore.removeReaction(...args)
+        if (!result.ok) return refuse(reply, result.error)
+        return reply.code(204).send()
+      }
+    )
+  }
 
   app.get(
     '/boards/:boardId/tasks/:taskId/description',

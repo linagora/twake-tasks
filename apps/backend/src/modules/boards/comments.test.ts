@@ -132,3 +132,139 @@ describe('task comments', () => {
     expect(empty.statusCode).toBe(400)
   })
 })
+
+describe('comment reactions', () => {
+  interface Listed {
+    id: string
+    reactions: {
+      emoji: string
+      people: { userId: string; email: string; name: string | null }[]
+    }[]
+  }
+
+  async function aComment(owner: TestUser) {
+    const { boardId, taskId } = await aTaskOf(owner)
+    const comments = `/boards/${boardId}/tasks/${taskId}/comments`
+    const { id } = (
+      await api.as(owner).post(comments, { body: 'Which palette?' })
+    ).json<{ id: string }>()
+    const reaction = (emoji: string) =>
+      `${comments}/${id}/reactions/${encodeURIComponent(emoji)}`
+    const reactionsOf = async (viewer: TestUser) =>
+      (await api.as(viewer).get(comments))
+        .json<{ comments: Listed[] }>()
+        .comments.find(comment => comment.id === id)?.reactions
+    return { boardId, taskId, id, reaction, reactionsOf }
+  }
+
+  it('lists each emoji once, with who gave it, in the order it was first given', async () => {
+    const alice = aUser({ name: 'Alice Martin' })
+    const bob = aUser({ organizationId: alice.organizationId })
+    const { boardId, reaction, reactionsOf } = await aComment(alice)
+    await joinBoard(db, alice, boardId, bob, 'editor')
+
+    expect((await api.as(bob).put(reaction('👍️'))).statusCode).toBe(204)
+    await api.as(alice).put(reaction('🎉'))
+    await api.as(alice).put(reaction('👍️'))
+
+    expect(await reactionsOf(alice)).toEqual([
+      {
+        emoji: '👍️',
+        people: [
+          expect.objectContaining({ userId: bob.userId, email: bob.email }),
+          expect.objectContaining({
+            userId: alice.userId,
+            name: 'Alice Martin'
+          })
+        ]
+      },
+      {
+        emoji: '🎉',
+        people: [expect.objectContaining({ userId: alice.userId })]
+      }
+    ])
+  })
+
+  it('counts a reaction given twice once', async () => {
+    const alice = aUser()
+    const { reaction, reactionsOf } = await aComment(alice)
+
+    await api.as(alice).put(reaction('🎉'))
+    const again = await api.as(alice).put(reaction('🎉'))
+
+    expect(again.statusCode).toBe(204)
+    expect((await reactionsOf(alice))?.[0]?.people).toHaveLength(1)
+  })
+
+  it('takes back only the reaction of whoever asks', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const { boardId, reaction, reactionsOf } = await aComment(alice)
+    await joinBoard(db, alice, boardId, bob, 'editor')
+    await api.as(alice).put(reaction('🎉'))
+    await api.as(bob).put(reaction('🎉'))
+
+    const removed = await api.as(bob).delete(reaction('🎉'))
+
+    expect(removed.statusCode).toBe(204)
+    expect((await reactionsOf(alice))?.[0]?.people).toEqual([
+      expect.objectContaining({ userId: alice.userId })
+    ])
+  })
+
+  it('lets viewers react and hides the comment from outsiders', async () => {
+    const alice = aUser()
+    const viewer = aUser({ organizationId: alice.organizationId })
+    const outsider = aUser({ organizationId: alice.organizationId })
+    const { boardId, reaction } = await aComment(alice)
+    await joinBoard(db, alice, boardId, viewer, 'viewer')
+
+    expect((await api.as(viewer).put(reaction('👀'))).statusCode).toBe(204)
+    expect((await api.as(outsider).put(reaction('👀'))).statusCode).toBe(404)
+  })
+
+  it('refuses text that is not an emoji', async () => {
+    const alice = aUser()
+    const { reaction } = await aComment(alice)
+
+    for (const text of ['ok', '1', '<b>', '👍 ok', '🎉🎉']) {
+      expect((await api.as(alice).put(reaction(text))).statusCode).toBe(400)
+    }
+  })
+
+  it('accepts emoji made of several joined together', async () => {
+    const alice = aUser()
+    const { reaction, reactionsOf } = await aComment(alice)
+
+    for (const emoji of ['👩🏽‍💻', '🇫🇷', '❤️']) {
+      expect((await api.as(alice).put(reaction(emoji))).statusCode).toBe(204)
+    }
+    expect((await reactionsOf(alice))?.map(r => r.emoji)).toEqual([
+      '👩🏽‍💻',
+      '🇫🇷',
+      '❤️'
+    ])
+  })
+
+  it('refuses a comment of another task', async () => {
+    const alice = aUser()
+    const first = await aComment(alice)
+    const other = await aTaskOf(alice)
+
+    const response = await api
+      .as(alice)
+      .put(
+        `/boards/${other.boardId}/tasks/${other.taskId}/comments/${first.id}/reactions/${encodeURIComponent('🎉')}`
+      )
+
+    expect(response.statusCode).toBe(404)
+  })
+
+  it('refuses reactions on an archived board', async () => {
+    const alice = aUser()
+    const { boardId, reaction } = await aComment(alice)
+    await api.as(alice).post(`/boards/${boardId}/archive`, {})
+
+    expect((await api.as(alice).put(reaction('🎉'))).statusCode).toBe(409)
+  })
+})
