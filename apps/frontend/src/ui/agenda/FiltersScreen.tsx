@@ -3,7 +3,6 @@ import {
   CalendarToday,
   Dashboard,
   Eye,
-  Filter,
   Flag,
   Icon,
   Label,
@@ -92,7 +91,7 @@ export function FiltersScreen(): ReactElement {
   return (
     <main className="u-p-2">
       <PageCrumbs
-        origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
+        origin={{ icon: Eye, label: t('filters.title'), to: '/filters' }}
       />
       <div className="u-flex u-flex-items-center u-flex-justify-between u-mb-2">
         <Typography variant="h3" component="h1">
@@ -566,7 +565,7 @@ function EditViewForm({
   return (
     <main className="u-p-2">
       <PageCrumbs
-        origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
+        origin={{ icon: Eye, label: t('filters.title'), to: '/filters' }}
         steps={[{ to: `/filters/${initial.id}`, label: initial.name }]}
         current={t('filters.edit')}
       />

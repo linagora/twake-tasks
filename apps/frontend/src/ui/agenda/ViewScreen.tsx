@@ -1,4 +1,4 @@
-import { Filter, Icon } from '@linagora/twake-icons'
+import { Eye, Icon } from '@linagora/twake-icons'
 import { Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 import { useParams } from 'react-router'
@@ -40,7 +40,7 @@ export function ViewScreen(): ReactElement {
       layout={view.layout}
       groupBy={view.groupBy}
       allColumns={view.allColumns}
-      origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
+      origin={{ icon: Eye, label: t('filters.title'), to: '/filters' }}
       current={view.name}
       actions={<ViewMenu view={view} starrable />}
       title={
