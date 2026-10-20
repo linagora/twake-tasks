@@ -120,6 +120,13 @@ describe('archive and trash', () => {
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     )
     expect(panel.queryByRole('button', { name: 'Task options' })).toBeNull()
+    const crumbs = within(
+      panel.getByRole('navigation', { name: 'Where the task is' })
+    )
+    expect(crumbs.getByRole('link', { name: 'Design' })).toHaveAttribute(
+      'href',
+      `/boards/${board.id}`
+    )
     expect(
       panel.getByText('In the trash, deleted for good in 30 days.')
     ).toBeVisible()

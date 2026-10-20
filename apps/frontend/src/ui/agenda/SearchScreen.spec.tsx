@@ -39,6 +39,21 @@ describe('SearchScreen', () => {
     expect(boardsApi.search).toHaveBeenCalledWith('logo')
   })
 
+  it('opens a result whose breadcrumb goes back to the same search', async () => {
+    renderRoute('/search?q=logo', { boardsApi: boards().boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: /New logo/ }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: /^DES-1 New logo/ })
+    )
+
+    expect(
+      within(
+        panel.getByRole('navigation', { name: 'Where the task is' })
+      ).getByRole('link', { name: 'Search' })
+    ).toHaveAttribute('href', '/search?q=logo')
+  })
+
   it('highlights the part of each title that matches, inside a word too', async () => {
     renderRoute('/search?q=LOG', { boardsApi: boards().boardsApi })
 
