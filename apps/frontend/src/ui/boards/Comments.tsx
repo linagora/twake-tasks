@@ -127,42 +127,47 @@ export function Comments({
             onSubmit={send}
             mentions={names}
             linkPicker={drive.linkPicker}
-            suggestions={{
-              trigger: '@',
-              label: t('editor.mentionsLabel'),
-              search: query =>
-                mentionable(query).map(person => ({
-                  key: person.userId,
-                  insert: [
-                    { type: 'mention', attrs: { email: person.email } },
-                    { type: 'text', text: ' ' }
-                  ],
-                  label: (
-                    <>
-                      <PersonAvatar
-                        email={person.email}
-                        name={person.name}
-                        avatar={person.avatar}
-                      />
-                      <div className="u-ellipsis">
-                        <Typography variant="body2" className="u-ellipsis">
-                          <Highlight text={displayName(person)} query={query} />
-                        </Typography>
-                        {displayName(person) !== person.email && (
-                          <Typography
-                            variant="caption"
-                            color="textSecondary"
-                            component="div"
-                            className="u-ellipsis"
-                          >
-                            <Highlight text={person.email} query={query} />
+            suggestions={[
+              {
+                trigger: '@',
+                label: t('editor.mentionsLabel'),
+                search: query =>
+                  mentionable(query).map(person => ({
+                    key: person.userId,
+                    insert: [
+                      { type: 'mention', attrs: { email: person.email } },
+                      { type: 'text', text: ' ' }
+                    ],
+                    label: (
+                      <>
+                        <PersonAvatar
+                          email={person.email}
+                          name={person.name}
+                          avatar={person.avatar}
+                        />
+                        <div className="u-ellipsis">
+                          <Typography variant="body2" className="u-ellipsis">
+                            <Highlight
+                              text={displayName(person)}
+                              query={query}
+                            />
                           </Typography>
-                        )}
-                      </div>
-                    </>
-                  )
-                }))
-            }}
+                          {displayName(person) !== person.email && (
+                            <Typography
+                              variant="caption"
+                              color="textSecondary"
+                              component="div"
+                              className="u-ellipsis"
+                            >
+                              <Highlight text={person.email} query={query} />
+                            </Typography>
+                          )}
+                        </div>
+                      </>
+                    )
+                  }))
+              }
+            ]}
             footer={
               <>
                 <Typography
