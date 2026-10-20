@@ -56,6 +56,7 @@ import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
 import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
+import { useEmojiInput } from '@/ui/boards/useEmojiInput'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import {
   UnsavedContext,
@@ -477,6 +478,7 @@ function Description({
   const { t } = useI18n()
   const labels = useRichTextLabels()
   const drive = useDrivePicker()
+  const emojiInput = useEmojiInput()
   const description = useDescription(boardId, task.id)
   const save = useSetDescription(boardId, task.id)
   const [draft, setDraft] = useState<string | null>(null)
@@ -545,6 +547,8 @@ function Description({
             minHeight={144}
             onChange={setDraft}
             linkPicker={drive.linkPicker}
+            emoji={emojiInput.emoji}
+            suggestions={[emojiInput.suggestions]}
             footer={
               <>
                 <Button
