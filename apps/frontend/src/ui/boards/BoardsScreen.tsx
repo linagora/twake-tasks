@@ -140,7 +140,7 @@ export function BoardsScreen(): ReactElement {
   const projectName = useProjectName()
 
   return (
-    <main className="u-p-2">
+    <main className="u-ph-2 u-pt-half u-pb-2">
       <PageCrumbs origin={origin} />
       <div className="u-flex u-flex-items-center u-flex-justify-between u-mb-2">
         <Typography variant="h3" component="h1">

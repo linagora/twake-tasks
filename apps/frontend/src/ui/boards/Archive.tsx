@@ -184,7 +184,7 @@ export function ShelfScreen({
   useDocumentTitle(shown ? `${title} - ${shown.name}` : null)
 
   return (
-    <main className={flush ? undefined : 'u-p-2'}>
+    <main className={flush ? undefined : 'u-ph-2 u-pt-half u-pb-2'}>
       <PageCrumbs origin={origin} steps={[boardStep]} current={title} />
       {missing && (
         <EmptyState

@@ -98,7 +98,7 @@ export function BoardScreen({
       <BoardStepContext
         value={{ to: '.', label: shown?.name ?? '…', relative: true }}
       >
-        <main className={flush ? undefined : 'u-p-2'}>
+        <main className={flush ? undefined : 'u-ph-2 u-pt-half u-pb-2'}>
           {back && (
             <PageCrumbs origin={boardsOrigin} current={shown?.name ?? '…'} />
           )}

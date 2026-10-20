@@ -358,7 +358,7 @@ export function AgendaScreen(
 
   return (
     <OriginContext value={origin}>
-      <main className="u-p-2">
+      <main className="u-ph-2 u-pt-half u-pb-2">
         <PageCrumbs
           origin={origin}
           current={'origin' in props ? title || '…' : undefined}

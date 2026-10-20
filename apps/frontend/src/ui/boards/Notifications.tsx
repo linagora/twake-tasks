@@ -118,7 +118,7 @@ export function NotificationsScreen(): ReactElement {
   ]
 
   return (
-    <main className="u-p-2">
+    <main className="u-ph-2 u-pt-half u-pb-2">
       <PageCrumbs
         origin={{
           icon: Bell,
