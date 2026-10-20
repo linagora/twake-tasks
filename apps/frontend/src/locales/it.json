@@ -169,7 +169,15 @@
     "removeLabel": "Rimuovi l’etichetta %{name}",
     "addAssignees": "Aggiungi assegnatari",
     "unassign": "Rimuovi %{name}",
-    "breadcrumb": "Posizione dell’attività"
+    "breadcrumb": "Posizione dell’attività",
+    "reactions": "Reazioni",
+    "reaction": "%{emoji} da %{names}",
+    "addReaction": "Aggiungi una reazione",
+    "reactionFailed": "Non è stato possibile salvare la reazione.",
+    "quickReactions": "Reazioni abituali",
+    "moreEmoji": "Altre emoji",
+    "whoReacted": "Vedi chi ha reagito",
+    "moreReactions": "+%{count}"
   },
   "editor": {
     "toolbar": "Formattazione",

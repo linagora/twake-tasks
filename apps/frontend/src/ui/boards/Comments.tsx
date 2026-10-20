@@ -6,10 +6,11 @@ import { RichText, RichTextEditor } from '@/ds/RichText'
 import { Feed, FeedItem } from '@/ds/SidePanel'
 import type { Person, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
+import { CommentReactions, ReactButton } from '@/ui/boards/CommentReactions'
 import { momentFormat } from '@/ui/boards/dueLabel'
 import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useAddComment, useComments } from '@/ui/boards/queries'
+import { useAddComment, useComments, useReact } from '@/ui/boards/queries'
 import { useEmojiInput } from '@/ui/boards/useEmojiInput'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -37,6 +38,11 @@ export function Comments({
   const emojiInput = useEmojiInput()
   const comments = useComments(boardId, task.id)
   const add = useAddComment(boardId, task.id)
+  const myEmail = user.email?.toLowerCase() ?? ''
+  const me: Person = members.find(
+    person => person.email.toLowerCase() === myEmail
+  ) ?? { userId: '', email: myEmail, name: user.name }
+  const react = useReact(boardId, task.id, me)
   const [body, setBody] = useState('')
   const [draft, setDraft] = useState(0)
   const format = momentFormat(lang)
@@ -89,6 +95,20 @@ export function Comments({
                 size={28}
               />
             }
+            {...(archived
+              ? {}
+              : {
+                  actions: (
+                    <ReactButton
+                      reactions={comment.reactions}
+                      me={me}
+                      emojiInput={emojiInput}
+                      onReact={(emoji, on) => {
+                        react.mutate({ commentId: comment.id, emoji, on })
+                      }}
+                    />
+                  )
+                })}
           >
             <article aria-label={displayName(comment.author)}>
               <Typography variant="body2" component="div">
@@ -102,10 +122,23 @@ export function Comments({
                 </Typography>
               </Typography>
               <RichText markdown={comment.body} mentions={names} />
+              <CommentReactions
+                reactions={comment.reactions}
+                me={me}
+                readOnly={archived}
+                onReact={(emoji, on) => {
+                  react.mutate({ commentId: comment.id, emoji, on })
+                }}
+              />
             </article>
           </FeedItem>
         ))}
       </Feed>
+      {react.isError && (
+        <Typography role="alert" variant="caption">
+          {t('task.reactionFailed')}
+        </Typography>
+      )}
       {!archived && (
         <form
           className="u-mt-1"

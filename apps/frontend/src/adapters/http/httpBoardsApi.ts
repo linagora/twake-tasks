@@ -237,6 +237,18 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
         body
       })
     },
+    addReaction: async (boardId, taskId, commentId, emoji) => {
+      await call(
+        'PUT',
+        route`/boards/${boardId}/tasks/${taskId}/comments/${commentId}/reactions/${emoji}`
+      )
+    },
+    removeReaction: async (boardId, taskId, commentId, emoji) => {
+      await call(
+        'DELETE',
+        route`/boards/${boardId}/tasks/${taskId}/comments/${commentId}/reactions/${emoji}`
+      )
+    },
     listReminders: async (boardId, taskId) =>
       (
         await call<{ reminders: Reminder[] }>(

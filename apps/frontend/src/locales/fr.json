@@ -169,7 +169,15 @@
     "removeLabel": "Retirer l’étiquette %{name}",
     "addAssignees": "Ajouter des responsables",
     "unassign": "Retirer %{name}",
-    "breadcrumb": "Emplacement de la tâche"
+    "breadcrumb": "Emplacement de la tâche",
+    "reactions": "Réactions",
+    "reaction": "%{emoji} de %{names}",
+    "addReaction": "Ajouter une réaction",
+    "reactionFailed": "La réaction n’a pas pu être enregistrée.",
+    "quickReactions": "Réactions habituelles",
+    "moreEmoji": "Plus d’emoji",
+    "whoReacted": "Voir qui a réagi",
+    "moreReactions": "+%{count}"
   },
   "editor": {
     "toolbar": "Mise en forme",
