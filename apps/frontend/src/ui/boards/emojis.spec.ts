@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { fetchEmojis, findEmojis } from '@/ui/boards/emojis'
+import { fetchEmojis, findEmojis, findQuickReactions } from '@/ui/boards/emojis'
 
 const unicodes = (found: { unicode: string }[]) =>
   found.map(emoji => emoji.unicode)
@@ -57,5 +57,17 @@ describe('emojis', () => {
     expect(emojis.find(emoji => emoji.hexcode === '1F44D')?.label).toBe(
       'thumbs up'
     )
+  })
+
+  it('offers the reactions of Twake Chat, as the grid writes them', async () => {
+    const emojis = await fetchEmojis('fr')
+
+    const quick = findQuickReactions(emojis)
+
+    expect(unicodes(quick)).toEqual(['💜', '👍️', '👎️', '😂', '😮', '🥲'])
+    expect(quick[1]?.label).toBe('pouce vers le haut')
+    for (const emoji of quick) {
+      expect(emojis.some(each => each.unicode === emoji.unicode)).toBe(true)
+    }
   })
 })

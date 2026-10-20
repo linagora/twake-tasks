@@ -195,7 +195,15 @@
     "removeLabel": "Bỏ nhãn %{name}",
     "addAssignees": "Thêm người phụ trách",
     "unassign": "Bỏ %{name}",
-    "breadcrumb": "Vị trí của công việc"
+    "breadcrumb": "Vị trí của công việc",
+    "reactions": "Bày tỏ cảm xúc",
+    "reaction": "%{emoji} từ %{names}",
+    "addReaction": "Thêm cảm xúc",
+    "reactionFailed": "Không thể lưu cảm xúc.",
+    "quickReactions": "Cảm xúc thường dùng",
+    "moreEmoji": "Thêm biểu tượng cảm xúc",
+    "whoReacted": "Xem ai đã bày tỏ cảm xúc",
+    "moreReactions": "+%{count}"
   },
   "editor": {
     "toolbar": "Định dạng",

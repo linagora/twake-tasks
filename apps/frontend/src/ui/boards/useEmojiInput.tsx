@@ -1,9 +1,9 @@
 import { Typography } from '@linagora/twake-mui'
 
-import type { EmojiPickerOptions } from '@/ds/EmojiPicker'
+import type { EmojiChoice, EmojiPickerOptions } from '@/ds/EmojiPicker'
 import { Highlight } from '@/ds/Highlight'
 import type { Suggestions } from '@/ds/Suggestions'
-import { findEmojis, useEmojis } from '@/ui/boards/emojis'
+import { findEmojis, findQuickReactions, useEmojis } from '@/ui/boards/emojis'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const MAX_PICKED = 48
@@ -16,12 +16,15 @@ export interface EmojiInput {
   emoji: EmojiPickerOptions
   /** The list that opens on ":name". */
   suggestions: Suggestions
+  /** The reactions offered first, as in Twake Chat. */
+  quick: EmojiChoice[]
 }
 
 export function useEmojiInput(): EmojiInput {
   const { t, lang } = useI18n()
   const emojis = useEmojis(lang)
   return {
+    quick: findQuickReactions(emojis),
     emoji: {
       labels: {
         open: t('editor.emoji'),

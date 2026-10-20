@@ -31,7 +31,8 @@ function logoBoard(role: 'admin' | 'viewer' = 'admin') {
       id: 'c1',
       author: { userId: 'bob', email: 'bob@example.com', name: 'Bob Durand' },
       body: 'Which palette?',
-      createdAt: '2026-10-05T09:00:00Z'
+      createdAt: '2026-10-05T09:00:00Z',
+      reactions: []
     }
   ])
   return { board, logo, boardsApi }
@@ -118,7 +119,8 @@ describe('Comments', () => {
         id: 'c2',
         author: { userId: 'bob', email: 'bob@example.com', name: null },
         body: 'Use the **new** one:\n\n- [x] logo\n- [ ] icons',
-        createdAt: '2026-10-05T09:00:00Z'
+        createdAt: '2026-10-05T09:00:00Z',
+        reactions: []
       }
     ])
     renderRoute(`/boards/${board.id}`, { boardsApi })
@@ -379,7 +381,8 @@ describe('Comments', () => {
             name: 'Bob Durand'
           },
           body,
-          createdAt: '2026-10-05T09:00:00Z'
+          createdAt: '2026-10-05T09:00:00Z',
+          reactions: []
         }
       ])
       renderRoute(`/boards/${board.id}`, { boardsApi })
@@ -522,6 +525,258 @@ describe('Comments', () => {
       await waitFor(() => {
         expect(editor).toHaveTextContent('Shipped 🎉')
       })
+    })
+  })
+
+  describe('reactions', () => {
+    const bob = { userId: 'bob', email: 'bob@example.com', name: 'Bob Durand' }
+
+    async function openReactions(
+      reactions: { emoji: string; people: (typeof bob)[] }[],
+      archived = false
+    ) {
+      const { board, logo, boardsApi } = logoBoard()
+      board.archived = archived
+      const [first] = boardsApi.comments.get(logo.id) ?? []
+      if (first) first.reactions = reactions
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      const panel = await openLogo()
+      const comment = within(
+        await panel.findByRole('article', { name: 'Bob Durand' })
+      )
+      return { board, logo, boardsApi, panel, comment }
+    }
+
+    it('shows each emoji with who gave it, yours pressed', async () => {
+      const { comment } = await openReactions([
+        { emoji: '👍️', people: [bob, alice] },
+        { emoji: '🎉', people: [bob] }
+      ])
+
+      const thumbs = comment.getByRole('button', {
+        name: '👍️ from Bob Durand, Alice Martin'
+      })
+      expect(thumbs).toHaveTextContent('👍️ 2')
+      expect(thumbs).toHaveAttribute('aria-pressed', 'true')
+      expect(
+        comment.getByRole('button', { name: '🎉 from Bob Durand' })
+      ).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    it('takes your reaction back when you press it again', async () => {
+      const { board, logo, boardsApi, comment } = await openReactions([
+        { emoji: '👍️', people: [bob, alice] }
+      ])
+
+      fireEvent.click(
+        comment.getByRole('button', {
+          name: '👍️ from Bob Durand, Alice Martin'
+        })
+      )
+
+      expect(
+        await comment.findByRole('button', { name: '👍️ from Bob Durand' })
+      ).toHaveTextContent('👍️ 1')
+      expect(boardsApi.removeReaction).toHaveBeenCalledWith(
+        board.id,
+        logo.id,
+        'c1',
+        '👍️'
+      )
+    })
+
+    it('adds yours to an emoji someone else gave', async () => {
+      const { board, logo, boardsApi, comment } = await openReactions([
+        { emoji: '🎉', people: [bob] }
+      ])
+
+      fireEvent.click(
+        comment.getByRole('button', { name: '🎉 from Bob Durand' })
+      )
+
+      expect(
+        await comment.findByRole('button', {
+          name: '🎉 from Bob Durand, Alice Martin'
+        })
+      ).toHaveAttribute('aria-pressed', 'true')
+      expect(boardsApi.addReaction).toHaveBeenCalledWith(
+        board.id,
+        logo.id,
+        'c1',
+        '🎉'
+      )
+    })
+
+    it('reacts from the usual reactions of the button over the comment', async () => {
+      const { board, logo, boardsApi, panel, comment } = await openReactions([])
+
+      fireEvent.click(panel.getByRole('button', { name: 'Add a reaction' }))
+      const quick = await screen.findByRole('group', {
+        name: 'Usual reactions'
+      })
+      expect(
+        within(quick)
+          .getAllByRole('button')
+          .map(button => button.textContent)
+      ).toEqual(['💜', '👍️', '👎️', '😂', '😮', '🥲', ''])
+      // Named by the emoji until the names load, then by its name.
+      fireEvent.click(
+        within(quick).getByRole('button', {
+          name: /^(😂|face with tears of joy)$/
+        })
+      )
+
+      expect(
+        await comment.findByRole('button', { name: '😂 from Alice Martin' })
+      ).toHaveTextContent('😂 1')
+      expect(boardsApi.addReaction).toHaveBeenCalledWith(
+        board.id,
+        logo.id,
+        'c1',
+        '😂'
+      )
+    })
+
+    it('takes a usual reaction back when it is already yours', async () => {
+      const { boardsApi, panel, comment } = await openReactions([
+        { emoji: '👍️', people: [alice] }
+      ])
+
+      fireEvent.click(panel.getByRole('button', { name: 'Add a reaction' }))
+      const quick = await screen.findByRole('group', {
+        name: 'Usual reactions'
+      })
+      const thumbs = within(quick).getAllByRole('button')[1]
+      if (!thumbs) throw new Error('No thumbs up in the usual reactions')
+      expect(thumbs).toHaveAttribute('aria-pressed', 'true')
+      fireEvent.click(thumbs)
+
+      await waitFor(() => {
+        expect(comment.queryByRole('group', { name: 'Reactions' })).toBe(null)
+      })
+      expect(boardsApi.removeReaction).toHaveBeenCalled()
+    })
+
+    it('reacts with any emoji from the grid behind the + button', async () => {
+      const { board, logo, boardsApi, panel, comment } = await openReactions([])
+
+      fireEvent.click(panel.getByRole('button', { name: 'Add a reaction' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'More emoji' }))
+      const search = await screen.findByLabelText('Search emoji')
+      // The names load in the background, after the first keystrokes of a test.
+      const party = await waitFor(() => {
+        fireEvent.change(search, { target: { value: 'party' } })
+        return within(screen.getByRole('group', { name: 'Emoji' })).getByRole(
+          'button',
+          { name: 'party popper' }
+        )
+      })
+      fireEvent.click(party)
+
+      expect(
+        await comment.findByRole('button', { name: '🎉 from Alice Martin' })
+      ).toHaveTextContent('🎉 1')
+      expect(boardsApi.addReaction).toHaveBeenCalledWith(
+        board.id,
+        logo.id,
+        'c1',
+        '🎉'
+      )
+    })
+
+    it('shows the three most given and how many more, as Twake Chat does', async () => {
+      const { comment } = await openReactions([
+        { emoji: '😮', people: [bob] },
+        { emoji: '👍️', people: [bob, alice] },
+        { emoji: '🎉', people: [bob] },
+        { emoji: '💜', people: [alice] },
+        { emoji: '😂', people: [bob] }
+      ])
+
+      const group = within(comment.getByRole('group', { name: 'Reactions' }))
+      expect(
+        group
+          .getAllByRole('button', { name: / from / })
+          .map(chip => chip.textContent)
+      ).toEqual(['👍️ 2', '😮 1', '🎉 1'])
+      expect(group.getByText('+2')).toBeInTheDocument()
+    })
+
+    it('lists who gave every reaction', async () => {
+      const { comment } = await openReactions([
+        { emoji: '😮', people: [bob] },
+        { emoji: '👍️', people: [bob, alice] },
+        { emoji: '🎉', people: [bob] },
+        { emoji: '💜', people: [alice] }
+      ])
+
+      fireEvent.click(comment.getByRole('button', { name: 'See who reacted' }))
+
+      const list = await screen.findByRole('list', { name: 'See who reacted' })
+      // Each reaction, then the people who gave it, each with an avatar.
+      const names = (item: HTMLElement) =>
+        within(item)
+          .getAllByRole('listitem')
+          .map(person => person.lastElementChild?.textContent)
+      expect(
+        Array.from(list.children, item => [
+          item.firstElementChild?.textContent,
+          names(item as HTMLElement)
+        ])
+      ).toEqual([
+        ['👍️', ['Bob Durand', 'Alice Martin']],
+        ['😮', ['Bob Durand']],
+        ['🎉', ['Bob Durand']],
+        ['💜', ['Alice Martin']]
+      ])
+    })
+
+    it('lists who gave a reaction, with their avatars, on hover', async () => {
+      const { comment } = await openReactions([
+        { emoji: '👍️', people: [bob, alice] }
+      ])
+
+      fireEvent.mouseOver(comment.getByRole('button', { name: / from / }))
+
+      const tooltip = within(await screen.findByRole('tooltip'))
+      expect(
+        tooltip.getAllByRole('listitem').map(person => person.textContent)
+      ).toEqual(['BDBob Durand', 'AMAlice Martin'])
+    })
+
+    it('puts the reactions back as they were when saving fails', async () => {
+      const { boardsApi, comment } = await openReactions([
+        { emoji: '🎉', people: [bob] }
+      ])
+      boardsApi.addReaction.mockRejectedValueOnce(new Error('offline'))
+
+      fireEvent.click(
+        comment.getByRole('button', { name: '🎉 from Bob Durand' })
+      )
+
+      expect(
+        await screen.findByText('The reaction could not be saved.')
+      ).toBeInTheDocument()
+      expect(
+        comment.getByRole('button', { name: '🎉 from Bob Durand' })
+      ).toHaveTextContent('🎉 1')
+    })
+
+    it('shows the reactions of an archived board without letting anyone react', async () => {
+      const { comment } = await openReactions(
+        [{ emoji: '🎉', people: [bob] }],
+        true
+      )
+
+      expect(comment.getByLabelText('🎉 from Bob Durand')).toHaveTextContent(
+        '🎉 1'
+      )
+      expect(
+        comment.queryByRole('button', { name: '🎉 from Bob Durand' })
+      ).toBe(null)
+      expect(screen.queryByRole('button', { name: 'Add a reaction' })).toBe(
+        null
+      )
     })
   })
 })
