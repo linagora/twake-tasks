@@ -15,6 +15,7 @@ export interface ConsumerNames {
   b2bExchange: string
   authExchange: string
   settingsExchange: string
+  activityExchange: string
   queue: string
   oldQueue: string
   deadLetterExchange: string
@@ -47,7 +48,12 @@ const otherBindings = (names: ConsumerNames) => [
   { exchange: names.b2bExchange, routingKey: 'domain.user.deleted' },
   { exchange: names.authExchange, routingKey: 'user.deleted' },
   { exchange: names.b2bExchange, routingKey: 'domain.organization.deleted' },
-  { exchange: names.settingsExchange, routingKey: 'user.settings.updated' }
+  { exchange: names.settingsExchange, routingKey: 'user.settings.updated' },
+  // The platform's replies about the team drives of the spaces.
+  {
+    exchange: names.activityExchange,
+    routingKey: 'com.twake.drive.org_drive.#'
+  }
 ]
 
 /** The messages ready on the queue, or undefined when there is no such queue. */

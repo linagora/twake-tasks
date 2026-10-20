@@ -37,6 +37,7 @@ const names: ConsumerNames = {
   b2bExchange: 'b2b',
   authExchange: 'auth',
   settingsExchange: 'settings',
+  activityExchange: 'activity',
   queue: 'twake-tasks',
   oldQueue: 'platform.all.twake-tasks',
   deadLetterExchange: 'twake-tasks.dlx'
@@ -453,6 +454,7 @@ describe('startConsumer', () => {
       b2bExchange: 'staging.b2b',
       authExchange: 'staging.auth',
       settingsExchange: 'staging.settings',
+      activityExchange: 'staging.activity',
       queue: 'staging.twake-tasks',
       oldQueue: 'staging.platform.all.twake-tasks',
       deadLetterExchange: 'staging.twake-tasks.dlx'

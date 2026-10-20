@@ -19,6 +19,7 @@ import { alias } from 'drizzle-orm/pg-core'
 import { generateNKeysBetween } from 'fractional-indexing'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { spaces } from '../spaces/schema.ts'
 import {
   accessibleBoards,
   claimInvites,
@@ -421,12 +422,17 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
   const role = await roleOn(tx, userId, boardId)
   if (!role) return null
   const [found] = await tx
-    .select({ board: boards, project: projectSummary })
+    .select({
+      board: boards,
+      project: projectSummary,
+      teamDriveId: spaces.driveId
+    })
     .from(boards)
     .innerJoin(projects, eq(projects.id, boards.projectId))
+    .leftJoin(spaces, eq(spaces.projectId, projects.id))
     .where(eq(boards.id, boardId))
   if (!found) return null
-  const { board, project } = found
+  const { board, project, teamDriveId } = found
   const sectionRows = await tx
     .select({
       id: sections.id,
@@ -458,6 +464,8 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     project,
     inbox: board.inbox,
     archived: board.archivedAt !== null,
+    // The drive of the board's space, where its files go, once the platform made it.
+    teamDriveId,
     version: board.version,
     role,
     members,
