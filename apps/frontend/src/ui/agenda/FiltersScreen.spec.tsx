@@ -358,7 +358,11 @@ describe('FiltersScreen', () => {
 
     // A name being typed waits until there is one.
     fireEvent.change(name, { target: { value: ' ' } })
-    fireEvent.click(screen.getByRole('link', { name: 'Back to views' }))
+    fireEvent.click(
+      within(
+        screen.getByRole('navigation', { name: 'Where the page is' })
+      ).getByRole('link', { name: 'Views' })
+    )
     expect(
       await screen.findByRole('link', { name: 'Client fires' })
     ).toBeVisible()
@@ -425,7 +429,11 @@ describe('FiltersScreen', () => {
     fireEvent.change(await screen.findByLabelText(/^Name/), {
       target: { value: 'Now' }
     })
-    fireEvent.click(screen.getByRole('link', { name: 'Back to views' }))
+    fireEvent.click(
+      within(
+        screen.getByRole('navigation', { name: 'Where the page is' })
+      ).getByRole('link', { name: 'Views' })
+    )
 
     await waitFor(() => {
       expect(boardsApi.updateFilter).toHaveBeenCalledWith(
@@ -498,7 +506,11 @@ describe('FiltersScreen', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Edit view' })
     ).toBeVisible()
-    fireEvent.click(screen.getByRole('link', { name: 'Back to views' }))
+    fireEvent.click(
+      within(
+        screen.getByRole('navigation', { name: 'Where the page is' })
+      ).getByRole('link', { name: 'Views' })
+    )
     fireEvent.click(
       await screen.findByRole('button', { name: 'Actions of Urgent' })
     )

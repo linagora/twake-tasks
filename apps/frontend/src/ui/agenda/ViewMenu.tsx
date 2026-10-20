@@ -33,12 +33,9 @@ import { useI18n } from '@/ui/i18n/useI18n'
  */
 export function ViewMenu({
   view,
-  from = `/filters/${view.id}`,
   starrable = false
 }: {
   view: SavedFilter
-  /** Where its settings go back to. */
-  from?: string
   /** Stars it too, where no star shows by it, as in the open view. */
   starrable?: boolean
 }): ReactElement {
@@ -75,9 +72,7 @@ export function ViewMenu({
         <MenuItem
           onClick={() => {
             close()
-            void navigate(`/filters/${view.id}/edit`, {
-              state: { from }
-            })
+            void navigate(`/filters/${view.id}/edit`)
           }}
         >
           <ListItemIcon>

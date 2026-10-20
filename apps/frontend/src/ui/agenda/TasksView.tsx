@@ -37,6 +37,7 @@ import { MissingStatusDialog } from '@/ui/agenda/MissingStatusDialog'
 import { NewViewTask } from '@/ui/agenda/NewViewTask'
 import { ViewAddTask } from '@/ui/agenda/ViewAddTask'
 import { ViewTaskPanel } from '@/ui/agenda/ViewTaskPanel'
+import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
 import { BoardDrag } from '@/ui/boards/BoardDrag'
 import { CalendarTask } from '@/ui/boards/CalendarTask'
 import { localToday } from '@/ui/boards/dueLabel'
@@ -103,7 +104,8 @@ export function TasksView({
   groupBy = 'status',
   allColumns = false,
   title,
-  back,
+  origin,
+  current,
   actions,
   empty
 }: {
@@ -114,7 +116,10 @@ export function TasksView({
   /** Columns of statuses no task is in show too. */
   allColumns?: boolean
   title: ReactNode
-  back?: ReactNode
+  /** Where the breadcrumb, and that of the tasks opened here, starts. */
+  origin: Origin
+  /** The page, after its origin, when it is not the origin itself. */
+  current?: string | undefined
   actions?: ReactNode
   /** What to say when no task matches, if not that there is nothing to do. */
   empty?: { icon: IconComponent; title: string; text: string }
@@ -190,254 +195,257 @@ export function TasksView({
 
   return (
     <HiddenFactsContext value={hiddenFactsOf(groupBy)}>
-      <main className="u-p-2">
-        <PageHeader
-          back={back}
-          title={title}
-          actions={
-            <>
-              {actions}
-              <Button
-                startIcon={<Icon icon={Plus} />}
-                disabled={!canAdd}
-                onClick={() => {
-                  setAdding(true)
-                }}
-              >
-                {t('board.newTask')}
-              </Button>
-            </>
-          }
-        />
-        {adding && canAdd && (
-          <NewViewTask
-            criteria={criteria}
-            dueOn={addingOn ?? undefined}
-            onClose={() => {
-              setAdding(false)
-              setAddingOn(null)
-            }}
-          />
-        )}
-        <ViewTaskPanel
-          tasks={tasks}
-          editable={boardId => writable.has(boardId)}
-        />
-        {missing && (
-          <MissingStatusDialog
-            board={missing.board.name}
-            status={missing.status.name}
-            busy={addStatus.isPending}
-            failed={addStatus.isError}
-            onCancel={() => {
-              setMissing(null)
-            }}
-            onAdd={() => {
-              addStatus.mutate(
-                {
-                  boardId: missing.board.id,
-                  taskId: missing.task.id,
-                  status: missing.status,
-                  neighbours: missing.neighbours
-                },
-                {
-                  onSuccess: () => {
-                    setMissing(null)
-                  }
-                }
-              )
-            }}
-          />
-        )}
-        {(agenda.isError || moveTask.isError) && (
-          <Typography role="alert">{t('agenda.loadFailed')}</Typography>
-        )}
-        {agenda.isPending && <ColumnsSkeleton label={t('app.loading')} />}
-        {agenda.isSuccess && tasks.length === 0 && layout !== 'calendar' && (
-          <EmptyState
-            icon={empty?.icon ?? CheckCircle}
-            title={empty?.title ?? t('agenda.empty')}
-            text={empty?.text ?? t('agenda.emptyHint')}
-            action={
-              canAdd && (
+      <OriginContext value={origin}>
+        <main className="u-p-2">
+          <PageCrumbs origin={origin} current={current} />
+          <PageHeader
+            title={title}
+            actions={
+              <>
+                {actions}
                 <Button
                   startIcon={<Icon icon={Plus} />}
+                  disabled={!canAdd}
                   onClick={() => {
                     setAdding(true)
                   }}
                 >
                   {t('board.newTask')}
                 </Button>
-              )
+              </>
             }
           />
-        )}
-        {tasks.length > 0 && layout !== 'calendar' && !ready && (
-          <ColumnsSkeleton label={t('app.loading')} />
-        )}
-        {tasks.length > 0 && layout === 'board' && groupBy !== 'status' && (
-          <Columns>
-            {groups.map(group => (
-              <HiddenFactsContext
-                key={group.key}
-                value={hiddenFactsOf(
-                  groupBy,
-                  group.key === 'label:none' ? null : group.name
-                )}
-              >
-                <Column title={group.name} count={group.tasks.length}>
-                  {group.tasks.map(task => (
-                    <ViewCard
-                      key={task.id}
-                      task={task}
-                      tasks={tasks}
-                      sortable={false}
-                    />
-                  ))}
-                </Column>
-              </HiddenFactsContext>
-            ))}
-          </Columns>
-        )}
-        {tasks.length > 0 &&
-          layout === 'board' &&
-          groupBy === 'status' &&
-          ready && (
-            <BoardDrag
-              lanes={columns.map(column => ({
-                key: column.key,
-                sectionId: column.key,
-                name: column.name,
-                taskIds: column.tasks.map(task => task.id)
-              }))}
-              titleOf={id => {
-                const task = byId.get(id)
-                return task ? `${task.key} ${task.title}` : ''
+          {adding && canAdd && (
+            <NewViewTask
+              criteria={criteria}
+              dueOn={addingOn ?? undefined}
+              onClose={() => {
+                setAdding(false)
+                setAddingOn(null)
               }}
-              onMove={(taskId, to) => {
-                const task = byId.get(taskId)
-                const column = columns.find(each => each.key === to.sectionId)
-                const board = sources.find(each => each.id === task?.boardId)
-                if (!task || !column || !board || !editable(task)) return false
-                const move = viewMove(
-                  board,
-                  column.section,
-                  to,
-                  id => byId.get(id)?.boardId === task.boardId
-                )
-                if (!move) {
-                  // The column's status, as another board of the view has it.
-                  const status = sources
-                    .flatMap(each => each.sections)
-                    .find(
-                      each =>
-                        each.name.trim().toLocaleLowerCase() ===
-                        column.name.trim().toLocaleLowerCase()
-                    )
-                  const sameBoard = (id: string | undefined) =>
-                    id !== undefined && byId.get(id)?.boardId === task.boardId
-                  addStatus.reset()
-                  setMissing({
-                    task,
-                    board,
-                    status: {
-                      name: status?.name ?? column.name,
-                      category: status?.category ?? 'started'
-                    },
-                    neighbours: {
-                      ...(sameBoard(to.afterId) && { afterId: to.afterId }),
-                      ...(sameBoard(to.beforeId) && { beforeId: to.beforeId })
-                    }
-                  })
-                  return false
-                }
-                moveTask.mutate({ boardId: task.boardId, taskId, move })
-                return true
-              }}
-              preview={id => {
-                const task = byId.get(id)
-                return (
-                  task && (
-                    <Card label={`${task.key} ${task.title}`} drag="lifted">
-                      <Typography variant="caption" color="textSecondary">
-                        {task.key}
-                      </Typography>
-                      <CardTitle>{task.title}</CardTitle>
-                    </Card>
-                  )
-                )
-              }}
-            >
-              {idsOf => (
-                <Columns>
-                  {columns.map(column => {
-                    const ids = idsOf(column.key)
-                    return (
-                      <DropColumn
-                        key={column.key}
-                        id={column.key}
-                        title={column.name}
-                        count={ids.length}
-                      >
-                        <SortableList ids={ids}>
-                          {ids.flatMap(id => {
-                            const task = byId.get(id)
-                            return task
-                              ? [
-                                  <ViewCard
-                                    key={id}
-                                    task={task}
-                                    tasks={tasks}
-                                  />
-                                ]
-                              : []
-                          })}
-                        </SortableList>
-                        {ids.length === 0 && (
-                          <EmptyColumn label={t('board.emptyColumn')} />
-                        )}
-                        {addTask(column)}
-                      </DropColumn>
-                    )
-                  })}
-                </Columns>
-              )}
-            </BoardDrag>
+            />
           )}
-        {tasks.length > 0 && layout === 'list' && ready && (
-          <ListLayout
-            columns={
-              groupBy === 'status'
-                ? columns.map(column => ({
-                    ...column,
-                    footer: addTask(column)
-                  }))
-                : groups
-            }
-            row={task => (
-              <ViewListRow
-                key={task.id}
-                task={task}
-                editable={editable(task)}
-              />
-            )}
-          />
-        )}
-        {agenda.isSuccess && layout === 'calendar' && (
-          <CalendarLayout
+          <ViewTaskPanel
             tasks={tasks}
-            onAddOn={
-              canAdd
-                ? day => {
-                    setAddingOn(day)
-                    setAdding(true)
-                  }
-                : undefined
-            }
-            item={task => <CalendarTask key={task.id} task={task} />}
+            editable={boardId => writable.has(boardId)}
           />
-        )}
-      </main>
+          {missing && (
+            <MissingStatusDialog
+              board={missing.board.name}
+              status={missing.status.name}
+              busy={addStatus.isPending}
+              failed={addStatus.isError}
+              onCancel={() => {
+                setMissing(null)
+              }}
+              onAdd={() => {
+                addStatus.mutate(
+                  {
+                    boardId: missing.board.id,
+                    taskId: missing.task.id,
+                    status: missing.status,
+                    neighbours: missing.neighbours
+                  },
+                  {
+                    onSuccess: () => {
+                      setMissing(null)
+                    }
+                  }
+                )
+              }}
+            />
+          )}
+          {(agenda.isError || moveTask.isError) && (
+            <Typography role="alert">{t('agenda.loadFailed')}</Typography>
+          )}
+          {agenda.isPending && <ColumnsSkeleton label={t('app.loading')} />}
+          {agenda.isSuccess && tasks.length === 0 && layout !== 'calendar' && (
+            <EmptyState
+              icon={empty?.icon ?? CheckCircle}
+              title={empty?.title ?? t('agenda.empty')}
+              text={empty?.text ?? t('agenda.emptyHint')}
+              action={
+                canAdd && (
+                  <Button
+                    startIcon={<Icon icon={Plus} />}
+                    onClick={() => {
+                      setAdding(true)
+                    }}
+                  >
+                    {t('board.newTask')}
+                  </Button>
+                )
+              }
+            />
+          )}
+          {tasks.length > 0 && layout !== 'calendar' && !ready && (
+            <ColumnsSkeleton label={t('app.loading')} />
+          )}
+          {tasks.length > 0 && layout === 'board' && groupBy !== 'status' && (
+            <Columns>
+              {groups.map(group => (
+                <HiddenFactsContext
+                  key={group.key}
+                  value={hiddenFactsOf(
+                    groupBy,
+                    group.key === 'label:none' ? null : group.name
+                  )}
+                >
+                  <Column title={group.name} count={group.tasks.length}>
+                    {group.tasks.map(task => (
+                      <ViewCard
+                        key={task.id}
+                        task={task}
+                        tasks={tasks}
+                        sortable={false}
+                      />
+                    ))}
+                  </Column>
+                </HiddenFactsContext>
+              ))}
+            </Columns>
+          )}
+          {tasks.length > 0 &&
+            layout === 'board' &&
+            groupBy === 'status' &&
+            ready && (
+              <BoardDrag
+                lanes={columns.map(column => ({
+                  key: column.key,
+                  sectionId: column.key,
+                  name: column.name,
+                  taskIds: column.tasks.map(task => task.id)
+                }))}
+                titleOf={id => {
+                  const task = byId.get(id)
+                  return task ? `${task.key} ${task.title}` : ''
+                }}
+                onMove={(taskId, to) => {
+                  const task = byId.get(taskId)
+                  const column = columns.find(each => each.key === to.sectionId)
+                  const board = sources.find(each => each.id === task?.boardId)
+                  if (!task || !column || !board || !editable(task))
+                    return false
+                  const move = viewMove(
+                    board,
+                    column.section,
+                    to,
+                    id => byId.get(id)?.boardId === task.boardId
+                  )
+                  if (!move) {
+                    // The column's status, as another board of the view has it.
+                    const status = sources
+                      .flatMap(each => each.sections)
+                      .find(
+                        each =>
+                          each.name.trim().toLocaleLowerCase() ===
+                          column.name.trim().toLocaleLowerCase()
+                      )
+                    const sameBoard = (id: string | undefined) =>
+                      id !== undefined && byId.get(id)?.boardId === task.boardId
+                    addStatus.reset()
+                    setMissing({
+                      task,
+                      board,
+                      status: {
+                        name: status?.name ?? column.name,
+                        category: status?.category ?? 'started'
+                      },
+                      neighbours: {
+                        ...(sameBoard(to.afterId) && { afterId: to.afterId }),
+                        ...(sameBoard(to.beforeId) && { beforeId: to.beforeId })
+                      }
+                    })
+                    return false
+                  }
+                  moveTask.mutate({ boardId: task.boardId, taskId, move })
+                  return true
+                }}
+                preview={id => {
+                  const task = byId.get(id)
+                  return (
+                    task && (
+                      <Card label={`${task.key} ${task.title}`} drag="lifted">
+                        <Typography variant="caption" color="textSecondary">
+                          {task.key}
+                        </Typography>
+                        <CardTitle>{task.title}</CardTitle>
+                      </Card>
+                    )
+                  )
+                }}
+              >
+                {idsOf => (
+                  <Columns>
+                    {columns.map(column => {
+                      const ids = idsOf(column.key)
+                      return (
+                        <DropColumn
+                          key={column.key}
+                          id={column.key}
+                          title={column.name}
+                          count={ids.length}
+                        >
+                          <SortableList ids={ids}>
+                            {ids.flatMap(id => {
+                              const task = byId.get(id)
+                              return task
+                                ? [
+                                    <ViewCard
+                                      key={id}
+                                      task={task}
+                                      tasks={tasks}
+                                    />
+                                  ]
+                                : []
+                            })}
+                          </SortableList>
+                          {ids.length === 0 && (
+                            <EmptyColumn label={t('board.emptyColumn')} />
+                          )}
+                          {addTask(column)}
+                        </DropColumn>
+                      )
+                    })}
+                  </Columns>
+                )}
+              </BoardDrag>
+            )}
+          {tasks.length > 0 && layout === 'list' && ready && (
+            <ListLayout
+              columns={
+                groupBy === 'status'
+                  ? columns.map(column => ({
+                      ...column,
+                      footer: addTask(column)
+                    }))
+                  : groups
+              }
+              row={task => (
+                <ViewListRow
+                  key={task.id}
+                  task={task}
+                  editable={editable(task)}
+                />
+              )}
+            />
+          )}
+          {agenda.isSuccess && layout === 'calendar' && (
+            <CalendarLayout
+              tasks={tasks}
+              onAddOn={
+                canAdd
+                  ? day => {
+                      setAddingOn(day)
+                      setAdding(true)
+                    }
+                  : undefined
+              }
+              item={task => <CalendarTask key={task.id} task={task} />}
+            />
+          )}
+        </main>
+      </OriginContext>
     </HiddenFactsContext>
   )
 }

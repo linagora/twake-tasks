@@ -6,7 +6,6 @@ import {
   Flag,
   Icon,
   Label,
-  Left,
   Mosaic,
   People,
   Plus,
@@ -17,7 +16,6 @@ import {
   Button,
   Divider,
   IconButton,
-  Link,
   List,
   ListItem,
   ListItemButton,
@@ -43,7 +41,6 @@ import {
   Link as RouterLink,
   useHref,
   useLinkClickHandler,
-  useLocation,
   useNavigate,
   useParams
 } from 'react-router'
@@ -150,7 +147,7 @@ function ViewRow({
       <ListItemText primary={filter.name} secondary={summary} />
       <ListItemSecondaryAction>
         <FavoriteButton filter={filter} />
-        <ViewMenu view={filter} from="/filters" />
+        <ViewMenu view={filter} />
       </ListItemSecondaryAction>
     </ListItemLink>
   )
@@ -202,7 +199,6 @@ export function NewViewScreen(): ReactElement {
   return (
     <ViewForm
       title={t('filters.new')}
-      back="/filters"
       submitLabel={t('filters.save')}
       pending={create.isPending}
       failed={create.isError}
@@ -217,24 +213,12 @@ export function NewViewScreen(): ReactElement {
   )
 }
 
-const cameFrom = (state: unknown): string | null =>
-  typeof state === 'object' &&
-  state !== null &&
-  'from' in state &&
-  typeof state.from === 'string' &&
-  state.from.startsWith('/')
-    ? state.from
-    : null
-
 export function EditViewScreen(): ReactElement {
   const { t } = useI18n()
   const { filterId = '' } = useParams()
   const filters = useFilters()
   const view = filters.data?.find(filter => filter.id === filterId)
   const update = useUpdateFilter(filterId)
-  // Back where the edit was opened from: the view, or the list of views.
-  const location = useLocation()
-  const from = cameFrom(location.state as unknown) ?? '/filters'
   useDocumentTitle(t('filters.edit'))
 
   if (filters.isPending) {
@@ -252,7 +236,6 @@ export function EditViewScreen(): ReactElement {
     <ViewForm
       key={view.id}
       title={t('filters.edit')}
-      back={from}
       initial={view}
       autosave={update.isPending ? 'saving' : update.isSuccess && 'saved'}
       pending={update.isPending}
@@ -282,7 +265,6 @@ const AUTOSAVE_DELAY = 600
 // saved as it is made.
 function ViewForm({
   title,
-  back,
   initial,
   submitLabel,
   autosave,
@@ -291,7 +273,6 @@ function ViewForm({
   onSave
 }: {
   title: string
-  back: string
   initial?: SavedFilter
   /** Without autosave, the view is created with the button of this label. */
   submitLabel?: string
@@ -361,21 +342,17 @@ function ViewForm({
 
   return (
     <main className="u-p-2">
-      <Link
-        component={RouterLink}
-        to={back}
-        variant="body2"
-        color="textSecondary"
-        underline="hover"
-        className="u-flex u-flex-items-center"
-      >
-        <Icon icon={Left} size={12} className="u-mr-half" />
-        {t(back === '/filters' ? 'filters.back' : 'filters.backToView')}
-      </Link>
+      <PageCrumbs
+        origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
+        steps={
+          initial && [{ to: `/filters/${initial.id}`, label: initial.name }]
+        }
+        current={title}
+      />
       {/* A view is created from the header, where its edits say they saved. */}
       <PageHeader
         title={
-          <Typography variant="h3" component="h1" className="u-mt-1">
+          <Typography variant="h3" component="h1">
             {title}
           </Typography>
         }

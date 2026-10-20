@@ -1,7 +1,7 @@
-import { Icon, Left } from '@linagora/twake-icons'
-import { Link, Typography } from '@linagora/twake-mui'
+import { Filter, Icon } from '@linagora/twake-icons'
+import { Typography } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
-import { Link as RouterLink, useParams } from 'react-router'
+import { useParams } from 'react-router'
 
 import { ColumnsSkeleton } from '@/ds/Columns'
 import { viewIcon } from '@/ds/viewIcons'
@@ -40,7 +40,8 @@ export function ViewScreen(): ReactElement {
       layout={view.layout}
       groupBy={view.groupBy}
       allColumns={view.allColumns}
-      back={<BackLink />}
+      origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
+      current={view.name}
       actions={<ViewMenu view={view} starrable />}
       title={
         <>
@@ -58,22 +59,5 @@ export function ViewScreen(): ReactElement {
         </>
       }
     />
-  )
-}
-
-function BackLink(): ReactElement {
-  const { t } = useI18n()
-  return (
-    <Link
-      component={RouterLink}
-      to="/filters"
-      variant="body2"
-      color="textSecondary"
-      underline="hover"
-      className="u-flex u-flex-items-center"
-    >
-      <Icon icon={Left} size={12} className="u-mr-half" />
-      {t('filters.back')}
-    </Link>
   )
 }

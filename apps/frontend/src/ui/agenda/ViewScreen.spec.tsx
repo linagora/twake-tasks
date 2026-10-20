@@ -88,17 +88,21 @@ describe('ViewScreen', () => {
     expect(chips.getByLabelText('Priority: P1')).toBeVisible()
   })
 
-  it('leads back to the list of views', async () => {
+  it('starts its breadcrumb from the list of views', async () => {
     const { boardsApi, id } = await aView()
     renderRoute(`/filters/${id}`, { boardsApi })
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Urgent' })
     ).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Back to views' })).toHaveAttribute(
+    const crumbs = within(
+      screen.getByRole('navigation', { name: 'Where the page is' })
+    )
+    expect(crumbs.getByRole('link', { name: 'Views' })).toHaveAttribute(
       'href',
       '/filters'
     )
+    expect(crumbs.getByText('Urgent')).toHaveAttribute('aria-current', 'page')
   })
 
   it('says its criteria by its name, since its cards leave them off', async () => {
@@ -407,30 +411,34 @@ describe('ViewScreen', () => {
     expect(design1).toHaveTextContent('Design')
   })
 
-  it('goes back to the view from its edit page, when opened there', async () => {
+  it('leads from its edit page to the view and to the list of views', async () => {
     const { boardsApi, id } = await aView()
-    renderRoute(`/filters/${id}`, { boardsApi })
+    renderRoute(`/filters/${id}/edit`, { boardsApi })
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Actions of Urgent' })
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Edit view' })
+    ).toBeVisible()
+    const crumbs = within(
+      screen.getByRole('navigation', { name: 'Where the page is' })
     )
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit view' }))
-    fireEvent.click(
-      await screen.findByRole('link', { name: 'Back to the view' })
+    expect(crumbs.getByRole('link', { name: 'Views' })).toHaveAttribute(
+      'href',
+      '/filters'
     )
+    fireEvent.click(crumbs.getByRole('link', { name: 'Urgent' }))
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Urgent' })
     ).toBeVisible()
   })
 
-  it('goes back to the list of views from an edit page opened directly', async () => {
-    const { boardsApi, id } = await aView()
-    renderRoute(`/filters/${id}/edit`, { boardsApi })
+  it('starts the breadcrumb of my tasks from My tasks', async () => {
+    renderRoute('/mine', { boardsApi: fakeBoardsApi() })
 
-    expect(
-      await screen.findByRole('link', { name: 'Back to views' })
-    ).toHaveAttribute('href', '/filters')
+    const crumbs = within(
+      await screen.findByRole('navigation', { name: 'Where the page is' })
+    )
+    expect(crumbs.getByText('My tasks')).toHaveAttribute('aria-current', 'page')
   })
 
   it('shows my tasks as a view, in the layout I pick', async () => {

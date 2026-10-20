@@ -31,6 +31,7 @@ export function MyTasksScreen(): ReactElement {
       source="mine"
       criteria={{ assignees: ['me'] }}
       layout={layout}
+      origin={{ icon: Profile, label: t('agenda.mine'), to: '/mine' }}
       title={
         <Typography variant="h3" component="h1">
           {t('agenda.mine')}

@@ -478,7 +478,6 @@
     "notFound": "Cette vue n’existe pas, ou vous ne pouvez pas l’ouvrir.",
     "edit": "Modifier la vue",
     "layout": "Affichage",
-    "backToView": "Retour à la vue",
     "filtersSection": "Filtres",
     "allColumns": "Afficher toutes les colonnes",
     "groupBy": "Regrouper par",
