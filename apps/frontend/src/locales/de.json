@@ -504,6 +504,7 @@
     "addStatus": "„%{section}“ zu „%{board}“ hinzufügen",
     "addStatusFailed": "Der Abschnitt konnte nicht hinzugefügt werden.",
     "back": "Zurück zu den Ansichten",
+    "goBack": "Zurück",
     "new": "Ansicht erstellen",
     "createTitle": "Ansicht erstellen",
     "close": "Schließen",

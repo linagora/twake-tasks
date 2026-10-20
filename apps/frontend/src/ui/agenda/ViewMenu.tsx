@@ -20,7 +20,7 @@ import {
   Typography
 } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 
 import type { SavedFilter } from '@/application/boards'
 import { useDeleteFilter, useSetFilterFavorite } from '@/ui/boards/queries'
@@ -41,6 +41,7 @@ export function ViewMenu({
 }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const { pathname, search } = useLocation()
   const remove = useDeleteFilter()
   const setFavorite = useSetFilterFavorite()
   const titleId = useId()
@@ -72,7 +73,10 @@ export function ViewMenu({
         <MenuItem
           onClick={() => {
             close()
-            void navigate(`/filters/${view.id}/edit`)
+            // Its edit page closes back to where it was opened from.
+            void navigate(`/filters/${view.id}/edit`, {
+              state: { from: pathname + search }
+            })
           }}
         >
           <ListItemIcon>

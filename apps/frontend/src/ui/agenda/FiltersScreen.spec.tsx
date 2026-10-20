@@ -382,9 +382,10 @@ describe('FiltersScreen', () => {
     // A name being typed waits until there is one.
     fireEvent.change(name, { target: { value: ' ' } })
     fireEvent.click(
-      within(
-        screen.getByRole('navigation', { name: 'Where the page is' })
-      ).getByRole('link', { name: 'Views' })
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'Views' }
+      )
     )
     expect(
       await screen.findByRole('link', { name: 'Client fires' })
@@ -462,9 +463,10 @@ describe('FiltersScreen', () => {
       target: { value: 'Now' }
     })
     fireEvent.click(
-      within(
-        screen.getByRole('navigation', { name: 'Where the page is' })
-      ).getByRole('link', { name: 'Views' })
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'Views' }
+      )
     )
 
     await waitFor(() => {
@@ -539,9 +541,10 @@ describe('FiltersScreen', () => {
       await screen.findByRole('heading', { level: 1, name: 'Edit view' })
     ).toBeVisible()
     fireEvent.click(
-      within(
-        screen.getByRole('navigation', { name: 'Where the page is' })
-      ).getByRole('link', { name: 'Views' })
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'Views' }
+      )
     )
     fireEvent.click(
       await screen.findByRole('button', { name: 'Actions of Urgent' })
@@ -557,6 +560,28 @@ describe('FiltersScreen', () => {
     await waitFor(() => {
       expect(boardsApi.deleteFilter).toHaveBeenCalledWith(id)
     })
+  })
+
+  it('goes back from the edit page of a view to the list it was opened from', async () => {
+    const boardsApi = boards()
+    await boardsApi.createFilter({ name: 'Urgent', criteria: {} })
+    const { router } = renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Actions of Urgent' })
+    )
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit view' }))
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Edit view' })
+    ).toBeVisible()
+    fireEvent.click(screen.getByRole('link', { name: 'Back' }))
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/filters')
+    })
+    expect(
+      await screen.findByRole('button', { name: 'Actions of Urgent' })
+    ).toBeVisible()
   })
 
   it('deletes a view from its menu, once a dialog has asked', async () => {

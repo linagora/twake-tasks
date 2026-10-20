@@ -8,6 +8,7 @@ import {
   GroupList,
   Icon,
   Label,
+  Left,
   People,
   Plus,
   Right,
@@ -45,9 +46,11 @@ import {
   type ReactElement
 } from 'react'
 import {
+  Link as RouterLink,
   Navigate,
   useHref,
   useLinkClickHandler,
+  useLocation,
   useNavigate,
   useParams,
   useSearchParams
@@ -533,6 +536,7 @@ function EditViewForm({
   onSave: (view: NewSavedFilter) => void
 }): ReactElement {
   const { t } = useI18n()
+  const { state } = useLocation() as { state: { from?: string } | null }
   const draft = useViewDraft(initial)
   const { view } = draft
   // Edits wait for a name, so its field asks for it as soon as it is empty.
@@ -566,15 +570,25 @@ function EditViewForm({
     []
   )
 
+  // The page it was opened from, the view unless known.
+  const backTo = state?.from ?? `/filters/${initial.id}`
+
   return (
+    // No breadcrumb: the view's settings, rather than a page of its own.
     <main className="u-p-2">
-      <PageCrumbs
-        origin={{ icon: Eye, label: t('filters.title'), to: '/filters' }}
-        steps={[{ to: `/filters/${initial.id}`, label: initial.name }]}
-        current={t('filters.edit')}
-      />
       {/* Its edits say in the header how they saved. */}
       <PageHeader
+        back={
+          // Its edit still waiting is saved on leaving.
+          <Button
+            component={RouterLink}
+            to={backTo}
+            variant="text"
+            startIcon={<Icon icon={Left} />}
+          >
+            {t('filters.goBack')}
+          </Button>
+        }
         title={
           <Typography variant="h3" component="h1">
             {t('filters.edit')}

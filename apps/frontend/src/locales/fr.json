@@ -504,6 +504,7 @@
     "addStatus": "Ajouter « %{section} » à « %{board} »",
     "addStatusFailed": "Impossible d’ajouter la section.",
     "back": "Retour aux vues",
+    "goBack": "Retour",
     "new": "Créer une vue",
     "createTitle": "Créer une vue",
     "close": "Fermer",

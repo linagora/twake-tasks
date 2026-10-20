@@ -504,6 +504,7 @@
     "addStatus": "Thêm “%{section}” vào “%{board}”",
     "addStatusFailed": "Không thể thêm mục.",
     "back": "Quay lại chế độ xem",
+    "goBack": "Quay lại",
     "new": "Tạo chế độ xem",
     "createTitle": "Tạo chế độ xem",
     "close": "Đóng",
