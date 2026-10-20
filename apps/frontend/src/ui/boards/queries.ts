@@ -45,19 +45,19 @@ export type AgendaView = 'today' | 'upcoming' | 'mine' | { filterId: string }
 
 const AGENDA_DAYS = { today: 1, upcoming: 7 } as const
 
-// The lists of tasks of many boards, which a change refreshes their board
-// only: any change made while one shows refreshes them too.
-export function useRefreshOnChange(): void {
+// The lists span many boards, while a change only refreshes its own board.
+export function useRefreshLists(): () => void {
   const queryClient = useQueryClient()
-  useEffect(
-    () =>
-      queryClient.getMutationCache().subscribe(event => {
-        if (event.type === 'updated' && event.action.type === 'success') {
-          void queryClient.invalidateQueries({ queryKey: ['agenda'] })
-        }
-      }),
-    [queryClient]
-  )
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: ['agenda'] })
+    void queryClient.invalidateQueries({ queryKey: ['search'] })
+  }
+}
+
+/** The board as last fetched, without fetching it. */
+export function useCachedBoard(boardId: string): Board | undefined {
+  return useQuery<Board>({ queryKey: boardKey(boardId), queryFn: skipToken })
+    .data
 }
 
 export function useAgenda(view: AgendaView): UseQueryResult<Agenda> {

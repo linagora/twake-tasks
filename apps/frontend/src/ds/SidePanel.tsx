@@ -10,8 +10,11 @@ import {
 import {
   createContext,
   useContext,
+  useEffect,
+  useRef,
   type ReactElement,
-  type ReactNode
+  type ReactNode,
+  type RefObject
 } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -28,9 +31,27 @@ function inField(element: Element | null): boolean {
  */
 export const PanelHostContext = createContext<HTMLElement | null>(null)
 
-// A stable callback ref: an inline one would steal the focus on every render.
-const focusOnMount = (element: HTMLElement | null): void => {
-  element?.focus()
+// The drawer does this itself: the panel takes the focus, and gives it back
+// on close to where it was, so a parent's Escape works again after its
+// sub-task closes.
+function useFocusWhileOpen(
+  host: HTMLElement | null
+): RefObject<HTMLElement | null> {
+  const ref = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!host) return
+    const opener = document.activeElement
+    ref.current?.focus()
+    return () => {
+      // Safari focuses no button on click: the panel under it, if any, then.
+      const back =
+        opener instanceof HTMLElement && opener !== document.body
+          ? opener
+          : host.lastElementChild
+      if (back instanceof HTMLElement) back.focus()
+    }
+  }, [host])
+  return ref
 }
 
 /**
@@ -51,6 +72,7 @@ export function SidePanel({
   children: ReactNode
 }): ReactElement {
   const host = useContext(PanelHostContext)
+  const focused = useFocusWhileOpen(host)
   const top = (
     <Box sx={{ ...CRUMB_BAR, borderBottom: 1, borderColor: 'divider' }}>
       {header}
@@ -150,7 +172,7 @@ export function SidePanel({
   }
   return createPortal(
     <Box
-      ref={focusOnMount}
+      ref={focused}
       role="dialog"
       aria-label={label}
       tabIndex={-1}
@@ -381,7 +403,6 @@ export function FeedItem({
   )
 }
 
-/** The title of a task and its description, close together. */
 export function TaskHead({ children }: { children: ReactNode }): ReactElement {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
