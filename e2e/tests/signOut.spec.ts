@@ -10,7 +10,7 @@ test('signing out ends the session: its access token is refused', async ({
   await page.goto('/')
   await page.getByRole('button', { name: 'Sign in as alice' }).click()
   const authorization = (await apiCall).headers().authorization ?? ''
-  await expect(page.getByRole('navigation')).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Main menu' })).toBeVisible()
   const boards = () =>
     page.request.get('/api/boards', { headers: { authorization } })
   expect((await boards()).status()).toBe(200)
