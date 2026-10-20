@@ -61,7 +61,11 @@ export function SearchScreen(): ReactElement {
   const results = useSearch(text)
   useDocumentTitle(t('search.label'))
 
-  const origin = { icon: Magnifier, label: t('search.label'), to: '/search' }
+  const origin = {
+    icon: Magnifier,
+    label: t('search.label'),
+    to: text ? `/search?q=${encodeURIComponent(text)}` : '/search'
+  }
 
   return (
     <OriginContext value={origin}>

@@ -36,7 +36,12 @@ import { useBoard, useBoardChange, useHiddenTasks } from '@/ui/boards/queries'
 import { Assignees, PriorityChip } from '@/ui/boards/TaskFacts'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
-import { PageCrumbs, useBoardsOrigin } from '@/ui/boards/Crumbs'
+import {
+  BoardStepContext,
+  OriginContext,
+  PageCrumbs,
+  useBoardsOrigin
+} from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -174,17 +179,14 @@ export function ShelfScreen({
   const title = t(
     shelf === 'archived' ? 'archive.archivedTasks' : 'archive.trash'
   )
-  const boardsOrigin = useBoardsOrigin()
+  const origin = { ...useBoardsOrigin(), to: '../../..', relative: true }
+  const boardStep = { to: '..', label: board.data?.name ?? '…', relative: true }
   useDocumentTitle(board.data ? `${title} - ${board.data.name}` : null)
   const missing = board.error instanceof ApiError && board.error.status === 404
 
   return (
     <main className={flush ? undefined : 'u-p-2'}>
-      <PageCrumbs
-        origin={{ ...boardsOrigin, to: '../../..', relative: true }}
-        steps={[{ to: '..', label: board.data?.name ?? '…', relative: true }]}
-        current={title}
-      />
+      <PageCrumbs origin={origin} steps={[boardStep]} current={title} />
       {missing && (
         <EmptyState
           icon={Compass}
@@ -197,7 +199,11 @@ export function ShelfScreen({
       )}
       {board.isPending && <ListSkeleton label={t('app.loading')} />}
       {board.data && (
-        <ShelfTasks board={board.data} shelf={shelf} title={title} />
+        <OriginContext value={origin}>
+          <BoardStepContext value={boardStep}>
+            <ShelfTasks board={board.data} shelf={shelf} title={title} />
+          </BoardStepContext>
+        </OriginContext>
       )}
     </main>
   )

@@ -8,14 +8,12 @@ import { SidebarEntry } from '@/ds/AppFrame'
 // twake-mui is a div with role button, so it only draws the entry.
 export function SidebarLink({
   to,
-  end = false,
   active,
   label,
   onClick,
   children
 }: {
   to: string
-  end?: boolean
   /** Lit or not whatever the URL says, when the shell knows better. */
   active?: boolean | undefined
   label?: string | undefined
@@ -32,7 +30,7 @@ export function SidebarLink({
   return (
     <SidebarEntry>
       {active === undefined ? (
-        <RouterNavLink to={to} end={end} onClick={onClick} {...named}>
+        <RouterNavLink to={to} onClick={onClick} {...named}>
           {({ isActive }) => entry(isActive)}
         </RouterNavLink>
       ) : (

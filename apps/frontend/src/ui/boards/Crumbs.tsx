@@ -1,6 +1,6 @@
 import { Home, Icon, type IconProps } from '@linagora/twake-icons'
 import { Breadcrumbs, Link, Typography } from '@linagora/twake-mui'
-import { createContext, useContext, type ReactElement } from 'react'
+import { createContext, type ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
 import { CrumbSlot } from '@/ds/CrumbBar'
@@ -100,7 +100,6 @@ export function Crumbs({
   )
 }
 
-/** A page's breadcrumb, in the strip at the top of the content. */
 export function PageCrumbs({
   origin,
   steps,
@@ -122,7 +121,3 @@ export function PageCrumbs({
     </CrumbSlot>
   )
 }
-
-/** The origin of the page's tasks, given by the page. */
-export const useOrigin = (): Origin | null => useContext(OriginContext)
-export const useBoardStep = (): Crumb | null => useContext(BoardStepContext)

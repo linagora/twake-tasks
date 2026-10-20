@@ -27,7 +27,10 @@ import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Highlight } from '@/ds/Highlight'
 import { PageHeader } from '@/ds/PageHeader'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
-import { AgendaTaskPanel } from '@/ui/agenda/AgendaTaskPanel'
+import {
+  AgendaTaskPanel,
+  useAgendaTaskPanel
+} from '@/ui/agenda/AgendaTaskPanel'
 import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
 import { formatDay } from '@/ui/boards/dueLabel'
 import { LayoutToggle } from '@/ui/boards/Layouts'
@@ -36,10 +39,8 @@ import {
   useAgenda,
   useCompleteAgendaTask,
   useFilters,
-  useRefreshOnChange,
   type AgendaView
 } from '@/ui/boards/queries'
-import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
 import { NotFoundScreen } from '@/ui/shell/Problems'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -91,7 +92,7 @@ function AgendaRow({
 }): ReactElement {
   const { t } = useI18n()
   const complete = useCompleteAgendaTask()
-  const panel = useTaskPanel(task.key)
+  const panel = useAgendaTaskPanel(task)
   const done = task.completedAt !== null
 
   return (
@@ -249,7 +250,7 @@ function ByStatus({ tasks }: { tasks: AgendaTask[] }): ReactElement {
 
 function FilterCard({ task }: { task: AgendaTask }): ReactElement {
   const { t } = useI18n()
-  const panel = useTaskPanel(task.key)
+  const panel = useAgendaTaskPanel(task)
   return (
     <Card label={`${task.key} ${task.title}`}>
       <Typography variant="caption" color="textSecondary">
@@ -318,7 +319,6 @@ export function AgendaScreen(
           to: `/${props.view}`
         }
   useDocumentTitle(title || null)
-  useRefreshOnChange()
 
   const tasks = agenda.data?.tasks ?? []
   const empty = agenda.isSuccess && tasks.length === 0

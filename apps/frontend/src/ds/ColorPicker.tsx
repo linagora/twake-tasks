@@ -185,6 +185,8 @@ function CustomColor({
         </Button>
         <Button
           variant="secondary"
+          // The API takes six digits only, not the shorthand the input lets through.
+          disabled={!/^#[0-9A-F]{6}$/.test(picked)}
           onClick={() => {
             onSave(picked)
           }}

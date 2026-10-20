@@ -1,23 +1,16 @@
-import { CrossMedium, Icon, Previous } from '@linagora/twake-icons'
+import { CrossMedium, Icon } from '@linagora/twake-icons'
 import { Box, IconButton, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
-interface HeaderAction {
-  label: string
-  onClick: () => void
-}
-
-/** Back, title and close on one row, as in the dialogs of Twake Space. */
+/** Title and close on one row, as in the dialogs of Twake Space. */
 export function DialogHeader({
   id,
   title,
-  back,
   close
 }: {
   id: string
   title: ReactNode
-  back?: HeaderAction | undefined
-  close: HeaderAction
+  close: { label: string; onClick: () => void }
 }): ReactElement {
   return (
     <Box
@@ -29,11 +22,6 @@ export function DialogHeader({
         py: 1
       }}
     >
-      {back && (
-        <IconButton aria-label={back.label} onClick={back.onClick}>
-          <Icon icon={Previous} />
-        </IconButton>
-      )}
       <Typography
         id={id}
         variant="h4"

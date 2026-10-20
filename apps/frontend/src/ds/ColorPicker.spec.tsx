@@ -85,6 +85,27 @@ describe('ColorField', () => {
     expect(picked()).toHaveTextContent('#ABCDEF')
   })
 
+  it('saves no shorthand hex code', async () => {
+    renderWithProviders(<Field initial={null} />)
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Choose the color' })
+    )
+    const palette = within(
+      screen.getByRole('dialog', { name: 'Choose the color' })
+    )
+      .getAllByRole('button')
+      .at(-1)
+    if (!palette) throw new Error('No palette')
+    fireEvent.click(palette)
+    const custom = within(screen.getByRole('dialog', { name: 'Custom color' }))
+    fireEvent.change(custom.getByRole('textbox', { name: 'Hex' }), {
+      target: { value: 'abc' }
+    })
+
+    expect(custom.getByRole('button', { name: 'Save' })).toBeDisabled()
+  })
+
   it('goes back to the swatches when the custom color is cancelled', async () => {
     renderWithProviders(<Field initial={first} />)
 

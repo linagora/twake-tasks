@@ -50,7 +50,51 @@ describe('AgendaScreen', () => {
     expect(boardsApi.agenda).toHaveBeenCalledWith(localZone(), 1)
   })
 
-  it('refreshes Today after a change made in the task opened over it', async () => {
+  it('opens a sub-task over the task opened from Today', async () => {
+    const { design, boardsApi } = boards()
+    design.tasks.push(
+      aTask(null, {
+        key: 'DES-4',
+        title: 'Sketch',
+        parentId: design.tasks[1]?.id ?? null
+      })
+    )
+    renderRoute('/today', { boardsApi })
+
+    // Pressed from the keyboard, as jsdom focuses nothing on a click.
+    const press = (button: HTMLElement) => {
+      button.focus()
+      fireEvent.click(button)
+    }
+    press(await screen.findByRole('button', { name: 'Poster' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: /^DES-2 Poster/ })
+    )
+    press(await panel.findByRole('button', { name: 'Sketch' }))
+
+    const sketch = await screen.findByRole('dialog', { name: /^DES-4 Sketch/ })
+    expect(
+      screen.getByRole('dialog', { name: /^DES-2 Poster/ })
+    ).toBeInTheDocument()
+    fireEvent.click(within(sketch).getByRole('button', { name: 'Close' }))
+    const poster = await screen.findByRole('dialog', { name: /^DES-2 Poster/ })
+
+    // Focus goes back to where each task was opened from.
+    await waitFor(() => {
+      expect(
+        within(poster).getByRole('button', { name: 'Sketch' })
+      ).toHaveFocus()
+    })
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: 'Escape'
+    })
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+    expect(screen.getByRole('button', { name: 'Poster' })).toHaveFocus()
+  })
+
+  it('refreshes Today once the task opened over it closes', async () => {
     const { boardsApi } = boards()
     renderRoute('/today', { boardsApi })
 
@@ -64,7 +108,13 @@ describe('AgendaScreen', () => {
     const title = panel.getByRole('textbox', { name: 'Title' })
     fireEvent.change(title, { target: { value: 'Big poster' } })
     fireEvent.blur(title)
+    await waitFor(() => {
+      expect(boardsApi.editTask).toHaveBeenCalled()
+    })
+    // A change keeps the task open, even one that takes it off Today.
+    expect(boardsApi.agenda).toHaveBeenCalledTimes(1)
 
+    fireEvent.click(panel.getByRole('button', { name: 'Close' }))
     await waitFor(() => {
       expect(boardsApi.agenda).toHaveBeenCalledTimes(2)
     })
