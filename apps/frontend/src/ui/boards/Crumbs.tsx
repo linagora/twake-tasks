@@ -1,0 +1,128 @@
+import { Home, Icon, type IconProps } from '@linagora/twake-icons'
+import { Breadcrumbs, Link, Typography } from '@linagora/twake-mui'
+import { createContext, useContext, type ReactElement } from 'react'
+import { Link as RouterLink } from 'react-router'
+
+import { CrumbSlot } from '@/ds/CrumbBar'
+import { useI18n } from '@/ui/i18n/useI18n'
+
+export interface Crumb {
+  to: string
+  label: string
+  /** Relative to the URL's path, as `../..` from a board. */
+  relative?: boolean
+}
+
+/** Where a page starts the breadcrumb from: Boards, Today, My tasks… */
+export interface Origin extends Crumb {
+  icon: IconProps['icon']
+}
+
+/** The page a task is opened from, for its breadcrumb to start there. */
+export const OriginContext = createContext<Origin | null>(null)
+
+/** The board a task is opened in, a step of its breadcrumb. */
+export const BoardStepContext = createContext<Crumb | null>(null)
+
+export function useBoardsOrigin(): Origin {
+  const { t } = useI18n()
+  return { icon: Home, label: t('boards.title'), to: '/' }
+}
+
+function OriginLabel({ origin }: { origin: Origin }): ReactElement {
+  return (
+    <>
+      <Icon icon={origin.icon} size={16} className="u-mr-half" />
+      {origin.label}
+    </>
+  )
+}
+
+/**
+ * Where a page or a task sits: the page it starts from, with its icon, the
+ * steps between, then the page itself, which is not a link.
+ */
+export function Crumbs({
+  label,
+  origin,
+  steps = [],
+  current
+}: {
+  label: string
+  origin: Origin
+  steps?: Crumb[] | undefined
+  /** None when the page is the origin itself. */
+  current?: string | undefined
+}): ReactElement {
+  return (
+    <Breadcrumbs aria-label={label} className="u-miw-0">
+      {current === undefined ? (
+        <Typography
+          variant="body2"
+          color="textPrimary"
+          aria-current="page"
+          className="u-flex u-flex-items-center"
+        >
+          <OriginLabel origin={origin} />
+        </Typography>
+      ) : (
+        <Link
+          component={RouterLink}
+          to={origin.to}
+          relative={origin.relative ? 'path' : 'route'}
+          color="inherit"
+          underline="hover"
+          variant="body2"
+          className="u-flex u-flex-items-center"
+        >
+          <OriginLabel origin={origin} />
+        </Link>
+      )}
+      {steps.map(step => (
+        <Link
+          key={step.to}
+          component={RouterLink}
+          to={step.to}
+          relative={step.relative ? 'path' : 'route'}
+          color="inherit"
+          underline="hover"
+          variant="body2"
+        >
+          {step.label}
+        </Link>
+      ))}
+      {current !== undefined && (
+        <Typography variant="body2" color="textPrimary" aria-current="page">
+          {current}
+        </Typography>
+      )}
+    </Breadcrumbs>
+  )
+}
+
+/** A page's breadcrumb, in the strip at the top of the content. */
+export function PageCrumbs({
+  origin,
+  steps,
+  current
+}: {
+  origin: Origin
+  steps?: Crumb[] | undefined
+  current?: string | undefined
+}): ReactElement {
+  const { t } = useI18n()
+  return (
+    <CrumbSlot>
+      <Crumbs
+        label={t('page.breadcrumb')}
+        origin={origin}
+        steps={steps}
+        current={current}
+      />
+    </CrumbSlot>
+  )
+}
+
+/** The origin of the page's tasks, given by the page. */
+export const useOrigin = (): Origin | null => useContext(OriginContext)
+export const useBoardStep = (): Crumb | null => useContext(BoardStepContext)

@@ -16,6 +16,7 @@ import type { BoardSummary, ProjectSummary } from '@/domain/board'
 import { groupBoards } from '@/domain/boardGroups'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { useBoards, useSetFavorite } from '@/ui/boards/queries'
+import { PageCrumbs, useBoardsOrigin } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -119,6 +120,7 @@ export function BoardsScreen(): ReactElement {
   const boards = useBoards()
   const [shelf, setShelf] = useState<Shelf>('active')
   const [creating, setCreating] = useState(false)
+  const origin = useBoardsOrigin()
   useDocumentTitle(t('boards.title'))
 
   const shown = (boards.data ?? []).filter(
@@ -129,6 +131,7 @@ export function BoardsScreen(): ReactElement {
 
   return (
     <main className="u-p-2">
+      <PageCrumbs origin={origin} />
       <div className="u-flex u-flex-items-center u-flex-justify-between u-mb-2">
         <Typography variant="h3" component="h1">
           {t('boards.title')}

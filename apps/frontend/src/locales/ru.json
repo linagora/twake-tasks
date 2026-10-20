@@ -16,7 +16,8 @@
   },
   "app": {
     "name": "Twake Project",
-    "loading": "Загрузка"
+    "loading": "Загрузка",
+    "mainMenu": "Главное меню"
   },
   "session": {
     "signingIn": "Выполняется вход…",
@@ -78,32 +79,13 @@
     "createTitle": "Новая метка",
     "editTitle": "Изменить метку",
     "name": "Название",
-    "color": "Цвет",
-    "noColor": "Без цвета",
+    "newName": "Введите название новой метки",
+    "editName": "Название метки",
+    "pickColor": "Выбрать цвет",
+    "customColor": "Свой цвет",
     "create": "Создать",
-    "editFailed": "Не удалось сохранить метку."
-  },
-  "labelColors": {
-    "navyBlue": "Тёмно-синий",
-    "purple": "Фиолетовый",
-    "lavender": "Лавандовый",
-    "indigo": "Индиго",
-    "blue": "Синий",
-    "petrolBlue": "Сине-зелёный",
-    "darkGreen": "Тёмно-зелёный",
-    "turquoise": "Бирюзовый",
-    "green": "Зелёный",
-    "red": "Красный",
-    "magenta": "Пурпурный",
-    "pink": "Розовый",
-    "brown": "Коричневый",
-    "lightBrown": "Светло-коричневый",
-    "salmon": "Лососевый",
-    "orange": "Оранжевый",
-    "yellow": "Жёлтый",
-    "black": "Чёрный",
-    "darkGrey": "Тёмно-серый",
-    "grey": "Серый"
+    "editFailed": "Не удалось сохранить метку.",
+    "close": "Закрыть"
   },
   "board": {
     "back": "Назад к доскам",
@@ -139,8 +121,9 @@
     "searchPeople": "Поиск людей",
     "searchLabels": "Поиск меток",
     "createLabel": "Создать «%{name}»",
-    "labelsHint": "Введите название, чтобы создать метку.",
+    "newLabel": "Создать метку",
     "noMatches": "Ничего не найдено",
+    "noLabels": "Меток пока нет.",
     "labelTaken": "Метка %{name} уже существует.",
     "labelFailed": "Не удалось создать метку.",
     "labelsFailed": "Не удалось сохранить метки.",
@@ -174,17 +157,19 @@
     "priority": "Приоритет",
     "noPriority": "Нет",
     "assignees": "Исполнители",
-    "editAssignees": "Изменить исполнителей",
     "nobody": "Никого",
     "labels": "Метки",
-    "editLabels": "Изменить метки",
     "noLabels": "Нет",
     "dates": "Сроки",
     "reminders": "Напоминания",
     "subtasks": "Подзадачи",
     "noDescription": "Нет описания.",
     "changeFailed": "Не удалось сохранить изменение.",
-    "edit": "Изменить"
+    "addLabels": "Добавить метки",
+    "removeLabel": "Убрать метку %{name}",
+    "addAssignees": "Добавить исполнителей",
+    "unassign": "Снять %{name}",
+    "breadcrumb": "Расположение задачи"
   },
   "editor": {
     "toolbar": "Форматирование",
@@ -532,5 +517,8 @@
   },
   "members": {
     "count": "%{smart_count} участник |||| %{smart_count} участника |||| %{smart_count} участников"
+  },
+  "page": {
+    "breadcrumb": "Расположение страницы"
   }
 }

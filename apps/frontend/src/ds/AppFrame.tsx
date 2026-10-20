@@ -13,7 +13,10 @@ import {
   Typography,
   type Theme
 } from '@linagora/twake-mui'
-import type { ReactElement, ReactNode } from 'react'
+import { useState, type ReactElement, type ReactNode } from 'react'
+
+import { CRUMB_BAR, CrumbHostContext } from '@/ds/CrumbBar'
+import { PanelHostContext } from '@/ds/SidePanel'
 
 export const TOP_BAR_HEIGHT = 64
 
@@ -29,7 +32,9 @@ const FrameLayout = styled(Layout)(({ theme }) => ({
 
 // Content is `height: 100%` plus a 16px margin on wide screens, which
 // overflows the window; stretching it in the flex row keeps the margin inside.
+// The content scrolls inside, under the layer an open task takes.
 const FrameContent = styled(Content)(({ theme }) => ({
+  overflow: 'hidden',
   [theme.breakpoints.up('lg')]: { height: 'auto' }
 }))
 
@@ -42,14 +47,48 @@ export function AppFrame({
   sidebar: ReactNode
   children: ReactNode
 }): ReactElement {
+  const [panelHost, setPanelHost] = useState<HTMLElement | null>(null)
+  const [crumbHost, setCrumbHost] = useState<HTMLElement | null>(null)
   return (
-    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      {topBar}
-      <FrameLayout withTopBar={false}>
-        <Sidebar>{sidebar}</Sidebar>
-        <FrameContent role={undefined}>{children}</FrameContent>
-      </FrameLayout>
-    </Box>
+    <CrumbHostContext value={crumbHost}>
+      <PanelHostContext value={panelHost}>
+        <Box
+          sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}
+        >
+          {topBar}
+          <FrameLayout withTopBar={false}>
+            <Sidebar>{sidebar}</Sidebar>
+            <FrameContent role={undefined}>
+              <Box ref={setCrumbHost} sx={CRUMB_BAR} />
+              {/* Its own stacking context: the raised checkboxes and
+                  buttons of the rows stay under an open task. */}
+              <Box
+                sx={{
+                  flex: '1 1 auto',
+                  minHeight: 0,
+                  overflow: 'auto',
+                  isolation: 'isolate'
+                }}
+              >
+                {children}
+              </Box>
+              {/* An open task covers the content, and only it. */}
+              <Box
+                ref={setPanelHost}
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  pointerEvents: 'none',
+                  borderRadius: 'inherit',
+                  overflow: 'hidden',
+                  '& > *': { pointerEvents: 'auto' }
+                }}
+              />
+            </FrameContent>
+          </FrameLayout>
+        </Box>
+      </PanelHostContext>
+    </CrumbHostContext>
   )
 }
 
@@ -200,7 +239,9 @@ export const SidebarEntry = styled('div')(({ theme }) => ({
   // The bottom bar greys the entries that are not current, as twake-mui 10.0
   // did; its NavLink now keeps them in the primary text colour.
   [theme.breakpoints.down('lg')]: {
-    '& > a:not(.active) > div': { color: theme.vars.palette.text.secondary }
+    '& > a:not([aria-current="page"]) > div': {
+      color: theme.vars.palette.text.secondary
+    }
   }
 }))
 

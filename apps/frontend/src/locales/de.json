@@ -16,7 +16,8 @@
   },
   "app": {
     "name": "Twake Project",
-    "loading": "Wird geladen"
+    "loading": "Wird geladen",
+    "mainMenu": "Hauptmenü"
   },
   "session": {
     "signingIn": "Sie werden angemeldet…",
@@ -78,32 +79,13 @@
     "createTitle": "Neues Label",
     "editTitle": "Label bearbeiten",
     "name": "Name",
-    "color": "Farbe",
-    "noColor": "Keine Farbe",
+    "newName": "Namen für das neue Label eingeben",
+    "editName": "Name des Labels",
+    "pickColor": "Farbe wählen",
+    "customColor": "Eigene Farbe",
     "create": "Erstellen",
-    "editFailed": "Das Label konnte nicht gespeichert werden."
-  },
-  "labelColors": {
-    "navyBlue": "Marineblau",
-    "purple": "Lila",
-    "lavender": "Lavendel",
-    "indigo": "Indigo",
-    "blue": "Blau",
-    "petrolBlue": "Petrolblau",
-    "darkGreen": "Dunkelgrün",
-    "turquoise": "Türkis",
-    "green": "Grün",
-    "red": "Rot",
-    "magenta": "Magenta",
-    "pink": "Rosa",
-    "brown": "Braun",
-    "lightBrown": "Hellbraun",
-    "salmon": "Lachs",
-    "orange": "Orange",
-    "yellow": "Gelb",
-    "black": "Schwarz",
-    "darkGrey": "Dunkelgrau",
-    "grey": "Grau"
+    "editFailed": "Das Label konnte nicht gespeichert werden.",
+    "close": "Schließen"
   },
   "board": {
     "back": "Zurück zu den Boards",
@@ -139,8 +121,9 @@
     "searchPeople": "Personen suchen",
     "searchLabels": "Labels suchen",
     "createLabel": "„%{name}“ erstellen",
-    "labelsHint": "Geben Sie einen Namen ein, um ein Label zu erstellen.",
+    "newLabel": "Label erstellen",
     "noMatches": "Keine Treffer",
+    "noLabels": "Noch keine Labels.",
     "labelTaken": "Ein Label namens %{name} existiert bereits.",
     "labelFailed": "Das Label konnte nicht erstellt werden.",
     "labelsFailed": "Die Labels konnten nicht gespeichert werden.",
@@ -174,17 +157,19 @@
     "priority": "Priorität",
     "noPriority": "Keine",
     "assignees": "Zugewiesen",
-    "editAssignees": "Zuweisungen bearbeiten",
     "nobody": "Niemand",
     "labels": "Labels",
-    "editLabels": "Labels bearbeiten",
     "noLabels": "Keine",
     "dates": "Termine",
     "reminders": "Erinnerungen",
     "subtasks": "Unteraufgaben",
     "noDescription": "Keine Beschreibung.",
     "changeFailed": "Die Änderung konnte nicht gespeichert werden.",
-    "edit": "Bearbeiten"
+    "addLabels": "Labels hinzufügen",
+    "removeLabel": "Label %{name} entfernen",
+    "addAssignees": "Zuständige hinzufügen",
+    "unassign": "%{name} entfernen",
+    "breadcrumb": "Ort der Aufgabe"
   },
   "editor": {
     "toolbar": "Formatierung",
@@ -532,5 +517,8 @@
   },
   "members": {
     "count": "%{smart_count} Mitglied |||| %{smart_count} Mitglieder"
+  },
+  "page": {
+    "breadcrumb": "Ort der Seite"
   }
 }

@@ -19,6 +19,7 @@ import {
   useFilters,
   useLabelNames
 } from '@/ui/boards/queries'
+import { PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -59,6 +60,9 @@ export function FiltersScreen(): ReactElement {
 
   return (
     <main className="u-p-2">
+      <PageCrumbs
+        origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
+      />
       <div className="u-flex u-flex-items-center u-flex-justify-between u-mb-2">
         <Typography variant="h3" component="h1">
           {t('filters.title')}

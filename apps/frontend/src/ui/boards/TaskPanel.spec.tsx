@@ -31,6 +31,23 @@ describe('TaskPanel', () => {
     const panel = await openLogo()
 
     expect(await panel.findByText('new', { selector: 'strong' })).toBeVisible()
+    // A filled description needs no title on screen, only for screen readers.
+    expect(panel.getByRole('heading', { name: 'Description' })).toHaveClass(
+      'u-visuallyhidden'
+    )
+  })
+
+  it('titles an empty description, which has nothing to show instead', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    boardsApi.descriptions.delete(logo.id)
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+
+    expect(await panel.findByText('No description.')).toBeVisible()
+    expect(panel.getByRole('heading', { name: 'Description' })).not.toHaveClass(
+      'u-visuallyhidden'
+    )
   })
 
   it('edits the description from the version it started from', async () => {
@@ -175,11 +192,33 @@ describe('TaskPanel', () => {
     expect(panel.getByText('ann@example.com')).toBeVisible()
     expect(panel.getByText('Urgent')).toBeVisible()
     expect(
-      panel.getByRole('button', { name: 'Edit assignees' })
+      panel.getByRole('button', { name: 'Add assignees' })
     ).toBeInTheDocument()
     expect(
-      panel.getByRole('button', { name: 'Edit labels' })
+      panel.getByRole('button', { name: 'Add labels' })
     ).toBeInTheDocument()
+  })
+
+  it('takes a label off with the cross of its chip', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    Object.assign(logo, {
+      labels: [
+        { id: 'l1', name: 'Urgent', color: null },
+        { id: 'l2', name: 'Client', color: null }
+      ]
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(
+      panel.getByRole('button', { name: 'Remove the label Urgent' })
+    )
+
+    await waitFor(() => {
+      expect(boardsApi.setLabels).toHaveBeenCalledWith(board.id, logo.id, [
+        'l2'
+      ])
+    })
   })
 
   it('assigns from the panel without a save step', async () => {
@@ -188,7 +227,7 @@ describe('TaskPanel', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const panel = await openLogo()
-    fireEvent.click(panel.getByRole('button', { name: 'Edit assignees' }))
+    fireEvent.click(panel.getByRole('button', { name: 'Add assignees' }))
     fireEvent.click(
       within(
         await screen.findByRole('dialog', { name: 'Assign DES-1' })
@@ -259,6 +298,59 @@ describe('TaskPanel', () => {
       })
     }
 
+    it('opens in the content, its properties in a bar beside it', async () => {
+      const { board, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      expect(screen.getByRole('link', { name: 'My tasks' })).toBeVisible()
+      const aside = within(panel.getByRole('complementary'))
+      expect(aside.getByText('Assignees')).toBeVisible()
+      expect(aside.queryByText('Description')).toBeNull()
+      expect(panel.getByText('Description')).toBeVisible()
+    })
+
+    it('shows where the task is, from the boards to its key', async () => {
+      const { board, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      const crumbs = within(
+        panel.getByRole('navigation', { name: 'Where the task is' })
+      )
+      expect(crumbs.getByRole('link', { name: 'Boards' })).toHaveAttribute(
+        'href',
+        '/'
+      )
+      expect(crumbs.getByRole('link', { name: board.name })).toHaveAttribute(
+        'href',
+        `/boards/${board.id}`
+      )
+      expect(crumbs.getByText('DES-1')).toHaveAttribute('aria-current', 'page')
+    })
+
+    it('unassigns with the cross of a person’s chip', async () => {
+      const { board, logo, boardsApi } = logoBoard()
+      Object.assign(logo, {
+        assignees: [
+          { userId: 'ann', email: 'ann@example.com', name: null },
+          { userId: 'bob', email: 'bob@example.com', name: null }
+        ]
+      })
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      fireEvent.click(
+        panel.getByRole('button', { name: 'Unassign ann@example.com' })
+      )
+
+      await waitFor(() => {
+        expect(boardsApi.setAssignees).toHaveBeenCalledWith(board.id, logo.id, [
+          'bob'
+        ])
+      })
+    })
+
     it('copies the link of the task and says so', async () => {
       const writeText = vi.fn(() => Promise.resolve())
       stubClipboard(writeText)
@@ -273,7 +365,11 @@ describe('TaskPanel', () => {
           `${window.location.origin}/boards/${board.id}?task=DES-1`
         )
       })
-      expect(await screen.findByRole('status')).toHaveTextContent('Link copied')
+      expect(
+        (await screen.findAllByRole('status')).some(status =>
+          status.textContent.includes('Link copied')
+        )
+      ).toBe(true)
     })
 
     it('writes with the clipboard of the window that was clicked', async () => {

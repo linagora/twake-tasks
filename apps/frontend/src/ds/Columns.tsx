@@ -1,4 +1,12 @@
-import { Box, Button, Skeleton, styled, Typography } from '@linagora/twake-mui'
+import { Cross, Icon } from '@linagora/twake-icons'
+import {
+  Box,
+  Button,
+  ButtonBase,
+  Skeleton,
+  styled,
+  Typography
+} from '@linagora/twake-mui'
 import {
   useId,
   type HTMLAttributes,
@@ -325,11 +333,14 @@ function hueOf(name: string): number {
 export function LabelChip({
   name,
   color = null,
-  highlight = ''
+  highlight = '',
+  remove
 }: {
   name: string
   color?: string | null | undefined
   highlight?: string
+  /** A small cross in the chip takes the label off. */
+  remove?: ChipRemoval | undefined
 }): ReactElement {
   const hue = hueOf(name)
   return (
@@ -357,10 +368,12 @@ export function LabelChip({
         maxWidth: '100%',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        ...(remove && { pr: 0.25, gap: 0.25 })
       })}
     >
       <Highlight text={name} query={highlight} />
+      {remove && <ChipRemove {...remove} size={16} />}
     </Box>
   )
 }
@@ -418,5 +431,78 @@ export function Checklist({
 export function Row({ children }: { children: ReactNode }): ReactElement {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{children}</Box>
+  )
+}
+
+interface ChipRemoval {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+}
+
+/** The cross of a chip, in the chip's own colour, darker on hover. */
+function ChipRemove({
+  label,
+  onClick,
+  disabled = false,
+  size
+}: ChipRemoval & { size: number }): ReactElement {
+  return (
+    <ButtonBase
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      sx={{
+        width: size,
+        height: size,
+        flex: 'none',
+        borderRadius: '50%',
+        color: 'inherit',
+        opacity: 0.75,
+        '&:hover, &:focus-visible': { opacity: 1, bgcolor: 'action.selected' }
+      }}
+    >
+      <Icon icon={Cross} size={8} />
+    </ButtonBase>
+  )
+}
+
+/** A person on a task, as a chip with its avatar, and a cross to take it off. */
+export function PersonChip({
+  avatar,
+  name,
+  remove
+}: {
+  avatar: ReactNode
+  name: string
+  remove?: ChipRemoval | undefined
+}): ReactElement {
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.75,
+        height: 28,
+        maxWidth: '100%',
+        pl: 0.25,
+        pr: remove ? 0.5 : 1.25,
+        borderRadius: 14,
+        bgcolor: 'action.hover',
+        typography: 'body2',
+        whiteSpace: 'nowrap'
+      }}
+    >
+      {avatar}
+      <Box
+        component="span"
+        sx={{ overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}
+      >
+        {name}
+      </Box>
+      {remove && <ChipRemove {...remove} size={18} />}
+    </Box>
   )
 }

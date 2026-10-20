@@ -14,7 +14,9 @@ describe('problem pages', () => {
   it('says a page does not exist and keeps the app around it', async () => {
     renderRoute('/no-such-page')
 
-    expect(await screen.findByRole('navigation')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('list', { name: 'Main menu' })
+    ).toBeInTheDocument()
     expect(await screen.findByRole('status')).toHaveTextContent(
       'Page not found'
     )

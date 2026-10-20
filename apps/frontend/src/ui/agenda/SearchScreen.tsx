@@ -7,6 +7,7 @@ import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { SearchBar } from '@/ds/SearchBar'
 import { Group } from '@/ui/agenda/AgendaScreen'
 import { useSearch } from '@/ui/boards/queries'
+import { OriginContext, PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -60,31 +61,36 @@ export function SearchScreen(): ReactElement {
   const results = useSearch(text)
   useDocumentTitle(t('search.label'))
 
+  const origin = { icon: Magnifier, label: t('search.label'), to: '/search' }
+
   return (
-    <main className="u-p-2">
-      <Typography variant="h3" component="h1" className="u-mb-2">
-        {t('search.label')}
-      </Typography>
-      {results.isError && (
-        <Typography role="alert">{t('search.failed')}</Typography>
-      )}
-      {text !== '' && results.isPending && (
-        <ListSkeleton label={t('app.loading')} />
-      )}
-      {results.data?.length === 0 && (
-        <EmptyState
-          icon={Magnifier}
-          title={t('search.empty')}
-          text={t('search.emptyHint')}
-        />
-      )}
-      {results.data && results.data.length > 0 && (
-        <Group
-          label={t('search.results', { text })}
-          tasks={results.data}
-          highlight={text}
-        />
-      )}
-    </main>
+    <OriginContext value={origin}>
+      <main className="u-p-2">
+        <PageCrumbs origin={origin} />
+        <Typography variant="h3" component="h1" className="u-mb-2">
+          {t('search.label')}
+        </Typography>
+        {results.isError && (
+          <Typography role="alert">{t('search.failed')}</Typography>
+        )}
+        {text !== '' && results.isPending && (
+          <ListSkeleton label={t('app.loading')} />
+        )}
+        {results.data?.length === 0 && (
+          <EmptyState
+            icon={Magnifier}
+            title={t('search.empty')}
+            text={t('search.emptyHint')}
+          />
+        )}
+        {results.data && results.data.length > 0 && (
+          <Group
+            label={t('search.results', { text })}
+            tasks={results.data}
+            highlight={text}
+          />
+        )}
+      </main>
+    </OriginContext>
   )
 }

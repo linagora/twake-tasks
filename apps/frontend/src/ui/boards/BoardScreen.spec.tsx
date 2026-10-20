@@ -488,6 +488,22 @@ describe('BoardScreen', () => {
     ).toBeNull()
   })
 
+  it('shows where the board is, from the boards', async () => {
+    const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    expect(
+      await screen.findByText('Design', { selector: '[aria-current="page"]' })
+    ).toBeVisible()
+    const crumbs = within(
+      screen.getByRole('navigation', { name: 'Where the page is' })
+    )
+    expect(crumbs.getByRole('link', { name: 'Boards' })).toHaveAttribute(
+      'href',
+      '/'
+    )
+  })
+
   it('says when the board does not exist', async () => {
     const boardsApi = fakeBoardsApi()
     boardsApi.getBoard.mockRejectedValue(new ApiError(404, 'not_found'))
@@ -497,7 +513,9 @@ describe('BoardScreen', () => {
       await screen.findByText("This board doesn't exist, or you can't open it.")
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: 'Back to boards' })
+      within(
+        screen.getByRole('navigation', { name: 'Where the page is' })
+      ).getByRole('link', { name: 'Boards' })
     ).toHaveAttribute('href', '/')
   })
 

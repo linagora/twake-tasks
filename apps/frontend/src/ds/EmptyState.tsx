@@ -1,5 +1,9 @@
 import { Icon, type IconProps } from '@linagora/twake-icons'
-import { Box, Empty, Skeleton } from '@linagora/twake-mui'
+import {
+  Box,
+  Empty,
+  ListSkeleton as TwakeListSkeleton
+} from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
 export function EmptyState({
@@ -70,6 +74,7 @@ export function EmptyState({
   )
 }
 
+/** Twake's list placeholder, named for those who cannot see it. */
 export function ListSkeleton({
   label,
   rows = 4
@@ -78,23 +83,8 @@ export function ListSkeleton({
   rows?: number
 }): ReactElement {
   return (
-    <Box
-      role="progressbar"
-      aria-label={label}
-      sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, py: 1 }}
-    >
-      {Array.from({ length: rows }, (_, index) => (
-        <Box
-          key={index}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
-        >
-          <Skeleton variant="circular" width={20} height={20} />
-          <Box sx={{ flex: 1 }}>
-            <Skeleton variant="text" width={`${String(70 - index * 9)}%`} />
-            <Skeleton variant="text" width="30%" height={14} />
-          </Box>
-        </Box>
-      ))}
+    <Box role="progressbar" aria-label={label}>
+      <TwakeListSkeleton count={rows} hasSecondary />
     </Box>
   )
 }

@@ -36,6 +36,7 @@ import { useBoard, useBoardChange, useHiddenTasks } from '@/ui/boards/queries'
 import { Assignees, PriorityChip } from '@/ui/boards/TaskFacts'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
+import { PageCrumbs, useBoardsOrigin } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -173,11 +174,17 @@ export function ShelfScreen({
   const title = t(
     shelf === 'archived' ? 'archive.archivedTasks' : 'archive.trash'
   )
+  const boardsOrigin = useBoardsOrigin()
   useDocumentTitle(board.data ? `${title} - ${board.data.name}` : null)
   const missing = board.error instanceof ApiError && board.error.status === 404
 
   return (
     <main className={flush ? undefined : 'u-p-2'}>
+      <PageCrumbs
+        origin={{ ...boardsOrigin, to: '../../..', relative: true }}
+        steps={[{ to: '..', label: board.data?.name ?? '…', relative: true }]}
+        current={title}
+      />
       {missing && (
         <EmptyState
           icon={Compass}

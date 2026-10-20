@@ -11,7 +11,9 @@ export async function newBoard(page: Page) {
   await dialog.getByLabel('Name').fill(name)
   await dialog.getByLabel('Key prefix').fill(prefix)
   await dialog.getByRole('button', { name: 'Create' }).click()
-  await expect(page.getByRole('link', { name: 'Back to boards' })).toBeVisible()
+  await expect(
+    page.getByRole('navigation', { name: 'Where the page is' })
+  ).toContainText(name)
   return { name, prefix }
 }
 
