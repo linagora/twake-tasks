@@ -59,7 +59,11 @@ export function AppFrame({
           <FrameLayout withTopBar={false}>
             <Sidebar>{sidebar}</Sidebar>
             <FrameContent role={undefined}>
-              <Box ref={setCrumbHost} sx={CRUMB_BAR} />
+              {/* A page with no breadcrumb leaves no empty strip above it. */}
+              <Box
+                ref={setCrumbHost}
+                sx={{ ...CRUMB_BAR, '&:empty': { display: 'none' } }}
+              />
               {/* Its own stacking context: the raised checkboxes and
                   buttons of the rows stay under an open task. */}
               <Box
