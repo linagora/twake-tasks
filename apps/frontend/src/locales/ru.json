@@ -186,7 +186,11 @@
     "commentPlaceholder": "Напишите комментарий…",
     "descriptionPlaceholder": "Добавьте подробности, шаги или ссылки…",
     "sendHint": "Ctrl+Enter, чтобы отправить",
-    "mentionsLabel": "Кого упомянуть"
+    "mentionsLabel": "Кого упомянуть",
+    "emoji": "Эмодзи",
+    "emojiSearch": "Поиск эмодзи",
+    "emojiList": "Эмодзи",
+    "emojiNone": "Эмодзи не найдены"
   },
   "history": {
     "heading": "История",

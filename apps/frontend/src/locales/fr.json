@@ -186,7 +186,11 @@
     "commentPlaceholder": "Écrire un commentaire…",
     "descriptionPlaceholder": "Ajoutez des détails, des étapes ou des liens…",
     "sendHint": "Ctrl+Entrée pour envoyer",
-    "mentionsLabel": "Personnes à mentionner"
+    "mentionsLabel": "Personnes à mentionner",
+    "emoji": "Emoji",
+    "emojiSearch": "Rechercher un emoji",
+    "emojiList": "Emoji",
+    "emojiNone": "Aucun emoji trouvé"
   },
   "history": {
     "heading": "Historique",

@@ -186,7 +186,11 @@
     "commentPlaceholder": "Write a comment…",
     "descriptionPlaceholder": "Add details, steps or links…",
     "sendHint": "Ctrl+Enter to send",
-    "mentionsLabel": "People to mention"
+    "mentionsLabel": "People to mention",
+    "emoji": "Emoji",
+    "emojiSearch": "Search emoji",
+    "emojiList": "Emoji",
+    "emojiNone": "No emoji found"
   },
   "history": {
     "heading": "History",

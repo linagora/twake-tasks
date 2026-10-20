@@ -186,7 +186,11 @@
     "commentPlaceholder": "Viết bình luận…",
     "descriptionPlaceholder": "Thêm chi tiết, các bước hoặc liên kết…",
     "sendHint": "Ctrl+Enter để gửi",
-    "mentionsLabel": "Người có thể nhắc đến"
+    "mentionsLabel": "Người có thể nhắc đến",
+    "emoji": "Biểu tượng cảm xúc",
+    "emojiSearch": "Tìm biểu tượng cảm xúc",
+    "emojiList": "Biểu tượng cảm xúc",
+    "emojiNone": "Không tìm thấy biểu tượng cảm xúc"
   },
   "history": {
     "heading": "Lịch sử",

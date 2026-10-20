@@ -20,6 +20,7 @@ import {
   type ReactNode
 } from 'react'
 
+import type { EmojiPickerOptions } from '@/ds/EmojiPicker'
 import { mentionExtension } from '@/ds/Mention'
 import { Toolbar, type RichTextLabels } from '@/ds/RichTextToolbar'
 import {
@@ -212,6 +213,7 @@ export function RichTextEditor({
   onChange,
   onSubmit,
   suggestions,
+  emoji,
   footer
 }: {
   label: string
@@ -223,6 +225,8 @@ export function RichTextEditor({
   onSubmit?: () => void
   /** Lists of options, each opening when the user types its trigger character. Read once, when the editor is created. */
   suggestions?: Suggestions[]
+  /** Adds a button that inserts an emoji. */
+  emoji?: EmojiPickerOptions
   footer?: ReactNode
 }): ReactElement {
   // The editor keeps the callbacks it was created with, so it reads the latest ones here.
@@ -359,7 +363,7 @@ export function RichTextEditor({
         }
       })}
     >
-      <Toolbar editor={editor} labels={labels} />
+      <Toolbar editor={editor} labels={labels} emoji={emoji} />
       <Box
         sx={theme => ({
           ...prose(theme),

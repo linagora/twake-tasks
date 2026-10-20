@@ -10,6 +10,7 @@ import { momentFormat } from '@/ui/boards/dueLabel'
 import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useAddComment, useComments } from '@/ui/boards/queries'
+import { useEmojiInput } from '@/ui/boards/useEmojiInput'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
@@ -33,6 +34,7 @@ export function Comments({
   const { t, lang } = useI18n()
   const { user } = useSession()
   const labels = useRichTextLabels()
+  const emojiInput = useEmojiInput()
   const comments = useComments(boardId, task.id)
   const add = useAddComment(boardId, task.id)
   const [body, setBody] = useState('')
@@ -121,6 +123,7 @@ export function Comments({
             minHeight={48}
             onChange={setBody}
             onSubmit={send}
+            emoji={emojiInput.emoji}
             suggestions={[
               {
                 trigger: '@',
@@ -157,7 +160,8 @@ export function Comments({
                       </>
                     )
                   }))
-              }
+              },
+              emojiInput.suggestions
             ]}
             footer={
               <>

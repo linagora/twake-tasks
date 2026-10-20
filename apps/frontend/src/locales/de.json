@@ -186,7 +186,11 @@
     "commentPlaceholder": "Kommentar schreiben…",
     "descriptionPlaceholder": "Details, Schritte oder Links hinzufügen…",
     "sendHint": "Strg+Eingabe zum Senden",
-    "mentionsLabel": "Zu erwähnende Personen"
+    "mentionsLabel": "Zu erwähnende Personen",
+    "emoji": "Emoji",
+    "emojiSearch": "Emoji suchen",
+    "emojiList": "Emoji",
+    "emojiNone": "Kein Emoji gefunden"
   },
   "history": {
     "heading": "Verlauf",
