@@ -28,7 +28,7 @@ import {
   suggestionsExtension,
   useEditorComboboxAttributes,
   type SuggestionBridge,
-  type SuggestionHandlers,
+  type SuggestionOption,
   type SuggestionState,
   type Suggestions
 } from '@/ds/Suggestions'
@@ -194,6 +194,15 @@ export function RichText({
   )
 }
 
+type OpenSuggestions = SuggestionState & { source: number }
+
+interface SourcedHandlers {
+  search: (source: number, query: string) => SuggestionOption[]
+  show: (source: number, state: SuggestionState) => void
+  hide: (source: number) => void
+  keyDown: (event: KeyboardEvent) => boolean
+}
+
 export function RichTextEditor({
   label,
   initial,
@@ -212,8 +221,8 @@ export function RichTextEditor({
   minHeight?: number
   onChange: (markdown: string) => void
   onSubmit?: () => void
-  /** A list of options that opens when the user types its trigger character. */
-  suggestions?: Suggestions
+  /** Lists of options, each opening when the user types its trigger character. Read once, when the editor is created. */
+  suggestions?: Suggestions[]
   footer?: ReactNode
 }): ReactElement {
   // The editor keeps the callbacks it was created with, so it reads the latest ones here.
@@ -222,7 +231,7 @@ export function RichTextEditor({
     latest.current = { onChange, onSubmit }
   })
   const listId = useId()
-  const [open, setOpen] = useState<SuggestionState | null>(null)
+  const [open, setOpen] = useState<OpenSuggestions | null>(null)
   const [active, setActive] = useState(0)
   const shown = useRef({ open, active })
   useEffect(() => {
@@ -232,40 +241,50 @@ export function RichTextEditor({
     shown.current.active = index
     setActive(index)
   }
-  const handlers = useRef<SuggestionHandlers>({
+  const handlers = useRef<SourcedHandlers>({
     search: () => [],
     show: () => undefined,
     hide: () => undefined,
     keyDown: () => false
   })
-  // The editor is created once, so it talks to the latest handlers through this.
-  const [bridge] = useState<SuggestionBridge>(() => ({
-    trigger: suggestions?.trigger ?? '',
-    search: query => handlers.current.search(query),
-    show: next => {
-      handlers.current.show(next)
-    },
-    hide: () => {
-      handlers.current.hide()
-    },
-    keyDown: event => handlers.current.keyDown(event)
-  }))
+  // The editor is created once, so it talks to the latest handlers through these.
+  const [bridges] = useState<SuggestionBridge[]>(() =>
+    (suggestions ?? []).map(({ trigger }, source) => ({
+      trigger,
+      search: query => handlers.current.search(source, query),
+      show: next => {
+        handlers.current.show(source, next)
+      },
+      hide: () => {
+        handlers.current.hide(source)
+      },
+      keyDown: event => handlers.current.keyDown(event)
+    }))
+  )
   useEffect(() => {
     handlers.current = {
-      search: query => suggestions?.search(query) ?? [],
-      show: next => {
+      search: (source, query) => suggestions?.[source]?.search(query) ?? [],
+      show: (source, next) => {
         if (next.items.length === 0) {
-          setOpen(null)
+          if (shown.current.open?.source === source) {
+            shown.current.open = null
+            setOpen(null)
+          }
           return
         }
-        const sameQuery = shown.current.open?.query === next.query
+        const previous = shown.current.open
+        const sameQuery =
+          previous?.source === source && previous.query === next.query
         move(
           sameQuery ? Math.min(shown.current.active, next.items.length - 1) : 0
         )
-        shown.current.open = next
-        setOpen(next)
+        const opened = { ...next, source }
+        shown.current.open = opened
+        setOpen(opened)
       },
-      hide: () => {
+      // Typing one trigger after another can close the first list after the second opened.
+      hide: source => {
+        if (shown.current.open?.source !== source) return
         shown.current.open = null
         setOpen(null)
       },
@@ -297,10 +316,7 @@ export function RichTextEditor({
     }
   })
   const editor = useEditor({
-    extensions: extensions(
-      placeholder,
-      suggestions ? [suggestionsExtension(bridge)] : []
-    ),
+    extensions: extensions(placeholder, bridges.map(suggestionsExtension)),
     content: initial,
     contentType: 'markdown',
     editorProps: {
@@ -314,12 +330,12 @@ export function RichTextEditor({
       latest.current.onChange(markdownOf(current))
     },
     onBlur: () => {
-      bridge.hide()
+      for (const bridge of bridges) bridge.hide()
     }
   })
   useEditorComboboxAttributes(
     editor,
-    suggestions
+    bridges.length > 0
       ? {
           'aria-haspopup': 'listbox',
           'aria-autocomplete': 'list',
@@ -370,11 +386,11 @@ export function RichTextEditor({
       >
         <EditorContent editor={editor} />
       </Box>
-      {suggestions && open && (
+      {open && (
         <SuggestionList
           editor={editor}
           listId={listId}
-          label={suggestions.label}
+          label={suggestions?.[open.source]?.label ?? ''}
           state={open}
           active={active}
         />
