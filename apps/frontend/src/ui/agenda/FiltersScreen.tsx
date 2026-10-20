@@ -1,4 +1,5 @@
 import {
+  Bottom,
   CalendarToday,
   Dashboard,
   Eye,
@@ -9,11 +10,15 @@ import {
   Mosaic,
   People,
   Plus,
+  Right,
   Star,
   StarOutline
 } from '@linagora/twake-icons'
 import {
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
   Divider,
   IconButton,
   List,
@@ -22,6 +27,7 @@ import {
   ListItemIcon,
   ListItemSecondaryAction,
   ListItemText,
+  Stack,
   Switch,
   TextField,
   Typography
@@ -38,11 +44,12 @@ import {
   type ReactElement
 } from 'react'
 import {
-  Link as RouterLink,
+  Navigate,
   useHref,
   useLinkClickHandler,
   useNavigate,
-  useParams
+  useParams,
+  useSearchParams
 } from 'react-router'
 
 import type {
@@ -50,6 +57,7 @@ import type {
   NewSavedFilter,
   SavedFilter
 } from '@/application/boards'
+import { ClosableTitle } from '@/ds/ClosableTitle'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { FieldRow, PlainForm } from '@/ds/FormPanel'
 import { IconPicker } from '@/ds/IconPicker'
@@ -77,6 +85,7 @@ import { useDocumentTitle } from '@/ui/useDocumentTitle'
 export function FiltersScreen(): ReactElement {
   const { t } = useI18n()
   const filters = useFilters()
+  const [, setParams] = useSearchParams()
   useDocumentTitle(t('filters.title'))
   const summary = useCriteriaSummary()
 
@@ -90,9 +99,17 @@ export function FiltersScreen(): ReactElement {
           {t('filters.title')}
         </Typography>
         <Button
-          component={RouterLink}
-          to="/filters/new"
           startIcon={<Icon icon={Plus} />}
+          onClick={() => {
+            setParams(
+              current => {
+                const next = new URLSearchParams(current)
+                next.set('new', 'view')
+                return next
+              },
+              { replace: true }
+            )
+          }}
         >
           {t('filters.new')}
         </Button>
@@ -119,6 +136,7 @@ export function FiltersScreen(): ReactElement {
           ))}
         </List>
       )}
+      <NewViewFromUrl />
     </main>
   )
 }
@@ -191,25 +209,122 @@ function FavoriteButton({ filter }: { filter: SavedFilter }): ReactElement {
   )
 }
 
+/**
+ * The dialog that creates a view, while the URL holds `?new=view`, so a link
+ * opens it, as `?new=task` does the new task's. Created, the view opens.
+ */
+function NewViewFromUrl(): ReactElement | null {
+  const [params, setParams] = useSearchParams()
+  if (params.get('new') !== 'view') return null
+  return (
+    <NewViewDialog
+      onClose={() => {
+        setParams(
+          current => {
+            const next = new URLSearchParams(current)
+            next.delete('new')
+            return next
+          },
+          { replace: true }
+        )
+      }}
+    />
+  )
+}
+
+/** The old page of a new view, now its dialog over the list of views. */
 export function NewViewScreen(): ReactElement {
+  return <Navigate to="/filters?new=view" replace />
+}
+
+// As the new task dialog: a name, then the rest under Add details.
+function NewViewDialog({ onClose }: { onClose: () => void }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
   const create = useCreateFilter()
-  useDocumentTitle(t('filters.new'))
+  const titleId = useId()
+  const draft = useViewDraft()
+  const [details, setDetails] = useState(false)
+  const [nameMissing, setNameMissing] = useState(false)
+  const nameInput = useRef<HTMLInputElement | null>(null)
+  // Stable, as focusOnMount is, so that it focuses on mount only.
+  const nameRef = useCallback((node: HTMLInputElement | null) => {
+    nameInput.current = node
+    focusOnMount(node)
+  }, [])
+  // Closed while creating, it would miss the view once created.
+  const close = () => {
+    if (!create.isPending) onClose()
+  }
+
+  const handleSubmit = () => {
+    if (create.isPending) return
+    // A view needs a name, which its field asks for.
+    if (!draft.view.name) {
+      setNameMissing(true)
+      nameInput.current?.focus()
+      return
+    }
+    create.mutate(draft.view, {
+      onSuccess: ({ id }) => {
+        void navigate(`/filters/${id}`, { replace: true })
+      }
+    })
+  }
+
   return (
-    <ViewForm
-      title={t('filters.new')}
-      submitLabel={t('filters.save')}
-      pending={create.isPending}
-      failed={create.isError}
-      onSave={view => {
-        create.mutate(view, {
-          onSuccess: ({ id }) => {
-            void navigate(`/filters/${id}`, { replace: true })
-          }
-        })
-      }}
-    />
+    <Dialog open onClose={close} aria-labelledby={titleId} size="medium">
+      <form
+        noValidate
+        onSubmit={event => {
+          event.preventDefault()
+          handleSubmit()
+        }}
+      >
+        <ClosableTitle
+          id={titleId}
+          title={t('filters.createTitle')}
+          closeLabel={t('filters.close')}
+          onClose={close}
+        />
+        <DialogContent>
+          <Stack spacing={2}>
+            <ViewNameRow
+              draft={draft}
+              error={nameMissing}
+              inputRef={nameRef}
+              onNamed={() => {
+                setNameMissing(false)
+              }}
+            />
+            <div>
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<Icon icon={details ? Bottom : Right} size={14} />}
+                aria-expanded={details}
+                onClick={() => {
+                  setDetails(!details)
+                }}
+              >
+                {t(details ? 'filters.hideDetails' : 'filters.addDetails')}
+              </Button>
+            </div>
+            {details && <ViewSettings draft={draft} />}
+            {create.isError && (
+              <Typography role="alert" variant="body2" color="error">
+                {t('filters.saveFailed')}
+              </Typography>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button type="submit" disabled={create.isPending}>
+            {t('filters.save')}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   )
 }
 
@@ -233,12 +348,10 @@ export function EditViewScreen(): ReactElement {
     )
   }
   return (
-    <ViewForm
+    <EditViewForm
       key={view.id}
-      title={t('filters.edit')}
       initial={view}
       autosave={update.isPending ? 'saving' : update.isSuccess && 'saved'}
-      pending={update.isPending}
       failed={update.isError}
       onSave={edit => {
         update.mutate(edit)
@@ -260,32 +373,24 @@ const GROUPINGS_SHOWN = {
 // A view's edits are saved a moment after the last one, or on leaving.
 const AUTOSAVE_DELAY = 600
 
-// The page that creates a view or edits one: its icon, name, layout, grouping
-// and criteria. A view is created with a button; once it is, each change is
-// saved as it is made.
-function ViewForm({
-  title,
-  initial,
-  submitLabel,
-  autosave,
-  pending,
-  failed,
-  onSave
-}: {
-  title: string
-  initial?: SavedFilter
-  /** Without autosave, the view is created with the button of this label. */
-  submitLabel?: string
-  /** With, edits are saved as made, and this says how the last one went. */
-  autosave?: 'saving' | 'saved' | false
-  pending: boolean
-  failed: boolean
-  onSave: (view: NewSavedFilter) => void
-}): ReactElement {
-  const { t } = useI18n()
-  const allColumnsId = useId()
-  const formId = useId()
-  const creating = initial === undefined
+/** A view being made or edited: its fields, and the view they make. */
+interface ViewDraft {
+  icon: string
+  setIcon: (icon: string) => void
+  name: string
+  setName: (name: string) => void
+  layout: Layout
+  setLayout: (layout: Layout) => void
+  groupBy: Grouping
+  setGroupBy: (groupBy: Grouping) => void
+  allColumns: boolean
+  setAllColumns: (allColumns: boolean) => void
+  criteria: FilterCriteria
+  setCriteria: (criteria: FilterCriteria) => void
+  view: NewSavedFilter
+}
+
+function useViewDraft(initial?: SavedFilter): ViewDraft {
   const [icon, setIcon] = useState(initial?.icon ?? DEFAULT_VIEW_ICON)
   const [name, setName] = useState(initial?.name ?? '')
   const [layout, setLayout] = useState<Layout>(initial?.layout ?? 'list')
@@ -294,23 +399,141 @@ function ViewForm({
   const [criteria, setCriteria] = useState<FilterCriteria>(
     initial?.criteria ?? {}
   )
-  const view = {
-    name: name.trim(),
-    criteria,
+  return {
     icon,
+    setIcon,
+    name,
+    setName,
     layout,
+    setLayout,
     groupBy,
-    allColumns
+    setGroupBy,
+    allColumns,
+    setAllColumns,
+    criteria,
+    setCriteria,
+    view: { name: name.trim(), criteria, icon, layout, groupBy, allColumns }
   }
-  const nameInput = useRef<HTMLInputElement | null>(null)
-  // Stable, as focusOnMount is, so that it focuses on mount only.
-  const nameRef = useCallback((node: HTMLInputElement | null) => {
-    nameInput.current = node
-    focusOnMount(node)
-  }, [])
-  const [nameMissing, setNameMissing] = useState(false)
-  // Edits wait for a name, so their field asks for it as soon as it is empty.
-  const nameError = nameMissing || (!creating && !view.name)
+}
+
+// A view's icon beside its name, which it needs.
+function ViewNameRow({
+  draft,
+  error,
+  inputRef,
+  onNamed
+}: {
+  draft: ViewDraft
+  error: boolean
+  inputRef: (node: HTMLInputElement | null) => void
+  /** Once the name is not empty, as its error may wait for. */
+  onNamed?: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  return (
+    <FieldRow>
+      <IconPicker
+        value={draft.icon}
+        onChange={draft.setIcon}
+        labels={{
+          button: t('icon.change'),
+          title: t('icon.title'),
+          search: t('icon.search'),
+          noResult: t('icon.noResult')
+        }}
+      />
+      <TextField
+        label={t('filters.name')}
+        value={draft.name}
+        fullWidth
+        required
+        error={error}
+        helperText={error && t('filters.nameRequired')}
+        inputRef={inputRef}
+        onChange={event => {
+          draft.setName(event.target.value)
+          if (event.target.value.trim()) onNamed?.()
+        }}
+        slotProps={{ htmlInput: { maxLength: 100 } }}
+      />
+    </FieldRow>
+  )
+}
+
+// How a view shows its tasks, then which tasks it keeps to.
+function ViewSettings({ draft }: { draft: ViewDraft }): ReactElement {
+  const { t } = useI18n()
+  const allColumnsId = useId()
+  const { layout, groupBy } = draft
+  return (
+    <>
+      <ListSection title={t('filters.display')}>
+        <SettingPicker
+          label={t('filters.layout')}
+          value={layout}
+          choices={LAYOUTS.map(each => ({
+            value: each,
+            name: t(`layout.${each}`),
+            icon: LAYOUT_ICONS[each]
+          }))}
+          iconInButton
+          onChange={draft.setLayout}
+        />
+        {/* A calendar puts tasks on their days, so it has no groups. */}
+        {layout !== 'calendar' && (
+          <SettingPicker
+            label={t('filters.groupBy')}
+            value={groupBy}
+            choices={GROUPINGS.map(each => ({
+              value: each,
+              name: t(GROUPINGS_SHOWN[each].name),
+              icon: GROUPINGS_SHOWN[each].icon
+            }))}
+            onChange={draft.setGroupBy}
+          />
+        )}
+        {/* Only sections have columns no task is in. */}
+        {layout !== 'calendar' && groupBy === 'status' && (
+          <ListItem disableGutters ellipsis={false}>
+            <ListItemIcon>
+              <Icon icon={Eye} />
+            </ListItemIcon>
+            <ListItemText primary={t('filters.allColumns')} id={allColumnsId} />
+            <Switch
+              checked={draft.allColumns}
+              slotProps={{
+                input: { 'aria-labelledby': allColumnsId }
+              }}
+              onChange={event => {
+                draft.setAllColumns(event.target.checked)
+              }}
+            />
+          </ListItem>
+        )}
+      </ListSection>
+      <CriteriaFields criteria={draft.criteria} onChange={draft.setCriteria} />
+    </>
+  )
+}
+
+// The page that edits a view: each change is saved as it is made.
+function EditViewForm({
+  initial,
+  autosave,
+  failed,
+  onSave
+}: {
+  initial: SavedFilter
+  /** How the last edit went. */
+  autosave: 'saving' | 'saved' | false
+  failed: boolean
+  onSave: (view: NewSavedFilter) => void
+}): ReactElement {
+  const { t } = useI18n()
+  const draft = useViewDraft(initial)
+  const { view } = draft
+  // Edits wait for a name, so its field asks for it as soon as it is empty.
+  const nameError = !view.name
   const unsaved = useRef<NewSavedFilter | null>(null)
   const save = useRef(onSave)
   useEffect(() => {
@@ -319,7 +542,7 @@ function ViewForm({
   const edited = JSON.stringify(view)
   const first = useRef(edited)
   useEffect(() => {
-    if (creating || edited === first.current) return
+    if (edited === first.current) return
     const next = JSON.parse(edited) as NewSavedFilter
     // A view keeps its name: one being typed waits until it has one.
     if (!next.name) return
@@ -331,7 +554,7 @@ function ViewForm({
     return () => {
       clearTimeout(timer)
     }
-  }, [creating, edited])
+  }, [edited])
   // Leaving the page saves the edit still waiting.
   useEffect(
     () => () => {
@@ -344,36 +567,18 @@ function ViewForm({
     <main className="u-p-2">
       <PageCrumbs
         origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
-        steps={
-          initial && [{ to: `/filters/${initial.id}`, label: initial.name }]
-        }
-        current={title}
+        steps={[{ to: `/filters/${initial.id}`, label: initial.name }]}
+        current={t('filters.edit')}
       />
-      {/* A view is created from the header, where its edits say they saved. */}
+      {/* Its edits say in the header how they saved. */}
       <PageHeader
         title={
           <Typography variant="h3" component="h1">
-            {title}
+            {t('filters.edit')}
           </Typography>
         }
         actions={
-          creating ? (
-            <>
-              {failed && (
-                <Typography role="alert" variant="caption" color="error">
-                  {t('filters.saveFailed')}
-                </Typography>
-              )}
-              <Button
-                type="submit"
-                form={formId}
-                startIcon={<Icon icon={Plus} />}
-                disabled={pending}
-              >
-                {submitLabel}
-              </Button>
-            </>
-          ) : failed ? (
+          failed ? (
             <Typography role="alert" variant="caption" color="error">
               {t('filters.saveFailed')}
             </Typography>
@@ -391,93 +596,12 @@ function ViewForm({
         }
       />
       <PlainForm
-        id={formId}
         onSubmit={event => {
           event.preventDefault()
-          if (!creating) return
-          // A view needs a name, which its field asks for.
-          if (!view.name) {
-            setNameMissing(true)
-            nameInput.current?.focus()
-            return
-          }
-          onSave(view)
         }}
       >
-        <FieldRow>
-          <IconPicker
-            value={icon}
-            onChange={setIcon}
-            labels={{
-              button: t('icon.change'),
-              title: t('icon.title'),
-              search: t('icon.search'),
-              noResult: t('icon.noResult')
-            }}
-          />
-          <TextField
-            label={t('filters.name')}
-            value={name}
-            fullWidth
-            required
-            error={nameError}
-            helperText={nameError && t('filters.nameRequired')}
-            inputRef={nameRef}
-            onChange={event => {
-              setName(event.target.value)
-              if (event.target.value.trim()) setNameMissing(false)
-            }}
-            slotProps={{ htmlInput: { maxLength: 100 } }}
-          />
-        </FieldRow>
-        <ListSection title={t('filters.display')}>
-          <SettingPicker
-            label={t('filters.layout')}
-            value={layout}
-            choices={LAYOUTS.map(each => ({
-              value: each,
-              name: t(`layout.${each}`),
-              icon: LAYOUT_ICONS[each]
-            }))}
-            iconInButton
-            onChange={setLayout}
-          />
-          {/* A calendar puts tasks on their days, so it has no groups. */}
-          {layout !== 'calendar' && (
-            <SettingPicker
-              label={t('filters.groupBy')}
-              value={groupBy}
-              choices={GROUPINGS.map(each => ({
-                value: each,
-                name: t(GROUPINGS_SHOWN[each].name),
-                icon: GROUPINGS_SHOWN[each].icon
-              }))}
-              onChange={setGroupBy}
-            />
-          )}
-          {/* Only statuses have columns no task is in. */}
-          {layout !== 'calendar' && groupBy === 'status' && (
-            <ListItem disableGutters ellipsis={false}>
-              <ListItemIcon>
-                <Icon icon={Eye} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t('filters.allColumns')}
-                id={allColumnsId}
-              />
-              <Switch
-                checked={allColumns}
-                slotProps={{
-                  input: { 'aria-labelledby': allColumnsId }
-                }}
-                onChange={event => {
-                  setAllColumns(event.target.checked)
-                }}
-              />
-            </ListItem>
-          )}
-        </ListSection>
-        <CriteriaFields criteria={criteria} onChange={setCriteria} />
+        <ViewNameRow draft={draft} error={nameError} inputRef={focusOnMount} />
+        <ViewSettings draft={draft} />
       </PlainForm>
     </main>
   )

@@ -61,11 +61,27 @@ async function pick(criterion: string, ...values: string[]) {
   })
 }
 
+// The dialog of a new view, its details shown unless said.
+async function openNewView(
+  boardsApi: ReturnType<typeof fakeBoardsApi>,
+  details = true
+) {
+  const rendered = renderRoute('/filters/new', { boardsApi })
+  const dialog = within(
+    await screen.findByRole('dialog', { name: 'Create a view' })
+  )
+  if (details) {
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+  }
+  return { ...rendered, dialog }
+}
+
 describe('FiltersScreen', () => {
   it('shows the criteria in use, and adds the others from a menu', async () => {
     renderRoute('/filters', { boardsApi: boards() })
 
-    fireEvent.click(await screen.findByRole('link', { name: 'New view' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Create view' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Add details' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Add filter' }))
     expect(
       (await screen.findAllByRole('menuitem')).map(item => item.textContent)
@@ -105,7 +121,7 @@ describe('FiltersScreen', () => {
 
   it('groups a view by the criterion chosen, its sections unless said', async () => {
     const boardsApi = boards()
-    renderRoute('/filters/new', { boardsApi })
+    await openNewView(boardsApi)
 
     fireEvent.change(await screen.findByLabelText(/^Name/), {
       target: { value: 'By label' }
@@ -143,7 +159,7 @@ describe('FiltersScreen', () => {
 
   it('keeps to any of many values, shown as on a task', async () => {
     const boardsApi = boards()
-    renderRoute('/filters/new', { boardsApi })
+    await openNewView(boardsApi)
 
     fireEvent.change(await screen.findByLabelText(/^Name/), {
       target: { value: 'Mine or nobody’s' }
@@ -172,7 +188,7 @@ describe('FiltersScreen', () => {
 
   it('takes a chosen value off with its cross', async () => {
     const boardsApi = boards()
-    renderRoute('/filters/new', { boardsApi })
+    await openNewView(boardsApi)
 
     fireEvent.change(await screen.findByLabelText(/^Name/), {
       target: { value: 'High' }
@@ -196,7 +212,7 @@ describe('FiltersScreen', () => {
 
   it('keeps to columns by name, offering those of all my boards', async () => {
     const boardsApi = boards()
-    renderRoute('/filters/new', { boardsApi })
+    await openNewView(boardsApi)
 
     fireEvent.change(await screen.findByLabelText(/^Name/), {
       target: { value: 'In progress' }
@@ -217,7 +233,7 @@ describe('FiltersScreen', () => {
       { userId: 'lea', email: 'lea@example.com', name: 'Léa Martin' }
     ]
     const boardsApi = fakeBoardsApi([design])
-    renderRoute('/filters/new', { boardsApi })
+    await openNewView(boardsApi)
 
     fireEvent.change(await screen.findByLabelText(/^Name/), {
       target: { value: 'Léa’s' }
@@ -233,16 +249,21 @@ describe('FiltersScreen', () => {
     expect(await screen.findByLabelText('Assignee: Léa Martin')).toBeVisible()
   })
 
-  it('creates a view on its own page, then opens it', async () => {
+  it('creates a view from its dialog, as a task is, then opens it', async () => {
     const boardsApi = boards()
-    renderRoute('/filters', { boardsApi })
+    const { router } = renderRoute('/filters', { boardsApi })
 
     expect(screen.queryByLabelText(/^Name/)).toBeNull()
-    fireEvent.click(await screen.findByRole('link', { name: 'New view' }))
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'New view' })
-    ).toBeVisible()
-    fireEvent.change(await screen.findByLabelText(/^Name/), {
+    fireEvent.click(await screen.findByRole('button', { name: 'Create view' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a view' })
+    )
+    expect(router.state.location.search).toBe('?new=view')
+    expect(dialog.getByLabelText(/^Name/)).toHaveFocus()
+    // The rest waits under Add details.
+    expect(dialog.queryByRole('button', { name: 'Add filter' })).toBeNull()
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    fireEvent.change(dialog.getByLabelText(/^Name/), {
       target: { value: 'Client fires' }
     })
     await pick('Priority', 'P1')
@@ -270,7 +291,7 @@ describe('FiltersScreen', () => {
 
   it('gives a view an icon, the eye unless chosen', async () => {
     const boardsApi = boards()
-    renderRoute('/filters/new', { boardsApi })
+    await openNewView(boardsApi)
 
     fireEvent.change(await screen.findByLabelText(/^Name/), {
       target: { value: 'Bugs' }
@@ -290,7 +311,9 @@ describe('FiltersScreen', () => {
     })
     fireEvent.click(dialog.getByRole('button', { name: 'Trophy' }))
     await waitFor(() => {
-      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(
+        screen.queryByRole('dialog', { name: 'Choose an icon' })
+      ).toBeNull()
     })
     fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
@@ -302,7 +325,7 @@ describe('FiltersScreen', () => {
 
   it('creates a view in the layout chosen', async () => {
     const boardsApi = boards()
-    renderRoute('/filters/new', { boardsApi })
+    await openNewView(boardsApi)
 
     fireEvent.change(await screen.findByLabelText(/^Name/), {
       target: { value: 'Agenda' }
@@ -350,7 +373,7 @@ describe('FiltersScreen', () => {
     expect(boardsApi.updateFilter).toHaveBeenCalledTimes(1)
     const saved = await screen.findByRole('status')
     expect(saved).toHaveTextContent('Changes saved')
-    // Said in the header, where Create is on a new view.
+    // Said in the header.
     expect(
       screen.getByRole('heading', { level: 1, name: 'Edit view' }).parentElement
         ?.parentElement
@@ -369,18 +392,27 @@ describe('FiltersScreen', () => {
     expect(boardsApi.updateFilter).toHaveBeenCalledTimes(1)
   })
 
+  it('closes the dialog of a new view from its cross', async () => {
+    const { dialog, router } = await openNewView(boards(), false)
+
+    fireEvent.click(dialog.getByRole('button', { name: 'Close' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(router.state.location.pathname).toBe('/filters')
+    expect(router.state.location.search).toBe('')
+  })
+
   it('asks for a name when a view is created without one', async () => {
     const boardsApi = boards()
-    renderRoute('/filters/new', { boardsApi })
+    const { dialog } = await openNewView(boardsApi, false)
 
     const name = await screen.findByLabelText(/^Name/)
-    const create = screen.getByRole('button', { name: 'Create' })
+    const create = dialog.getByRole('button', { name: 'Create' })
     expect(create).toBeEnabled()
-    // Created from the page's header, with no Cancel.
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'New view' }).parentElement
-        ?.parentElement
-    ).toContainElement(create)
+    // Closed from its cross, with no Cancel.
+    expect(dialog.getByRole('button', { name: 'Close' })).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull()
     fireEvent.click(create)
 
