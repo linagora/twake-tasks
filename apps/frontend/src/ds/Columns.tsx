@@ -339,7 +339,6 @@ export function LabelChip({
   name: string
   color?: string | null | undefined
   highlight?: string
-  /** A small cross in the chip takes the label off. */
   remove?: ChipRemoval | undefined
 }): ReactElement {
   const hue = hueOf(name)
@@ -440,7 +439,6 @@ interface ChipRemoval {
   disabled?: boolean
 }
 
-/** The cross of a chip, in the chip's own colour, darker on hover. */
 function ChipRemove({
   label,
   onClick,
@@ -468,7 +466,6 @@ function ChipRemove({
   )
 }
 
-/** A person on a task, as a chip with its avatar, and a cross to take it off. */
 export function PersonChip({
   avatar,
   name,

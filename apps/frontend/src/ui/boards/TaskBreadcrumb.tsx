@@ -1,12 +1,12 @@
-import type { ReactElement } from 'react'
+import { useContext, type ReactElement } from 'react'
 import { useLocation } from 'react-router'
 
 import type { Board, Task } from '@/domain/board'
 import {
+  BoardStepContext,
   Crumbs,
-  useBoardStep,
-  useBoardsOrigin,
-  useOrigin
+  OriginContext,
+  useBoardsOrigin
 } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -25,8 +25,8 @@ export function TaskBreadcrumb({
   const { t } = useI18n()
   const { pathname } = useLocation()
   const boards = useBoardsOrigin()
-  const origin = useOrigin() ?? boards
-  const boardStep = useBoardStep()
+  const origin = useContext(OriginContext) ?? boards
+  const boardStep = useContext(BoardStepContext)
   const ancestors: Task[] = []
   if (boardStep) {
     for (
