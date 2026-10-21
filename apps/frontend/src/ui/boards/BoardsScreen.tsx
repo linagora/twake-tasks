@@ -141,20 +141,20 @@ export function BoardsScreen(): ReactElement {
 
   return (
     <main className="u-ph-2 u-pt-half u-pb-2">
-      <PageCrumbs origin={origin} />
-      <div className="u-flex u-flex-items-center u-flex-justify-between u-mb-2">
-        <Typography variant="h3" component="h1">
-          {t('boards.title')}
-        </Typography>
-        <Button
-          startIcon={<Icon icon={Plus} />}
-          onClick={() => {
-            setCreating(true)
-          }}
-        >
-          {t('boards.new')}
-        </Button>
-      </div>
+      <PageCrumbs
+        origin={origin}
+        heading
+        actions={
+          <Button
+            startIcon={<Icon icon={Plus} />}
+            onClick={() => {
+              setCreating(true)
+            }}
+          >
+            {t('boards.new')}
+          </Button>
+        }
+      />
       <ShelfTabs
         segmented
         value={shelf}

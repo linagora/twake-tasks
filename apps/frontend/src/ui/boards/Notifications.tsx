@@ -125,10 +125,8 @@ export function NotificationsScreen(): ReactElement {
           label: t('notifications.title'),
           to: '/notifications'
         }}
+        heading
       />
-      <Typography variant="h3" component="h1" className="u-mb-2">
-        {t('notifications.title')}
-      </Typography>
       {notifications.isError && (
         <Typography role="alert">{t('notifications.loadFailed')}</Typography>
       )}

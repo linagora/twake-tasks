@@ -23,6 +23,18 @@ function boards() {
 }
 
 describe('FiltersScreen', () => {
+  it('titles the page with its breadcrumb, with no title repeating it', async () => {
+    renderRoute('/filters', { boardsApi: fakeBoardsApi() })
+
+    const crumbs = within(
+      await screen.findByRole('navigation', { name: 'Where the page is' })
+    )
+    expect(
+      crumbs.getByRole('heading', { level: 1, name: 'Filters' })
+    ).toHaveAttribute('aria-current', 'page')
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+  })
+
   it('keeps each select label clear of its value', async () => {
     renderRoute('/filters', { boardsApi: boards() })
 

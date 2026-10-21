@@ -401,7 +401,6 @@
     "undo": "Undo",
     "viewArchived": "View archived tasks",
     "viewTrash": "View trash",
-    "back": "Back to %{board}",
     "shelves": "Hidden tasks",
     "archivedShelf": "Archived",
     "trashShelf": "Trash",

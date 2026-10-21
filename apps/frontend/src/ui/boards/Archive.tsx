@@ -1,11 +1,4 @@
-import {
-  Archive,
-  Compass,
-  Icon,
-  Left,
-  Restore,
-  Trash
-} from '@linagora/twake-icons'
+import { Archive, Compass, Icon, Restore, Trash } from '@linagora/twake-icons'
 import {
   Alert,
   Button,
@@ -22,12 +15,12 @@ import {
   useState,
   type ReactElement
 } from 'react'
-import { Link as RouterLink, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import type { HiddenTask, Shelf } from '@/application/boards'
 import { LabelChip } from '@/ds/Columns'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
-import { HeaderToggleGroup, PageHeader, ToggleLabel } from '@/ds/PageHeader'
+import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
 import { ShelfHeader, ShelfList, ShelfRow, ShelfWhen } from '@/ds/ShelfList'
 import { Toast } from '@/ds/Toast'
 import type { Board, Task } from '@/domain/board'
@@ -185,7 +178,13 @@ export function ShelfScreen({
 
   return (
     <main className={flush ? undefined : 'u-ph-2 u-pt-half u-pb-2'}>
-      <PageCrumbs origin={origin} steps={[boardStep]} current={title} />
+      <PageCrumbs
+        origin={origin}
+        steps={[boardStep]}
+        current={title}
+        heading
+        actions={<ShelfSwitch shelf={shelf} />}
+      />
       {missing && (
         <EmptyState
           icon={Compass}
@@ -205,6 +204,36 @@ export function ShelfScreen({
         </OriginContext>
       )}
     </main>
+  )
+}
+
+// The shelf shown, beside its title: the other one is one click away.
+function ShelfSwitch({ shelf }: { shelf: Shelf }): ReactElement {
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  return (
+    <HeaderToggleGroup
+      exclusive
+      size="small"
+      value={shelf}
+      aria-label={t('archive.shelves')}
+      onChange={(_event, next: Shelf | null) => {
+        if (next) {
+          void navigate(`../${next}`, { relative: 'path', replace: true })
+        }
+      }}
+    >
+      {(['archived', 'trash'] as const).map(each => (
+        <ToggleButton
+          key={each}
+          value={each}
+          aria-label={t(`archive.${each}Shelf`)}
+        >
+          <Icon icon={SHELF_ICONS[each]} />
+          <ToggleLabel>{t(`archive.${each}Shelf`)}</ToggleLabel>
+        </ToggleButton>
+      ))}
+    </HeaderToggleGroup>
   )
 }
 
@@ -229,51 +258,6 @@ function ShelfTasks({
 
   return (
     <>
-      <PageHeader
-        back={
-          <Link
-            component={RouterLink}
-            to=".."
-            relative="path"
-            variant="body2"
-            color="textSecondary"
-            underline="hover"
-            className="u-flex u-flex-items-center"
-          >
-            <Icon icon={Left} size={12} className="u-mr-half" />
-            {t('archive.back', { board: board.name })}
-          </Link>
-        }
-        title={
-          <Typography variant="h3" component="h1" noWrap>
-            {title}
-          </Typography>
-        }
-        actions={
-          <HeaderToggleGroup
-            exclusive
-            size="small"
-            value={shelf}
-            aria-label={t('archive.shelves')}
-            onChange={(_event, next: Shelf | null) => {
-              if (next) {
-                void navigate(`../${next}`, { relative: 'path', replace: true })
-              }
-            }}
-          >
-            {(['archived', 'trash'] as const).map(each => (
-              <ToggleButton
-                key={each}
-                value={each}
-                aria-label={t(`archive.${each}Shelf`)}
-              >
-                <Icon icon={SHELF_ICONS[each]} />
-                <ToggleLabel>{t(`archive.${each}Shelf`)}</ToggleLabel>
-              </ToggleButton>
-            ))}
-          </HeaderToggleGroup>
-        }
-      />
       {shelf === 'trash' && tasks.length > 0 && (
         <Alert severity="info" className="u-mb-1">
           {t('archive.retention')}

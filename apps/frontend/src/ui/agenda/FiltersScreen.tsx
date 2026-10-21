@@ -66,22 +66,20 @@ export function FiltersScreen(): ReactElement {
     <main className="u-ph-2 u-pt-half u-pb-2">
       <PageCrumbs
         origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
+        heading
+        actions={
+          !form && (
+            <Button
+              startIcon={<Icon icon={Plus} />}
+              onClick={() => {
+                setForm('new')
+              }}
+            >
+              {t('filters.new')}
+            </Button>
+          )
+        }
       />
-      <div className="u-flex u-flex-items-center u-flex-justify-between u-mb-2">
-        <Typography variant="h3" component="h1">
-          {t('filters.title')}
-        </Typography>
-        {!form && (
-          <Button
-            startIcon={<Icon icon={Plus} />}
-            onClick={() => {
-              setForm('new')
-            }}
-          >
-            {t('filters.new')}
-          </Button>
-        )}
-      </div>
       {form && (
         <FilterForm
           key={form === 'new' ? form : form.id}

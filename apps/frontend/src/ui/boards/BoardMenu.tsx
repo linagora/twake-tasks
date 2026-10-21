@@ -55,7 +55,9 @@ export function BoardMenu({
 
   return (
     <>
+      {/* As tall as the other actions, so that the breadcrumb strip keeps its height. */}
       <IconButton
+        size="medium"
         aria-label={t('board.menu')}
         aria-haspopup="menu"
         aria-expanded={anchor !== null}
