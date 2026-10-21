@@ -217,6 +217,8 @@
     "unassigned": "%{actor} desasignó a %{name}",
     "labeled": "%{actor} añadió la etiqueta %{name}",
     "unlabeled": "%{actor} quitó la etiqueta %{name}",
+    "fileAdded": "%{actor} añadió el archivo %{name}",
+    "fileRemoved": "%{actor} quitó el archivo %{name}",
     "someone": "alguien que dejó el tablero",
     "someLabel": "una etiqueta eliminada",
     "someSection": "una sección eliminada"

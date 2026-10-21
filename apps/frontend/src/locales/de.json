@@ -217,6 +217,8 @@
     "unassigned": "%{actor} hat die Zuweisung von %{name} aufgehoben",
     "labeled": "%{actor} hat das Label %{name} hinzugefügt",
     "unlabeled": "%{actor} hat das Label %{name} entfernt",
+    "fileAdded": "%{actor} hat die Datei %{name} hinzugefügt",
+    "fileRemoved": "%{actor} hat die Datei %{name} entfernt",
     "someone": "eine Person, die das Board verlassen hat",
     "someLabel": "ein gelöschtes Label",
     "someSection": "einem gelöschten Abschnitt"

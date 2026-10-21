@@ -217,6 +217,8 @@
     "unassigned": "%{actor} đã bỏ giao %{name}",
     "labeled": "%{actor} đã thêm nhãn %{name}",
     "unlabeled": "%{actor} đã bỏ nhãn %{name}",
+    "fileAdded": "%{actor} đã thêm tệp %{name}",
+    "fileRemoved": "%{actor} đã gỡ tệp %{name}",
     "someone": "người đã rời bảng",
     "someLabel": "nhãn đã xóa",
     "someSection": "mục đã xóa"

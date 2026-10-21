@@ -16,6 +16,8 @@ function logoBoard() {
   const at = '2026-10-05T09:00:00Z'
   const entry = { actor: alice, name: null, at }
   boardsApi.history.set(logo.id, [
+    { ...entry, field: 'files', from: 'brief.pdf', to: null },
+    { ...entry, field: 'files', from: null, to: 'brief.pdf' },
     {
       ...entry,
       field: 'board',
@@ -58,6 +60,8 @@ describe('History', () => {
         item => within(item).getByRole('paragraph').textContent.split(' · ')[0]
       )
     ).toEqual([
+      'Alice removed the file brief.pdf',
+      'Alice added the file brief.pdf',
       'Alice moved it from the board Ops to Design',
       'Alice added the label Urgent',
       'Alice added the label a deleted label',

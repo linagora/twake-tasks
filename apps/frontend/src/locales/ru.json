@@ -217,6 +217,8 @@
     "unassigned": "%{actor} снял(а) %{name}",
     "labeled": "%{actor} добавил(а) метку %{name}",
     "unlabeled": "%{actor} убрал(а) метку %{name}",
+    "fileAdded": "%{actor} добавил(а) файл %{name}",
+    "fileRemoved": "%{actor} убрал(а) файл %{name}",
     "someone": "человек, покинувший доску",
     "someLabel": "удалённая метка",
     "someSection": "удалённый раздел"

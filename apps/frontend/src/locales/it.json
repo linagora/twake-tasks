@@ -217,6 +217,8 @@
     "unassigned": "%{actor} ha rimosso l’assegnazione di %{name}",
     "labeled": "%{actor} ha aggiunto l’etichetta %{name}",
     "unlabeled": "%{actor} ha rimosso l’etichetta %{name}",
+    "fileAdded": "%{actor} ha aggiunto il file %{name}",
+    "fileRemoved": "%{actor} ha rimosso il file %{name}",
     "someone": "una persona che ha lasciato la bacheca",
     "someLabel": "un’etichetta eliminata",
     "someSection": "una sezione eliminata"

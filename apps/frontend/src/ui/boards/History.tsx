@@ -107,6 +107,11 @@ function describe(
         name
       })
     }
+    case 'files':
+      return t(added ? 'history.fileAdded' : 'history.fileRemoved', {
+        actor,
+        name: value
+      })
     case 'archived':
       return t(added ? 'history.archived' : 'history.unarchived', { actor })
     case 'deleted':
