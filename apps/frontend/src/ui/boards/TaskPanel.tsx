@@ -1,4 +1,14 @@
-import { Check, CheckList, Cross, Dots, Icon, Pen } from '@linagora/twake-icons'
+import {
+  Archive,
+  Check,
+  CheckList,
+  Cross,
+  Dots,
+  FolderMoveto,
+  Icon,
+  Pen,
+  Trash
+} from '@linagora/twake-icons'
 import {
   Button,
   Dialog,
@@ -6,7 +16,6 @@ import {
   DialogTitle,
   IconButton,
   Menu,
-  MenuItem,
   Tab,
   Tabs,
   TextField,
@@ -18,6 +27,7 @@ import {
 import { useId, useState, type ReactElement, type ReactNode } from 'react'
 
 import { ApiError } from '@/application/boards'
+import { IconMenuItem } from '@/ds/IconMenuItem'
 import { RichText, RichTextEditor } from '@/ds/RichText'
 import {
   Grow,
@@ -405,28 +415,31 @@ function TaskMenu({
         }}
       >
         {movable && (
-          <MenuItem
+          <IconMenuItem
+            icon={FolderMoveto}
             onClick={choose(() => {
               setMoving(true)
             })}
           >
             {t('transfer.title')}
-          </MenuItem>
+          </IconMenuItem>
         )}
-        <MenuItem
+        <IconMenuItem
+          icon={Archive}
           onClick={choose(() => {
             remove.mutate('archived', { onSuccess: onRemoved })
           })}
         >
           {t('archive.archive')}
-        </MenuItem>
-        <MenuItem
+        </IconMenuItem>
+        <IconMenuItem
+          icon={Trash}
           onClick={choose(() => {
             remove.mutate('trash', { onSuccess: onRemoved })
           })}
         >
           {t('archive.delete')}
-        </MenuItem>
+        </IconMenuItem>
       </Menu>
       {moving && (
         <Dialog

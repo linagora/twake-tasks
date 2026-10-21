@@ -6,15 +6,23 @@ import {
   DialogTitle,
   IconButton,
   Menu,
-  MenuItem,
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { Dots, Icon, Plus } from '@linagora/twake-icons'
+import {
+  Dots,
+  Icon,
+  Left,
+  Pen,
+  Plus,
+  Right,
+  Trash
+} from '@linagora/twake-icons'
 import { useId, useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { NewColumnButton } from '@/ds/Columns'
+import { IconMenuItem } from '@/ds/IconMenuItem'
 import type { Board, Section, SectionCategory } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -106,38 +114,42 @@ export function SectionMenu({
           setAnchor(null)
         }}
       >
-        <MenuItem
+        <IconMenuItem
+          icon={Pen}
           onClick={choose(() => {
             setDialog('edit')
           })}
         >
           {t('section.edit')}
-        </MenuItem>
+        </IconMenuItem>
         {previous && (
-          <MenuItem
+          <IconMenuItem
+            icon={Left}
             onClick={choose(() => {
               move.mutate({ beforeId: previous.id })
             })}
           >
             {t('section.moveLeft')}
-          </MenuItem>
+          </IconMenuItem>
         )}
         {next && (
-          <MenuItem
+          <IconMenuItem
+            icon={Right}
             onClick={choose(() => {
               move.mutate({ afterId: next.id })
             })}
           >
             {t('section.moveRight')}
-          </MenuItem>
+          </IconMenuItem>
         )}
-        <MenuItem
+        <IconMenuItem
+          icon={Trash}
           onClick={choose(() => {
             setDialog('delete')
           })}
         >
           {t('section.delete')}
-        </MenuItem>
+        </IconMenuItem>
       </Menu>
       {move.isError && (
         <Typography role="alert" variant="caption">
