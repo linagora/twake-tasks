@@ -35,7 +35,7 @@ import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
-import { useTaskPanel } from '@/ui/boards/useTaskPanel'
+import { useArrived, useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -64,11 +64,13 @@ export function TaskPanel({
   const tabsId = useId()
   const children = board?.tasks.filter(each => each.parentId === task.id) ?? []
   const done = children.filter(each => each.completedAt !== null).length
+  const arrived = useArrived(task.key)
 
   return (
     <SidePanel
       label={`${task.key} ${task.title}`}
       onClose={onClose}
+      instant={arrived}
       header={
         <>
           <TaskBreadcrumb task={task} board={board} />

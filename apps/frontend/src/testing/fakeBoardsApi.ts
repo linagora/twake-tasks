@@ -152,11 +152,10 @@ export function fakeBoardsApi(boards: Board[] = []) {
   })
 
   const filters: SavedFilter[] = []
-  const openTasks = () =>
+  // Done and canceled tasks too, as a view shows them.
+  const allTasks = () =>
     [...store.values()].flatMap(board =>
-      board.tasks
-        .filter(task => !task.completedAt && !task.canceledAt)
-        .map(task => agendaTask(board, task))
+      board.tasks.map(task => agendaTask(board, task))
     )
 
   const sharings = new Map<string, Sharing>()
@@ -284,13 +283,48 @@ export function fakeBoardsApi(boards: Board[] = []) {
       })
     ),
     listFilters: vi.fn<BoardsApi['listFilters']>(() =>
-      Promise.resolve(structuredClone(filters))
+      Promise.resolve(
+        structuredClone(filters).sort(
+          (a, b) => Number(b.favorite) - Number(a.favorite)
+        )
+      )
     ),
     createFilter: vi.fn<BoardsApi['createFilter']>(filter =>
       Promise.resolve().then(() => {
         const id = nextId()
-        filters.push({ id, ...structuredClone(filter) })
+        filters.push({
+          id,
+          name: filter.name,
+          criteria: structuredClone(filter.criteria),
+          favorite: false,
+          icon: filter.icon ?? null,
+          layout: filter.layout ?? 'list',
+          groupBy: filter.groupBy ?? 'status',
+          allColumns: filter.allColumns ?? false
+        })
         return { id }
+      })
+    ),
+    setFilterFavorite: vi.fn<BoardsApi['setFilterFavorite']>(
+      (filterId, favorite) =>
+        Promise.resolve().then(() => {
+          const filter = filters.find(filter => filter.id === filterId)
+          if (!filter) throw new ApiError(404, 'not_found')
+          filter.favorite = favorite
+        })
+    ),
+    updateFilter: vi.fn<BoardsApi['updateFilter']>((filterId, edit) =>
+      Promise.resolve().then(() => {
+        const filter = filters.find(filter => filter.id === filterId)
+        if (!filter) throw new ApiError(404, 'not_found')
+        Object.assign(filter, {
+          name: edit.name,
+          criteria: structuredClone(edit.criteria),
+          icon: edit.icon ?? null,
+          layout: edit.layout ?? 'list',
+          groupBy: edit.groupBy ?? 'status',
+          allColumns: edit.allColumns ?? false
+        })
       })
     ),
     deleteFilter: vi.fn<BoardsApi['deleteFilter']>(filterId =>
@@ -311,18 +345,54 @@ export function fakeBoardsApi(boards: Board[] = []) {
         ].sort()
       )
     ),
+    people: vi.fn<BoardsApi['people']>(() =>
+      Promise.resolve([
+        ...new Map(
+          [...store.values()]
+            .flatMap(board => board.members)
+            .map(member => [member.userId, member])
+        ).values()
+      ])
+    ),
+    statusNames: vi.fn<BoardsApi['statusNames']>(() =>
+      Promise.resolve([
+        ...new Map(
+          [...store.values()]
+            .filter(board => !board.archived)
+            .flatMap(board => board.sections)
+            .map(section => [section.name.trim().toLowerCase(), section.name])
+        ).values()
+      ])
+    ),
+    // Without a signed-in person, `me` matches nobody.
     filteredTasks: vi.fn<BoardsApi['filteredTasks']>(filterId =>
       Promise.resolve().then(() => {
         const filter = filters.find(candidate => candidate.id === filterId)
         if (!filter) throw new ApiError(404, 'not_found')
-        const { priority, label } = filter.criteria
-        return openTasks().filter(
+        const { priorities, labels, boards, assignees, statuses } =
+          filter.criteria
+        const names = labels?.map(name => name.toLowerCase())
+        const sections = statuses?.map(name => name.trim().toLowerCase())
+        return allTasks().filter(
           task =>
-            (priority === undefined || task.priority === priority) &&
-            (label === undefined ||
-              task.labels.some(
-                each => each.name.toLowerCase() === label.toLowerCase()
-              ))
+            (boards === undefined || boards.includes(task.boardId)) &&
+            (priorities === undefined ||
+              (task.priority !== null && priorities.includes(task.priority))) &&
+            (names === undefined ||
+              task.labels.some(each =>
+                names.includes(each.name.toLowerCase())
+              )) &&
+            (assignees === undefined ||
+              (assignees.includes('nobody') && task.assignees.length === 0) ||
+              task.assignees.some(each => assignees.includes(each.userId))) &&
+            (sections === undefined ||
+              store
+                .get(task.boardId)
+                ?.sections.some(
+                  section =>
+                    section.id === task.sectionId &&
+                    sections.includes(section.name.trim().toLowerCase())
+                ))
         )
       })
     ),

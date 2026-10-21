@@ -123,8 +123,16 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (await call<{ filters: SavedFilter[] }>('GET', '/filters')).filters,
     createFilter: filter => call('POST', '/filters', filter),
     deleteFilter: filterId => call('DELETE', route`/filters/${filterId}`),
+    setFilterFavorite: (filterId, favorite) =>
+      call(favorite ? 'PUT' : 'DELETE', route`/filters/${filterId}/favorite`),
+    updateFilter: (filterId, filter) =>
+      call('PUT', route`/filters/${filterId}`, filter),
     labelNames: async () =>
       (await call<{ labels: string[] }>('GET', '/labels')).labels,
+    people: async () =>
+      (await call<{ people: Person[] }>('GET', '/people')).people,
+    statusNames: async () =>
+      (await call<{ statuses: string[] }>('GET', '/statuses')).statuses,
     filteredTasks: async (filterId, zone) =>
       (
         await call<{ tasks: AgendaTask[] }>(

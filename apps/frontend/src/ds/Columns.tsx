@@ -1,4 +1,4 @@
-import { Cross, Icon } from '@linagora/twake-icons'
+import { Cross, Icon, Mosaic } from '@linagora/twake-icons'
 import {
   Box,
   Button,
@@ -500,6 +500,36 @@ export function PersonChip({
         {name}
       </Box>
       {remove && <ChipRemove {...remove} size={18} />}
+    </Box>
+  )
+}
+
+/** The board a task comes from, beside its labels where tasks of many boards meet. */
+export function BoardChip({ name }: { name: string }): ReactElement {
+  return (
+    <Box
+      component="span"
+      title={name}
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.5,
+        height: 20,
+        px: 1,
+        borderRadius: 10,
+        typography: 'caption',
+        fontWeight: 500,
+        lineHeight: 1,
+        maxWidth: '100%',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        color: 'text.secondary',
+        bgcolor: 'action.hover',
+        '& > span': { overflow: 'hidden', textOverflow: 'ellipsis' }
+      }}
+    >
+      <Icon icon={Mosaic} size={10} aria-hidden="true" />
+      <span>{name}</span>
     </Box>
   )
 }

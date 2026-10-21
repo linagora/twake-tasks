@@ -5,7 +5,7 @@ import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createCommentStore } from './comments.ts'
-import { createFilterStore } from './filters.ts'
+import { createFilterStore, criteriaOf, type View } from './filters.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
@@ -13,6 +13,7 @@ import { createSharingStore } from './sharing.ts'
 import { createReminderStore } from './reminders.ts'
 import {
   durationUnit,
+  GROUPINGS,
   LAYOUTS,
   memberRole,
   recurrenceUnit,
@@ -95,12 +96,52 @@ const agendaQuery = z.object({
 
 const newFilter = z.object({
   name: z.string().trim().min(1).max(100),
+  // Each criterion takes many values; the single ones of earlier views stay
+  // understood.
   criteria: z.strictObject({
+    assignees: z
+      .array(z.union([z.enum(['me', 'nobody']), z.uuid()]))
+      .max(100)
+      .optional(),
+    priorities: z.array(z.int().min(1).max(4)).max(4).optional(),
+    labels: z.array(z.string().trim().min(1).max(50)).max(100).optional(),
+    dues: z
+      .array(z.enum(['overdue', 'today', 'week', 'none']))
+      .max(4)
+      .optional(),
+    boards: z.array(z.uuid()).max(100).optional(),
+    statuses: z.array(z.string().trim().min(1).max(100)).max(100).optional(),
     assignee: z.enum(['me', 'nobody']).optional(),
     priority: z.int().min(1).max(4).optional(),
     label: z.string().trim().min(1).max(50).optional(),
-    due: z.enum(['overdue', 'today', 'week', 'none']).optional()
-  })
+    due: z.enum(['overdue', 'today', 'week', 'none']).optional(),
+    board: z.uuid().optional()
+  }),
+  // The name of an icon of the Twake set, which the frontend draws.
+  icon: z
+    .string()
+    .regex(/^[A-Z][A-Za-z0-9]{0,39}$/)
+    .nullable()
+    .optional(),
+  layout: z.enum(LAYOUTS).optional(),
+  groupBy: z.enum(GROUPINGS).optional(),
+  allColumns: z.boolean().optional()
+})
+
+const viewOf = ({
+  name,
+  criteria,
+  icon,
+  layout,
+  groupBy,
+  allColumns
+}: z.infer<typeof newFilter>): View => ({
+  name,
+  criteria: criteriaOf(criteria),
+  icon: icon ?? null,
+  layout: layout ?? 'list',
+  groupBy: groupBy ?? 'status',
+  allColumns: allColumns ?? false
 })
 
 const filterParams = z.object({ filterId: z.uuid() })
@@ -556,6 +597,30 @@ export function registerBoards(
     }
   )
 
+  app.get(
+    '/statuses',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await filterStore.statusNames(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return { statuses: result.value }
+    }
+  )
+
+  app.get(
+    '/people',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await filterStore.people(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return { people: result.value }
+    }
+  )
+
   app.post(
     '/filters',
     { preHandler: deps.requireIdentity },
@@ -566,11 +631,7 @@ export function registerBoards(
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
-      const result = await filterStore.createFilter(
-        identity,
-        body.data.name,
-        body.data.criteria
-      )
+      const result = await filterStore.createFilter(identity, viewOf(body.data))
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(201).send(result.value)
     }
@@ -587,6 +648,52 @@ export function registerBoards(
       const result = await filterStore.deleteFilter(
         identity,
         params.data.filterId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  for (const [method, favorite] of [
+    ['PUT', true],
+    ['DELETE', false]
+  ] as const) {
+    app.route({
+      method,
+      url: '/filters/:filterId/favorite',
+      preHandler: deps.requireIdentity,
+      handler: async (request, reply) => {
+        const identity = request.identity
+        if (!identity) return reply.code(401).send()
+        const params = filterParams.safeParse(request.params)
+        if (!params.success) return reply.code(404).send({ error: 'not_found' })
+        const result = await filterStore.setFavorite(
+          identity,
+          params.data.filterId,
+          favorite
+        )
+        if (!result.ok) return refuse(reply, result.error)
+        return reply.code(204).send()
+      }
+    })
+  }
+
+  app.put(
+    '/filters/:filterId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = filterParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = newFilter.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await filterStore.updateFilter(
+        identity,
+        params.data.filterId,
+        viewOf(body.data)
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()

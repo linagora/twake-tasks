@@ -11,7 +11,8 @@ import {
 import { useEffect, useId, useRef, useState, type ReactElement } from 'react'
 
 import type { TransferPreview } from '@/application/boards'
-import type { Task } from '@/domain/board'
+import { keptSection } from '@/application/viewTask'
+import type { Section, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import {
   useBoard,
@@ -21,18 +22,24 @@ import {
 } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
+// The task keeps its status if the board has one of that name, else it takes
+// the board's default.
 function SectionSelect({
   boardId,
+  kept,
   value,
   onChange
 }: {
   boardId: string
+  kept: { sections: readonly Section[]; sectionId: string | null }
   value: string | null | undefined
   onChange: (sectionId: string | null) => void
 }): ReactElement | null {
   const { t } = useI18n()
   const sections = useBoard(boardId).data?.sections
-  const first = sections?.[0]?.id ?? null
+  const first = sections
+    ? (keptSection(kept.sections, kept.sectionId, sections)?.id ?? null)
+    : null
   useEffect(() => {
     if (sections && value === undefined) onChange(first)
   }, [sections, value, first, onChange])
@@ -68,7 +75,7 @@ function personName(
     : displayName({ email: person.email ?? '', name: person.name })
 }
 
-function ConfirmTransfer({
+export function ConfirmTransfer({
   task,
   board,
   preview,
@@ -168,7 +175,8 @@ export function TransferTask({
   const { t } = useI18n()
   const boards = useBoards()
   const [target, setTarget] = useState('')
-  // Undefined until the target board loads and its first section is chosen.
+  const from = useBoard(boardId).data?.sections ?? []
+  // Undefined until the target board loads and the task's status is chosen.
   const [sectionId, setSectionId] = useState<string | null>()
   const [preview, setPreview] = useState<TransferPreview | null>(null)
   const [removed, setRemoved] = useState<TransferPreview | null>(null)
@@ -263,6 +271,7 @@ export function TransferTask({
         {target && (
           <SectionSelect
             boardId={target}
+            kept={{ sections: from, sectionId: task.sectionId }}
             value={sectionId}
             onChange={setSectionId}
           />

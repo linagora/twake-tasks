@@ -1,6 +1,7 @@
 import type {
   Board,
   BoardSummary,
+  Grouping,
   Label,
   Layout,
   Person,
@@ -136,17 +137,41 @@ export interface Agenda {
   tasks: AgendaTask[]
 }
 
+export type Due = 'overdue' | 'today' | 'week' | 'none'
+
+/**
+ * What a view keeps to. A task matches a criterion with any of its values,
+ * and the view with every criterion set.
+ */
 export interface FilterCriteria {
-  assignee?: 'me' | 'nobody'
-  priority?: number
-  label?: string
-  due?: 'overdue' | 'today' | 'week' | 'none'
+  /** People's ids, `me` or `nobody`. */
+  assignees?: string[]
+  priorities?: number[]
+  labels?: string[]
+  dues?: Due[]
+  /** Boards' ids. */
+  boards?: string[]
+  /** Section names, the columns of any board of that name in any case. */
+  statuses?: string[]
 }
 
 export interface SavedFilter {
   id: string
   name: string
   criteria: FilterCriteria
+  favorite: boolean
+  icon: string | null
+  layout: Layout
+  groupBy: Grouping
+  /** Columns of statuses no task is in show too. */
+  allColumns: boolean
+}
+
+export type NewSavedFilter = Pick<SavedFilter, 'name' | 'criteria'> & {
+  icon?: string | null
+  layout?: Layout
+  groupBy?: Grouping
+  allColumns?: boolean
 }
 
 export interface Sharing {
@@ -226,10 +251,16 @@ export interface BoardsApi {
   setMemberRole: (boardId: string, userId: string, role: Role) => Promise<void>
   removeMember: (boardId: string, userId: string) => Promise<void>
   listFilters: () => Promise<SavedFilter[]>
-  createFilter: (filter: Omit<SavedFilter, 'id'>) => Promise<{ id: string }>
+  createFilter: (filter: NewSavedFilter) => Promise<{ id: string }>
   deleteFilter: (filterId: string) => Promise<void>
+  setFilterFavorite: (filterId: string, favorite: boolean) => Promise<void>
+  updateFilter: (filterId: string, filter: NewSavedFilter) => Promise<void>
   /** The label names on the person's boards, one per spelling regardless of case. */
   labelNames: () => Promise<string[]>
+  /** The people who share a board with the person, to keep a view to. */
+  people: () => Promise<Person[]>
+  /** The section names of the person's boards, one per name regardless of case. */
+  statusNames: () => Promise<string[]>
   /** Open tasks matching a saved filter, across the person's boards. */
   filteredTasks: (filterId: string, zone: string) => Promise<AgendaTask[]>
   /** Overdue tasks, then those due within `days` days of today in `zone`. */

@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useSearchParams } from 'react-router'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 
 import type { Task } from '@/domain/board'
 
@@ -25,7 +25,11 @@ export interface TaskPanelState {
 export function useTaskPanel(key: string, tasks: Task[] = []): TaskPanelState {
   const [params, setParams] = useSearchParams()
   const shown = params.get('task')
-  const open = shown !== null && lineage(shown, tasks).includes(key)
+  const state: unknown = useLocation().state
+  // A task that just moved keeps its panel until its new card shows.
+  const open =
+    (shown !== null && lineage(shown, tasks).includes(key)) ||
+    movedOf(state)?.from === key
 
   const show = useCallback(() => {
     setParams(
@@ -65,4 +69,44 @@ export function lineage(key: string, tasks: Task[]): string[] {
     keys.push(task.key)
   }
   return keys
+}
+
+interface Moved {
+  from: string
+  to: string
+}
+
+const movedOf = (state: unknown): Moved | null =>
+  typeof state === 'object' && state !== null && 'moved' in state
+    ? (state.moved as Moved)
+    : null
+
+/** Whether the panel of this task follows it from its former board. */
+export function useArrived(key: string): boolean {
+  return movedOf(useLocation().state)?.to === key
+}
+
+/**
+ * Keeps the panel on a task that moved to another board, where it took a new
+ * key: a board's page goes to the new board, any other list stays.
+ */
+export function useFollowMovedTask(): (
+  from: string,
+  to: string,
+  key: string
+) => void {
+  const navigate = useNavigate()
+  const { pathname, search } = useLocation()
+  return useCallback(
+    (from: string, to: string, key: string) => {
+      const params = new URLSearchParams(search)
+      const moved: Moved = { from: params.get('task') ?? '', to: key }
+      params.set('task', key)
+      void navigate(
+        `${pathname.replace(`/boards/${from}`, `/boards/${to}`)}?${params.toString()}`,
+        { replace: true, state: { moved } }
+      )
+    },
+    [navigate, pathname, search]
+  )
 }

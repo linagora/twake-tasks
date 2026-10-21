@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -22,35 +22,253 @@ function boards() {
   return fakeBoardsApi([design])
 }
 
+// Picks a choice of a setting of the view, as its layout, from its menu.
+async function choose(setting: string, from: string, to: string) {
+  fireEvent.click(screen.getByRole('button', { name: `${setting}: ${from}` }))
+  fireEvent.click(
+    within(await screen.findByRole('menu', { name: setting })).getByRole(
+      'menuitemradio',
+      { name: to }
+    )
+  )
+  expect(
+    await screen.findByRole('button', { name: `${setting}: ${to}` })
+  ).toBeVisible()
+}
+
+// Picks values of a criterion in its picker, as on a task, after adding the
+// criterion from the menu unless it shows.
+async function pick(criterion: string, ...values: string[]) {
+  await screen.findByLabelText(/^Name/)
+  const shown = screen.queryByRole('button', {
+    name: new RegExp(`^(Add to|Change) ${criterion}$`)
+  })
+  if (shown) {
+    fireEvent.click(shown)
+  } else {
+    fireEvent.click(screen.getByRole('button', { name: 'Add filter' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: criterion }))
+  }
+  const picker = within(await screen.findByRole('dialog', { name: criterion }))
+  for (const value of values) {
+    fireEvent.click(
+      await picker.findByRole('menuitemcheckbox', { name: value })
+    )
+  }
+  fireEvent.keyDown(picker.getByRole('menu'), { key: 'Escape' })
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog', { name: criterion })).toBeNull()
+  })
+}
+
+// The dialog of a new view, its details shown unless said.
+async function openNewView(
+  boardsApi: ReturnType<typeof fakeBoardsApi>,
+  details = true
+) {
+  const rendered = renderRoute('/filters/new', { boardsApi })
+  const dialog = within(
+    await screen.findByRole('dialog', { name: 'Create a view' })
+  )
+  if (details) {
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+  }
+  return { ...rendered, dialog }
+}
+
 describe('FiltersScreen', () => {
-  it('keeps each select label clear of its value', async () => {
+  it('shows the criteria in use, and adds the others from a menu', async () => {
     renderRoute('/filters', { boardsApi: boards() })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
-    for (const name of ['Assignee', 'Priority', 'Label', 'Due']) {
-      expect(
-        await screen.findByText(name, { selector: 'label' })
-      ).toHaveAttribute('data-shrink', 'true')
-    }
+    fireEvent.click(await screen.findByRole('button', { name: 'Create view' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Add details' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Add filter' }))
+    expect(
+      (await screen.findAllByRole('menuitem')).map(item => item.textContent)
+    ).toEqual(['Board', 'Section', 'Assignee', 'Label', 'Priority', 'Due'])
+    expect(screen.queryByText('No criteria')).toBeNull()
+
+    // A criterion added opens its picker, and stays though nothing is picked.
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Priority' }))
+    const picker = await screen.findByRole('dialog', { name: 'Priority' })
+    fireEvent.keyDown(within(picker).getByRole('menu'), { key: 'Escape' })
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Priority' })).toBeNull()
+    })
+    expect(
+      screen.getByRole('button', { name: 'Add to Priority' })
+    ).toBeVisible()
+    expect(screen.getByText('No criteria')).toBeVisible()
+
+    await pick('Priority', 'P1')
+    fireEvent.click(screen.getByRole('button', { name: 'Remove P1' }))
+    expect(screen.getByText('No criteria')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Add filter' }))
+    expect(
+      (await screen.findAllByRole('menuitem')).map(item => item.textContent)
+    ).not.toContain('Priority')
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+
+    // The plus is by the title once a filter shows; the bin takes it off.
+    expect(
+      screen.getByRole('heading', { name: 'Filters' }).parentElement
+    ).toContainElement(screen.getByRole('button', { name: 'Add filter' }))
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Remove the Priority filter' })
+    )
+    expect(screen.queryByRole('button', { name: 'Add to Priority' })).toBeNull()
   })
 
-  it('saves a filter and opens its tasks', async () => {
+  it('groups a view by the criterion chosen, its sections unless said', async () => {
     const boardsApi = boards()
-    renderRoute('/filters', { boardsApi })
+    await openNewView(boardsApi)
 
-    expect(screen.queryByLabelText('Name')).toBeNull()
-    fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
-    fireEvent.change(await screen.findByLabelText('Name'), {
+    fireEvent.change(await screen.findByLabelText(/^Name/), {
+      target: { value: 'By label' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Group by: Section' }))
+    const choices = within(
+      await screen.findByRole('menu', { name: 'Group by' })
+    )
+    expect(
+      choices.getByRole('menuitemradio', { name: 'Section' })
+    ).toHaveAttribute('aria-checked', 'true')
+    fireEvent.click(choices.getByRole('menuitemradio', { name: 'Label' }))
+    expect(
+      await screen.findByRole('button', { name: 'Group by: Label' })
+    ).toBeVisible()
+    // Only columns of statuses can have no task.
+    expect(
+      screen.queryByRole('switch', { name: 'Show all columns' })
+    ).toBeNull()
+    await choose('Layout', 'List', 'Board')
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createFilter).toHaveBeenCalledWith(
+        expect.objectContaining({ groupBy: 'label' })
+      )
+    })
+    expect(
+      await screen.findByRole('region', { name: 'client' })
+    ).toHaveTextContent('Logo')
+    expect(screen.getByRole('region', { name: 'No label' })).toHaveTextContent(
+      'Poster'
+    )
+  })
+
+  it('keeps to any of many values, shown as on a task', async () => {
+    const boardsApi = boards()
+    await openNewView(boardsApi)
+
+    fireEvent.change(await screen.findByLabelText(/^Name/), {
+      target: { value: 'Mine or nobody’s' }
+    })
+    await pick('Assignee', 'Me', 'Unassigned')
+    await pick('Due', 'Overdue', 'Today')
+    await pick('Priority', 'P1', 'P2')
+    await pick('Label', 'client')
+    expect(screen.getByText('client')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Remove client' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createFilter).toHaveBeenCalledWith(
+        expect.objectContaining({
+          criteria: {
+            assignees: ['me', 'nobody'],
+            priorities: [1, 2],
+            labels: ['client'],
+            dues: ['today']
+          }
+        })
+      )
+    })
+  })
+
+  it('takes a chosen value off with its cross', async () => {
+    const boardsApi = boards()
+    await openNewView(boardsApi)
+
+    fireEvent.change(await screen.findByLabelText(/^Name/), {
+      target: { value: 'High' }
+    })
+    await pick('Priority', 'P1', 'P2')
+    // The plus follows the values chosen.
+    expect(
+      screen.getByRole('button', { name: 'Remove P2' }).parentElement
+        ?.parentElement
+    ).toContainElement(screen.getByRole('button', { name: 'Add to Priority' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove P1' }))
+    expect(screen.queryByRole('button', { name: 'Remove P1' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createFilter).toHaveBeenCalledWith(
+        expect.objectContaining({ criteria: { priorities: [2] } })
+      )
+    })
+  })
+
+  it('keeps to columns by name, offering those of all my boards', async () => {
+    const boardsApi = boards()
+    await openNewView(boardsApi)
+
+    fireEvent.change(await screen.findByLabelText(/^Name/), {
+      target: { value: 'In progress' }
+    })
+    await pick('Section', 'In progress')
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createFilter).toHaveBeenCalledWith(
+        expect.objectContaining({ criteria: { statuses: ['In progress'] } })
+      )
+    })
+  })
+
+  it('keeps to anyone who shares a board with me', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    design.members = [
+      { userId: 'lea', email: 'lea@example.com', name: 'Léa Martin' }
+    ]
+    const boardsApi = fakeBoardsApi([design])
+    await openNewView(boardsApi)
+
+    fireEvent.change(await screen.findByLabelText(/^Name/), {
+      target: { value: 'Léa’s' }
+    })
+    await pick('Assignee', 'Léa Martin')
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createFilter).toHaveBeenCalledWith(
+        expect.objectContaining({ criteria: { assignees: ['lea'] } })
+      )
+    })
+    expect(await screen.findByLabelText('Assignee: Léa Martin')).toBeVisible()
+  })
+
+  it('creates a view from its dialog, as a task is, then opens it', async () => {
+    const boardsApi = boards()
+    const { router } = renderRoute('/filters', { boardsApi })
+
+    expect(screen.queryByLabelText(/^Name/)).toBeNull()
+    fireEvent.click(await screen.findByRole('button', { name: 'Create view' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a view' })
+    )
+    expect(router.state.location.search).toBe('?new=view')
+    expect(dialog.getByLabelText(/^Name/)).toHaveFocus()
+    // The rest waits under Add details.
+    expect(dialog.queryByRole('button', { name: 'Add filter' })).toBeNull()
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    fireEvent.change(dialog.getByLabelText(/^Name/), {
       target: { value: 'Client fires' }
     })
-    fireEvent.change(screen.getByRole('combobox', { name: 'Priority' }), {
-      target: { value: '1' }
-    })
-    const label = screen.getByRole('combobox', { name: 'Label' })
-    await within(label).findByRole('option', { name: 'client' })
-    fireEvent.change(label, { target: { value: 'client' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
-    fireEvent.click(await screen.findByRole('link', { name: 'Client fires' }))
+    await pick('Priority', 'P1')
+    await pick('Label', 'client')
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
     expect(
       await screen.findByRole('heading', { name: 'Client fires' })
@@ -59,7 +277,11 @@ describe('FiltersScreen', () => {
     expect(screen.queryByText('Poster')).not.toBeInTheDocument()
     expect(boardsApi.createFilter).toHaveBeenCalledWith({
       name: 'Client fires',
-      criteria: { priority: 1, label: 'client' }
+      criteria: { priorities: [1], labels: ['client'] },
+      icon: 'Eye',
+      layout: 'list',
+      groupBy: 'status',
+      allColumns: false
     })
     expect(boardsApi.filteredTasks).toHaveBeenCalledWith(
       expect.any(String),
@@ -67,92 +289,333 @@ describe('FiltersScreen', () => {
     )
   })
 
-  it('shows the tasks as a board, one column per status kind', async () => {
-    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
-    const [todo, doing] = design.sections
-    design.tasks = [
-      aTask(doing ?? null, { key: 'DES-1', title: 'Logo' }),
-      aTask(null, { key: 'DES-2', title: 'Poster' }),
-      aTask(todo ?? null, { key: 'DES-3', title: 'Flyer' })
-    ]
-    const boardsApi = fakeBoardsApi([design])
-    const { id } = await boardsApi.createFilter({ name: 'All', criteria: {} })
-    const { unmount } = renderRoute(`/filters/${id}`, { boardsApi })
+  it('gives a view an icon, the eye unless chosen', async () => {
+    const boardsApi = boards()
+    await openNewView(boardsApi)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Board' }))
+    fireEvent.change(await screen.findByLabelText(/^Name/), {
+      target: { value: 'Bugs' }
+    })
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Change the view’s icon' })
+    )
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Choose an icon' })
+    )
+    expect(dialog.getByRole('button', { name: 'Eye' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    fireEvent.change(dialog.getByLabelText('Search for an icon'), {
+      target: { value: 'troph' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Trophy' }))
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Choose an icon' })
+      ).toBeNull()
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
-    const started = within(screen.getByRole('region', { name: 'In progress' }))
-    expect(started.getByRole('button', { name: 'Logo' })).toBeVisible()
-    expect(started.getByText('DES-1 · Design')).toBeVisible()
-    const unstarted = within(screen.getByRole('region', { name: 'To do' }))
-    expect(unstarted.getByText('Poster')).toBeVisible()
-    expect(unstarted.getByText('Flyer')).toBeVisible()
-
-    unmount()
-    renderRoute(`/filters/${id}`, { boardsApi })
-    expect(
-      await screen.findByRole('region', { name: 'In progress' })
-    ).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Bugs' })).toBeVisible()
+    expect(boardsApi.createFilter).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Bugs', icon: 'Trophy' })
+    )
   })
 
-  it('names the parent of a sub-task', async () => {
-    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
-    const parent = aTask(null, { key: 'DES-1', title: 'Logo' })
-    design.tasks = [
-      parent,
-      aTask(null, { key: 'DES-2', title: 'Sketch', parentId: parent.id })
-    ]
-    const boardsApi = fakeBoardsApi([design])
-    const { id } = await boardsApi.createFilter({ name: 'All', criteria: {} })
-    renderRoute(`/filters/${id}`, { boardsApi })
+  it('creates a view in the layout chosen', async () => {
+    const boardsApi = boards()
+    await openNewView(boardsApi)
 
-    expect(await screen.findByText('Logo')).toBeVisible()
-    expect(screen.getByText('DES-2 · Design · Sub-task of Logo')).toBeVisible()
-    fireEvent.click(screen.getByRole('button', { name: 'Board' }))
-    expect(screen.getByText('DES-2 · Design · Sub-task of Logo')).toBeVisible()
+    fireEvent.change(await screen.findByLabelText(/^Name/), {
+      target: { value: 'Agenda' }
+    })
+    expect(screen.getByRole('list', { name: 'Filters' })).toContainElement(
+      screen.getByRole('button', { name: 'Add filter' })
+    )
+    expect(screen.queryByText('Icon, name, layout and criteria')).toBeNull()
+    await choose('Layout', 'List', 'Calendar')
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    expect(
+      await screen.findByRole('button', { name: 'Previous month' })
+    ).toBeVisible()
+    expect(boardsApi.createFilter).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Agenda', layout: 'calendar' })
+    )
   })
 
-  it('says so when the filter does not exist, with a way back to the filters', async () => {
-    renderRoute('/filters/unknown', { boardsApi: boards() })
+  it('saves each edit of a view as it is made, with no button', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priorities: [1] }
+    })
+    renderRoute(`/filters/${id}/edit`, { boardsApi })
 
+    const name = await screen.findByLabelText(/^Name/)
+    expect(name).toHaveValue('Urgent')
+    expect(screen.getByText('P1')).toBeVisible()
+    expect(screen.queryByRole('button', { name: /^Save/ })).toBeNull()
+    fireEvent.change(name, { target: { value: 'Client fires' } })
+    await choose('Layout', 'List', 'Board')
+
+    await waitFor(() => {
+      expect(boardsApi.updateFilter).toHaveBeenCalledWith(id, {
+        name: 'Client fires',
+        criteria: { priorities: [1] },
+        icon: 'Eye',
+        layout: 'board',
+        groupBy: 'status',
+        allColumns: false
+      })
+    })
+    expect(boardsApi.updateFilter).toHaveBeenCalledTimes(1)
+    const saved = await screen.findByRole('status')
+    expect(saved).toHaveTextContent('Changes saved')
+    // Said in the header.
     expect(
-      await findEmptyState("This filter doesn't exist, or you can't open it.")
+      screen.getByRole('heading', { level: 1, name: 'Edit view' }).parentElement
+        ?.parentElement
+    ).toContainElement(saved)
+
+    // A name being typed waits until there is one.
+    fireEvent.change(name, { target: { value: ' ' } })
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'Views' }
+      )
+    )
+    expect(
+      await screen.findByRole('link', { name: 'Client fires' })
     ).toBeVisible()
-    expect(
-      screen.getByRole('link', { name: 'Back to filters' })
-    ).toHaveAttribute('href', '/filters')
-    expect(document.title).toContain('Page not found')
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Board' })).toBeNull()
+    expect(boardsApi.updateFilter).toHaveBeenCalledTimes(1)
+  })
+
+  it('closes the dialog of a new view from its cross', async () => {
+    const { dialog, router } = await openNewView(boards(), false)
+
+    fireEvent.click(dialog.getByRole('button', { name: 'Close' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(router.state.location.pathname).toBe('/filters')
+    expect(router.state.location.search).toBe('')
+  })
+
+  it('asks for a name when a view is created without one', async () => {
+    const boardsApi = boards()
+    const { dialog } = await openNewView(boardsApi, false)
+
+    const name = await screen.findByLabelText(/^Name/)
+    const create = dialog.getByRole('button', { name: 'Create' })
+    expect(create).toBeEnabled()
+    // Closed from its cross, with no Cancel.
+    expect(dialog.getByRole('button', { name: 'Close' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull()
+    fireEvent.click(create)
+
+    expect(await screen.findByText('A name is required.')).toBeVisible()
+    expect(name).toHaveAttribute('aria-invalid', 'true')
+    expect(name).toHaveFocus()
+    expect(boardsApi.createFilter).not.toHaveBeenCalled()
+
+    fireEvent.change(name, { target: { value: 'Mine' } })
+    expect(screen.queryByText('A name is required.')).toBeNull()
+    fireEvent.click(create)
+    await waitFor(() => {
+      expect(boardsApi.createFilter).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Mine' })
+      )
+    })
+  })
+
+  it('saves in a view whether it shows the columns of no task', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({ name: 'All', criteria: {} })
+    renderRoute(`/filters/${id}/edit`, { boardsApi })
+
+    const all = await screen.findByRole('switch', {
+      name: 'Show all columns'
+    })
+    expect(all).not.toBeChecked()
+    fireEvent.click(all)
+
+    await waitFor(() => {
+      expect(boardsApi.updateFilter).toHaveBeenCalledWith(
+        id,
+        expect.objectContaining({ allColumns: true })
+      )
+    })
+  })
+
+  it('saves an edit still waiting on leaving the page', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: {}
+    })
+    renderRoute(`/filters/${id}/edit`, { boardsApi })
+
+    fireEvent.change(await screen.findByLabelText(/^Name/), {
+      target: { value: 'Now' }
+    })
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'Views' }
+      )
+    )
+
+    await waitFor(() => {
+      expect(boardsApi.updateFilter).toHaveBeenCalledWith(
+        id,
+        expect.objectContaining({ name: 'Now' })
+      )
+    })
+    expect(await screen.findByRole('link', { name: 'Now' })).toBeVisible()
   })
 
   it('sums up what each saved filter looks for', async () => {
     const boardsApi = boards()
     await boardsApi.createFilter({
       name: 'Client fires',
-      criteria: { priority: 1, label: 'client' }
+      criteria: { priorities: [1], labels: ['client'] }
     })
     await boardsApi.createFilter({ name: 'Everything', criteria: {} })
     renderRoute('/filters', { boardsApi })
 
     expect(
-      await screen.findByRole('listitem', { name: 'Client fires' })
-    ).toHaveTextContent('Priority: P1 · Label: client')
-    expect(
-      screen.getByRole('listitem', { name: 'Everything' })
-    ).toHaveTextContent('All tasks')
+      await screen.findByRole('link', { name: 'Client fires' })
+    ).toHaveTextContent('Label: client and Priority: P1')
+    expect(screen.getByRole('link', { name: 'Everything' })).toHaveTextContent(
+      'All tasks'
+    )
   })
 
-  it('deletes a filter', async () => {
+  it('stars a view, which goes first and into the favorites', async () => {
     const boardsApi = boards()
-    await boardsApi.createFilter({ name: 'Urgent', criteria: { priority: 1 } })
+    await boardsApi.createFilter({ name: 'Alpha', criteria: {} })
+    await boardsApi.createFilter({ name: 'Beta', criteria: {} })
     renderRoute('/filters', { boardsApi })
 
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Delete Urgent' })
+      await screen.findByRole('button', { name: 'Add Beta to favorites' })
     )
 
-    expect(await findEmptyState('No saved filters')).toHaveTextContent(
+    const favourites = within(
+      await screen.findByRole('list', { name: 'Favorites' })
+    )
+    expect(await favourites.findByRole('link', { name: 'Beta' })).toBeVisible()
+    expect(favourites.queryByRole('link', { name: 'Alpha' })).toBeNull()
+    expect(
+      screen.getByRole('button', { name: 'Remove Beta from favorites' })
+    ).toBeVisible()
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole('list', { name: 'Saved views' }))
+          .getAllByRole('link', { name: /^(Alpha|Beta)$/ })
+          .map(link => link.getAttribute('aria-label'))
+      ).toEqual(['Beta', 'Alpha'])
+    })
+  })
+
+  it('ends each view of the list with its star and menu', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: {}
+    })
+    renderRoute('/filters', { boardsApi })
+
+    expect(
+      await screen.findByRole('button', { name: 'Add Urgent to favorites' })
+    ).toBeVisible()
+    expect(screen.queryByText('Saved views')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Actions of Urgent' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit view' }))
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Edit view' })
+    ).toBeVisible()
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'Views' }
+      )
+    )
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Actions of Urgent' })
+    )
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: 'Delete view' })
+    )
+    fireEvent.click(
+      within(
+        await screen.findByRole('dialog', { name: 'Delete “Urgent”?' })
+      ).getByRole('button', { name: 'Delete' })
+    )
+    await waitFor(() => {
+      expect(boardsApi.deleteFilter).toHaveBeenCalledWith(id)
+    })
+  })
+
+  it('goes back from the edit page of a view to the list it was opened from', async () => {
+    const boardsApi = boards()
+    await boardsApi.createFilter({ name: 'Urgent', criteria: {} })
+    const { router } = renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Actions of Urgent' })
+    )
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit view' }))
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Edit view' })
+    ).toBeVisible()
+    fireEvent.click(screen.getByRole('link', { name: 'Back' }))
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/filters')
+    })
+    expect(
+      await screen.findByRole('button', { name: 'Actions of Urgent' })
+    ).toBeVisible()
+  })
+
+  it('deletes a view from its menu, once a dialog has asked', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priorities: [1] }
+    })
+    renderRoute(`/filters/${id}`, { boardsApi })
+    const askToDelete = async () => {
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Actions of Urgent' })
+      )
+      fireEvent.click(
+        await screen.findByRole('menuitem', { name: 'Delete view' })
+      )
+      return within(
+        await screen.findByRole('dialog', { name: 'Delete “Urgent”?' })
+      )
+    }
+
+    fireEvent.click(
+      (await askToDelete()).getByRole('button', { name: 'Cancel' })
+    )
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(boardsApi.deleteFilter).not.toHaveBeenCalled()
+
+    fireEvent.click(
+      (await askToDelete()).getByRole('button', { name: 'Delete' })
+    )
+
+    expect(await findEmptyState('No saved views')).toHaveTextContent(
       'Save the criteria you look for often, like your P1 tasks.'
     )
     expect(

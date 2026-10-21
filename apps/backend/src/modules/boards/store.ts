@@ -564,6 +564,11 @@ export function openTasksOf(tx: Tx, userId: string, which: SQL | undefined) {
   )
 }
 
+/** The tasks of boards still in use, done and canceled ones as well. */
+export function liveTasksOf(tx: Tx, userId: string, which: SQL | undefined) {
+  return tasksOf(tx, userId, and(isNull(boards.archivedAt), which))
+}
+
 async function tasksOf(
   tx: Tx,
   userId: string,

@@ -3,28 +3,33 @@ import { Box, ButtonBase, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
 // Wide screens line every row up in columns; phones put the facts on a
-// second line under the title.
-const rowGrid = {
-  display: 'grid',
-  alignItems: 'center',
-  columnGap: 2,
-  gridTemplateColumns: {
-    xs: '32px auto minmax(0, 1fr)',
-    md: '32px 5rem minmax(0, 1fr) 6rem 7.5rem 7rem 11rem'
-  },
-  px: 1.5
-} as const
+// second line under the title. The tasks of many boards name their board in
+// a column of its own.
+const rowGrid = (board: boolean) =>
+  ({
+    display: 'grid',
+    alignItems: 'center',
+    columnGap: 2,
+    gridTemplateColumns: {
+      xs: '32px auto minmax(0, 1fr)',
+      md: `32px 5rem minmax(0, 1fr)${board ? ' 9rem' : ''} 6rem 7.5rem 7rem 11rem`
+    },
+    px: 1.5
+  }) as const
 
 export function ListHeader({
-  columns
+  columns,
+  board = false
 }: {
-  columns: [string, string, string, string, string]
+  /** The task, then its facts: the board's first when it shows. */
+  columns: string[]
+  board?: boolean
 }): ReactElement {
   return (
     <Box
       aria-hidden
       sx={{
-        ...rowGrid,
+        ...rowGrid(board),
         display: { xs: 'none', md: 'grid' },
         py: 1,
         mb: 1,
@@ -106,7 +111,8 @@ export function ListRow({
   people,
   due,
   priority,
-  labels
+  labels,
+  board
 }: {
   label: string
   check: ReactNode
@@ -117,13 +123,15 @@ export function ListRow({
   due: ReactNode
   priority: ReactNode
   labels: ReactNode
+  /** In a column of its own, where the tasks of many boards meet. */
+  board?: ReactNode
 }): ReactElement {
   return (
     <Box
       component="li"
       aria-label={label}
       sx={{
-        ...rowGrid,
+        ...rowGrid(board !== undefined),
         position: 'relative',
         listStyle: 'none',
         minHeight: 44,
@@ -178,6 +186,7 @@ export function ListRow({
           '& > *': { minWidth: 0 }
         }}
       >
+        {board !== undefined && <Cell>{board}</Cell>}
         <Cell>{people}</Cell>
         <Cell>{due}</Cell>
         <Cell>{priority}</Cell>
