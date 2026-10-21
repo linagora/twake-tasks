@@ -110,6 +110,7 @@
     "comments": "%{smart_count} комментарий |||| %{smart_count} комментария |||| %{smart_count} комментариев",
     "subtaskProgress": "Подзадачи: выполнено %{done} из %{total}",
     "moreAssignees": "Ещё %{smart_count} исполнитель |||| Ещё %{smart_count} исполнителя |||| Ещё %{smart_count} исполнителей",
+    "moreLabels": "Ещё %{smart_count} метка: %{names} |||| Ещё %{smart_count} метки: %{names} |||| Ещё %{smart_count} меток: %{names}",
     "options": "Действия с %{key}",
     "moveTo": "Переместить в %{section}",
     "assign": "Назначить",

@@ -2,6 +2,8 @@ import { Bottom, Icon, Right } from '@linagora/twake-icons'
 import { Box, ButtonBase, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
+import { FittingChips, type FittingChip } from '@/ds/FittingChips'
+
 // Wide screens line every row up in columns; phones put the facts on a
 // second line under the title.
 const rowGrid = {
@@ -106,7 +108,8 @@ export function ListRow({
   people,
   due,
   priority,
-  labels
+  labels,
+  moreLabels
 }: {
   label: string
   check: ReactNode
@@ -116,7 +119,8 @@ export function ListRow({
   people: ReactNode
   due: ReactNode
   priority: ReactNode
-  labels: ReactNode
+  labels: FittingChip[]
+  moreLabels: (hidden: FittingChip[]) => string
 }): ReactElement {
   return (
     <Box
@@ -171,7 +175,6 @@ export function ListRow({
         sx={{
           display: { xs: 'flex', md: 'contents' },
           gridColumn: { xs: '2 / -1', md: 'auto' },
-          flexWrap: 'wrap',
           alignItems: 'center',
           gap: 1,
           '&:empty': { display: 'none' },
@@ -181,26 +184,24 @@ export function ListRow({
         <Cell>{people}</Cell>
         <Cell>{due}</Cell>
         <Cell>{priority}</Cell>
-        <Cell wrap>{labels}</Cell>
+        {/* One line of labels keeps every row as high as the others. */}
+        <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
+          {labels.length > 0 && (
+            <FittingChips chips={labels} moreLabel={moreLabels} />
+          )}
+        </Box>
       </Box>
     </Box>
   )
 }
 
-function Cell({
-  wrap = false,
-  children
-}: {
-  wrap?: boolean
-  children: ReactNode
-}): ReactElement {
+function Cell({ children }: { children: ReactNode }): ReactElement {
   return (
     <Box
       sx={{
         display: 'flex',
         alignItems: 'center',
         gap: 0.5,
-        flexWrap: wrap ? 'wrap' : 'nowrap',
         '&:empty': { display: { xs: 'none', md: 'flex' } }
       }}
     >

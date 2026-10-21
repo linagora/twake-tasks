@@ -110,6 +110,7 @@
     "comments": "%{smart_count} comment |||| %{smart_count} comments",
     "subtaskProgress": "Sub-tasks, %{done} of %{total} done",
     "moreAssignees": "%{smart_count} more assignee |||| %{smart_count} more assignees",
+    "moreLabels": "%{smart_count} more label: %{names} |||| %{smart_count} more labels: %{names}",
     "options": "Options for %{key}",
     "moveTo": "Move to %{section}",
     "assign": "Assign",

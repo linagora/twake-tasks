@@ -50,9 +50,17 @@ export function TaskListRow({
       priority={
         task.priority !== null && <PriorityChip priority={task.priority} />
       }
-      labels={task.labels.map(label => (
-        <LabelChip key={label.id} name={label.name} color={label.color} />
-      ))}
+      labels={task.labels.map(label => ({
+        key: label.id,
+        name: label.name,
+        chip: <LabelChip name={label.name} color={label.color} />
+      }))}
+      moreLabels={hidden =>
+        t('board.moreLabels', {
+          smart_count: hidden.length,
+          names: hidden.map(each => each.name).join(', ')
+        })
+      }
     />
   )
 }
