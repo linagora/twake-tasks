@@ -148,4 +148,36 @@ describe('task files', () => {
       (await api.as(alice).post(path, { files: [report] })).statusCode
     ).toBe(409)
   })
+
+  it('writes in the history each file linked and unlinked, by its name', async () => {
+    const alice = aUser({ name: 'Alice Martin' })
+    const { boardId, taskId, path, filesOf } = await aTaskOf(alice)
+    await api.as(alice).post(path, { files: [report] })
+    const [file] = await filesOf(alice)
+    await api.as(alice).delete(`${path}/${file?.id ?? ''}`)
+
+    const { entries } = (
+      await api.as(alice).get(`/boards/${boardId}/tasks/${taskId}/history`)
+    ).json<{
+      entries: {
+        field: string
+        from: unknown
+        to: unknown
+        actor: { userId: string }
+      }[]
+    }>()
+
+    expect(entries.filter(entry => entry.field === 'files')).toEqual([
+      expect.objectContaining({
+        from: 'report.pdf',
+        to: null,
+        actor: expect.objectContaining({ userId: alice.userId }) as object
+      }),
+      expect.objectContaining({
+        from: null,
+        to: 'report.pdf',
+        actor: expect.objectContaining({ userId: alice.userId }) as object
+      })
+    ])
+  })
 })

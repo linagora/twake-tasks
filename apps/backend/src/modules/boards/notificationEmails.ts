@@ -218,6 +218,13 @@ async function describe(
       return entry.to !== null
         ? messages.labeled(actor, plain(entry.name))
         : messages.unlabeled(actor, plain(entry.name))
+    case 'files': {
+      // The entry holds the file's name, as it was linked or unlinked.
+      if (typeof value !== 'string') return messages.updated(actor)
+      return entry.to !== null
+        ? messages.fileAdded(actor, plain(value))
+        : messages.fileRemoved(actor, plain(value))
+    }
     case 'description':
       return messages.described(actor)
     case 'archived':
