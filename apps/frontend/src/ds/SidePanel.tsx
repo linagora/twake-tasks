@@ -101,6 +101,10 @@ export function SidePanel({
         minHeight: 0,
         display: 'grid',
         gridTemplateColumns: { xs: '1fr', md: aside ? '2fr 1fr' : '1fr' },
+        // Stacked on a phone, each part is as tall as its content and the
+        // panel scrolls: the min-height of 0 that lets each column scroll on
+        // its own would otherwise squeeze the task under its properties.
+        gridAutoRows: { xs: 'max-content', md: 'auto' },
         overflowY: { xs: 'auto', md: 'hidden' }
       }}
     >
