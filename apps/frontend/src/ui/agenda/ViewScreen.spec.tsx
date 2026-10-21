@@ -105,6 +105,28 @@ describe('ViewScreen', () => {
     expect(crumbs.getByText('Urgent')).toHaveAttribute('aria-current', 'page')
   })
 
+  it('names the view in the breadcrumb of a task opened from it', async () => {
+    const { boardsApi, id } = await aView()
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: /^DES-1 Logo/ })
+    )
+    const crumbs = within(
+      panel.getByRole('navigation', { name: 'Where the task is' })
+    )
+    expect(crumbs.getByRole('link', { name: 'Views' })).toHaveAttribute(
+      'href',
+      '/filters'
+    )
+    expect(crumbs.getByRole('link', { name: 'Urgent' })).toHaveAttribute(
+      'href',
+      `/filters/${id}`
+    )
+    expect(crumbs.getByText('DES-1')).toHaveAttribute('aria-current', 'page')
+  })
+
   it('says its criteria by its name, since its cards leave them off', async () => {
     const { boardsApi, id } = await aView()
     renderRoute(`/filters/${id}`, { boardsApi })

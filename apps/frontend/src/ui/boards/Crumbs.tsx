@@ -1,6 +1,6 @@
 import { Home, Icon, type IconProps } from '@linagora/twake-icons'
 import { Breadcrumbs, Link, Typography } from '@linagora/twake-mui'
-import { createContext, type ReactElement } from 'react'
+import { createContext, type ReactElement, type ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router'
 
 import { CrumbSlot } from '@/ds/CrumbBar'
@@ -21,8 +21,34 @@ export interface Origin extends Crumb {
 /** The page a task is opened from, for its breadcrumb to start there. */
 export const OriginContext = createContext<Origin | null>(null)
 
+/**
+ * The page a task is opened from when it comes after the origin, as a view
+ * after Views, a step of its breadcrumb.
+ */
+export const PageStepContext = createContext<Crumb | null>(null)
+
 /** The board a task is opened in, a step of its breadcrumb. */
 export const BoardStepContext = createContext<Crumb | null>(null)
+
+/**
+ * Where the tasks opened in a page start their breadcrumb: the page's origin,
+ * then the page itself when it comes after it.
+ */
+export function TasksOrigin({
+  origin,
+  page,
+  children
+}: {
+  origin: Origin
+  page: Crumb | null
+  children: ReactNode
+}): ReactElement {
+  return (
+    <OriginContext value={origin}>
+      <PageStepContext value={page}>{children}</PageStepContext>
+    </OriginContext>
+  )
+}
 
 export function useBoardsOrigin(): Origin {
   const { t } = useI18n()

@@ -8,7 +8,7 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react'
-import { useSearchParams } from 'react-router'
+import { useLocation, useSearchParams } from 'react-router'
 
 import type { AgendaTask, FilterCriteria, TaskMove } from '@/application/boards'
 import { hiddenFactsOf } from '@/application/hiddenFacts'
@@ -37,7 +37,7 @@ import { MissingStatusDialog } from '@/ui/agenda/MissingStatusDialog'
 import { NewViewTask } from '@/ui/agenda/NewViewTask'
 import { ViewAddTask } from '@/ui/agenda/ViewAddTask'
 import { ViewTaskPanel } from '@/ui/agenda/ViewTaskPanel'
-import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
+import { PageCrumbs, TasksOrigin, type Origin } from '@/ui/boards/Crumbs'
 import { BoardDrag } from '@/ui/boards/BoardDrag'
 import { CalendarTask } from '@/ui/boards/CalendarTask'
 import { localToday } from '@/ui/boards/dueLabel'
@@ -125,6 +125,7 @@ export function TasksView({
   empty?: { icon: IconComponent; title: string; text: string }
 }): ReactElement {
   const { t } = useI18n()
+  const { pathname } = useLocation()
   const agenda = useAgenda(source)
   const boards = useBoards()
   const moveTask = useMoveViewTask()
@@ -195,7 +196,11 @@ export function TasksView({
 
   return (
     <HiddenFactsContext value={hiddenFactsOf(groupBy)}>
-      <OriginContext value={origin}>
+      {/* The tasks opened here have the page in their breadcrumb too. */}
+      <TasksOrigin
+        origin={origin}
+        page={current === undefined ? null : { to: pathname, label: current }}
+      >
         <main className="u-p-2">
           <PageCrumbs origin={origin} current={current} />
           <PageHeader
@@ -445,7 +450,7 @@ export function TasksView({
             />
           )}
         </main>
-      </OriginContext>
+      </TasksOrigin>
     </HiddenFactsContext>
   )
 }
