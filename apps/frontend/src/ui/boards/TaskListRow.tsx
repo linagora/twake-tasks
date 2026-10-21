@@ -1,8 +1,9 @@
 import { Link } from '@linagora/twake-mui'
-import type { ReactElement } from 'react'
+import type { ComponentProps, ReactElement } from 'react'
 
 import { LabelChip } from '@/ds/Columns'
 import { ListRow } from '@/ds/ListView'
+import { SortableListRow } from '@/ds/Sortable'
 import type { Section, Task } from '@/domain/board'
 import { CompleteCheckbox } from '@/ui/boards/CompleteCheckbox'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
@@ -10,23 +11,47 @@ import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 
+// Sortable where the list can be reordered, as the cards of a board.
+function Row({
+  sortable,
+  id,
+  description,
+  ...props
+}: ComponentProps<typeof ListRow> & {
+  sortable: boolean
+  id: string
+  description: string
+}): ReactElement {
+  return sortable ? (
+    <SortableListRow id={id} description={description} {...props} />
+  ) : (
+    <ListRow {...props} />
+  )
+}
+
 export function TaskListRow({
   task,
   boardId,
   sections,
-  editable
+  editable,
+  sortable = false
 }: {
   task: Task
   boardId: string
   sections: Section[]
   editable: boolean
+  /** Dragged to another place of the list, as a card on a board. */
+  sortable?: boolean
 }): ReactElement {
   const { t } = useI18n()
   const panel = useTaskPanel(task.key)
   const completion = useCompleteToggle(task, boardId, sections, editable)
 
   return (
-    <ListRow
+    <Row
+      sortable={sortable}
+      id={task.id}
+      description={t('drag.card')}
       label={`${task.key} ${task.title}`}
       check={<CompleteCheckbox title={task.title} completion={completion} />}
       taskKey={task.key}

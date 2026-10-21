@@ -12,7 +12,7 @@ import {
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 
-import type { Shelf } from '@/application/boards'
+import type { Shelf, TaskMove } from '@/application/boards'
 import {
   Card,
   CardTitle,
@@ -22,6 +22,7 @@ import {
   ColumnsSkeleton,
   EmptyColumn
 } from '@/ds/Columns'
+import { ListDragPreview } from '@/ds/ListView'
 import { EmptyState } from '@/ds/EmptyState'
 import { PageHeader, PageTitle, UnavailableButton } from '@/ds/PageHeader'
 import { Inline } from '@/ds/SidePanel'
@@ -312,6 +313,32 @@ function BoardColumns({
   const first = columns[0]
   const tasksIn = (column: (typeof columns)[number]) =>
     topLevel.filter(task => task.sectionId === column.id)
+  const listRow = (task: Task, sortable = false) => (
+    <TaskListRow
+      key={task.id}
+      sortable={sortable}
+      task={task}
+      boardId={board.id}
+      sections={board.sections}
+      editable={editable}
+    />
+  )
+  // The board and the list drag their tasks alike, among the sections.
+  const drag = {
+    lanes: columns.map(column => ({
+      key: laneKey(column),
+      sectionId: column.id,
+      name: column.name,
+      taskIds: tasksIn(column).map(task => task.id)
+    })),
+    titleOf: (id: string) => {
+      const task = byId.get(id)
+      return task ? `${task.key} ${task.title}` : ''
+    },
+    onMove: (taskId: string, to: TaskMove) => {
+      move.mutate({ taskId, move: to })
+    }
+  }
 
   const headerActions = (
     <>
@@ -480,19 +507,7 @@ function BoardColumns({
       )}
       {board.layout === 'board' && editable && (
         <BoardDrag
-          lanes={columns.map(column => ({
-            key: laneKey(column),
-            sectionId: column.id,
-            name: column.name,
-            taskIds: tasksIn(column).map(task => task.id)
-          }))}
-          titleOf={id => {
-            const task = byId.get(id)
-            return task ? `${task.key} ${task.title}` : ''
-          }}
-          onMove={(taskId, to) => {
-            move.mutate({ taskId, move: to })
-          }}
+          {...drag}
           preview={id => {
             const task = byId.get(id)
             return (
@@ -542,7 +557,7 @@ function BoardColumns({
           )}
         </BoardDrag>
       )}
-      {board.layout === 'list' && (
+      {board.layout === 'list' && !editable && (
         <ListLayout
           columns={columns.map(column => ({
             key: column.id ?? 'none',
@@ -550,16 +565,36 @@ function BoardColumns({
             tasks: tasksIn(column),
             footer: addTask(column)
           }))}
-          row={task => (
-            <TaskListRow
-              key={task.id}
-              task={task}
-              boardId={board.id}
-              sections={board.sections}
-              editable={editable}
+          row={listRow}
+        />
+      )}
+      {board.layout === 'list' && editable && (
+        <BoardDrag
+          {...drag}
+          previewAtPointer
+          preview={id => {
+            const task = byId.get(id)
+            return (
+              task && <ListDragPreview taskKey={task.key} title={task.title} />
+            )
+          }}
+        >
+          {idsOf => (
+            <ListLayout
+              columns={columns.map(column => ({
+                key: column.id ?? 'none',
+                name: column.name,
+                tasks: idsOf(laneKey(column)).flatMap(id => {
+                  const task = byId.get(id)
+                  return task ? [task] : []
+                }),
+                footer: addTask(column),
+                dropId: laneKey(column)
+              }))}
+              row={task => listRow(task, true)}
             />
           )}
-        />
+        </BoardDrag>
       )}
       {board.layout === 'calendar' && (
         <CalendarLayout

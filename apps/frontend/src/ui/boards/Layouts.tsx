@@ -16,6 +16,7 @@ import {
   MonthGrid
 } from '@/ds/Calendar'
 import { ListHeader, ListSection } from '@/ds/ListView'
+import { DropListSection, SortableList } from '@/ds/Sortable'
 import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
 import { LAYOUTS, type Board, type Layout, type Task } from '@/domain/board'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
@@ -79,7 +80,14 @@ export function ListLayout({
   columns,
   row
 }: {
-  columns: { key: string; name: string; tasks: Task[]; footer: ReactNode }[]
+  columns: {
+    key: string
+    name: string
+    tasks: Task[]
+    footer: ReactNode
+    /** Where its tasks are dropped, when the list can be reordered. */
+    dropId?: string
+  }[]
   row: (task: Task) => ReactElement
 }): ReactElement {
   const { t } = useI18n()
@@ -103,20 +111,29 @@ export function ListLayout({
           t('task.labels')
         ]}
       />
-      {columns.map(column => (
-        <ListSection
-          key={column.key}
-          label={column.name}
-          count={column.tasks.length}
-          expanded={!collapsed.has(column.key)}
-          onToggle={() => {
+      {columns.map(column => {
+        const section = {
+          label: column.name,
+          count: column.tasks.length,
+          expanded: !collapsed.has(column.key),
+          onToggle: () => {
             toggle(column.key)
-          }}
-          footer={column.footer}
-        >
-          {column.tasks.map(row)}
-        </ListSection>
-      ))}
+          },
+          footer: column.footer
+        }
+        // A folded section still takes the tasks dropped on its title.
+        return column.dropId === undefined ? (
+          <ListSection key={column.key} {...section}>
+            {column.tasks.map(row)}
+          </ListSection>
+        ) : (
+          <DropListSection key={column.key} id={column.dropId} {...section}>
+            <SortableList ids={column.tasks.map(task => task.id)}>
+              {column.tasks.map(row)}
+            </SortableList>
+          </DropListSection>
+        )
+      })}
     </>
   )
 }
