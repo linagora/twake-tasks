@@ -418,6 +418,7 @@ export function TasksView({
             )}
           {tasks.length > 0 && layout === 'list' && ready && (
             <ListLayout
+              board={!hiddenFactsOf(groupBy).board}
               columns={
                 groupBy === 'status'
                   ? columns.map(column => ({

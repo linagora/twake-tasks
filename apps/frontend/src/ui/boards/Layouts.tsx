@@ -77,10 +77,13 @@ export function LayoutToggle<L extends Layout>({
 
 export function ListLayout<T extends Task>({
   columns,
-  row
+  row,
+  board = false
 }: {
   columns: { key: string; name: string; tasks: T[]; footer: ReactNode }[]
   row: (task: T) => ReactElement
+  /** The rows name their board in a column, as in a view. */
+  board?: boolean
 }): ReactElement {
   const { t } = useI18n()
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
@@ -95,8 +98,10 @@ export function ListLayout<T extends Task>({
   return (
     <>
       <ListHeader
+        board={board}
         columns={[
           t('layout.task'),
+          ...(board ? [t('viewTask.board')] : []),
           t('task.assignees'),
           t('layout.due'),
           t('task.priority'),

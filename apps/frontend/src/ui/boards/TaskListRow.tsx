@@ -108,14 +108,12 @@ export function TaskListRow({
         task.priority !== null &&
         !hidden.priority && <PriorityChip priority={task.priority} />
       }
-      labels={[
-        ...(boardName && !hidden.board
-          ? [<BoardChip key="board" name={boardName} />]
-          : []),
-        ...shownLabels(task.labels, hidden).map(label => (
-          <LabelChip key={label.id} name={label.name} color={label.color} />
-        ))
-      ]}
+      board={
+        boardName && !hidden.board ? <BoardChip name={boardName} /> : undefined
+      }
+      labels={shownLabels(task.labels, hidden).map(label => (
+        <LabelChip key={label.id} name={label.name} color={label.color} />
+      ))}
     />
   )
 }

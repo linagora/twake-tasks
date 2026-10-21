@@ -157,6 +157,48 @@ describe('ViewScreen', () => {
     expect(await screen.findByRole('dialog')).toBeVisible()
   })
 
+  it('names the board of a task in a column of its list, not among its labels', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    design.tasks = [
+      aTask(null, {
+        key: 'DES-1',
+        title: 'Logo',
+        priority: 1,
+        labels: [{ id: 'l1', name: 'client', color: null }]
+      })
+    ]
+    const boardsApi = fakeBoardsApi([design])
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priorities: [1] },
+      layout: 'list'
+    })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    const row = await screen.findByRole('listitem', { name: 'DES-1 Logo' })
+    expect(screen.getByText('Board')).toBeInTheDocument()
+    const labels = row.lastElementChild?.lastElementChild
+    expect(labels).toHaveTextContent('client')
+    expect(labels).not.toHaveTextContent('Design')
+    expect(row).toHaveTextContent('Design')
+  })
+
+  it('leaves the board column out of a list grouped by board', async () => {
+    const { boardsApi, id } = await aView()
+    await boardsApi.updateFilter(id, {
+      name: 'Urgent',
+      criteria: { priorities: [1] },
+      layout: 'list',
+      groupBy: 'board'
+    })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    expect(
+      await screen.findByRole('listitem', { name: 'DES-1 Logo' })
+    ).toBeVisible()
+    expect(screen.queryByText('Board')).toBeNull()
+  })
+
   it('shows its tasks in the layout chosen for it, with no switch', async () => {
     const { boardsApi, id } = await aView()
     await boardsApi.updateFilter(id, {
