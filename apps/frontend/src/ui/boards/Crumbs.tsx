@@ -30,25 +30,9 @@ export function useBoardsOrigin(): Origin {
   return { icon: Home, label: t('boards.title'), to: '/' }
 }
 
-function OriginLabel({
-  origin,
-  size = 16
-}: {
-  origin: Origin
-  size?: number
-}): ReactElement {
-  return (
-    <>
-      <Icon icon={origin.icon} size={size} className="u-mr-half" />
-      {origin.label}
-    </>
-  )
-}
-
 // Every breadcrumb has the size of a page title, as Twake Drive's path: the
 // strip keeps its look from a page to a task opened over it.
 const VARIANT = 'h3'
-const ICON_SIZE = 24
 
 // The page itself, in bold: the page's heading when the breadcrumb titles it.
 function Page({
@@ -101,9 +85,7 @@ export function Crumbs({
       separator={<Icon icon={Right} size={16} />}
     >
       {origin === undefined ? null : current === undefined ? (
-        <Page heading={heading}>
-          <OriginLabel origin={origin} size={ICON_SIZE} />
-        </Page>
+        <Page heading={heading}>{origin.label}</Page>
       ) : (
         // As the root folder in Twake Drive's path: its icon alone.
         <Tooltip title={origin.label}>
