@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Tx } from '../../infra/db.ts'
 import { userSettings } from '../settings/schema.ts'
-import { boards, projectMembers, projects } from './schema.ts'
+import { boards, projectInvites, projectMembers, projects } from './schema.ts'
 import { bumpBoards } from './tasks.ts'
 
 export type Role = 'viewer' | 'editor' | 'admin'
@@ -83,6 +83,30 @@ export function membersOf(
     .leftJoin(userSettings, settingsOfMember)
     .where(eq(projectMembers.projectId, board.projectId))
     .orderBy(asc(projectMembers.email))
+}
+
+// The emails invited to each of the projects, not members until they sign
+// in. Only their admins see them.
+export async function invitedTo(
+  tx: Tx,
+  projectIds: string[]
+): Promise<Map<string, string[]>> {
+  const byProject = new Map<string, string[]>()
+  if (projectIds.length === 0) return byProject
+  const rows = await tx
+    .select({
+      projectId: projectInvites.projectId,
+      email: projectInvites.email
+    })
+    .from(projectInvites)
+    .where(inArray(projectInvites.projectId, projectIds))
+    .orderBy(asc(projectInvites.email))
+  for (const { projectId, email } of rows) {
+    const emails = byProject.get(projectId)
+    if (emails) emails.push(email)
+    else byProject.set(projectId, [email])
+  }
+  return byProject
 }
 
 type Looks = Pick<Member, 'name' | 'avatar'>
