@@ -64,7 +64,7 @@ describe('emojis', () => {
 
     const quick = findQuickReactions(emojis)
 
-    expect(unicodes(quick)).toEqual(['💜', '👍️', '👎️', '😂', '😮', '🥲'])
+    expect(unicodes(quick)).toEqual(['💜', '👍️', '👎️', '😂', '😮', '🥲', '🎉'])
     expect(quick[1]?.label).toBe('pouce vers le haut')
     for (const emoji of quick) {
       expect(emojis.some(each => each.unicode === emoji.unicode)).toBe(true)
