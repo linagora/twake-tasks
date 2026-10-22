@@ -172,6 +172,32 @@ describe.each([
     expect(await followersOf(db, peer, home.taskId)).not.toContain(gone.userId)
   })
 
+  it('loses its reactions to comments', async () => {
+    const gone = makeUser()
+    const peer =
+      gone.organizationId === null
+        ? aB2cUser()
+        : aUser({ organizationId: gone.organizationId })
+    await boardsOf(gone)
+    const home = await aBoard(gone, 'Home', [[peer, 'editor']])
+    const comments = `/boards/${home.id}/tasks/${home.taskId}/comments`
+    const { id } = (
+      await api.as(peer).post(comments, { body: 'Shipped' })
+    ).json<{ id: string }>()
+    await api
+      .as(gone)
+      .put(`${comments}/${id}/reactions/${encodeURIComponent('🎉')}`)
+    const reactions = async () =>
+      (await api.as(peer).get(comments)).json<{
+        comments: { reactions: object[] }[]
+      }>().comments[0]?.reactions
+    expect(await reactions()).toHaveLength(1)
+
+    await deliver(routingKey, body(gone))
+
+    expect(await reactions()).toEqual([])
+  })
+
   it('loses its notifications', async () => {
     const gone = makeUser()
     const peer =

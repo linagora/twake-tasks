@@ -169,7 +169,15 @@
     "removeLabel": "Remove the label %{name}",
     "addAssignees": "Add assignees",
     "unassign": "Unassign %{name}",
-    "breadcrumb": "Where the task is"
+    "breadcrumb": "Where the task is",
+    "reactions": "Reactions",
+    "reaction": "%{emoji} from %{names}",
+    "addReaction": "Add a reaction",
+    "reactionFailed": "The reaction could not be saved.",
+    "quickReactions": "Usual reactions",
+    "moreEmoji": "More emoji",
+    "whoReacted": "See who reacted",
+    "moreReactions": "+%{count}"
   },
   "editor": {
     "toolbar": "Formatting",
@@ -186,7 +194,11 @@
     "commentPlaceholder": "Write a comment…",
     "descriptionPlaceholder": "Add details, steps or links…",
     "sendHint": "Ctrl+Enter to send",
-    "mentionsLabel": "People to mention"
+    "mentionsLabel": "People to mention",
+    "emoji": "Emoji",
+    "emojiSearch": "Search emoji",
+    "emojiList": "Emoji",
+    "emojiNone": "No emoji found"
   },
   "history": {
     "heading": "History",

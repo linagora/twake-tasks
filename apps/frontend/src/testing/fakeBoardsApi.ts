@@ -136,6 +136,22 @@ export function fakeBoardsApi(boards: Board[] = []) {
     return task
   }
 
+  // The person of fakeUser, who the screens take to be signed in.
+  const me: Person = {
+    userId: 'alice',
+    email: 'alice@example.com',
+    name: 'Alice Martin'
+  }
+
+  const findComment = (boardId: string, taskId: string, commentId: string) => {
+    findTask(boardId, taskId)
+    const comment = comments
+      .get(taskId)
+      ?.find(candidate => candidate.id === commentId)
+    if (!comment) throw new ApiError(404, 'not_found')
+    return comment
+  }
+
   const agendaTask = (board: Board, task: Task): AgendaTask => ({
     ...structuredClone(task),
     category:
@@ -589,10 +605,38 @@ export function fakeBoardsApi(boards: Board[] = []) {
             id: nextId(),
             author: { userId: 'me', email: 'me@example.com', name: null },
             body,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            reactions: []
           }
         ])
       })
+    ),
+    addReaction: vi.fn<BoardsApi['addReaction']>(
+      (boardId, taskId, commentId, emoji) =>
+        Promise.resolve().then(() => {
+          const comment = findComment(boardId, taskId, commentId)
+          let reaction = comment.reactions.find(each => each.emoji === emoji)
+          if (!reaction) {
+            reaction = { emoji, people: [] }
+            comment.reactions.push(reaction)
+          }
+          if (!reaction.people.some(person => person.userId === me.userId)) {
+            reaction.people.push({ ...me })
+          }
+        })
+    ),
+    removeReaction: vi.fn<BoardsApi['removeReaction']>(
+      (boardId, taskId, commentId, emoji) =>
+        Promise.resolve().then(() => {
+          const comment = findComment(boardId, taskId, commentId)
+          comment.reactions = comment.reactions.flatMap(reaction => {
+            if (reaction.emoji !== emoji) return [reaction]
+            const people = reaction.people.filter(
+              person => person.userId !== me.userId
+            )
+            return people.length === 0 ? [] : [{ ...reaction, people }]
+          })
+        })
     ),
     setAssignees: vi.fn<BoardsApi['setAssignees']>((boardId, taskId, userIds) =>
       Promise.resolve().then(() => {

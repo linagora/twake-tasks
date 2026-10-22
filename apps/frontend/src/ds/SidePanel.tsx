@@ -385,20 +385,65 @@ export function Feed({
 export function FeedItem({
   avatar,
   label,
+  actions,
   children
 }: {
   avatar: ReactNode
   label?: string
+  /** Shown next to the item's text while it is hovered or focused, as in Twake Chat. */
+  actions?: ReactNode
   children: ReactNode
 }): ReactElement {
   return (
     <Box
       component="li"
       aria-label={label}
-      sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}
+      sx={{
+        display: 'flex',
+        gap: 1.5,
+        alignItems: 'flex-start',
+        '& .feed-actions': { opacity: 0 },
+        '&:hover .feed-actions, &:focus-within .feed-actions': {
+          opacity: 1
+        },
+        // Nothing hovers on a touch screen.
+        '@media (hover: none)': { '& .feed-actions': { opacity: 1 } }
+      }}
     >
       <Box sx={{ pt: 0.25 }}>{avatar}</Box>
-      <Box sx={{ minWidth: 0, flex: 1, '& p': { my: 0.5 } }}>{children}</Box>
+      <Box
+        sx={{
+          minWidth: 0,
+          flex: 1,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 0.5
+        }}
+      >
+        {/* As wide as its text, so the actions stay next to a short one. */}
+        <Box
+          sx={{
+            minWidth: 0,
+            flex: actions ? '0 1 auto' : 1,
+            '& p': { my: 0.5 }
+          }}
+        >
+          {children}
+        </Box>
+        {actions && (
+          <Box
+            className="feed-actions"
+            sx={theme => ({
+              flex: 'none',
+              display: 'flex',
+              mt: -0.5,
+              transition: theme.transitions.create('opacity')
+            })}
+          >
+            {actions}
+          </Box>
+        )}
+      </Box>
     </Box>
   )
 }

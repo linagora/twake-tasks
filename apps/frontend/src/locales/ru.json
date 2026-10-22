@@ -169,7 +169,15 @@
     "removeLabel": "Убрать метку %{name}",
     "addAssignees": "Добавить исполнителей",
     "unassign": "Снять %{name}",
-    "breadcrumb": "Расположение задачи"
+    "breadcrumb": "Расположение задачи",
+    "reactions": "Реакции",
+    "reaction": "%{emoji} от %{names}",
+    "addReaction": "Добавить реакцию",
+    "reactionFailed": "Не удалось сохранить реакцию.",
+    "quickReactions": "Обычные реакции",
+    "moreEmoji": "Другие эмодзи",
+    "whoReacted": "Кто отреагировал",
+    "moreReactions": "+%{count}"
   },
   "editor": {
     "toolbar": "Форматирование",
@@ -186,7 +194,11 @@
     "commentPlaceholder": "Напишите комментарий…",
     "descriptionPlaceholder": "Добавьте подробности, шаги или ссылки…",
     "sendHint": "Ctrl+Enter, чтобы отправить",
-    "mentionsLabel": "Кого упомянуть"
+    "mentionsLabel": "Кого упомянуть",
+    "emoji": "Эмодзи",
+    "emojiSearch": "Поиск эмодзи",
+    "emojiList": "Эмодзи",
+    "emojiNone": "Эмодзи не найдены"
   },
   "history": {
     "heading": "История",

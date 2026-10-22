@@ -73,6 +73,65 @@ describe('TaskPanel', () => {
     })
   })
 
+  describe('emoji in the description', () => {
+    async function editDescription() {
+      const { board, logo, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      const panel = await openLogo()
+      fireEvent.click(
+        await panel.findByRole('button', { name: 'Edit description' })
+      )
+      const editor = await panel.findByRole('textbox', { name: 'Description' })
+      const form = editor.closest('form')
+      if (!form) throw new Error('The description editor has no form')
+      editor.focus()
+      return { board, logo, boardsApi, panel, editor, form: within(form) }
+    }
+
+    it('suggests emoji as :name is typed and saves the one chosen', async () => {
+      const { board, logo, boardsApi, panel, editor } = await editDescription()
+
+      // The names load in the background, after the first keystrokes of a test.
+      const list = await waitFor(async () => {
+        await typeRichText(editor, 'Ready :rocket')
+        return screen.getByRole('listbox', { name: 'Emoji' })
+      })
+      fireEvent.click(within(list).getByRole('option', { name: 'rocket' }))
+      await waitFor(() => {
+        expect(editor.textContent).toBe('Ready 🚀')
+      })
+      fireEvent.click(panel.getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => {
+        expect(boardsApi.setDescription).toHaveBeenCalledWith(
+          board.id,
+          logo.id,
+          { markdown: 'Ready 🚀', version: 3 }
+        )
+      })
+    })
+
+    it('inserts the emoji picked from the button', async () => {
+      const { editor, form } = await editDescription()
+      await typeRichText(editor, 'Ready ')
+
+      fireEvent.click(form.getByRole('button', { name: 'Emoji' }))
+      fireEvent.change(await screen.findByLabelText('Search emoji'), {
+        target: { value: 'rocket' }
+      })
+      fireEvent.click(
+        within(screen.getByRole('group', { name: 'Emoji' })).getByRole(
+          'button',
+          { name: 'rocket' }
+        )
+      )
+
+      await waitFor(() => {
+        expect(editor).toHaveTextContent('Ready 🚀')
+      })
+    })
+  })
+
   it('keeps the draft when someone else changed the description', async () => {
     const { board, boardsApi } = logoBoard()
     boardsApi.setDescription.mockRejectedValueOnce(

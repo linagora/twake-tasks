@@ -34,6 +34,7 @@ import { Subtasks } from '@/ui/boards/Subtasks'
 import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
+import { useEmojiInput } from '@/ui/boards/useEmojiInput'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { focusOnMount } from '@/ui/focusOnMount'
@@ -320,6 +321,7 @@ function Description({
 }): ReactElement {
   const { t } = useI18n()
   const labels = useRichTextLabels()
+  const emojiInput = useEmojiInput()
   const description = useDescription(boardId, task.id)
   const save = useSetDescription(boardId, task.id)
   const [draft, setDraft] = useState<string | null>(null)
@@ -381,6 +383,8 @@ function Description({
             labels={labels}
             minHeight={144}
             onChange={setDraft}
+            emoji={emojiInput.emoji}
+            suggestions={[emojiInput.suggestions]}
             footer={
               <>
                 <Button
