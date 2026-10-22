@@ -1,4 +1,4 @@
-import { Button, IconButton, Link, Tab, Typography } from '@linagora/twake-mui'
+import { Button, IconButton, Link, Typography } from '@linagora/twake-mui'
 import {
   Archive,
   Icon,
@@ -11,10 +11,11 @@ import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
-import { CardTile, ShelfTabs, Shelves, TileShelf } from '@/ds/TileGrid'
+import { BoardCard, BoardChip, CardGrid, CreateCard } from '@/ds/TileGrid'
 import type { BoardSummary, ProjectSummary } from '@/domain/board'
-import { groupBoards } from '@/domain/boardGroups'
+import { listBoards } from '@/domain/boardList'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
+import { PeopleAvatars } from '@/ui/boards/MembersDialog'
 import { useBoards, useSetFavorite } from '@/ui/boards/queries'
 import { PageCrumbs, useBoardsOrigin } from '@/ui/boards/Crumbs'
 import { newlyShared } from '@/ui/boards/seenBoards'
@@ -68,122 +69,117 @@ export function useProjectName(): (project: ProjectSummary) => string {
     project.personal ? t('boards.personalProject') : project.name
 }
 
-function BoardShelf({
-  name,
-  boards,
-  withProject = false
+function BoardItem({
+  board,
+  fresh
 }: {
-  name: string
-  boards: BoardSummary[]
-  withProject?: boolean
+  board: BoardSummary
+  fresh: boolean
 }): ReactElement {
   const { t } = useI18n()
-  const projectName = useProjectName()
-  const isNewlyShared = newlyShared()
-  const status = (board: BoardSummary, fresh: boolean) =>
-    fresh && board.sharedBy
-      ? t('boards.sharedBy', {
-          name: board.sharedBy.name ?? board.sharedBy.email
-        })
-      : board.openTasks === 0
-        ? t('boards.noOpenTasks')
-        : t('boards.openTasks', { smart_count: board.openTasks })
   return (
-    <TileShelf name={name}>
-      {boards.map(board => {
-        const fresh = isNewlyShared(board)
-        return (
-          <CardTile
-            key={board.id}
-            label={board.name}
-            badge={(Array.from(board.name)[0] ?? '').toUpperCase()}
-            badgeLabel={t(
-              board.project.personal
-                ? 'boards.personal'
-                : board.project.managed
-                  ? 'boards.space'
-                  : 'boards.projectBoard'
-            )}
-            title={
-              <Link component={RouterLink} to={`/boards/${board.id}`}>
-                {board.name}
-              </Link>
-            }
-            flag={fresh ? t('boards.newlyShared') : undefined}
-            tag={board.keyPrefix}
-            meta={
-              withProject
-                ? `${projectName(board.project)} · ${status(board, fresh)}`
-                : status(board, fresh)
-            }
-            action={<FavoriteButton board={board} />}
+    <BoardCard
+      label={board.name}
+      badge={(Array.from(board.name)[0] ?? '').toUpperCase()}
+      badgeLabel={t(
+        board.project.personal
+          ? 'boards.personal'
+          : board.project.managed
+            ? 'boards.space'
+            : 'boards.projectBoard'
+      )}
+      title={
+        <Link component={RouterLink} to={`/boards/${board.id}`}>
+          {board.name}
+        </Link>
+      }
+      flag={fresh ? t('boards.newlyShared') : undefined}
+      chip={
+        board.project.personal ? (
+          <BoardChip
+            label={t('boards.defaultChip')}
+            hint={t('boards.defaultHint')}
           />
-        )
-      })}
-    </TileShelf>
+        ) : board.project.managed ? (
+          <BoardChip
+            label={t('boards.spaceChip')}
+            hint={t('boards.spaceHint', { name: board.project.name })}
+          />
+        ) : undefined
+      }
+      tag={board.keyPrefix}
+      meta={
+        fresh && board.sharedBy
+          ? t('boards.sharedBy', {
+              name: board.sharedBy.name ?? board.sharedBy.email
+            })
+          : board.openTasks === 0
+            ? t('boards.noOpenTasks')
+            : t('boards.openTasks', { smart_count: board.openTasks })
+      }
+      members={<BoardMembers board={board} />}
+      action={<FavoriteButton board={board} />}
+    />
   )
 }
 
-export function BoardsScreen(): ReactElement {
+// The people of a board, as Twake Space shows those of a space.
+function BoardMembers({ board }: { board: BoardSummary }): ReactElement | null {
+  const { t } = useI18n()
+  if (board.members.length === 0) return null
+  return (
+    <div
+      role="img"
+      aria-label={t('members.count', { smart_count: board.members.length })}
+      className="u-flex"
+    >
+      <PeopleAvatars members={board.members} size={24} />
+    </div>
+  )
+}
+
+/** The active boards, or the archived ones, which Archives lists apart. */
+export function BoardsScreen({
+  shelf = 'active'
+}: {
+  shelf?: Shelf
+}): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
   const boards = useBoards()
-  const [shelf, setShelf] = useState<Shelf>('active')
   const [creating, setCreating] = useState(false)
-  const origin = useBoardsOrigin()
-  useDocumentTitle(t('boards.title'))
+  const boardsOrigin = useBoardsOrigin()
+  const archives = shelf === 'archived'
+  const origin = archives
+    ? { icon: Archive, label: t('boards.archives'), to: '/archives' }
+    : boardsOrigin
+  useDocumentTitle(origin.label)
 
   const shown = (boards.data ?? []).filter(
-    board => board.archived === (shelf === 'archived')
+    board => board.archived === archives
   )
-  const { starred, projects } = groupBoards(shown)
-  const projectName = useProjectName()
+  const all = listBoards(shown)
+  const isNewlyShared = newlyShared()
+  const startCreating = (): void => {
+    setCreating(true)
+  }
 
   return (
     <main className="u-ph-2 u-pt-half u-pb-2">
-      <PageCrumbs
-        origin={origin}
-        heading
-        actions={
-          <Button
-            startIcon={<Icon icon={Plus} />}
-            onClick={() => {
-              setCreating(true)
-            }}
-          >
-            {t('boards.new')}
-          </Button>
-        }
-      />
-      <ShelfTabs
-        segmented
-        value={shelf}
-        onChange={(_event, value: Shelf) => {
-          setShelf(value)
-        }}
-        className="u-mb-2"
-      >
-        <Tab value="active" label={t('boards.active')} />
-        <Tab value="archived" label={t('boards.archived')} />
-      </ShelfTabs>
+      <PageCrumbs origin={origin} heading />
       {boards.isError && (
         <Typography role="alert">{t('boards.loadFailed')}</Typography>
       )}
       {boards.isPending && <ListSkeleton label={t('app.loading')} rows={3} />}
       {boards.isSuccess &&
         shown.length === 0 &&
-        (shelf === 'active' ? (
+        (!archives ? (
           <EmptyState
             icon={Mosaic}
             title={t('boards.empty')}
             text={t('boards.emptyHint')}
             action={
-              <Button
-                startIcon={<Icon icon={Plus} />}
-                onClick={() => {
-                  setCreating(true)
-                }}
-              >
+              <Button startIcon={<Icon icon={Plus} />} onClick={startCreating}>
                 {t('boards.createFirst')}
               </Button>
             }
@@ -196,22 +192,30 @@ export function BoardsScreen(): ReactElement {
             text={t('boards.emptyArchivedHint')}
           />
         ))}
-      <Shelves>
-        {starred.length > 0 && (
-          <BoardShelf
-            name={t('boards.favorites')}
-            boards={starred}
-            withProject
-          />
-        )}
-        {projects.map(({ project, boards }) => (
-          <BoardShelf
-            key={project.id}
-            name={projectName(project)}
-            boards={boards}
-          />
-        ))}
-      </Shelves>
+      {archives && shown.length > 0 && (
+        <Typography color="textSecondary" className="u-mt-half u-mb-1">
+          {t('boards.emptyArchivedHint')}
+        </Typography>
+      )}
+      {all.length > 0 && (
+        <CardGrid label={origin.label}>
+          {!archives && (
+            <CreateCard
+              icon={<Icon icon={Plus} size={24} />}
+              title={t('boards.createCard')}
+              text={t('boards.createHint')}
+              onClick={startCreating}
+            />
+          )}
+          {all.map(board => (
+            <BoardItem
+              key={board.id}
+              board={board}
+              fresh={isNewlyShared(board)}
+            />
+          ))}
+        </CardGrid>
+      )}
       {creating && (
         <NewBoardDialog
           onClose={() => {

@@ -23,6 +23,7 @@ export const routes: RouteObject[] = [
         errorElement: <CrashScreen />,
         children: [
           { path: '/', element: <BoardsScreen /> },
+          { path: '/archives', element: <BoardsScreen shelf="archived" /> },
           { path: '/boards/:boardId', element: <BoardScreen /> },
           {
             path: '/boards/:boardId/archived',

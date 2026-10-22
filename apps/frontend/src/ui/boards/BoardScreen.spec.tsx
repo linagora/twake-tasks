@@ -702,7 +702,7 @@ describe('BoardScreen', () => {
       renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
       const stack = await screen.findByRole('button', { name: '6 members' })
-      expect(stack).toHaveTextContent('+2')
+      expect(stack).toHaveTextContent(/\+3$/)
     })
   })
 

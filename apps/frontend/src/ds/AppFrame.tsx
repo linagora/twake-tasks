@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Content,
+  Divider,
   Layout,
   List,
   ListSubheader,
@@ -301,5 +302,23 @@ export function SidebarSection({
     >
       {children}
     </List>
+  )
+}
+
+// The sidebar's last links, under a divider, as Twake Space ends its own.
+export function SidebarShelves({
+  label,
+  children
+}: {
+  label: string
+  children: ReactNode
+}): ReactElement {
+  return (
+    <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+      <Divider sx={{ mx: 2, my: 1 }} />
+      <List aria-label={label} sx={{ py: 0 }}>
+        {children}
+      </List>
+    </Box>
   )
 }

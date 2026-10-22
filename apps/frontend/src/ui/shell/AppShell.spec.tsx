@@ -172,6 +172,24 @@ describe('AppShell', () => {
     )
   })
 
+  it('lights Archives, not Boards, on an archived board', async () => {
+    const old = aBoard({ name: 'Old plans', archived: true })
+    renderRoute(`/boards/${old.id}`, { boardsApi: fakeBoardsApi([old]) })
+
+    const archives = within(
+      await screen.findByRole('list', { name: 'Archived boards' })
+    ).getByRole('link', { name: 'Archives' })
+    await waitFor(() => {
+      expect(archives).toHaveAttribute('aria-current', 'page')
+    })
+    expect(
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'Boards' }
+      )
+    ).not.toHaveAttribute('aria-current')
+  })
+
   it('lists the favourite boards in the sidebar', async () => {
     const boardsApi = fakeBoardsApi([
       { ...aBoard(), id: 'board-1', name: 'Design' },

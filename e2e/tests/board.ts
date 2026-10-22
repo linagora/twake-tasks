@@ -6,7 +6,10 @@ export const unique = () => Math.random().toString(36).slice(2, 7).toUpperCase()
 export async function newBoard(page: Page) {
   const prefix = `E${unique()}`
   const name = `Launch ${prefix}`
-  await page.getByRole('button', { name: 'New' }).click()
+  await page
+    .getByRole('button', { name: /^Create a board/ })
+    .first()
+    .click()
   const dialog = page.getByRole('dialog', { name: 'New board' })
   await dialog.getByLabel('Name').fill(name)
   await dialog.getByLabel('Key prefix').fill(prefix)

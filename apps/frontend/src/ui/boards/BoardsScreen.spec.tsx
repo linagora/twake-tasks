@@ -23,58 +23,120 @@ describe('BoardsScreen', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   })
 
-  it('lists active boards, and archived ones under their own tab', async () => {
+  it('lists the active boards, and the archived ones in Archives', async () => {
     const project = aProject({ name: 'Product' })
     const boardsApi = fakeBoardsApi([
       aBoard({ name: 'Design', project }),
       aBoard({ name: 'Front UI', keyPrefix: 'FUI', project }),
       aBoard({ name: 'Old plans', keyPrefix: 'OLD', archived: true, project })
     ])
-    renderRoute('/', { boardsApi })
+    const { router } = renderRoute('/', { boardsApi })
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Boards' })
     ).toBeInTheDocument()
     expect(
-      boardNames(await screen.findByRole('list', { name: 'Product' }))
+      boardNames(await screen.findByRole('list', { name: 'Boards' }))
     ).toEqual(['Design', 'Front UI'])
+    expect(screen.queryByRole('tab')).toBeNull()
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Archived' }))
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Archived boards' })).getByRole(
+        'link',
+        {
+          name: 'Archives'
+        }
+      )
+    )
 
-    expect(boardNames(screen.getByRole('list', { name: 'Product' }))).toEqual([
-      'Old plans'
-    ])
+    expect(router.state.location.pathname).toBe('/archives')
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Archives' })
+    ).toBeInTheDocument()
+    const archived = screen.getByRole('list', { name: 'Archives' })
+    expect(boardNames(archived)).toEqual(['Old plans'])
+    expect(
+      within(archived).queryByRole('button', { name: /^Create a board/ })
+    ).toBeNull()
+    expect(
+      screen.getByText('Boards you archive stay here, read only.')
+    ).toBeVisible()
   })
 
-  it('groups boards under their project, the personal one first', async () => {
+  it('lists every board together, the personal ones first, marking those of a space', async () => {
     const personal = aProject({ name: 'Personal', personal: true })
     const acme = aProject({ name: 'Acme', managed: true })
     const marketing = aProject({ name: 'Marketing' })
     renderRoute('/', {
       boardsApi: fakeBoardsApi([
+        aBoard({ name: 'Ops', keyPrefix: 'OPS', project: acme }),
+        aBoard({ name: 'Launch', keyPrefix: 'LAU', project: marketing }),
         aBoard({
           name: 'Inbox',
           keyPrefix: 'INB',
           inbox: true,
           project: personal
-        }),
-        aBoard({ name: 'Launch', keyPrefix: 'LAU', project: marketing }),
-        aBoard({ name: 'Ops', keyPrefix: 'OPS', project: acme })
+        })
       ])
     })
 
-    await screen.findByRole('list', { name: 'Personal' })
+    const list = await screen.findByRole('list', { name: 'Boards' })
+    expect(boardNames(list)).toEqual(['Inbox', 'Launch', 'Ops'])
+    fireEvent.mouseOver(
+      within(screen.getByRole('listitem', { name: 'Inbox' })).getByText(
+        'Default'
+      )
+    )
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'New tasks are created here by default. This board can’t be shared.'
+    )
+    // Only a personal board or one of a space says where it belongs.
     expect(
-      screen
-        .getAllByRole('heading', { level: 2 })
-        .map(heading => heading.textContent)
-    ).toEqual(['Personal', 'Acme', 'Marketing'])
-    expect(boardNames(screen.getByRole('list', { name: 'Personal' }))).toEqual([
-      'Inbox'
-    ])
+      screen.getByRole('listitem', { name: 'Launch' })
+    ).not.toHaveTextContent('Marketing')
+    fireEvent.mouseOver(
+      within(screen.getByRole('listitem', { name: 'Ops' })).getByText('Space')
+    )
     expect(
-      screen.queryByText('Members come from the space.')
-    ).not.toBeInTheDocument()
+      await screen.findByRole('tooltip', {
+        name: 'Linked to the space “Acme”.'
+      })
+    ).toBeVisible()
+  })
+
+  it('shows the members of each board, and its space', async () => {
+    const person = (name: string) => ({
+      userId: name,
+      email: `${name.toLowerCase()}@example.com`,
+      name
+    })
+    renderRoute('/', {
+      boardsApi: fakeBoardsApi([
+        aBoard({
+          name: 'Ops',
+          keyPrefix: 'OPS',
+          project: aProject({ name: 'Acme', managed: true }),
+          members: ['Alice', 'Bob', 'Carol', 'Dave', 'Erin'].map(person)
+        }),
+        aBoard({
+          name: 'Launch',
+          keyPrefix: 'LAU',
+          project: aProject({ name: 'Marketing' }),
+          members: [person('Alice')]
+        })
+      ])
+    })
+
+    const ops = within(await screen.findByRole('listitem', { name: 'Ops' }))
+    const launch = within(screen.getByRole('listitem', { name: 'Launch' }))
+    expect(ops.getByText('Space')).toBeVisible()
+    // Three people, then the others counted, as in Twake Drive's list.
+    const opsPeople = ops.getByRole('img', { name: '5 members' })
+    expect(opsPeople).toHaveTextContent(/\+2$/)
+    fireEvent.mouseOver(within(opsPeople).getByText('+2'))
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Dave, Erin')
+    expect(launch.queryByText('Marketing')).toBeNull()
+    expect(launch.getByRole('img', { name: '1 member' })).toBeVisible()
   })
 
   it('offers to create the first board', async () => {
@@ -145,7 +207,7 @@ describe('BoardsScreen', () => {
     )
   })
 
-  it('pins a starred board above the projects until it is unstarred', async () => {
+  it('puts a starred board first, after the create card, until it is unstarred', async () => {
     const project = aProject({ name: 'Product' })
     const boardsApi = fakeBoardsApi([
       aBoard({ name: 'Design', project }),
@@ -159,30 +221,20 @@ describe('BoardsScreen', () => {
     const unstar = await screen.findByRole('button', {
       name: 'Remove Front UI from favorites'
     })
-    const home = within(screen.getByRole('main'))
+    const list = screen.getByRole('list', { name: 'Boards' })
 
     expect(
-      home
-        .getAllByRole('heading', { level: 2 })
-        .map(heading => heading.textContent)
-    ).toEqual(['Favorites', 'Product'])
-    expect(boardNames(home.getByRole('list', { name: 'Favorites' }))).toEqual([
-      'Front UI'
-    ])
-    expect(home.getByRole('listitem', { name: 'Front UI' })).toHaveTextContent(
-      'Product · No open tasks'
+      within(screen.getByRole('main')).queryByRole('heading', { level: 2 })
+    ).toBeNull()
+    expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent(
+      /^Create a board/
     )
-    expect(boardNames(home.getByRole('list', { name: 'Product' }))).toEqual([
-      'Design'
-    ])
+    expect(boardNames(list)).toEqual(['Front UI', 'Design'])
     fireEvent.click(unstar)
     expect(
       await screen.findByRole('button', { name: 'Add Front UI to favorites' })
     ).toBeInTheDocument()
-    expect(
-      home.queryByRole('list', { name: 'Favorites' })
-    ).not.toBeInTheDocument()
-    expect(boardNames(screen.getByRole('list', { name: 'Product' }))).toEqual([
+    expect(boardNames(screen.getByRole('list', { name: 'Boards' }))).toEqual([
       'Design',
       'Front UI'
     ])
@@ -264,7 +316,9 @@ describe('BoardsScreen', () => {
     const boardsApi = fakeBoardsApi()
     const { router } = renderRoute('/', { boardsApi })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'New' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: /^Create a board/ })
+    )
     const dialog = screen.getByRole('dialog', { name: 'New board' })
     const name = within(dialog).getByRole('textbox', { name: 'Name' })
     expect(name).toHaveFocus()
@@ -310,7 +364,9 @@ describe('BoardsScreen', () => {
     const boardsApi = fakeBoardsApi()
     renderRoute('/', { boardsApi })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'New' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: /^Create a board/ })
+    )
     const dialog = screen.getByRole('dialog', { name: 'New board' })
     const prefix = within(dialog).getByRole('textbox', { name: 'Key prefix' })
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), {
@@ -337,7 +393,9 @@ describe('BoardsScreen', () => {
     const boardsApi = fakeBoardsApi([aBoard({ keyPrefix: 'DES' })])
     renderRoute('/', { boardsApi })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'New' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: /^Create a board/ })
+    )
     const dialog = screen.getByRole('dialog', { name: 'New board' })
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), {
       target: { value: 'Desk' }
@@ -363,7 +421,9 @@ describe('BoardsScreen', () => {
   it('keeps Create disabled until the name has a character', async () => {
     renderRoute('/')
 
-    fireEvent.click(await screen.findByRole('button', { name: 'New' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: /^Create a board/ })
+    )
     const dialog = screen.getByRole('dialog', { name: 'New board' })
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), {
       target: { value: '   ' }
