@@ -8,6 +8,7 @@ interface Summary {
   openTasks: number
   doneTasks: number
   totalTasks: number
+  members: { email: string }[]
 }
 
 let api: Awaited<ReturnType<typeof startApp>>
@@ -47,6 +48,27 @@ describe('favorite boards', () => {
       ['Design', false]
     ])
     expect(without.map(board => board.name)).toEqual(['Inbox', 'Design', 'Ops'])
+  })
+
+  it('names the members of each board', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const design = await aBoard(alice, 'Design', 'DES')
+    await api.as(alice).post(`/boards/${design.id}/invites`, {
+      email: bob.email,
+      role: 'editor'
+    })
+    await listed(bob)
+
+    const boards = await listed(alice)
+    const emails = (name: string) =>
+      boards
+        .find(board => board.name === name)
+        ?.members.map(member => member.email)
+        .sort()
+
+    expect(emails('Design')).toEqual([alice.email, bob.email].sort())
+    expect(emails('Inbox')).toEqual([alice.email])
   })
 
   it('counts the open top-level tasks of each board', async () => {

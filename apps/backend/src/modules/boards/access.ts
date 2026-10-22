@@ -95,6 +95,32 @@ export async function invitedTo(tx: Tx, projectId: string): Promise<string[]> {
   return rows.map(row => row.email)
 }
 
+// The members of each of the projects, in one query for a list of boards.
+export async function membersOfProjects(
+  tx: Tx,
+  projectIds: string[]
+): Promise<Map<string, Member[]>> {
+  const byProject = new Map<string, Member[]>()
+  if (projectIds.length === 0) return byProject
+  const rows = await tx
+    .select({
+      projectId: projectMembers.projectId,
+      userId: projectMembers.userId,
+      email: projectMembers.email,
+      ...memberLooks
+    })
+    .from(projectMembers)
+    .leftJoin(userSettings, settingsOfMember)
+    .where(inArray(projectMembers.projectId, projectIds))
+    .orderBy(asc(projectMembers.email))
+  for (const { projectId, ...member } of rows) {
+    const members = byProject.get(projectId)
+    if (members) members.push(member)
+    else byProject.set(projectId, [member])
+  }
+  return byProject
+}
+
 type Looks = Pick<Member, 'name' | 'avatar'>
 
 // Someone who left the board keeps their email on what they wrote, not a name.

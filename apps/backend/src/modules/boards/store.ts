@@ -25,6 +25,7 @@ import {
   claimInvites,
   invitedTo,
   membersOf,
+  membersOfProjects,
   roleIn,
   roleOn,
   type Member
@@ -220,7 +221,7 @@ export function createBoardStore(db: Db) {
         const accessible = accessibleBoards(tx, identity.userId)
         const inviter = alias(projectMembers, 'inviter')
         const inviterSettings = alias(userSettings, 'inviter_settings')
-        return tx
+        const listed = await tx
           .select({
             id: boards.id,
             name: boards.name,
@@ -293,6 +294,13 @@ export function createBoardStore(db: Db) {
             sql`${boardFavorites.userId} is null`,
             asc(boards.name)
           )
+        const members = await membersOfProjects(tx, [
+          ...new Set(listed.map(board => board.project.id))
+        ])
+        return listed.map(board => ({
+          ...board,
+          members: members.get(board.project.id) ?? []
+        }))
       })
     },
 
