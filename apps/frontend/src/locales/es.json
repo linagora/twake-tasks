@@ -559,7 +559,8 @@
     "completeFailed": "No se pudo completar la tarea."
   },
   "members": {
-    "count": "%{smart_count} miembro |||| %{smart_count} miembros"
+    "count": "%{smart_count} miembro |||| %{smart_count} miembros",
+    "invitedCount": "%{smart_count} invitado |||| %{smart_count} invitados"
   },
   "page": {
     "breadcrumb": "Ubicación de la página"

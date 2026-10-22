@@ -3,22 +3,28 @@ import type { ComponentProps, ReactElement } from 'react'
 
 import { displayName } from '@/domain/person'
 
+export const PENDING = 'PersonAvatar-pending'
+
 export function PersonAvatar({
   email,
   name = null,
   avatar = null,
   label,
-  size = 24
+  size = 24,
+  pending = false
 }: {
   email: string
   name?: string | null
   avatar?: string | null | undefined
   label?: string
   size?: ComponentProps<typeof Avatar>['size']
+  /** Invited, not a member yet: greyed in a stack. */
+  pending?: boolean
 }): ReactElement {
   return (
     <Avatar
       size={size}
+      {...(pending && { className: PENDING })}
       {...(avatar && { src: avatar })}
       color={nameToColor(email) ?? 'sunrise'}
       {...(label

@@ -559,7 +559,8 @@
     "completeFailed": "Không thể hoàn thành công việc."
   },
   "members": {
-    "count": "%{smart_count} thành viên"
+    "count": "%{smart_count} thành viên",
+    "invitedCount": "%{smart_count} được mời"
   },
   "page": {
     "breadcrumb": "Vị trí của trang"

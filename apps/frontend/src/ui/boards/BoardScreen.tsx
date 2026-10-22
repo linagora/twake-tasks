@@ -363,9 +363,10 @@ function BoardColumns({
           />
         </Tooltip>
       )}
-      {board.members.length > 0 && (
+      {board.members.length + board.invited.length > 0 && (
         <MemberStack
           members={board.members}
+          invited={board.invited}
           onClick={() => {
             if (shareable) setSharing(true)
             else setListing(true)

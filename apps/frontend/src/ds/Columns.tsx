@@ -436,7 +436,9 @@ export function AvatarStack({
           fontSize: 0.45 * (size - 2 * AVATAR_BORDER),
           letterSpacing: 0
         },
-        '& > * + *': { ml: -0.5 }
+        '& > * + *': { ml: -0.5 },
+        // Someone invited, not a member until they sign in.
+        '& > .PersonAvatar-pending': { opacity: 0.5, filter: 'grayscale(1)' }
       }}
     >
       {children}

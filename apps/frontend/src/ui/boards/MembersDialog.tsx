@@ -18,29 +18,48 @@ import { useI18n } from '@/ui/i18n/useI18n'
 
 const SHOWN = 4
 
+/**
+ * The first members of a board side by side, then the people it invited,
+ * greyed until they sign in, the rest counted.
+ */
 export function MemberStack({
   members,
+  invited,
   onClick
 }: {
   members: Person[]
+  invited: string[]
   onClick: () => void
 }): ReactElement {
   const { t } = useI18n()
-  const hidden = members.length - SHOWN
+  const people = [
+    ...members.map(person => ({ ...person, pending: false })),
+    ...invited.map(email => ({
+      userId: email,
+      email,
+      name: null,
+      avatar: null,
+      pending: true
+    }))
+  ]
+  const hidden = people.length - SHOWN
+  const label = [
+    t('members.count', { smart_count: members.length }),
+    ...(invited.length > 0
+      ? [t('members.invitedCount', { smart_count: invited.length })]
+      : [])
+  ].join(', ')
   return (
-    <StackButton
-      onClick={onClick}
-      aria-haspopup="dialog"
-      aria-label={t('members.count', { smart_count: members.length })}
-    >
+    <StackButton onClick={onClick} aria-haspopup="dialog" aria-label={label}>
       <AvatarStack size={32}>
-        {members.slice(0, SHOWN).map(person => (
+        {people.slice(0, SHOWN).map(person => (
           <PersonAvatar
             key={person.userId}
             email={person.email}
             name={person.name}
             avatar={person.avatar}
             size={32}
+            pending={person.pending}
           />
         ))}
         {hidden > 0 && (

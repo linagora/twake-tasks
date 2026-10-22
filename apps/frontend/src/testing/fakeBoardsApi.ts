@@ -55,6 +55,7 @@ export function aBoard(overrides: Partial<Board> = {}): Board {
     layout: 'board',
     defaultLayout: 'board',
     members: [],
+    invited: [],
     labels: [],
     sections: [
       { id: nextId(), name: 'To do', category: 'unstarted' },

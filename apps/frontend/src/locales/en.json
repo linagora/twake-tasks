@@ -559,7 +559,8 @@
     "completeFailed": "Couldn’t complete the task."
   },
   "members": {
-    "count": "%{smart_count} member |||| %{smart_count} members"
+    "count": "%{smart_count} member |||| %{smart_count} members",
+    "invitedCount": "%{smart_count} invited"
   },
   "page": {
     "breadcrumb": "Where the page is"

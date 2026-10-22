@@ -559,7 +559,8 @@
     "completeFailed": "Impossible de terminer la tâche."
   },
   "members": {
-    "count": "%{smart_count} membre |||| %{smart_count} membres"
+    "count": "%{smart_count} membre |||| %{smart_count} membres",
+    "invitedCount": "%{smart_count} invité |||| %{smart_count} invités"
   },
   "page": {
     "breadcrumb": "Emplacement de la page"

@@ -141,6 +141,8 @@ export interface Board {
   layout: Layout
   defaultLayout: Layout
   members: Person[]
+  /** The emails invited to it, members once they sign in. Admins only. */
+  invited: string[]
   labels: Label[]
   sections: Section[]
   tasks: Task[]

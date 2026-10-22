@@ -559,7 +559,8 @@
     "completeFailed": "Не удалось завершить задачу."
   },
   "members": {
-    "count": "%{smart_count} участник |||| %{smart_count} участника |||| %{smart_count} участников"
+    "count": "%{smart_count} участник |||| %{smart_count} участника |||| %{smart_count} участников",
+    "invitedCount": "%{smart_count} приглашённый |||| %{smart_count} приглашённых |||| %{smart_count} приглашённых"
   },
   "page": {
     "breadcrumb": "Расположение страницы"
