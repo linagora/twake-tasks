@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 
+import { throwConfetti } from '@/ds/confetti'
 import { ReactionBar } from '@/ds/ReactionBar'
 import { ReactionPicker } from '@/ds/ReactionPicker'
 import type { Reaction } from '@/application/boards'
@@ -10,6 +11,16 @@ import type { EmojiInput } from '@/ui/boards/useEmojiInput'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 type OnReact = (emoji: string, on: boolean) => void
+
+const TADA = '🎉'
+
+// Giving 🎉, from any of its buttons, throws confetti.
+const celebrating =
+  (onReact: OnReact): OnReact =>
+  (emoji, on) => {
+    if (on && emoji.replace(/\u{FE0F}/gu, '') === TADA) throwConfetti()
+    onReact(emoji, on)
+  }
 
 const isSamePerson = (a: Person, b: Person): boolean =>
   a.email.toLowerCase() === b.email.toLowerCase()
@@ -57,7 +68,7 @@ export function CommentReactions({
         hidden: count => t('task.moreReactions', { count })
       }}
       readOnly={readOnly}
-      onReact={onReact}
+      onReact={celebrating(onReact)}
     />
   )
 }
@@ -92,7 +103,7 @@ export function ReactButton({
         more: t('task.moreEmoji')
       }}
       picker={emojiInput.emoji}
-      onReact={onReact}
+      onReact={celebrating(onReact)}
     />
   )
 }

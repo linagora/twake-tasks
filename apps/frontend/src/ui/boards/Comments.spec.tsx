@@ -1,9 +1,13 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
+import { throwConfetti } from '@/ds/confetti'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { typeRichText } from '@/testing/richText'
+
+// A canvas animation, which jsdom cannot draw.
+vi.mock('@/ds/confetti', () => ({ throwConfetti: vi.fn() }))
 
 const alice = {
   userId: 'alice',
@@ -600,7 +604,7 @@ describe('Comments', () => {
         within(quick)
           .getAllByRole('button')
           .map(button => button.textContent)
-      ).toEqual(['💜', '👍️', '👎️', '😂', '😮', '🥲', ''])
+      ).toEqual(['💜', '👍️', '👎️', '😂', '😮', '🥲', '🎉', ''])
       // Named by the emoji until the names load, then by its name.
       fireEvent.click(
         within(quick).getByRole('button', {
@@ -617,6 +621,31 @@ describe('Comments', () => {
         'c1',
         '😂'
       )
+    })
+
+    it('throws confetti when you give 🎉, not when you take it back', async () => {
+      vi.mocked(throwConfetti).mockClear()
+      const { panel, comment } = await openReactions([])
+
+      fireEvent.click(panel.getByRole('button', { name: 'Add a reaction' }))
+      const quick = await screen.findByRole('group', {
+        name: 'Usual reactions'
+      })
+      fireEvent.click(
+        within(quick).getByRole('button', { name: /^(🎉|party popper)$/ })
+      )
+      const tada = await comment.findByRole('button', {
+        name: '🎉 from Alice Martin'
+      })
+      expect(throwConfetti).toHaveBeenCalledTimes(1)
+
+      fireEvent.click(tada)
+      await waitFor(() => {
+        expect(
+          comment.queryByRole('button', { name: '🎉 from Alice Martin' })
+        ).toBeNull()
+      })
+      expect(throwConfetti).toHaveBeenCalledTimes(1)
     })
 
     it('takes a usual reaction back when it is already yours', async () => {
