@@ -12,7 +12,12 @@
     "picked": "Đã chọn %{task}.",
     "over": "%{task} đang ở trên %{place}.",
     "dropped": "Đã thả %{task} vào %{place}.",
-    "canceled": "Đã hủy di chuyển %{task}."
+    "canceled": "Đã hủy di chuyển %{task}.",
+    "column": "mục có thể kéo",
+    "columnPicked": "Đã chọn mục %{section}.",
+    "columnOver": "%{section} hiện ở vị trí %{position} trên %{count}.",
+    "columnDropped": "Đã thả %{section} vào vị trí %{position} trên %{count}.",
+    "columnCanceled": "Đã hủy di chuyển mục %{section}."
   },
   "app": {
     "name": "Twake Project",

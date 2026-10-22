@@ -198,6 +198,30 @@ describe('BoardScreen', () => {
     ).toHaveTextContent('To move a task, press space or enter.')
   })
 
+  it('lets admins pick a section up by its header, from the keyboard too', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const heading = await screen.findByRole('heading', {
+      level: 2,
+      name: 'To do'
+    })
+    const handle = heading.parentElement
+    expect(handle).toHaveAttribute('aria-roledescription', 'draggable section')
+    expect(handle).toHaveAttribute('tabindex', '0')
+  })
+
+  it('keeps the sections in place for an editor', async () => {
+    const board = { ...designBoard(), role: 'editor' as const }
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const heading = await screen.findByRole('heading', {
+      level: 2,
+      name: 'To do'
+    })
+    expect(heading.parentElement).not.toHaveAttribute('aria-roledescription')
+  })
+
   it('keeps cards in place for a viewer', async () => {
     const board = { ...designBoard(), role: 'viewer' as const }
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })

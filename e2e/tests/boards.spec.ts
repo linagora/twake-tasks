@@ -169,6 +169,35 @@ test('drags a row of the list to another section and it stays there', async ({
   ).toHaveAccessibleName(`${prefix}-1 Print the posters`)
 })
 
+test('drags a section by its header and it stays in its new place', async ({
+  page
+}) => {
+  await signIn(page, 'alice')
+  await newBoard(page)
+  const headings = () =>
+    page
+      .getByRole('heading', { level: 2 })
+      .filter({ hasText: /^(To do|In progress|Done)$/ })
+      .allTextContents()
+  const header = (name: string) =>
+    page.getByRole('heading', { level: 2, name, exact: true }).locator('..')
+
+  const from = await header('To do').boundingBox()
+  const to = await header('In progress').boundingBox()
+  if (!from || !to) throw new Error('The board is not laid out')
+  await page.mouse.move(from.x + 20, from.y + from.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(from.x + 40, from.y + from.height / 2, { steps: 4 })
+  await page.mouse.move(to.x + to.width - 10, to.y + to.height / 2, {
+    steps: 15
+  })
+  await page.mouse.up()
+  await expect.poll(headings).toEqual(['In progress', 'To do', 'Done'])
+
+  await page.reload()
+  await expect.poll(headings).toEqual(['In progress', 'To do', 'Done'])
+})
+
 test('notifies the person a task is assigned to', async ({ page, browser }) => {
   const bob = await asPerson(browser, 'bob')
   await signIn(page, 'alice')

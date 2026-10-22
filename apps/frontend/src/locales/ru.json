@@ -12,7 +12,12 @@
     "picked": "Задача %{task} взята.",
     "over": "Задача %{task} над разделом %{place}.",
     "dropped": "Задача %{task} перемещена в %{place}.",
-    "canceled": "Перемещение задачи %{task} отменено."
+    "canceled": "Перемещение задачи %{task} отменено.",
+    "column": "перетаскиваемый раздел",
+    "columnPicked": "Раздел %{section} взят.",
+    "columnOver": "Раздел %{section} теперь на позиции %{position} из %{count}.",
+    "columnDropped": "Раздел %{section} перемещён на позицию %{position} из %{count}.",
+    "columnCanceled": "Перемещение раздела %{section} отменено."
   },
   "app": {
     "name": "Twake Project",

@@ -12,7 +12,12 @@
     "picked": "Picked up %{task}.",
     "over": "%{task} is over %{place}.",
     "dropped": "%{task} dropped in %{place}.",
-    "canceled": "Moving %{task} was canceled."
+    "canceled": "Moving %{task} was canceled.",
+    "column": "draggable section",
+    "columnPicked": "Picked up the section %{section}.",
+    "columnOver": "%{section} is now in position %{position} of %{count}.",
+    "columnDropped": "%{section} dropped in position %{position} of %{count}.",
+    "columnCanceled": "Moving the section %{section} was canceled."
   },
   "app": {
     "name": "Twake Project",

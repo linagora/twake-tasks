@@ -12,7 +12,12 @@
     "picked": "%{task} aufgenommen.",
     "over": "%{task} befindet sich über %{place}.",
     "dropped": "%{task} in %{place} abgelegt.",
-    "canceled": "Verschieben von %{task} abgebrochen."
+    "canceled": "Verschieben von %{task} abgebrochen.",
+    "column": "verschiebbarer Abschnitt",
+    "columnPicked": "Abschnitt %{section} aufgenommen.",
+    "columnOver": "%{section} ist jetzt an Position %{position} von %{count}.",
+    "columnDropped": "%{section} an Position %{position} von %{count} abgelegt.",
+    "columnCanceled": "Verschieben des Abschnitts %{section} abgebrochen."
   },
   "app": {
     "name": "Twake Project",
