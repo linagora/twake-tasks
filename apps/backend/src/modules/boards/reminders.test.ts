@@ -120,6 +120,22 @@ describe('reminders', () => {
     ).toEqual({ error: 'invalid_reminder' })
   })
 
+  it('refuses a reminder on an archived or trashed task, or an archived board', async () => {
+    const owner = aUser()
+    const { boardId, taskId, remind } = await aTaskOf(owner)
+    const task = `/boards/${boardId}/tasks/${taskId}`
+    const at = { at: '2099-01-01T10:00:00Z' }
+
+    await api.as(owner).post(`${task}/archive`, {})
+    expect((await remind(owner, at)).statusCode).toBe(409)
+    await api.as(owner).post(`${task}/restore`, {})
+    await api.as(owner).delete(task)
+    expect((await remind(owner, at)).statusCode).toBe(409)
+    await api.as(owner).post(`${task}/restore`, {})
+    await api.as(owner).post(`/boards/${boardId}/archive`, {})
+    expect((await remind(owner, at)).statusCode).toBe(409)
+  })
+
   it('notifies its person when it fires', async () => {
     const owner = aUser()
     const { taskId, remind } = await aTaskOf(owner)

@@ -10,7 +10,7 @@ import {
   taskReminders,
   tasks
 } from './schema.ts'
-import { Refused, taskOf, writeOrRefuse } from './tasks.ts'
+import { Refused, refuseIfShelved, taskOf, writeOrRefuse } from './tasks.ts'
 
 export type NewReminder = { at: Date } | { beforeMinutes: number; zone: string }
 
@@ -73,6 +73,7 @@ export function createReminderStore(db: Db) {
     ) {
       return writeOrRefuse(db, identity, async tx => {
         const task = await visibleTask(tx, identity, boardId, taskId)
+        await refuseIfShelved(tx, boardId, task)
         const relative = 'beforeMinutes' in reminder
         if (relative ? task.dueDate === null : reminder.at <= new Date()) {
           throw new Refused('invalid_reminder')

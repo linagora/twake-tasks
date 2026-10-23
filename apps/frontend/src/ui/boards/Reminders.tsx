@@ -29,10 +29,12 @@ const DAY = 24 * HOUR
 
 export function Reminders({
   task,
-  boardId
+  boardId,
+  archived
 }: {
   task: Task
   boardId: string
+  archived: boolean
 }): ReactElement {
   const { t, lang } = useI18n()
   const reminders = useReminders(boardId, task.id)
@@ -98,19 +100,21 @@ export function Reminders({
             {t('reminders.none')}
           </Typography>
         )}
-        <IconButton
-          size="small"
-          aria-label={t('reminders.add')}
-          onClick={event => {
-            setAnchor(event.currentTarget)
-          }}
-        >
-          <Icon icon={Plus} size={14} />
-        </IconButton>
+        {!archived && (
+          <IconButton
+            size="small"
+            aria-label={t('reminders.add')}
+            onClick={event => {
+              setAnchor(event.currentTarget)
+            }}
+          >
+            <Icon icon={Plus} size={14} />
+          </IconButton>
+        )}
       </Row>
       <EditorPopover
         label={t('reminders.add')}
-        anchor={anchor}
+        anchor={archived ? null : anchor}
         onClose={close}
         onSubmit={() => {
           add.mutate(

@@ -10,8 +10,8 @@ afterEach(() => {
   followZone(null)
 })
 
-async function openLogo(dueDate: string | null) {
-  const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
+async function openLogo(dueDate: string | null, archived = false) {
+  const board = aBoard({ name: 'Design', keyPrefix: 'DES', archived })
   const logo = aTask(board.sections[0] ?? null, {
     key: 'DES-1',
     title: 'Logo',
@@ -155,6 +155,13 @@ describe('Reminders', () => {
     fireEvent.change(remindMe, { target: { value: '15' } })
 
     expect(editor.queryByRole('alert')).toBeNull()
+  })
+
+  it('offers no new reminder on an archived board', async () => {
+    const { reminders } = await openLogo('2026-11-02', true)
+
+    expect(reminders.getByText('None')).toBeVisible()
+    expect(reminders.queryByRole('button', { name: 'Add reminder' })).toBeNull()
   })
 
   it('deletes a reminder', async () => {
