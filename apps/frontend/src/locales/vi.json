@@ -217,6 +217,8 @@
     "unassigned": "%{actor} đã bỏ giao %{name}",
     "labeled": "%{actor} đã thêm nhãn %{name}",
     "unlabeled": "%{actor} đã bỏ nhãn %{name}",
+    "fileAdded": "%{actor} đã thêm tệp %{name}",
+    "fileRemoved": "%{actor} đã gỡ tệp %{name}",
     "someone": "người đã rời bảng",
     "someLabel": "nhãn đã xóa",
     "someSection": "mục đã xóa"
@@ -520,5 +522,30 @@
   },
   "page": {
     "breadcrumb": "Vị trí của trang"
+  },
+  "files": {
+    "title": "Tệp",
+    "add": "Thêm tệp",
+    "fromDrive": "Từ Twake Drive",
+    "fromComputer": "Từ máy tính của tôi",
+    "open": "Mở %{name}",
+    "remove": "Gỡ %{name}",
+    "pickerTitle": "Chọn tệp trong Twake Drive",
+    "pickerAdd": "Thêm vào công việc",
+    "close": "Đóng",
+    "uploadTitle": "Đang thêm tệp",
+    "uploadToDrive": "Tệp của bạn sẽ được tải lên thư mục Project trong Twake Drive của bạn và thêm vào công việc dưới dạng",
+    "uploadToSpace": "Tệp của bạn sẽ được tải lên thư mục Project trong drive của space và thêm vào công việc dưới dạng",
+    "asLinks": "liên kết.",
+    "cancel": "Hủy",
+    "cancelAll": "Hủy tất cả",
+    "done": "Xong",
+    "failed": "Thất bại",
+    "cancelled": "Đã hủy",
+    "addFailed": "Không thể thêm một số tệp vào công việc.",
+    "pickFailed": "Không thể mở Twake Drive.",
+    "removeFailed": "Không thể gỡ tệp.",
+    "tooMany": "Một công việc chứa tối đa 50 tệp.",
+    "loadFailed": "Không thể tải các tệp."
   }
 }

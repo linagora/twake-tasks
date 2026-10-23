@@ -59,6 +59,13 @@ Spaces, in [space mode](modes.md#space-mode) only (the queue stays bound to them
 
 All on the `space` exchange. An event dated more than a day ahead is rejected, since it would make every later event of its space look stale.
 
+In space mode, also the platform's replies about the team drive of each space ([cozy-stack ADR 009](https://github.com/linagora/cozy-stack/blob/master/docs/adr/009-adr-org-drive-provisioning.md)), on the `activity` exchange, bound with `com.twake.drive.org_drive.#`:
+
+- `com.twake.drive.org_drive.ready.v1`: the board of the space then gives its `teamDriveId`, where the files added to its tasks go.
+- `com.twake.drive.org_drive.removed.v1`: the board gives none again, and its files go to each person's own drive.
+
+Only the replies whose reference has the `twake-space` source count. A reply older than the last one applied for its space changes nothing.
+
 ## Published
 
 - `twake.space.sync.requested` on `space`, at start, in space mode, while no space is known yet.

@@ -4,6 +4,7 @@ import { connectSpaceOverlay } from '@linagora/twake-mui'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
+import { platformDrive } from '@/adapters/drive/platformDrive'
 import { httpBoardsApi } from '@/adapters/http/httpBoardsApi'
 import { embedSession, isEmbedded } from '@/adapters/oidc/embedSession'
 import {
@@ -47,6 +48,7 @@ if (!relayCallback()) {
       <App
         session={session}
         boardsApi={boardsApi}
+        makeDrive={platformDrive}
         overlay={overlay}
         reporting={reporting}
       />

@@ -5,6 +5,7 @@ import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createCommentStore } from './comments.ts'
+import { createFileStore, MAX_FILES_PER_TASK } from './files.ts'
 import { createFilterStore } from './filters.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
@@ -181,6 +182,24 @@ const labeling = z.object({ labelIds: z.array(z.uuid()).max(50) })
 
 const newComment = z.object({ body: z.string().trim().min(1).max(10_000) })
 
+// Links to Twake Drive files: only https, which is what the Drive hands out.
+const newFiles = z.object({
+  files: z
+    .array(
+      z.object({
+        url: z.url({ protocol: /^https$/ }).max(2000),
+        name: boardName.max(255),
+        mimeType: z.string().max(255).nullable().default(null),
+        size: z.number().int().min(0).nullable().default(null),
+        driveFileId: z.string().min(1).max(255).nullable().default(null)
+      })
+    )
+    .min(1)
+    .max(MAX_FILES_PER_TASK)
+})
+
+const fileParams = taskParams.extend({ fileId: z.uuid() })
+
 const newReminder = z.union([
   z.strictObject({
     at: z.iso.datetime({ offset: true }).pipe(z.coerce.date())
@@ -239,6 +258,7 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   invalid_dates: 400,
   invalid_reminder: 400,
   label_taken: 409,
+  too_many_files: 409,
   section_name_taken: 409,
   last_admin: 409,
   key_prefix_taken: 409,
@@ -258,6 +278,7 @@ export function registerBoards(
   const sectionStore = createSectionStore(deps.db)
   const labelStore = createLabelStore(deps.db)
   const commentStore = createCommentStore(deps.db)
+  const fileStore = createFileStore(deps.db)
   const reminderStore = createReminderStore(deps.db)
   const filterStore = createFilterStore(deps.db)
   const layoutStore = createLayoutStore(deps.db)
@@ -1146,6 +1167,66 @@ export function registerBoards(
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(201).send(result.value)
+    }
+  )
+
+  app.get(
+    '/boards/:boardId/tasks/:taskId/files',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await fileStore.listFiles(
+        identity,
+        params.data.boardId,
+        params.data.taskId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return { files: result.value }
+    }
+  )
+
+  app.post(
+    '/boards/:boardId/tasks/:taskId/files',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = taskParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = newFiles.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await fileStore.addFiles(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        body.data.files
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(201).send({ files: result.value })
+    }
+  )
+
+  app.delete(
+    '/boards/:boardId/tasks/:taskId/files/:fileId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = fileParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await fileStore.removeFile(
+        identity,
+        params.data.boardId,
+        params.data.taskId,
+        params.data.fileId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
     }
   )
 

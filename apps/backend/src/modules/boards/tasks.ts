@@ -42,6 +42,7 @@ export type Refusal =
   | 'invalid_dates'
   | 'invalid_reminder'
   | 'label_taken'
+  | 'too_many_files'
   | 'section_name_taken'
   | 'last_admin'
   | 'key_prefix_taken'

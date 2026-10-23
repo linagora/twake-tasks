@@ -118,6 +118,8 @@ export interface Board {
   project: ProjectSummary
   inbox: boolean
   archived: boolean
+  /** The drive of the board's space, where its files go, once the platform made it. */
+  teamDriveId: string | null
   version: number
   role: Role
   layout: Layout

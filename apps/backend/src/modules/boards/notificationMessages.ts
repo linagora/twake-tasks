@@ -20,6 +20,8 @@ export interface NotificationMessages {
   unassigned: (actor: string, name: string) => string
   labeled: (actor: string, name: string) => string
   unlabeled: (actor: string, name: string) => string
+  fileAdded: (actor: string, name: string) => string
+  fileRemoved: (actor: string, name: string) => string
   described: (actor: string) => string
   archived: (actor: string, archived: boolean) => string
   trashed: (actor: string, trashed: boolean) => string
@@ -70,6 +72,8 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     unassigned: (actor, name) => `${actor} unassigned ${name}`,
     labeled: (actor, name) => `${actor} added the label ${name}`,
     unlabeled: (actor, name) => `${actor} removed the label ${name}`,
+    fileAdded: (actor, name) => `${actor} added the file ${name}`,
+    fileRemoved: (actor, name) => `${actor} removed the file ${name}`,
     described: actor => `${actor} edited the description`,
     archived: (actor, archived) =>
       archived
@@ -135,6 +139,8 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     unassigned: (actor, name) => `${actor} a retiré ${name} de la tâche`,
     labeled: (actor, name) => `${actor} a ajouté l’étiquette ${name}`,
     unlabeled: (actor, name) => `${actor} a retiré l’étiquette ${name}`,
+    fileAdded: (actor, name) => `${actor} a ajouté le fichier ${name}`,
+    fileRemoved: (actor, name) => `${actor} a retiré le fichier ${name}`,
     described: actor => `${actor} a modifié la description`,
     archived: (actor, archived) =>
       archived
@@ -201,6 +207,8 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     unassigned: (actor, name) => `${actor} hat ${name} entfernt`,
     labeled: (actor, name) => `${actor} hat das Label ${name} hinzugefügt`,
     unlabeled: (actor, name) => `${actor} hat das Label ${name} entfernt`,
+    fileAdded: (actor, name) => `${actor} hat die Datei ${name} hinzugefügt`,
+    fileRemoved: (actor, name) => `${actor} hat die Datei ${name} entfernt`,
     described: actor => `${actor} hat die Beschreibung bearbeitet`,
     archived: (actor, archived) =>
       archived
@@ -267,6 +275,8 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     unassigned: (actor, name) => `${actor} ha rimosso ${name}`,
     labeled: (actor, name) => `${actor} ha aggiunto l’etichetta ${name}`,
     unlabeled: (actor, name) => `${actor} ha rimosso l’etichetta ${name}`,
+    fileAdded: (actor, name) => `${actor} ha aggiunto il file ${name}`,
+    fileRemoved: (actor, name) => `${actor} ha rimosso il file ${name}`,
     described: actor => `${actor} ha modificato la descrizione`,
     archived: (actor, archived) =>
       archived
@@ -331,6 +341,8 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     unassigned: (actor, name) => `${actor} quitó a ${name}`,
     labeled: (actor, name) => `${actor} añadió la etiqueta ${name}`,
     unlabeled: (actor, name) => `${actor} quitó la etiqueta ${name}`,
+    fileAdded: (actor, name) => `${actor} añadió el archivo ${name}`,
+    fileRemoved: (actor, name) => `${actor} quitó el archivo ${name}`,
     described: actor => `${actor} editó la descripción`,
     archived: (actor, archived) =>
       archived
@@ -392,6 +404,8 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     unassigned: (actor, name) => `${actor} снял(а) ${name} с задачи`,
     labeled: (actor, name) => `${actor} добавил(а) метку ${name}`,
     unlabeled: (actor, name) => `${actor} убрал(а) метку ${name}`,
+    fileAdded: (actor, name) => `${actor} добавил(а) файл ${name}`,
+    fileRemoved: (actor, name) => `${actor} убрал(а) файл ${name}`,
     described: actor => `${actor} изменил(а) описание`,
     archived: (actor, archived) =>
       archived
@@ -453,6 +467,8 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     unassigned: (actor, name) => `${actor} đã gỡ ${name} khỏi công việc`,
     labeled: (actor, name) => `${actor} đã thêm nhãn ${name}`,
     unlabeled: (actor, name) => `${actor} đã bỏ nhãn ${name}`,
+    fileAdded: (actor, name) => `${actor} đã thêm tệp ${name}`,
+    fileRemoved: (actor, name) => `${actor} đã gỡ tệp ${name}`,
     described: actor => `${actor} đã sửa mô tả`,
     archived: (actor, archived) =>
       archived

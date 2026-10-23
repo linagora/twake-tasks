@@ -1,8 +1,10 @@
 import { sql } from 'drizzle-orm'
 import {
+  bigint,
   foreignKey,
   pgPolicy,
   pgTable,
+  text,
   unique,
   uuid
 } from 'drizzle-orm/pg-core'
@@ -16,7 +18,11 @@ export const spaces = pgTable.withRLS(
     id: uuid().primaryKey(),
     organizationId: organizationId().notNull(),
     projectId: uuid('project_id').notNull(),
-    lastEventAt: timestamptz('last_event_at')
+    lastEventAt: timestamptz('last_event_at'),
+    // The team drive the platform made for the space, once it said so, and
+    // the revision of that reply, so that an older one changes nothing.
+    driveId: text('drive_id'),
+    driveRevision: bigint('drive_revision', { mode: 'number' })
   },
   table => [
     unique().on(table.projectId),

@@ -10,6 +10,7 @@ import type {
   SectionCategory,
   Task
 } from '@/domain/board'
+import type { DriveFile } from '@/application/drive'
 
 /**
  * The task and its sub-tasks lose their assignees who are not on the target
@@ -64,6 +65,16 @@ export interface Comment {
   id: string
   author: Person
   body: string
+  createdAt: string
+}
+
+export interface TaskFile {
+  id: string
+  url: string
+  name: string
+  mimeType: string | null
+  size: number | null
+  addedBy: string
   createdAt: string
 }
 
@@ -276,6 +287,13 @@ export interface BoardsApi {
   listHistory: (boardId: string, taskId: string) => Promise<HistoryEntry[]>
   listComments: (boardId: string, taskId: string) => Promise<Comment[]>
   addComment: (boardId: string, taskId: string, body: string) => Promise<void>
+  listFiles: (boardId: string, taskId: string) => Promise<TaskFile[]>
+  addFiles: (
+    boardId: string,
+    taskId: string,
+    files: DriveFile[]
+  ) => Promise<TaskFile[]>
+  removeFile: (boardId: string, taskId: string, fileId: string) => Promise<void>
   listReminders: (boardId: string, taskId: string) => Promise<Reminder[]>
   addReminder: (
     boardId: string,

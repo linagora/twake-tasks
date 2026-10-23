@@ -563,6 +563,35 @@ function ownRows(userId: AnyPgColumn, orReach?: SQL) {
 const visibleTask = (taskId: AnyPgColumn): SQL =>
   sql`exists (select 1 from ${tasks} where ${tasks.id} = ${taskId})`
 
+// Links to files kept in Twake Drive: the task holds the link, never the file.
+export const taskFiles = pgTable.withRLS(
+  'task_files',
+  {
+    id: id(),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    url: text().notNull(),
+    name: text().notNull(),
+    mimeType: text('mime_type'),
+    size: bigint({ mode: 'number' }),
+    // The file in the person's or the space's drive, when Tasks put it there.
+    driveFileId: text('drive_file_id'),
+    addedBy: uuid('added_by').notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+    tenant: tenant()
+  },
+  table => [
+    index().on(table.taskId, table.createdAt),
+    foreignKey({
+      columns: [table.tenant, table.taskId],
+      foreignColumns: [tasks.tenant, tasks.id]
+    }),
+    tenantPolicy(table.organizationId, visibleTask(table.taskId))
+  ]
+)
+
 // Either at a fixed moment, or some minutes before the due date. A due date
 // without a time counts from nine in the morning, and a floating due time in
 // the zone of whoever set the reminder.

@@ -34,6 +34,7 @@ import {
   purgeSpace,
   spaceRoutes
 } from './modules/spaces/events.ts'
+import { driveRoutes } from './modules/spaces/drives.ts'
 import { planReconcile, reconcileJobs } from './modules/spaces/reconcile.ts'
 import { settingsRoutes } from './modules/settings/events.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
@@ -83,7 +84,7 @@ const handle = createMessageHandler({
   // The queue stays bound to space events either way, since its first binding
   // fixes its dead letter key; without the integration they find no route.
   routes: new Map([
-    ...(spaces ? spaceRoutes() : []),
+    ...(spaces ? [...spaceRoutes(), ...driveRoutes] : []),
     ...accountRoutes,
     ...settingsRoutes
   ]),
@@ -98,6 +99,7 @@ const consumer = await startConsumer(
     b2bExchange: config.RABBITMQ_B2B_EXCHANGE,
     authExchange: config.RABBITMQ_AUTH_EXCHANGE,
     settingsExchange: config.RABBITMQ_SETTINGS_EXCHANGE,
+    activityExchange: config.RABBITMQ_ACTIVITY_EXCHANGE,
     queue: config.RABBITMQ_QUEUE,
     oldQueue: config.RABBITMQ_OLD_QUEUE,
     deadLetterExchange: config.RABBITMQ_DEAD_LETTER_EXCHANGE

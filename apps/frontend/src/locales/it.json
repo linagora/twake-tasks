@@ -217,6 +217,8 @@
     "unassigned": "%{actor} ha rimosso l’assegnazione di %{name}",
     "labeled": "%{actor} ha aggiunto l’etichetta %{name}",
     "unlabeled": "%{actor} ha rimosso l’etichetta %{name}",
+    "fileAdded": "%{actor} ha aggiunto il file %{name}",
+    "fileRemoved": "%{actor} ha rimosso il file %{name}",
     "someone": "una persona che ha lasciato la bacheca",
     "someLabel": "un’etichetta eliminata",
     "someSection": "una sezione eliminata"
@@ -520,5 +522,30 @@
   },
   "page": {
     "breadcrumb": "Posizione della pagina"
+  },
+  "files": {
+    "title": "File",
+    "add": "Aggiungi un file",
+    "fromDrive": "Da Twake Drive",
+    "fromComputer": "Dal mio computer",
+    "open": "Apri %{name}",
+    "remove": "Rimuovi %{name}",
+    "pickerTitle": "Scegli file in Twake Drive",
+    "pickerAdd": "Aggiungi all’attività",
+    "close": "Chiudi",
+    "uploadTitle": "Aggiunta dei file",
+    "uploadToDrive": "I tuoi file saranno caricati nella cartella Project del tuo Twake Drive e aggiunti all’attività come",
+    "uploadToSpace": "I tuoi file saranno caricati nella cartella Project del drive dello space e aggiunti all’attività come",
+    "asLinks": "link.",
+    "cancel": "Annulla",
+    "cancelAll": "Annulla",
+    "done": "Fatto",
+    "failed": "Non riuscito",
+    "cancelled": "Annullato",
+    "addFailed": "Alcuni file non sono stati aggiunti all’attività.",
+    "pickFailed": "Impossibile aprire Twake Drive.",
+    "removeFailed": "Impossibile rimuovere il file.",
+    "tooMany": "Un’attività contiene al massimo 50 file.",
+    "loadFailed": "Impossibile caricare i file."
   }
 }

@@ -217,6 +217,8 @@
     "unassigned": "%{actor} снял(а) %{name}",
     "labeled": "%{actor} добавил(а) метку %{name}",
     "unlabeled": "%{actor} убрал(а) метку %{name}",
+    "fileAdded": "%{actor} добавил(а) файл %{name}",
+    "fileRemoved": "%{actor} убрал(а) файл %{name}",
     "someone": "человек, покинувший доску",
     "someLabel": "удалённая метка",
     "someSection": "удалённый раздел"
@@ -520,5 +522,30 @@
   },
   "page": {
     "breadcrumb": "Расположение страницы"
+  },
+  "files": {
+    "title": "Файлы",
+    "add": "Добавить файл",
+    "fromDrive": "Из Twake Drive",
+    "fromComputer": "С моего компьютера",
+    "open": "Открыть %{name}",
+    "remove": "Убрать %{name}",
+    "pickerTitle": "Выбрать файлы в Twake Drive",
+    "pickerAdd": "Добавить к задаче",
+    "close": "Закрыть",
+    "uploadTitle": "Добавление файлов",
+    "uploadToDrive": "Ваши файлы будут загружены в папку Project вашего Twake Drive и добавлены к задаче в виде",
+    "uploadToSpace": "Ваши файлы будут загружены в папку Project диска пространства и добавлены к задаче в виде",
+    "asLinks": "ссылок.",
+    "cancel": "Отмена",
+    "cancelAll": "Отменить всё",
+    "done": "Готово",
+    "failed": "Ошибка",
+    "cancelled": "Отменено",
+    "addFailed": "Некоторые файлы не удалось добавить к задаче.",
+    "pickFailed": "Не удалось открыть Twake Drive.",
+    "removeFailed": "Не удалось убрать файл.",
+    "tooMany": "Задача может содержать не более 50 файлов.",
+    "loadFailed": "Не удалось загрузить файлы."
   }
 }
