@@ -109,7 +109,14 @@ export function aNotification(
   }
 }
 
-function summaryOf(board: Board, favorite = false): BoardSummary {
+function summaryOf(
+  board: Board,
+  favorite: boolean,
+  share: Pick<BoardSummary, 'sharedBy' | 'joinedAt'> = {
+    sharedBy: null,
+    joinedAt: '2026-01-01T00:00:00Z'
+  }
+): BoardSummary {
   const counted = board.tasks.filter(
     task => task.parentId === null && task.canceledAt === null
   )
@@ -124,7 +131,8 @@ function summaryOf(board: Board, favorite = false): BoardSummary {
     favorite,
     openTasks: counted.filter(task => task.completedAt === null).length,
     doneTasks: counted.filter(task => task.completedAt !== null).length,
-    totalTasks: counted.length
+    totalTasks: counted.length,
+    ...share
   }
 }
 
@@ -144,6 +152,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
 
   const watchers = new Map<string, Set<(version: number) => void>>()
   const favorites = new Set<string>()
+  const shares = new Map<string, Pick<BoardSummary, 'sharedBy' | 'joinedAt'>>()
   const descriptions = new Map<string, Description>()
   const comments = new Map<string, Comment[]>()
   const history = new Map<string, HistoryEntry[]>()
@@ -417,7 +426,9 @@ export function fakeBoardsApi(boards: Board[] = []) {
     listBoards: vi.fn(() =>
       Promise.resolve(
         [...store.values()]
-          .map(board => summaryOf(board, favorites.has(board.id)))
+          .map(board =>
+            summaryOf(board, favorites.has(board.id), shares.get(board.id))
+          )
           .sort((a, b) => Number(b.favorite) - Number(a.favorite))
       )
     ),
@@ -755,6 +766,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
         listener(board.version)
       }
     },
+    shares,
     descriptions,
     notifications,
     comments,

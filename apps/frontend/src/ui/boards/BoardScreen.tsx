@@ -59,6 +59,7 @@ import {
   useMoveTask,
   useRenameBoard
 } from '@/ui/boards/queries'
+import { markBoardSeen } from '@/ui/boards/seenBoards'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { ShareDialog } from '@/ui/boards/ShareDialog'
 import { TaskCard } from '@/ui/boards/TaskCard'
@@ -87,6 +88,10 @@ export function BoardScreen({
     relative: true
   }
   useDocumentTitle(shown?.name ?? null)
+  const shownId = shown?.id
+  useEffect(() => {
+    if (shownId) markBoardSeen(shownId)
+  }, [shownId])
 
   return (
     <OriginContext value={boardsOrigin}>

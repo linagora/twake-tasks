@@ -31,6 +31,10 @@ export interface BoardSummary {
   /** Top-level tasks completed, out of `totalTasks`, the ones not canceled. */
   doneTasks: number
   totalTasks: number
+  /** When the person joined the board's project. */
+  joinedAt: string
+  /** Who invited the person: null on their own boards and a space's. */
+  sharedBy: { name: string | null; email: string } | null
 }
 
 export interface Section {

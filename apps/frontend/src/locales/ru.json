@@ -63,7 +63,9 @@
     "projectBoard": "Доска проекта",
     "personalProject": "Личное",
     "openTasks": "%{smart_count} открытая задача |||| %{smart_count} открытые задачи |||| %{smart_count} открытых задач",
-    "noOpenTasks": "Нет открытых задач"
+    "noOpenTasks": "Нет открытых задач",
+    "newlyShared": "Новая",
+    "sharedBy": "Поделился(-ась) %{name}"
   },
   "newBoard": {
     "title": "Новая доска",

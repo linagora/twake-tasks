@@ -63,7 +63,9 @@
     "projectBoard": "Tableau de projet",
     "personalProject": "Personnel",
     "openTasks": "%{smart_count} tâche ouverte |||| %{smart_count} tâches ouvertes",
-    "noOpenTasks": "Aucune tâche ouverte"
+    "noOpenTasks": "Aucune tâche ouverte",
+    "newlyShared": "Nouveau",
+    "sharedBy": "Partagé par %{name}"
   },
   "newBoard": {
     "title": "Nouveau tableau",

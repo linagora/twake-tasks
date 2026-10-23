@@ -63,7 +63,9 @@
     "projectBoard": "Bacheca di progetto",
     "personalProject": "Personale",
     "openTasks": "%{smart_count} attività aperta |||| %{smart_count} attività aperte",
-    "noOpenTasks": "Nessuna attività aperta"
+    "noOpenTasks": "Nessuna attività aperta",
+    "newlyShared": "Nuovo",
+    "sharedBy": "Condiviso da %{name}"
   },
   "newBoard": {
     "title": "Nuova bacheca",

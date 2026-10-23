@@ -1,9 +1,11 @@
 import {
   Avatar,
   Box,
+  Chip,
   nameToColor,
   styled,
   Tabs,
+  Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
@@ -13,6 +15,7 @@ export function CardTile({
   badge,
   badgeLabel,
   title,
+  flag,
   tag,
   meta,
   action
@@ -21,6 +24,8 @@ export function CardTile({
   badge: string
   badgeLabel: string
   title: ReactNode
+  /** A short word next to the title, such as "New". */
+  flag?: string | undefined
   tag: string
   meta: string
   action?: ReactNode
@@ -61,14 +66,34 @@ export function CardTile({
         {badge}
       </Avatar>
       <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography
-          variant="subtitle1"
-          component="h3"
-          noWrap
-          sx={{ fontWeight: 600 }}
-        >
-          {title}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+          <Tooltip title={label} placement="top-start">
+            <Typography
+              variant="subtitle1"
+              component="h3"
+              sx={{
+                minWidth: 0,
+                fontWeight: 600,
+                lineHeight: 1.3,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                overflowWrap: 'anywhere'
+              }}
+            >
+              {title}
+            </Typography>
+          </Tooltip>
+          {flag && (
+            <Chip
+              size="small"
+              color="primary"
+              label={flag}
+              sx={{ flexShrink: 0, height: 20, fontWeight: 600 }}
+            />
+          )}
+        </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography
             variant="caption"
