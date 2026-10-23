@@ -8,17 +8,11 @@ import {
   Restore,
   Trash
 } from '@linagora/twake-icons'
-import {
-  Divider,
-  IconButton,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem
-} from '@linagora/twake-mui'
+import { Divider, IconButton, Menu } from '@linagora/twake-mui'
 import { useState, type ElementType, type ReactElement } from 'react'
 
 import type { Shelf } from '@/application/boards'
+import { IconMenuItem } from '@/ds/IconMenuItem'
 import type { Board } from '@/domain/board'
 import { useBoardChange, useSetLayout } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -48,17 +42,15 @@ export function BoardMenu({
     setAnchor(null)
   }
   const item = (icon: ElementType, label: string, action: () => void) => (
-    <MenuItem
+    <IconMenuItem
+      icon={icon}
       onClick={() => {
         close()
         action()
       }}
     >
-      <ListItemIcon>
-        <Icon icon={icon} />
-      </ListItemIcon>
-      <ListItemText>{label}</ListItemText>
-    </MenuItem>
+      {label}
+    </IconMenuItem>
   )
 
   return (
