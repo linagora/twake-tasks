@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import type { Person, Task } from '@/domain/board'
-import { aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderWithProviders } from '@/testing/renderWithProviders'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
 
@@ -32,6 +32,29 @@ function open(task: Task, tasks: Task[], boardsApi = fakeBoardsApi()) {
       boardId="b1"
       members={[newcomer, chloe, bob, me]}
       tasks={tasks}
+      shareable={false}
+      anchor={anchor}
+      onClose={() => undefined}
+    />,
+    { boardsApi }
+  )
+  return boardsApi
+}
+
+async function openWithInvite(shareable: boolean) {
+  const board = aBoard({ members: [me] })
+  const task = aTask(null, { key: 'DES-1' })
+  const boardsApi = fakeBoardsApi([board])
+  await boardsApi.invite(board.id, 'bob@acme.example', 'editor')
+  const anchor = document.createElement('button')
+  document.body.append(anchor)
+  renderWithProviders(
+    <AssignPicker
+      task={task}
+      boardId={board.id}
+      members={board.members}
+      tasks={[task]}
+      shareable={shareable}
       anchor={anchor}
       onClose={() => undefined}
     />,
@@ -136,6 +159,36 @@ describe('AssignPicker', () => {
       key: 'ArrowDown'
     })
     expect(screen.getAllByRole('menuitemcheckbox')[0]).toHaveFocus()
+  })
+
+  it('explains that an invited person can be assigned once they open the app', async () => {
+    const boardsApi = await openWithInvite(true)
+    await options()
+
+    search('bo')
+
+    const group = await screen.findByText('Invited, not joined yet')
+    expect(group).toBeVisible()
+    const pending = screen.getByRole('menuitem', { name: /bob@acme.example/ })
+    expect(pending).toHaveAttribute('aria-disabled', 'true')
+    expect(pending).toHaveTextContent(
+      'Can be assigned once they open Twake Project.'
+    )
+    expect(screen.queryByText(/No one matches/)).not.toBeInTheDocument()
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Search people' }), {
+      key: 'Enter'
+    })
+    expect(boardsApi.setAssignees).not.toHaveBeenCalled()
+  })
+
+  it('keeps the picker as it is for someone who cannot see the invites', async () => {
+    const boardsApi = await openWithInvite(false)
+    await options()
+
+    search('bo')
+
+    expect(screen.getByText('No one matches “bo”')).toBeInTheDocument()
+    expect(boardsApi.getSharing).not.toHaveBeenCalled()
   })
 
   it('says when saving fails and retries', async () => {

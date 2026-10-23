@@ -2,6 +2,7 @@ import { Check, Icon, Plus } from '@linagora/twake-icons'
 import {
   Box,
   Button,
+  ListSubheader,
   MenuItem,
   MenuList,
   Popover,
@@ -163,6 +164,52 @@ export function PickerOption({
         sx={{ display: 'flex', color: 'primary.main', width: 16 }}
       >
         {checked && <Icon icon={Check} size={16} />}
+      </Box>
+    </MenuItem>
+  )
+}
+
+export function PickerGroup({
+  children
+}: {
+  children: ReactNode
+}): ReactElement {
+  return (
+    <ListSubheader role="none" sx={{ lineHeight: '36px' }}>
+      {children}
+    </ListSubheader>
+  )
+}
+
+/** `hint` says why the option can't be picked. */
+export function PickerUnavailable({
+  start,
+  hint,
+  children
+}: {
+  start?: ReactNode
+  hint: string
+  children: ReactNode
+}): ReactElement {
+  return (
+    <MenuItem disabled sx={{ gap: 1.5, '&.Mui-disabled': { opacity: 1 } }}>
+      <Box sx={{ display: 'flex', opacity: 0.6 }}>{start}</Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          variant="body2"
+          color="textSecondary"
+          className="u-ellipsis"
+        >
+          {children}
+        </Typography>
+        <Typography
+          variant="caption"
+          color="textSecondary"
+          component="div"
+          sx={{ whiteSpace: 'normal' }}
+        >
+          {hint}
+        </Typography>
       </Box>
     </MenuItem>
   )

@@ -116,6 +116,8 @@
     "assignFailed": "The assignees could not be saved.",
     "retryAssign": "Retry",
     "noPeopleMatch": "No one matches “%{search}”",
+    "pendingGroup": "Invited, not joined yet",
+    "pendingHint": "Can be assigned once they open Twake Project.",
     "labels": "Labels",
     "labelsTitle": "Labels of %{key}",
     "searchPeople": "Search people",
@@ -410,7 +412,7 @@
       "admin": "Admin"
     },
     "invite": "Invite",
-    "invited": "Invited %{email}.",
+    "invited": "Invited %{email}. You can assign them tasks once they open Twake Project.",
     "pending": "Pending",
     "roleOf": "Role: %{role}",
     "roleOfPerson": "Role of %{person}: %{role}",

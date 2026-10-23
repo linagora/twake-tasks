@@ -4,15 +4,17 @@ import { useState, type ReactElement } from 'react'
 import {
   PickerEmpty,
   PickerError,
+  PickerGroup,
   PickerOption,
-  PickerPopover
+  PickerPopover,
+  PickerUnavailable
 } from '@/ds/Picker'
 import { Highlight } from '@/ds/Highlight'
 import type { Person, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useBoardChange } from '@/ui/boards/queries'
+import { useBoardChange, useSharing } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 
@@ -21,6 +23,7 @@ export function AssignPicker({
   boardId,
   members,
   tasks,
+  shareable,
   anchor,
   onClose
 }: {
@@ -28,6 +31,8 @@ export function AssignPicker({
   boardId: string
   members: Person[]
   tasks: Task[]
+  /** Whether the user may see the board's pending invites. */
+  shareable: boolean
   anchor: HTMLElement
   onClose: () => void
 }): ReactElement {
@@ -44,6 +49,15 @@ export function AssignPicker({
   const ordered = suggestionOrder(members, pinned, user.email, tasks)
   const query = search.trim()
   const shown = matchingPeople(ordered, query)
+  const sharing = useSharing(boardId, shareable)
+  const invited = matchingPeople(
+    (sharing.data?.invites ?? []).map(({ id, email }) => ({
+      userId: id,
+      email,
+      name: null
+    })),
+    query
+  )
 
   const save = (next: Set<string>) => {
     setChosen(next)
@@ -113,7 +127,19 @@ export function AssignPicker({
           )}
         </PickerOption>
       ))}
-      {shown.length === 0 && (
+      {invited.length > 0 && (
+        <PickerGroup>{t('board.pendingGroup')}</PickerGroup>
+      )}
+      {invited.map(person => (
+        <PickerUnavailable
+          key={person.userId}
+          start={<PersonAvatar email={person.email} />}
+          hint={t('board.pendingHint')}
+        >
+          <Highlight text={person.email} query={query} />
+        </PickerUnavailable>
+      ))}
+      {shown.length === 0 && invited.length === 0 && (
         <PickerEmpty>{t('board.noPeopleMatch', { search: query })}</PickerEmpty>
       )}
     </PickerPopover>

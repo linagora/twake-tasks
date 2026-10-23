@@ -116,6 +116,8 @@
     "assignFailed": "Không thể lưu người được giao.",
     "retryAssign": "Thử lại",
     "noPeopleMatch": "Không ai khớp với “%{search}”",
+    "pendingGroup": "Đã mời, chưa tham gia",
+    "pendingHint": "Có thể giao việc khi họ mở Twake Project.",
     "labels": "Nhãn",
     "labelsTitle": "Nhãn của %{key}",
     "searchPeople": "Tìm người",
@@ -410,7 +412,7 @@
       "admin": "Quản trị viên"
     },
     "invite": "Mời",
-    "invited": "Đã mời %{email}.",
+    "invited": "Đã mời %{email}. Bạn có thể giao việc khi họ mở Twake Project.",
     "pending": "Đang chờ",
     "roleOf": "Vai trò: %{role}",
     "roleOfPerson": "Vai trò của %{person}: %{role}",

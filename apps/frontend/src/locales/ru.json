@@ -116,6 +116,8 @@
     "assignFailed": "Не удалось сохранить исполнителей.",
     "retryAssign": "Повторить",
     "noPeopleMatch": "Никто не найден по запросу «%{search}»",
+    "pendingGroup": "Приглашены, ещё не вошли",
+    "pendingHint": "Можно будет назначить, когда человек откроет Twake Project.",
     "labels": "Метки",
     "labelsTitle": "Метки %{key}",
     "searchPeople": "Поиск людей",
@@ -410,7 +412,7 @@
       "admin": "Администратор"
     },
     "invite": "Пригласить",
-    "invited": "Приглашение для %{email} отправлено.",
+    "invited": "%{email} приглашён(а). Задачи можно будет назначить, когда человек откроет Twake Project.",
     "pending": "Ожидает",
     "roleOf": "Роль: %{role}",
     "roleOfPerson": "Роль %{person}: %{role}",

@@ -41,7 +41,11 @@ describe('sharing a board', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Editor' }))
     fireEvent.click(form.getByRole('button', { name: 'Invite' }))
 
-    expect(await dialog.findByText('Invited bob@example.com.')).toBeVisible()
+    expect(
+      await dialog.findByText(
+        'Invited bob@example.com. You can assign them tasks once they open Twake Project.'
+      )
+    ).toBeVisible()
     expect(
       await dialog.findByRole('listitem', { name: 'bob@example.com' })
     ).toHaveTextContent('Pending')
@@ -63,7 +67,7 @@ describe('sharing a board', () => {
     })
     fireEvent.click(invite)
 
-    expect(await dialog.findByText('Invited bob@example.com.')).toBeVisible()
+    expect(await dialog.findByText(/^Invited bob@example.com\./)).toBeVisible()
     expect(email).toHaveFocus()
   })
 
@@ -88,7 +92,7 @@ describe('sharing a board', () => {
     expect(email).toHaveValue('ada@example.com')
     expect(screen.queryByRole('option', { name: /Bob/ })).toBeNull()
     fireEvent.click(dialog.getByRole('button', { name: 'Invite' }))
-    expect(await dialog.findByText('Invited ada@example.com.')).toBeVisible()
+    expect(await dialog.findByText(/^Invited ada@example.com\./)).toBeVisible()
     expect(boardsApi.suggestPeople).toHaveBeenCalledWith(board.id, 'love')
   })
 
@@ -218,7 +222,7 @@ describe('sharing a board', () => {
       target: { value: 'eve@example.com' }
     })
     fireEvent.click(form.getByRole('button', { name: 'Invite' }))
-    expect(await dialog.findByText('Invited eve@example.com.')).toBeVisible()
+    expect(await dialog.findByText(/^Invited eve@example.com\./)).toBeVisible()
 
     boardsApi.setMemberRole.mockRejectedValueOnce(new ApiError(500, null))
     fireEvent.click(
@@ -228,7 +232,7 @@ describe('sharing a board', () => {
     expect(await dialog.findByRole('alert')).toHaveTextContent(
       'The change could not be saved.'
     )
-    expect(dialog.queryByText('Invited eve@example.com.')).toBeNull()
+    expect(dialog.queryByText(/^Invited eve@example.com\./)).toBeNull()
 
     fireEvent.click(
       await dialog.findByRole('button', {
