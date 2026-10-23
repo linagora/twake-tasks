@@ -21,7 +21,7 @@ export const localZone = (): string =>
   followedZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone
 
 // From parts, as the default pattern of a locale (even en-CA) varies by engine.
-export function localToday(): string {
+function localDay(at: Date): string {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat('en-US', {
       timeZone: localZone(),
@@ -29,11 +29,13 @@ export function localToday(): string {
       month: '2-digit',
       day: '2-digit'
     })
-      .formatToParts(new Date())
+      .formatToParts(at)
       .map(part => [part.type, part.value])
   ) as Record<'year' | 'month' | 'day', string>
   return `${parts.year}-${parts.month}-${parts.day}`
 }
+
+export const localToday = (): string => localDay(new Date())
 
 /** The instant a YYYY-MM-DDTHH:mm wall clock time shows in the local zone. */
 export function zonedInstant(wallClock: string): Date {
@@ -69,6 +71,36 @@ export function momentFormat(lang: string): Intl.DateTimeFormat {
     hourCycle: 'h23',
     timeZone: localZone()
   })
+}
+
+/** How long ago, for the past week; the moment itself before that. */
+export function relativeMoment(
+  at: Date,
+  t: ReturnType<typeof useI18n>['t'],
+  lang: string
+): string {
+  const now = new Date()
+  const minutes = Math.floor((now.getTime() - at.getTime()) / 60_000)
+  if (minutes < 1) return t('notifications.justNow')
+  if (minutes < 60) {
+    return t('notifications.minutesAgo', { smart_count: minutes })
+  }
+  const days =
+    (Date.parse(localDay(now)) - Date.parse(localDay(at))) / 86_400_000
+  if (days >= 7) return momentFormat(lang).format(at)
+  const clock = {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: localZone()
+  } as const
+  if (days > 1) {
+    return new Intl.DateTimeFormat(lang, { ...clock, weekday: 'long' }).format(
+      at
+    )
+  }
+  const time = new Intl.DateTimeFormat(lang, clock).format(at)
+  return days === 1 ? t('notifications.yesterdayAt', { time }) : time
 }
 
 export function formatDay(day: string, lang: string): string {

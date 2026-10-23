@@ -147,7 +147,9 @@ describe('reminders', () => {
       (await api.as(owner).get('/notifications')).json<{
         notifications: unknown[]
       }>().notifications
-    ).toMatchObject([{ reason: 'reminder', taskId, title: 'Logo' }])
+    ).toMatchObject([
+      { reason: 'reminder', taskId, title: 'Logo', actor: null, change: null }
+    ])
   })
 
   it('deletes a reminder, and it no longer fires', async () => {

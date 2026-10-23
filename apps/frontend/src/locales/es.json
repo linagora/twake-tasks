@@ -475,7 +475,14 @@
       "mentioned": "Te mencionaron",
       "following": "Cambió mientras la sigues",
       "reminder": "Recordatorio"
-    }
+    },
+    "sentence": {
+      "assigned": "%{actor} te asignó",
+      "mentioned": "%{actor} te mencionó"
+    },
+    "justNow": "Justo ahora",
+    "minutesAgo": "hace %{smart_count} min",
+    "yesterdayAt": "Ayer, %{time}"
   },
   "filters": {
     "title": "Filtros",

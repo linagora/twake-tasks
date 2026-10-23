@@ -475,7 +475,14 @@
       "mentioned": "Sei stato menzionato",
       "following": "Modificata mentre la segui",
       "reminder": "Promemoria"
-    }
+    },
+    "sentence": {
+      "assigned": "%{actor} ti ha assegnato",
+      "mentioned": "%{actor} ti ha menzionato"
+    },
+    "justNow": "Proprio ora",
+    "minutesAgo": "%{smart_count} min fa",
+    "yesterdayAt": "Ieri, %{time}"
   },
   "filters": {
     "title": "Filtri",

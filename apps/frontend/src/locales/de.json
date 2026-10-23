@@ -475,7 +475,14 @@
       "mentioned": "Sie wurden erwähnt",
       "following": "Geändert, während Sie ihr folgen",
       "reminder": "Erinnerung"
-    }
+    },
+    "sentence": {
+      "assigned": "%{actor} hat Sie zugewiesen",
+      "mentioned": "%{actor} hat Sie erwähnt"
+    },
+    "justNow": "Gerade eben",
+    "minutesAgo": "vor %{smart_count} Min.",
+    "yesterdayAt": "Gestern, %{time}"
   },
   "filters": {
     "title": "Filter",

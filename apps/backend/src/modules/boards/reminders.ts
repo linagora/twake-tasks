@@ -1,16 +1,35 @@
 import { and, asc, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { accessibleBoards, roleOn } from './access.ts'
+import { userSettings } from '../settings/schema.ts'
+import {
+  accessibleBoards,
+  memberLooks,
+  roleOn,
+  settingsOfMember
+} from './access.ts'
+import { plainText } from './markdown.ts'
 import { scheduleReminder, unscheduleReminder } from './reminderJobs.ts'
 import {
   boards,
+  comments,
   notifications,
+  projectMembers,
   taskFollowers,
+  taskHistory,
   taskReminders,
   tasks
 } from './schema.ts'
 import { Refused, refuseIfShelved, taskOf, writeOrRefuse } from './tasks.ts'
+
+const EXCERPT_LENGTH = 120
+
+function excerptOf(markdown: string): string {
+  const chars = Array.from(plainText(markdown).replace(/\s+/g, ' ').trim())
+  return chars.length > EXCERPT_LENGTH
+    ? `${chars.slice(0, EXCERPT_LENGTH).join('').trimEnd()}…`
+    : chars.join('')
+}
 
 export type NewReminder = { at: Date } | { beforeMinutes: number; zone: string }
 
@@ -214,21 +233,44 @@ export function createReminderStore(db: Db) {
     },
 
     notificationsOf(identity: Identity) {
-      return writeOrRefuse(db, identity, tx =>
-        tx
+      return writeOrRefuse(db, identity, async tx => {
+        const rows = await tx
           .select({
             id: notifications.id,
             reason: notifications.reason,
             boardId: tasks.boardId,
+            boardName: boards.name,
             taskId: notifications.taskId,
             key: sql<string>`${boards.keyPrefix} || '-' || ${tasks.number}`,
             title: tasks.title,
             createdAt: notifications.createdAt,
-            readAt: notifications.readAt
+            readAt: notifications.readAt,
+            actorId: notifications.actorId,
+            actorEmail: sql<
+              string | null
+            >`coalesce(${projectMembers.email}, ${taskHistory.actorEmail}, ${comments.authorEmail})`,
+            actorName: memberLooks.name,
+            actorAvatar: memberLooks.avatar,
+            field: taskHistory.field,
+            from: taskHistory.from,
+            to: taskHistory.to,
+            name: taskHistory.name,
+            at: taskHistory.at,
+            comment: comments.body
           })
           .from(notifications)
           .innerJoin(tasks, eq(tasks.id, notifications.taskId))
           .innerJoin(boards, eq(boards.id, tasks.boardId))
+          .leftJoin(taskHistory, eq(taskHistory.id, notifications.historyId))
+          .leftJoin(comments, eq(comments.id, notifications.commentId))
+          .leftJoin(
+            projectMembers,
+            and(
+              eq(projectMembers.projectId, boards.projectId),
+              eq(projectMembers.userId, notifications.actorId)
+            )
+          )
+          .leftJoin(userSettings, settingsOfMember)
           .where(
             and(
               eq(notifications.userId, identity.userId),
@@ -237,7 +279,43 @@ export function createReminderStore(db: Db) {
           )
           .orderBy(desc(notifications.createdAt))
           .limit(50)
-      )
+        return rows.map(
+          ({
+            actorId,
+            actorEmail,
+            actorName,
+            actorAvatar,
+            field,
+            from,
+            to,
+            name,
+            at,
+            comment,
+            ...row
+          }) => {
+            // No actor for a reminder, nor for someone who left the project
+            // once no history entry or comment still holds their email.
+            const actor =
+              actorId && actorEmail
+                ? {
+                    userId: actorId,
+                    email: actorEmail,
+                    name: actorName,
+                    avatar: actorAvatar
+                  }
+                : null
+            return {
+              ...row,
+              actor,
+              change:
+                actor && field !== null && at !== null
+                  ? { actor, field, from, to, name, at }
+                  : null,
+              commentExcerpt: comment === null ? null : excerptOf(comment)
+            }
+          }
+        )
+      })
     }
   }
 }

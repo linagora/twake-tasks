@@ -10,7 +10,12 @@ import {
 } from 'vitest'
 
 import type { Notification } from '@/application/boards'
-import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import {
+  aBoard,
+  aNotification,
+  aProject,
+  fakeBoardsApi
+} from '@/testing/fakeBoardsApi'
 import { renderBrowserRoute } from '@/testing/renderWithProviders'
 import { computeBadges } from '@/ui/embed/badges'
 import { connectTwakeSpace, disconnectTwakeSpace } from '@/ui/embed/twakeSpace'
@@ -75,16 +80,8 @@ describe('the badges reported to TwakeSpace', () => {
   let frame: HTMLIFrameElement
   let post: MockInstance<Window['postMessage']>
 
-  const unread = (boardId: string, id: string): Notification => ({
-    id,
-    reason: 'following',
-    boardId,
-    taskId: 'task',
-    key: 'DES-1',
-    title: 'Logo',
-    createdAt: '2026-10-05T10:00:00Z',
-    readAt: null
-  })
+  const unread = (boardId: string, id: string): Notification =>
+    aNotification({ id, boardId })
   const snapshots = () =>
     post.mock.calls
       .map(([message]) => message as { type: string; badges?: unknown })

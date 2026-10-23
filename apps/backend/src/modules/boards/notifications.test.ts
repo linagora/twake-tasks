@@ -1,5 +1,6 @@
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb } from '../../infra/db.ts'
+import { createDb, inTenant } from '../../infra/db.ts'
 import {
   aB2cUser,
   aUser,
@@ -7,12 +8,14 @@ import {
   startApp,
   type TestUser
 } from '../../testing/app.ts'
+import { notifications } from './schema.ts'
 
 interface Notification {
   id: string
   reason: string
   taskId: string
   readAt: string | null
+  commentExcerpt: string | null
 }
 
 let api: Awaited<ReturnType<typeof startApp>>
@@ -143,6 +146,75 @@ describe('following and notifications', () => {
     expect(await following(carol)).toBe(true)
     expect(await inbox(alice)).toMatchObject([{ reason: 'following' }])
     expect(await following(bob)).toBe(true)
+  })
+
+  describe('what each notification says', () => {
+    it('names who assigned the task, and on which board', async () => {
+      const { alice, bob, path, inbox } = await aTeam()
+
+      await api.as(alice).put(`${path}/assignees`, { userIds: [bob.userId] })
+
+      expect(await inbox(bob)).toMatchObject([
+        {
+          reason: 'assigned',
+          boardName: 'Design',
+          actor: { userId: alice.userId, email: 'alice@example.com' },
+          change: { field: 'assignees', to: bob.userId },
+          commentExcerpt: null
+        }
+      ])
+    })
+
+    it('carries the change made to a followed task, as its history logs it', async () => {
+      const { alice, bob, path, inbox } = await aTeam()
+
+      await api.as(bob).patch(path, { priority: 1 })
+
+      expect(await inbox(alice)).toMatchObject([
+        {
+          reason: 'following',
+          actor: { userId: bob.userId, email: 'bob@example.com' },
+          change: {
+            actor: { userId: bob.userId, email: 'bob@example.com' },
+            field: 'priority',
+            from: null,
+            to: 1,
+            name: null
+          }
+        }
+      ])
+    })
+
+    it('quotes the start of the comment that mentions someone, as plain text', async () => {
+      const { bob, carol, path, inbox } = await aTeam()
+      const words = 'word '.repeat(40)
+
+      await api.as(bob).post(`${path}/comments`, {
+        body: `**Look** @carol@example.com ${words}`
+      })
+
+      const [mention] = await inbox(carol)
+      expect(mention).toMatchObject({ reason: 'mentioned', change: null })
+      expect(mention?.commentExcerpt).toBe(
+        `${`Look @carol@example.com ${words}`.slice(0, 120).trimEnd()}…`
+      )
+    })
+
+    it('has no change once its history entry is gone', async () => {
+      const { alice, bob, path, inbox } = await aTeam()
+      await api.as(bob).patch(path, { priority: 1 })
+
+      await inTenant(db, alice, tx =>
+        tx
+          .update(notifications)
+          .set({ historyId: null })
+          .where(eq(notifications.userId, alice.userId))
+      )
+
+      expect(await inbox(alice)).toMatchObject([
+        { reason: 'following', actor: { userId: bob.userId }, change: null }
+      ])
+    })
   })
 
   it('stops notifying someone who unfollows', async () => {

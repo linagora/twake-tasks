@@ -8,21 +8,24 @@ import {
   People
 } from '@linagora/twake-icons'
 import { IconButton, Link, Tooltip, Typography } from '@linagora/twake-mui'
-import type { ReactElement } from 'react'
+import { useEffect, useReducer, type ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
 import type { Notification } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
-import { TaskGroup, TaskRow } from '@/ds/TaskList'
+import { LeadingBadge, TaskGroup, TaskRow } from '@/ds/TaskList'
 import type { Task } from '@/domain/board'
-import { momentFormat } from '@/ui/boards/dueLabel'
+import { displayName } from '@/domain/person'
+import { momentFormat, relativeMoment } from '@/ui/boards/dueLabel'
+import { describe } from '@/ui/boards/History'
+import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import {
   useFollowing,
   useNotifications,
   useSetFollowing
 } from '@/ui/boards/queries'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
-import { useI18n } from '@/ui/i18n/useI18n'
+import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 const REASON_ICONS = {
@@ -31,6 +34,22 @@ const REASON_ICONS = {
   following: Bell,
   reminder: Clock
 } as const satisfies Record<Notification['reason'], unknown>
+
+// The wording of the task's History, so both read the same.
+function sentenceOf(
+  notification: Notification,
+  t: I18nApi['t'],
+  lang: string
+): string {
+  const { reason, actor, change } = notification
+  if (reason === 'following' && change) {
+    return describe(change, undefined, t, lang)
+  }
+  if ((reason === 'assigned' || reason === 'mentioned') && actor) {
+    return t(`notifications.sentence.${reason}`, { actor: displayName(actor) })
+  }
+  return t(`notifications.reason.${reason}`)
+}
 
 export function FollowButton({
   task,
@@ -78,6 +97,14 @@ export function NotificationsScreen(): ReactElement {
   useDocumentTitle(t('notifications.title'))
   const notifications = useNotifications()
   const format = momentFormat(lang)
+  // "5 min ago" moves on while the page stays open.
+  const [, tick] = useReducer((count: number) => count + 1, 0)
+  useEffect(() => {
+    const timer = setInterval(tick, 60_000)
+    return () => {
+      clearInterval(timer)
+    }
+  }, [])
   const all = notifications.data ?? []
   const groups = [
     {
@@ -122,30 +149,50 @@ export function NotificationsScreen(): ReactElement {
               count={group.items.length}
             >
               {group.items.map(notification => {
-                const name = `${notification.key} ${notification.title}`
+                const at = new Date(notification.createdAt)
+                const { actor } = notification
+                const icon = REASON_ICONS[notification.reason]
                 return (
                   <TaskRow
                     key={notification.id}
-                    label={name}
+                    label={`${notification.key} ${notification.title}`}
                     unread={notification.readAt === null}
                     leading={
-                      <Icon
-                        icon={REASON_ICONS[notification.reason]}
-                        size={16}
-                      />
+                      actor ? (
+                        <LeadingBadge badge={<Icon icon={icon} size={10} />}>
+                          <PersonAvatar
+                            email={actor.email}
+                            name={actor.name}
+                            avatar={actor.avatar}
+                            size={32}
+                          />
+                        </LeadingBadge>
+                      ) : (
+                        <Icon icon={icon} size={16} />
+                      )
                     }
                     title={
-                      <Link
-                        component={RouterLink}
-                        to={`/boards/${notification.boardId}?task=${notification.key}`}
-                      >
-                        {name}
-                      </Link>
+                      <>
+                        {`${sentenceOf(notification, t, lang)} · `}
+                        <Link
+                          component={RouterLink}
+                          to={`/boards/${notification.boardId}?task=${notification.key}`}
+                        >
+                          {notification.title}
+                        </Link>
+                      </>
                     }
-                    context={t(`notifications.reason.${notification.reason}`)}
+                    excerpt={notification.commentExcerpt}
+                    context={`${notification.key} · ${notification.boardName}`}
                     facts={
-                      <Typography variant="caption" color="textSecondary">
-                        {format.format(new Date(notification.createdAt))}
+                      <Typography
+                        variant="caption"
+                        color="textSecondary"
+                        component="time"
+                        dateTime={notification.createdAt}
+                        title={format.format(at)}
+                      >
+                        {relativeMoment(at, t, lang)}
                       </Typography>
                     }
                   />

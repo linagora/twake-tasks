@@ -1,4 +1,4 @@
-import { Box, Typography } from '@linagora/twake-mui'
+import { Badge, Box, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
 export function TaskGroup({
@@ -44,6 +44,41 @@ export function TaskGroup({
         {children}
       </Box>
     </Box>
+  )
+}
+
+export function LeadingBadge({
+  badge,
+  children
+}: {
+  badge: ReactNode
+  children: ReactNode
+}): ReactElement {
+  return (
+    <Badge
+      overlap="circular"
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      badgeContent={
+        <Box
+          sx={{
+            display: 'grid',
+            placeItems: 'center',
+            width: 16,
+            height: 16,
+            borderRadius: '50%',
+            border: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            color: 'text.secondary'
+          }}
+        >
+          {badge}
+        </Box>
+      }
+      sx={{ '& .MuiBadge-badge': { p: 0, minWidth: 0, height: 'auto' } }}
+    >
+      {children}
+    </Badge>
   )
 }
 

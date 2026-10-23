@@ -475,7 +475,14 @@
       "mentioned": "Bạn được nhắc đến",
       "following": "Đã thay đổi khi bạn theo dõi",
       "reminder": "Lời nhắc"
-    }
+    },
+    "sentence": {
+      "assigned": "%{actor} đã giao cho bạn",
+      "mentioned": "%{actor} đã nhắc đến bạn"
+    },
+    "justNow": "Vừa xong",
+    "minutesAgo": "%{smart_count} phút trước",
+    "yesterdayAt": "Hôm qua, %{time}"
   },
   "filters": {
     "title": "Bộ lọc",

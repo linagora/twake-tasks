@@ -475,7 +475,14 @@
       "mentioned": "Вас упомянули",
       "following": "Изменена, пока вы за ней следите",
       "reminder": "Напоминание"
-    }
+    },
+    "sentence": {
+      "assigned": "%{actor} назначил(а) вас",
+      "mentioned": "%{actor} упомянул(а) вас"
+    },
+    "justNow": "Только что",
+    "minutesAgo": "%{smart_count} мин назад",
+    "yesterdayAt": "Вчера, %{time}"
   },
   "filters": {
     "title": "Фильтры",
