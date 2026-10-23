@@ -134,7 +134,7 @@ const taskChanges = z
 
 const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
 
-// Two names that render alike are the same label: invisible format characters
+// Two names that render alike are the same name: invisible format characters
 // go, accents are composed, and compatibility forms such as full width letters
 // and ligatures are folded. Kept, because they change what renders: the
 // joiner of an emoji sequence, a joiner between letters of a script that
@@ -147,16 +147,19 @@ const invisible = new RegExp(
   'gu'
 )
 
-const labelName = z
-  .string()
-  .overwrite(name =>
-    name
-      .replace(invisible, (_, kept: string | undefined) => kept ?? '')
-      .normalize('NFKC')
-  )
-  .trim()
-  .min(1)
-  .max(50)
+const uniqueName = (max: number) =>
+  z
+    .string()
+    .overwrite(name =>
+      name
+        .replace(invisible, (_, kept: string | undefined) => kept ?? '')
+        .normalize('NFKC')
+    )
+    .trim()
+    .min(1)
+    .max(max)
+
+const labelName = uniqueName(50)
 
 const labelColor = z
   .string()
@@ -202,7 +205,7 @@ const descriptionEdit = z.object({
   version: z.int().min(0)
 })
 
-const sectionName = z.string().trim().min(1).max(100)
+const sectionName = uniqueName(100)
 const category = z.enum(sectionCategory.enumValues)
 
 const newSection = z.object({

@@ -122,6 +122,32 @@ describe('sections', () => {
     ])
   })
 
+  it('refuses a section name that differs only by invisible characters', async () => {
+    const alice = aUser()
+    const { board, todo, doing } = await aBoard(alice)
+
+    for (const name of [`${todo.name}\u{200B}`, `\u{AD}${todo.name}`]) {
+      const created = await api
+        .as(alice)
+        .post(`/boards/${board.id}/sections`, { name, category: 'started' })
+      expect(created.statusCode).toBe(409)
+      expect(created.json()).toEqual({ error: 'section_name_taken' })
+    }
+    const renamed = await api
+      .as(alice)
+      .patch(`/boards/${board.id}/sections/${doing.id}`, {
+        name: `${todo.name}\u{2060}`
+      })
+
+    expect(renamed.statusCode).toBe(409)
+    expect(renamed.json()).toEqual({ error: 'section_name_taken' })
+    expect(await sectionNames(alice, board.id)).toEqual([
+      todo.name,
+      doing.name,
+      'Done'
+    ])
+  })
+
   it('lets a section keep its name while its status changes, and take a freed one', async () => {
     const alice = aUser()
     const { board, todo, doing } = await aBoard(alice)
