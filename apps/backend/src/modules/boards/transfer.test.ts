@@ -146,6 +146,42 @@ describe('moving a task to another board', () => {
     ])
   })
 
+  it('names the people it unassigns in the history', async () => {
+    const owner = aUser()
+    const bob = aUser({
+      organizationId: owner.organizationId,
+      name: 'Bob Durand'
+    })
+    const design = await aBoard(owner, 'DES')
+    const ops = await aBoard(owner, 'OPS')
+    const logo = await aTask(owner, design.id, 'Logo')
+    await joinBoard(db, owner, design.id, bob, 'editor')
+    await api.as(bob).get('/boards')
+    await api.as(owner).put(`/boards/${design.id}/tasks/${logo}/assignees`, {
+      userIds: [bob.userId]
+    })
+
+    await api.as(owner).post(`/boards/${design.id}/tasks/${logo}/transfer`, {
+      boardId: ops.id,
+      sectionId: null
+    })
+
+    const { entries } = (
+      await api.as(owner).get(`/boards/${ops.id}/tasks/${logo}/history`)
+    ).json<{ entries: { field: string; to: unknown; name: string | null }[] }>()
+    expect(
+      entries
+        .filter(entry => entry.field === 'assignees')
+        .map(entry => [
+          entry.to === null ? 'unassigned' : 'assigned',
+          entry.name
+        ])
+    ).toEqual([
+      ['unassigned', 'Bob Durand'],
+      ['assigned', 'Bob Durand']
+    ])
+  })
+
   describe('followers', () => {
     async function aFollowedTree() {
       const owner = aUser()

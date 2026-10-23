@@ -353,6 +353,27 @@ describe('twake.space.member.removed', () => {
     expect(await assignees()).toEqual([admin.userId])
   })
 
+  it('names the people it unassigns in the history', async () => {
+    const admin = aUser()
+    const gone = aUser({ organizationId: admin.organizationId })
+    const { space, boardId } = await aSpaceWithATask(admin, [gone])
+    const task = await firstTaskOf(admin, boardId)
+
+    await deliver('twake.space.member.removed', {
+      ...space,
+      members: [{ uuid: gone.userId }]
+    })
+
+    const { entries } = (
+      await api.as(admin).get(`/boards/${boardId}/tasks/${task.id}/history`)
+    ).json<{ entries: { field: string; to: unknown; name: string | null }[] }>()
+    expect(
+      entries
+        .filter(entry => entry.field === 'assignees' && entry.to === null)
+        .map(entry => entry.name)
+    ).toEqual([gone.email])
+  })
+
   it('stops the people removed following the tasks of the space', async () => {
     const admin = aUser()
     const gone = aUser({ organizationId: admin.organizationId })

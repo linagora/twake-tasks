@@ -344,9 +344,32 @@ async function removeMembers(
   projectId: string,
   which: SQL | undefined
 ): Promise<void> {
+  const leaving = and(eq(projectMembers.projectId, projectId), which)
+  // Before the membership goes, so the unassignment history still names them.
+  await tx
+    .delete(taskAssignees)
+    .where(
+      and(
+        inArray(
+          taskAssignees.userId,
+          tx
+            .select({ userId: projectMembers.userId })
+            .from(projectMembers)
+            .where(leaving)
+        ),
+        inArray(
+          taskAssignees.taskId,
+          tx
+            .select({ id: tasks.id })
+            .from(tasks)
+            .innerJoin(boards, eq(boards.id, tasks.boardId))
+            .where(eq(boards.projectId, projectId))
+        )
+      )
+    )
   const removed = await tx
     .delete(projectMembers)
-    .where(and(eq(projectMembers.projectId, projectId), which))
+    .where(leaving)
     .returning({ userId: projectMembers.userId })
   if (removed.length === 0) return
   await bumpProjects(tx, [projectId])
@@ -354,22 +377,6 @@ async function removeMembers(
     tx,
     removed.map(m => m.userId),
     projectId
-  )
-  await tx.delete(taskAssignees).where(
-    and(
-      inArray(
-        taskAssignees.userId,
-        removed.map(m => m.userId)
-      ),
-      inArray(
-        taskAssignees.taskId,
-        tx
-          .select({ id: tasks.id })
-          .from(tasks)
-          .innerJoin(boards, eq(boards.id, tasks.boardId))
-          .where(eq(boards.projectId, projectId))
-      )
-    )
   )
 }
 

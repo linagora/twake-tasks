@@ -36,6 +36,14 @@ function logoBoard() {
     { ...entry, field: 'deadline', from: null, to: '2026-10-20' },
     { ...entry, field: 'dueDate', from: null, to: '2026-10-13 15:00' },
     { ...entry, field: 'dueDate', from: null, to: '2026-10-12' },
+    {
+      ...entry,
+      field: 'assignees',
+      from: 'carol',
+      to: null,
+      name: 'Carol Durand'
+    },
+    { ...entry, field: 'assignees', from: null, to: 'gone' },
     { ...entry, field: 'assignees', from: null, to: bob.userId },
     { ...entry, field: 'section', from: null, to: doing?.id },
     { ...entry, field: 'title', from: 'Draft', to: 'Logo' },
@@ -67,6 +75,8 @@ describe('History', () => {
       'Alice set the deadline to Oct 20, 2026',
       'Alice set the due date to Oct 13, 2026, 15:00',
       'Alice set the due date to Oct 12, 2026',
+      'Alice unassigned Carol Durand',
+      'Alice assigned someone who left the board',
       'Alice assigned bob@example.com',
       'Alice moved it to In progress',
       'Alice renamed it from Draft to Logo',
