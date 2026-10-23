@@ -18,6 +18,7 @@ import {
   DialogTitle,
   IconButton,
   InputAdornment,
+  Link,
   TextField,
   Typography
 } from '@linagora/twake-mui'
@@ -29,8 +30,15 @@ import {
   useState,
   type ReactElement
 } from 'react'
+import { Link as RouterLink, useMatch } from 'react-router'
 
-import { isPerson, nameHas, QuickAddError, same } from '@/application/quickAdd'
+import {
+  isPerson,
+  nameHas,
+  QuickAddError,
+  same,
+  type QuickAdded
+} from '@/application/quickAdd'
 import { LabelChip, MetaChip } from '@/ds/Columns'
 import {
   ParsedPart,
@@ -128,8 +136,21 @@ function Understood({
   const memberOf = (typed: string) =>
     board?.members.find(each => isPerson(typed, each.email))
 
+  const boardName = summary?.name ?? parsed.board
+
   return (
     <ParsedParts label={t('quickAdd.understood')}>
+      {boardName !== undefined && (
+        <ParsedPart>
+          <MetaChip
+            icon={<Icon icon={Mosaic} />}
+            tone={summary || !boardsLoaded ? 'info' : 'warning'}
+            label={t('quickAdd.board', { name: boardName })}
+          >
+            {boardName}
+          </MetaChip>
+        </ParsedPart>
+      )}
       {parsed.title && (
         <ParsedPart>
           <ParsedTitle>{parsed.title}</ParsedTitle>
@@ -204,19 +225,6 @@ function Understood({
           <PriorityChip priority={parsed.priority} />
         </ParsedPart>
       )}
-      {parsed.board !== undefined && (
-        <ParsedPart>
-          <MetaChip
-            icon={<Icon icon={Mosaic} />}
-            tone={summary || !boardsLoaded ? 'info' : 'warning'}
-            label={t('quickAdd.board', {
-              name: summary?.name ?? parsed.board
-            })}
-          >
-            {summary?.name ?? parsed.board}
-          </MetaChip>
-        </ParsedPart>
-      )}
       {parsed.section !== undefined && (
         <ParsedPart>
           <MetaChip
@@ -257,6 +265,32 @@ function Understood({
   )
 }
 
+function Added({
+  added,
+  onOpen
+}: {
+  added: QuickAdded
+  onOpen: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const text = t('quickAdd.added', { key: added.key, board: added.board })
+  const at = text.indexOf(added.key)
+
+  return (
+    <Typography role="status">
+      {text.slice(0, at)}
+      <Link
+        component={RouterLink}
+        to={`/boards/${added.boardId}?task=${encodeURIComponent(added.key)}`}
+        onClick={onOpen}
+      >
+        {added.key}
+      </Link>
+      {text.slice(at + added.key.length)}
+    </Typography>
+  )
+}
+
 export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
   const { t } = useI18n()
   const titleId = useId()
@@ -269,10 +303,11 @@ export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
   const [helping, setHelping] = useState(false)
   const input = useRef<HTMLInputElement | null>(null)
   const nextCaret = useRef<number | null>(null)
-  const add = useQuickAdd()
+  const onScreen = useMatch('/boards/:boardId/*')?.params.boardId
+  const add = useQuickAdd(onScreen)
 
   const parsed = parseQuickAdd(line, localToday())
-  const { boards, summary, board } = useQuickAddBoard(parsed.board)
+  const { boards, summary, board } = useQuickAddBoard(parsed.board, onScreen)
   const mention = dismissed ? null : mentionAt(line, caret)
   const suggestions = mention ? suggest(mention, boards ?? [], board) : []
   const open = suggestions.length > 0
@@ -311,7 +346,10 @@ export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
   const error = add.error
   const refusal =
     error instanceof QuickAddError
-      ? t(`quickAdd.${error.code}`, { name: error.typed ?? '' })
+      ? t(`quickAdd.${error.code}`, {
+          name: error.typed ?? '',
+          board: error.board ?? ''
+        })
       : t('quickAdd.failed')
 
   return (
@@ -428,12 +466,12 @@ export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
               lines={SYNTAX.map(part => t(`quickAdd.syntax.${part}`))}
             />
           )}
-          {add.isSuccess && (
-            <Typography role="status">
-              {t('quickAdd.added', { key: add.data.key })}
+          {add.isSuccess && <Added added={add.data} onOpen={onClose} />}
+          {add.isError && (
+            <Typography role="alert" color="error">
+              {refusal}
             </Typography>
           )}
-          {add.isError && <Typography role="alert">{refusal}</Typography>}
         </DialogContent>
         <DialogActions>
           <Button variant="text" onClick={onClose}>

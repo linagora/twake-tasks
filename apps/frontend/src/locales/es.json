@@ -336,12 +336,12 @@
     "person": "Asignar a %{name}",
     "add": "Añadir",
     "close": "Cerrar",
-    "added": "%{key} añadida.",
+    "added": "%{key} añadida a %{board}.",
     "failed": "No se pudo añadir la tarea.",
     "no_title": "La tarea necesita un título.",
     "unknown_board": "No hay ningún tablero llamado %{name}.",
-    "unknown_section": "No hay ninguna sección llamada %{name}.",
-    "unknown_person": "No hay ningún miembro llamado %{name}.",
+    "unknown_section": "No hay ninguna sección llamada %{name} en %{board}.",
+    "unknown_person": "No hay ningún miembro llamado %{name} en %{board}.",
     "deadline_before_due": "La fecha límite no puede ser anterior a la fecha de vencimiento."
   },
   "shortcuts": {

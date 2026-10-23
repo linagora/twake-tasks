@@ -9,14 +9,23 @@ export type QuickAddRefusal =
   | 'unknown_person'
   | 'deadline_before_due'
 
+export interface QuickAdded {
+  boardId: string
+  board: string
+  key: string
+}
+
 export class QuickAddError extends Error {
   readonly code: QuickAddRefusal
   readonly typed: string | undefined
+  /** The board searched for the section or person typed. */
+  readonly board: string | undefined
 
-  constructor(code: QuickAddRefusal, typed?: string) {
+  constructor(code: QuickAddRefusal, typed?: string, board?: string) {
     super(typed ? `${code}: ${typed}` : code)
     this.code = code
     this.typed = typed
+    this.board = board
   }
 }
 
@@ -36,18 +45,27 @@ export const isPerson = (typed: string, email: string): boolean =>
 export const nameHas = (name: string, typed: string): boolean =>
   simple(name).includes(simple(typed))
 
-/** The board a line names, or the inbox when it names none. */
+/**
+ * The board a line names, else the default board if one can add to it, else
+ * the inbox.
+ */
 export function findBoard(
   summaries: BoardSummary[],
-  name: string | undefined
+  name: string | undefined,
+  defaultBoardId?: string
 ): BoardSummary | undefined {
-  return name === undefined
-    ? summaries.find(each => each.inbox)
-    : summaries.find(
-        each =>
-          !each.archived &&
-          (same(name, each.name) || same(name, each.keyPrefix))
-      )
+  if (name !== undefined) {
+    return summaries.find(
+      each =>
+        !each.archived && (same(name, each.name) || same(name, each.keyPrefix))
+    )
+  }
+  return (
+    summaries.find(
+      each =>
+        each.id === defaultBoardId && each.role !== 'viewer' && !each.archived
+    ) ?? summaries.find(each => each.inbox)
+  )
 }
 
 /**
@@ -57,15 +75,20 @@ export function findBoard(
 export async function quickAdd(
   api: BoardsApi,
   line: string,
-  today: string
-): Promise<{ boardId: string; key: string }> {
+  today: string,
+  defaultBoardId?: string
+): Promise<QuickAdded> {
   const parsed = parseQuickAdd(line, today)
   if (!parsed.title) throw new QuickAddError('no_title')
   if (deadlineBeforeDue(parsed.dueDate, parsed.deadline)) {
     throw new QuickAddError('deadline_before_due')
   }
 
-  const summary = findBoard(await api.listBoards(), parsed.board)
+  const summary = findBoard(
+    await api.listBoards(),
+    parsed.board,
+    defaultBoardId
+  )
   if (!summary) throw new QuickAddError('unknown_board', parsed.board)
   const board = await api.getBoard(summary.id)
 
@@ -77,12 +100,12 @@ export async function quickAdd(
         null)
       : board.sections.find(each => same(sectionName, each.name))
   if (section === undefined) {
-    throw new QuickAddError('unknown_section', sectionName)
+    throw new QuickAddError('unknown_section', sectionName, board.name)
   }
 
   const assignees = parsed.people.map(typed => {
     const person = board.members.find(member => isPerson(typed, member.email))
-    if (!person) throw new QuickAddError('unknown_person', typed)
+    if (!person) throw new QuickAddError('unknown_person', typed, board.name)
     return person.userId
   })
 
@@ -120,5 +143,5 @@ export async function quickAdd(
     await api.setAssignees(board.id, task.id, assignees)
   }
 
-  return { boardId: board.id, key: task.key }
+  return { boardId: board.id, board: board.name, key: task.key }
 }

@@ -336,12 +336,12 @@
     "person": "Assign %{name}",
     "add": "Add",
     "close": "Close",
-    "added": "%{key} added.",
+    "added": "%{key} added to %{board}.",
     "failed": "The task could not be added.",
     "no_title": "The task needs a title.",
     "unknown_board": "No board named %{name}.",
-    "unknown_section": "No section named %{name}.",
-    "unknown_person": "No member named %{name}.",
+    "unknown_section": "No section named %{name} on %{board}.",
+    "unknown_person": "No member named %{name} on %{board}.",
     "deadline_before_due": "The deadline cannot be before the due date."
   },
   "shortcuts": {

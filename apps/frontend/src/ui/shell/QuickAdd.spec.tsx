@@ -1,19 +1,24 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import type { Board, Role } from '@/domain/board'
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
-async function openQuickAdd() {
+async function openQuickAdd({
+  from = (board: Board) => `/boards/${board.id}`,
+  role = 'admin'
+}: { from?: (board: Board) => string; role?: Role } = {}) {
   const inbox = aBoard({ name: 'Inbox', keyPrefix: 'INB', inbox: true })
   const design = aBoard({
     name: 'Product Design',
     keyPrefix: 'DES',
+    role,
     members: [{ userId: 'u-ana', email: 'ana@example.com', name: 'Ana Lopez' }],
     labels: [{ id: 'l1', name: 'ops', color: null }]
   })
   const boardsApi = fakeBoardsApi([inbox, design])
-  renderRoute(`/boards/${design.id}`, { boardsApi })
+  const { router } = renderRoute(from(design), { boardsApi })
   fireEvent.click(await screen.findByRole('button', { name: 'Quick add' }))
   const dialog = within(
     await screen.findByRole('dialog', { name: 'Quick add' })
@@ -37,7 +42,23 @@ async function openQuickAdd() {
       gate.resolve(undefined)
     }
   }
-  return { dialog, field, type, add, design, holdNextAdd, boardsApi }
+  const firstChip = async () => {
+    const parts = within(dialog.getByRole('list', { name: 'Understood' }))
+    await parts.findByRole('img', { name: /^Board / })
+    return parts.getAllByRole('img')[0]
+  }
+  return {
+    dialog,
+    field,
+    type,
+    add,
+    firstChip,
+    inbox,
+    design,
+    holdNextAdd,
+    boardsApi,
+    router
+  }
 }
 
 describe('QuickAdd', () => {
@@ -47,12 +68,84 @@ describe('QuickAdd', () => {
 
     add('Logo tomorrow p1 #Product-Design')
 
-    expect(await dialog.findByText('DES-1 added.')).toBeVisible()
+    expect(await dialog.findByRole('status')).toHaveTextContent(
+      'DES-1 added to Product Design.'
+    )
     expect(field()).toHaveValue('')
     fireEvent.click(dialog.getByRole('button', { name: 'Close' }))
     expect(
       await screen.findByRole('button', { name: 'Logo' })
     ).toBeInTheDocument()
+  })
+
+  it('files under the board on screen, and says so', async () => {
+    const { dialog, type, add, firstChip, design } = await openQuickAdd()
+
+    type('Logo')
+    expect(await firstChip()).toHaveAccessibleName('Board Product Design')
+    add('Logo +ana')
+
+    expect(await dialog.findByRole('status')).toHaveTextContent(
+      'DES-1 added to Product Design.'
+    )
+    expect(design.tasks).toMatchObject([
+      { sectionId: design.sections[0]?.id, assignees: [{ userId: 'u-ana' }] }
+    ])
+  })
+
+  it('suggests the people of the board on screen', async () => {
+    const { dialog, type } = await openQuickAdd()
+
+    type('Logo +a')
+
+    expect(
+      await dialog.findByRole('option', { name: /Ana Lopez/ })
+    ).toBeVisible()
+  })
+
+  it.each([
+    ['another screen', { from: () => '/today' }],
+    ['a board one only views', { role: 'viewer' as const }]
+  ])('files under the Inbox from %s', async (_, options) => {
+    const { dialog, type, add, firstChip, inbox, design } =
+      await openQuickAdd(options)
+
+    type('Logo')
+    expect(await firstChip()).toHaveAccessibleName('Board Inbox')
+    add('Logo')
+
+    expect(await dialog.findByRole('status')).toHaveTextContent(
+      'INB-1 added to Inbox.'
+    )
+    expect(inbox.tasks).toHaveLength(1)
+    expect(design.tasks).toEqual([])
+  })
+
+  it('opens the added task from its key and closes', async () => {
+    const { dialog, add, design, router } = await openQuickAdd({
+      from: () => '/today'
+    })
+    add('Logo #DES')
+
+    fireEvent.click(await dialog.findByRole('link', { name: 'DES-1' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Quick add' })).toBeNull()
+    })
+    expect(router.state.location).toMatchObject({
+      pathname: `/boards/${design.id}`,
+      search: '?task=DES-1'
+    })
+  })
+
+  it('names the board where a person is missing', async () => {
+    const { dialog, add } = await openQuickAdd()
+
+    add('Logo +bo')
+
+    expect(await dialog.findByRole('alert')).toHaveTextContent(
+      'No member named bo on Product Design.'
+    )
   })
 
   it('names what it could not find', async () => {
@@ -79,11 +172,11 @@ describe('QuickAdd', () => {
   it('drops the success notice once the next line is typed', async () => {
     const { dialog, type, add } = await openQuickAdd()
     add('Logo #DES')
-    expect(await dialog.findByText('DES-1 added.')).toBeVisible()
+    expect(await dialog.findByRole('status')).toBeVisible()
 
     type('Next')
 
-    expect(dialog.queryByText('DES-1 added.')).toBeNull()
+    expect(dialog.queryByRole('status')).toBeNull()
   })
 
   it('keeps an add in flight when the line is edited meanwhile', async () => {
@@ -98,7 +191,7 @@ describe('QuickAdd', () => {
 
     release()
 
-    expect(await dialog.findByText('DES-1 added.')).toBeVisible()
+    expect(await dialog.findByRole('status')).toHaveTextContent('DES-1 added')
     expect(field()).toHaveValue('')
     expect(design.tasks).toHaveLength(1)
   })
@@ -111,7 +204,7 @@ describe('QuickAdd', () => {
 
     fireEvent.click(dialog.getByRole('button', { name: 'Add' }))
 
-    expect(await dialog.findByText('DES-1 added.')).toBeVisible()
+    expect(await dialog.findByRole('status')).toHaveTextContent('DES-1 added')
     expect(design.tasks).toHaveLength(1)
   })
 

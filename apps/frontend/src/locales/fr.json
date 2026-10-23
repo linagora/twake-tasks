@@ -336,12 +336,12 @@
     "person": "Assigner à %{name}",
     "add": "Ajouter",
     "close": "Fermer",
-    "added": "%{key} ajoutée.",
+    "added": "%{key} ajoutée à %{board}.",
     "failed": "La tâche n'a pas pu être ajoutée.",
     "no_title": "La tâche doit avoir un titre.",
     "unknown_board": "Aucun tableau nommé %{name}.",
-    "unknown_section": "Aucune section nommée %{name}.",
-    "unknown_person": "Aucun membre nommé %{name}.",
+    "unknown_section": "Aucune section nommée %{name} dans %{board}.",
+    "unknown_person": "Aucun membre nommé %{name} dans %{board}.",
     "deadline_before_due": "La date limite ne peut pas précéder la date d'échéance."
   },
   "shortcuts": {
