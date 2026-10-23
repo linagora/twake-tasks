@@ -91,7 +91,9 @@ function describe(
       )
     case 'assignees': {
       const member = board?.members.find(each => each.userId === value)
-      const name = member ? displayName(member) : t('history.someone')
+      const name = member
+        ? displayName(member)
+        : (entry.name ?? t('history.someone'))
       return t(added ? 'history.assigned' : 'history.unassigned', {
         actor,
         name
