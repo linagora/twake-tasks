@@ -300,6 +300,19 @@ describe('TaskPanel', () => {
     )
   })
 
+  it('names its board first, as plain text on that board', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    const terms = panel.getAllByRole('term')
+
+    expect(terms[0]).toHaveTextContent('Board')
+    const value = within(terms[0]?.nextElementSibling as HTMLElement)
+    expect(value.getByText('Design')).toBeVisible()
+    expect(value.queryByRole('link')).toBeNull()
+  })
+
   it('names an assignee in full in a tooltip', async () => {
     const { board, logo, boardsApi } = logoBoard()
     Object.assign(logo, {

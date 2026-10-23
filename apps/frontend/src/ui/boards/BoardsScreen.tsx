@@ -61,7 +61,7 @@ function FavoriteButton({ board }: { board: BoardSummary }): ReactElement {
   )
 }
 
-function useProjectName(): (project: ProjectSummary) => string {
+export function useProjectName(): (project: ProjectSummary) => string {
   const { t } = useI18n()
   return project =>
     project.personal ? t('boards.personalProject') : project.name

@@ -159,6 +159,7 @@
     "noDoneSection": "This board has no Done section.",
     "linkCopied": "Link copied",
     "copyFailed": "The link could not be copied.",
+    "board": "Board",
     "section": "Section",
     "priority": "Priority",
     "noPriority": "None",

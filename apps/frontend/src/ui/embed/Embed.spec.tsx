@@ -12,7 +12,7 @@ import {
 import { ApiError } from '@/application/boards'
 import type { Board } from '@/domain/board'
 import { findEmptyState } from '@/testing/emptyState'
-import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { aBoard, aProject, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderBrowserRoute, renderRoute } from '@/testing/renderWithProviders'
 import {
   connectTwakeSpace,
@@ -214,6 +214,29 @@ describe('the embedded view', () => {
 
     fireEvent.click(await screen.findByRole('link', { name: 'Boards' }))
     expect(router.state.location.pathname).toBe(`/embed/projects/${roadmap.id}`)
+  })
+
+  it('links an archived task to its board inside the frame', async () => {
+    const board = aBoard({ name: 'Roadmap', project: roadmap })
+    const logo = aTask(null, { key: 'DES-1', title: 'Logo' })
+    board.tasks = [logo]
+    const boardsApi = projectBoardsApi([board])
+    await boardsApi.archiveTask(board.id, logo.id)
+    renderRoute(
+      `/embed/projects/${roadmap.id}/boards/${board.id}/archived?task=DES-1`,
+      { boardsApi }
+    )
+
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+    const value = panel.getAllByRole('term')[0]?.nextElementSibling
+    expect(
+      within(value as HTMLElement).getByRole('link', { name: 'Roadmap' })
+    ).toHaveAttribute(
+      'href',
+      `/embed/projects/${roadmap.id}/boards/${board.id}`
+    )
   })
 })
 
