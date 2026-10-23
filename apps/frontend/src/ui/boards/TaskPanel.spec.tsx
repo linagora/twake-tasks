@@ -283,6 +283,38 @@ describe('TaskPanel', () => {
     ).toBeInTheDocument()
   })
 
+  it('reads the properties between the title and the description', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    const description = await panel.findByText('new', { selector: 'strong' })
+    const title = panel.getByRole('textbox', { name: 'Title' })
+    const priority = panel.getByRole('combobox', { name: 'Priority' })
+
+    expect(title.compareDocumentPosition(priority)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    )
+    expect(priority.compareDocumentPosition(description)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    )
+  })
+
+  it('names an assignee in full in a tooltip', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    Object.assign(logo, {
+      assignees: [
+        { userId: 'bob', email: 'bob@example.com', name: 'Bob Dylan' }
+      ]
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.mouseOver(panel.getByText('Bob Dylan'))
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Bob Dylan')
+  })
+
   it('takes a label off with the cross of its chip', async () => {
     const { board, logo, boardsApi } = logoBoard()
     Object.assign(logo, {

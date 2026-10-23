@@ -5,6 +5,7 @@ import {
   ButtonBase,
   Skeleton,
   styled,
+  Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import {
@@ -525,12 +526,14 @@ export function PersonChip({
       }}
     >
       {avatar}
-      <Box
-        component="span"
-        sx={{ overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}
-      >
-        {name}
-      </Box>
+      <Tooltip title={name}>
+        <Box
+          component="span"
+          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}
+        >
+          {name}
+        </Box>
+      </Tooltip>
       {remove && <ChipRemove {...remove} size={18} />}
     </Box>
   )

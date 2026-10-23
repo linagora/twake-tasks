@@ -54,92 +54,106 @@ function useFocusWhileOpen(
   return ref
 }
 
+// The panel's own width decides, not the window's: a drawer stays narrow on
+// a wide screen.
+const WIDE = '@container (min-width: 960px)'
+const ASIDE_WIDTH = 'max(280px, 100% / 3)'
+
 /**
- * An open task: its header over two columns, the content (two thirds) and a
- * bar of properties (one third), one under the other on narrow screens.
+ * An open task: the content (two thirds) under its header, and a bar of
+ * properties (one third) from the top. In a narrow panel, the properties sit
+ * between the title and the rest of the content.
  */
 export function SidePanel({
   label,
   onClose,
   header,
+  lead,
   aside,
   children
 }: {
   label: string
   onClose: () => void
   header: ReactNode
-  aside?: ReactNode
+  /** The title, and what must be read before it. */
+  lead: ReactNode
+  aside: ReactNode
   children: ReactNode
 }): ReactElement {
   const host = useContext(PanelHostContext)
   const focused = useFocusWhileOpen(host)
-  const top = (
-    <Box sx={{ ...CRUMB_BAR, borderBottom: 1, borderColor: 'divider' }}>
-      {header}
-    </Box>
-  )
-  const main = (
-    <Box
-      sx={{
-        minWidth: 0,
-        px: { xs: 2, sm: 3 },
-        py: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 3
-      }}
-    >
-      {children}
-    </Box>
-  )
-  // The header tops the content only: the bar of properties runs from the
-  // top, all on the same white.
+  const gutter = { minWidth: 0, px: { xs: 2, sm: 3 } }
+  const column = { display: 'flex', flexDirection: 'column', gap: 3 }
+  // One reading order for both layouts: a wide panel takes the properties
+  // out of the flow into a column of their own, from the top.
   const body = (
     <Box
       sx={{
         flex: 1,
         minHeight: 0,
-        display: 'grid',
-        gridTemplateColumns: { xs: '1fr', md: aside ? '2fr 1fr' : '1fr' },
-        overflowY: { xs: 'auto', md: 'hidden' }
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        containerType: 'inline-size'
       }}
     >
       <Box
         sx={{
-          minWidth: 0,
+          flex: 1,
           minHeight: 0,
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          overflowY: 'auto',
+          [WIDE]: { overflowY: 'hidden', mr: ASIDE_WIDTH }
         }}
       >
-        {top}
-        <Box sx={{ flex: 1, minHeight: 0, overflowY: { md: 'auto' } }}>
-          {main}
-        </Box>
-      </Box>
-      {aside && (
+        {/* Pinned, so Close stays in reach while a narrow panel scrolls. */}
         <Box
-          component="aside"
           sx={{
-            minWidth: 0,
-            overflowY: { md: 'auto' },
-            px: { xs: 2, sm: 3 },
-            py: 2,
-            // As thin and light as the header's line: widths only, since a
-            // `border` shorthand in a breakpoint resets the colour to the text.
-            borderStyle: 'solid',
+            ...CRUMB_BAR,
+            borderBottom: 1,
             borderColor: 'divider',
-            borderWidth: 0,
-            borderTopWidth: { xs: '1px', md: 0 },
-            borderLeftWidth: { md: '1px' },
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 3
+            position: 'sticky',
+            top: 0,
+            zIndex: 2,
+            bgcolor: 'background.paper'
           }}
         >
-          {aside}
+          {header}
         </Box>
-      )}
+        <Box sx={{ [WIDE]: { flex: 1, minHeight: 0, overflowY: 'auto' } }}>
+          <Box sx={{ ...gutter, ...column, pt: 2 }}>{lead}</Box>
+          <Box
+            component="aside"
+            sx={{
+              ...gutter,
+              ...column,
+              py: 2,
+              mt: 2,
+              // As thin and light as the header's line: widths only, since
+              // a `border` shorthand in a query resets the colour.
+              borderStyle: 'solid',
+              borderColor: 'divider',
+              borderWidth: '1px 0',
+              [WIDE]: {
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: ASIDE_WIDTH,
+                mt: 0,
+                overflowY: 'auto',
+                borderWidth: '0 0 0 1px'
+              }
+            }}
+          >
+            {aside}
+          </Box>
+          <Box sx={{ ...gutter, ...column, py: 2, [WIDE]: { pt: 1 } }}>
+            {children}
+          </Box>
+        </Box>
+      </Box>
     </Box>
   )
 
@@ -299,10 +313,14 @@ export function Properties({
       sx={{
         m: 0,
         display: 'grid',
-        gridTemplateColumns: { xs: '6.5rem 1fr', sm: '8rem 1fr' },
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(220px, 100%), 1fr))',
         columnGap: 2,
-        rowGap: 0.5,
-        alignItems: 'center'
+        rowGap: 1,
+        [WIDE]: {
+          gridTemplateColumns: '8rem 1fr',
+          rowGap: 0.5,
+          alignItems: 'center'
+        }
       }}
     >
       {children}
@@ -321,21 +339,29 @@ export function Property({
   label: string
   children: ReactNode
 }): ReactElement {
+  // A narrow panel stacks each label over its value; a wide one lines the
+  // labels up in a column of their own.
   return (
-    <>
+    <Box sx={{ minWidth: 0, [WIDE]: { display: 'contents' } }}>
       <Box
         component="dt"
         sx={{
           display: 'flex',
           alignItems: 'center',
           gap: 1,
-          minHeight: 40,
           color: 'text.secondary',
-          '& svg': { width: 16, height: 16, flexShrink: 0 }
+          '& svg': { width: 16, height: 16, flexShrink: 0 },
+          [WIDE]: { minHeight: 40 }
         }}
       >
         {icon}
-        <Typography id={id} variant="body2" color="inherit" noWrap>
+        <Typography
+          id={id}
+          variant="caption"
+          color="inherit"
+          noWrap
+          sx={theme => ({ [WIDE]: theme.typography.body2 })}
+        >
           {label}
         </Typography>
       </Box>
@@ -353,7 +379,7 @@ export function Property({
       >
         {children}
       </Box>
-    </>
+    </Box>
   )
 }
 
@@ -399,14 +425,6 @@ export function FeedItem({
     >
       <Box sx={{ pt: 0.25 }}>{avatar}</Box>
       <Box sx={{ minWidth: 0, flex: 1, '& p': { my: 0.5 } }}>{children}</Box>
-    </Box>
-  )
-}
-
-export function TaskHead({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      {children}
     </Box>
   )
 }

@@ -10,7 +10,7 @@ import {
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import { Fragment, useState, type ReactElement } from 'react'
 
 import { Row } from '@/ds/Columns'
 import {
@@ -100,7 +100,17 @@ function Summary({ task }: { task: Task }): ReactElement {
       </Typography>
     )
   }
-  return <Typography variant="body2">{facts.join(' · ')}</Typography>
+  // A line breaks between the facts before it breaks inside one.
+  return (
+    <Typography variant="body2">
+      {facts.map((fact, index) => (
+        <Fragment key={index}>
+          {index > 0 && '\u{a0}· '}
+          <span className="u-dib">{fact}</span>
+        </Fragment>
+      ))}
+    </Typography>
+  )
 }
 
 export function Dates({
