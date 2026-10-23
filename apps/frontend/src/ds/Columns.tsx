@@ -241,7 +241,13 @@ export function Card({
   )
 }
 
-export function CardTitle({ children }: { children: ReactNode }): ReactElement {
+export function CardTitle({
+  done = false,
+  children
+}: {
+  done?: boolean
+  children: ReactNode
+}): ReactElement {
   return (
     <Box
       sx={{
@@ -252,12 +258,32 @@ export function CardTitle({ children }: { children: ReactNode }): ReactElement {
         overflow: 'hidden',
         '& > *': { fontWeight: 'inherit' },
         // Stretches the title button or link over the whole card, so a click anywhere on it opens the task.
-        '& > :is(button, a)': { position: 'static' },
+        '& > :is(button, a)': {
+          position: 'static',
+          ...(done && { textDecoration: 'line-through' })
+        },
         '& > :is(button, a)::after': {
           content: '""',
           position: 'absolute',
           inset: 0
         }
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
+
+// Above the title's stretched link, and no taller than the line it starts.
+export function CardCheck({ children }: { children: ReactNode }): ReactElement {
+  return (
+    <Box
+      sx={{
+        position: 'relative',
+        zIndex: 1,
+        display: 'flex',
+        m: -0.5,
+        '& > .MuiCheckbox-root': { p: 0.5 }
       }}
     >
       {children}

@@ -253,6 +253,7 @@ function BoardColumns({
       boardId={board.id}
       members={board.members}
       labels={board.labels}
+      sections={board.sections}
       destinations={board.sections.filter(
         section => section.id !== task.sectionId
       )}

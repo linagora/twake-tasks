@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import type { Task } from '@/domain/board'
+import type { Board, Section, Task } from '@/domain/board'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
@@ -82,6 +82,106 @@ describe('TaskCard', () => {
     ).toBeInTheDocument()
     expect(card.getAllByRole('img', { name: /^Assigned to/ })).toHaveLength(2)
     expect(card.getByLabelText('3 more assignees')).toBeInTheDocument()
+  })
+
+  describe('complete checkbox', () => {
+    function renderCard(
+      board: Board,
+      section: Section | null,
+      task: Partial<Task> = {}
+    ) {
+      board.tasks = [aTask(section, { key: 'DES-1', title: 'Logo', ...task })]
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      return boardsApi
+    }
+    const checkbox = () =>
+      screen.findByRole('checkbox', { name: 'Complete Logo' })
+
+    it('moves the task to the first Done section, then back to To do', async () => {
+      const board = aBoard()
+      const [todo, , done] = board.sections
+      const boardsApi = renderCard(board, todo ?? null)
+
+      fireEvent.click(await checkbox())
+
+      await waitFor(() => {
+        expect(boardsApi.moveTask).toHaveBeenCalledWith(
+          board.id,
+          board.tasks[0]?.id,
+          { sectionId: done?.id }
+        )
+      })
+      const doneColumn = within(screen.getByRole('region', { name: 'Done' }))
+      expect(
+        doneColumn.getByRole('checkbox', { name: 'Complete Logo' })
+      ).toBeChecked()
+
+      fireEvent.click(await checkbox())
+
+      await waitFor(() => {
+        expect(boardsApi.moveTask).toHaveBeenLastCalledWith(
+          board.id,
+          board.tasks[0]?.id,
+          { sectionId: todo?.id }
+        )
+      })
+    })
+
+    it('strikes the title of a done card through', async () => {
+      const board = aBoard()
+      renderCard(board, board.sections[2] ?? null)
+
+      expect(await checkbox()).toBeChecked()
+      expect(screen.getByRole('button', { name: 'Logo' })).toHaveStyle({
+        textDecoration: 'line-through'
+      })
+    })
+
+    it('completes a task outside sections in place', async () => {
+      const board = aBoard()
+      const boardsApi = renderCard(board, null)
+
+      fireEvent.click(await checkbox())
+
+      await waitFor(() => {
+        expect(boardsApi.completeTask).toHaveBeenCalledWith(
+          board.id,
+          board.tasks[0]?.id,
+          'completed'
+        )
+      })
+    })
+
+    it('does not open the task', async () => {
+      const board = aBoard()
+      renderCard(board, board.sections[0] ?? null)
+
+      fireEvent.click(await checkbox())
+
+      await waitFor(async () => {
+        expect(await checkbox()).toBeChecked()
+      })
+      expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+    })
+
+    it.each<[string, Partial<Board>, Partial<Task>]>([
+      ['for a viewer', { role: 'viewer' }, {}],
+      ['on an archived board', { archived: true }, {}],
+      ['on a canceled task', {}, { canceledAt: '2026-01-01T00:00:00Z' }],
+      [
+        'without a Done section',
+        {
+          sections: [{ id: 'todo', name: 'To do', category: 'unstarted' }]
+        },
+        {}
+      ]
+    ])('is disabled %s', async (_case, overrides, task) => {
+      const board = aBoard(overrides)
+      renderCard(board, board.sections[0] ?? null, task)
+
+      expect(await checkbox()).toBeDisabled()
+    })
   })
 
   describe('panel', () => {

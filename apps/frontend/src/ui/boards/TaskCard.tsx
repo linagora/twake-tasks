@@ -9,13 +9,22 @@ import {
 import { CheckList, Comment, Dots, Icon } from '@linagora/twake-icons'
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
 
-import { Card, CardTitle, LabelChip, Meta, MetaChip } from '@/ds/Columns'
+import {
+  Card,
+  CardCheck,
+  CardTitle,
+  LabelChip,
+  Meta,
+  MetaChip
+} from '@/ds/Columns'
 import { SortableCard } from '@/ds/Sortable'
 import type { Label, Person, Section, Task } from '@/domain/board'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
+import { CompleteCheckbox } from '@/ui/boards/CompleteCheckbox'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { Subtasks } from '@/ui/boards/Subtasks'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
+import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -25,6 +34,7 @@ export function TaskCard({
   boardId,
   members,
   labels,
+  sections,
   destinations,
   onMove,
   sortable = false
@@ -34,6 +44,7 @@ export function TaskCard({
   boardId: string
   members: Person[]
   labels: Label[]
+  sections: Section[]
   destinations: { id: string | null; name: string }[]
   onMove: ((sectionId: Section['id'] | null) => void) | undefined
   sortable?: boolean
@@ -44,6 +55,7 @@ export function TaskCard({
   const [labeling, setLabeling] = useState<HTMLElement | null>(null)
   const panel = useTaskPanel(task.key)
   const editable = onMove !== undefined
+  const completion = useCompleteToggle(task, boardId, sections, editable)
   const [showSubtasks, setShowSubtasks] = useState(false)
   const children = tasks.filter(each => each.parentId === task.id)
   const done = children.filter(each => each.completedAt !== null).length
@@ -60,6 +72,16 @@ export function TaskCard({
   const body = (
     <>
       <Meta>
+        <CardCheck>
+          <CompleteCheckbox
+            title={task.title}
+            completion={completion}
+            // Space and Enter on the card start a keyboard drag.
+            onKeyDown={event => {
+              event.stopPropagation()
+            }}
+          />
+        </CardCheck>
         <Typography variant="caption" color="textSecondary">
           {task.key}
         </Typography>
@@ -67,12 +89,12 @@ export function TaskCard({
           <LabelChip key={label.id} name={label.name} color={label.color} />
         ))}
       </Meta>
-      <CardTitle>
+      <CardTitle done={completion.done}>
         <Link
           component="button"
           variant="body2"
-          color="textPrimary"
-          underline="hover"
+          color={completion.done ? 'textSecondary' : 'textPrimary'}
+          underline={completion.done ? 'none' : 'hover'}
           className="u-ta-left"
           onClick={() => {
             panel.show()

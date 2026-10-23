@@ -104,6 +104,30 @@ test('drags a card to another section and it stays there', async ({ page }) => {
   )
 })
 
+test('completes a task from its card with Space, without picking it up', async ({
+  page
+}) => {
+  await signIn(page, 'alice')
+  const { prefix } = await newBoard(page)
+  await addTask(page, 'Print the posters')
+  const done = page.locator('section').filter({
+    has: page.getByRole('heading', { name: 'Done', exact: true })
+  })
+  const check = () =>
+    done.getByRole('checkbox', { name: 'Complete Print the posters' })
+
+  await page
+    .getByRole('checkbox', { name: 'Complete Print the posters' })
+    .press('Space')
+  await expect(check()).toBeChecked()
+  await expect(done.getByRole('article')).toHaveAccessibleName(
+    `${prefix}-1 Print the posters`
+  )
+
+  await page.reload()
+  await expect(check()).toBeChecked()
+})
+
 test('notifies the person a task is assigned to', async ({ page, browser }) => {
   const bob = await asPerson(browser, 'bob')
   await signIn(page, 'alice')
