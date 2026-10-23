@@ -136,6 +136,13 @@ export async function taskOf(tx: Tx, boardId: string, taskId: string) {
   return task
 }
 
+// Archived and trashed tasks stay read only until they are restored.
+export async function shownTaskOf(tx: Tx, boardId: string, taskId: string) {
+  const task = await taskOf(tx, boardId, taskId)
+  if (task.archivedAt || task.deletedAt) throw new Refused('archived')
+  return task
+}
+
 const MAX_DEPTH = 4
 
 async function depthOf(tx: Tx, taskId: string): Promise<number> {
@@ -318,10 +325,16 @@ export function createTaskStore(db: Db) {
         const section = await sectionOf(tx, boardId, sectionId)
         if (parentId !== null) {
           const [parent] = await tx
-            .select({ id: tasks.id })
+            .select({
+              archivedAt: tasks.archivedAt,
+              deletedAt: tasks.deletedAt
+            })
             .from(tasks)
             .where(and(eq(tasks.id, parentId), eq(tasks.boardId, boardId)))
           if (!parent) throw new Refused('invalid_parent')
+          if (parent.archivedAt || parent.deletedAt) {
+            throw new Refused('archived')
+          }
           if ((await depthOf(tx, parentId)) >= MAX_DEPTH) {
             throw new Refused('too_deep')
           }
@@ -374,7 +387,7 @@ export function createTaskStore(db: Db) {
         await checkRole(tx, identity, boardId, 'editor')
         await bumpBoard(tx, boardId)
         const section = await sectionOf(tx, boardId, input.sectionId)
-        const task = await taskOf(tx, boardId, taskId)
+        const task = await shownTaskOf(tx, boardId, taskId)
         if (task.parentId !== null) throw new Refused('invalid_section')
         if (section?.category === 'completed' && (await recur(tx, task))) {
           return null
@@ -409,7 +422,7 @@ export function createTaskStore(db: Db) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
         await bumpBoard(tx, boardId)
-        const task = await taskOf(tx, boardId, taskId)
+        const task = await shownTaskOf(tx, boardId, taskId)
         await tx
           .update(tasks)
           .set(withDates(task, changes))
@@ -429,7 +442,7 @@ export function createTaskStore(db: Db) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
         await bumpBoard(tx, boardId)
-        const task = await taskOf(tx, boardId, taskId)
+        const task = await shownTaskOf(tx, boardId, taskId)
         if (task.sectionId !== null) throw new Refused('invalid_section')
         if (state === 'completed' && (await recur(tx, task))) return null
         await tx
@@ -459,7 +472,7 @@ export function createTaskStore(db: Db) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
         await bumpBoard(tx, boardId)
-        const task = await taskOf(tx, boardId, taskId)
+        const task = await shownTaskOf(tx, boardId, taskId)
         if (task.descriptionVersion !== edit.version) {
           throw new Refused('stale_version')
         }
@@ -485,7 +498,7 @@ export function createTaskStore(db: Db) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
         const board = await bumpBoard(tx, boardId)
-        const task = await taskOf(tx, boardId, taskId)
+        const task = await shownTaskOf(tx, boardId, taskId)
         const members = await membersOf(tx, board)
         if (
           !userIds.every(userId =>

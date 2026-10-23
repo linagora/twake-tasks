@@ -188,6 +188,64 @@ describe('archive and trash', () => {
     ).toEqual([expect.objectContaining({ title: 'Logo', sectionId: null })])
   })
 
+  it.each(['archive', 'trash'])(
+    'refuses every edit to a task in the %s until it is restored',
+    async which => {
+      const owner = aUser()
+      const { boardId, sectionId, ids } = await aBoard(owner, ['Logo'])
+      const [logo = ''] = ids
+      const other = (
+        await api.as(owner).post('/boards', { name: 'Other', keyPrefix: 'OTH' })
+      ).json<Board>()
+      const label = (
+        await api.as(owner).post(`/boards/${boardId}/labels`, { name: 'Bug' })
+      ).json<{ id: string }>()
+      await (which === 'archive'
+        ? api.as(owner).post(`/boards/${boardId}/tasks/${logo}/archive`, {})
+        : api.as(owner).delete(`/boards/${boardId}/tasks/${logo}`))
+      const task = `/boards/${boardId}/tasks/${logo}`
+      const as = api.as(owner)
+      const edits = [
+        () => as.patch(task, { title: 'Renamed' }),
+        () => as.post(`${task}/move`, { sectionId }),
+        () => as.post(`${task}/complete`, { state: 'completed' }),
+        () => as.put(`${task}/description`, { markdown: 'x', version: 0 }),
+        () => as.put(`${task}/assignees`, { userIds: [owner.userId] }),
+        () => as.put(`${task}/labels`, { labelIds: [label.id] }),
+        () =>
+          as.post(`/boards/${boardId}/tasks`, { parentId: logo, title: 'Sub' }),
+        () =>
+          as.post(`${task}/transfer`, { boardId: other.id, sectionId: null })
+      ]
+
+      const refusals: unknown[] = []
+      for (const edit of edits) {
+        const response = await edit()
+        refusals.push([response.statusCode, response.json()])
+      }
+
+      expect(refusals).toEqual(edits.map(() => [409, { error: 'archived' }]))
+      expect(
+        (
+          await as.get(
+            `/boards/${boardId}/${which === 'archive' ? 'archived' : 'trash'}`
+          )
+        ).json()
+      ).toEqual({
+        tasks: [
+          expect.objectContaining({
+            title: 'Logo',
+            sectionId,
+            assignees: [],
+            labels: []
+          })
+        ]
+      })
+      await as.post(`${task}/restore`, {})
+      expect((await as.patch(task, { title: 'Renamed' })).statusCode).toBe(204)
+    }
+  )
+
   it('lets only editors archive or trash, and keeps archived boards read only', async () => {
     const owner = aUser()
     const viewer = aUser({ organizationId: owner.organizationId })

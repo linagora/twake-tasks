@@ -8,7 +8,7 @@ import {
   checkRole,
   isUniqueViolation,
   Refused,
-  taskOf,
+  shownTaskOf,
   writeOrRefuse,
   type Result
 } from './tasks.ts'
@@ -104,7 +104,7 @@ export function createLabelStore(db: Db) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
         const board = await bumpBoard(tx, boardId)
-        const task = await taskOf(tx, boardId, taskId)
+        const task = await shownTaskOf(tx, boardId, taskId)
         const available = await labelsOn(tx, board)
         if (!labelIds.every(id => available.some(label => label.id === id))) {
           throw new Refused('invalid_label')
