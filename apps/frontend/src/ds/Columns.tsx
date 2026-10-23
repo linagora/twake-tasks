@@ -125,7 +125,12 @@ export function Column({
       })}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography id={titleId} variant="subtitle1" component="h2">
+        <Typography
+          id={titleId}
+          variant="subtitle1"
+          component="h2"
+          sx={{ overflowWrap: 'anywhere' }}
+        >
           {title}
         </Typography>
         <Typography variant="caption" color="textSecondary">
@@ -186,6 +191,7 @@ export function Card({
         flexDirection: 'column',
         gap: 1,
         p: 1.5,
+        overflowWrap: 'anywhere',
         borderRadius: 2,
         bgcolor: 'background.paper',
         border: 1,

@@ -2,8 +2,27 @@ import { screen } from '@testing-library/react'
 import { Avatar } from '@linagora/twake-mui'
 import { describe, expect, it } from 'vitest'
 
-import { AvatarStack } from '@/ds/Columns'
+import { AvatarStack, Card, CardTitle, Column } from '@/ds/Columns'
 import { renderWithProviders } from '@/testing/renderWithProviders'
+
+describe('Column', () => {
+  it('breaks a column name or card title that has no spaces', async () => {
+    const name = 'y'.repeat(300)
+    const title = 'x'.repeat(300)
+    renderWithProviders(
+      <Column title={name} count={1}>
+        <Card label={title}>
+          <CardTitle>{title}</CardTitle>
+        </Card>
+      </Column>
+    )
+
+    const heading = await screen.findByRole('heading', { name })
+    const card = screen.getByRole('article', { name: title })
+    expect(getComputedStyle(heading).overflowWrap).toBe('anywhere')
+    expect(getComputedStyle(card).overflowWrap).toBe('anywhere')
+  })
+})
 
 describe('AvatarStack', () => {
   it.each([
