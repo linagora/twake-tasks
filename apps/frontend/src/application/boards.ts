@@ -27,6 +27,7 @@ export interface TransferPreview {
 export interface NewBoard {
   name: string
   keyPrefix: string
+  language: string
 }
 
 export type NewTask = { title: string } & (

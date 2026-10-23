@@ -49,13 +49,27 @@ import {
   type Result
 } from './tasks.ts'
 import { labelsOn } from './labels.ts'
+import { languageOf, type Language } from './mailLayout.ts'
 import { recurrenceOf, shift, todayIn } from './recurrence.ts'
 
-const DEFAULT_SECTIONS = [
-  { name: 'To do', category: 'unstarted' },
-  { name: 'In progress', category: 'started' },
-  { name: 'Done', category: 'completed' }
+const DEFAULT_SECTION_CATEGORIES = [
+  'unstarted',
+  'started',
+  'completed'
 ] as const
+
+const DEFAULT_SECTION_NAMES: Record<
+  Language,
+  readonly [string, string, string]
+> = {
+  en: ['To do', 'In progress', 'Done'],
+  fr: ['À faire', 'En cours', 'Terminé'],
+  de: ['Zu erledigen', 'In Arbeit', 'Erledigt'],
+  it: ['Da fare', 'In corso', 'Fatto'],
+  es: ['Por hacer', 'En curso', 'Hecho'],
+  ru: ['К выполнению', 'В работе', 'Готово'],
+  vi: ['Cần làm', 'Đang làm', 'Hoàn thành']
+}
 
 export const INBOX_KEY_PREFIX = 'INBOX'
 
@@ -295,7 +309,12 @@ export function createBoardStore(db: Db) {
     // Without a project, the board starts a project of its own, named after it.
     async createBoard(
       identity: Identity,
-      input: { name: string; keyPrefix: string; projectId?: string | undefined }
+      input: {
+        name: string
+        keyPrefix: string
+        projectId?: string | undefined
+        language?: string | undefined
+      }
     ): Promise<Result<NonNullable<Awaited<ReturnType<typeof loadBoard>>>>> {
       try {
         return await writeOrRefuse(db, identity, async tx => {
@@ -318,7 +337,7 @@ export function createBoardStore(db: Db) {
             })
             .returning()
           if (!board) throw new Error('board insert returned nothing')
-          await addDefaultSections(tx, board)
+          await addDefaultSections(tx, board, input.language)
           const loaded = await loadBoard(tx, board.id, identity.userId)
           if (!loaded) throw new Error('new board is not visible')
           return loaded
@@ -342,12 +361,19 @@ export function createBoardStore(db: Db) {
 
 export async function addDefaultSections(
   tx: Tx,
-  board: { id: string; organizationId: string | null }
+  board: { id: string; organizationId: string | null },
+  language?: string
 ) {
-  const positions = generateNKeysBetween(null, null, DEFAULT_SECTIONS.length)
+  const names = DEFAULT_SECTION_NAMES[languageOf(language)]
+  const positions = generateNKeysBetween(
+    null,
+    null,
+    DEFAULT_SECTION_CATEGORIES.length
+  )
   await tx.insert(sections).values(
-    DEFAULT_SECTIONS.map((section, index) => ({
-      ...section,
+    DEFAULT_SECTION_CATEGORIES.map((category, index) => ({
+      name: names[index] ?? '',
+      category,
       boardId: board.id,
       organizationId: board.organizationId,
       position: positions[index] ?? ''

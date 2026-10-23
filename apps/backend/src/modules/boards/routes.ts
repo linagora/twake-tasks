@@ -35,7 +35,8 @@ const boardName = z
 const newBoard = z.object({
   name: boardName,
   keyPrefix: z.string().regex(/^[A-Z][A-Z0-9]{0,9}$/),
-  projectId: z.uuid().optional()
+  projectId: z.uuid().optional(),
+  language: z.string().max(35).optional()
 })
 
 const boardRename = z.object({ name: boardName })

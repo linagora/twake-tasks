@@ -207,9 +207,30 @@ describe('BoardsScreen', () => {
     ).toBeInTheDocument()
     expect(boardsApi.createBoard).toHaveBeenCalledWith({
       name: 'Design',
-      keyPrefix: 'DES'
+      keyPrefix: 'DES',
+      language: 'en'
     })
     expect(router.state.location.pathname).toMatch(/^\/boards\//)
+  })
+
+  it('creates a board in the language of the interface', async () => {
+    const boardsApi = fakeBoardsApi()
+    renderRoute('/', { boardsApi, lang: 'fr' })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Nouveau' }))
+    const dialog = screen.getByRole('dialog', { name: 'Nouveau tableau' })
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Nom' }), {
+      target: { value: 'Équipe' }
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Créer' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createBoard).toHaveBeenCalledWith({
+        name: 'Équipe',
+        keyPrefix: 'EQU',
+        language: 'fr'
+      })
+    })
   })
 
   it('suggests a key prefix from the name until one is typed', async () => {
@@ -233,7 +254,8 @@ describe('BoardsScreen', () => {
     await waitFor(() => {
       expect(boardsApi.createBoard).toHaveBeenCalledWith({
         name: 'Marketing',
-        keyPrefix: 'MKT'
+        keyPrefix: 'MKT',
+        language: 'en'
       })
     })
   })

@@ -32,6 +32,34 @@ describe('user boards', () => {
     })
   })
 
+  it.each([
+    ['en', 'To do', 'In progress', 'Done'],
+    ['fr', 'À faire', 'En cours', 'Terminé'],
+    ['de', 'Zu erledigen', 'In Arbeit', 'Erledigt'],
+    ['it', 'Da fare', 'In corso', 'Fatto'],
+    ['es', 'Por hacer', 'En curso', 'Hecho'],
+    ['ru', 'К выполнению', 'В работе', 'Готово'],
+    ['vi', 'Cần làm', 'Đang làm', 'Hoàn thành'],
+    ['fr-CA', 'À faire', 'En cours', 'Terminé'],
+    ['klingon', 'To do', 'In progress', 'Done']
+  ])(
+    'names the default sections in the language %s',
+    async (language, unstarted, started, completed) => {
+      const response = await api
+        .as(aUser())
+        .post('/boards', { name: 'Design', keyPrefix: 'DES', language })
+
+      expect(response.statusCode).toBe(201)
+      expect(response.json()).toMatchObject({
+        sections: [
+          { name: unstarted, category: 'unstarted' },
+          { name: started, category: 'started' },
+          { name: completed, category: 'completed' }
+        ]
+      })
+    }
+  )
+
   it('lists only the boards a person belongs to', async () => {
     const alice = aUser()
     const bob = aUser({ organizationId: alice.organizationId })
