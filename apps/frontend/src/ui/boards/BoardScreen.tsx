@@ -26,7 +26,12 @@ import { PageHeader, PageTitle, UnavailableButton } from '@/ds/PageHeader'
 import { Inline } from '@/ds/SidePanel'
 import { DropColumn, SortableList } from '@/ds/Sortable'
 import { TitleButton } from '@/ds/TitleButton'
-import type { Board, Section, Task } from '@/domain/board'
+import {
+  isShareable,
+  type Board,
+  type Section,
+  type Task
+} from '@/domain/board'
 import {
   RemovalNotice,
   RemovalNotices,
@@ -207,8 +212,7 @@ function BoardColumns({
   const move = useMoveTask(board.id)
   const editable = board.role !== 'viewer' && !board.archived
   const manageable = board.role === 'admin' && !board.archived
-  const shareable =
-    manageable && !board.project.personal && !board.project.managed
+  const shareable = isShareable(board)
   const [sharing, setSharing] = useState(false)
   const [listing, setListing] = useState(false)
   const whyNot = board.project.personal
@@ -252,6 +256,7 @@ function BoardColumns({
       tasks={board.tasks}
       boardId={board.id}
       members={board.members}
+      shareable={shareable}
       labels={board.labels}
       sections={board.sections}
       destinations={board.sections.filter(

@@ -116,6 +116,8 @@
     "assignFailed": "Les personnes assignées n'ont pas pu être enregistrées.",
     "retryAssign": "Réessayer",
     "noPeopleMatch": "Personne ne correspond à « %{search} »",
+    "pendingGroup": "Invité(e)s, pas encore arrivé(e)s",
+    "pendingHint": "Pourra être assigné(e) dès sa première ouverture de Twake Project.",
     "labels": "Étiquettes",
     "labelsTitle": "Étiquettes de %{key}",
     "searchPeople": "Rechercher une personne",
@@ -410,7 +412,7 @@
       "admin": "Administrateur"
     },
     "invite": "Inviter",
-    "invited": "%{email} a été invité.",
+    "invited": "%{email} est invité(e). Vous pourrez lui assigner des tâches dès sa première ouverture de Twake Project.",
     "pending": "En attente",
     "roleOf": "Rôle : %{role}",
     "roleOfPerson": "Rôle de %{person} : %{role}",

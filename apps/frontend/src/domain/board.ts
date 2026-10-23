@@ -112,6 +112,15 @@ export const deadlineBeforeDue = (
 
 export const MAX_TASK_DEPTH = 4
 
+/** Whether this user may see and change who the board is shared with. */
+export const isShareable = (
+  board: Pick<BoardSummary, 'role' | 'archived' | 'project'>
+): boolean =>
+  board.role === 'admin' &&
+  !board.archived &&
+  !board.project.personal &&
+  !board.project.managed
+
 export const LAYOUTS = ['board', 'list', 'calendar'] as const
 
 export type Layout = (typeof LAYOUTS)[number]

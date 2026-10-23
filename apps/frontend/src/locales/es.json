@@ -116,6 +116,8 @@
     "assignFailed": "No se pudieron guardar las asignaciones.",
     "retryAssign": "Reintentar",
     "noPeopleMatch": "Nadie coincide con «%{search}»",
+    "pendingGroup": "Invitados, aún no se han unido",
+    "pendingHint": "Se podrá asignar en cuanto abra Twake Project.",
     "labels": "Etiquetas",
     "labelsTitle": "Etiquetas de %{key}",
     "searchPeople": "Buscar personas",
@@ -410,7 +412,7 @@
       "admin": "Administrador"
     },
     "invite": "Invitar",
-    "invited": "Se invitó a %{email}.",
+    "invited": "%{email} invitado. Podrás asignarle tareas en cuanto abra Twake Project.",
     "pending": "Pendiente",
     "roleOf": "Rol: %{role}",
     "roleOfPerson": "Rol de %{person}: %{role}",

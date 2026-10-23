@@ -33,6 +33,7 @@ export function TaskCard({
   tasks,
   boardId,
   members,
+  shareable,
   labels,
   sections,
   destinations,
@@ -43,6 +44,7 @@ export function TaskCard({
   tasks: Task[]
   boardId: string
   members: Person[]
+  shareable: boolean
   labels: Label[]
   sections: Section[]
   destinations: { id: string | null; name: string }[]
@@ -225,6 +227,7 @@ export function TaskCard({
           boardId={boardId}
           members={members}
           tasks={tasks}
+          shareable={shareable}
           anchor={assigning}
           onClose={() => {
             setAssigning(null)

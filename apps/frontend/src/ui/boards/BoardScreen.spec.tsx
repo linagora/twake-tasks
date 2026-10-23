@@ -273,6 +273,29 @@ describe('BoardScreen', () => {
     ])
   })
 
+  it('shows the people invited to the board as not assignable yet', async () => {
+    const board = designBoard()
+    const boardsApi = fakeBoardsApi([board])
+    await boardsApi.invite(board.id, 'zoe@acme.example', 'editor')
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for DES-2' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Assign' }))
+    const picker = within(
+      await screen.findByRole('dialog', { name: 'Assign DES-2' })
+    )
+    fireEvent.change(picker.getByRole('textbox', { name: 'Search people' }), {
+      target: { value: 'zo' }
+    })
+
+    expect(
+      await picker.findByRole('menuitem', { name: /zoe@acme.example/ })
+    ).toHaveAttribute('aria-disabled', 'true')
+    expect(picker.getByText('Invited, not joined yet')).toBeVisible()
+  })
+
   it('says when unassigning fails and keeps the assignee', async () => {
     const board = designBoard()
     const boardsApi = fakeBoardsApi([board])

@@ -20,7 +20,7 @@ import {
   PropertySelect,
   TitleInput
 } from '@/ds/SidePanel'
-import type { Board, Task } from '@/domain/board'
+import { isShareable, type Board, type Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
 import { useProjectName } from '@/ui/boards/BoardsScreen'
@@ -173,6 +173,7 @@ export function TaskProperties({
           boardId={boardId}
           members={board.members}
           tasks={board.tasks}
+          shareable={isShareable(board)}
           anchor={assigning}
           onClose={() => {
             setAssigning(null)

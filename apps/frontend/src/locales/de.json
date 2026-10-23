@@ -116,6 +116,8 @@
     "assignFailed": "Die Zuweisungen konnten nicht gespeichert werden.",
     "retryAssign": "Erneut versuchen",
     "noPeopleMatch": "Niemand entspricht „%{search}“",
+    "pendingGroup": "Eingeladen, noch nicht beigetreten",
+    "pendingHint": "Kann zugewiesen werden, sobald Twake Project geöffnet wurde.",
     "labels": "Labels",
     "labelsTitle": "Labels von %{key}",
     "searchPeople": "Personen suchen",
@@ -410,7 +412,7 @@
       "admin": "Admin"
     },
     "invite": "Einladen",
-    "invited": "%{email} eingeladen.",
+    "invited": "%{email} eingeladen. Aufgaben können zugewiesen werden, sobald Twake Project geöffnet wurde.",
     "pending": "Ausstehend",
     "roleOf": "Rolle: %{role}",
     "roleOfPerson": "Rolle von %{person}: %{role}",

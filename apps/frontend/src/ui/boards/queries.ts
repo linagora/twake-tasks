@@ -156,11 +156,15 @@ export function useDeleteFilter(): UseMutationResult<void, Error, string> {
   })
 }
 
-export function useSharing(boardId: string): UseQueryResult<Sharing> {
+export function useSharing(
+  boardId: string,
+  enabled = true
+): UseQueryResult<Sharing> {
   const api = useBoardsApi()
   return useQuery({
     queryKey: [...boardKey(boardId), 'sharing'],
-    queryFn: () => api.getSharing(boardId)
+    queryFn: () => api.getSharing(boardId),
+    enabled
   })
 }
 
