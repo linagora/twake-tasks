@@ -237,6 +237,7 @@
     "pin": "Keep this time in %{zone}",
     "deadline": "Deadline",
     "deadlineOn": "Deadline %{date}",
+    "deadlineTooEarly": "The deadline cannot be before the due date.",
     "duration": "Duration",
     "unit": "Unit",
     "unitMinutes": "Minutes",
@@ -337,7 +338,8 @@
     "no_title": "The task needs a title.",
     "unknown_board": "No board named %{name}.",
     "unknown_section": "No section named %{name}.",
-    "unknown_person": "No member named %{name}."
+    "unknown_person": "No member named %{name}.",
+    "deadline_before_due": "The deadline cannot be before the due date."
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",

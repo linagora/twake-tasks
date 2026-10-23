@@ -237,6 +237,7 @@
     "pin": "Giữ giờ này theo %{zone}",
     "deadline": "Hạn chót",
     "deadlineOn": "Hạn chót %{date}",
+    "deadlineTooEarly": "Hạn chót không thể sớm hơn ngày đến hạn.",
     "duration": "Thời lượng",
     "unit": "Đơn vị",
     "unitMinutes": "Phút",
@@ -337,7 +338,8 @@
     "no_title": "Công việc cần có tiêu đề.",
     "unknown_board": "Không có bảng tên %{name}.",
     "unknown_section": "Không có mục tên %{name}.",
-    "unknown_person": "Không có thành viên tên %{name}."
+    "unknown_person": "Không có thành viên tên %{name}.",
+    "deadline_before_due": "Hạn chót không thể sớm hơn ngày đến hạn."
   },
   "shortcuts": {
     "title": "Phím tắt",

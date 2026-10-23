@@ -237,6 +237,7 @@
     "pin": "Mantieni quest’ora in %{zone}",
     "deadline": "Termine ultimo",
     "deadlineOn": "Termine ultimo %{date}",
+    "deadlineTooEarly": "Il termine ultimo non può precedere la data di scadenza.",
     "duration": "Durata",
     "unit": "Unità",
     "unitMinutes": "Minuti",
@@ -337,7 +338,8 @@
     "no_title": "L’attività deve avere un titolo.",
     "unknown_board": "Nessuna bacheca chiamata %{name}.",
     "unknown_section": "Nessuna sezione chiamata %{name}.",
-    "unknown_person": "Nessun membro chiamato %{name}."
+    "unknown_person": "Nessun membro chiamato %{name}.",
+    "deadline_before_due": "Il termine ultimo non può precedere la data di scadenza."
   },
   "shortcuts": {
     "title": "Scorciatoie da tastiera",

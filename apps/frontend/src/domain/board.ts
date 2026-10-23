@@ -105,6 +105,11 @@ export function labelName(text: string): string {
     .trim()
 }
 
+export const deadlineBeforeDue = (
+  dueDate: string | null | undefined,
+  deadline: string | null | undefined
+): boolean => Boolean(dueDate && deadline && deadline < dueDate)
+
 export const MAX_TASK_DEPTH = 4
 
 export const LAYOUTS = ['board', 'list', 'calendar'] as const

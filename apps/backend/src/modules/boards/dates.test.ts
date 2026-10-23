@@ -98,4 +98,25 @@ describe('task dates', () => {
     expect(unknownZone.statusCode).toBe(400)
     expect(emptyDuration.statusCode).toBe(400)
   })
+
+  it('refuses a deadline before the due date, set together or one after the other', async () => {
+    const { edit, read } = await aTaskOf(aUser())
+
+    const together = await edit({
+      dueDate: '2026-10-20',
+      deadline: '2026-10-01'
+    })
+    await edit({ dueDate: '2026-10-20', deadline: '2026-10-20' })
+    const earlierDeadline = await edit({ deadline: '2026-10-19' })
+    const laterDue = await edit({ dueDate: '2026-10-21' })
+
+    expect(together.statusCode).toBe(400)
+    expect(together.json()).toEqual({ error: 'invalid_dates' })
+    expect(earlierDeadline.statusCode).toBe(400)
+    expect(laterDue.statusCode).toBe(400)
+    expect(await read()).toMatchObject({
+      dueDate: '2026-10-20',
+      deadline: '2026-10-20'
+    })
+  })
 })

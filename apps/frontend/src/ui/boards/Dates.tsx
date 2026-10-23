@@ -21,7 +21,12 @@ import {
   FieldRow,
   QuickPicks
 } from '@/ds/Pickers'
-import type { Duration, Recurrence, Task } from '@/domain/board'
+import {
+  deadlineBeforeDue,
+  type Duration,
+  type Recurrence,
+  type Task
+} from '@/domain/board'
 import {
   dueLabel,
   formatDay,
@@ -174,6 +179,7 @@ function DatesEditor({
   const set = (changes: Partial<Draft>) => {
     setDraft(previous => ({ ...previous, ...changes }))
   }
+  const deadlineTooEarly = deadlineBeforeDue(draft.dueDate, draft.deadline)
   const picks = [
     { label: t('dates.today'), day: inDays(0) },
     { label: t('dates.tomorrow'), day: inDays(1) },
@@ -243,6 +249,7 @@ function DatesEditor({
         onChange={deadline => {
           set({ deadline })
         }}
+        error={deadlineTooEarly ? t('dates.deadlineTooEarly') : undefined}
       />
       <FieldRow>
         <TextField
@@ -319,7 +326,11 @@ function DatesEditor({
         <Button variant="text" size="small" onClick={onClose}>
           {t('board.cancel')}
         </Button>
-        <Button type="submit" size="small" disabled={save.isPending}>
+        <Button
+          type="submit"
+          size="small"
+          disabled={save.isPending || deadlineTooEarly}
+        >
           {t('dates.save')}
         </Button>
       </EditorActions>
