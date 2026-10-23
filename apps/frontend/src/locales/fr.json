@@ -159,6 +159,7 @@
     "noDoneSection": "Ce tableau n'a pas de section Terminé.",
     "linkCopied": "Lien copié",
     "copyFailed": "Le lien n'a pas pu être copié.",
+    "board": "Tableau",
     "section": "Section",
     "priority": "Priorité",
     "noPriority": "Aucune",

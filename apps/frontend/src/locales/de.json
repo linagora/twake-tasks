@@ -159,6 +159,7 @@
     "noDoneSection": "Dieses Board hat keinen Abschnitt „Erledigt“.",
     "linkCopied": "Link kopiert",
     "copyFailed": "Der Link konnte nicht kopiert werden.",
+    "board": "Board",
     "section": "Abschnitt",
     "priority": "Priorität",
     "noPriority": "Keine",

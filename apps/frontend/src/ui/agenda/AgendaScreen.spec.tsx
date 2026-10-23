@@ -50,6 +50,29 @@ describe('AgendaScreen', () => {
     expect(boardsApi.agenda).toHaveBeenCalledWith(localZone(), 1)
   })
 
+  it('links the task opened from Today to its board, named with its project', async () => {
+    const { design, boardsApi } = boards()
+    design.project.name = 'Product launch'
+    const { router } = renderRoute('/today', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: /^DES-1 Logo/ })
+    )
+    await waitFor(() => {
+      expect(panel.getAllByRole('term')[0]).toHaveTextContent('Board')
+    })
+    const value = panel.getAllByRole('term')[0]?.nextElementSibling
+    expect(value).toHaveTextContent('Design · Product launch')
+    fireEvent.click(
+      within(value as HTMLElement).getByRole('link', { name: 'Design' })
+    )
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/boards/${design.id}`)
+    })
+  })
+
   it('opens a sub-task over the task opened from Today', async () => {
     const { design, boardsApi } = boards()
     design.tasks.push(

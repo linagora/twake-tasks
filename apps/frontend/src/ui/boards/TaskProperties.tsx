@@ -2,14 +2,16 @@ import {
   Bell,
   CalendarToday,
   Flag,
+  Folder,
   Icon,
   Label,
   Mosaic,
   People,
   Plus
 } from '@linagora/twake-icons'
-import { IconButton, Tooltip, Typography } from '@linagora/twake-mui'
+import { IconButton, Link, Tooltip, Typography } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement } from 'react'
+import { Link as RouterLink, useMatch, useParams } from 'react-router'
 
 import { LabelChip, PersonChip } from '@/ds/Columns'
 import {
@@ -21,11 +23,13 @@ import {
 import type { Board, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
+import { useProjectName } from '@/ui/boards/BoardsScreen'
 import { Dates } from '@/ui/boards/Dates'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoardChange, useMoveTask } from '@/ui/boards/queries'
 import { Reminders } from '@/ui/boards/Reminders'
+import { EMBED_PREFIX } from '@/ui/embed/twakeSpace'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const PRIORITIES = [1, 2, 3, 4] as const
@@ -56,6 +60,7 @@ export function TaskProperties({
   return (
     <>
       <Properties>
+        {board && <BoardRow board={board} />}
         {board && task.parentId === null && (
           <SectionRow
             task={task}
@@ -242,6 +247,36 @@ export function Title({
   )
 }
 
+function BoardRow({ board }: { board: Board }): ReactElement {
+  const { t } = useI18n()
+  const { projectId } = useParams()
+  const projectName = useProjectName()(board.project)
+  const to =
+    projectId === undefined
+      ? `/boards/${board.id}`
+      : `${EMBED_PREFIX}${board.project.id}/boards/${board.id}`
+  const onBoard = useMatch(to) !== null
+
+  return (
+    <Property icon={<Icon icon={Mosaic} />} label={t('task.board')}>
+      <Typography variant="body2" className="u-miw-0">
+        {onBoard ? (
+          board.name
+        ) : (
+          <Link component={RouterLink} to={to} underline="hover">
+            {board.name}
+          </Link>
+        )}
+        {projectName !== board.name && (
+          <Typography component="span" variant="body2" color="textSecondary">
+            {` · ${projectName}`}
+          </Typography>
+        )}
+      </Typography>
+    </Property>
+  )
+}
+
 function SectionRow({
   task,
   boardId,
@@ -262,7 +297,7 @@ function SectionRow({
   return (
     <Property
       id={labelId}
-      icon={<Icon icon={Mosaic} />}
+      icon={<Icon icon={Folder} />}
       label={t('task.section')}
     >
       {editable ? (
