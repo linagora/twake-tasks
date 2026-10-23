@@ -123,13 +123,17 @@ export function Comments({
             minHeight={48}
             onChange={setBody}
             onSubmit={send}
+            mentions={names}
             suggestions={{
               trigger: '@',
               label: t('editor.mentionsLabel'),
               search: query =>
                 mentionable(query).map(person => ({
                   key: person.userId,
-                  insert: `@${person.email} `,
+                  insert: [
+                    { type: 'mention', attrs: { email: person.email } },
+                    { type: 'text', text: ' ' }
+                  ],
                   label: (
                     <>
                       <PersonAvatar

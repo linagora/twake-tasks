@@ -180,7 +180,10 @@ export function RichText({
 }): ReactElement {
   const editor = useEditor(
     {
-      extensions: extensions('', mentions ? [mentionExtension(mentions)] : []),
+      extensions: extensions(
+        '',
+        mentions ? [mentionExtension(() => mentions)] : []
+      ),
       content: markdown,
       contentType: 'markdown',
       editable: false
@@ -203,6 +206,7 @@ export function RichTextEditor({
   onChange,
   onSubmit,
   suggestions,
+  mentions,
   footer
 }: {
   label: string
@@ -214,13 +218,15 @@ export function RichTextEditor({
   onSubmit?: () => void
   /** A list of options that opens when the user types its trigger character. */
   suggestions?: Suggestions
+  mentions?: Record<string, string>
   footer?: ReactNode
 }): ReactElement {
   // The editor keeps the callbacks it was created with, so it reads the latest ones here.
-  const latest = useRef({ onChange, onSubmit })
+  const latest = useRef({ onChange, onSubmit, mentions })
   useEffect(() => {
-    latest.current = { onChange, onSubmit }
+    latest.current = { onChange, onSubmit, mentions }
   })
+  const [names] = useState(() => () => latest.current.mentions ?? {})
   const listId = useId()
   const [open, setOpen] = useState<SuggestionState | null>(null)
   const [active, setActive] = useState(0)
@@ -297,10 +303,10 @@ export function RichTextEditor({
     }
   })
   const editor = useEditor({
-    extensions: extensions(
-      placeholder,
-      suggestions ? [suggestionsExtension(bridge)] : []
-    ),
+    extensions: extensions(placeholder, [
+      ...(suggestions ? [suggestionsExtension(bridge)] : []),
+      ...(mentions ? [mentionExtension(names)] : [])
+    ]),
     content: initial,
     contentType: 'markdown',
     editorProps: {

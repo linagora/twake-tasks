@@ -160,8 +160,12 @@ describe('Comments', () => {
       )
 
       await waitFor(() => {
-        expect(editor).toHaveTextContent('Thanks @alice@example.com')
+        expect(editor).toHaveTextContent('Thanks @Alice Martin')
       })
+      expect(within(editor).getByText('@Alice Martin')).toHaveAttribute(
+        'title',
+        'alice@example.com'
+      )
       expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
       fireEvent.click(panel.getByRole('button', { name: 'Send' }))
       await waitFor(() => {
@@ -181,7 +185,7 @@ describe('Comments', () => {
       )
 
       await waitFor(() => {
-        expect(editor.textContent).toBe('@alice@example.com ')
+        expect(editor.textContent).toBe('@Alice Martin ')
       })
       expect(editor.querySelectorAll('a')).toHaveLength(0)
     })
@@ -221,7 +225,7 @@ describe('Comments', () => {
       fireEvent.keyDown(editor, { key: 'Enter' })
 
       await waitFor(() => {
-        expect(editor.textContent).toBe('@jean_dupont@example.com ')
+        expect(editor.textContent).toBe('@Jean Dupont ')
       })
       expect(editor.querySelectorAll('p')).toHaveLength(1)
       expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
@@ -233,7 +237,7 @@ describe('Comments', () => {
         await typeInComment('@jean')
       fireEvent.keyDown(editor, { key: 'Enter' })
       await waitFor(() => {
-        expect(editor.textContent).toBe('@jean_dupont@example.com ')
+        expect(editor.textContent).toBe('@Jean Dupont ')
       })
       fireEvent.click(panel.getByRole('button', { name: 'Send' }))
       await waitFor(() => {
@@ -252,7 +256,7 @@ describe('Comments', () => {
       fireEvent.keyDown(editor, { key: 'Tab' })
 
       await waitFor(() => {
-        expect(editor.textContent).toBe('@albert@example.com ')
+        expect(editor.textContent).toBe('@Albert Roux ')
       })
     })
 
@@ -263,7 +267,7 @@ describe('Comments', () => {
       fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true })
 
       await waitFor(() => {
-        expect(editor.textContent).toBe('@albert@example.com ')
+        expect(editor.textContent).toBe('@Albert Roux ')
       })
       expect(boardsApi.addComment).not.toHaveBeenCalled()
     })
