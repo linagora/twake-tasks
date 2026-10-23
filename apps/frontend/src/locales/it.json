@@ -336,12 +336,12 @@
     "person": "Assegna a %{name}",
     "add": "Aggiungi",
     "close": "Chiudi",
-    "added": "%{key} aggiunta.",
+    "added": "%{key} aggiunta a %{board}.",
     "failed": "Impossibile aggiungere l’attività.",
     "no_title": "L’attività deve avere un titolo.",
     "unknown_board": "Nessuna bacheca chiamata %{name}.",
-    "unknown_section": "Nessuna sezione chiamata %{name}.",
-    "unknown_person": "Nessun membro chiamato %{name}.",
+    "unknown_section": "Nessuna sezione chiamata %{name} in %{board}.",
+    "unknown_person": "Nessun membro chiamato %{name} in %{board}.",
     "deadline_before_due": "Il termine ultimo non può precedere la data di scadenza."
   },
   "shortcuts": {

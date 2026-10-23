@@ -336,12 +336,12 @@
     "person": "Назначить %{name}",
     "add": "Добавить",
     "close": "Закрыть",
-    "added": "%{key} добавлена.",
+    "added": "%{key} добавлена в %{board}.",
     "failed": "Не удалось добавить задачу.",
     "no_title": "У задачи должно быть название.",
     "unknown_board": "Нет доски %{name}.",
-    "unknown_section": "Нет раздела %{name}.",
-    "unknown_person": "Нет участника %{name}.",
+    "unknown_section": "В %{board} нет раздела %{name}.",
+    "unknown_person": "В %{board} нет участника %{name}.",
     "deadline_before_due": "Крайний срок не может быть раньше даты выполнения."
   },
   "shortcuts": {

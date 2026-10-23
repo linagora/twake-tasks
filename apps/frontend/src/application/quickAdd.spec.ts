@@ -30,7 +30,11 @@ describe('quickAdd', () => {
 
     const added = await quickAdd(api, 'Buy milk tomorrow p2', today)
 
-    expect(added).toMatchObject({ boardId: inbox.id, key: 'INB-1' })
+    expect(added).toMatchObject({
+      boardId: inbox.id,
+      board: 'Inbox',
+      key: 'INB-1'
+    })
     expect(inbox.tasks).toMatchObject([
       { title: 'Buy milk', priority: 2, dueDate: '2026-10-08', sectionId: null }
     ])
@@ -70,6 +74,57 @@ describe('quickAdd', () => {
     await quickAdd(api, 'Logo #des', today)
 
     expect(design.tasks).toHaveLength(1)
+  })
+
+  it('lands on the default board when the line names none', async () => {
+    const { inbox, design, api } = boards()
+
+    const added = await quickAdd(api, 'Logo +bob', today, design.id)
+
+    expect(added).toMatchObject({
+      boardId: design.id,
+      board: 'Product Design',
+      key: 'DES-1'
+    })
+    expect(design.tasks).toMatchObject([
+      { sectionId: design.sections[0]?.id, assignees: [{ userId: 'u-bob' }] }
+    ])
+    expect(inbox.tasks).toEqual([])
+  })
+
+  it('files under the board the line names over the default one', async () => {
+    const { inbox, design, api } = boards()
+
+    await quickAdd(api, 'Buy milk #inbox', today, design.id)
+
+    expect(inbox.tasks).toHaveLength(1)
+    expect(design.tasks).toEqual([])
+  })
+
+  it.each([
+    ['a viewer of', { role: 'viewer' as const }],
+    ['archived', { archived: true }]
+  ])('lands in the Inbox when the default board is %s', async (_, change) => {
+    const { inbox, design, api } = boards()
+    Object.assign(design, change)
+
+    await quickAdd(api, 'Logo', today, design.id)
+
+    expect(inbox.tasks).toHaveLength(1)
+    expect(design.tasks).toEqual([])
+  })
+
+  it.each([
+    ['Logo /Review', 'unknown_section', 'Review'],
+    ['Logo +carol', 'unknown_person', 'carol']
+  ])('names the board it searched for "%s"', async (line, code, typed) => {
+    const { design, api } = boards()
+
+    await expect(quickAdd(api, line, today, design.id)).rejects.toMatchObject({
+      code,
+      typed,
+      board: 'Product Design'
+    })
   })
 
   it.each([

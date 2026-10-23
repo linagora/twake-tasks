@@ -33,7 +33,7 @@ import {
 } from '@/application/boards'
 import type { Board, BoardSummary, Layout, Person } from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
-import { findBoard, quickAdd } from '@/application/quickAdd'
+import { findBoard, quickAdd, type QuickAdded } from '@/application/quickAdd'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
 
@@ -564,29 +564,31 @@ export function useUnreadByProject(): UseQueryResult<ProjectUnread[]> {
   })
 }
 
-export function useQuickAdd(): UseMutationResult<
-  { boardId: string; key: string },
-  Error,
-  string
-> {
+export function useQuickAdd(
+  defaultBoardId: string | undefined
+): UseMutationResult<QuickAdded, Error, string> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (line: string) => quickAdd(api, line, localToday()),
+    mutationFn: (line: string) =>
+      quickAdd(api, line, localToday(), defaultBoardId),
     onSuccess: ({ boardId }) =>
       queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
   })
 }
 
-/** The boards quick add can name, and the one the line names so far. */
-export function useQuickAddBoard(name: string | undefined): {
+/** The boards quick add can name, and the one the task goes to so far. */
+export function useQuickAddBoard(
+  name: string | undefined,
+  defaultBoardId: string | undefined
+): {
   boards: BoardSummary[] | undefined
   summary: BoardSummary | undefined
   board: Board | undefined
 } {
   const api = useBoardsApi()
   const boards = useBoards().data
-  const summary = boards && findBoard(boards, name)
+  const summary = boards && findBoard(boards, name, defaultBoardId)
   const named = useQuery({
     queryKey: boardKey(summary?.id ?? ''),
     queryFn: summary ? () => api.getBoard(summary.id) : skipToken
