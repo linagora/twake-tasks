@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import type { Board, Role } from '@/domain/board'
@@ -177,6 +177,19 @@ describe('QuickAdd', () => {
     type('Next')
 
     expect(dialog.queryByRole('status')).toBeNull()
+  })
+
+  it('takes the focus back to the line after a click on Add', async () => {
+    const { dialog, field, type } = await openQuickAdd()
+    type('Logo #DES')
+    const button = dialog.getByRole('button', { name: 'Add' })
+    act(() => {
+      button.focus()
+    })
+    fireEvent.click(button)
+
+    expect(await dialog.findByRole('status')).toBeVisible()
+    expect(field()).toHaveFocus()
   })
 
   it('keeps an add in flight when the line is edited meanwhile', async () => {

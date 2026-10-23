@@ -103,9 +103,12 @@ describe('Labels', () => {
     const dialog = within(
       await screen.findByRole('dialog', { name: 'New label' })
     )
-    expect(
-      dialog.getByRole('textbox', { name: 'Enter a new label name' })
-    ).toHaveValue('Later')
+    const name = dialog.getByRole<HTMLInputElement>('textbox', {
+      name: 'Label name'
+    })
+    expect(name).toHaveValue('Later')
+    expect(name).toHaveFocus()
+    expect([name.selectionStart, name.selectionEnd]).toEqual([0, 5])
     pickColor(1)
     fireEvent.click(
       within(screen.getByRole('dialog', { name: 'New label' })).getByRole(
@@ -191,9 +194,7 @@ describe('Labels', () => {
     const dialog = within(
       await screen.findByRole('dialog', { name: 'New label' })
     )
-    expect(
-      dialog.getByRole('textbox', { name: 'Enter a new label name' })
-    ).toHaveValue('')
+    expect(dialog.getByRole('textbox', { name: 'Label name' })).toHaveValue('')
     expect(dialog.getByRole('button', { name: 'Create' })).toBeDisabled()
   })
 

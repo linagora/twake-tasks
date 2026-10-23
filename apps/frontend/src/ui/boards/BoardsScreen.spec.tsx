@@ -254,9 +254,9 @@ describe('BoardsScreen', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'New' }))
     const dialog = screen.getByRole('dialog', { name: 'New board' })
-    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), {
-      target: { value: 'Design' }
-    })
+    const name = within(dialog).getByRole('textbox', { name: 'Name' })
+    expect(name).toHaveFocus()
+    fireEvent.change(name, { target: { value: 'Design' } })
     fireEvent.change(
       within(dialog).getByRole('textbox', { name: 'Key prefix' }),
       { target: { value: 'des' } }

@@ -11,6 +11,7 @@ import { useId, useState, type ReactElement } from 'react'
 import { ApiError } from '@/application/boards'
 import type { Board } from '@/domain/board'
 import { useCreateBoard } from '@/ui/boards/queries'
+import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 function suggestedPrefix(name: string): string {
@@ -62,6 +63,7 @@ export function NewBoardDialog({
             required
             fullWidth
             margin="dense"
+            inputRef={focusOnMount}
             slotProps={{ htmlInput: { maxLength: 100 } }}
           />
           <TextField
