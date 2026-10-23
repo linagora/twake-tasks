@@ -159,6 +159,8 @@
     "options": "Options de la tâche",
     "close": "Fermer",
     "copyLink": "Copier le lien",
+    "expand": "Ouvrir en pleine page",
+    "peek": "Ouvrir sur le côté",
     "markComplete": "Marquer comme terminée",
     "completed": "Terminée",
     "noDoneSection": "Ce tableau n'a pas de section Terminé.",

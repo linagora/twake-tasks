@@ -31,10 +31,11 @@ describe('AgendaScreen', () => {
       await screen.findByRole('region', { name: 'Overdue' })
     )
     fireEvent.click(overdue.getByRole('button', { name: 'Poster' }))
-    // The task opens over Today, which its breadcrumb starts from.
+    // Its full page opens over Today, which its breadcrumb starts from.
     const panel = within(
       await screen.findByRole('dialog', { name: /^DES-2 Poster/ })
     )
+    fireEvent.click(panel.getByRole('button', { name: 'Open as full page' }))
     const crumbs = within(
       panel.getByRole('navigation', { name: 'Where the task is' })
     )

@@ -19,7 +19,13 @@ import { useId, useState, type ReactElement, type ReactNode } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { RichText, RichTextEditor } from '@/ds/RichText'
-import { Grow, Inline, PanelSection, SidePanel } from '@/ds/SidePanel'
+import {
+  Grow,
+  Inline,
+  PanelSection,
+  SidePanel,
+  useInPeek
+} from '@/ds/SidePanel'
 import { UnavailableButton } from '@/ds/PageHeader'
 import { MAX_TASK_DEPTH, type Section, type Task } from '@/domain/board'
 import { useRemoveTask } from '@/ui/boards/Archive'
@@ -45,7 +51,7 @@ import {
   useUnsaved,
   useUnsavedFields
 } from '@/ui/boards/unsaved'
-import { useTaskPanel } from '@/ui/boards/useTaskPanel'
+import { useExpandedPanel, useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useDrivePicker } from '@/ui/drive/useDrivePicker'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -78,6 +84,7 @@ export function TaskPanel({
   const archived = shelved || (board?.archived ?? false)
   const unsaved = useUnsavedFields()
   const [asking, setAsking] = useState(false)
+  const [expanded, expand] = useExpandedPanel()
   const close = () => {
     if (unsaved.any()) setAsking(true)
     else onClose()
@@ -88,6 +95,10 @@ export function TaskPanel({
       <SidePanel
         label={`${task.key} ${task.title}`}
         onClose={close}
+        expanded={expanded}
+        onExpand={expand}
+        expandLabel={t('task.expand')}
+        peekLabel={t('task.peek')}
         header={
           <>
             <TaskBreadcrumb task={task} board={board} />
@@ -101,7 +112,11 @@ export function TaskPanel({
               />
             )}
             <FollowButton task={task} boardId={boardId} />
-            <CopyLinkButton boardId={boardId} taskKey={task.key} />
+            <CopyLinkButton
+              boardId={boardId}
+              taskKey={task.key}
+              expanded={expanded}
+            />
             {editable && (
               <TaskMenu task={task} boardId={boardId} onRemoved={onClose} />
             )}
@@ -234,7 +249,8 @@ function CompleteButton({
 }): ReactElement {
   const { t } = useI18n()
   const theme = useTheme()
-  const phone = useMediaQuery(theme.breakpoints.down('md'))
+  const inPeek = useInPeek()
+  const iconOnly = useMediaQuery(theme.breakpoints.down('md')) || inPeek
   const { done, disabled, noDoneSection, toggle } = useCompleteToggle(
     task,
     boardId,
@@ -248,10 +264,10 @@ function CompleteButton({
     size: 'small',
     variant: done ? 'contained' : 'outlined',
     color: done ? 'success' : 'primary',
-    startIcon: phone ? undefined : icon,
-    'aria-label': phone ? label : undefined,
-    className: phone ? 'u-miw-auto u-ph-half' : undefined,
-    children: phone ? icon : label
+    startIcon: iconOnly ? undefined : icon,
+    'aria-label': iconOnly ? label : undefined,
+    className: iconOnly ? 'u-miw-auto u-ph-half' : undefined,
+    children: iconOnly ? icon : label
   } as const
 
   // aria-disabled keeps the button hoverable, so its tooltip can say why.
@@ -263,7 +279,7 @@ function CompleteButton({
     )
   }
   return (
-    <Tooltip title={phone && !disabled ? label : ''}>
+    <Tooltip title={iconOnly && !disabled ? label : ''}>
       <Button {...props} disabled={disabled} onClick={toggle} />
     </Tooltip>
   )

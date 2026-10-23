@@ -159,6 +159,8 @@
     "options": "Task options",
     "close": "Close",
     "copyLink": "Copy link",
+    "expand": "Open as full page",
+    "peek": "Open in side peek",
     "markComplete": "Mark complete",
     "completed": "Completed",
     "noDoneSection": "This board has no Done section.",

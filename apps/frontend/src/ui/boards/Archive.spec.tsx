@@ -120,6 +120,7 @@ describe('archive and trash', () => {
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     )
     expect(panel.queryByRole('button', { name: 'Task options' })).toBeNull()
+    fireEvent.click(panel.getByRole('button', { name: 'Open as full page' }))
     const crumbs = within(
       panel.getByRole('navigation', { name: 'Where the task is' })
     )

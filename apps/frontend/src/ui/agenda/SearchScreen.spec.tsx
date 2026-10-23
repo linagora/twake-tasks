@@ -46,6 +46,7 @@ describe('SearchScreen', () => {
     const panel = within(
       await screen.findByRole('dialog', { name: /^DES-1 New logo/ })
     )
+    fireEvent.click(panel.getByRole('button', { name: 'Open as full page' }))
 
     expect(
       within(

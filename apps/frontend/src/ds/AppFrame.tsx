@@ -16,7 +16,7 @@ import {
 import { useState, type ReactElement, type ReactNode } from 'react'
 
 import { CRUMB_BAR, CrumbHostContext } from '@/ds/CrumbBar'
-import { PanelHostContext } from '@/ds/SidePanel'
+import { PanelHostContext, PEEK_WIDTH } from '@/ds/SidePanel'
 
 export const TOP_BAR_HEIGHT = 64
 
@@ -33,8 +33,12 @@ const FrameLayout = styled(Layout)(({ theme }) => ({
 // Content is `height: 100%` plus a 16px margin on wide screens, which
 // overflows the window; stretching it in the flex row keeps the margin inside.
 // The content scrolls inside, under the layer an open task takes.
+// A peek leaves the page beside it, all of it in reach.
 const FrameContent = styled(Content)(({ theme }) => ({
   overflow: 'hidden',
+  [theme.breakpoints.up('md')]: {
+    '&:has([data-peek])': { paddingRight: PEEK_WIDTH }
+  },
   [theme.breakpoints.up('lg')]: { height: 'auto' }
 }))
 
@@ -72,7 +76,7 @@ export function AppFrame({
               >
                 {children}
               </Box>
-              {/* An open task covers the content, and only it. */}
+              {/* An open task covers the content, or a peek its right. */}
               <Box
                 ref={setPanelHost}
                 sx={{

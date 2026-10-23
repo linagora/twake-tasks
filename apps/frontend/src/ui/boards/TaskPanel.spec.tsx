@@ -519,6 +519,71 @@ describe('TaskPanel', () => {
     expect(panel.getByRole('heading', { name: 'Logo' })).toBeVisible()
   })
 
+  describe('peek', () => {
+    it('opens beside the board, whose other tasks open in its place', async () => {
+      const { board, boardsApi } = logoBoard()
+      board.tasks.push(
+        aTask(board.sections[0] ?? null, { key: 'DES-2', title: 'Icons' })
+      )
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      expect(
+        panel.getByRole('navigation', { name: 'Where the task is' })
+      ).toHaveTextContent(/^DES-1$/)
+      fireEvent.click(screen.getByRole('button', { name: 'Icons' }))
+
+      expect(
+        await screen.findByRole('dialog', { name: 'DES-2 Icons' })
+      ).toBeVisible()
+      expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+    })
+
+    it('expands to the full page and back, the link keeping the way', async () => {
+      const { board, boardsApi } = logoBoard()
+      const { router } = renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      fireEvent.click(panel.getByRole('button', { name: 'Open as full page' }))
+      await waitFor(() => {
+        expect(router.state.location.search).toBe('?task=DES-1&panel=full')
+      })
+      fireEvent.click(panel.getByRole('button', { name: 'Open in side peek' }))
+
+      await waitFor(() => {
+        expect(router.state.location.search).toBe('?task=DES-1')
+      })
+    })
+
+    it('opens a full page link expanded, and closes back to a peek', async () => {
+      const writeText = vi.fn(() => Promise.resolve())
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText },
+        configurable: true
+      })
+      const { board, boardsApi } = logoBoard()
+      const { router } = renderRoute(
+        `/boards/${board.id}?task=DES-1&panel=full`,
+        { boardsApi }
+      )
+
+      const panel = within(
+        await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+      )
+      fireEvent.click(panel.getByRole('button', { name: 'Copy link' }))
+      await waitFor(() => {
+        expect(writeText).toHaveBeenCalledWith(
+          `${window.location.origin}/boards/${board.id}?task=DES-1&panel=full`
+        )
+      })
+      fireEvent.click(panel.getByRole('button', { name: 'Close' }))
+
+      await waitFor(() => {
+        expect(router.state.location.search).toBe('')
+      })
+    })
+  })
+
   describe('copy link', () => {
     const stubClipboard = (writeText: () => Promise<void>) => {
       Object.defineProperty(navigator, 'clipboard', {
@@ -541,9 +606,11 @@ describe('TaskPanel', () => {
 
     it('shows where the task is, from the boards to its key', async () => {
       const { board, boardsApi } = logoBoard()
-      renderRoute(`/boards/${board.id}`, { boardsApi })
+      renderRoute(`/boards/${board.id}?task=DES-1&panel=full`, { boardsApi })
 
-      const panel = await openLogo()
+      const panel = within(
+        await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+      )
       const crumbs = within(
         panel.getByRole('navigation', { name: 'Where the task is' })
       )

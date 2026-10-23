@@ -159,6 +159,8 @@
     "options": "Opzioni dell’attività",
     "close": "Chiudi",
     "copyLink": "Copia link",
+    "expand": "Apri a pagina intera",
+    "peek": "Apri in un pannello laterale",
     "markComplete": "Segna come completata",
     "completed": "Completata",
     "noDoneSection": "Questa bacheca non ha una sezione Fatto.",

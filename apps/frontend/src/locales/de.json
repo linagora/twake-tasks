@@ -159,6 +159,8 @@
     "options": "Aufgabenoptionen",
     "close": "Schließen",
     "copyLink": "Link kopieren",
+    "expand": "Als ganze Seite öffnen",
+    "peek": "In der Seitenansicht öffnen",
     "markComplete": "Als erledigt markieren",
     "completed": "Erledigt",
     "noDoneSection": "Dieses Board hat keinen Abschnitt „Erledigt“.",

@@ -1,6 +1,8 @@
+import { Breadcrumbs, Link, Typography } from '@linagora/twake-mui'
 import { useContext, type ReactElement } from 'react'
-import { useLocation } from 'react-router'
+import { Link as RouterLink, useLocation } from 'react-router'
 
+import { useInPeek } from '@/ds/SidePanel'
 import type { Board, Task } from '@/domain/board'
 import {
   BoardStepContext,
@@ -23,7 +25,8 @@ export function TaskBreadcrumb({
   board: Board | undefined
 }): ReactElement {
   const { t } = useI18n()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
+  const inPeek = useInPeek()
   const boards = useBoardsOrigin()
   const origin = useContext(OriginContext) ?? boards
   const boardStep = useContext(BoardStepContext)
@@ -38,17 +41,39 @@ export function TaskBreadcrumb({
     }
   }
 
+  const parents = ancestors.map(parent => {
+    const params = new URLSearchParams(search)
+    params.set('task', parent.key)
+    return { to: `${pathname}?${params.toString()}`, label: parent.key }
+  })
+
+  // A peek sits beside the page and its board: the task's own path is enough.
+  if (inPeek) {
+    return (
+      <Breadcrumbs aria-label={t('task.breadcrumb')} className="u-miw-0">
+        {parents.map(parent => (
+          <Link
+            key={parent.to}
+            component={RouterLink}
+            to={parent.to}
+            color="inherit"
+            underline="hover"
+            variant="body2"
+          >
+            {parent.label}
+          </Link>
+        ))}
+        <Typography variant="body2" color="textPrimary" aria-current="page">
+          {task.key}
+        </Typography>
+      </Breadcrumbs>
+    )
+  }
   return (
     <Crumbs
       label={t('task.breadcrumb')}
       origin={origin}
-      steps={[
-        ...(boardStep ? [boardStep] : []),
-        ...ancestors.map(parent => ({
-          to: `${pathname}?task=${encodeURIComponent(parent.key)}`,
-          label: parent.key
-        }))
-      ]}
+      steps={[...(boardStep ? [boardStep] : []), ...parents]}
       current={task.key}
     />
   )

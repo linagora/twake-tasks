@@ -1,10 +1,13 @@
+import { Icon, Narrow } from '@linagora/twake-icons'
 import {
   Box,
   Drawer,
+  IconButton,
   InputBase,
   MenuItem,
   Select,
   styled,
+  Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import {
@@ -14,7 +17,8 @@ import {
   useRef,
   type ReactElement,
   type ReactNode,
-  type RefObject
+  type RefObject,
+  type SVGProps
 } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -41,8 +45,12 @@ function useFocusWhileOpen(
   useEffect(() => {
     if (!host) return
     const opener = document.activeElement
-    ref.current?.focus()
+    const panel = ref.current
+    panel?.focus()
     return () => {
+      // Another task clicked beside a peek has the focus, and opens there.
+      const now = document.activeElement
+      if (now && now !== document.body && !panel?.contains(now)) return
       // Safari focuses no button on click: the panel under it, if any, then.
       const back =
         opener instanceof HTMLElement && opener !== document.body
@@ -54,19 +62,54 @@ function useFocusWhileOpen(
   return ref
 }
 
+const PeekContext = createContext(false)
+
+/** True in a peek, whose header has room for the task's key and icons only. */
+export function useInPeek(): boolean {
+  return useContext(PeekContext)
+}
+
 // The panel's own width decides, not the window's: a drawer stays narrow on
 // a wide screen.
 const WIDE = '@container (min-width: 960px)'
+// Wide enough for a column of labels beside the values.
+const ROWS = '@container (min-width: 420px)'
 const ASIDE_WIDTH = 'max(280px, 100% / 3)'
+
+/** The width of a peek, which the frame leaves free beside the page. */
+export const PEEK_WIDTH = 'clamp(480px, 45vw, 760px)'
+
+// twake-icons has the arrows that narrow, not the ones that widen.
+function Widen(props: SVGProps<SVGSVGElement>): ReactElement {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" {...props}>
+      <path
+        d="M10 1.9h4.1V6m0-4.1L9.6 6.4M6 14.1H1.9V10m0 4.1 4.5-4.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
 
 /**
  * An open task: the content (two thirds) under its header, and a bar of
  * properties (one third) from the top. In a narrow panel, the properties sit
  * between the title and the rest of the content.
+ *
+ * In the frame, it opens in a peek beside the page, which stays in use, or
+ * expanded over the whole content. On a phone, both take the whole content.
  */
 export function SidePanel({
   label,
   onClose,
+  expanded,
+  onExpand,
+  expandLabel,
+  peekLabel,
   header,
   lead,
   aside,
@@ -74,6 +117,10 @@ export function SidePanel({
 }: {
   label: string
   onClose: () => void
+  expanded: boolean
+  onExpand: (expanded: boolean) => void
+  expandLabel: string
+  peekLabel: string
   header: ReactNode
   /** The title, and what must be read before it. */
   lead: ReactNode
@@ -119,6 +166,20 @@ export function SidePanel({
             bgcolor: 'background.paper'
           }}
         >
+          {host && (
+            <Tooltip title={expanded ? peekLabel : expandLabel}>
+              <IconButton
+                size="small"
+                aria-label={expanded ? peekLabel : expandLabel}
+                onClick={() => {
+                  onExpand(!expanded)
+                }}
+                sx={{ display: { xs: 'none', md: 'inline-flex' }, ml: -0.5 }}
+              >
+                <Icon icon={expanded ? Narrow : Widen} />
+              </IconButton>
+            </Tooltip>
+          )}
           {header}
         </Box>
         <Box sx={{ [WIDE]: { flex: 1, minHeight: 0, overflowY: 'auto' } }}>
@@ -129,19 +190,17 @@ export function SidePanel({
               ...gutter,
               ...column,
               py: 2,
-              mt: 2,
               // As thin and light as the header's line: widths only, since
               // a `border` shorthand in a query resets the colour.
               borderStyle: 'solid',
               borderColor: 'divider',
-              borderWidth: '1px 0',
+              borderWidth: '0 0 1px',
               [WIDE]: {
                 position: 'absolute',
                 top: 0,
                 right: 0,
                 bottom: 0,
                 width: ASIDE_WIDTH,
-                mt: 0,
                 overflowY: 'auto',
                 borderWidth: '0 0 0 1px'
               }
@@ -184,12 +243,14 @@ export function SidePanel({
       </Drawer>
     )
   }
+  const peek = !expanded
   return createPortal(
     <Box
       ref={focused}
       role="dialog"
       aria-label={label}
       tabIndex={-1}
+      data-peek={peek ? '' : undefined}
       onKeyDown={event => {
         if (event.key !== 'Escape' || inField(document.activeElement)) return
         event.stopPropagation()
@@ -198,13 +259,19 @@ export function SidePanel({
       sx={{
         position: 'absolute',
         inset: 0,
+        ...(peek && {
+          left: { md: 'auto' },
+          width: { md: PEEK_WIDTH },
+          borderLeft: { md: 1 },
+          borderColor: { md: 'divider' }
+        }),
         display: 'flex',
         flexDirection: 'column',
         bgcolor: 'background.paper',
         outline: 'none'
       }}
     >
-      {body}
+      <PeekContext value={peek}>{body}</PeekContext>
     </Box>,
     host
   )
@@ -316,7 +383,7 @@ export function Properties({
         gridTemplateColumns: 'repeat(auto-fill, minmax(min(220px, 100%), 1fr))',
         columnGap: 2,
         rowGap: 1,
-        [WIDE]: {
+        [ROWS]: {
           gridTemplateColumns: '8rem 1fr',
           rowGap: 0.5,
           alignItems: 'center'
@@ -339,10 +406,10 @@ export function Property({
   label: string
   children: ReactNode
 }): ReactElement {
-  // A narrow panel stacks each label over its value; a wide one lines the
-  // labels up in a column of their own.
+  // A phone stacks each label over its value; a wider panel lines the labels
+  // up in a column of their own.
   return (
-    <Box sx={{ minWidth: 0, [WIDE]: { display: 'contents' } }}>
+    <Box sx={{ minWidth: 0, [ROWS]: { display: 'contents' } }}>
       <Box
         component="dt"
         sx={{
@@ -351,7 +418,7 @@ export function Property({
           gap: 1,
           color: 'text.secondary',
           '& svg': { width: 16, height: 16, flexShrink: 0 },
-          [WIDE]: { minHeight: 40 }
+          [ROWS]: { minHeight: 40 }
         }}
       >
         {icon}
@@ -360,7 +427,7 @@ export function Property({
           variant="caption"
           color="inherit"
           noWrap
-          sx={theme => ({ [WIDE]: theme.typography.body2 })}
+          sx={theme => ({ [ROWS]: theme.typography.body2 })}
         >
           {label}
         </Typography>

@@ -159,6 +159,8 @@
     "options": "Opciones de la tarea",
     "close": "Cerrar",
     "copyLink": "Copiar enlace",
+    "expand": "Abrir a página completa",
+    "peek": "Abrir en un panel lateral",
     "markComplete": "Marcar como completada",
     "completed": "Completada",
     "noDoneSection": "Este tablero no tiene una sección Hecho.",

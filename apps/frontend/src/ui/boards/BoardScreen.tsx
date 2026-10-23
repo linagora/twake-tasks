@@ -185,6 +185,7 @@ function LinkedTask({
       current => {
         const next = new URLSearchParams(current)
         next.delete('task')
+        next.delete('panel')
         return next
       },
       { replace: true }

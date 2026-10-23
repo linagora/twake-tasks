@@ -159,6 +159,8 @@
     "options": "Tùy chọn công việc",
     "close": "Đóng",
     "copyLink": "Sao chép liên kết",
+    "expand": "Mở toàn trang",
+    "peek": "Mở ở khung bên",
     "markComplete": "Đánh dấu hoàn thành",
     "completed": "Đã hoàn thành",
     "noDoneSection": "Bảng này không có mục Hoàn thành.",
