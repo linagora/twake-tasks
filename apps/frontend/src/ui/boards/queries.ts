@@ -9,26 +9,27 @@ import {
 } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 
-import type {
-  Agenda,
-  AgendaTask,
-  BoardsApi,
-  Comment,
-  Description,
-  HiddenTask,
-  HistoryEntry,
-  NewBoard,
-  NewReminder,
-  NewTask,
-  Notification,
-  Project,
-  ProjectUnread,
-  Reminder,
-  SavedFilter,
-  Sharing,
-  Shelf,
-  TaskMove,
-  TransferPreview
+import {
+  ApiError,
+  type Agenda,
+  type AgendaTask,
+  type BoardsApi,
+  type Comment,
+  type Description,
+  type HiddenTask,
+  type HistoryEntry,
+  type NewBoard,
+  type NewReminder,
+  type NewTask,
+  type Notification,
+  type Project,
+  type ProjectUnread,
+  type Reminder,
+  type SavedFilter,
+  type Sharing,
+  type Shelf,
+  type TaskMove,
+  type TransferPreview
 } from '@/application/boards'
 import type { Board, BoardSummary, Layout, Person } from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
@@ -242,6 +243,26 @@ export function useBoard(boardId: string): UseQueryResult<Board> {
     queryKey: boardKey(boardId),
     queryFn: () => api.getBoard(boardId)
   })
+}
+
+// A project's frame opens only that project's boards: one of another project
+// is refused as if it did not exist.
+export function useBoardOf(
+  boardId: string,
+  projectId: string | undefined
+): {
+  board: UseQueryResult<Board>
+  shown: Board | undefined
+  missing: boolean
+} {
+  const board = useBoard(boardId)
+  const foreign =
+    projectId !== undefined &&
+    board.data !== undefined &&
+    board.data.project.id !== projectId
+  const missing =
+    foreign || (board.error instanceof ApiError && board.error.status === 404)
+  return { board, shown: missing ? undefined : board.data, missing }
 }
 
 export function useCreateTask(

@@ -24,7 +24,7 @@ import {
 } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router'
 
-import { ApiError, type HiddenTask, type Shelf } from '@/application/boards'
+import type { HiddenTask, Shelf } from '@/application/boards'
 import { LabelChip } from '@/ds/Columns'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { HeaderToggleGroup, PageHeader, ToggleLabel } from '@/ds/PageHeader'
@@ -32,7 +32,7 @@ import { ShelfHeader, ShelfList, ShelfRow, ShelfWhen } from '@/ds/ShelfList'
 import { Toast } from '@/ds/Toast'
 import type { Board, Task } from '@/domain/board'
 import { momentFormat } from '@/ui/boards/dueLabel'
-import { useBoard, useBoardChange, useHiddenTasks } from '@/ui/boards/queries'
+import { useBoardChange, useBoardOf, useHiddenTasks } from '@/ui/boards/queries'
 import { Assignees, PriorityChip } from '@/ui/boards/TaskFacts'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
@@ -174,15 +174,14 @@ export function ShelfScreen({
   flush?: boolean
 }): ReactElement {
   const { t } = useI18n()
-  const { boardId = '' } = useParams()
-  const board = useBoard(boardId)
+  const { boardId = '', projectId } = useParams()
+  const { board, shown, missing } = useBoardOf(boardId, projectId)
   const title = t(
     shelf === 'archived' ? 'archive.archivedTasks' : 'archive.trash'
   )
   const origin = { ...useBoardsOrigin(), to: '../../..', relative: true }
-  const boardStep = { to: '..', label: board.data?.name ?? '…', relative: true }
-  useDocumentTitle(board.data ? `${title} - ${board.data.name}` : null)
-  const missing = board.error instanceof ApiError && board.error.status === 404
+  const boardStep = { to: '..', label: shown?.name ?? '…', relative: true }
+  useDocumentTitle(shown ? `${title} - ${shown.name}` : null)
 
   return (
     <main className={flush ? undefined : 'u-p-2'}>
@@ -198,10 +197,10 @@ export function ShelfScreen({
         <Typography role="alert">{t('board.loadFailed')}</Typography>
       )}
       {board.isPending && <ListSkeleton label={t('app.loading')} />}
-      {board.data && (
+      {shown && (
         <OriginContext value={origin}>
           <BoardStepContext value={boardStep}>
-            <ShelfTasks board={board.data} shelf={shelf} title={title} />
+            <ShelfTasks board={shown} shelf={shelf} title={title} />
           </BoardStepContext>
         </OriginContext>
       )}
