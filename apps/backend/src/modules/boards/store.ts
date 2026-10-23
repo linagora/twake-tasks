@@ -146,20 +146,23 @@ export function createBoardStore(db: Db) {
       )
     },
 
-    /** Tasks whose key starts with, or whose title or description contains, `text`. */
+    /** Tasks whose key starts with, or whose title or description contains, `text`, an exact key match first. */
     search(identity: Identity, text: string) {
       const pattern = text.replace(/[\\%_]/g, '\\$&')
+      const keyMatches = (keyPattern: string) =>
+        sql`(${boards.keyPrefix} || '-' || ${tasks.number} ilike ${keyPattern}
+          or exists (select 1 from unnest(${tasks.previousKeys}) as key where key ilike ${keyPattern}))`
       return inTenant(db, identity, async tx => {
         const found = await tasksOf(
           tx,
           identity.userId,
           or(
-            sql`${boards.keyPrefix} || '-' || ${tasks.number} ilike ${`${pattern}%`}`,
-            sql`exists (select 1 from unnest(${tasks.previousKeys}) as key where key ilike ${`${pattern}%`})`,
+            keyMatches(`${pattern}%`),
             ilike(tasks.title, `%${pattern}%`),
             ilike(tasks.descriptionText, `%${pattern}%`)
           ),
-          SEARCH_LIMIT
+          SEARCH_LIMIT,
+          sql`${keyMatches(pattern)} desc`
         )
         const quoted = found.flatMap(task =>
           task.id && !task.title?.toLowerCase().includes(text.toLowerCase())
@@ -568,7 +571,8 @@ async function tasksOf(
   tx: Tx,
   userId: string,
   which: SQL | undefined,
-  limit?: number
+  limit?: number,
+  first?: SQL
 ) {
   const accessible = accessibleBoards(tx, userId)
   const parent = alias(tasks, 'parent')
@@ -591,6 +595,7 @@ async function tasksOf(
     .leftJoin(parent, eq(parent.id, tasks.parentId))
     .where(and(shown, which))
     .orderBy(
+      ...(first ? [first] : []),
       sql`${tasks.dueDate} asc nulls last`,
       sql`${tasks.dueTime} asc nulls last`,
       sql`${tasks.priority} asc nulls last`,

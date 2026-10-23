@@ -16,6 +16,7 @@ async function aBoardOf(owner: TestUser, keyPrefix: string) {
     await api.as(owner).post('/boards', { name: keyPrefix, keyPrefix })
   ).json<{ id: string }>()
   return {
+    id,
     add: async (title: string, description?: string) => {
       const task = (
         await api
@@ -51,6 +52,22 @@ describe('search', () => {
     expect(await search(owner, 'hom-1')).toEqual(['HOM-1'])
     expect(await search(owner, 'palette')).toEqual(['DES-2'])
     expect(await search(owner, '100%')).toEqual([])
+  })
+
+  it('lists the task whose key is the query first', async () => {
+    const owner = aUser()
+    const board = await aBoardOf(owner, 'SRK')
+    await board.add('Undated')
+    for (let n = 2; n <= 11; n++) {
+      const task = await board.add(`Task ${String(n)}`)
+      if (n >= 10) {
+        await api.as(owner).patch(`/boards/${board.id}/tasks/${task.id}`, {
+          dueDate: '2026-11-01'
+        })
+      }
+    }
+
+    expect(await search(owner, 'srk-1')).toEqual(['SRK-1', 'SRK-10', 'SRK-11'])
   })
 
   it('quotes the part of the description that matches, when the title does not', async () => {
