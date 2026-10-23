@@ -43,6 +43,7 @@
     "@tiptap/suggestion": "^3.31.4",
     "cozy-intent": "^2.31.1",
     "dayjs": "^1.11.23",
+    "linkifyjs": "^4.3.3",
     "marked": "^17.0.6",
     "openid-client": "^6.8.8",
     "react": "^19.3.0",

@@ -142,6 +142,36 @@ describe('link tool', () => {
     )
   })
 
+  it.each([
+    ['example.org/x', 'https://example.org/x'],
+    ['example.org:8080/x', 'https://example.org:8080/x'],
+    ['bob@example.com', 'mailto:bob@example.com'],
+    ['mailto:bob@example.com', 'mailto:bob@example.com'],
+    ['/boards/1', '/boards/1'],
+    ['#notes', '#notes']
+  ])('links %s to %s', async (typed, href) => {
+    renderWithProviders(
+      <RichTextEditor
+        label="Description"
+        initial="Website"
+        labels={LABELS}
+        onChange={vi.fn()}
+      />
+    )
+
+    await screen.findByRole('textbox', { name: 'Description' })
+    fireEvent.click(screen.getByRole('button', { name: 'Link' }))
+    fireEvent.change(await screen.findByRole('textbox', { name: 'URL' }), {
+      target: { value: typed }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(await screen.findByRole('link', { name: href })).toHaveAttribute(
+      'href',
+      href
+    )
+  })
+
   it('does not insert an address with a script protocol', async () => {
     const onChange = vi.fn()
     renderWithProviders(

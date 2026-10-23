@@ -20,6 +20,18 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react'
+import { find } from 'linkifyjs'
+
+const SCHEME_OR_PATH = /^(?:[a-z][a-z\d+.-]*:|[/#?])/i
+
+// A link without a scheme would open a path inside the app. linkify, which
+// tiptap pastes with, goes first: it reads "example.org:8080" as a host, where
+// the scheme test alone sees an "example.org:" scheme, and "bob@example.org"
+// as a mail address.
+const hrefOf = (typed: string): string =>
+  find(typed, { defaultProtocol: 'https' }).find(
+    link => link.isLink && link.value === typed
+  )?.href ?? (!typed || SCHEME_OR_PATH.test(typed) ? typed : `https://${typed}`)
 
 export interface RichTextLabels {
   toolbar: string
@@ -171,7 +183,7 @@ export function Toolbar({
           onSubmit={event => {
             event.preventDefault()
             event.stopPropagation()
-            const href = url.trim()
+            const href = hrefOf(url.trim())
             setLinkAnchor(null)
             // setLink checks the protocol and that a link fits where the caret is
             if (!href || !editor.can().setLink({ href })) return
