@@ -1,23 +1,26 @@
-import { Filter, Icon, Plus, Trash } from '@linagora/twake-icons'
+import { Check, Filter, Icon, Pen, Plus, Trash } from '@linagora/twake-icons'
 import {
+  Alert,
   Button,
   IconButton,
   Link,
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
-import type { FilterCriteria } from '@/application/boards'
+import type { FilterCriteria, SavedFilter } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { FormPanel } from '@/ds/FormPanel'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
+import { Toast } from '@/ds/Toast'
 import {
   useCreateFilter,
   useDeleteFilter,
   useFilters,
-  useLabelNames
+  useLabelNames,
+  useUpdateFilter
 } from '@/ui/boards/queries'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -36,8 +39,9 @@ const SELECT_SLOTS = {
 export function FiltersScreen(): ReactElement {
   const { t } = useI18n()
   const filters = useFilters()
-  const remove = useDeleteFilter()
-  const [creating, setCreating] = useState(false)
+  const [form, setForm] = useState<SavedFilter | 'new' | null>(null)
+  const [deleted, setDeleted] = useState<SavedFilter | null>(null)
+  const shown = filters.data?.filter(filter => filter.id !== deleted?.id)
   useDocumentTitle(t('filters.title'))
   const summary = (criteria: FilterCriteria) => {
     const parts = [
@@ -67,21 +71,23 @@ export function FiltersScreen(): ReactElement {
         <Typography variant="h3" component="h1">
           {t('filters.title')}
         </Typography>
-        {!creating && (
+        {!form && (
           <Button
             startIcon={<Icon icon={Plus} />}
             onClick={() => {
-              setCreating(true)
+              setForm('new')
             }}
           >
             {t('filters.new')}
           </Button>
         )}
       </div>
-      {creating && (
-        <NewFilter
+      {form && (
+        <FilterForm
+          key={form === 'new' ? form : form.id}
+          filter={form === 'new' ? undefined : form}
           onClose={() => {
-            setCreating(false)
+            setForm(null)
           }}
         />
       )}
@@ -89,7 +95,7 @@ export function FiltersScreen(): ReactElement {
         <Typography role="alert">{t('filters.loadFailed')}</Typography>
       )}
       {filters.isPending && <ListSkeleton label={t('app.loading')} rows={2} />}
-      {filters.data?.length === 0 && (
+      {shown?.length === 0 && (
         <EmptyState
           icon={Filter}
           illustrated
@@ -97,9 +103,9 @@ export function FiltersScreen(): ReactElement {
           text={t('filters.emptyHint')}
         />
       )}
-      {filters.data && filters.data.length > 0 && (
-        <TaskGroup label={t('filters.saved')} count={filters.data.length}>
-          {filters.data.map(filter => (
+      {shown && shown.length > 0 && (
+        <TaskGroup label={t('filters.saved')} count={shown.length}>
+          {shown.map(filter => (
             <TaskRow
               key={filter.id}
               label={filter.name}
@@ -111,34 +117,127 @@ export function FiltersScreen(): ReactElement {
               }
               context={summary(filter.criteria)}
               trailing={
-                <IconButton
-                  size="small"
-                  disabled={remove.isPending}
-                  onClick={() => {
-                    remove.mutate(filter.id)
-                  }}
-                  aria-label={t('filters.delete', { name: filter.name })}
-                >
-                  <Icon icon={Trash} size={16} />
-                </IconButton>
+                <>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setForm(filter)
+                    }}
+                    aria-label={t('filters.edit', { name: filter.name })}
+                  >
+                    <Icon icon={Pen} size={16} />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      if (form !== 'new' && form?.id === filter.id) {
+                        setForm(null)
+                      }
+                      setDeleted(filter)
+                    }}
+                    aria-label={t('filters.delete', { name: filter.name })}
+                  >
+                    <Icon icon={Trash} size={16} />
+                  </IconButton>
+                </>
               }
             />
           ))}
         </TaskGroup>
       )}
+      {deleted && (
+        <DeletedNotice
+          key={deleted.id}
+          filter={deleted}
+          onClose={() => {
+            setDeleted(null)
+          }}
+        />
+      )}
     </main>
   )
 }
 
-function NewFilter({ onClose }: { onClose: () => void }): ReactElement {
+// The filter is deleted when the notice goes, by timeout or by leaving the
+// page, unless Undo was clicked.
+function DeletedNotice({
+  filter,
+  onClose
+}: {
+  filter: SavedFilter
+  onClose: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const { mutate: remove } = useDeleteFilter()
+  const undone = useRef(false)
+  const leaving = useRef<number>(undefined)
+  useEffect(() => {
+    // StrictMode unmounts once right after mounting: only a real unmount
+    // lets the timer run.
+    window.clearTimeout(leaving.current)
+    return () => {
+      leaving.current = window.setTimeout(() => {
+        if (!undone.current) remove(filter.id)
+      })
+    }
+  }, [filter.id, remove])
+
+  return (
+    <Toast
+      open
+      autoHideDuration={6000}
+      onClose={(_, reason) => {
+        if (reason !== 'clickaway') onClose()
+      }}
+    >
+      <Alert
+        severity="info"
+        role="status"
+        action={
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => {
+              undone.current = true
+              onClose()
+            }}
+          >
+            {t('archive.undo')}
+          </Button>
+        }
+      >
+        {t('filters.deleted', { name: filter.name })}
+      </Alert>
+    </Toast>
+  )
+}
+
+export function FilterForm({
+  filter,
+  onClose
+}: {
+  filter?: SavedFilter | undefined
+  onClose: () => void
+}): ReactElement {
   const { t } = useI18n()
   const create = useCreateFilter()
+  const update = useUpdateFilter(filter?.id ?? '')
   const labelNames = useLabelNames()
-  const [name, setName] = useState('')
-  const [assignee, setAssignee] = useState<(typeof ASSIGNEES)[number]>('')
-  const [priority, setPriority] = useState<(typeof PRIORITIES)[number]>('')
-  const [label, setLabel] = useState('')
-  const [due, setDue] = useState<(typeof DUES)[number]>('')
+  const initial = filter?.criteria ?? {}
+  const [name, setName] = useState(filter?.name ?? '')
+  const [assignee, setAssignee] = useState<(typeof ASSIGNEES)[number]>(
+    initial.assignee ?? ''
+  )
+  const [priority, setPriority] = useState<(typeof PRIORITIES)[number]>(
+    String(initial.priority ?? '') as (typeof PRIORITIES)[number]
+  )
+  const [label, setLabel] = useState(initial.label ?? '')
+  const [due, setDue] = useState<(typeof DUES)[number]>(initial.due ?? '')
+  const save = filter ? update : create
+  // A label no board has any more stays choosable, so saving keeps it.
+  const labels = [
+    ...new Set([...(labelNames.data ?? []), ...(label ? [label] : [])])
+  ]
 
   const criteria: FilterCriteria = {
     ...(assignee && { assignee }),
@@ -149,14 +248,16 @@ function NewFilter({ onClose }: { onClose: () => void }): ReactElement {
 
   return (
     <FormPanel
-      title={t('filters.new')}
+      title={t(filter ? 'filters.editTitle' : 'filters.new')}
       onSubmit={event => {
         event.preventDefault()
-        create.mutate({ name: name.trim(), criteria }, { onSuccess: onClose })
+        const changes = { name: name.trim(), criteria }
+        if (filter) update.mutate(changes, { onSuccess: onClose })
+        else create.mutate(changes, { onSuccess: onClose })
       }}
       actions={
         <>
-          {create.isError && (
+          {save.isError && (
             <Typography role="alert" variant="caption" color="error">
               {t('filters.saveFailed')}
             </Typography>
@@ -166,8 +267,8 @@ function NewFilter({ onClose }: { onClose: () => void }): ReactElement {
           </Button>
           <Button
             type="submit"
-            startIcon={<Icon icon={Plus} />}
-            disabled={create.isPending || !name.trim()}
+            startIcon={<Icon icon={filter ? Check : Plus} />}
+            disabled={save.isPending || !name.trim()}
           >
             {t('filters.save')}
           </Button>
@@ -224,7 +325,7 @@ function NewFilter({ onClose }: { onClose: () => void }): ReactElement {
         slotProps={SELECT_SLOTS}
       >
         <option value="">{t('filters.assignees.any')}</option>
-        {labelNames.data?.map(name => (
+        {labels.map(name => (
           <option key={name} value={name}>
             {name}
           </option>

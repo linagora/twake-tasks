@@ -147,11 +147,33 @@ export function useCreateFilter(): UseMutationResult<
   })
 }
 
+export function useUpdateFilter(
+  filterId: string
+): UseMutationResult<void, Error, Omit<SavedFilter, 'id'>> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (filter: Omit<SavedFilter, 'id'>) =>
+      api.updateFilter(filterId, filter),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: filtersKey }),
+        queryClient.invalidateQueries({ queryKey: ['agenda', { filterId }] })
+      ])
+  })
+}
+
 export function useDeleteFilter(): UseMutationResult<void, Error, string> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (filterId: string) => api.deleteFilter(filterId),
+    onMutate: async filterId => {
+      await queryClient.cancelQueries({ queryKey: filtersKey })
+      queryClient.setQueryData<SavedFilter[]>(filtersKey, filters =>
+        filters?.filter(filter => filter.id !== filterId)
+      )
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
   })
 }
