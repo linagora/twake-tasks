@@ -1,7 +1,8 @@
 import { Icon, Link } from '@linagora/twake-icons'
-import { Alert, IconButton, Snackbar, Tooltip } from '@linagora/twake-mui'
+import { Alert, IconButton, Tooltip } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 
+import { Toast } from '@/ds/Toast'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 type Outcome = 'copied' | 'failed' | null
@@ -63,7 +64,7 @@ export function CopyLinkButton({
           <Icon icon={Link} />
         </IconButton>
       </Tooltip>
-      <Snackbar
+      <Toast
         open={outcome !== null}
         autoHideDuration={4000}
         onClose={() => {
@@ -76,7 +77,7 @@ export function CopyLinkButton({
         >
           {outcome === 'failed' ? t('task.copyFailed') : t('task.linkCopied')}
         </Alert>
-      </Snackbar>
+      </Toast>
     </>
   )
 }
