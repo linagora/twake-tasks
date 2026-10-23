@@ -316,6 +316,106 @@ describe('TaskPanel', () => {
     })
   })
 
+  it('asks before closing over an unsaved description', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(
+      await panel.findByRole('button', { name: 'Edit description' })
+    )
+    await typeRichText(
+      await panel.findByRole('textbox', { name: 'Description' }),
+      'Half typed'
+    )
+    fireEvent.click(panel.getByRole('button', { name: 'Close' }))
+    const ask = within(
+      await screen.findByRole('dialog', { name: 'Discard your changes?' })
+    )
+    fireEvent.click(ask.getByRole('button', { name: 'Keep editing' }))
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Discard your changes?' })
+      ).toBeNull()
+    })
+    expect(
+      panel.getByRole('textbox', { name: 'Description' })
+    ).toHaveTextContent('Half typed')
+
+    fireEvent.click(panel.getByRole('button', { name: 'Close' }))
+    fireEvent.click(
+      within(
+        await screen.findByRole('dialog', { name: 'Discard your changes?' })
+      ).getByRole('button', { name: 'Discard' })
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+    })
+  })
+
+  it('asks before Escape closes over an unsaved comment', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    await typeRichText(
+      await panel.findByRole('textbox', { name: 'Comment' }),
+      'Comment draft'
+    )
+    fireEvent.keyDown(panel.getByRole('button', { name: 'Close' }), {
+      key: 'Escape'
+    })
+
+    const ask = await screen.findByRole('dialog', {
+      name: 'Discard your changes?'
+    })
+    fireEvent.keyDown(ask, { key: 'Escape' })
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Discard your changes?' })
+      ).toBeNull()
+    })
+    expect(panel.getByRole('textbox', { name: 'Comment' })).toHaveTextContent(
+      'Comment draft'
+    )
+  })
+
+  it('keeps the comment draft across a look at the history', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    await typeRichText(
+      await panel.findByRole('textbox', { name: 'Comment' }),
+      'Comment draft'
+    )
+    fireEvent.click(panel.getByRole('tab', { name: 'History' }))
+    fireEvent.click(panel.getByRole('tab', { name: 'Comments' }))
+
+    expect(panel.getByRole('textbox', { name: 'Comment' })).toHaveTextContent(
+      'Comment draft'
+    )
+  })
+
+  it('asks before closing over an unsaved sub-task', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(panel.getByRole('button', { name: 'Add a sub-task' }))
+    fireEvent.change(panel.getByRole('textbox', { name: 'Sub-task title' }), {
+      target: { value: 'Sub draft' }
+    })
+    fireEvent.click(panel.getByRole('button', { name: 'Close' }))
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Discard your changes?' })
+    ).toBeVisible()
+  })
+
   it('offers no edit to a viewer', async () => {
     const { board, boardsApi } = logoBoard()
     board.role = 'viewer'

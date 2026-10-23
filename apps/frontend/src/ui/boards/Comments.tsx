@@ -10,6 +10,7 @@ import { momentFormat } from '@/ui/boards/dueLabel'
 import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useAddComment, useComments } from '@/ui/boards/queries'
+import { useUnsaved } from '@/ui/boards/unsaved'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
@@ -37,6 +38,7 @@ export function Comments({
   const add = useAddComment(boardId, task.id)
   const [body, setBody] = useState('')
   const [draft, setDraft] = useState(0)
+  useUnsaved(body.trim() !== '')
   const format = momentFormat(lang)
   const sendable = !add.isPending && body !== '' && body.length <= MAX_COMMENT
   const mentionable = (query: string) => {

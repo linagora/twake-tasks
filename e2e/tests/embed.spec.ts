@@ -175,6 +175,7 @@ test("opens a task's panel on the page of TwakeSpace, not in its frame", async (
     )
 
     await page.keyboard.press('Escape')
+    await overlay.getByRole('button', { name: 'Discard', exact: true }).click()
     await expect(panel).toBeHidden()
     await expect.poll(clipPath).toMatch(/^inset/)
     await expect(card).toBeFocused()
