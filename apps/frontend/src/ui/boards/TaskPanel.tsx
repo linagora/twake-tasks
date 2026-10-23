@@ -325,6 +325,7 @@ function Description({
   const description = useDescription(boardId, task.id)
   const save = useSetDescription(boardId, task.id)
   const [draft, setDraft] = useState<string | null>(null)
+  const [draftVersion, setDraftVersion] = useState(0)
   const stale =
     save.error instanceof ApiError && save.error.code === 'stale_version'
 
@@ -342,6 +343,7 @@ function Description({
               aria-label={t('task.editDescription')}
               onClick={() => {
                 setDraft(description.data.markdown)
+                setDraftVersion(description.data.version)
               }}
             >
               <Icon icon={Pen} size={14} />
@@ -367,7 +369,10 @@ function Description({
           onSubmit={event => {
             event.preventDefault()
             save.mutate(
-              { markdown: draft, version: description.data.version },
+              {
+                markdown: draft,
+                version: stale ? description.data.version : draftVersion
+              },
               {
                 onSuccess: () => {
                   setDraft(null)
@@ -398,7 +403,11 @@ function Description({
                 <Button
                   type="submit"
                   size="small"
-                  disabled={save.isPending || draft.length > MAX_DESCRIPTION}
+                  disabled={
+                    save.isPending ||
+                    (stale && description.isFetching) ||
+                    draft.length > MAX_DESCRIPTION
+                  }
                 >
                   {t('board.save')}
                 </Button>
