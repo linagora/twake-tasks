@@ -1,5 +1,6 @@
 import {
   CheckSquare,
+  Drive,
   Icon,
   Link as LinkIcon,
   List,
@@ -47,12 +48,20 @@ export interface RichTextLabels {
   apply: string
 }
 
+/** Picks links from elsewhere (Twake Drive); none when the user cancels. */
+export interface LinkPicker {
+  label: string
+  pick: () => Promise<readonly { name: string; url: string }[]>
+}
+
 export function Toolbar({
   editor,
-  labels
+  labels,
+  linkPicker
 }: {
   editor: Editor
   labels: RichTextLabels
+  linkPicker?: LinkPicker | undefined
 }): ReactElement {
   const [linkAnchor, setLinkAnchor] = useState<HTMLElement | null>(null)
   const [url, setUrl] = useState('')
@@ -169,6 +178,34 @@ export function Toolbar({
       >
         <Icon icon={LinkIcon} size={16} />
       </Tool>
+      {linkPicker && (
+        <Tool
+          label={linkPicker.label}
+          onClick={() => {
+            void linkPicker.pick().then(links => {
+              const fits = links.every(link =>
+                editor.can().setLink({ href: link.url })
+              )
+              if (links.length === 0 || !fits) return
+              chain()
+                .insertContent(
+                  links.flatMap((link, index) => [
+                    ...(index > 0 ? [{ type: 'text', text: ' ' }] : []),
+                    {
+                      type: 'text',
+                      text: link.name,
+                      marks: [{ type: 'link', attrs: { href: link.url } }]
+                    }
+                  ])
+                )
+                .unsetMark('link')
+                .run()
+            })
+          }}
+        >
+          <Icon icon={Drive} size={16} />
+        </Tool>
+      )}
       <Popover
         open={linkAnchor !== null}
         anchorEl={linkAnchor}
@@ -233,7 +270,7 @@ function Tool({
   children
 }: {
   label: string
-  pressed: boolean
+  pressed?: boolean
   onClick: (event: MouseEvent<HTMLButtonElement>) => void
   children: ReactNode
 }): ReactElement {

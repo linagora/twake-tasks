@@ -4,6 +4,10 @@ import { connectSpaceOverlay } from '@linagora/twake-mui'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
+import {
+  isDrivePickerEnabled,
+  twakeDrivePicker
+} from '@/adapters/drive/twakeDrivePicker'
 import { httpBoardsApi } from '@/adapters/http/httpBoardsApi'
 import { embedSession, isEmbedded } from '@/adapters/oidc/embedSession'
 import {
@@ -49,6 +53,7 @@ if (!relayCallback()) {
         boardsApi={boardsApi}
         overlay={overlay}
         reporting={reporting}
+        drivePicker={isDrivePickerEnabled(window) ? twakeDrivePicker : null}
       />
     </StrictMode>
   )

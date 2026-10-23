@@ -79,3 +79,8 @@ Security headers. The image builds the Content Security Policy itself, adding th
 Sources are space separated, and must not hold double quotes, backslashes, dollar signs, semicolons or commas.
 
 Error reporting: `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_FEEDBACK_ENABLED`. See [error reporting](error-reporting.md).
+
+Twake Drive:
+
+- `DRIVE_PICKER_ENABLED=true` adds a Drive button to the toolbar of the task description and of comments. It opens the Twake Drive file picker and inserts a public, read-only sharing link for each file or folder picked. Off by default. It needs `workplaceFqdn` in `SSO_SCOPE` and the workplace origins in `CSP_CONNECT_SRC`, like the platform top bar.
+- The picker is a frame served by the Drive app of each workplace (with flat subdomains, `alice.twake.app` serves it on `alice-drive.twake.app`): add those origins to `CSP_FRAME_SRC`, for example `https://*.twake.app`.

@@ -9,6 +9,10 @@ import { AppProviders } from '@/app/AppProviders'
 import { makeQueryClient } from '@/app/queryClient'
 import { routes } from '@/app/routes'
 import { BoardsApiProvider } from '@/ui/boards/BoardsApiProvider'
+import {
+  DrivePickerProvider,
+  type ConnectDrive
+} from '@/ui/drive/useDrivePicker'
 import { findPreferredLanguage } from '@/ui/i18n/languages'
 import { ReportingProvider } from '@/ui/reporting/ReportingProvider'
 import { SessionGate } from '@/ui/session/SessionGate'
@@ -19,13 +23,16 @@ export interface AppProps {
   boardsApi: BoardsApi
   overlay?: SpaceOverlay | null
   reporting?: Reporting
+  /** Null when the Drive picker is turned off. */
+  drivePicker?: ConnectDrive | null
 }
 
 export function App({
   session,
   boardsApi,
   overlay = null,
-  reporting = noReporting
+  reporting = noReporting,
+  drivePicker = null
 }: AppProps): ReactElement {
   const [queryClient] = useState(makeQueryClient)
   const [lang] = useState(findPreferredLanguage)
@@ -35,9 +42,11 @@ export function App({
       <ReportingProvider reporting={reporting}>
         <SessionGate session={session}>
           <BoardsApiProvider api={boardsApi}>
-            <FollowSettings>
-              <AppRouter />
-            </FollowSettings>
+            <DrivePickerProvider connect={drivePicker}>
+              <FollowSettings>
+                <AppRouter />
+              </FollowSettings>
+            </DrivePickerProvider>
           </BoardsApiProvider>
         </SessionGate>
       </ReportingProvider>

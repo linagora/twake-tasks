@@ -12,5 +12,7 @@ declare global {
     SENTRY_ENVIRONMENT?: string
     /** "true" offers the feedback button, once SENTRY_DSN is set. */
     SENTRY_FEEDBACK_ENABLED?: string
+    /** "true" offers the Twake Drive picker in the rich text toolbar. */
+    DRIVE_PICKER_ENABLED?: string
   }
 }

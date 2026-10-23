@@ -231,6 +231,73 @@ describe('link tool', () => {
   })
 })
 
+describe('link picker tool', () => {
+  it('shows no button without a link picker', async () => {
+    renderWithProviders(
+      <RichTextEditor
+        label="Description"
+        initial="Files"
+        labels={LABELS}
+        onChange={vi.fn()}
+      />
+    )
+
+    await screen.findByRole('textbox', { name: 'Description' })
+    expect(screen.queryByRole('button', { name: 'Drive' })).toBeNull()
+  })
+
+  it('inserts each link picked as a markdown link named after the file', async () => {
+    const onChange = vi.fn()
+    renderWithProviders(
+      <RichTextEditor
+        label="Description"
+        initial="Files"
+        labels={LABELS}
+        onChange={onChange}
+        linkPicker={{
+          label: 'Drive',
+          pick: () =>
+            Promise.resolve([
+              { name: 'Plan.pdf', url: 'https://alice-drive.test/public/1' },
+              { name: 'Specs', url: 'https://alice-drive.test/public/2' }
+            ])
+        }}
+      />
+    )
+
+    await screen.findByRole('textbox', { name: 'Description' })
+    fireEvent.click(screen.getByRole('button', { name: 'Drive' }))
+
+    expect(
+      await screen.findByRole('link', { name: 'Plan.pdf' })
+    ).toHaveAttribute('href', 'https://alice-drive.test/public/1')
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.stringContaining(
+        '[Plan.pdf](https://alice-drive.test/public/1) [Specs](https://alice-drive.test/public/2)'
+      )
+    )
+  })
+
+  it('leaves the text alone when nothing is picked', async () => {
+    const onChange = vi.fn()
+    renderWithProviders(
+      <RichTextEditor
+        label="Description"
+        initial="Files"
+        labels={LABELS}
+        onChange={onChange}
+        linkPicker={{ label: 'Drive', pick: () => Promise.resolve([]) }}
+      />
+    )
+
+    await screen.findByRole('textbox', { name: 'Description' })
+    fireEvent.click(screen.getByRole('button', { name: 'Drive' }))
+    await Promise.resolve()
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
 describe('checklists in rich text', () => {
   it('show the checkboxes of saved text as read-only', async () => {
     renderWithProviders(<RichText markdown="- [ ] check me" />)

@@ -198,7 +198,14 @@
     "commentPlaceholder": "Écrire un commentaire…",
     "descriptionPlaceholder": "Ajoutez des détails, des étapes ou des liens…",
     "sendHint": "Ctrl+Entrée pour envoyer",
-    "mentionsLabel": "Personnes à mentionner"
+    "mentionsLabel": "Personnes à mentionner",
+    "drive": "Lier un fichier de Twake Drive"
+  },
+  "drive": {
+    "title": "Twake Drive",
+    "insertLinks": "Insérer les liens",
+    "failed": "Impossible d’ouvrir Twake Drive. Réessayez plus tard.",
+    "close": "Fermer"
   },
   "history": {
     "heading": "Historique",

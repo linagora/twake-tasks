@@ -46,6 +46,7 @@ import {
   useUnsavedFields
 } from '@/ui/boards/unsaved'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
+import { useDrivePicker } from '@/ui/drive/useDrivePicker'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -427,6 +428,7 @@ function Description({
 }): ReactElement {
   const { t } = useI18n()
   const labels = useRichTextLabels()
+  const drive = useDrivePicker()
   const description = useDescription(boardId, task.id)
   const save = useSetDescription(boardId, task.id)
   const [draft, setDraft] = useState<string | null>(null)
@@ -494,6 +496,7 @@ function Description({
             labels={labels}
             minHeight={144}
             onChange={setDraft}
+            linkPicker={drive.linkPicker}
             footer={
               <>
                 <Button
@@ -532,6 +535,7 @@ function Description({
           )}
         </form>
       )}
+      {drive.dialog}
     </PanelSection>
   )
 }

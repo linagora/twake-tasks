@@ -12,6 +12,7 @@ import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useAddComment, useComments } from '@/ui/boards/queries'
 import { useUnsaved } from '@/ui/boards/unsaved'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
+import { useDrivePicker } from '@/ui/drive/useDrivePicker'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 
@@ -34,6 +35,7 @@ export function Comments({
   const { t, lang } = useI18n()
   const { user } = useSession()
   const labels = useRichTextLabels()
+  const drive = useDrivePicker()
   const comments = useComments(boardId, task.id)
   const add = useAddComment(boardId, task.id)
   const [body, setBody] = useState('')
@@ -124,6 +126,7 @@ export function Comments({
             onChange={setBody}
             onSubmit={send}
             mentions={names}
+            linkPicker={drive.linkPicker}
             suggestions={{
               trigger: '@',
               label: t('editor.mentionsLabel'),
@@ -182,6 +185,7 @@ export function Comments({
           )}
         </form>
       )}
+      {drive.dialog}
     </section>
   )
 }
