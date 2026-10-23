@@ -234,6 +234,7 @@
     "pin": "Garder cette heure en %{zone}",
     "deadline": "Date limite",
     "deadlineOn": "Date limite %{date}",
+    "deadlineTooEarly": "La date limite ne peut pas précéder la date d'échéance.",
     "duration": "Durée",
     "unit": "Unité",
     "unitMinutes": "Minutes",
@@ -334,7 +335,8 @@
     "no_title": "La tâche doit avoir un titre.",
     "unknown_board": "Aucun tableau nommé %{name}.",
     "unknown_section": "Aucune section nommée %{name}.",
-    "unknown_person": "Aucun membre nommé %{name}."
+    "unknown_person": "Aucun membre nommé %{name}.",
+    "deadline_before_due": "La date limite ne peut pas précéder la date d'échéance."
   },
   "shortcuts": {
     "title": "Raccourcis clavier",

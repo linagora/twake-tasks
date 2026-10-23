@@ -76,7 +76,8 @@ describe('quickAdd', () => {
     ['Logo #Marketing', 'unknown_board', 'Marketing'],
     ['Logo #DES /Review', 'unknown_section', 'Review'],
     ['Logo #DES +carol', 'unknown_person', 'carol'],
-    ['#DES p1 tomorrow', 'no_title', undefined]
+    ['#DES p1 tomorrow', 'no_title', undefined],
+    ['Logo #DES in 3 days {tomorrow}', 'deadline_before_due', undefined]
   ])('refuses "%s" before creating anything', async (line, code, typed) => {
     const { inbox, design, api } = boards()
 

@@ -90,11 +90,13 @@ export function DayCalendar({
 export function DayField({
   label,
   value,
-  onChange
+  onChange,
+  error
 }: {
   label: string
   value: string
   onChange: (day: string) => void
+  error?: string | undefined
 }): ReactElement {
   return (
     <DatePicker
@@ -104,7 +106,12 @@ export function DayField({
         onChange(next?.isValid() ? next.format(DAY) : '')
       }}
       slotProps={{
-        textField: { size: 'small', fullWidth: true },
+        textField: {
+          size: 'small',
+          fullWidth: true,
+          error: Boolean(error),
+          helperText: error
+        },
         field: { clearable: true }
       }}
     />

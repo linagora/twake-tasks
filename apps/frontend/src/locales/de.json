@@ -234,6 +234,7 @@
     "pin": "Diese Uhrzeit in %{zone} beibehalten",
     "deadline": "Frist",
     "deadlineOn": "Frist %{date}",
+    "deadlineTooEarly": "Die Frist darf nicht vor dem Fälligkeitsdatum liegen.",
     "duration": "Dauer",
     "unit": "Einheit",
     "unitMinutes": "Minuten",
@@ -334,7 +335,8 @@
     "no_title": "Die Aufgabe braucht einen Titel.",
     "unknown_board": "Kein Board namens %{name}.",
     "unknown_section": "Kein Abschnitt namens %{name}.",
-    "unknown_person": "Kein Mitglied namens %{name}."
+    "unknown_person": "Kein Mitglied namens %{name}.",
+    "deadline_before_due": "Die Frist darf nicht vor dem Fälligkeitsdatum liegen."
   },
   "shortcuts": {
     "title": "Tastenkürzel",

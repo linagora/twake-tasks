@@ -269,6 +269,18 @@ function withDates(task: typeof tasks.$inferSelect, changes: TaskChanges) {
   if ((changes.dueTime || recurrence) && dueDate === null) {
     throw new Refused('invalid_dates')
   }
+  const deadline =
+    changes.deadline === undefined ? task.deadline : changes.deadline
+  // Only an edit of either date is checked, so a task saved before this rule
+  // can still be renamed.
+  if (
+    (changes.dueDate !== undefined || changes.deadline !== undefined) &&
+    dueDate !== null &&
+    deadline !== null &&
+    deadline < dueDate
+  ) {
+    throw new Refused('invalid_dates')
+  }
   const rule = dueDate === null ? null : recurrence
   return {
     ...fields,

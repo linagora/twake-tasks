@@ -234,6 +234,7 @@
     "pin": "Сохранять это время в %{zone}",
     "deadline": "Крайний срок",
     "deadlineOn": "Крайний срок %{date}",
+    "deadlineTooEarly": "Крайний срок не может быть раньше даты выполнения.",
     "duration": "Длительность",
     "unit": "Единица",
     "unitMinutes": "Минуты",
@@ -334,7 +335,8 @@
     "no_title": "У задачи должно быть название.",
     "unknown_board": "Нет доски %{name}.",
     "unknown_section": "Нет раздела %{name}.",
-    "unknown_person": "Нет участника %{name}."
+    "unknown_person": "Нет участника %{name}.",
+    "deadline_before_due": "Крайний срок не может быть раньше даты выполнения."
   },
   "shortcuts": {
     "title": "Сочетания клавиш",

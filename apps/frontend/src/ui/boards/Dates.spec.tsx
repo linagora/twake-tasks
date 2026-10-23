@@ -77,6 +77,19 @@ describe('Dates', () => {
     })
   })
 
+  it('refuses a deadline before the due date', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    Object.assign(logo, { dueDate: '2026-11-10', deadline: '2026-11-20' })
+    const { editor } = await openDates(board.id, boardsApi)
+
+    fireEvent.click(editor.getByRole('gridcell', { name: '25' }))
+
+    expect(
+      editor.getByText('The deadline cannot be before the due date.')
+    ).toBeVisible()
+    expect(editor.getByRole('button', { name: 'Save dates' })).toBeDisabled()
+  })
+
   it('offers quick picks for the due day', async () => {
     const { board, logo, boardsApi } = logoBoard()
     Object.assign(logo, { dueDate: '2026-11-02' })

@@ -1,9 +1,13 @@
 import type { BoardsApi, TaskChanges } from '@/application/boards'
-import type { BoardSummary } from '@/domain/board'
+import { deadlineBeforeDue, type BoardSummary } from '@/domain/board'
 import { parseQuickAdd } from '@/domain/quickAdd'
 
 export type QuickAddRefusal =
-  'no_title' | 'unknown_board' | 'unknown_section' | 'unknown_person'
+  | 'no_title'
+  | 'unknown_board'
+  | 'unknown_section'
+  | 'unknown_person'
+  | 'deadline_before_due'
 
 export class QuickAddError extends Error {
   readonly code: QuickAddRefusal
@@ -57,6 +61,9 @@ export async function quickAdd(
 ): Promise<{ boardId: string; key: string }> {
   const parsed = parseQuickAdd(line, today)
   if (!parsed.title) throw new QuickAddError('no_title')
+  if (deadlineBeforeDue(parsed.dueDate, parsed.deadline)) {
+    throw new QuickAddError('deadline_before_due')
+  }
 
   const summary = findBoard(await api.listBoards(), parsed.board)
   if (!summary) throw new QuickAddError('unknown_board', parsed.board)
