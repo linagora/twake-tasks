@@ -90,6 +90,24 @@ describe('the Drive button', () => {
     })
   })
 
+  it('names the frame of the picker', async () => {
+    renderEditor(
+      fakePicker(container => {
+        container.append(document.createElement('iframe'))
+        return new Promise(() => undefined)
+      })
+    )
+
+    await screen.findByRole('textbox', { name: 'Description' })
+    fireEvent.click(screen.getByRole('button', { name: DRIVE }))
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('intent-container').querySelector('iframe')
+      ).toHaveAttribute('title', 'Twake Drive')
+    })
+  })
+
   it('tells the user when Drive cannot be opened, and closes', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const { onChange } = renderEditor(

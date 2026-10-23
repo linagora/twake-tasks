@@ -1,6 +1,6 @@
 import { Cross, Icon } from '@linagora/twake-icons'
 import { Alert, Box, Dialog, IconButton } from '@linagora/twake-mui'
-import { useEffect, useRef, type ReactElement } from 'react'
+import { useCallback, useEffect, useState, type ReactElement } from 'react'
 
 /**
  * Holds the frame of another app's service (the Twake Drive picker), which a
@@ -23,11 +23,18 @@ export function IntentDialog({
   onContainer: (element: HTMLDivElement | null) => void
   closeButton: { label: string; isShown: boolean }
 }): ReactElement {
-  const container = useRef<HTMLDivElement | null>(null)
+  // State, not a ref: the dialog mounts its content after its own effects run
+  const [element, setElement] = useState<HTMLDivElement | null>(null)
+  const container = useCallback(
+    (next: HTMLDivElement | null) => {
+      setElement(next)
+      onContainer(next)
+    },
+    [onContainer]
+  )
   // The frame comes without a title
   useEffect(() => {
-    const element = container.current
-    if (!open || !element) return
+    if (!element) return
     const observer = new MutationObserver(() => {
       element.querySelector('iframe')?.setAttribute('title', title)
     })
@@ -35,7 +42,7 @@ export function IntentDialog({
     return () => {
       observer.disconnect()
     }
-  }, [open, title])
+  }, [element, title])
 
   return (
     <Dialog
@@ -66,10 +73,7 @@ export function IntentDialog({
         </Alert>
       )}
       <Box
-        ref={(element: HTMLDivElement | null) => {
-          container.current = element
-          onContainer(element)
-        }}
+        ref={container}
         data-testid="intent-container"
         // cozy-interapp writes the size the service asks for on this box
         sx={{

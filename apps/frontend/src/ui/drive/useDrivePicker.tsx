@@ -51,12 +51,15 @@ export function useDrivePicker(): {
   const { colorScheme } = useColorScheme()
   const theme = colorScheme === 'dark' ? 'dark' : 'light'
   const linkLabel = t('drive.insertLinks')
-  const failed = t('drive.failed')
+  // The theme and labels of the picker are taken when it opens: a change
+  // while it is shown would start it over
   const [request, setRequest] = useState<{
     resolve: (links: readonly DriveLink[]) => void
+    linkLabel: string
+    theme: 'light' | 'dark'
   } | null>(null)
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [hasFailed, setHasFailed] = useState(false)
   // Drive draws its own close button once ready: one at a time
   const [isReady, setIsReady] = useState(false)
   const [isCloseAsked, setIsCloseAsked] = useState(false)
@@ -66,8 +69,8 @@ export function useDrivePicker(): {
     let isCurrent = true
     picker
       .pick(container, {
-        linkLabel,
-        theme,
+        linkLabel: request.linkLabel,
+        theme: request.theme,
         onReady: () => {
           if (isCurrent) setIsReady(true)
         },
@@ -84,14 +87,14 @@ export function useDrivePicker(): {
         (reason: unknown) => {
           if (!isCurrent) return
           console.error('The Drive picker failed:', reason)
-          setError(failed)
+          setHasFailed(true)
         }
       )
     return () => {
       isCurrent = false
       picker.stop()
     }
-  }, [picker, request, container, linkLabel, theme, failed])
+  }, [picker, request, container])
 
   if (!picker) return { linkPicker: undefined, dialog: null }
   const close = () => {
@@ -103,22 +106,22 @@ export function useDrivePicker(): {
       label: t('editor.drive'),
       pick: () =>
         new Promise(resolve => {
-          setError(null)
+          setHasFailed(false)
           setIsReady(false)
           setIsCloseAsked(false)
-          setRequest({ resolve })
+          setRequest({ resolve, linkLabel, theme })
         })
     },
     dialog: (
       <IntentDialog
         open={request !== null}
         title={t('drive.title')}
-        error={error}
+        error={hasFailed ? t('drive.failed') : null}
         onClose={close}
         onContainer={setContainer}
         closeButton={{
           label: t('drive.close'),
-          isShown: !isReady || error !== null || isCloseAsked
+          isShown: !isReady || hasFailed || isCloseAsked
         }}
       />
     )

@@ -210,6 +210,33 @@ describe('twakeDrivePicker', () => {
     expect(intent.stop).toHaveBeenCalledOnce()
   })
 
+  it('shows no picker once stopped while the intent is created', async () => {
+    const { sdk } = fakeSdk()
+    let created = (): void => undefined
+    const start = vi.fn()
+    const create = vi
+      .spyOn(Intents.prototype, 'create')
+      .mockImplementation(() =>
+        Object.assign(
+          new Promise<void>(resolve => {
+            created = resolve
+          }),
+          { start }
+        )
+      )
+    const picker = twakeDrivePicker(sdk, 'id-token')
+    const picked = picker.pick(document.createElement('div'), options())
+    await vi.waitFor(() => {
+      expect(create).toHaveBeenCalled()
+    })
+
+    picker.stop()
+    created()
+
+    expect(await picked).toEqual([])
+    expect(start).not.toHaveBeenCalled()
+  })
+
   it('shows no picker once stopped during the exchange', async () => {
     const { sdk, setStatus } = fakeSdk('waiting')
     const intent = fakeIntent([])

@@ -87,6 +87,10 @@ export function twakeDrivePicker(sdk: Sdk, idToken: string): DrivePicker {
         },
         ['GET']
       )
+      // cozy-interapp cannot stop an intent still being created: it would put
+      // the frame in the container after the stop
+      await intent
+      if (current !== run) return []
       const mine = intent.start(container, {
         onReadyToUse: options.onReady,
         onShowCross: () => {

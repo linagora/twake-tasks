@@ -183,7 +183,10 @@ export function Toolbar({
           label={linkPicker.label}
           onClick={() => {
             void linkPicker.pick().then(links => {
-              if (links.length === 0) return
+              const fits = links.every(link =>
+                editor.can().setLink({ href: link.url })
+              )
+              if (links.length === 0 || !fits) return
               chain()
                 .insertContent(
                   links.flatMap((link, index) => [
