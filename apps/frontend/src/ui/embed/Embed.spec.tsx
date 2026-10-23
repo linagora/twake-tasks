@@ -106,6 +106,39 @@ describe('the embedded view', () => {
     ).toBeInTheDocument()
   })
 
+  it("refuses a board of another project, with a way back to the project's boards", async () => {
+    const elsewhere = aBoard({ name: 'Private C' })
+    renderRoute(`/embed/projects/${roadmap.id}/boards/${elsewhere.id}`, {
+      boardsApi: projectBoardsApi([
+        aBoard({ name: 'Roadmap', project: roadmap }),
+        aBoard({ name: 'Launch', project: roadmap }),
+        elsewhere
+      ])
+    })
+
+    expect(
+      await findEmptyState("This board doesn't exist, or you can't open it.")
+    ).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Private C' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Boards' })).toBeInTheDocument()
+  })
+
+  it.each(['archived', 'trash'])(
+    'refuses the %s tasks of a board of another project',
+    async shelf => {
+      const elsewhere = aBoard({ name: 'Private C' })
+      renderRoute(
+        `/embed/projects/${roadmap.id}/boards/${elsewhere.id}/${shelf}`,
+        { boardsApi: projectBoardsApi([elsewhere]) }
+      )
+
+      expect(
+        await findEmptyState("This board doesn't exist, or you can't open it.")
+      ).toBeVisible()
+      expect(screen.queryByText('Private C')).toBeNull()
+    }
+  )
+
   it('shows the board, with no way back, when the list of boards fails to load', async () => {
     const board = aBoard({ name: 'Roadmap', project: roadmap })
     const boardsApi = projectBoardsApi([board])

@@ -11,7 +11,7 @@ import {
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 
-import { ApiError, type Shelf } from '@/application/boards'
+import type { Shelf } from '@/application/boards'
 import {
   Card,
   CardTitle,
@@ -47,7 +47,7 @@ import {
 } from '@/ui/boards/Crumbs'
 import { NewDatedTask } from '@/ui/boards/NewDatedTask'
 import {
-  useBoard,
+  useBoardOf,
   useCreateTask,
   useHiddenTasks,
   useMoveTask,
@@ -73,27 +73,23 @@ export function BoardScreen({
   waiting?: boolean
 }): ReactElement {
   const { t } = useI18n()
-  const { boardId = '' } = useParams()
-  const board = useBoard(boardId)
+  const { boardId = '', projectId } = useParams()
+  const { board, shown, missing } = useBoardOf(boardId, projectId)
   const boardsOrigin = {
     ...useBoardsOrigin(),
     to: '../..',
     relative: true
   }
-  useDocumentTitle(board.data?.name ?? null)
-  const missing = board.error instanceof ApiError && board.error.status === 404
+  useDocumentTitle(shown?.name ?? null)
 
   return (
     <OriginContext value={boardsOrigin}>
       <BoardStepContext
-        value={{ to: '.', label: board.data?.name ?? '…', relative: true }}
+        value={{ to: '.', label: shown?.name ?? '…', relative: true }}
       >
         <main className={flush ? undefined : 'u-p-2'}>
           {back && (
-            <PageCrumbs
-              origin={boardsOrigin}
-              current={board.data?.name ?? '…'}
-            />
+            <PageCrumbs origin={boardsOrigin} current={shown?.name ?? '…'} />
           )}
           {missing && (
             <EmptyState
@@ -107,11 +103,11 @@ export function BoardScreen({
               {t('board.loadFailed')}
             </Typography>
           )}
-          {(board.isPending || (waiting && !board.isError)) && (
+          {(board.isPending || (waiting && !board.isError && !missing)) && (
             <ColumnsSkeleton label={t('app.loading')} />
           )}
-          {board.data && !waiting && (
-            <BoardColumns board={board.data} settled={!board.isFetching} />
+          {shown && !waiting && (
+            <BoardColumns board={shown} settled={!board.isFetching} />
           )}
         </main>
       </BoardStepContext>
