@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '@/application/boards'
@@ -98,6 +98,47 @@ describe('TaskPanel', () => {
     expect(
       panel.getByRole('textbox', { name: 'Description' })
     ).toHaveTextContent('Mine')
+  })
+
+  it('refuses to overwrite a description saved elsewhere while editing', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(
+      await panel.findByRole('button', { name: 'Edit description' })
+    )
+    await typeRichText(
+      await panel.findByRole('textbox', { name: 'Description' }),
+      'Mine'
+    )
+    const reads = boardsApi.getDescription.mock.calls.length
+    act(() => {
+      boardsApi.descriptions.set(logo.id, { markdown: 'Theirs', version: 4 })
+      boardsApi.changeElsewhere(board.id, () => undefined)
+    })
+    await waitFor(() => {
+      expect(boardsApi.getDescription.mock.calls.length).toBeGreaterThan(reads)
+    })
+    fireEvent.click(panel.getByRole('button', { name: 'Save' }))
+
+    expect(
+      await panel.findByText(
+        'Someone else changed the description. Your text is kept: save again to replace theirs.'
+      )
+    ).toBeInTheDocument()
+    expect(boardsApi.descriptions.get(logo.id)?.markdown).toBe('Theirs')
+
+    await waitFor(() => {
+      expect(panel.getByRole('button', { name: 'Save' })).toBeEnabled()
+    })
+    fireEvent.click(panel.getByRole('button', { name: 'Save' }))
+    await waitFor(() => {
+      expect(boardsApi.descriptions.get(logo.id)).toEqual({
+        markdown: 'Mine',
+        version: 5
+      })
+    })
   })
 
   it('keeps the panel and the typed text when Escape is pressed in a field', async () => {
