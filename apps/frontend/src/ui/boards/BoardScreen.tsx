@@ -49,6 +49,7 @@ import { NewDatedTask } from '@/ui/boards/NewDatedTask'
 import {
   useBoard,
   useCreateTask,
+  useHiddenTasks,
   useMoveTask,
   useRenameBoard
 } from '@/ui/boards/queries'
@@ -146,10 +147,28 @@ function LinkedTask({
     }
   }
 
+  const looking = lost !== null && shown === lost
+  const archived = useHiddenTasks(board.id, 'archived', looking)
+  const trashed = useHiddenTasks(board.id, 'trash', looking)
+  const shelf = archived.data?.some(task => task.key === lost)
+    ? 'archived'
+    : trashed.data?.some(task => task.key === lost)
+      ? 'trash'
+      : null
+  const searching = archived.isFetching || trashed.isFetching
+  const navigate = useNavigate()
+
   // Twake's alert says the task is gone, as other apps say theirs.
   const { showAlert } = useAlert()
   useEffect(() => {
-    if (lost === null || shown !== lost) return
+    if (!looking || searching) return
+    if (shelf) {
+      void navigate(`${shelf}?task=${encodeURIComponent(lost)}`, {
+        relative: 'path',
+        replace: true
+      })
+      return
+    }
     showAlert({
       message: t('board.taskNotFound'),
       severity: 'warning',
@@ -163,7 +182,7 @@ function LinkedTask({
       },
       { replace: true }
     )
-  }, [lost, shown, setParams, showAlert, t])
+  }, [looking, lost, shelf, searching, navigate, setParams, showAlert, t])
 
   return (
     <>
