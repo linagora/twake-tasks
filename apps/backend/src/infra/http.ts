@@ -29,6 +29,13 @@ export function createServer(deps: {
     return reply.send({ error: 'server_error' })
   })
 
+  // Postgres text and jsonb cannot hold U+0000: a query would fail with it.
+  app.addHook('preValidation', async (request, reply) => {
+    if (holdsNul(request.body) || holdsNul(request.query)) {
+      return reply.code(400).send({ error: 'invalid_request' })
+    }
+  })
+
   app.get('/health/live', () => ({ status: 'ok' }))
 
   app.get('/health/ready', async (_request, reply) => {
@@ -39,6 +46,21 @@ export function createServer(deps: {
   })
 
   return app
+}
+
+// A loop, not recursion: a deeply nested body would overflow the stack.
+function holdsNul(value: unknown): boolean {
+  const pending = [value]
+  while (pending.length > 0) {
+    const next = pending.pop()
+    if (typeof next === 'string' && next.includes('\0')) return true
+    if (typeof next !== 'object' || next === null) continue
+    for (const [key, entry] of Object.entries(next)) {
+      if (key.includes('\0')) return true
+      pending.push(entry)
+    }
+  }
+  return false
 }
 
 export type HttpServer = FastifyInstance

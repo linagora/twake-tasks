@@ -54,4 +54,23 @@ describe('the server', () => {
       code: 'FST_ERR_CTP_INVALID_JSON_BODY'
     })
   })
+
+  it('reads a deeply nested body without overflowing', async () => {
+    const app = serverLoggingTo([])
+    app.post('/echo', () => ({ ok: true }))
+    const depth = 200_000
+
+    const responses = await Promise.all(
+      ['"x"', '"\\u0000"'].map(leaf =>
+        app.inject({
+          method: 'POST',
+          url: '/echo',
+          headers: { 'content-type': 'application/json' },
+          payload: '['.repeat(depth) + leaf + ']'.repeat(depth)
+        })
+      )
+    )
+
+    expect(responses.map(response => response.statusCode)).toEqual([200, 400])
+  })
 })
