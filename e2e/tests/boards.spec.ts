@@ -149,10 +149,11 @@ test('notifies the person a task is assigned to', async ({ page, browser }) => {
   await page.keyboard.press('Escape')
 
   await bob.getByRole('link', { name: /^Notifications/ }).click()
-  const notification = bob.getByRole('listitem').filter({
-    has: bob.getByRole('link', { name: `${prefix}-1 Order the badges` })
+  const notification = bob.getByRole('listitem', {
+    name: `${prefix}-1 Order the badges`
   })
-  await expect(notification).toContainText('You were assigned')
+  await expect(notification).toContainText('Alice Martin assigned you')
+  await expect(notification).toContainText(`${prefix}-1 · ${name}`)
 })
 
 test('notifies the person mentioned in a comment', async ({
@@ -183,8 +184,7 @@ test('notifies the person mentioned in a comment', async ({
   ).toContainText('Can you check the rooms @Bob Durand')
 
   await bob.getByRole('link', { name: /^Notifications/ }).click()
-  const notification = bob.getByRole('listitem').filter({
-    has: bob.getByRole('link', { name: task })
-  })
-  await expect(notification).toContainText('You were mentioned')
+  const notification = bob.getByRole('listitem', { name: task })
+  await expect(notification).toContainText('Alice Martin mentioned you')
+  await expect(notification).toContainText('Can you check the rooms')
 })
