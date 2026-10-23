@@ -19,7 +19,8 @@ import {
   EditorActions,
   EditorPopover,
   FieldRow,
-  QuickPicks
+  QuickPicks,
+  TimeField
 } from '@/ds/Pickers'
 import {
   deadlineBeforeDue,
@@ -216,17 +217,13 @@ function DatesEditor({
           set({ dueDate })
         }}
       />
-      <TextField
-        type="time"
+      <TimeField
         label={t('dates.time')}
         value={draft.dueTime}
         disabled={!draft.dueDate}
-        onChange={event => {
-          set({ dueTime: event.target.value })
+        onChange={dueTime => {
+          set({ dueTime })
         }}
-        size="small"
-        fullWidth
-        slotProps={{ inputLabel: { shrink: true } }}
       />
       {draft.dueDate && draft.dueTime && (
         <FormControlLabel
