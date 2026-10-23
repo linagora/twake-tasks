@@ -17,7 +17,7 @@ import { ColorField, leastUsedColor } from '@/ds/ColorPicker'
 import { DialogHeader } from '@/ds/DialogHeader'
 import { labelName, type Label } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
-import { focusOnMount } from '@/ui/focusOnMount'
+import { selectOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 type Draft = Pick<Label, 'name' | 'color'>
@@ -82,7 +82,7 @@ export function LabelDialog({
         <DialogContent className="u-pb-1-half">
           <Stack direction="row" spacing={2} className="u-flex-items-start">
             <TextField
-              label={t(label ? 'labelDialog.editName' : 'labelDialog.newName')}
+              label={t('labelDialog.editName')}
               placeholder={t('labelDialog.name')}
               value={name}
               onChange={event => {
@@ -91,7 +91,7 @@ export function LabelDialog({
               }}
               required
               fullWidth
-              inputRef={focusOnMount}
+              inputRef={selectOnMount}
               error={taken}
               helperText={taken && t('board.labelTaken', { name: trimmed })}
               slotProps={{

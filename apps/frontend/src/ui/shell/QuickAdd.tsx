@@ -357,6 +357,9 @@ export function QuickAdd({ onClose }: { onClose: () => void }): ReactElement {
       <form
         onSubmit={event => {
           event.preventDefault()
+          // Add disables itself while the request runs, which would drop
+          // focus to the body whether the add succeeds or fails.
+          input.current?.focus()
           add.mutate(line, {
             onSuccess: () => {
               setText('', 0)
