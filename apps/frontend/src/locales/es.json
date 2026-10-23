@@ -63,7 +63,9 @@
     "projectBoard": "Tablero de proyecto",
     "personalProject": "Personal",
     "openTasks": "%{smart_count} tarea abierta |||| %{smart_count} tareas abiertas",
-    "noOpenTasks": "No hay tareas abiertas"
+    "noOpenTasks": "No hay tareas abiertas",
+    "newlyShared": "Nuevo",
+    "sharedBy": "Compartido por %{name}"
   },
   "newBoard": {
     "title": "Nuevo tablero",

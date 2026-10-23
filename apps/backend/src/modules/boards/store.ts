@@ -19,6 +19,7 @@ import { alias } from 'drizzle-orm/pg-core'
 import { generateNKeysBetween } from 'fractional-indexing'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { userSettings } from '../settings/schema.ts'
 import {
   accessibleBoards,
   claimInvites,
@@ -216,6 +217,8 @@ export function createBoardStore(db: Db) {
             )
         }
         const accessible = accessibleBoards(tx, identity.userId)
+        const inviter = alias(projectMembers, 'inviter')
+        const inviterSettings = alias(userSettings, 'inviter_settings')
         return tx
           .select({
             id: boards.id,
@@ -224,6 +227,13 @@ export function createBoardStore(db: Db) {
             project: projectSummary,
             inbox: boards.inbox,
             role: accessible.role,
+            joinedAt: accessible.joinedAt,
+            sharedBy: sql<{ name: string | null; email: string } | null>`
+              case when ${inviter.userId} is null then null
+              else json_build_object(
+                'name', coalesce(${inviterSettings.name}, ${inviter.name}),
+                'email', ${inviter.email}
+              ) end`,
             archived: sql<boolean>`${boards.archivedAt} is not null`,
             favorite: sql<boolean>`${boardFavorites.userId} is not null`,
             openTasks: tx.$count(
@@ -259,6 +269,17 @@ export function createBoardStore(db: Db) {
           .from(boards)
           .innerJoin(accessible, eq(accessible.boardId, boards.id))
           .innerJoin(projects, eq(projects.id, boards.projectId))
+          .leftJoin(
+            inviter,
+            and(
+              eq(inviter.projectId, boards.projectId),
+              eq(inviter.userId, accessible.invitedBy)
+            )
+          )
+          .leftJoin(
+            inviterSettings,
+            eq(inviterSettings.email, sql`lower(${inviter.email})`)
+          )
           .leftJoin(
             boardFavorites,
             and(

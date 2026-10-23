@@ -63,7 +63,9 @@
     "projectBoard": "Projekt-Board",
     "personalProject": "Persönlich",
     "openTasks": "%{smart_count} offene Aufgabe |||| %{smart_count} offene Aufgaben",
-    "noOpenTasks": "Keine offenen Aufgaben"
+    "noOpenTasks": "Keine offenen Aufgaben",
+    "newlyShared": "Neu",
+    "sharedBy": "Geteilt von %{name}"
   },
   "newBoard": {
     "title": "Neues Board",

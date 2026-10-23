@@ -63,7 +63,9 @@
     "projectBoard": "Bảng dự án",
     "personalProject": "Cá nhân",
     "openTasks": "%{smart_count} việc đang mở",
-    "noOpenTasks": "Không có việc đang mở"
+    "noOpenTasks": "Không có việc đang mở",
+    "newlyShared": "Mới",
+    "sharedBy": "Được chia sẻ bởi %{name}"
   },
   "newBoard": {
     "title": "Bảng mới",

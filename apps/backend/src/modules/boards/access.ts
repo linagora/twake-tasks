@@ -10,7 +10,12 @@ export type Role = 'viewer' | 'editor' | 'admin'
 // role in its project.
 export function accessibleBoards(tx: Tx, userId: string) {
   return tx
-    .select({ boardId: boards.id, role: projectMembers.role })
+    .select({
+      boardId: boards.id,
+      role: projectMembers.role,
+      joinedAt: projectMembers.joinedAt,
+      invitedBy: projectMembers.invitedBy
+    })
     .from(boards)
     .innerJoin(
       projects,

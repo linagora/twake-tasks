@@ -17,6 +17,7 @@ import { groupBoards } from '@/domain/boardGroups'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { useBoards, useSetFavorite } from '@/ui/boards/queries'
 import { PageCrumbs, useBoardsOrigin } from '@/ui/boards/Crumbs'
+import { newlyShared } from '@/ui/boards/seenBoards'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -78,38 +79,47 @@ function BoardShelf({
 }): ReactElement {
   const { t } = useI18n()
   const projectName = useProjectName()
-  const openTasks = (board: BoardSummary) =>
-    board.openTasks === 0
-      ? t('boards.noOpenTasks')
-      : t('boards.openTasks', { smart_count: board.openTasks })
+  const isNewlyShared = newlyShared()
+  const status = (board: BoardSummary, fresh: boolean) =>
+    fresh && board.sharedBy
+      ? t('boards.sharedBy', {
+          name: board.sharedBy.name ?? board.sharedBy.email
+        })
+      : board.openTasks === 0
+        ? t('boards.noOpenTasks')
+        : t('boards.openTasks', { smart_count: board.openTasks })
   return (
     <TileShelf name={name}>
-      {boards.map(board => (
-        <CardTile
-          key={board.id}
-          label={board.name}
-          badge={(Array.from(board.name)[0] ?? '').toUpperCase()}
-          badgeLabel={t(
-            board.project.personal
-              ? 'boards.personal'
-              : board.project.managed
-                ? 'boards.space'
-                : 'boards.projectBoard'
-          )}
-          title={
-            <Link component={RouterLink} to={`/boards/${board.id}`}>
-              {board.name}
-            </Link>
-          }
-          tag={board.keyPrefix}
-          meta={
-            withProject
-              ? `${projectName(board.project)} · ${openTasks(board)}`
-              : openTasks(board)
-          }
-          action={<FavoriteButton board={board} />}
-        />
-      ))}
+      {boards.map(board => {
+        const fresh = isNewlyShared(board)
+        return (
+          <CardTile
+            key={board.id}
+            label={board.name}
+            badge={(Array.from(board.name)[0] ?? '').toUpperCase()}
+            badgeLabel={t(
+              board.project.personal
+                ? 'boards.personal'
+                : board.project.managed
+                  ? 'boards.space'
+                  : 'boards.projectBoard'
+            )}
+            title={
+              <Link component={RouterLink} to={`/boards/${board.id}`}>
+                {board.name}
+              </Link>
+            }
+            flag={fresh ? t('boards.newlyShared') : undefined}
+            tag={board.keyPrefix}
+            meta={
+              withProject
+                ? `${projectName(board.project)} · ${status(board, fresh)}`
+                : status(board, fresh)
+            }
+            action={<FavoriteButton board={board} />}
+          />
+        )
+      })}
     </TileShelf>
   )
 }

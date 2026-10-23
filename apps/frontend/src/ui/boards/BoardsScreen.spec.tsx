@@ -176,6 +176,67 @@ describe('BoardsScreen', () => {
     ])
   })
 
+  it('shows the whole name of a board when hovered', async () => {
+    const name = 'ux-audit-6 Website relaunch, content and design'
+    renderRoute('/', { boardsApi: fakeBoardsApi([aBoard({ name })]) })
+
+    fireEvent.mouseOver(await screen.findByRole('link', { name }))
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(name)
+  })
+
+  it('marks a board shared with the person until they open it', async () => {
+    const design = aBoard({ name: 'Design' })
+    const boardsApi = fakeBoardsApi([design])
+    boardsApi.shares.set(design.id, {
+      sharedBy: { name: 'Alice Martin', email: 'alice@example.com' },
+      joinedAt: new Date(Date.now() - 60_000).toISOString()
+    })
+    const { router } = renderRoute('/', { boardsApi })
+
+    const card = await screen.findByRole('listitem', { name: 'Design' })
+    expect(within(card).getByText('New')).toBeVisible()
+    expect(card).toHaveTextContent('Shared by Alice Martin')
+    expect(card).not.toHaveTextContent('No open tasks')
+
+    fireEvent.click(within(card).getByRole('link', { name: 'Design' }))
+    await screen.findByRole('heading', { level: 1, name: 'Design' })
+    await router.navigate('/')
+
+    const seen = await screen.findByRole('listitem', { name: 'Design' })
+    expect(seen).toHaveTextContent('No open tasks')
+    expect(within(seen).queryByText('New')).not.toBeInTheDocument()
+  })
+
+  it('stops marking a shared board a week after the person joined', async () => {
+    const design = aBoard({ name: 'Design' })
+    const boardsApi = fakeBoardsApi([design])
+    boardsApi.shares.set(design.id, {
+      sharedBy: { name: null, email: 'alice@example.com' },
+      joinedAt: new Date(Date.now() - 8 * 24 * 3600_000).toISOString()
+    })
+    renderRoute('/', { boardsApi })
+
+    const card = await screen.findByRole('listitem', { name: 'Design' })
+
+    expect(card).toHaveTextContent('No open tasks')
+    expect(within(card).queryByText('New')).not.toBeInTheDocument()
+  })
+
+  it('names the inviter by email when they have no name', async () => {
+    const design = aBoard({ name: 'Design' })
+    const boardsApi = fakeBoardsApi([design])
+    boardsApi.shares.set(design.id, {
+      sharedBy: { name: null, email: 'alice@example.com' },
+      joinedAt: new Date().toISOString()
+    })
+    renderRoute('/', { boardsApi })
+
+    expect(
+      await screen.findByRole('listitem', { name: 'Design' })
+    ).toHaveTextContent('Shared by alice@example.com')
+  })
+
   it('opens a board from the list', async () => {
     const design = aBoard({ name: 'Design' })
     const { router } = renderRoute('/', {
