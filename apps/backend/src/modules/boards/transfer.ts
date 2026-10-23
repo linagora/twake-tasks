@@ -13,7 +13,7 @@ import {
   inSection,
   Refused,
   sectionOf,
-  taskOf,
+  shownTaskOf,
   writeOrRefuse
 } from './tasks.ts'
 
@@ -186,7 +186,7 @@ export function createTransferStore(db: Db) {
           await checkRole(tx, identity, boardId, 'editor')
           await checkRole(tx, identity, to.boardId, 'editor')
           const from = await boardOf(tx, boardId)
-          const task = await taskOf(tx, boardId, taskId)
+          const task = await shownTaskOf(tx, boardId, taskId)
           if (task.parentId !== null) throw new Refused('invalid_parent')
           await sectionOf(tx, to.boardId, to.sectionId)
           const target = await boardOf(tx, to.boardId)
@@ -216,7 +216,7 @@ export function createTransferStore(db: Db) {
         await checkRole(tx, identity, boardId, 'editor')
         await checkRole(tx, identity, to.boardId, 'editor')
         const from = await bumpBoard(tx, boardId)
-        const task = await taskOf(tx, boardId, taskId)
+        const task = await shownTaskOf(tx, boardId, taskId)
         if (task.parentId !== null) throw new Refused('invalid_parent')
         const section = await sectionOf(tx, to.boardId, to.sectionId)
         const tree = await treeOf(tx, taskId)
