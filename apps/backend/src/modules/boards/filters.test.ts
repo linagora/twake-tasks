@@ -162,6 +162,56 @@ describe('saved filters', () => {
     ])
   })
 
+  it('renames a filter and changes what it looks for, for its owner only', async () => {
+    const owner = aUser()
+    const other = aUser({ organizationId: owner.organizationId })
+    const design = await aBoardOf(owner, 'DES')
+    const client = await design.label('client')
+    await design.add('Urgent, labeled', { priority: 1 }, [client])
+    await design.add('Low, labeled', { priority: 4 }, [client])
+    const { id } = (
+      await api
+        .as(owner)
+        .post('/filters', { name: 'Clint', criteria: { label: 'client' } })
+    ).json<{ id: string }>()
+
+    const renamed = await api.as(owner).patch(`/filters/${id}`, {
+      name: 'Client fires',
+      criteria: { label: 'client', priority: 1 }
+    })
+
+    expect(renamed.statusCode).toBe(204)
+    expect(
+      (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
+    ).toEqual({
+      filters: [
+        { id, name: 'Client fires', criteria: { label: 'client', priority: 1 } }
+      ]
+    })
+    expect(await keysOf(owner, id)).toEqual(['DES-1'])
+    expect(
+      (await api.as(owner).patch(`/filters/${id}`, { name: 'Clients' }))
+        .statusCode
+    ).toBe(204)
+    expect(
+      (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
+    ).toEqual({
+      filters: [
+        { id, name: 'Clients', criteria: { label: 'client', priority: 1 } }
+      ]
+    })
+    expect(
+      (await api.as(other).patch(`/filters/${id}`, { name: 'Mine now' }))
+        .statusCode
+    ).toBe(404)
+    expect(
+      (await api.as(owner).patch(`/filters/${id}`, { name: ' ' })).statusCode
+    ).toBe(400)
+    expect((await api.as(owner).patch(`/filters/${id}`, {})).statusCode).toBe(
+      400
+    )
+  })
+
   it('refuses unknown criteria', async () => {
     const response = await api
       .as(aUser())

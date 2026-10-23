@@ -128,6 +128,21 @@ export function createFilterStore(db: Db) {
       })
     },
 
+    updateFilter(
+      identity: Identity,
+      filterId: string,
+      changes: { name?: string | undefined; criteria?: Criteria | undefined }
+    ) {
+      return writeOrRefuse(db, identity, async tx => {
+        const updated = await tx
+          .update(savedFilters)
+          .set(changes)
+          .where(eq(savedFilters.id, filterId))
+          .returning({ id: savedFilters.id })
+        if (updated.length === 0) throw new Refused('not_found')
+      })
+    },
+
     deleteFilter(identity: Identity, filterId: string) {
       return writeOrRefuse(db, identity, async tx => {
         const deleted = await tx
