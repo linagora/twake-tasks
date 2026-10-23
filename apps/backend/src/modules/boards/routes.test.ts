@@ -174,4 +174,41 @@ describe('user boards', () => {
     expect(response.statusCode).toBe(409)
     expect(response.json()).toEqual({ error: 'key_prefix_taken' })
   })
+
+  it('refuses a NUL character, which Postgres cannot store', async () => {
+    const alice = aUser()
+    const board = (
+      await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
+    ).json<{ id: string; sections: { id: string }[] }>()
+    const task = (
+      await api
+        .as(alice)
+        .post(`/boards/${board.id}/tasks`, { sectionId: null, title: 'Logo' })
+    ).json<{ id: string }>()
+    const taskPath = `/boards/${board.id}/tasks/${task.id}`
+
+    const responses = await Promise.all([
+      api.as(alice).post(`/boards/${board.id}/tasks`, {
+        sectionId: board.sections[0]?.id,
+        title: 'nul\u{0}x'
+      }),
+      api.as(alice).patch(taskPath, { title: 'a\u{0}b' }),
+      api.as(alice).post(`${taskPath}/comments`, { body: 'c\u{0}d' }),
+      api
+        .as(alice)
+        .put(`${taskPath}/description`, { markdown: 'd\u{0}e', version: 0 }),
+      api.as(alice).post(`/boards/${board.id}/sections`, {
+        name: 'S\u{0}',
+        category: 'backlog'
+      }),
+      api.as(alice).post(`/boards/${board.id}/labels`, { name: 'N\u{0}' }),
+      api.as(alice).post('/filters', { name: 'f\u{0}', criteria: {} }),
+      api.as(alice).get('/search?q=a%00')
+    ])
+
+    expect(responses.map(response => response.statusCode)).toEqual(
+      responses.map(() => 400)
+    )
+    expect(responses[0].json()).toEqual({ error: 'invalid_request' })
+  })
 })
