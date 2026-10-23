@@ -21,7 +21,6 @@ export type ConnectDrive = (sdk: Sdk, idToken: string) => DrivePicker
 
 const DriveContext = createContext<ConnectDrive | null>(null)
 
-/** `connect` is null when the Drive picker is turned off. */
 export function DrivePickerProvider({
   connect,
   children

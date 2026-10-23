@@ -14,7 +14,6 @@ export interface DrivePickOptions {
   onCloseButton: (isShown: boolean) => void
 }
 
-/** The file picker of Twake Drive, on the user's workplace. */
 export interface DrivePicker {
   /**
    * Shows the picker in `container`. Resolves to the links picked, none when
