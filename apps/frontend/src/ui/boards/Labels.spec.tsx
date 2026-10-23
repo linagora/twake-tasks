@@ -256,12 +256,15 @@ describe('Labels', () => {
     ).toBeInTheDocument()
   })
 
-  it('finds a label by a name with invisible characters', async () => {
+  it.each([
+    ['invisible characters', 'Ur\u{2060}gent\u{200B}'],
+    ['full width letters', 'Ｕｒｇｅｎｔ']
+  ])('finds a label by a name with %s', async (_, lookalike) => {
     const { board, boardsApi } = labeledBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const picker = await openLabels()
-    search(picker, 'Ur\u{2060}gent\u{200B}')
+    search(picker, lookalike)
 
     expect(
       picker.getByRole('menuitemcheckbox', { name: 'Urgent' })

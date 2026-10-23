@@ -101,7 +101,7 @@ const invisible = new RegExp(
 export function labelName(text: string): string {
   return text
     .replace(invisible, (_, kept: string | undefined) => kept ?? '')
-    .normalize('NFC')
+    .normalize('NFKC')
     .trim()
 }
 
