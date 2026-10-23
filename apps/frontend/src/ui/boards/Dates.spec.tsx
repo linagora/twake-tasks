@@ -56,7 +56,10 @@ describe('Dates', () => {
     const { panel, editor } = await openDates(board.id, boardsApi)
 
     fireEvent.click(editor.getByRole('gridcell', { name: '2' }))
-    change(editor.getByLabelText('Time'), '09:30')
+    change(
+      within(editor.getByRole('group', { name: 'Time' })).getByDisplayValue(''),
+      '09:30'
+    )
     fireEvent.click(editor.getByRole('checkbox', { name: /Keep this time in/ }))
     fireEvent.click(editor.getByRole('button', { name: /Choose date/ }))
     const picker = (await screen.findAllByRole('dialog')).at(-1)
@@ -75,6 +78,26 @@ describe('Dates', () => {
       duration: { amount: 90, unit: 'minutes' },
       recurrence: null
     })
+  })
+
+  it('edits the time on the 24-hour clock the app shows', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    Object.assign(logo, { dueDate: '2026-10-20', dueTime: '15:00' })
+    const { panel, editor } = await openDates(board.id, boardsApi)
+
+    expect(editor.getByRole('spinbutton', { name: 'Hours' })).toHaveTextContent(
+      '15'
+    )
+    expect(editor.queryByRole('spinbutton', { name: 'Meridiem' })).toBeNull()
+    change(editor.getByDisplayValue('15:00'), '09:30')
+    fireEvent.click(editor.getByRole('button', { name: 'Save dates' }))
+
+    expect(await panel.findByText(/Due Oct 20, 2026, 09:30/)).toBeVisible()
+    expect(boardsApi.editTask).toHaveBeenCalledWith(
+      board.id,
+      logo.id,
+      expect.objectContaining({ dueTime: '09:30' })
+    )
   })
 
   it('refuses a deadline before the due date', async () => {

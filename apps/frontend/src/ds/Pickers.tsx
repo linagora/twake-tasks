@@ -6,6 +6,7 @@ import { DateCalendar } from '@mui/x-date-pickers/DateCalendar'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { TimePicker } from '@mui/x-date-pickers/TimePicker'
 import {
   deDE,
   enUS,
@@ -34,6 +35,7 @@ const TEXTS: Record<string, typeof enUS> = {
 
 const DAY = 'YYYY-MM-DD'
 const MINUTE = 'YYYY-MM-DDTHH:mm'
+const TIME = 'HH:mm'
 
 export function PickersProvider({
   lang,
@@ -112,6 +114,35 @@ export function DayField({
           error: Boolean(error),
           helperText: error
         },
+        field: { clearable: true }
+      }}
+    />
+  )
+}
+
+/** Times are HH:mm strings, empty for none. */
+export function TimeField({
+  label,
+  value,
+  onChange,
+  disabled
+}: {
+  label: string
+  value: string
+  onChange: (time: string) => void
+  disabled: boolean
+}): ReactElement {
+  return (
+    <TimePicker
+      label={label}
+      value={value ? dayjs(`2000-01-01T${value}`) : null}
+      ampm={false}
+      disabled={disabled}
+      onChange={(next: Dayjs | null) => {
+        onChange(next?.isValid() ? next.format(TIME) : '')
+      }}
+      slotProps={{
+        textField: { size: 'small', fullWidth: true },
         field: { clearable: true }
       }}
     />
