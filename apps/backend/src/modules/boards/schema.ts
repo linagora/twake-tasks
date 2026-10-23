@@ -107,6 +107,8 @@ export const projectMembers = pgTable.withRLS(
     name: text(),
     role: memberRole().notNull(),
     joinedAt: timestamptz('joined_at').notNull().defaultNow(),
+    // Who invited the person: null for a project's creator or a managed project.
+    invitedBy: uuid('invited_by'),
     tenant: tenant()
   },
   table => [

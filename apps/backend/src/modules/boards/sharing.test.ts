@@ -169,6 +169,43 @@ describe('sharing a board', () => {
     )
   })
 
+  it('says who shared a board with the person, and when they joined', async () => {
+    const owner = aUser({ name: 'Alice Martin' })
+    const guest = aUser({ organizationId: owner.organizationId })
+    const boardId = await aBoardOf(owner)
+    const spaceBoard = await aBoardIn(
+      db,
+      guest,
+      await aManagedProject(db, [[guest, 'editor']]),
+      { name: 'Launch', keyPrefix: 'LCH' }
+    )
+    await invite(owner, boardId, guest.email, 'editor')
+    const summaries = async (user: TestUser) =>
+      (await api.as(user).get('/boards')).json<{
+        boards: {
+          id: string
+          sharedBy: { name: string | null; email: string } | null
+          joinedAt: string
+        }[]
+      }>().boards
+
+    const guestBoards = await summaries(guest)
+    const shared = guestBoards.find(board => board.id === boardId)
+    const ownBoard = (await summaries(owner)).find(
+      board => board.id === boardId
+    )
+
+    expect(shared?.sharedBy).toEqual({
+      name: 'Alice Martin',
+      email: owner.email
+    })
+    expect(Date.now() - Date.parse(shared?.joinedAt ?? '')).toBeLessThan(60_000)
+    expect(ownBoard?.sharedBy).toBeNull()
+    expect(
+      guestBoards.find(board => board.id === spaceBoard)?.sharedBy
+    ).toBeNull()
+  })
+
   it('changes a role and removes a member, keeping an admin', async () => {
     const owner = aUser()
     const guest = aUser({ organizationId: owner.organizationId })
