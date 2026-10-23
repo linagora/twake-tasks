@@ -1,4 +1,4 @@
-import { CheckList, Cross, Dots, Icon, Pen } from '@linagora/twake-icons'
+import { Check, CheckList, Cross, Dots, Icon, Pen } from '@linagora/twake-icons'
 import {
   Button,
   Dialog,
@@ -11,14 +11,17 @@ import {
   Tabs,
   TextField,
   Tooltip,
-  Typography
+  Typography,
+  useMediaQuery,
+  useTheme
 } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement, type ReactNode } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { RichText, RichTextEditor } from '@/ds/RichText'
 import { Grow, Inline, PanelSection, SidePanel, TaskHead } from '@/ds/SidePanel'
-import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
+import { UnavailableButton } from '@/ds/PageHeader'
+import { MAX_TASK_DEPTH, type Section, type Task } from '@/domain/board'
 import { useRemoveTask } from '@/ui/boards/Archive'
 import { Comments } from '@/ui/boards/Comments'
 import { CopyLinkButton } from '@/ui/boards/CopyLink'
@@ -35,6 +38,7 @@ import { Subtasks } from '@/ui/boards/Subtasks'
 import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
+import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import {
   UnsavedContext,
@@ -87,6 +91,14 @@ export function TaskPanel({
           <>
             <TaskBreadcrumb task={task} board={board} />
             <Grow />
+            {board && (
+              <CompleteButton
+                task={task}
+                boardId={boardId}
+                sections={board.sections}
+                editable={editable}
+              />
+            )}
             <FollowButton task={task} boardId={boardId} />
             <CopyLinkButton boardId={boardId} taskKey={task.key} />
             {editable && (
@@ -203,6 +215,54 @@ export function TaskPanel({
         )}
       </SidePanel>
     </UnsavedContext>
+  )
+}
+
+function CompleteButton({
+  task,
+  boardId,
+  sections,
+  editable
+}: {
+  task: Task
+  boardId: string
+  sections: Section[]
+  editable: boolean
+}): ReactElement {
+  const { t } = useI18n()
+  const theme = useTheme()
+  const phone = useMediaQuery(theme.breakpoints.down('md'))
+  const { done, disabled, noDoneSection, toggle } = useCompleteToggle(
+    task,
+    boardId,
+    sections,
+    editable
+  )
+  const label = done ? t('task.completed') : t('task.markComplete')
+  const icon = <Icon icon={Check} />
+  const unavailable = editable && task.canceledAt === null && noDoneSection
+  const props = {
+    size: 'small',
+    variant: done ? 'contained' : 'outlined',
+    color: done ? 'success' : 'primary',
+    startIcon: phone ? undefined : icon,
+    'aria-label': phone ? label : undefined,
+    className: phone ? 'u-miw-auto u-ph-half' : undefined,
+    children: phone ? icon : label
+  } as const
+
+  // aria-disabled keeps the button hoverable, so its tooltip can say why.
+  if (unavailable) {
+    return (
+      <Tooltip title={t('task.noDoneSection')} describeChild>
+        <UnavailableButton {...props} aria-disabled="true" disableRipple />
+      </Tooltip>
+    )
+  }
+  return (
+    <Tooltip title={phone && !disabled ? label : ''}>
+      <Button {...props} disabled={disabled} onClick={toggle} />
+    </Tooltip>
   )
 }
 

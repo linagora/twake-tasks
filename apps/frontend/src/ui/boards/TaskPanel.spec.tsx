@@ -24,6 +24,49 @@ async function openLogo() {
 }
 
 describe('TaskPanel', () => {
+  it('completes the task from its header, then reopens it', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(panel.getByRole('button', { name: 'Mark complete' }))
+
+    await waitFor(() => {
+      expect(boardsApi.moveTask).toHaveBeenCalledWith(board.id, logo.id, {
+        sectionId: board.sections[2]?.id
+      })
+    })
+    fireEvent.click(await panel.findByRole('button', { name: 'Completed' }))
+
+    await waitFor(() => {
+      expect(boardsApi.moveTask).toHaveBeenLastCalledWith(board.id, logo.id, {
+        sectionId: board.sections[0]?.id
+      })
+    })
+    expect(
+      await panel.findByRole('button', { name: 'Mark complete' })
+    ).toBeEnabled()
+  })
+
+  it('says why a board without a Done section cannot complete the task', async () => {
+    const { board, boardsApi } = logoBoard()
+    board.sections = board.sections.filter(
+      section => section.category !== 'completed'
+    )
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    const button = panel.getByRole('button', { name: 'Mark complete' })
+    expect(button).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(button)
+    fireEvent.mouseOver(button)
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'This board has no Done section.'
+    )
+    expect(boardsApi.moveTask).not.toHaveBeenCalled()
+  })
+
   it('shows the description as formatted text', async () => {
     const { board, boardsApi } = logoBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })
