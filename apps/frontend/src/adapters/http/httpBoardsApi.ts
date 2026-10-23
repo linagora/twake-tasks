@@ -122,6 +122,8 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     listFilters: async () =>
       (await call<{ filters: SavedFilter[] }>('GET', '/filters')).filters,
     createFilter: filter => call('POST', '/filters', filter),
+    updateFilter: (filterId, filter) =>
+      call('PATCH', route`/filters/${filterId}`, filter),
     deleteFilter: filterId => call('DELETE', route`/filters/${filterId}`),
     labelNames: async () =>
       (await call<{ labels: string[] }>('GET', '/labels')).labels,

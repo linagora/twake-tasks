@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -143,7 +143,62 @@ describe('FiltersScreen', () => {
     ).toHaveTextContent('All tasks')
   })
 
-  it('deletes a filter', async () => {
+  it('edits a saved filter in place', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({
+      name: 'Design work',
+      criteria: { label: 'client' }
+    })
+    renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Edit Design work' })
+    )
+    expect(screen.getByRole('heading', { name: 'Edit filter' })).toBeVisible()
+    const name = screen.getByLabelText('Name')
+    expect(name).toHaveValue('Design work')
+    const label = screen.getByRole('combobox', { name: 'Label' })
+    await within(label).findByRole('option', { name: 'client' })
+    expect(label).toHaveValue('client')
+    fireEvent.change(name, { target: { value: 'Client fires' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Priority' }), {
+      target: { value: '1' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
+
+    expect(
+      await screen.findByRole('listitem', { name: 'Client fires' })
+    ).toHaveTextContent('Priority: P1 · Label: client')
+    expect(screen.queryByRole('heading', { name: 'Edit filter' })).toBeNull()
+    expect(boardsApi.updateFilter).toHaveBeenCalledWith(id, {
+      name: 'Client fires',
+      criteria: { priority: 1, label: 'client' }
+    })
+  })
+
+  it('edits a filter from its page and lists what now matches', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priority: 1 }
+    })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    expect(await screen.findByText('Poster')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit filter' }))
+    const label = screen.getByRole('combobox', { name: 'Label' })
+    await within(label).findByRole('option', { name: 'client' })
+    fireEvent.change(label, { target: { value: 'client' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
+
+    await waitFor(() => {
+      expect(screen.queryByText('Poster')).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('Logo')).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Edit filter' })).toBeNull()
+  })
+
+  it('deletes a filter once its undo notice closes', async () => {
     const boardsApi = boards()
     await boardsApi.createFilter({ name: 'Urgent', criteria: { priority: 1 } })
     renderRoute('/filters', { boardsApi })
@@ -155,10 +210,56 @@ describe('FiltersScreen', () => {
     expect(await findEmptyState('No saved filters')).toHaveTextContent(
       'Save the criteria you look for often, like your P1 tasks.'
     )
+    expect(screen.getByText('Urgent deleted')).toBeVisible()
+    expect(boardsApi.deleteFilter).not.toHaveBeenCalled()
     expect(
       screen
         .getByRole('list', { name: 'Main menu' })
         .querySelector('a[href="/filters"]')
     ).not.toBeNull()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    await waitFor(() => {
+      expect(boardsApi.deleteFilter).toHaveBeenCalledTimes(1)
+    })
+    expect(await boardsApi.listFilters()).toEqual([])
+  })
+
+  it('brings a deleted filter back on undo', async () => {
+    const boardsApi = boards()
+    await boardsApi.createFilter({ name: 'Urgent', criteria: { priority: 1 } })
+    await boardsApi.createFilter({ name: 'Mine', criteria: { assignee: 'me' } })
+    renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Delete Urgent' })
+    )
+    expect(screen.queryByRole('listitem', { name: 'Urgent' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+
+    expect(
+      within(screen.getByRole('region', { name: 'Saved filters' }))
+        .getAllByRole('listitem')
+        .map(item => item.getAttribute('aria-label'))
+    ).toEqual(['Urgent', 'Mine'])
+    expect(screen.queryByText('Urgent deleted')).toBeNull()
+    await new Promise(resolve => setTimeout(resolve, 10))
+    expect(boardsApi.deleteFilter).not.toHaveBeenCalled()
+  })
+
+  it('deletes a filter whose notice is still open when the page is left', async () => {
+    const boardsApi = boards()
+    await boardsApi.createFilter({ name: 'Urgent', criteria: { priority: 1 } })
+    const { unmount } = renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Delete Urgent' })
+    )
+    unmount()
+
+    await waitFor(() => {
+      expect(boardsApi.deleteFilter).toHaveBeenCalledTimes(1)
+    })
   })
 })

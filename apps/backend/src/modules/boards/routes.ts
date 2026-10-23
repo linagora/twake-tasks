@@ -104,6 +104,10 @@ const newFilter = z.object({
   })
 })
 
+const filterChanges = newFilter
+  .partial()
+  .refine(changes => Object.keys(changes).length > 0)
+
 const filterParams = z.object({ filterId: z.uuid() })
 
 const zoneQuery = z.object({ zone: z.string().max(64).refine(isTimeZone) })
@@ -578,6 +582,28 @@ export function registerBoards(
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(201).send(result.value)
+    }
+  )
+
+  app.patch(
+    '/filters/:filterId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = filterParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = filterChanges.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await filterStore.updateFilter(
+        identity,
+        params.data.filterId,
+        body.data
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
     }
   )
 

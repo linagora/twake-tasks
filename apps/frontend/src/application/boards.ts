@@ -236,6 +236,10 @@ export interface BoardsApi {
   removeMember: (boardId: string, userId: string) => Promise<void>
   listFilters: () => Promise<SavedFilter[]>
   createFilter: (filter: Omit<SavedFilter, 'id'>) => Promise<{ id: string }>
+  updateFilter: (
+    filterId: string,
+    filter: Omit<SavedFilter, 'id'>
+  ) => Promise<void>
   deleteFilter: (filterId: string) => Promise<void>
   /** The label names on the person's boards, one per spelling regardless of case. */
   labelNames: () => Promise<string[]>

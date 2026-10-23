@@ -3,9 +3,11 @@ import {
   CalendarToday,
   CheckCircle,
   Filter,
+  Icon,
+  Pen,
   Profile
 } from '@linagora/twake-icons'
-import { Checkbox, Link, Typography } from '@linagora/twake-mui'
+import { Button, Checkbox, Link, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 import { useParams } from 'react-router'
 
@@ -31,6 +33,7 @@ import {
   AgendaTaskPanel,
   useAgendaTaskPanel
 } from '@/ui/agenda/AgendaTaskPanel'
+import { FilterForm } from '@/ui/agenda/FiltersScreen'
 import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
 import { formatDay } from '@/ui/boards/dueLabel'
 import { LayoutToggle } from '@/ui/boards/Layouts'
@@ -195,6 +198,8 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
   const filters = useFilters()
   const agenda = useAgenda({ filterId })
   const [layout, setLayout] = useFilterLayout(filterId)
+  const [editing, setEditing] = useState(false)
+  const filter = filters.data?.find(each => each.id === filterId)
   if (agenda.error instanceof ApiError && agenda.error.status === 404) {
     return (
       <NotFoundScreen
@@ -206,14 +211,40 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
   return (
     <AgendaScreen
       view={{ filterId }}
-      title={filters.data?.find(filter => filter.id === filterId)?.name ?? ''}
+      title={filter?.name ?? ''}
       origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
       actions={
-        <LayoutToggle
-          layouts={FILTER_LAYOUTS}
-          value={layout}
-          onChange={setLayout}
-        />
+        <>
+          {filter && !editing && (
+            <Button
+              variant="secondary"
+              startIcon={<Icon icon={Pen} />}
+              onClick={() => {
+                setEditing(true)
+              }}
+            >
+              {t('filters.editTitle')}
+            </Button>
+          )}
+          <LayoutToggle
+            layouts={FILTER_LAYOUTS}
+            value={layout}
+            onChange={setLayout}
+          />
+        </>
+      }
+      form={
+        filter &&
+        editing && (
+          <div className="u-mb-2">
+            <FilterForm
+              filter={filter}
+              onClose={() => {
+                setEditing(false)
+              }}
+            />
+          </div>
+        )
       }
       body={
         layout === 'board' ? tasks => <ByStatus tasks={tasks} /> : undefined
@@ -301,6 +332,7 @@ export function AgendaScreen(
         title: string
         origin: Origin
         actions?: ReactNode
+        form?: ReactNode
         body?: ((tasks: AgendaTask[]) => ReactNode) | undefined
       }
 ): ReactElement {
@@ -309,6 +341,7 @@ export function AgendaScreen(
   const agenda = useAgenda(view)
   const title = 'title' in props ? props.title : t(`agenda.${props.view}`)
   const actions = 'actions' in props ? props.actions : undefined
+  const form = 'form' in props ? props.form : undefined
   const body = 'body' in props ? props.body : undefined
   const origin: Origin =
     'origin' in props
@@ -338,6 +371,7 @@ export function AgendaScreen(
           }
           actions={actions}
         />
+        {form}
         {agenda.isError && (
           <Typography role="alert">{t('agenda.loadFailed')}</Typography>
         )}

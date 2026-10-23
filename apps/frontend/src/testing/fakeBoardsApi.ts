@@ -313,6 +313,13 @@ export function fakeBoardsApi(boards: Board[] = []) {
         return { id }
       })
     ),
+    updateFilter: vi.fn<BoardsApi['updateFilter']>((filterId, filter) =>
+      Promise.resolve().then(() => {
+        const index = filters.findIndex(each => each.id === filterId)
+        if (index < 0) throw new ApiError(404, 'not_found')
+        filters[index] = { id: filterId, ...structuredClone(filter) }
+      })
+    ),
     deleteFilter: vi.fn<BoardsApi['deleteFilter']>(filterId =>
       Promise.resolve().then(() => {
         const index = filters.findIndex(filter => filter.id === filterId)
