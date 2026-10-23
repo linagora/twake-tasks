@@ -370,6 +370,19 @@ export function Chips({
   )
 }
 
+/** A header action as small as its neighbours, filled once it is on. */
+export const HeaderToggle = styled(IconButton, {
+  shouldForwardProp: prop => prop !== 'on' && prop !== 'unavailable'
+})<{ on: boolean; unavailable: boolean }>(({ theme, on, unavailable }) => ({
+  ...(on && {
+    '&, &:hover': {
+      backgroundColor: theme.vars.palette.success.main,
+      color: theme.vars.palette.success.contrastText
+    }
+  }),
+  ...(unavailable && { opacity: 0.5, cursor: 'default' })
+}))
+
 export function Inline({ children }: { children: ReactNode }): ReactElement {
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>

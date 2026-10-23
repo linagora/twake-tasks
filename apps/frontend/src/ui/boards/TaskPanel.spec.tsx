@@ -36,7 +36,9 @@ describe('TaskPanel', () => {
         sectionId: board.sections[2]?.id
       })
     })
-    fireEvent.click(await panel.findByRole('button', { name: 'Completed' }))
+    fireEvent.click(
+      await panel.findByRole('button', { name: 'Mark incomplete' })
+    )
 
     await waitFor(() => {
       expect(boardsApi.moveTask).toHaveBeenLastCalledWith(board.id, logo.id, {

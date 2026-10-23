@@ -163,6 +163,7 @@
     "peek": "Apri in un pannello laterale",
     "markComplete": "Segna come completata",
     "completed": "Completata",
+    "markIncomplete": "Segna come non completata",
     "noDoneSection": "Questa bacheca non ha una sezione Fatto.",
     "linkCopied": "Link copiato",
     "copyFailed": "Impossibile copiare il link.",

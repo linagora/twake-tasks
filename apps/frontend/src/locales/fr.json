@@ -163,6 +163,7 @@
     "peek": "Ouvrir sur le côté",
     "markComplete": "Marquer comme terminée",
     "completed": "Terminée",
+    "markIncomplete": "Marquer comme non terminée",
     "noDoneSection": "Ce tableau n'a pas de section Terminé.",
     "linkCopied": "Lien copié",
     "copyFailed": "Le lien n'a pas pu être copié.",

@@ -21,6 +21,7 @@ import { ApiError } from '@/application/boards'
 import { RichText, RichTextEditor } from '@/ds/RichText'
 import {
   Grow,
+  HeaderToggle,
   Inline,
   PanelSection,
   SidePanel,
@@ -258,20 +259,41 @@ function CompleteButton({
     sections,
     editable
   )
-  const label = done ? t('task.completed') : t('task.markComplete')
   const icon = <Icon icon={Check} />
   const unavailable = editable && task.canceledAt === null && noDoneSection
+
+  if (iconOnly) {
+    const label = done ? t('task.markIncomplete') : t('task.markComplete')
+    // aria-disabled keeps the button hoverable, so its tooltip can say why.
+    return (
+      <Tooltip
+        title={unavailable ? t('task.noDoneSection') : disabled ? '' : label}
+        describeChild
+      >
+        <HeaderToggle
+          size="small"
+          on={done}
+          unavailable={unavailable}
+          aria-label={label}
+          aria-disabled={unavailable ? 'true' : undefined}
+          disabled={!unavailable && disabled}
+          disableRipple={unavailable}
+          onClick={unavailable ? undefined : toggle}
+        >
+          {icon}
+        </HeaderToggle>
+      </Tooltip>
+    )
+  }
+
+  const label = done ? t('task.completed') : t('task.markComplete')
   const props = {
     size: 'small',
     variant: done ? 'contained' : 'outlined',
     color: done ? 'success' : 'primary',
-    startIcon: iconOnly ? undefined : icon,
-    'aria-label': iconOnly ? label : undefined,
-    className: iconOnly ? 'u-miw-auto u-ph-half' : undefined,
-    children: iconOnly ? icon : label
+    startIcon: icon,
+    children: label
   } as const
-
-  // aria-disabled keeps the button hoverable, so its tooltip can say why.
   if (unavailable) {
     return (
       <Tooltip title={t('task.noDoneSection')} describeChild>
@@ -279,11 +301,7 @@ function CompleteButton({
       </Tooltip>
     )
   }
-  return (
-    <Tooltip title={iconOnly && !disabled ? label : ''}>
-      <Button {...props} disabled={disabled} onClick={toggle} />
-    </Tooltip>
-  )
+  return <Button {...props} disabled={disabled} onClick={toggle} />
 }
 
 function DiscardDialog({

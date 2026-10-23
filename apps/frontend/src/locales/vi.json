@@ -163,6 +163,7 @@
     "peek": "Mở ở khung bên",
     "markComplete": "Đánh dấu hoàn thành",
     "completed": "Đã hoàn thành",
+    "markIncomplete": "Đánh dấu chưa hoàn thành",
     "noDoneSection": "Bảng này không có mục Hoàn thành.",
     "linkCopied": "Đã sao chép liên kết",
     "copyFailed": "Không thể sao chép liên kết.",

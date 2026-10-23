@@ -163,6 +163,7 @@
     "peek": "Open in side peek",
     "markComplete": "Mark complete",
     "completed": "Completed",
+    "markIncomplete": "Mark incomplete",
     "noDoneSection": "This board has no Done section.",
     "linkCopied": "Link copied",
     "copyFailed": "The link could not be copied.",

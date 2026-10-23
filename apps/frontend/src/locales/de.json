@@ -163,6 +163,7 @@
     "peek": "In der Seitenansicht öffnen",
     "markComplete": "Als erledigt markieren",
     "completed": "Erledigt",
+    "markIncomplete": "Als nicht erledigt markieren",
     "noDoneSection": "Dieses Board hat keinen Abschnitt „Erledigt“.",
     "linkCopied": "Link kopiert",
     "copyFailed": "Der Link konnte nicht kopiert werden.",
