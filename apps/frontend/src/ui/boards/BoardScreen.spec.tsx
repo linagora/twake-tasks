@@ -557,9 +557,17 @@ describe('BoardScreen', () => {
     })
 
     it.each([
-      ['a viewer', () => ({ role: 'viewer' as const })],
-      ['a personal project', () => ({ project: aProject({ personal: true }) })]
-    ])('lists the members read-only for %s', async (_name, overrides) => {
+      [
+        'a viewer',
+        () => ({ role: 'viewer' as const }),
+        'Only an admin can share this board.'
+      ],
+      [
+        'a personal project',
+        () => ({ project: aProject({ personal: true }) }),
+        'A board of your personal project is private. Move it to a project to share it.'
+      ]
+    ])('lists the members read-only for %s', async (_name, overrides, why) => {
       const board = { ...designBoard(), ...overrides() }
       renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
@@ -568,9 +576,49 @@ describe('BoardScreen', () => {
       const dialog = within(
         await screen.findByRole('dialog', { name: 'People with access' })
       )
+      expect(dialog.getByText(why)).toBeVisible()
       expect(dialog.getByText('Alice Martin')).toBeVisible()
       expect(dialog.getByText('bob.durand@example.com')).toBeVisible()
       expect(dialog.queryByRole('button', { name: /^Role/ })).toBeNull()
+    })
+
+    it.each([
+      [
+        'viewer' as const,
+        'Viewer',
+        'You can view tasks, comment and set your own reminders.'
+      ],
+      [
+        'editor' as const,
+        'Editor',
+        'You can add, edit and move tasks. Admins manage sections, sharing and the board.'
+      ]
+    ])('tells a %s their role and what it allows', async (role, chip, hint) => {
+      const board = { ...designBoard(), role }
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+      const button = await screen.findByRole('button', { name: chip })
+      fireEvent.keyDown(document.body, { key: 'Tab' })
+      act(() => {
+        button.focus()
+      })
+      const tooltip = await screen.findByRole('tooltip')
+      expect(tooltip).toHaveTextContent(hint)
+      expect(button).toHaveAccessibleDescription(hint)
+
+      fireEvent.click(button)
+      expect(
+        await screen.findByRole('dialog', { name: 'People with access' })
+      ).toBeVisible()
+    })
+
+    it('shows an admin no role chip', async () => {
+      const board = designBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+      await screen.findByRole('button', { name: '2 members' })
+      expect(screen.queryByRole('button', { name: 'Admin' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Editor' })).toBeNull()
     })
 
     it('summarises a larger board with a +N bubble', async () => {

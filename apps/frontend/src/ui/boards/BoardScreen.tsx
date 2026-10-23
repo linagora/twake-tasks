@@ -2,6 +2,7 @@ import { Compass, Icon, Plus, Share } from '@linagora/twake-icons'
 import {
   Alert,
   Button,
+  Chip,
   ClickAwayListener,
   TextField,
   Tooltip,
@@ -218,7 +219,7 @@ function BoardColumns({
   const whyNot = board.project.personal
     ? t('sharing.personalBoard')
     : board.project.managed
-      ? t('sharing.managedBoard')
+      ? t('sharing.managedBoard', { space: board.project.name })
       : board.archived
         ? t('sharing.archivedBoard')
         : board.role !== 'admin'
@@ -306,6 +307,26 @@ function BoardColumns({
         actions={
           <>
             <LayoutSwitch board={board} />
+            {board.role !== 'admin' && (
+              <Tooltip
+                title={
+                  board.archived
+                    ? t('archive.boardArchived')
+                    : t(`board.${board.role}Hint`)
+                }
+                describeChild
+              >
+                <Chip
+                  variant="outlined"
+                  size="small"
+                  label={t(`sharing.roles.${board.role}`)}
+                  aria-haspopup="dialog"
+                  onClick={() => {
+                    setListing(true)
+                  }}
+                />
+              </Tooltip>
+            )}
             {board.members.length > 0 && (
               <MemberStack
                 members={board.members}
@@ -384,6 +405,7 @@ function BoardColumns({
       {listing && (
         <MembersDialog
           board={board}
+          reason={whyNot}
           onClose={() => {
             setListing(false)
           }}

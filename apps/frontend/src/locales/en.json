@@ -90,6 +90,8 @@
   "board": {
     "back": "Back to boards",
     "menu": "Board options",
+    "viewerHint": "You can view tasks, comment and set your own reminders.",
+    "editorHint": "You can add, edit and move tasks. Admins manage sections, sharing and the board.",
     "newTask": "Add task",
     "notFound": "This board doesn't exist, or you can't open it.",
     "taskNotFound": "This task doesn't exist, or you can't open it.",
@@ -411,6 +413,11 @@
       "editor": "Editor",
       "admin": "Admin"
     },
+    "roleHints": {
+      "viewer": "Sees tasks and comments on them",
+      "editor": "Adds, edits and moves tasks",
+      "admin": "Also manages sections, sharing and the board"
+    },
     "invite": "Invite",
     "invited": "Invited %{email}. You can assign them tasks once they open Twake Project.",
     "pending": "Pending",
@@ -424,7 +431,7 @@
     "failed": "The change could not be saved.",
     "loadFailed": "The members could not be loaded.",
     "personalBoard": "A board of your personal project is private. Move it to a project to share it.",
-    "managedBoard": "The members of this project are managed by its integration.",
+    "managedBoard": "The members of this board are the members of the space %{space}. Manage them in TwakeSpace.",
     "archivedBoard": "An archived board can't be shared.",
     "adminOnly": "Only an admin can share this board.",
     "help": "Sharing this board shares its project %{project} with everyone on it.",

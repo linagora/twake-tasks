@@ -90,6 +90,8 @@
   "board": {
     "back": "Zurück zu den Boards",
     "menu": "Board-Optionen",
+    "viewerHint": "Sie können Aufgaben ansehen, kommentieren und eigene Erinnerungen setzen.",
+    "editorHint": "Sie können Aufgaben hinzufügen, bearbeiten und verschieben. Admins verwalten Abschnitte, Freigabe und das Board.",
     "newTask": "Aufgabe hinzufügen",
     "notFound": "Dieses Board existiert nicht, oder Sie können es nicht öffnen.",
     "taskNotFound": "Diese Aufgabe existiert nicht, oder Sie können sie nicht öffnen.",
@@ -411,6 +413,11 @@
       "editor": "Bearbeiter",
       "admin": "Admin"
     },
+    "roleHints": {
+      "viewer": "Sieht Aufgaben und kommentiert sie",
+      "editor": "Fügt Aufgaben hinzu, bearbeitet und verschiebt sie",
+      "admin": "Verwaltet auch Abschnitte, Freigabe und das Board"
+    },
     "invite": "Einladen",
     "invited": "%{email} eingeladen. Aufgaben können zugewiesen werden, sobald Twake Project geöffnet wurde.",
     "pending": "Ausstehend",
@@ -424,7 +431,7 @@
     "failed": "Die Änderung konnte nicht gespeichert werden.",
     "loadFailed": "Die Mitglieder konnten nicht geladen werden.",
     "personalBoard": "Ein Board Ihres persönlichen Projekts ist privat. Verschieben Sie es in ein Projekt, um es zu teilen.",
-    "managedBoard": "Die Mitglieder dieses Projekts werden von seiner Integration verwaltet.",
+    "managedBoard": "Die Mitglieder dieses Boards sind die des Bereichs %{space}. Verwalten Sie sie in TwakeSpace.",
     "archivedBoard": "Ein archiviertes Board kann nicht geteilt werden.",
     "adminOnly": "Nur ein Admin kann dieses Board teilen.",
     "help": "Wenn Sie dieses Board teilen, teilen Sie sein Projekt %{project} mit allen darin.",

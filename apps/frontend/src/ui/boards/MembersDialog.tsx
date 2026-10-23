@@ -1,4 +1,10 @@
-import { Avatar, Dialog, DialogContent, List } from '@linagora/twake-mui'
+import {
+  Avatar,
+  Dialog,
+  DialogContent,
+  List,
+  Typography
+} from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 
 import { ClosableTitle } from '@/ds/ClosableTitle'
@@ -49,9 +55,11 @@ export function MemberStack({
 
 export function MembersDialog({
   board,
+  reason,
   onClose
 }: {
   board: Board
+  reason: string | null
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
@@ -63,6 +71,11 @@ export function MembersDialog({
         onClose={onClose}
       />
       <DialogContent className="u-pb-1-half">
+        {reason && (
+          <Typography variant="body2" color="textSecondary" className="u-mb-1">
+            {reason}
+          </Typography>
+        )}
         <List dense>
           {board.members.map(member => (
             <PersonRow

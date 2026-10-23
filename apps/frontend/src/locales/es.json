@@ -90,6 +90,8 @@
   "board": {
     "back": "Volver a los tableros",
     "menu": "Opciones del tablero",
+    "viewerHint": "Puedes ver las tareas, comentar y crear tus recordatorios.",
+    "editorHint": "Puedes añadir, editar y mover tareas. Los administradores gestionan las secciones, el uso compartido y el tablero.",
     "newTask": "Añadir tarea",
     "notFound": "Este tablero no existe o no puedes abrirlo.",
     "taskNotFound": "Esta tarea no existe o no puedes abrirla.",
@@ -411,6 +413,11 @@
       "editor": "Editor",
       "admin": "Administrador"
     },
+    "roleHints": {
+      "viewer": "Ve las tareas y las comenta",
+      "editor": "Añade, edita y mueve tareas",
+      "admin": "También gestiona secciones, uso compartido y el tablero"
+    },
     "invite": "Invitar",
     "invited": "%{email} invitado. Podrás asignarle tareas en cuanto abra Twake Project.",
     "pending": "Pendiente",
@@ -424,7 +431,7 @@
     "failed": "No se pudo guardar el cambio.",
     "loadFailed": "No se pudieron cargar los miembros.",
     "personalBoard": "Un tablero de tu proyecto personal es privado. Muévelo a un proyecto para compartirlo.",
-    "managedBoard": "Los miembros de este proyecto los gestiona su integración.",
+    "managedBoard": "Los miembros de este tablero son los del espacio %{space}. Gestiónalos en TwakeSpace.",
     "archivedBoard": "Un tablero archivado no se puede compartir.",
     "adminOnly": "Solo un administrador puede compartir este tablero.",
     "help": "Compartir este tablero comparte su proyecto %{project} con todas las personas que lo integran.",

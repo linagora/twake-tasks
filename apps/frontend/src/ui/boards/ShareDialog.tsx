@@ -18,6 +18,7 @@ import { useState, type ReactElement } from 'react'
 import { ApiError } from '@/application/boards'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { MenuHint } from '@/ds/MenuHint'
+import { MenuOption } from '@/ds/MenuOption'
 import { InviteRow, PersonCombobox, PersonRow } from '@/ds/PeopleList'
 import { ROLES, type Board, type Role } from '@/domain/board'
 import { displayName } from '@/domain/person'
@@ -76,20 +77,22 @@ function RoleMenu({
         {lastAdmin && <MenuHint>{t('sharing.lastAdmin')}</MenuHint>}
         {onChange &&
           ROLES.map(role => (
-            <MenuItem
+            <MenuOption
               key={role}
+              label={t(`sharing.roles.${role}`)}
+              hint={t(`sharing.roleHints.${role}`)}
+              icon={
+                <ListItemIcon>
+                  {role === value && <Icon icon={Check} />}
+                </ListItemIcon>
+              }
               selected={role === value}
               disabled={lastAdmin && role !== value}
               onClick={() => {
                 close()
                 if (role !== value) onChange(role)
               }}
-            >
-              <ListItemIcon>
-                {role === value && <Icon icon={Check} />}
-              </ListItemIcon>
-              <ListItemText>{t(`sharing.roles.${role}`)}</ListItemText>
-            </MenuItem>
+            />
           ))}
         {onChange && action && <Divider />}
         {action && (
@@ -119,7 +122,7 @@ export function ShareDialog({
   const sharing = useSharing(board.id)
   const [email, setEmail] = useState('')
   const suggestions = usePeopleSuggestions(board.id, email)
-  const [role, setRole] = useState<Role>('viewer')
+  const [role, setRole] = useState<Role>('editor')
   const [invited, setInvited] = useState<string | null>(null)
   const invite = useBoardChange(board.id, (api, to: string) =>
     api.invite(board.id, to, role)

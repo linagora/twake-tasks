@@ -37,8 +37,8 @@ describe('sharing a board', () => {
     fireEvent.change(form.getByRole('combobox', { name: 'Email' }), {
       target: { value: 'bob@example.com' }
     })
-    fireEvent.click(form.getByRole('button', { name: 'Role: Viewer' }))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Editor' }))
+    fireEvent.click(form.getByRole('button', { name: 'Role: Editor' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Viewer' }))
     fireEvent.click(form.getByRole('button', { name: 'Invite' }))
 
     expect(
@@ -52,7 +52,48 @@ describe('sharing a board', () => {
     expect(boardsApi.invite).toHaveBeenCalledWith(
       board.id,
       'bob@example.com',
+      'viewer'
+    )
+  })
+
+  it('invites as an editor unless told otherwise', async () => {
+    const { boardsApi, board, dialog } = await openSharing()
+    const form = within(dialog.getByRole('form', { name: 'Invite' }))
+
+    fireEvent.change(form.getByRole('combobox', { name: 'Email' }), {
+      target: { value: 'bob@example.com' }
+    })
+    fireEvent.click(form.getByRole('button', { name: 'Invite' }))
+
+    await dialog.findByText(/^Invited bob@example.com\./)
+    expect(boardsApi.invite).toHaveBeenCalledWith(
+      board.id,
+      'bob@example.com',
       'editor'
+    )
+  })
+
+  it.each([
+    ['the invite', 'Role: Editor'],
+    ['a member', 'Role of me@example.com: Admin']
+  ])('says what each role allows in the menu of %s', async (_name, menu) => {
+    const { dialog } = await openSharing([
+      me,
+      { userId: 'bob', email: 'bob@example.com', name: null, role: 'admin' }
+    ])
+
+    fireEvent.click(await dialog.findByRole('button', { name: menu }))
+
+    expect(
+      screen.getByRole('menuitem', { name: 'Viewer' })
+    ).toHaveAccessibleDescription('Sees tasks and comments on them')
+    expect(
+      screen.getByRole('menuitem', { name: 'Editor' })
+    ).toHaveAccessibleDescription('Adds, edits and moves tasks')
+    expect(
+      screen.getByRole('menuitem', { name: 'Admin' })
+    ).toHaveAccessibleDescription(
+      'Also manages sections, sharing and the board'
     )
   })
 
@@ -236,7 +277,7 @@ describe('sharing a board', () => {
 
     fireEvent.click(
       await dialog.findByRole('button', {
-        name: 'Role of eve@example.com: Viewer'
+        name: 'Role of eve@example.com: Editor'
       })
     )
     fireEvent.click(screen.getByRole('menuitem', { name: 'Cancel invite' }))
@@ -315,8 +356,11 @@ describe('sharing a board', () => {
     ],
     [
       'a managed project',
-      () => aBoard({ project: aProject({ managed: true }) }),
-      'The members of this project are managed by its integration.'
+      () =>
+        aBoard({
+          project: aProject({ name: 'Product launch', managed: true })
+        }),
+      'The members of this board are the members of the space Product launch. Manage them in TwakeSpace.'
     ],
     [
       'an archived board',
