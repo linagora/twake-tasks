@@ -1,12 +1,12 @@
 import { List, ListItemButton, Paper, Popper } from '@linagora/twake-mui'
-import { Extension, type Editor } from '@tiptap/react'
+import { Extension, type Content, type Editor } from '@tiptap/react'
 import { Suggestion, type SuggestionProps } from '@tiptap/suggestion'
 import { useEffect, useMemo, type ReactElement, type ReactNode } from 'react'
 
 export interface SuggestionOption {
   key: string
-  /** The text that replaces the trigger and what was typed after it. */
-  insert: string
+  /** What replaces the trigger and what was typed after it. */
+  insert: Content
   label: ReactNode
 }
 
@@ -53,7 +53,7 @@ export function suggestionsExtension(bridge: SuggestionBridge) {
             editor
               .chain()
               .focus()
-              .insertContentAt(range, { type: 'text', text: props.insert })
+              .insertContentAt(range, props.insert)
               .setMeta('preventAutolink', true)
               .run()
           },

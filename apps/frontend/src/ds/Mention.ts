@@ -11,24 +11,45 @@ const MENTION_START = /(?:^|\s)@(?:[A-Za-z0-9._%+-]|\\_)+@/
  * that belong to nobody in `names` stay the text they were written as, and the
  * stored markdown is always "@<email>".
  */
-export function mentionExtension(names: Record<string, string>) {
+export function mentionExtension(names: () => Record<string, string>) {
   const nameOf = (email: string): string | undefined =>
-    names[email.toLowerCase()]
+    names()[email.toLowerCase()]
   return Node.create({
     name: 'mention',
     group: 'inline',
     inline: true,
     atom: true,
     selectable: false,
-    addAttributes: () => ({ email: { default: '' } }),
+    addAttributes: () => ({
+      email: {
+        default: '',
+        parseHTML: element => element.getAttribute('data-email') ?? ''
+      }
+    }),
+    // A chip pasted into an editor stays a mention. A viewer never reads one
+    // from the raw HTML a markdown body may hold: it would look like a mention
+    // the backend never saw.
+    parseHTML() {
+      return [
+        {
+          tag: 'span[data-email]',
+          getAttrs: element =>
+            this.editor?.isEditable &&
+            nameOf(element.getAttribute('data-email') ?? '')
+              ? null
+              : false
+        }
+      ]
+    },
     renderHTML: ({ node }) => {
       const email = String(node.attrs.email)
       return [
         'span',
-        { class: 'mention', title: email },
+        { class: 'mention', title: email, 'data-email': email },
         `@${nameOf(email) ?? email}`
       ]
     },
+    renderText: ({ node }) => `@${String(node.attrs.email)}`,
     markdownTokenName: 'mention',
     markdownTokenizer: {
       name: 'mention',

@@ -69,6 +69,21 @@ describe('mentions in rich text', () => {
       'jean_dupont@example.com'
     )
   })
+
+  it('does not show raw HTML in the markdown as a mention', async () => {
+    renderWithProviders(
+      <div data-testid="comment">
+        <RichText
+          markdown={'Ask <span data-email="bob@example.com">@Bob</span> now'}
+          mentions={{ 'bob@example.com': 'Bob' }}
+        />
+      </div>
+    )
+
+    const comment = await screen.findByTestId('comment')
+    await screen.findByText(/Ask/)
+    expect(comment.querySelector('.mention')).toBeNull()
+  })
 })
 
 describe('links in rich text', () => {
