@@ -63,6 +63,7 @@ All on the `space` exchange. An event dated more than a day ahead is rejected, s
 
 - `twake.space.sync.requested` on `space`, at start, in space mode, while no space is known yet.
 - `com.twake.tasks.space.provisioned.v1` on `activity`, once a space has its project. A CloudEvent whose data holds the space id and the project (`{ kind: 'project', id }`), which tells TwakeSpace the project to show for the space.
+- `com.twake.tasks.task.commented.v1` on `activity`, once per project member a comment mentions (`@email`), other than its author. Its data holds the task as `object`, and `recipients: [{ uuid, email, reason: 'mentioned' }]` for that member. It carries no comment text. A comment that mentions no one publishes nothing.
 
 ## Live updates
 

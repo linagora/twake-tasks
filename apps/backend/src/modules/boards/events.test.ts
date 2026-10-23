@@ -165,6 +165,44 @@ describe('task events', () => {
     })
   })
 
+  it('publishes a comment once per member it mentions, without its text', async () => {
+    const alice = aUser()
+    const bob = aUser()
+    const carol = aUser()
+    const board = await aBoardOf(alice)
+    await joinBoard(db, alice, board.id, bob, 'editor')
+    await joinBoard(db, alice, board.id, carol, 'viewer')
+    const task = await aTaskOn(alice, board.id, null)
+    const before = (await eventsOf(task.id)).length
+
+    await api.as(alice).post(`${task.path}/comments`, { body: 'No mention' })
+    await api.as(alice).post(`${task.path}/comments`, {
+      body: `@${bob.email} and @${carol.email.toUpperCase()}, @${alice.email} says @nobody@example.com`
+    })
+
+    const commented = (await eventsOf(task.id)).slice(before)
+    expect(commented.map(({ event }) => event.type)).toEqual([
+      'com.twake.tasks.task.commented.v1',
+      'com.twake.tasks.task.commented.v1'
+    ])
+    expect(commented.map(({ event }) => event.data.recipients)).toEqual(
+      expect.arrayContaining([
+        [{ uuid: bob.userId, email: bob.email, reason: 'mentioned' }],
+        [{ uuid: carol.userId, email: carol.email, reason: 'mentioned' }]
+      ])
+    )
+    for (const { event } of commented) {
+      expect(event).toMatchObject({
+        twakeactorid: alice.userId,
+        twakeactor: alice.email
+      })
+      expect(Object.keys(event.data).sort()).toEqual(['object', 'recipients'])
+      expect(event.data).toMatchObject({
+        object: { type: 'task', id: task.id, key: 'DES-1' }
+      })
+    }
+  })
+
   it('names the project that holds the task', async () => {
     const admin = aUser()
     const board = await aBoardOf(admin)
