@@ -90,6 +90,8 @@
   "board": {
     "back": "Torna alle bacheche",
     "menu": "Opzioni della bacheca",
+    "viewerHint": "Puoi vedere le attività, commentare e impostare i tuoi promemoria.",
+    "editorHint": "Puoi aggiungere, modificare e spostare attività. Gli amministratori gestiscono sezioni, condivisione e bacheca.",
     "newTask": "Aggiungi attività",
     "notFound": "Questa bacheca non esiste, oppure non puoi aprirla.",
     "taskNotFound": "Questa attività non esiste, oppure non puoi aprirla.",
@@ -411,6 +413,11 @@
       "editor": "Editor",
       "admin": "Amministratore"
     },
+    "roleHints": {
+      "viewer": "Vede le attività e le commenta",
+      "editor": "Aggiunge, modifica e sposta le attività",
+      "admin": "Gestisce anche sezioni, condivisione e bacheca"
+    },
     "invite": "Invita",
     "invited": "%{email} invitato. Potrai assegnargli attività appena apre Twake Project.",
     "pending": "In attesa",
@@ -424,7 +431,7 @@
     "failed": "Impossibile salvare la modifica.",
     "loadFailed": "Impossibile caricare i membri.",
     "personalBoard": "Una bacheca del tuo progetto personale è privata. Spostala in un progetto per condividerla.",
-    "managedBoard": "I membri di questo progetto sono gestiti dalla sua integrazione.",
+    "managedBoard": "I membri di questa bacheca sono quelli dello spazio %{space}. Gestiscili in TwakeSpace.",
     "archivedBoard": "Una bacheca archiviata non può essere condivisa.",
     "adminOnly": "Solo un amministratore può condividere questa bacheca.",
     "help": "Condividere questa bacheca condivide il suo progetto %{project} con tutte le persone che ne fanno parte.",

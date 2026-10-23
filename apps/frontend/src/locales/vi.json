@@ -90,6 +90,8 @@
   "board": {
     "back": "Quay lại danh sách bảng",
     "menu": "Tùy chọn bảng",
+    "viewerHint": "Bạn có thể xem công việc, bình luận và đặt nhắc nhở cho mình.",
+    "editorHint": "Bạn có thể thêm, sửa và di chuyển công việc. Quản trị viên quản lý mục, chia sẻ và bảng.",
     "newTask": "Thêm công việc",
     "notFound": "Bảng này không tồn tại, hoặc bạn không thể mở nó.",
     "taskNotFound": "Công việc này không tồn tại, hoặc bạn không thể mở nó.",
@@ -411,6 +413,11 @@
       "editor": "Người chỉnh sửa",
       "admin": "Quản trị viên"
     },
+    "roleHints": {
+      "viewer": "Xem và bình luận công việc",
+      "editor": "Thêm, sửa và di chuyển công việc",
+      "admin": "Quản lý cả mục, chia sẻ và bảng"
+    },
     "invite": "Mời",
     "invited": "Đã mời %{email}. Bạn có thể giao việc khi họ mở Twake Project.",
     "pending": "Đang chờ",
@@ -424,7 +431,7 @@
     "failed": "Không thể lưu thay đổi.",
     "loadFailed": "Không thể tải danh sách thành viên.",
     "personalBoard": "Bảng của dự án cá nhân là riêng tư. Hãy chuyển bảng vào một dự án để chia sẻ.",
-    "managedBoard": "Thành viên của dự án này do tích hợp của dự án quản lý.",
+    "managedBoard": "Thành viên của bảng này là thành viên của không gian %{space}. Quản lý họ trong TwakeSpace.",
     "archivedBoard": "Không thể chia sẻ bảng đã lưu trữ.",
     "adminOnly": "Chỉ quản trị viên mới có thể chia sẻ bảng này.",
     "help": "Chia sẻ bảng này sẽ chia sẻ dự án %{project} với tất cả thành viên của dự án.",

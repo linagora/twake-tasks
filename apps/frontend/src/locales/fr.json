@@ -90,6 +90,8 @@
   "board": {
     "back": "Retour aux tableaux",
     "menu": "Options du tableau",
+    "viewerHint": "Vous pouvez consulter les tâches, commenter et créer vos rappels.",
+    "editorHint": "Vous pouvez ajouter, modifier et déplacer des tâches. Les administrateurs gèrent les sections, le partage et le tableau.",
     "newTask": "Ajouter une tâche",
     "notFound": "Ce tableau n'existe pas, ou vous ne pouvez pas l'ouvrir.",
     "taskNotFound": "Cette tâche n'existe pas, ou vous ne pouvez pas l'ouvrir.",
@@ -411,6 +413,11 @@
       "editor": "Éditeur",
       "admin": "Administrateur"
     },
+    "roleHints": {
+      "viewer": "Voit les tâches et les commente",
+      "editor": "Ajoute, modifie et déplace les tâches",
+      "admin": "Gère aussi les sections, le partage et le tableau"
+    },
     "invite": "Inviter",
     "invited": "%{email} est invité(e). Vous pourrez lui assigner des tâches dès sa première ouverture de Twake Project.",
     "pending": "En attente",
@@ -424,7 +431,7 @@
     "failed": "La modification n'a pas pu être enregistrée.",
     "loadFailed": "Les membres n'ont pas pu être chargés.",
     "personalBoard": "Un tableau de votre projet personnel est privé. Déplacez-le dans un projet pour le partager.",
-    "managedBoard": "Les membres de ce projet sont gérés par son intégration.",
+    "managedBoard": "Les membres de ce tableau sont ceux de l'espace %{space}. Gérez-les dans TwakeSpace.",
     "archivedBoard": "Un tableau archivé ne peut pas être partagé.",
     "adminOnly": "Seul un administrateur peut partager ce tableau.",
     "help": "Partager ce tableau partage son projet %{project} avec tous ses membres.",
