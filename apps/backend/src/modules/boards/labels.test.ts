@@ -199,12 +199,15 @@ describe('labels', () => {
   it.each([
     ['a zero width space', 'Urgent\u{200B}'],
     ['a word joiner', 'Ur\u{2060}gent'],
-    ['decomposed accents', 'Cafe\u{301}']
+    ['decomposed accents', 'Cafe\u{301}'],
+    ['full width letters', 'Ｕｒｇｅｎｔ'],
+    ['a ligature', '\u{FB01}x']
   ])('refuses a name that differs only by %s', async (_, lookalike) => {
     const alice = aUser()
     const board = await aBoard(alice)
     await board.addLabel('Urgent')
     await board.addLabel('Café')
+    await board.addLabel('fix')
 
     const again = await board.addLabel(lookalike)
 
@@ -219,6 +222,15 @@ describe('labels', () => {
     const label = await board.addLabel('\u{200B}Cafe\u{301}\u{2060}')
 
     expect(label.json()).toMatchObject({ name: 'Café' })
+  })
+
+  it('stores a name with its compatibility forms folded', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+
+    const label = await board.addLabel('Ｕｒｇｅｎｔ \u{FB01}x')
+
+    expect(label.json()).toMatchObject({ name: 'Urgent fix' })
   })
 
   it.each([

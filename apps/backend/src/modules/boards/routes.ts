@@ -135,7 +135,8 @@ const taskChanges = z
 const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
 
 // Two names that render alike are the same label: invisible format characters
-// go, and accents are composed. Kept, because they change what renders: the
+// go, accents are composed, and compatibility forms such as full width letters
+// and ligatures are folded. Kept, because they change what renders: the
 // joiner of an emoji sequence, a joiner between letters of a script that
 // shapes with it (Persian, Devanagari), the tags of a subdivision flag.
 const emojiJoiner = String.raw`(?<=[\p{Extended_Pictographic}\p{Emoji_Modifier}\u{FE0F}])\u{200D}(?=\p{Extended_Pictographic})`
@@ -151,7 +152,7 @@ const labelName = z
   .overwrite(name =>
     name
       .replace(invisible, (_, kept: string | undefined) => kept ?? '')
-      .normalize('NFC')
+      .normalize('NFKC')
   )
   .trim()
   .min(1)
