@@ -29,7 +29,7 @@ export function NewBoardDialog({
   onClose: () => void
   onCreated: (board: Board) => void
 }): ReactElement {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const titleId = useId()
   const [name, setName] = useState('')
   const [typedPrefix, setTypedPrefix] = useState<string | null>(null)
@@ -46,7 +46,7 @@ export function NewBoardDialog({
         onSubmit={event => {
           event.preventDefault()
           create.mutate(
-            { name: name.trim(), keyPrefix },
+            { name: name.trim(), keyPrefix, language: lang },
             { onSuccess: onCreated }
           )
         }}

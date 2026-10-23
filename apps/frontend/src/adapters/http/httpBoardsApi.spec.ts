@@ -51,14 +51,19 @@ describe('httpBoardsApi', () => {
 
     await httpBoardsApi(BASE, send).createBoard({
       name: 'Design',
-      keyPrefix: 'DES'
+      keyPrefix: 'DES',
+      language: 'fr'
     })
 
     const [request] = send.mock.calls[0] ?? []
     expect(request?.method).toBe('POST')
     expect(request?.url).toBe(`${BASE}/api/boards`)
     expect(request?.headers.get('content-type')).toBe('application/json')
-    expect(await request?.json()).toEqual({ name: 'Design', keyPrefix: 'DES' })
+    expect(await request?.json()).toEqual({
+      name: 'Design',
+      keyPrefix: 'DES',
+      language: 'fr'
+    })
   })
 
   it('moves a task and accepts an empty answer', async () => {
@@ -94,7 +99,8 @@ describe('httpBoardsApi', () => {
 
     const created = httpBoardsApi(BASE, send).createBoard({
       name: 'Design',
-      keyPrefix: 'DES'
+      keyPrefix: 'DES',
+      language: 'en'
     })
 
     await expect(created).rejects.toEqual(new ApiError(409, 'key_prefix_taken'))
