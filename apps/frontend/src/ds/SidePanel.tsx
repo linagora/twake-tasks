@@ -215,6 +215,8 @@ export function SidePanel({
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',
+          // A sheet over the page scrolls without a bar of its own.
+          ...(peek && { scrollbarWidth: 'none' }),
           [WIDE]: { overflowY: 'hidden', mr: ASIDE_WIDTH }
         }}
       >
@@ -325,7 +327,9 @@ export function SidePanel({
         ...(peek && {
           left: { md: 'auto' },
           width: { md: PEEK_WIDTH },
-          boxShadow: { md: 8 }
+          boxShadow: {
+            md: '-12px 0 32px rgb(0 0 0 / 0.2), -1px 0 0 rgb(0 0 0 / 0.08)'
+          }
         }),
         display: 'flex',
         flexDirection: 'column',
