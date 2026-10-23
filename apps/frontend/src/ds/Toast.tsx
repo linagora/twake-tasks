@@ -10,8 +10,8 @@ const SEVERITIES = [
   'error'
 ] as const
 
-// Phones keep the bottom bar uncovered. An alert's tint is see-through, which
-// a toast lays over the page: it is mixed with the paper instead.
+// Phones keep the bottom bar uncovered. An alert's tint is see-through and a
+// toast sits over the page, so the tint is mixed into the paper instead.
 export const Toast = styled(Snackbar)(({ theme }) => ({
   [theme.breakpoints.down('lg')]: {
     bottom: `calc(var(--sidebarHeight, 0px) + ${theme.spacing(1)})`
