@@ -107,11 +107,13 @@ export function AppShell(): ReactElement {
       topBar={<Header searchRef={search} onNewTask={startNewTask} />}
       sidebar={
         <>
+          {/* Create, as Twake Drive's button says; its name says what. */}
           <SidebarButton
-            startIcon={<Icon icon={Plus} />}
+            startIcon={<Icon icon={Plus} size={12} />}
+            aria-label={t('newTask.open')}
             onClick={startNewTask}
           >
-            {t('newTask.open')}
+            {t('newTask.create')}
           </SidebarButton>
           <AppNav boardsLit={lit.boards} boardLit={lit.board} />
           <Favorites lit={lit.favorite} onOpen={lit.openFavorite} />
