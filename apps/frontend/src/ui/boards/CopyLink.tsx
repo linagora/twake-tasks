@@ -1,10 +1,11 @@
 import { Icon, Link } from '@linagora/twake-icons'
-import { Alert, IconButton, Snackbar, Tooltip } from '@linagora/twake-mui'
+import { Alert, IconButton, Tooltip } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 
+import { Toast } from '@/ds/Toast'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-type Outcome = 'copied' | 'failed' | null
+type Outcome = 'copied' | 'failed'
 
 /**
  * The link of a task is always the one of Tasks itself, also in TwakeSpace's
@@ -34,7 +35,9 @@ export function CopyLinkButton({
   expanded: boolean
 }): ReactElement {
   const { t } = useI18n()
-  const [outcome, setOutcome] = useState<Outcome>(null)
+  // Kept apart from the outcome so the toast keeps its message while it fades.
+  const [open, setOpen] = useState(false)
+  const [outcome, setOutcome] = useState<Outcome>('copied')
 
   // Written with the clipboard of the window that was clicked: in TwakeSpace
   // the panel is in the overlay's document, which owns the user activation.
@@ -48,6 +51,7 @@ export function CopyLinkButton({
     } catch {
       setOutcome('failed')
     }
+    setOpen(true)
   }
 
   return (
@@ -63,11 +67,11 @@ export function CopyLinkButton({
           <Icon icon={Link} />
         </IconButton>
       </Tooltip>
-      <Snackbar
-        open={outcome !== null}
+      <Toast
+        open={open}
         autoHideDuration={4000}
         onClose={() => {
-          setOutcome(null)
+          setOpen(false)
         }}
       >
         <Alert
@@ -76,7 +80,7 @@ export function CopyLinkButton({
         >
           {outcome === 'failed' ? t('task.copyFailed') : t('task.linkCopied')}
         </Alert>
-      </Snackbar>
+      </Toast>
     </>
   )
 }
