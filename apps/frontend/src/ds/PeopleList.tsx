@@ -23,6 +23,9 @@ export function InviteRow({
       aria-label={label}
       onSubmit={event => {
         event.preventDefault()
+        // The submit button disables itself while the request runs, which
+        // would drop focus to the body, outside the dialog's Escape handler.
+        event.currentTarget.querySelector('input')?.focus()
         onSubmit()
       }}
       sx={{

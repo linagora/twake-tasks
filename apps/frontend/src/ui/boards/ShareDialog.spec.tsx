@@ -52,6 +52,21 @@ describe('sharing a board', () => {
     )
   })
 
+  it('keeps the keyboard in the Email field after a click on Invite', async () => {
+    const { dialog } = await openSharing()
+    const email = dialog.getByRole('combobox', { name: 'Email' })
+    const invite = dialog.getByRole('button', { name: 'Invite' })
+
+    fireEvent.change(email, { target: { value: 'bob@example.com' } })
+    act(() => {
+      invite.focus()
+    })
+    fireEvent.click(invite)
+
+    expect(await dialog.findByText('Invited bob@example.com.')).toBeVisible()
+    expect(email).toHaveFocus()
+  })
+
   it('suggests people by name and invites the one picked', async () => {
     const board = aBoard({ name: 'Design' })
     const boardsApi = fakeBoardsApi([board])
