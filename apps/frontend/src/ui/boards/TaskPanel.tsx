@@ -2,6 +2,7 @@ import { CheckList, Cross, Dots, Icon, Pen } from '@linagora/twake-icons'
 import {
   Button,
   Dialog,
+  DialogActions,
   DialogTitle,
   IconButton,
   Menu,
@@ -35,6 +36,11 @@ import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferTask } from '@/ui/boards/TransferTask'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
+import {
+  UnsavedContext,
+  useUnsaved,
+  useUnsavedFields
+} from '@/ui/boards/unsaved'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -65,123 +71,160 @@ export function TaskPanel({
   const children = board?.tasks.filter(each => each.parentId === task.id) ?? []
   const done = children.filter(each => each.completedAt !== null).length
   const archived = shelved || (board?.archived ?? false)
+  const unsaved = useUnsavedFields()
+  const [asking, setAsking] = useState(false)
+  const close = () => {
+    if (unsaved.any()) setAsking(true)
+    else onClose()
+  }
 
   return (
-    <SidePanel
-      label={`${task.key} ${task.title}`}
-      onClose={onClose}
-      header={
-        <>
-          <TaskBreadcrumb task={task} board={board} />
-          <Grow />
-          <FollowButton task={task} boardId={boardId} />
-          <CopyLinkButton boardId={boardId} taskKey={task.key} />
-          {editable && (
-            <TaskMenu task={task} boardId={boardId} onRemoved={onClose} />
-          )}
-          <IconButton
-            size="small"
-            aria-label={t('task.close')}
-            onClick={onClose}
+    <UnsavedContext value={unsaved.mark}>
+      <SidePanel
+        label={`${task.key} ${task.title}`}
+        onClose={close}
+        header={
+          <>
+            <TaskBreadcrumb task={task} board={board} />
+            <Grow />
+            <FollowButton task={task} boardId={boardId} />
+            <CopyLinkButton boardId={boardId} taskKey={task.key} />
+            {editable && (
+              <TaskMenu task={task} boardId={boardId} onRemoved={onClose} />
+            )}
+            <IconButton
+              size="small"
+              aria-label={t('task.close')}
+              onClick={close}
+            >
+              <Icon icon={Cross} />
+            </IconButton>
+          </>
+        }
+        aside={
+          <TaskProperties
+            task={task}
+            boardId={boardId}
+            board={board}
+            editable={editable}
+            archived={archived}
+          />
+        }
+      >
+        {notice}
+        <TaskHead>
+          <Title task={task} boardId={boardId} editable={editable} />
+          <Description task={task} boardId={boardId} editable={editable} />
+        </TaskHead>
+        {(children.length > 0 || (editable && depth < MAX_TASK_DEPTH)) && (
+          <PanelSection
+            title={t('task.subtasks')}
+            action={
+              children.length > 0 && (
+                <Inline>
+                  <Icon icon={CheckList} size={14} />
+                  <Typography variant="body2" color="textSecondary">
+                    {`${String(done)}/${String(children.length)}`}
+                  </Typography>
+                </Inline>
+              )
+            }
           >
-            <Icon icon={Cross} />
-          </IconButton>
-        </>
-      }
-      aside={
-        <TaskProperties
-          task={task}
-          boardId={boardId}
-          board={board}
-          editable={editable}
-          archived={archived}
-        />
-      }
-    >
-      {notice}
-      <TaskHead>
-        <Title task={task} boardId={boardId} editable={editable} />
-        <Description task={task} boardId={boardId} editable={editable} />
-      </TaskHead>
-      {(children.length > 0 || (editable && depth < MAX_TASK_DEPTH)) && (
-        <PanelSection
-          title={t('task.subtasks')}
-          action={
-            children.length > 0 && (
-              <Inline>
-                <Icon icon={CheckList} size={14} />
-                <Typography variant="body2" color="textSecondary">
-                  {`${String(done)}/${String(children.length)}`}
-                </Typography>
-              </Inline>
-            )
-          }
-        >
-          {board && (
-            <Subtasks
-              parentId={task.id}
+            {board && (
+              <Subtasks
+                parentId={task.id}
+                tasks={board.tasks}
+                boardId={boardId}
+                editable={editable}
+                label={t('task.subtasks')}
+              />
+            )}
+            {editable && depth < MAX_TASK_DEPTH && (
+              <AddSubtask task={task} boardId={boardId} />
+            )}
+          </PanelSection>
+        )}
+        {board &&
+          children.map(child => (
+            <LinkedTaskPanel
+              key={child.id}
+              task={child}
               tasks={board.tasks}
               boardId={boardId}
               editable={editable}
-              label={t('task.subtasks')}
+              depth={depth + 1}
             />
-          )}
-          {editable && depth < MAX_TASK_DEPTH && (
-            <AddSubtask task={task} boardId={boardId} />
-          )}
-        </PanelSection>
-      )}
-      {board &&
-        children.map(child => (
-          <LinkedTaskPanel
-            key={child.id}
-            task={child}
-            tasks={board.tasks}
-            boardId={boardId}
-            editable={editable}
-            depth={depth + 1}
-          />
-        ))}
-      <div>
-        <Tabs
-          value={tab}
-          onChange={(_event, value: 'comments' | 'history') => {
-            setTab(value)
-          }}
-        >
-          <Tab
-            value="comments"
-            label={t('task.comments')}
-            id={`${tabsId}-comments`}
-            aria-controls={`${tabsId}-panel`}
-          />
-          <Tab
-            value="history"
-            label={t('history.heading')}
-            id={`${tabsId}-history`}
-            aria-controls={`${tabsId}-panel`}
-          />
-        </Tabs>
-        <div
-          role="tabpanel"
-          id={`${tabsId}-panel`}
-          aria-labelledby={`${tabsId}-${tab}`}
-          className="u-pt-1"
-        >
-          {tab === 'comments' ? (
-            <Comments
-              task={task}
-              boardId={boardId}
-              members={board?.members ?? []}
-              tasks={board?.tasks ?? []}
-              archived={archived}
+          ))}
+        <div>
+          <Tabs
+            value={tab}
+            onChange={(_event, value: 'comments' | 'history') => {
+              setTab(value)
+            }}
+          >
+            <Tab
+              value="comments"
+              label={t('task.comments')}
+              id={`${tabsId}-comments`}
+              aria-controls={`${tabsId}-panel`}
             />
-          ) : (
-            <History task={task} boardId={boardId} />
-          )}
+            <Tab
+              value="history"
+              label={t('history.heading')}
+              id={`${tabsId}-history`}
+              aria-controls={`${tabsId}-panel`}
+            />
+          </Tabs>
+          <div
+            role="tabpanel"
+            id={`${tabsId}-panel`}
+            aria-labelledby={`${tabsId}-${tab}`}
+            className="u-pt-1"
+          >
+            <div hidden={tab !== 'comments'}>
+              <Comments
+                task={task}
+                boardId={boardId}
+                members={board?.members ?? []}
+                tasks={board?.tasks ?? []}
+                archived={archived}
+              />
+            </div>
+            {tab === 'history' && <History task={task} boardId={boardId} />}
+          </div>
         </div>
-      </div>
-    </SidePanel>
+        {asking && (
+          <DiscardDialog
+            onKeep={() => {
+              setAsking(false)
+            }}
+            onDiscard={onClose}
+          />
+        )}
+      </SidePanel>
+    </UnsavedContext>
+  )
+}
+
+function DiscardDialog({
+  onKeep,
+  onDiscard
+}: {
+  onKeep: () => void
+  onDiscard: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const titleId = useId()
+  return (
+    <Dialog open onClose={onKeep} aria-labelledby={titleId} size="small">
+      <DialogTitle id={titleId}>{t('task.discardTitle')}</DialogTitle>
+      <DialogActions>
+        <Button variant="text" onClick={onKeep}>
+          {t('task.keepEditing')}
+        </Button>
+        <Button onClick={onDiscard}>{t('task.discard')}</Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 
@@ -326,6 +369,7 @@ function Description({
   const save = useSetDescription(boardId, task.id)
   const [draft, setDraft] = useState<string | null>(null)
   const [draftVersion, setDraftVersion] = useState(0)
+  useUnsaved(draft !== null && draft !== description.data?.markdown)
   const stale =
     save.error instanceof ApiError && save.error.code === 'stale_version'
 
@@ -440,6 +484,7 @@ function AddSubtask({
   const { t } = useI18n()
   const create = useCreateTask(boardId)
   const [title, setTitle] = useState<string | null>(null)
+  useUnsaved(Boolean(title?.trim()))
 
   if (title === null) {
     return (
