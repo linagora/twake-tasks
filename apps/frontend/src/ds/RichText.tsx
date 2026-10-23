@@ -21,7 +21,11 @@ import {
 } from 'react'
 
 import { mentionExtension } from '@/ds/Mention'
-import { Toolbar, type RichTextLabels } from '@/ds/RichTextToolbar'
+import {
+  Toolbar,
+  type LinkPicker,
+  type RichTextLabels
+} from '@/ds/RichTextToolbar'
 import {
   optionId,
   SuggestionList,
@@ -33,7 +37,7 @@ import {
   type Suggestions
 } from '@/ds/Suggestions'
 
-export type { RichTextLabels } from '@/ds/RichTextToolbar'
+export type { LinkPicker, RichTextLabels } from '@/ds/RichTextToolbar'
 
 // @tiptap/markdown types the parser as the shared `marked`, but only calls
 // `use`, `lexer`, `setOptions` and `defaults`, which every `Marked` has.
@@ -207,6 +211,7 @@ export function RichTextEditor({
   onSubmit,
   suggestions,
   mentions,
+  linkPicker,
   footer
 }: {
   label: string
@@ -219,6 +224,7 @@ export function RichTextEditor({
   /** A list of options that opens when the user types its trigger character. */
   suggestions?: Suggestions
   mentions?: Record<string, string>
+  linkPicker?: LinkPicker | undefined
   footer?: ReactNode
 }): ReactElement {
   // The editor keeps the callbacks it was created with, so it reads the latest ones here.
@@ -349,7 +355,7 @@ export function RichTextEditor({
         }
       })}
     >
-      <Toolbar editor={editor} labels={labels} />
+      <Toolbar editor={editor} labels={labels} linkPicker={linkPicker} />
       <Box
         sx={theme => ({
           ...prose(theme),

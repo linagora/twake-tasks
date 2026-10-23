@@ -198,7 +198,14 @@
     "commentPlaceholder": "Viết bình luận…",
     "descriptionPlaceholder": "Thêm chi tiết, các bước hoặc liên kết…",
     "sendHint": "Ctrl+Enter để gửi",
-    "mentionsLabel": "Người có thể nhắc đến"
+    "mentionsLabel": "Người có thể nhắc đến",
+    "drive": "Liên kết tệp từ Twake Drive"
+  },
+  "drive": {
+    "title": "Twake Drive",
+    "insertLinks": "Chèn liên kết",
+    "failed": "Không thể mở Twake Drive. Vui lòng thử lại sau.",
+    "close": "Đóng"
   },
   "history": {
     "heading": "Lịch sử",

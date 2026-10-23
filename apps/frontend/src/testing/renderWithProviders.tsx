@@ -15,6 +15,10 @@ import { routes } from '@/app/routes'
 import { fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { fakeSession } from '@/testing/fakeSession'
 import { BoardsApiProvider } from '@/ui/boards/BoardsApiProvider'
+import {
+  DrivePickerProvider,
+  type ConnectDrive
+} from '@/ui/drive/useDrivePicker'
 import type { SupportedLanguage } from '@/ui/i18n/languages'
 import { ReportingProvider } from '@/ui/reporting/ReportingProvider'
 import { SessionGate } from '@/ui/session/SessionGate'
@@ -24,6 +28,7 @@ interface Options {
   session?: SessionService
   boardsApi?: BoardsApi
   reporting?: Reporting
+  drivePicker?: ConnectDrive | null
 }
 
 export function renderWithProviders(
@@ -32,14 +37,19 @@ export function renderWithProviders(
     lang = 'en',
     session = fakeSession(),
     boardsApi = fakeBoardsApi(),
-    reporting = noReporting
+    reporting = noReporting,
+    drivePicker = null
   }: Options = {}
 ): RenderResult {
   return render(
     <AppProviders lang={lang} queryClient={makeQueryClient()}>
       <ReportingProvider reporting={reporting}>
         <SessionGate session={session}>
-          <BoardsApiProvider api={boardsApi}>{ui}</BoardsApiProvider>
+          <BoardsApiProvider api={boardsApi}>
+            <DrivePickerProvider connect={drivePicker}>
+              {ui}
+            </DrivePickerProvider>
+          </BoardsApiProvider>
         </SessionGate>
       </ReportingProvider>
     </AppProviders>
