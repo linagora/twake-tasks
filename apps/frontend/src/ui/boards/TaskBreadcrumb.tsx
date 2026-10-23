@@ -1,6 +1,5 @@
-import { Breadcrumbs, Link, Typography } from '@linagora/twake-mui'
 import { useContext, type ReactElement } from 'react'
-import { Link as RouterLink, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
 
 import { useInPeek } from '@/ds/SidePanel'
 import type { Board, Task } from '@/domain/board'
@@ -48,32 +47,11 @@ export function TaskBreadcrumb({
   })
 
   // A peek sits beside the page and its board: the task's own path is enough.
-  if (inPeek) {
-    return (
-      <Breadcrumbs aria-label={t('task.breadcrumb')} className="u-miw-0">
-        {parents.map(parent => (
-          <Link
-            key={parent.to}
-            component={RouterLink}
-            to={parent.to}
-            color="inherit"
-            underline="hover"
-            variant="body2"
-          >
-            {parent.label}
-          </Link>
-        ))}
-        <Typography variant="body2" color="textPrimary" aria-current="page">
-          {task.key}
-        </Typography>
-      </Breadcrumbs>
-    )
-  }
   return (
     <Crumbs
       label={t('task.breadcrumb')}
-      origin={origin}
-      steps={[...(boardStep ? [boardStep] : []), ...parents]}
+      origin={inPeek ? undefined : origin}
+      steps={inPeek || !boardStep ? parents : [boardStep, ...parents]}
       current={task.key}
     />
   )

@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { useSearchParams } from 'react-router'
 
 import type { AgendaTask } from '@/application/boards'
 import {
@@ -20,8 +21,14 @@ export function useAgendaTaskPanel(
 ): TaskPanelState {
   const panel = useTaskPanel(task.key, useCachedBoard(task.boardId)?.tasks)
   const refresh = useRefreshLists()
+  const [params] = useSearchParams()
   return {
     ...panel,
+    // A task opened beside a peek closes the one in it.
+    show: () => {
+      if (params.has('task')) refresh()
+      panel.show()
+    },
     close: () => {
       panel.close()
       refresh()

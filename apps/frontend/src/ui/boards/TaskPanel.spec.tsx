@@ -539,6 +539,54 @@ describe('TaskPanel', () => {
       expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
     })
 
+    it('closes on a click on the board beside it, not on a full page', async () => {
+      const { board, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      fireEvent.click(panel.getByRole('button', { name: 'Open as full page' }))
+      fireEvent.click(screen.getByRole('main'))
+      expect(screen.getByRole('dialog', { name: 'DES-1 Logo' })).toBeVisible()
+      fireEvent.click(panel.getByRole('button', { name: 'Open in side peek' }))
+      fireEvent.click(screen.getByRole('main'))
+
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+      })
+    })
+
+    it('closes on Escape on the board beside it', async () => {
+      const { board, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      await openLogo()
+      fireEvent.keyDown(screen.getByRole('main'), { key: 'Escape' })
+
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+      })
+    })
+
+    it('asks before another task takes the place of an unsaved one', async () => {
+      const { board, boardsApi } = logoBoard()
+      board.tasks.push(
+        aTask(board.sections[0] ?? null, { key: 'DES-2', title: 'Icons' })
+      )
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      await typeRichText(
+        await panel.findByRole('textbox', { name: 'Comment' }),
+        'Comment draft'
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Icons' }))
+
+      expect(
+        await screen.findByRole('dialog', { name: 'Discard your changes?' })
+      ).toBeVisible()
+      expect(screen.queryByRole('dialog', { name: 'DES-2 Icons' })).toBeNull()
+    })
+
     it('expands to the full page and back, the link keeping the way', async () => {
       const { board, boardsApi } = logoBoard()
       const { router } = renderRoute(`/boards/${board.id}`, { boardsApi })

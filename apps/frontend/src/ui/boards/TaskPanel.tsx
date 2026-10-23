@@ -95,6 +95,7 @@ export function TaskPanel({
       <SidePanel
         label={`${task.key} ${task.title}`}
         onClose={close}
+        unsaved={unsaved.any}
         expanded={expanded}
         onExpand={expand}
         expandLabel={t('task.expand')}

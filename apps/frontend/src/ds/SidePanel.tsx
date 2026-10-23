@@ -8,7 +8,9 @@ import {
   Select,
   styled,
   Tooltip,
-  Typography
+  Typography,
+  useMediaQuery,
+  useTheme
 } from '@linagora/twake-mui'
 import {
   createContext,
@@ -76,8 +78,57 @@ const WIDE = '@container (min-width: 960px)'
 const ROWS = '@container (min-width: 420px)'
 const ASIDE_WIDTH = 'max(280px, 100% / 3)'
 
-/** The width of a peek, which the frame leaves free beside the page. */
-export const PEEK_WIDTH = 'clamp(480px, 45vw, 760px)'
+const PEEK_WIDTH = 'clamp(480px, 36vw, 560px)'
+
+const CONTROLS =
+  'button, a, input, textarea, select, label, [role="button"], [contenteditable]'
+
+function inPeekPanel(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest('[data-peek]') !== null
+}
+
+/**
+ * The page beside a peek stays in use: a click there closes the peek, unless
+ * it hits a control (a task there opens in its place), and so does Escape.
+ * Unsaved changes stop the click, and the peek asks before it goes. Only the
+ * top one of a sub-task's stack listens.
+ */
+function usePageBesidePeek(
+  page: HTMLElement | null | undefined,
+  panel: RefObject<HTMLElement | null>,
+  onClose: () => void,
+  unsaved: () => boolean
+): void {
+  useEffect(() => {
+    if (!page) return
+    const top = () =>
+      panel.current !== null &&
+      panel.current === panel.current.parentElement?.lastElementChild
+    // Captured, so that it comes before the page's own handlers.
+    const click = (event: MouseEvent) => {
+      if (inPeekPanel(event.target) || !top()) return
+      if (unsaved()) {
+        event.stopPropagation()
+        event.preventDefault()
+        onClose()
+      } else if (!(
+        event.target instanceof Element && event.target.closest(CONTROLS)
+      )) {
+        onClose()
+      }
+    }
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || inPeekPanel(event.target) || !top()) return
+      if (!inField(document.activeElement)) onClose()
+    }
+    page.addEventListener('click', click, true)
+    page.addEventListener('keydown', key)
+    return () => {
+      page.removeEventListener('click', click, true)
+      page.removeEventListener('keydown', key)
+    }
+  }, [page, panel, onClose, unsaved])
+}
 
 // twake-icons has the arrows that narrow, not the ones that widen.
 function Widen(props: SVGProps<SVGSVGElement>): ReactElement {
@@ -100,12 +151,14 @@ function Widen(props: SVGProps<SVGSVGElement>): ReactElement {
  * properties (one third) from the top. In a narrow panel, the properties sit
  * between the title and the rest of the content.
  *
- * In the frame, it opens in a peek beside the page, which stays in use, or
- * expanded over the whole content. On a phone, both take the whole content.
+ * In the frame, it opens in a peek over the right of the page, which stays
+ * in use, or expanded over the whole content. On a phone, both take the whole
+ * content.
  */
 export function SidePanel({
   label,
   onClose,
+  unsaved,
   expanded,
   onExpand,
   expandLabel,
@@ -117,6 +170,8 @@ export function SidePanel({
 }: {
   label: string
   onClose: () => void
+  /** Whether closing would lose an edit, and so has to ask first. */
+  unsaved: () => boolean
   expanded: boolean
   onExpand: (expanded: boolean) => void
   expandLabel: string
@@ -129,6 +184,15 @@ export function SidePanel({
 }): ReactElement {
   const host = useContext(PanelHostContext)
   const focused = useFocusWhileOpen(host)
+  const theme = useTheme()
+  const phone = useMediaQuery(theme.breakpoints.down('md'))
+  const peek = host !== null && !expanded
+  usePageBesidePeek(
+    peek && !phone ? host.parentElement : null,
+    focused,
+    onClose,
+    unsaved
+  )
   const gutter = { minWidth: 0, px: { xs: 2, sm: 3 } }
   const column = { display: 'flex', flexDirection: 'column', gap: 3 }
   // One reading order for both layouts: a wide panel takes the properties
@@ -243,7 +307,6 @@ export function SidePanel({
       </Drawer>
     )
   }
-  const peek = !expanded
   return createPortal(
     <Box
       ref={focused}
@@ -262,8 +325,7 @@ export function SidePanel({
         ...(peek && {
           left: { md: 'auto' },
           width: { md: PEEK_WIDTH },
-          borderLeft: { md: 1 },
-          borderColor: { md: 'divider' }
+          boxShadow: { md: 8 }
         }),
         display: 'flex',
         flexDirection: 'column',
@@ -271,7 +333,7 @@ export function SidePanel({
         outline: 'none'
       }}
     >
-      <PeekContext value={peek}>{body}</PeekContext>
+      <PeekContext value={peek && !phone}>{body}</PeekContext>
     </Box>,
     host
   )

@@ -63,20 +63,17 @@ export function useTaskPanel(key: string, tasks: Task[] = []): TaskPanelState {
  */
 export function useExpandedPanel(): [boolean, (expanded: boolean) => void] {
   const [params, setParams] = useSearchParams()
-  const expand = useCallback(
-    (expanded: boolean) => {
-      setParams(
-        current => {
-          const next = new URLSearchParams(current)
-          if (expanded) next.set('panel', 'full')
-          else next.delete('panel')
-          return next
-        },
-        { replace: true }
-      )
-    },
-    [setParams]
-  )
+  const expand = (expanded: boolean) => {
+    setParams(
+      current => {
+        const next = new URLSearchParams(current)
+        if (expanded) next.set('panel', 'full')
+        else next.delete('panel')
+        return next
+      },
+      { replace: true }
+    )
+  }
   return [params.get('panel') === 'full', expand]
 }
 
