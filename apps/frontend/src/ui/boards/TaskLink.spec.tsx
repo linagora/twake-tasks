@@ -114,4 +114,31 @@ describe('a link to a task', () => {
       screen.getByRole('article', { name: 'DES-1 Logo' })
     ).toBeInTheDocument()
   })
+
+  it.each([
+    ['archived', 'archiveTask', 'This task is archived.'],
+    ['trash', 'trashTask', 'In the trash, deleted for good in 30 days.']
+  ] as const)(
+    'opens a task in the %s on that page',
+    async (shelf, remove, notice) => {
+      const { board, boardsApi } = logoWithSketch()
+      const logo = board.tasks[0]
+      if (!logo) throw new Error('no task')
+      await boardsApi[remove](board.id, logo.id)
+
+      const { router } = renderRoute(`/boards/${board.id}?task=DES-1`, {
+        boardsApi
+      })
+
+      const panel = within(
+        await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+      )
+      expect(panel.getByText(notice)).toBeInTheDocument()
+      expect(router.state.location.pathname).toBe(
+        `/boards/${board.id}/${shelf}`
+      )
+      expect(router.state.location.search).toBe('?task=DES-1')
+      expect(screen.queryByText(/This task doesn't exist/)).toBeNull()
+    }
+  )
 })

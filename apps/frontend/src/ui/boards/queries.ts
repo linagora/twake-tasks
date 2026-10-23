@@ -189,12 +189,13 @@ export function usePeopleSuggestions(
 
 export function useHiddenTasks(
   boardId: string,
-  shelf: Shelf
+  shelf: Shelf,
+  enabled = true
 ): UseQueryResult<HiddenTask[]> {
   const api = useBoardsApi()
   return useQuery({
     queryKey: [...boardKey(boardId), shelf],
-    queryFn: () => api.hiddenTasks(boardId, shelf)
+    queryFn: enabled ? () => api.hiddenTasks(boardId, shelf) : skipToken
   })
 }
 
