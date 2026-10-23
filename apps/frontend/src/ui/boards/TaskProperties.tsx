@@ -34,12 +34,14 @@ export function TaskProperties({
   task,
   boardId,
   board,
-  editable
+  editable,
+  archived
 }: {
   task: Task
   boardId: string
   board: Board | undefined
   editable: boolean
+  archived: boolean
 }): ReactElement {
   const { t } = useI18n()
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
@@ -157,7 +159,7 @@ export function TaskProperties({
           <Dates task={task} boardId={boardId} editable={editable} />
         </Property>
         <Property icon={<Icon icon={Bell} />} label={t('task.reminders')}>
-          <Reminders task={task} boardId={boardId} />
+          <Reminders task={task} boardId={boardId} archived={archived} />
         </Property>
       </Properties>
       {assigning && board && (

@@ -64,6 +64,7 @@ export function TaskPanel({
   const tabsId = useId()
   const children = board?.tasks.filter(each => each.parentId === task.id) ?? []
   const done = children.filter(each => each.completedAt !== null).length
+  const archived = shelved || (board?.archived ?? false)
 
   return (
     <SidePanel
@@ -93,6 +94,7 @@ export function TaskPanel({
           boardId={boardId}
           board={board}
           editable={editable}
+          archived={archived}
         />
       }
     >
@@ -172,7 +174,7 @@ export function TaskPanel({
               boardId={boardId}
               members={board?.members ?? []}
               tasks={board?.tasks ?? []}
-              archived={shelved || (board?.archived ?? false)}
+              archived={archived}
             />
           ) : (
             <History task={task} boardId={boardId} />

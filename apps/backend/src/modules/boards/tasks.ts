@@ -143,6 +143,20 @@ export async function shownTaskOf(tx: Tx, boardId: string, taskId: string) {
   return task
 }
 
+export async function refuseIfShelved(
+  tx: Tx,
+  boardId: string,
+  task: { archivedAt: Date | null; deletedAt: Date | null }
+) {
+  const [board] = await tx
+    .select({ archivedAt: boards.archivedAt })
+    .from(boards)
+    .where(eq(boards.id, boardId))
+  if (board?.archivedAt || task.archivedAt || task.deletedAt) {
+    throw new Refused('archived')
+  }
+}
+
 const MAX_DEPTH = 4
 
 async function depthOf(tx: Tx, taskId: string): Promise<number> {
