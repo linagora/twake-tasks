@@ -44,7 +44,10 @@ export function useTaskPanel(key: string, tasks: Task[] = []): TaskPanelState {
       current => {
         const next = new URLSearchParams(current)
         if (parentKey) next.set('task', parentKey)
-        else next.delete('task')
+        else {
+          next.delete('task')
+          next.delete('panel')
+        }
         return next
       },
       { replace: true }
@@ -52,6 +55,26 @@ export function useTaskPanel(key: string, tasks: Task[] = []): TaskPanelState {
   }, [key, tasks, setParams])
 
   return { open, show, close }
+}
+
+/**
+ * `?panel=full` opens the task over the whole content, so a copied link opens
+ * it the same way; without it, the task opens in a peek beside the page.
+ */
+export function useExpandedPanel(): [boolean, (expanded: boolean) => void] {
+  const [params, setParams] = useSearchParams()
+  const expand = (expanded: boolean) => {
+    setParams(
+      current => {
+        const next = new URLSearchParams(current)
+        if (expanded) next.set('panel', 'full')
+        else next.delete('panel')
+        return next
+      },
+      { replace: true }
+    )
+  }
+  return [params.get('panel') === 'full', expand]
 }
 
 /** The key, then the keys of its parents up to its top-level task */

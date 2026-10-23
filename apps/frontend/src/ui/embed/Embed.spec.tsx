@@ -216,6 +216,22 @@ describe('the embedded view', () => {
     expect(router.state.location.pathname).toBe(`/embed/projects/${roadmap.id}`)
   })
 
+  it('opens a task in a drawer, which has no full page', async () => {
+    const board = aBoard({ name: 'Roadmap', project: roadmap })
+    board.tasks = [aTask(null, { key: 'DES-1', title: 'Logo' })]
+    renderRoute(`/embed/projects/${roadmap.id}/boards/${board.id}?task=DES-1`, {
+      boardsApi: projectBoardsApi([board])
+    })
+
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+    expect(panel.getByRole('button', { name: 'Close' })).toBeVisible()
+    expect(
+      panel.queryByRole('button', { name: 'Open as full page' })
+    ).toBeNull()
+  })
+
   it('links an archived task to its board inside the frame', async () => {
     const board = aBoard({ name: 'Roadmap', project: roadmap })
     const logo = aTask(null, { key: 'DES-1', title: 'Logo' })

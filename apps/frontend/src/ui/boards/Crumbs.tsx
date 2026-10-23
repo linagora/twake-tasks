@@ -49,14 +49,15 @@ export function Crumbs({
   current
 }: {
   label: string
-  origin: Origin
+  /** None in a peek, which sits beside the page it starts from. */
+  origin?: Origin | undefined
   steps?: Crumb[] | undefined
   /** None when the page is the origin itself. */
   current?: string | undefined
 }): ReactElement {
   return (
     <Breadcrumbs aria-label={label} className="u-miw-0">
-      {current === undefined ? (
+      {origin === undefined ? null : current === undefined ? (
         <Typography
           variant="body2"
           color="textPrimary"

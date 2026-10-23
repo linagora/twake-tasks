@@ -10,21 +10,28 @@ type Outcome = 'copied' | 'failed' | null
  * The link of a task is always the one of Tasks itself, also in TwakeSpace's
  * frame, so that it opens anywhere.
  */
-export function taskUrl(boardId: string, key: string): string {
+export function taskUrl(
+  boardId: string,
+  key: string,
+  expanded: boolean
+): string {
   const url = new URL(
     `/boards/${encodeURIComponent(boardId)}`,
     window.location.origin
   )
   url.searchParams.set('task', key)
+  if (expanded) url.searchParams.set('panel', 'full')
   return url.toString()
 }
 
 export function CopyLinkButton({
   boardId,
-  taskKey
+  taskKey,
+  expanded
 }: {
   boardId: string
   taskKey: string
+  expanded: boolean
 }): ReactElement {
   const { t } = useI18n()
   const [outcome, setOutcome] = useState<Outcome>(null)
@@ -36,7 +43,7 @@ export function CopyLinkButton({
       button.ownerDocument.defaultView?.navigator.clipboard ??
       navigator.clipboard
     try {
-      await clipboard.writeText(taskUrl(boardId, taskKey))
+      await clipboard.writeText(taskUrl(boardId, taskKey, expanded))
       setOutcome('copied')
     } catch {
       setOutcome('failed')
