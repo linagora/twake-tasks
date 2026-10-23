@@ -1,7 +1,14 @@
 import { fireEvent, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import type { Notification } from '@/application/boards'
+import {
+  aBoard,
+  aNotification,
+  aTask,
+  fakeBoardsApi
+} from '@/testing/fakeBoardsApi'
+import { followZone } from '@/ui/boards/dueLabel'
 import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 
@@ -67,44 +74,118 @@ describe('following a task', () => {
 })
 
 describe('notifications', () => {
-  it('lists why each one came, links to the task, and marks them read', async () => {
+  const alice = {
+    userId: 'alice',
+    email: 'alice@example.com',
+    name: 'Alice Martin',
+    avatar: null
+  }
+
+  function anInbox(...notifications: Partial<Notification>[]) {
     const { board, logo, boardsApi } = aBoardWithLogo()
-    boardsApi.notifications.push({
-      id: 'n1',
-      reason: 'assigned',
-      boardId: board.id,
-      taskId: logo.id,
-      key: 'DES-1',
-      title: 'Logo',
-      createdAt: '2026-10-05T10:00:00Z',
-      readAt: null
-    })
+    boardsApi.notifications.push(
+      ...notifications.map(notification =>
+        aNotification({
+          boardId: board.id,
+          boardName: 'Product launch',
+          taskId: logo.id,
+          ...notification
+        })
+      )
+    )
+    return { board, boardsApi }
+  }
+
+  const rowOf = async () =>
+    screen.findByRole('listitem', { name: 'DES-1 Logo' })
+
+  it('says who assigned the task, links to it, and marks them read', async () => {
+    const { board, boardsApi } = anInbox({ reason: 'assigned', actor: alice })
     renderRoute('/notifications', { boardsApi })
 
-    const link = await screen.findByRole('link', { name: /DES-1 Logo/ })
-    expect(link).toHaveAttribute('href', `/boards/${board.id}?task=DES-1`)
-    expect(screen.getByText('You were assigned')).toBeVisible()
+    const row = await rowOf()
+    expect(row).toHaveTextContent('Alice Martin assigned you')
+    expect(row).toHaveTextContent('DES-1 · Product launch')
+    expect(within(row).getByText('AM')).toBeInTheDocument()
+    expect(within(row).getByRole('link', { name: 'Logo' })).toHaveAttribute(
+      'href',
+      `/boards/${board.id}?task=DES-1`
+    )
     expect(boardsApi.markNotificationsRead).toHaveBeenCalled()
   })
 
-  it('puts unread notifications apart from the ones already seen', async () => {
-    const { board, logo, boardsApi } = aBoardWithLogo()
-    const about = {
-      boardId: board.id,
-      taskId: logo.id,
-      key: 'DES-1',
-      title: 'Logo'
+  it.each([
+    { lang: 'en', sentence: 'Alice Martin set the priority to P1' },
+    { lang: 'fr', sentence: 'Alice Martin a mis la priorité à P1' }
+  ] as const)(
+    'says what changed on a followed task as its history does ($lang)',
+    async ({ lang, sentence }) => {
+      const { boardsApi } = anInbox({
+        actor: alice,
+        change: {
+          actor: alice,
+          field: 'priority',
+          from: null,
+          to: 1,
+          name: null,
+          at: '2026-10-05T10:00:00Z'
+        }
+      })
+      renderRoute('/notifications', { boardsApi, lang })
+
+      expect(await rowOf()).toHaveTextContent(sentence)
     }
-    boardsApi.notifications.push(
+  )
+
+  it('says a followed task changed when the change is no longer known', async () => {
+    const { boardsApi } = anInbox({ actor: alice, change: null })
+    renderRoute('/notifications', { boardsApi })
+
+    expect(await rowOf()).toHaveTextContent('Changed while you follow it')
+  })
+
+  it('quotes the comment that mentions the reader', async () => {
+    const { boardsApi } = anInbox({
+      reason: 'mentioned',
+      actor: alice,
+      commentExcerpt: 'Can you check the colours?'
+    })
+    renderRoute('/notifications', { boardsApi })
+
+    const row = await rowOf()
+    expect(row).toHaveTextContent('Alice Martin mentioned you')
+    expect(row).toHaveTextContent('Can you check the colours?')
+  })
+
+  it('shows a reminder with its clock and nobody behind it', async () => {
+    const { boardsApi } = anInbox({ reason: 'reminder' })
+    renderRoute('/notifications', { boardsApi })
+
+    const row = await rowOf()
+    expect(row).toHaveTextContent('Reminder')
+    expect(within(row).queryByText('AM')).toBeNull()
+  })
+
+  it('tells the time relative to now, with the exact moment on hover', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-23T12:00:00Z'))
+    followZone('UTC')
+    try {
+      const { boardsApi } = anInbox({ createdAt: '2026-10-23T11:55:00Z' })
+      renderRoute('/notifications', { boardsApi })
+
+      const time = within(await rowOf()).getByText('5 min ago')
+      expect(time).toHaveAttribute('title', 'Oct 23, 2026, 11:55')
+    } finally {
+      vi.useRealTimers()
+      followZone(null)
+    }
+  })
+
+  it('puts unread notifications apart from the ones already seen', async () => {
+    const { boardsApi } = anInbox(
+      { id: 'n1', reason: 'mentioned', readAt: null },
       {
-        ...about,
-        id: 'n1',
-        reason: 'mentioned',
-        createdAt: '2026-10-05T10:00:00Z',
-        readAt: null
-      },
-      {
-        ...about,
         id: 'n2',
         reason: 'assigned',
         createdAt: '2026-10-01T10:00:00Z',

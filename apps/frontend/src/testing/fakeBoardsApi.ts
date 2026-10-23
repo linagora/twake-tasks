@@ -89,6 +89,26 @@ export function aTask(section: Section | null, overrides: Partial<Task> = {}) {
   } satisfies Task
 }
 
+export function aNotification(
+  overrides: Partial<Notification> = {}
+): Notification {
+  return {
+    id: nextId(),
+    reason: 'following',
+    boardId: 'board-1',
+    boardName: 'Design',
+    taskId: 'task-1',
+    key: 'DES-1',
+    title: 'Logo',
+    createdAt: '2026-10-05T10:00:00Z',
+    readAt: null,
+    actor: null,
+    change: null,
+    commentExcerpt: null,
+    ...overrides
+  }
+}
+
 function summaryOf(board: Board, favorite = false): BoardSummary {
   const counted = board.tasks.filter(
     task => task.parentId === null && task.canceledAt === null

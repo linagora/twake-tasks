@@ -3,7 +3,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { aBoard, aNotification, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { fakeSession, fakeUser } from '@/testing/fakeSession'
 import { renderRoute } from '@/testing/renderWithProviders'
 
@@ -223,16 +223,7 @@ describe('AppShell', () => {
 
   it('counts unread notifications until they are opened', async () => {
     const boardsApi = fakeBoardsApi()
-    boardsApi.notifications.push({
-      id: 'n1',
-      reason: 'assigned',
-      boardId: 'board-1',
-      taskId: 'task-1',
-      key: 'DES-1',
-      title: 'Logo',
-      createdAt: '2026-10-05T10:00:00Z',
-      readAt: null
-    })
+    boardsApi.notifications.push(aNotification({ reason: 'assigned' }))
     renderRoute('/today', { boardsApi })
 
     const nav = within(await screen.findByRole('list', { name: 'Main menu' }))

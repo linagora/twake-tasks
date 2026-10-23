@@ -67,15 +67,23 @@ export interface Comment {
   createdAt: string
 }
 
+/**
+ * `actor` is null for a reminder. `change` is the history entry behind it,
+ * null for a comment or once the entry is gone.
+ */
 export interface Notification {
   id: string
   reason: 'assigned' | 'mentioned' | 'following' | 'reminder'
   boardId: string
+  boardName: string
   taskId: string
   key: string
   title: string
   createdAt: string
   readAt: string | null
+  actor: Person | null
+  change: HistoryEntry | null
+  commentExcerpt: string | null
 }
 
 /** The unread notifications of a project; a project without any is absent. */

@@ -31,7 +31,7 @@ function dueOf(value: string, lang: string): string {
   return dueLabel({ dueDate, dueTime, dueZone }, lang) ?? value
 }
 
-function describe(
+export function describe(
   entry: HistoryEntry,
   board: Board | undefined,
   t: Translate,

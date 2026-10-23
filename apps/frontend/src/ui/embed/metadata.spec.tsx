@@ -10,7 +10,13 @@ import {
 } from 'vitest'
 
 import type { Notification } from '@/application/boards'
-import { aBoard, aProject, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import {
+  aBoard,
+  aNotification,
+  aProject,
+  aTask,
+  fakeBoardsApi
+} from '@/testing/fakeBoardsApi'
 import { renderBrowserRoute } from '@/testing/renderWithProviders'
 import { computeMetadata, countTasks } from '@/ui/embed/metadata'
 import { connectTwakeSpace, disconnectTwakeSpace } from '@/ui/embed/twakeSpace'
@@ -112,16 +118,8 @@ describe('the metadata reported to TwakeSpace', () => {
   let frame: HTMLIFrameElement
   let post: MockInstance<Window['postMessage']>
 
-  const unread = (boardId: string): Notification => ({
-    id: 'n1',
-    reason: 'following',
-    boardId,
-    taskId: 'task',
-    key: 'DES-1',
-    title: 'Logo',
-    createdAt: '2026-10-05T10:00:00Z',
-    readAt: null
-  })
+  const unread = (boardId: string): Notification =>
+    aNotification({ id: 'n1', boardId })
   const snapshots = () =>
     post.mock.calls
       .map(([message]) => message as { type: string; metadata?: unknown })
