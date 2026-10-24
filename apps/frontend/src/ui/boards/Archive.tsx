@@ -1,4 +1,4 @@
-import { Archive, Compass, Icon, Restore, Trash } from '@linagora/twake-icons'
+import { Compass, Icon, Restore, Stack, Trash } from '@linagora/twake-icons'
 import {
   Alert,
   Button,
@@ -33,6 +33,7 @@ import {
   BoardStepContext,
   OriginContext,
   PageCrumbs,
+  useArchivesOrigin,
   useBoardsOrigin
 } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -157,7 +158,8 @@ const daysLeft = (at: string) =>
     Math.ceil((Date.parse(at) + RETENTION_DAYS * DAY - Date.now()) / DAY)
   )
 
-const SHELF_ICONS = { archived: Archive, trash: Trash } as const
+// Not Archive, which archives the board in its menu.
+const SHELF_ICONS = { archived: Stack, trash: Trash } as const
 
 export function ShelfScreen({
   shelf,
@@ -172,7 +174,10 @@ export function ShelfScreen({
   const title = t(
     shelf === 'archived' ? 'archive.archivedTasks' : 'archive.trash'
   )
-  const origin = { ...useBoardsOrigin(), to: '../../..', relative: true }
+  const boardsOrigin = { ...useBoardsOrigin(), to: '../../..', relative: true }
+  const archivesOrigin = useArchivesOrigin()
+  // As on the board: from the Archives, except in an embed.
+  const origin = shown?.archived && !flush ? archivesOrigin : boardsOrigin
   const boardStep = { to: '..', label: shown?.name ?? '…', relative: true }
   useDocumentTitle(shown ? `${title} - ${shown.name}` : null)
 

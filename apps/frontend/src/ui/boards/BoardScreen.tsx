@@ -32,6 +32,7 @@ import {
   SortableColumns,
   SortableList
 } from '@/ds/Sortable'
+import { CutTooltip } from '@/ds/CutTooltip'
 import { TitleButton } from '@/ds/TitleButton'
 import {
   isShareable,
@@ -54,13 +55,14 @@ import {
   BoardStepContext,
   OriginContext,
   PageCrumbs,
+  useArchivesOrigin,
   useBoardsOrigin,
   type Origin
 } from '@/ui/boards/Crumbs'
 import {
   useBoardChange,
   useBoardOf,
-  useListedBoardName,
+  useListedBoard,
   useCreateTask,
   useHiddenTasks,
   useMoveTask,
@@ -92,13 +94,18 @@ export function BoardScreen({
   const { board, shown, missing } = useBoardOf(boardId, projectId)
   // Opened from the boards, its name is known already: the breadcrumb shows it
   // at once rather than "…" then the name.
-  const listedName = useListedBoardName(boardId)
-  const name = shown?.name ?? (missing ? null : listedName) ?? '…'
+  const listed = useListedBoard(boardId)
+  const name = shown?.name ?? (missing ? null : listed?.name) ?? '…'
   const boardsOrigin = {
     ...useBoardsOrigin(),
     to: '../..',
     relative: true
   }
+  const archivesOrigin = useArchivesOrigin()
+  // An archived board is reached from the Archives, as the sidebar shows,
+  // except in an embed (flush), which has no Archives page.
+  const origin =
+    (shown ?? listed)?.archived && !flush ? archivesOrigin : boardsOrigin
   useDocumentTitle(shown?.name ?? null)
   const shownId = shown?.id
   useEffect(() => {
@@ -106,13 +113,13 @@ export function BoardScreen({
   }, [shownId])
 
   return (
-    <OriginContext value={boardsOrigin}>
+    <OriginContext value={origin}>
       <BoardStepContext value={{ to: '.', label: name, relative: true }}>
         <main className={flush ? undefined : 'u-ph-2 u-pt-half u-pb-2'}>
           {/* Once loaded, the board titles itself with its breadcrumb. */}
           {back && !(shown && !waiting) && (
             // The size of the board's own title, so that nothing moves once it loads.
-            <PageCrumbs origin={boardsOrigin} current={name} heading />
+            <PageCrumbs origin={origin} current={name} heading />
           )}
           {missing && (
             <EmptyState
@@ -133,7 +140,7 @@ export function BoardScreen({
             <BoardColumns
               board={shown}
               settled={!board.isFetching}
-              origin={back ? boardsOrigin : undefined}
+              origin={back ? origin : undefined}
             />
           )}
         </main>
@@ -724,7 +731,7 @@ function BoardTitle({
     )
   }
   const name = renamable ? (
-    <Tooltip title={t('board.rename')} describeChild>
+    <CutTooltip title={t('board.rename')}>
       <TitleButton
         focusOnMount={returned}
         onClick={() => {
@@ -734,7 +741,7 @@ function BoardTitle({
       >
         {board.name}
       </TitleButton>
-    </Tooltip>
+    </CutTooltip>
   ) : (
     board.name
   )

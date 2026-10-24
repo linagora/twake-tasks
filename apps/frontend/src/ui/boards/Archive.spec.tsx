@@ -259,6 +259,29 @@ describe('archive and trash', () => {
     ).toBeVisible()
   })
 
+  it('starts the breadcrumb of an archived board from the Archives', async () => {
+    logoBoard({ archived: true })
+
+    await openShelf('Archived tasks')
+
+    const breadcrumb = within(
+      screen.getByRole('navigation', { name: 'Where the page is' })
+    )
+    expect(breadcrumb.getByRole('link', { name: 'Archives' })).toHaveAttribute(
+      'href',
+      '/archives'
+    )
+  })
+
+  it('draws the archived tasks and the archiving of the board apart', async () => {
+    logoBoard()
+    const menu = await boardMenu()
+    const icon = (name: string) =>
+      menu.getByRole('menuitem', { name }).querySelector('svg')?.innerHTML
+
+    expect(icon('Archived tasks')).not.toBe(icon('Archive board'))
+  })
+
   it('archives a board, which becomes read only', async () => {
     const { board, boardsApi } = logoBoard()
 

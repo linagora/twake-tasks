@@ -25,7 +25,11 @@ import { listBoards } from '@/domain/boardList'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PeopleAvatars } from '@/ui/boards/MembersDialog'
 import { useBoards, useSetFavorite } from '@/ui/boards/queries'
-import { PageCrumbs, useBoardsOrigin } from '@/ui/boards/Crumbs'
+import {
+  PageCrumbs,
+  useArchivesOrigin,
+  useBoardsOrigin
+} from '@/ui/boards/Crumbs'
 import { newlyShared } from '@/ui/boards/seenBoards'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -160,10 +164,9 @@ export function BoardsScreen({
   const boards = useBoards()
   const [creating, setCreating] = useState(false)
   const boardsOrigin = useBoardsOrigin()
+  const archivesOrigin = useArchivesOrigin()
   const archives = shelf === 'archived'
-  const origin = archives
-    ? { icon: Archive, label: t('boards.archives'), to: '/archives' }
-    : boardsOrigin
+  const origin = archives ? archivesOrigin : boardsOrigin
   useDocumentTitle(origin.label)
 
   const shown = (boards.data ?? []).filter(board => board.archived === archives)

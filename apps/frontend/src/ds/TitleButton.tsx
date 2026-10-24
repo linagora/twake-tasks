@@ -1,4 +1,4 @@
-import { ButtonBase } from '@linagora/twake-mui'
+import { ButtonBase, type ButtonBaseProps } from '@linagora/twake-mui'
 import {
   useCallback,
   useEffect,
@@ -11,12 +11,11 @@ import {
 /** A page title that opens its editor, drawn as the text it replaces. */
 export function TitleButton({
   children,
-  onClick,
   focusOnMount = false,
-  ref
-}: {
+  ref,
+  ...props
+}: Omit<ButtonBaseProps, 'ref'> & {
   children: ReactNode
-  onClick: () => void
   focusOnMount?: boolean
   ref?: Ref<HTMLButtonElement>
 }): ReactElement {
@@ -35,11 +34,14 @@ export function TitleButton({
 
   return (
     <ButtonBase
+      {...props}
       ref={join}
-      onClick={onClick}
       sx={{
         font: 'inherit',
         color: 'inherit',
+        // Not a flex box, which the ellipsis does not cut.
+        display: 'inline-block',
+        verticalAlign: 'bottom',
         maxWidth: '100%',
         textAlign: 'start',
         borderRadius: 1,
