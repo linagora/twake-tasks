@@ -1,4 +1,5 @@
 import {
+  Archive,
   Bell,
   Calendar,
   CalendarToday,
@@ -42,6 +43,7 @@ import {
   CountBadge,
   SidebarButton,
   SidebarSection,
+  SidebarShelves,
   TopBar,
   TopBarSearch,
   TopBarSpacer,
@@ -92,6 +94,7 @@ export function AppShell(): ReactElement {
           </SidebarButton>
           <AppNav boardsLit={lit.boards} />
           <Favorites lit={lit.favorite} onOpen={lit.openFavorite} />
+          <ShelfLinks archivesLit={lit.archives} />
         </>
       }
     >
@@ -272,6 +275,7 @@ function AccountMenu(): ReactElement {
  */
 function useLitEntry(): {
   boards: boolean
+  archives: boolean
   favorite: string | null
   openFavorite: (boardId: string) => void
 } {
@@ -283,10 +287,14 @@ function useLitEntry(): {
   // Left the board: the next time it opens, it is from wherever it is.
   if (favorite !== null && !inBoard(favorite)) setFavorite(null)
   const onFavorite = favorite !== null && inBoard(favorite)
+  // An archived board is reached from Archives, which it lights instead.
+  const boards = useBoards().data ?? []
+  const onArchived = boards.some(board => board.archived && inBoard(board.id))
+  const onBoard = pathname.startsWith('/boards/') && !onFavorite
 
   return {
-    boards:
-      pathname === '/' || (pathname.startsWith('/boards/') && !onFavorite),
+    boards: pathname === '/' || (onBoard && !onArchived),
+    archives: pathname === '/archives' || (onBoard && onArchived),
     favorite: onFavorite ? favorite : null,
     openFavorite: setFavorite
   }
@@ -355,6 +363,20 @@ function AppNavLink({
         <NavText>{label}</NavText>
       </SidebarLink>
     </Item>
+  )
+}
+
+function ShelfLinks({ archivesLit }: { archivesLit: boolean }): ReactElement {
+  const { t } = useI18n()
+  return (
+    <SidebarShelves label={t('boards.shelves')}>
+      <NavItem>
+        <SidebarLink to="/archives" active={archivesLit}>
+          <NavIcon icon={Archive} />
+          <NavText>{t('boards.archives')}</NavText>
+        </SidebarLink>
+      </NavItem>
+    </SidebarShelves>
   )
 }
 

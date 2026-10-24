@@ -17,7 +17,56 @@ import { displayName } from '@/domain/person'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-const SHOWN = 4
+// As Twake Drive shows the people a file is shared with, in its list.
+const SHOWN = 3
+const MAX_COUNT = 99
+
+/**
+ * The first members of a board side by side, the rest counted. `named` names
+ * the rest on the count's hover, unless a tooltip already covers the stack.
+ */
+export function PeopleAvatars({
+  members,
+  size,
+  named = true
+}: {
+  members: (Person & { pending?: boolean })[]
+  size: number
+  named?: boolean
+}): ReactElement {
+  const shown = members.slice(0, SHOWN)
+  const hidden = members.slice(SHOWN)
+  const count = (
+    <Avatar size={size} color="none" border innerBorder aria-hidden>
+      {`+${String(Math.min(hidden.length, MAX_COUNT))}`}
+    </Avatar>
+  )
+  return (
+    <AvatarStack size={size}>
+      {shown.map(person => (
+        <PersonAvatar
+          key={person.userId}
+          email={person.email}
+          name={person.name}
+          avatar={person.avatar}
+          size={size}
+          pending={person.pending === true}
+        />
+      ))}
+      {hidden.length > 0 &&
+        (named ? (
+          <Tooltip
+            title={hidden.map(person => displayName(person)).join(', ')}
+            describeChild
+          >
+            {count}
+          </Tooltip>
+        ) : (
+          count
+        ))}
+    </AvatarStack>
+  )
+}
 
 /**
  * The first members of a board side by side, then the people it invited,
@@ -34,7 +83,7 @@ export function MemberStack({
 }): ReactElement {
   const { t } = useI18n()
   const people = [
-    ...members.map(person => ({ ...person, pending: false })),
+    ...members,
     ...invited.map(email => ({
       userId: email,
       email,
@@ -43,7 +92,6 @@ export function MemberStack({
       pending: true
     }))
   ]
-  const hidden = people.length - SHOWN
   const label = [
     t('members.count', { smart_count: members.length }),
     ...(invited.length > 0
@@ -53,23 +101,7 @@ export function MemberStack({
   return (
     <Tooltip title={label}>
       <StackButton onClick={onClick} aria-haspopup="dialog" aria-label={label}>
-        <AvatarStack size={32}>
-          {people.slice(0, SHOWN).map(person => (
-            <PersonAvatar
-              key={person.userId}
-              email={person.email}
-              name={person.name}
-              avatar={person.avatar}
-              size={32}
-              pending={person.pending}
-            />
-          ))}
-          {hidden > 0 && (
-            <Avatar size={32} aria-hidden>
-              {`+${String(hidden)}`}
-            </Avatar>
-          )}
-        </AvatarStack>
+        <PeopleAvatars members={people} size={32} named={false} />
       </StackButton>
     </Tooltip>
   )

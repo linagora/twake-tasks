@@ -1,23 +1,54 @@
 import {
   Avatar,
   Box,
+  Card,
+  CardActionArea,
   Chip,
   nameToColor,
-  styled,
-  Tabs,
   Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
-export function CardTile({
+const CARD_RADIUS = '20px'
+
+export function CardGrid({
+  label,
+  children
+}: {
+  label: string
+  children: ReactNode
+}): ReactElement {
+  return (
+    <Box
+      component="ul"
+      aria-label={label}
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+        gap: 2,
+        m: 0,
+        p: 0,
+        listStyle: 'none'
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
+
+// `title` is a link that stretches over the whole card; `action` sits above
+// that stretch so it keeps its own click.
+export function BoardCard({
   label,
   badge,
   badgeLabel,
   title,
   flag,
+  chip,
   tag,
   meta,
+  members,
   action
 }: {
   label: string
@@ -26,150 +57,152 @@ export function CardTile({
   title: ReactNode
   /** A short word next to the title, such as "New". */
   flag?: string | undefined
+  /** Where the board belongs, when that tells something: personal, a space. */
+  chip?: ReactNode
   tag: string
   meta: string
+  /** The people of the board, at the end of its last row. */
+  members?: ReactNode
   action?: ReactNode
 }): ReactElement {
   return (
-    <Box
+    <Card
       component="li"
       aria-label={label}
-      sx={theme => ({
+      sx={{
+        minHeight: { sm: 144 },
         position: 'relative',
-        width: { xs: '100%', sm: '17rem' },
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
         gap: 1.5,
         p: 1.5,
-        borderRadius: 3,
-        border: 1,
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        transition: theme.transitions.create(['border-color', 'box-shadow']),
-        '&:hover, &:focus-within': {
-          borderColor: 'primary.main',
-          boxShadow: theme.vars.shadows[2]
-        },
+        borderRadius: CARD_RADIUS,
+        '&:hover': { boxShadow: 3 },
         '& a': { color: 'text.primary', textDecoration: 'none' },
         '& a::after': { content: '""', position: 'absolute', inset: 0 },
+        '&:focus-within': {
+          outline: 2,
+          outlineColor: 'primary.main',
+          outlineOffset: -2
+        },
         '& a:focus-visible': { outline: 'none' }
-      })}
-    >
-      <Avatar
-        variant="rounded"
-        size={40}
-        color={nameToColor(label) ?? 'sunrise'}
-        role="img"
-        aria-label={badgeLabel}
-        sx={{ borderRadius: 2, fontWeight: 600 }}
-      >
-        {badge}
-      </Avatar>
-      <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-          <Tooltip title={label} placement="top-start">
-            <Typography
-              variant="subtitle1"
-              component="h3"
-              sx={{
-                minWidth: 0,
-                fontWeight: 600,
-                lineHeight: 1.3,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                overflowWrap: 'anywhere'
-              }}
-            >
-              {title}
-            </Typography>
-          </Tooltip>
-          {flag && (
-            <Chip
-              size="small"
-              color="primary"
-              label={flag}
-              sx={{ flexShrink: 0, height: 20, fontWeight: 600 }}
-            />
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography
-            variant="caption"
-            sx={{
-              px: 0.75,
-              borderRadius: 1,
-              fontWeight: 600,
-              letterSpacing: '0.04em',
-              color: 'text.secondary',
-              bgcolor: 'action.hover'
-            }}
-          >
-            {tag}
-          </Typography>
-          <Typography variant="caption" color="textSecondary" noWrap>
-            {meta}
-          </Typography>
-        </Box>
-      </Box>
-      {action && <Box sx={{ position: 'relative', zIndex: 1 }}>{action}</Box>}
-    </Box>
-  )
-}
-
-export const ShelfTabs = styled(Tabs)(({ theme }) => ({
-  [theme.breakpoints.up('sm')]: { width: 'fit-content' }
-}))
-
-// Projects flow side by side, so one-board projects share a row.
-export function Shelves({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'flex-start',
-        columnGap: 4,
-        rowGap: 3
       }}
     >
-      {children}
-    </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Avatar
+          variant="rounded"
+          size={40}
+          color={nameToColor(label) ?? 'sunrise'}
+          role="img"
+          aria-label={badgeLabel}
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          {badge}
+        </Avatar>
+        <Tooltip title={label} placement="top-start">
+          <Typography
+            variant="h6"
+            component="h3"
+            sx={{
+              flex: '1 1 auto',
+              minWidth: 0,
+              lineHeight: 1.3,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              overflowWrap: 'anywhere'
+            }}
+          >
+            {title}
+          </Typography>
+        </Tooltip>
+        {flag && (
+          <Chip
+            size="small"
+            color="primary"
+            label={flag}
+            sx={{ flexShrink: 0, height: 20, fontWeight: 600 }}
+          />
+        )}
+        {action && (
+          <Box sx={{ position: 'relative', zIndex: 1, m: -0.5 }}>{action}</Box>
+        )}
+      </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            px: 0.75,
+            borderRadius: 1,
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            color: 'text.secondary',
+            bgcolor: 'action.hover'
+          }}
+        >
+          {tag}
+        </Typography>
+        <Typography variant="caption" color="textSecondary" noWrap>
+          {meta}
+        </Typography>
+      </Box>
+      {/* Above the stretched link, so the pointer reaches the tooltips. */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          mt: 'auto',
+          '& > *': { position: 'relative', zIndex: 1 }
+        }}
+      >
+        {chip}
+        <Box sx={{ ml: 'auto' }}>{members}</Box>
+      </Box>
+    </Card>
   )
 }
 
-export function TileShelf({
-  name,
-  children
+export function CreateCard({
+  icon,
+  title,
+  text,
+  onClick
 }: {
-  name: string
-  children: ReactNode
+  icon: ReactNode
+  title: string
+  text: string
+  onClick: () => void
 }): ReactElement {
   return (
-    <Box
-      component="section"
-      sx={{ width: { xs: '100%', sm: 'auto' }, maxWidth: '100%', minWidth: 0 }}
+    <Card
+      component="li"
+      sx={{ minHeight: { sm: 144 }, borderRadius: CARD_RADIUS }}
     >
-      <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 600 }}>
-        {name}
-      </Typography>
-      <Box
-        component="ul"
-        aria-label={name}
+      <CardActionArea
+        onClick={onClick}
         sx={{
-          listStyle: 'none',
-          m: 0,
-          mt: 1,
-          p: 0,
+          height: '100%',
           display: 'flex',
-          flexWrap: 'wrap',
-          gap: 2
+          flexDirection: 'column',
+          justifyContent: 'center',
+          gap: 1,
+          p: 1.5,
+          textAlign: 'center'
         }}
       >
-        {children}
-      </Box>
-    </Box>
+        <Box component="span" sx={{ display: 'flex', color: 'primary.main' }}>
+          {icon}
+        </Box>
+        <Typography variant="h6" component="span" noWrap sx={{ maxWidth: 1 }}>
+          {title}
+        </Typography>
+        <Typography variant="body2" component="span" color="textSecondary">
+          {text}
+        </Typography>
+      </CardActionArea>
+    </Card>
   )
 }
 
@@ -216,5 +249,29 @@ export function Tile({ children }: { children: ReactNode }): ReactElement {
     >
       {children}
     </Box>
+  )
+}
+
+export function BoardChip({
+  label,
+  hint
+}: {
+  label: string
+  hint?: string
+}): ReactElement {
+  const chip = (
+    <Chip
+      size="small"
+      label={label}
+      tabIndex={hint ? 0 : undefined}
+      sx={{ maxWidth: '100%', bgcolor: 'action.hover', color: 'text.primary' }}
+    />
+  )
+  return hint ? (
+    <Tooltip title={hint} describeChild>
+      {chip}
+    </Tooltip>
+  ) : (
+    chip
   )
 }
