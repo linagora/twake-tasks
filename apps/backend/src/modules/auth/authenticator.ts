@@ -2,9 +2,36 @@ import { createHash } from 'node:crypto'
 import type { Identity, IdentityProvider } from './oidc.ts'
 import type { AuthStore } from './store.ts'
 
-export type Authenticate = (accessToken: string) => Promise<Identity | null>
+// Decides whether a caller may have a token checked by the SSO.
+export interface IdentityProviderGate {
+  // The seconds to wait, or null when the SSO may be asked.
+  blockedFor: () => Promise<number | null>
+  refused: () => Promise<void>
+}
+
+export type Authenticate = (
+  accessToken: string,
+  gate?: IdentityProviderGate
+) => Promise<Identity | null>
+
+export class TooManyFailures extends Error {
+  readonly retryAfter: number
+
+  constructor(retryAfter: number) {
+    super('too many refused tokens')
+    this.retryAfter = retryAfter
+  }
+}
+
+export class IdentityProviderBusy extends Error {
+  constructor() {
+    super('too many token checks in flight')
+  }
+}
 
 const CACHE_TTL_MS = 60_000
+const MAX_REFUSED = 10_000
+const MAX_CHECKS_IN_FLIGHT = 50
 
 export function sha256(value: string): string {
   return createHash('sha256').update(value).digest('base64url')
@@ -17,30 +44,77 @@ export function createAuthenticator(deps: {
 }): Authenticate {
   const now = deps.now ?? Date.now
   const cache = new Map<string, { identity: Identity; until: number }>()
+  // Keyed by hash and kept in order of refusal, so the oldest come first.
+  const refused = new Map<string, number>()
+  const inFlight = new Map<string, Promise<Identity | null>>()
+  let checks = 0
 
   function evictExpired(at: number) {
     for (const [key, entry] of cache) {
       if (entry.until > at) break
       cache.delete(key)
     }
+    for (const [key, until] of refused) {
+      if (until > at) break
+      refused.delete(key)
+    }
   }
 
-  return async accessToken => {
+  async function check(
+    key: string,
+    accessToken: string,
+    gate: IdentityProviderGate | undefined
+  ): Promise<Identity | null> {
+    const blockedFor = await gate?.blockedFor()
+    if (blockedFor) throw new TooManyFailures(blockedFor)
+    if (checks >= MAX_CHECKS_IN_FLIGHT) throw new IdentityProviderBusy()
+    checks++
+    let identity: Identity | null
+    try {
+      identity = await deps.provider.identify(accessToken)
+    } finally {
+      checks--
+    }
+    const at = now()
+    evictExpired(at)
+    if (!identity) {
+      if (refused.size >= MAX_REFUSED) {
+        refused.delete(refused.keys().next().value as string)
+      }
+      refused.set(key, at + CACHE_TTL_MS)
+      await gate?.refused()
+      return null
+    }
+    cache.delete(key)
+    cache.set(key, {
+      identity,
+      until: Math.min(identity.expiresAt.getTime(), at + CACHE_TTL_MS)
+    })
+    return identity
+  }
+
+  return async (accessToken, gate) => {
     const key = sha256(accessToken)
     const at = now()
-    let entry = cache.get(key)
-    if (!entry || entry.until <= at) {
-      cache.delete(key)
-      const identity = await deps.provider.identify(accessToken)
-      if (!identity) return null
-      evictExpired(at)
-      entry = {
-        identity,
-        until: Math.min(identity.expiresAt.getTime(), at + CACHE_TTL_MS)
+    const cached = cache.get(key)
+    let identity: Identity | null
+    if (cached && cached.until > at) {
+      identity = cached.identity
+    } else if ((refused.get(key) ?? 0) > at) {
+      return null
+    } else {
+      let pending = inFlight.get(key)
+      if (!pending) {
+        pending = check(key, accessToken, gate).finally(() => {
+          inFlight.delete(key)
+        })
+        inFlight.set(key, pending)
       }
-      cache.set(key, entry)
+      identity = await pending
     }
-    if (await deps.store.isRevoked(entry.identity.sessionId)) return null
-    return entry.identity
+    if (!identity || (await deps.store.isRevoked(identity.sessionId))) {
+      return null
+    }
+    return identity
   }
 }
