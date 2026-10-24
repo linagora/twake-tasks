@@ -1,6 +1,6 @@
 # Modes
 
-The backend runs standalone or in space mode, set by `SPACE_INTEGRATION`. Embedding in TwakeSpace and the platform top bar are set on the frontend and the SSO, and work in either mode.
+The backend runs standalone or in space mode, set by `SPACE_INTEGRATION`. Embedding in TwakeSpace, the platform top bar and search from TwakeSpace are set on the frontend, the SSO and the backend's settings, and work in either mode.
 
 ## Standalone
 
@@ -55,3 +55,14 @@ To allow it:
 With `workplaceFqdn` in `SSO_SCOPE`, the SSO names the person's Twake Workplace platform, and the app shows that platform's top bar (home, the other apps, the account). The bar exchanges the id token for a platform token, so the platform must accept the app's SSO client for token exchange.
 
 Without the claim, the app shows its own header. The embedded pages never show a bar.
+
+## Search from TwakeSpace
+
+TwakeSpace's Ctrl+K searches tasks from the browser, with the user's own token, issued for TwakeSpace's audience rather than `OIDC_AUDIENCE`.
+
+- `GET /api/search?q=<text>` answers `{ tasks: [...] }`: up to 50 tasks the user can open, whose key starts with the text or whose title or description holds it. An exact key match comes first.
+- When a task's title does not hold the text, its `excerpt` gives a few words of the description around the match.
+- A query shorter than `SEARCH_MIN_LENGTH` answers no task.
+- Such a token works on this route alone. Every other route answers 401.
+
+To allow it, set `OIDC_SEARCH_AUDIENCES` to TwakeSpace's audience and `SEARCH_ALLOWED_ORIGINS` to its origin (see [configuration](configuration.md#backend)).

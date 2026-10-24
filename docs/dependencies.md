@@ -1,10 +1,10 @@
 # Dependencies
 
-## PostgreSQL 18
+## PostgreSQL
 
-- Version 18 or later: the schema uses `uuidv7()`.
+- Version 16 or later. Development and the tests use 18, and one test migrates a 16 database. On a server older than 18, the backend creates the `uuidv7()` function that 18 has built in before it migrates.
 - The backend runs its migrations at start.
-- Its role must not be a superuser, since a superuser skips the row level security that keeps organizations apart. The backend refuses to start with one.
+- Its role must have neither `SUPERUSER` nor `BYPASSRLS`, since either skips the row level security that keeps organizations apart. The backend refuses to start with one.
 
 ## RabbitMQ
 
@@ -37,6 +37,10 @@ For the platform top bar, the SSO also answers the `workplaceFqdn` scope with a 
 ## SMTP
 
 Optional. Without `SMTP_URL`, notifications and project invitations stay in the app.
+
+## Redis
+
+Optional. With `REDIS_URL`, the backend replicas share their rate limit counters there.
 
 ## ldap-rest
 
