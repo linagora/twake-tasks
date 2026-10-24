@@ -4,7 +4,7 @@ import type { Identity } from './oidc.ts'
 import { tooManyRequests, type RequireIdentity } from './routes.ts'
 
 // The budgets a route draws on besides `requests`, which every route does.
-// The path is the route's, under the prefix of the scope.
+// `path` is the route pattern without the scope's prefix.
 export type BudgetsOf = (
   method: string,
   path: string,

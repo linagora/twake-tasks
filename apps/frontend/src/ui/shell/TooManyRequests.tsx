@@ -11,7 +11,6 @@ function tooManyRequests(error: unknown): boolean {
   return error instanceof ApiError && error.status === 429
 }
 
-/** Tells the user once when the server refuses requests for coming too fast. */
 export function TooManyRequests(): null {
   const queryClient = useQueryClient()
   const { showAlert } = useAlert()

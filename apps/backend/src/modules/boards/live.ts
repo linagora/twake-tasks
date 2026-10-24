@@ -87,7 +87,7 @@ export function registerLive(
     requireIdentity: RequireIdentity
     changes: Changes
     streamVersions: StreamVersions
-    // Per user on this replica, where the streams live; 0 for no cap.
+    // Per user on this replica, where the streams live; 0 turns the cap off.
     openStreams?: number | undefined
   }
 ) {
