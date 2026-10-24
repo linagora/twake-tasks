@@ -16,15 +16,19 @@ interface Reactor {
   email: string
 }
 
+async function seeBoard(tx: Tx, identity: Identity, boardId: string) {
+  if (!(await roleOn(tx, identity.userId, boardId))) {
+    throw new Refused('not_found')
+  }
+}
+
 async function visibleTask(
   tx: Tx,
   identity: Identity,
   boardId: string,
   taskId: string
 ) {
-  if (!(await roleOn(tx, identity.userId, boardId))) {
-    throw new Refused('not_found')
-  }
+  await seeBoard(tx, identity, boardId)
   return taskOf(tx, boardId, taskId)
 }
 
@@ -34,10 +38,12 @@ async function openTask(
   boardId: string,
   taskId: string
 ) {
-  const task = await visibleTask(tx, identity, boardId, taskId)
-  await refuseIfShelved(tx, boardId, task)
-  // The board's viewers reload it, and with it the open comments.
+  await seeBoard(tx, identity, boardId)
+  // Before reading the task, so a concurrent archive cannot slip in between.
+  // The bump also has the board's viewers reload the open comments.
   await bumpBoard(tx, boardId)
+  const task = await taskOf(tx, boardId, taskId)
+  await refuseIfShelved(tx, boardId, task)
   return task
 }
 
