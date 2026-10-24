@@ -32,7 +32,7 @@ import { DayPopover } from '@/ds/Pickers'
 import { RichTextEditor } from '@/ds/RichText'
 import { Inline, Properties, Property, PropertySelect } from '@/ds/SidePanel'
 import { Toast } from '@/ds/Toast'
-import type { Priority } from '@/domain/board'
+import { isShareable, type Priority } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { inDays, shortDay, untilNextMonday } from '@/ui/boards/dueLabel'
 import { LabelsMenu } from '@/ui/boards/LabelsMenu'
@@ -461,8 +461,10 @@ export function NewTaskDialog({
       {menu?.name === 'members' && board && (
         <PeopleMenu
           label={t('newTask.membersTitle')}
+          boardId={board.id}
           members={members}
           tasks={board.tasks}
+          shareable={isShareable(board)}
           pinned={new Set()}
           chosen={new Set(facts.assigneeIds)}
           onToggle={userId => {

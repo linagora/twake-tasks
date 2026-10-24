@@ -308,7 +308,8 @@ describe('AppShell', () => {
     })
     expect(boardsApi.createBoard).toHaveBeenCalledWith({
       name: 'Roadmap',
-      keyPrefix: 'ROA'
+      keyPrefix: 'ROA',
+      language: 'en'
     })
     await waitFor(() => {
       expect(nav.getByRole('link', { name: 'Roadmap' })).toHaveAttribute(
