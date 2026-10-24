@@ -1,5 +1,7 @@
+import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
+import { userSettings } from '../settings/schema.ts'
 import {
   aB2cUser,
   aBoardIn,
@@ -390,6 +392,30 @@ describe('sharing a board', () => {
       })
       expect((await suggest(owner, boardId, 'ADA-')).emails).toContain(
         ada.email
+      )
+    })
+
+    it('matches the name chosen in settings, else the one signed in with', async () => {
+      const owner = aUser()
+      const tag = owner.userId.slice(0, 8)
+      const organizationId = owner.organizationId
+      const chosen = aUser({
+        organizationId,
+        email: `Linus-${randomUUID()}@Example.com`,
+        name: 'Linus Old'
+      })
+      const signedIn = aUser({ organizationId, name: `Grace ${tag}` })
+      const renamed = aUser({ organizationId, name: `Ken ${tag}` })
+      for (const user of [chosen, signedIn, renamed]) await boardIdsOf(user)
+      await db.insert(userSettings).values([
+        { email: chosen.email.toLowerCase(), version: 1, name: `Linus ${tag}` },
+        { email: signedIn.email, version: 1, language: 'fr-FR' },
+        { email: renamed.email, version: 1, name: 'Ken Renamed' }
+      ])
+      const boardId = await aBoardOf(owner)
+
+      expect((await suggest(owner, boardId, tag)).emails).toEqual(
+        [chosen.email, signedIn.email].sort()
       )
     })
 

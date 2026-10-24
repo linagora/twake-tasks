@@ -1,0 +1,1 @@
+CREATE INDEX "project_members_tenant_index" ON "project_members" ("tenant");

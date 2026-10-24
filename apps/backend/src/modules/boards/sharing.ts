@@ -247,6 +247,11 @@ export function createSharingStore(db: Db) {
           .select({ email: projectInvites.email })
           .from(projectInvites)
           .where(eq(projectInvites.projectId, project.id))
+        const namedInSettings = tx
+          .select({ email: userSettings.email })
+          .from(userSettings)
+          .where(sql`lower(${userSettings.name}) like ${pattern}`)
+        const like = (value: unknown) => sql`lower(${value}) like ${pattern}`
         const people = tx
           .selectDistinctOn([projectMembers.userId], {
             userId: projectMembers.userId,
@@ -258,12 +263,21 @@ export function createSharingStore(db: Db) {
           .leftJoin(userSettings, settingsOfMember)
           .where(
             and(
+              // Row level security keeps the tenant already, but no index
+              // serves its test. Nor can one serve `like` here: under row
+              // level security Postgres only uses an index for leakproof
+              // operators, and `like` is not one.
+              eq(projectMembers.tenant, project.organizationId ?? ''),
               notInArray(projectMembers.userId, inProject),
               notInArray(sql`lower(${projectMembers.email})`, invited),
+              // A first pass that needs no join, so only the memberships it
+              // keeps look up their settings. The second test is the exact one.
               or(
-                sql`lower(${projectMembers.email}) like ${pattern}`,
-                sql`lower(${memberLooks.name}) like ${pattern}`
-              )
+                like(projectMembers.email),
+                like(projectMembers.name),
+                inArray(sql`lower(${projectMembers.email})`, namedInSettings)
+              ),
+              or(like(projectMembers.email), like(memberLooks.name))
             )
           )
           .orderBy(asc(projectMembers.userId))
