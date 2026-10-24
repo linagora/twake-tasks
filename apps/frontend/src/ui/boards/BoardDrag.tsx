@@ -56,7 +56,7 @@ export interface DraggableColumns {
   /** The sections in their order. */
   ids: string[]
   nameOf: (sectionId: string) => string
-  onMove: (sectionId: string, move: SectionMove) => void
+  onMove: (sectionId: string, move: SectionMove) => Promise<unknown>
   preview: (sectionId: string) => ReactNode
 }
 
@@ -279,7 +279,11 @@ export function BoardDrag({
             order: reorder(order, moved, sectionOf(over.id)),
             shownOver: sectionSignature
           })
-          columns.onMove(moved, move)
+          // A refused move leaves the sections as they were, so the dropped
+          // order would otherwise stay on screen.
+          columns.onMove(moved, move).catch(() => {
+            setColumnDrag(null)
+          })
           return
         }
         if (drag?.phase !== 'dragging' || !over) {

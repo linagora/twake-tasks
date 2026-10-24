@@ -509,6 +509,11 @@ function BoardColumns({
           {t('board.moveFailed')}
         </Typography>
       )}
+      {moveSection.isError && (
+        <Typography role="alert" className="u-mb-1">
+          {t('section.moveFailed')}
+        </Typography>
+      )}
       {board.layout === 'board' && !editable && (
         <Columns>
           {columns.map(column => (
@@ -539,9 +544,8 @@ function BoardColumns({
                   nameOf: id =>
                     board.sections.find(section => section.id === id)?.name ??
                     '',
-                  onMove: (sectionId, to) => {
-                    moveSection.mutate({ sectionId, to })
-                  },
+                  onMove: (sectionId, to) =>
+                    moveSection.mutateAsync({ sectionId, to }),
                   preview: id => {
                     const column = columns.find(each => each.id === id)
                     if (!column) return null
