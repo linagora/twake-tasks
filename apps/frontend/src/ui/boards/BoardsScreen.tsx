@@ -1,4 +1,11 @@
-import { Button, IconButton, Link, Typography } from '@linagora/twake-mui'
+import {
+  Button,
+  IconButton,
+  Link,
+  Typography,
+  useMediaQuery,
+  useTheme
+} from '@linagora/twake-mui'
 import {
   Archive,
   Icon,
@@ -123,7 +130,6 @@ function BoardItem({
   )
 }
 
-// The people of a board, as Twake Space shows those of a space.
 function BoardMembers({ board }: { board: BoardSummary }): ReactElement | null {
   const { t } = useI18n()
   if (board.members.length === 0) return null
@@ -155,18 +161,35 @@ export function BoardsScreen({
     : boardsOrigin
   useDocumentTitle(origin.label)
 
-  const shown = (boards.data ?? []).filter(
-    board => board.archived === archives
-  )
+  const shown = (boards.data ?? []).filter(board => board.archived === archives)
   const all = listBoards(shown)
   const isNewlyShared = newlyShared()
+  const theme = useTheme()
+  const phone = useMediaQuery(theme.breakpoints.down('lg'))
   const startCreating = (): void => {
     setCreating(true)
   }
 
   return (
     <main className="u-ph-2 u-pt-half u-pb-2">
-      <PageCrumbs origin={origin} heading />
+      <PageCrumbs
+        origin={origin}
+        heading
+        actions={
+          // The phone bottom bar has no Archives entry.
+          phone &&
+          !archives && (
+            <Button
+              component={RouterLink}
+              to="/archives"
+              variant="text"
+              startIcon={<Icon icon={Archive} />}
+            >
+              {t('boards.archives')}
+            </Button>
+          )
+        }
+      />
       {boards.isError && (
         <Typography role="alert">{t('boards.loadFailed')}</Typography>
       )}

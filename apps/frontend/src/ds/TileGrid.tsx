@@ -12,29 +12,20 @@ import type { ReactElement, ReactNode } from 'react'
 
 const CARD_RADIUS = '20px'
 
-// As Twake Space lists its spaces: `maxColumns` caps the columns of a wide
-// screen, no card being narrower than its share of the row, less a pixel so
-// that rounding never drops a column.
 export function CardGrid({
   label,
-  maxColumns,
   children
 }: {
   label: string
-  maxColumns?: number
   children: ReactNode
 }): ReactElement {
-  const min =
-    maxColumns === undefined
-      ? '200px'
-      : `max(200px, calc((100% - ${String(maxColumns - 1)} * 16px) / ${String(maxColumns)} - 1px))`
   return (
     <Box
       component="ul"
       aria-label={label}
       sx={{
         display: 'grid',
-        gridTemplateColumns: `repeat(auto-fill, minmax(${min}, 1fr))`,
+        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
         gap: 2,
         m: 0,
         p: 0,
@@ -79,7 +70,7 @@ export function BoardCard({
       component="li"
       aria-label={label}
       sx={{
-        minHeight: 144,
+        minHeight: { sm: 144 },
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
@@ -138,13 +129,7 @@ export function BoardCard({
           <Box sx={{ position: 'relative', zIndex: 1, m: -0.5 }}>{action}</Box>
         )}
       </Box>
-      {chip && (
-        // Above the stretched link, so the pointer reaches its tooltip.
-        <Box sx={{ position: 'relative', zIndex: 1, alignSelf: 'flex-start' }}>
-          {chip}
-        </Box>
-      )}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 'auto' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography
           variant="caption"
           sx={{
@@ -161,18 +146,24 @@ export function BoardCard({
         <Typography variant="caption" color="textSecondary" noWrap>
           {meta}
         </Typography>
-        {members && (
-          // Above the stretched link, so the pointer reaches the +X bubble.
-          <Box sx={{ position: 'relative', zIndex: 1, ml: 'auto' }}>
-            {members}
-          </Box>
-        )}
+      </Box>
+      {/* Above the stretched link, so the pointer reaches the tooltips. */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          mt: 'auto',
+          '& > *': { position: 'relative', zIndex: 1 }
+        }}
+      >
+        {chip}
+        <Box sx={{ ml: 'auto' }}>{members}</Box>
       </Box>
     </Card>
   )
 }
 
-// The first card of a grid, which makes a new one.
 export function CreateCard({
   icon,
   title,
@@ -185,7 +176,10 @@ export function CreateCard({
   onClick: () => void
 }): ReactElement {
   return (
-    <Card component="li" sx={{ minHeight: 144, borderRadius: CARD_RADIUS }}>
+    <Card
+      component="li"
+      sx={{ minHeight: { sm: 144 }, borderRadius: CARD_RADIUS }}
+    >
       <CardActionArea
         onClick={onClick}
         sx={{
@@ -258,8 +252,6 @@ export function Tile({ children }: { children: ReactNode }): ReactElement {
   )
 }
 
-// A grey pill naming where a board belongs, as the Admin Panel marks what is
-// linked to a space; `hint` says more on hover or focus.
 export function BoardChip({
   label,
   hint

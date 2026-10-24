@@ -305,7 +305,7 @@ export function SidebarSection({
   )
 }
 
-// The sidebar's last links, under a divider, as Twake Space ends its own.
+// Phones get the bottom bar only, as for SidebarSection.
 export function SidebarShelves({
   label,
   children
