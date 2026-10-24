@@ -71,6 +71,7 @@ export function SortableListRow({
 }): ReactElement {
   const {
     setNodeRef,
+    setActivatorNodeRef,
     attributes,
     listeners,
     transform,
@@ -89,7 +90,12 @@ export function SortableListRow({
       {...props}
       {...attributes}
       {...listeners}
-      ref={setNodeRef}
+      // As the activator, Space and Enter pick the row up only from the row
+      // itself, and still tick its checkbox or open its title.
+      ref={node => {
+        setNodeRef(node)
+        setActivatorNodeRef(node)
+      }}
       drag={isDragging ? 'placeholder' : 'none'}
       // eslint-disable-next-line no-restricted-syntax -- changes every frame of a drag; sx would mint a class per frame
       style={{
