@@ -4,18 +4,24 @@ import type { HTMLAttributes, ReactElement, ReactNode, Ref } from 'react'
 
 import { FittingChips, type FittingChip } from '@/ds/FittingChips'
 
-// Wide screens line every row up in columns; phones put the facts on a
-// second line under the title.
+// A list wide enough lines every row up in columns, the title keeping at
+// least 10rem; a narrower one puts the facts on a second line under the
+// title. The list's own width decides, since the sidebar narrows it.
+const COLUMNS = '@container list (min-width: 56rem)'
+const columnGrid = {
+  gridTemplateColumns: '32px 5rem minmax(0, 1fr) 6rem 7.5rem 7rem 11rem'
+}
 const rowGrid = {
   display: 'grid',
   alignItems: 'center',
   columnGap: 2,
-  gridTemplateColumns: {
-    xs: '32px auto minmax(0, 1fr)',
-    md: '32px 5rem minmax(0, 1fr) 6rem 7.5rem 7rem 11rem'
-  },
+  gridTemplateColumns: '32px auto minmax(0, 1fr)',
   px: 1.5
 } as const
+
+export function ListView({ children }: { children: ReactNode }): ReactElement {
+  return <Box sx={{ container: 'list / inline-size' }}>{children}</Box>
+}
 
 export function ListHeader({
   columns
@@ -27,7 +33,8 @@ export function ListHeader({
       aria-hidden
       sx={{
         ...rowGrid,
-        display: { xs: 'none', md: 'grid' },
+        display: 'none',
+        [COLUMNS]: { ...columnGrid, display: 'grid' },
         py: 1,
         mb: 1,
         borderBottom: 1,
@@ -156,6 +163,7 @@ export function ListRow({
       data-new-task={highlighted ? '' : undefined}
       sx={theme => ({
         ...rowGrid,
+        [COLUMNS]: columnGrid,
         position: 'relative',
         listStyle: 'none',
         minHeight: 44,
@@ -193,7 +201,7 @@ export function ListRow({
     >
       <Box
         className="ListRow-check"
-        sx={{ gridRow: { xs: 'span 2', md: 'auto' } }}
+        sx={{ gridRow: 'span 2', [COLUMNS]: { gridRow: 'auto' } }}
       >
         {check}
       </Box>
@@ -212,13 +220,14 @@ export function ListRow({
       </Box>
       <Box
         sx={{
-          display: { xs: 'flex', md: 'contents' },
-          gridColumn: { xs: '2 / -1', md: 'auto' },
-          minHeight: { xs: 24, md: 'auto' },
+          display: 'flex',
+          gridColumn: '2 / -1',
+          minHeight: 24,
           alignItems: 'center',
           gap: 1,
           '&:empty': { display: 'none' },
-          '& > *': { minWidth: 0 }
+          '& > *': { minWidth: 0 },
+          [COLUMNS]: { display: 'contents' }
         }}
       >
         <Cell>{people}</Cell>
@@ -241,7 +250,8 @@ function Cell({ children }: { children: ReactNode }): ReactElement {
         display: 'flex',
         alignItems: 'center',
         gap: 0.5,
-        '&:empty': { display: { xs: 'none', md: 'flex' } }
+        '&:empty': { display: 'none' },
+        [COLUMNS]: { '&:empty': { display: 'flex' } }
       }}
     >
       {children}
