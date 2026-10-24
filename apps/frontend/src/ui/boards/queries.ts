@@ -308,20 +308,43 @@ export function useListedBoard(boardId: string): BoardSummary | null {
 }
 
 // Reloads on a newer version: a change made elsewhere, or one missed while
-// the stream was reconnecting.
+// the stream was reconnecting. Every view of the board watches it and reads
+// count against the person's budget, so a read already under way may bring
+// the version and is awaited before reading again.
 export function useBoard(boardId: string): UseQueryResult<Board> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
-  useEffect(
-    () =>
-      api.watchBoard(boardId, version => {
-        const shown = queryClient.getQueryData<Board>(boardKey(boardId))
-        if (shown && version > shown.version) {
-          void queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
-        }
-      }),
-    [api, boardId, queryClient]
-  )
+  useEffect(() => {
+    const queryKey = boardKey(boardId)
+    let stopped = false
+    // Checks again once the read ends: another watcher may have started the
+    // next read in the meantime, or cancelled this one for its own.
+    const onVersion = (version: number) => {
+      if (stopped) return
+      const query = queryClient
+        .getQueryCache()
+        .find<Board>({ queryKey, exact: true })
+      const reading =
+        query?.state.fetchStatus === 'fetching' ? query.promise : undefined
+      if (reading) {
+        void reading
+          .catch(() => undefined)
+          .then(() => {
+            onVersion(version)
+          })
+        return
+      }
+      const shown = query?.state.data
+      if (shown && version > shown.version) {
+        void queryClient.invalidateQueries({ queryKey })
+      }
+    }
+    const unwatch = api.watchBoard(boardId, onVersion)
+    return () => {
+      stopped = true
+      unwatch()
+    }
+  }, [api, boardId, queryClient])
   return useQuery({
     queryKey: boardKey(boardId),
     queryFn: () => api.getBoard(boardId)
