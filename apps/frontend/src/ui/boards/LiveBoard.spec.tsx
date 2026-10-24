@@ -1,9 +1,40 @@
-import { act, screen, within } from '@testing-library/react'
+import { act, fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
+import { typeRichText } from '@/testing/richText'
+
+const settle = () =>
+  act(() => new Promise<void>(resolve => setTimeout(resolve, 50)))
+
+async function openLogo() {
+  const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
+  board.tasks = [
+    aTask(board.sections[0] ?? null, { key: 'DES-1', title: 'Logo' })
+  ]
+  const boardsApi = fakeBoardsApi([board])
+  renderRoute(`/boards/${board.id}?task=DES-1`, { boardsApi })
+  const panel = within(
+    await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+  )
+  const composer = await panel.findByRole('textbox', { name: 'Comment' })
+  await settle()
+  const send = async () => {
+    await typeRichText(composer, 'Blue.')
+    fireEvent.click(panel.getByRole('button', { name: 'Send' }))
+    await panel.findByRole('article', { name: 'me@example.com' })
+    await settle()
+  }
+  return {
+    board,
+    boardsApi,
+    boardReads: boardsApi.getBoard.mock.calls.length,
+    commentReads: boardsApi.listComments.mock.calls.length,
+    send
+  }
+}
 
 describe('a board open in two places', () => {
   it('shows a change made elsewhere', async () => {
@@ -62,6 +93,52 @@ describe('a board open in two places', () => {
     expect(
       comment.getByRole('button', { name: '🎉 from Bob Durand' })
     ).toBeInTheDocument()
+  })
+
+  it('reads the board and the open comments once per change', async () => {
+    const { board, boardsApi, boardReads, commentReads } = await openLogo()
+
+    act(() => {
+      boardsApi.changeElsewhere(board.id, () => undefined)
+    })
+    await settle()
+
+    expect(boardsApi.getBoard).toHaveBeenCalledTimes(boardReads + 1)
+    expect(boardsApi.listComments).toHaveBeenCalledTimes(commentReads + 1)
+  })
+
+  it('does not read the board again for the version it is already reading', async () => {
+    const { boardsApi, boardReads, commentReads, send } = await openLogo()
+    const read = boardsApi.getBoard.getMockImplementation()
+    boardsApi.getBoard.mockImplementationOnce(async boardId => {
+      await Promise.resolve()
+      act(() => {
+        boardsApi.changeElsewhere(boardId, () => undefined)
+      })
+      return read?.(boardId) ?? Promise.reject(new Error('no board'))
+    })
+
+    await send()
+
+    expect(boardsApi.getBoard).toHaveBeenCalledTimes(boardReads + 1)
+    expect(boardsApi.listComments).toHaveBeenCalledTimes(commentReads + 1)
+  })
+
+  it('reads the board once more when the read under way brings an older version', async () => {
+    const { boardsApi, boardReads, send } = await openLogo()
+    const read = boardsApi.getBoard.getMockImplementation()
+    boardsApi.getBoard.mockImplementationOnce(async boardId => {
+      const before = await (read?.(boardId) ??
+        Promise.reject(new Error('no board')))
+      act(() => {
+        boardsApi.changeElsewhere(boardId, () => undefined)
+      })
+      return before
+    })
+
+    await send()
+
+    expect(boardsApi.getBoard).toHaveBeenCalledTimes(boardReads + 2)
   })
 
   it.each([
