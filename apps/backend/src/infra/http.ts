@@ -8,9 +8,14 @@ import Fastify, {
 export function createServer(deps: {
   logger: FastifyBaseLogger
   isReady: () => Promise<boolean>
+  // The proxies between the caller and the server, each adding the address
+  // it got the request from to X-Forwarded-For.
+  proxyHops?: number | undefined
 }): HttpServer {
+  const proxyHops = deps.proxyHops ?? 0
   const app = Fastify({
     loggerInstance: deps.logger,
+    trustProxy: (_address, hop) => hop < proxyHops,
     logController: new LogController({
       disableRequestLogging: request => request.url.startsWith('/health/')
     })

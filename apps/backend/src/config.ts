@@ -58,6 +58,8 @@ const configSchema = z
     MAIL_FROM: z.string().min(1).default('Twake Project <tasks@twake.app>'),
     HTTP_HOST: z.string().min(1).default('0.0.0.0'),
     HTTP_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
+    HTTP_TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).default(2),
+    REDIS_URL: z.url({ protocol: /^rediss?$/ }).optional(),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
       .default('info')

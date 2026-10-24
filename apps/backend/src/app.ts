@@ -1,7 +1,9 @@
+import type { Redis } from 'ioredis'
 import type { Logger } from 'pino'
 import { versionStreams, type Changes } from './infra/changes.ts'
 import type { Db } from './infra/db.ts'
 import { createServer } from './infra/http.ts'
+import { registerRateLimit } from './infra/rateLimit.ts'
 import {
   postgresAuthStore,
   registerAuth,
@@ -20,8 +22,15 @@ export async function buildApp(deps: {
   authenticate: Authenticate
   searchAllowedOrigins: readonly string[]
   isReady: () => Promise<boolean>
+  proxyHops?: number | undefined
+  redis?: Redis | undefined
 }) {
-  const app = createServer({ logger: deps.logger, isReady: deps.isReady })
+  const app = createServer({
+    logger: deps.logger,
+    isReady: deps.isReady,
+    proxyHops: deps.proxyHops
+  })
+  await registerRateLimit(app, deps.redis)
   // The frontend serves its own routes, such as /boards/<id>, on the same origin.
   await app.register(
     api => {

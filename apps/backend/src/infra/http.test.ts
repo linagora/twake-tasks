@@ -22,6 +22,31 @@ function serverLoggingTo(lines: LogLine[]) {
 }
 
 describe('the server', () => {
+  it.each([
+    [2, '198.51.100.1'],
+    [0, '10.0.0.3']
+  ])(
+    'behind %i trusted proxies, takes the caller to be %s',
+    async (proxyHops, ip) => {
+      const app = createServer({
+        logger: pino({ level: 'silent' }),
+        isReady: () => Promise.resolve(true),
+        proxyHops
+      })
+      app.get('/ip', request => ({ ip: request.ip }))
+
+      // The caller forged the first address; the ingress added the second
+      // and the frontend's nginx the third, before connecting.
+      const response = await app.inject({
+        url: '/ip',
+        remoteAddress: '10.0.0.3',
+        headers: { 'x-forwarded-for': '192.0.2.66, 198.51.100.1, 10.0.0.2' }
+      })
+
+      expect(response.json()).toEqual({ ip })
+    }
+  )
+
   it('answers a failure without its cause, which goes to the log', async () => {
     const lines: LogLine[] = []
     const app = serverLoggingTo(lines)

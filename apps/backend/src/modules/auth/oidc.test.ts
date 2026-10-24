@@ -55,6 +55,7 @@ function fakeSso(jwks: unknown, tokens: Map<string, FakeToken>) {
         return Promise.resolve(json(found?.introspection ?? { active: false }))
       }
       case `${ISSUER}oauth2/userinfo`: {
+        sso.userinfoCalls++
         const token = headers.get('authorization')?.replace(/^Bearer /, '')
         const found = tokens.get(token ?? '')
         return Promise.resolve(
@@ -70,12 +71,14 @@ function fakeSso(jwks: unknown, tokens: Map<string, FakeToken>) {
         return Promise.resolve(new Response(null, { status: 404 }))
     }
   }
-  return {
+  const sso = {
     fetch,
+    userinfoCalls: 0,
     failIntrospection: () => {
       introspectionStatus = 500
     }
   }
+  return sso
 }
 
 const now = () => Math.floor(Date.now() / 1000)
@@ -246,6 +249,19 @@ describe('identify', () => {
     const { provider } = await setUp()
 
     await expect(provider.identify('unknown')).resolves.toBeNull()
+  })
+
+  it.each([
+    ['inactive', { active: false }],
+    ['for another audience', { aud: 'tmail' }]
+  ])('asks no userinfo for a token %s', async (_case, override) => {
+    const token = validToken()
+    token.introspection = { ...token.introspection, ...override }
+    const { provider, sso } = await setUp({ token })
+
+    await provider.identify('token')
+
+    expect(sso.userinfoCalls).toBe(0)
   })
 
   it('fails when introspection fails', async () => {

@@ -91,13 +91,7 @@ export async function discoverIdentityProvider(
 
   return {
     async identify(accessToken) {
-      const [introspection, userinfo] = await Promise.allSettled([
-        client.tokenIntrospection(config, accessToken),
-        // eslint-disable-next-line @typescript-eslint/no-deprecated -- runs in parallel with introspection, the subjects are compared below
-        client.fetchUserInfo(config, accessToken, client.skipSubjectCheck)
-      ])
-      if (introspection.status === 'rejected') throw introspection.reason
-      const token = introspection.value
+      const token = await client.tokenIntrospection(config, accessToken)
       if (
         !token.active ||
         token.exp === undefined ||
@@ -114,8 +108,13 @@ export async function discoverIdentityProvider(
       ) {
         return null
       }
-      if (userinfo.status === 'rejected') throw userinfo.reason
-      const parsed = userinfoSchema.safeParse(userinfo.value)
+      const userinfo = await client.fetchUserInfo(
+        config,
+        accessToken,
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- the subjects are compared below, refusing the token instead of throwing
+        client.skipSubjectCheck
+      )
+      const parsed = userinfoSchema.safeParse(userinfo)
       if (!parsed.success) return null
       const claims = parsed.data
       if (token.sub !== undefined && token.sub !== claims.sub) return null
