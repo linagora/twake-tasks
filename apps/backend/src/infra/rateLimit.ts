@@ -10,8 +10,17 @@ export function connectRedis(url: string, logger: Logger): Redis {
     maxRetriesPerRequest: 1,
     enableOfflineQueue: false
   })
+  // ioredis reports every failed reconnection, so only the first is logged.
+  let up = true
+  redis.on('ready', () => {
+    if (!up) logger.info('redis back, rate limits are on')
+    up = true
+  })
   redis.on('error', (error: Error) => {
-    logger.warn({ err: error }, 'redis unavailable, rate limits are off')
+    if (up) {
+      logger.warn({ err: error }, 'redis unavailable, rate limits are off')
+    }
+    up = false
   })
   return redis
 }

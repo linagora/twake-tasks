@@ -5,7 +5,8 @@ import type { HttpServer } from '../../infra/http.ts'
 import {
   IdentityProviderBusy,
   TooManyFailures,
-  type Authenticate
+  type Authenticate,
+  type IdentityProviderGate
 } from './authenticator.ts'
 import type { Identity, IdentityProvider } from './oidc.ts'
 import type { AuthStore } from './store.ts'
@@ -31,6 +32,8 @@ function unauthorized(reply: FastifyReply, error: string | null) {
     .header('www-authenticate', error ? `Bearer error="${error}"` : 'Bearer')
     .send({ error: 'unauthorized' })
 }
+
+const MAX_CHECKS_PER_ADDRESS = 5
 
 function tooManyRequests(reply: FastifyReply, retryAfter: number) {
   return reply
@@ -84,6 +87,30 @@ export function registerAuth(
   // against the caller's address.
   const accessFailures = failuresPerAddress(app, 'access-token', 30)
   const logoutFailures = failuresPerAddress(app, 'logout-token', 60)
+  // Failures are counted once the SSO answers, so checks running at the same
+  // time from one address are capped too.
+  const checksByAddress = new Map<string, number>()
+
+  function gateFor(request: FastifyRequest): IdentityProviderGate {
+    const address = normalizeIP(request.ip)
+    const leave = () => {
+      const checks = (checksByAddress.get(address) ?? 1) - 1
+      if (checks > 0) checksByAddress.set(address, checks)
+      else checksByAddress.delete(address)
+    }
+    return {
+      async enter() {
+        const checks = checksByAddress.get(address) ?? 0
+        if (checks >= MAX_CHECKS_PER_ADDRESS) return 1
+        checksByAddress.set(address, checks + 1)
+        const waitFor = await accessFailures.blockedFor(request)
+        if (waitFor) leave()
+        return waitFor
+      },
+      leave,
+      refused: () => accessFailures.count(request)
+    }
+  }
 
   const requireIdentity: RequireIdentity = async (request, reply) => {
     const [scheme, token] = request.headers.authorization?.split(' ') ?? []
@@ -92,10 +119,7 @@ export function registerAuth(
     }
     let identity: Identity | null
     try {
-      identity = await deps.authenticate(token, {
-        blockedFor: () => accessFailures.blockedFor(request),
-        refused: () => accessFailures.count(request)
-      })
+      identity = await deps.authenticate(token, gateFor(request))
     } catch (error) {
       if (error instanceof TooManyFailures) {
         return tooManyRequests(reply, error.retryAfter)

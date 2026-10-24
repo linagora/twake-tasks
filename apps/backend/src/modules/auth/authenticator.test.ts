@@ -131,9 +131,10 @@ describe('createAuthenticator', () => {
   })
 
   describe('with a gate', () => {
-    function aGate(blockedFor: number | null = null) {
+    function aGate(waitFor: number | null = null) {
       return {
-        blockedFor: vi.fn(() => Promise.resolve(blockedFor)),
+        enter: vi.fn(() => Promise.resolve(waitFor)),
+        leave: vi.fn(),
         refused: vi.fn(() => Promise.resolve())
       }
     }
@@ -147,6 +148,36 @@ describe('createAuthenticator', () => {
       expect(gate.refused).toHaveBeenCalledTimes(1)
     })
 
+    it('gives back the place of each caller, whatever the check gives', async () => {
+      const { authenticate, identify } = setUp()
+      vi.mocked(identify).mockRejectedValueOnce(new Error('sso down'))
+      const first = aGate()
+      const second = aGate()
+
+      await expect(authenticate('token', first)).rejects.toThrow('sso down')
+      await Promise.all([
+        authenticate('token', first),
+        authenticate('token', second)
+      ])
+
+      expect(first.leave).toHaveBeenCalledTimes(2)
+      expect(second.leave).toHaveBeenCalledTimes(1)
+    })
+
+    it('holds back a caller joining a check while its own gate is closed', async () => {
+      const { authenticate } = setUp()
+
+      const [open, closed] = await Promise.allSettled([
+        authenticate('token', aGate()),
+        authenticate('token', aGate(42))
+      ])
+
+      expect(open.status).toBe('fulfilled')
+      expect(closed.status === 'rejected' && closed.reason).toBeInstanceOf(
+        TooManyFailures
+      )
+    })
+
     it('does not count a token it already knows', async () => {
       const refusing = setUp(null)
       const accepting = setUp()
@@ -157,7 +188,7 @@ describe('createAuthenticator', () => {
       await refusing.authenticate('token', gate)
       await accepting.authenticate('token', gate)
 
-      expect(gate.blockedFor).not.toHaveBeenCalled()
+      expect(gate.enter).not.toHaveBeenCalled()
       expect(gate.refused).not.toHaveBeenCalled()
     })
 

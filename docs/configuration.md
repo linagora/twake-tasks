@@ -62,7 +62,7 @@ Server:
 Rate limits:
 
 - `REDIS_URL`: a `redis://` or `rediss://` URL. The replicas share their rate limit counters there. Without it, each replica counts in memory. While Redis is unreachable, the limits let every request through and the backend logs a warning.
-- Tokens the SSO refuses count against the caller's address. Past 30 in a minute, that address gets 429 with `Retry-After` until the minute ends, except for tokens already checked.
+- Tokens the SSO refuses count against the caller's address. Past 30 in a minute, that address gets 429 with `Retry-After` until the minute ends, except for tokens already checked. An address also gets 429 while 5 of its tokens are being checked.
 - Logout tokens that `POST /api/auth/backchannel-logout` refuses count the same way, with 60 a minute per address.
 - Each replica checks at most 50 tokens with the SSO at once, and answers 503 past that.
 

@@ -163,6 +163,48 @@ describe('refused tokens from one address', () => {
     expect((await call(app, 'good')).statusCode).toBe(429)
   })
 
+  it('wait while 5 of their tokens are being checked', async () => {
+    const answers: (() => void)[] = []
+    const authenticate = createAuthenticator({
+      provider: {
+        identify: () =>
+          new Promise(resolve => {
+            answers.push(() => {
+              resolve(null)
+            })
+          }),
+        verifyLogoutToken: vi.fn()
+      },
+      store: { isRevoked: () => Promise.resolve(false), revoke: vi.fn() }
+    })
+    const { app } = await setUp(authenticate)
+    const checking = Array.from({ length: 5 }, (_, i) =>
+      call(app, `bad-${String(i)}`)
+    )
+    await vi.waitFor(() => {
+      expect(answers).toHaveLength(5)
+    })
+
+    const sixth = await call(app, 'bad-5')
+    const elsewhere = call(app, 'bad-6', '198.51.100.1')
+    await vi.waitFor(() => {
+      expect(answers).toHaveLength(6)
+    })
+    for (const answer of answers) answer()
+
+    expect(sixth.statusCode).toBe(429)
+    expect((await elsewhere).statusCode).toBe(401)
+    for (const response of await Promise.all(checking)) {
+      expect(response.statusCode).toBe(401)
+    }
+    const next = call(app, 'bad-7')
+    await vi.waitFor(() => {
+      expect(answers).toHaveLength(7)
+    })
+    answers[6]?.()
+    expect((await next).statusCode).toBe(401)
+  })
+
   it('leave other addresses alone', async () => {
     const { authenticate } = aRealAuthenticator()
     const { app } = await setUp(authenticate)

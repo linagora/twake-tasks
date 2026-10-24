@@ -4,8 +4,10 @@ import type { AuthStore } from './store.ts'
 
 // Decides whether a caller may have a token checked by the SSO.
 export interface IdentityProviderGate {
-  // The seconds to wait, or null when the SSO may be asked.
-  blockedFor: () => Promise<number | null>
+  // Takes the caller's place for one check, or says how many seconds to wait.
+  enter: () => Promise<number | null>
+  // Gives back a place enter took.
+  leave: () => void
   refused: () => Promise<void>
 }
 
@@ -65,8 +67,6 @@ export function createAuthenticator(deps: {
     accessToken: string,
     gate: IdentityProviderGate | undefined
   ): Promise<Identity | null> {
-    const blockedFor = await gate?.blockedFor()
-    if (blockedFor) throw new TooManyFailures(blockedFor)
     if (checks >= MAX_CHECKS_IN_FLIGHT) throw new IdentityProviderBusy()
     checks++
     let identity: Identity | null
@@ -103,14 +103,22 @@ export function createAuthenticator(deps: {
     } else if ((refused.get(key) ?? 0) > at) {
       return null
     } else {
-      let pending = inFlight.get(key)
-      if (!pending) {
-        pending = check(key, accessToken, gate).finally(() => {
-          inFlight.delete(key)
-        })
-        inFlight.set(key, pending)
+      // Each caller is gated on its own address, even one joining a check
+      // already in flight.
+      const waitFor = await gate?.enter()
+      if (waitFor) throw new TooManyFailures(waitFor)
+      try {
+        let pending = inFlight.get(key)
+        if (!pending) {
+          pending = check(key, accessToken, gate).finally(() => {
+            inFlight.delete(key)
+          })
+          inFlight.set(key, pending)
+        }
+        identity = await pending
+      } finally {
+        gate?.leave()
       }
-      identity = await pending
     }
     if (!identity || (await deps.store.isRevoked(identity.sessionId))) {
       return null
