@@ -3,11 +3,23 @@ import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { looksOn, roleOn } from './access.ts'
 import { commentReactions, comments } from './schema.ts'
-import { Refused, refuseIfShelved, taskOf, writeOrRefuse } from './tasks.ts'
+import {
+  bumpBoard,
+  Refused,
+  refuseIfShelved,
+  taskOf,
+  writeOrRefuse
+} from './tasks.ts'
 
 interface Reactor {
   userId: string
   email: string
+}
+
+async function seeBoard(tx: Tx, identity: Identity, boardId: string) {
+  if (!(await roleOn(tx, identity.userId, boardId))) {
+    throw new Refused('not_found')
+  }
 }
 
 async function visibleTask(
@@ -16,9 +28,7 @@ async function visibleTask(
   boardId: string,
   taskId: string
 ) {
-  if (!(await roleOn(tx, identity.userId, boardId))) {
-    throw new Refused('not_found')
-  }
+  await seeBoard(tx, identity, boardId)
   return taskOf(tx, boardId, taskId)
 }
 
@@ -28,7 +38,11 @@ async function openTask(
   boardId: string,
   taskId: string
 ) {
-  const task = await visibleTask(tx, identity, boardId, taskId)
+  await seeBoard(tx, identity, boardId)
+  // Before reading the task, so a concurrent archive cannot slip in between.
+  // The bump also has the board's viewers reload the open comments.
+  await bumpBoard(tx, boardId)
+  const task = await taskOf(tx, boardId, taskId)
   await refuseIfShelved(tx, boardId, task)
   return task
 }

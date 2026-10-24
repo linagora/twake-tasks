@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb, inTenant } from '../../infra/db.ts'
-import { aB2cUser, aUser, startApp, type TestUser } from '../../testing/app.ts'
+import {
+  aB2cUser,
+  aUser,
+  joinBoard,
+  startApp,
+  type TestUser
+} from '../../testing/app.ts'
 import { openStream } from '../../testing/stream.ts'
 import { bumpBoard } from './tasks.ts'
 
@@ -128,6 +134,36 @@ describe('live board updates', () => {
       .as(alice)
       .put(`/boards/${board.id}/members/${guest.userId}`, { role: 'viewer' })
     await api.as(guest).delete(`/boards/${board.id}/members/${guest.userId}`)
+
+    expect([
+      await nextVersion(stream),
+      await nextVersion(stream),
+      await nextVersion(stream)
+    ]).toEqual([first + 1, first + 2, first + 3])
+    stream.close()
+  })
+
+  it("tells of a viewer's comment, then of a reaction given and taken back", async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const board = await aBoardOf(alice)
+    await joinBoard(db, alice, board.id, bob, 'viewer')
+    const task = (
+      await api.as(alice).post(`/boards/${board.id}/tasks`, {
+        sectionId: board.sections[0]?.id,
+        title: 'Logo'
+      })
+    ).json<{ id: string }>()
+    const comments = `/boards/${board.id}/tasks/${task.id}/comments`
+    const stream = openBoardStream(alice, board.id)
+    const first = await nextVersion(stream)
+
+    const comment = (
+      await api.as(bob).post(comments, { body: 'Which palette?' })
+    ).json<{ id: string }>()
+    const reaction = `${comments}/${comment.id}/reactions/${encodeURIComponent('🎉')}`
+    await api.as(bob).put(reaction, {})
+    await api.as(bob).delete(reaction)
 
     expect([
       await nextVersion(stream),
