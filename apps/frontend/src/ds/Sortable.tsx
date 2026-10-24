@@ -1,5 +1,6 @@
 import { useDroppable } from '@dnd-kit/core'
 import {
+  horizontalListSortingStrategy,
   SortableContext,
   useSortable,
   verticalListSortingStrategy
@@ -112,4 +113,66 @@ export function DropListSection({
 }: ComponentProps<typeof ListSection> & { id: string }): ReactElement {
   const { setNodeRef, isOver } = useDroppable({ id })
   return <ListSection {...props} ref={setNodeRef} highlighted={isOver} />
+}
+
+/** Marks a column's sortable, so that a drag tells columns from cards. */
+export const COLUMN = 'column'
+
+export function SortableColumns({
+  ids,
+  children
+}: {
+  ids: string[]
+  children: ReactNode
+}): ReactElement {
+  return (
+    <SortableContext items={ids} strategy={horizontalListSortingStrategy}>
+      {children}
+    </SortableContext>
+  )
+}
+
+// A column cards drop in, which its header also picks up to reorder it.
+export function SortableColumn({
+  id,
+  sortId,
+  description,
+  ...props
+}: ColumnProps & {
+  /** Where cards drop. */
+  id: string
+  /** Where the column sits among the others. */
+  sortId: string
+  description: string
+}): ReactElement {
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id })
+  const {
+    setNodeRef,
+    setActivatorNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({
+    id: sortId,
+    data: { type: COLUMN },
+    attributes: { roleDescription: description }
+  })
+  return (
+    <Column
+      {...props}
+      ref={node => {
+        setNodeRef(node)
+        setDropRef(node)
+      }}
+      highlighted={isOver}
+      // As the activator, Space and Enter pick the column up only from its
+      // header, and still open the section menu inside it.
+      handle={{ ...attributes, ...listeners, ref: setActivatorNodeRef }}
+      drag={isDragging ? 'placeholder' : 'none'}
+      // eslint-disable-next-line no-restricted-syntax -- changes every frame of a drag; sx would mint a class per frame
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+    />
+  )
 }

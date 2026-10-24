@@ -1,14 +1,18 @@
 import {
+  closestCenter,
   closestCorners,
   DndContext,
   DragOverlay,
   KeyboardSensor,
   MouseSensor,
+  pointerWithin,
   TouchSensor,
   useSensor,
   useSensors,
   type Active,
   type Announcements,
+  type CollisionDetection,
+  type KeyboardCoordinateGetter,
   type Modifier,
   type Over,
   type UniqueIdentifier
@@ -23,8 +27,10 @@ import {
   type TouchEvent as ReactTouchEvent
 } from 'react'
 
-import type { TaskMove } from '@/application/boards'
+import type { SectionMove, TaskMove } from '@/application/boards'
 import { dropOn, enterLane, laneOf, type Lanes } from '@/application/boardDrag'
+import { columnMove, reorder } from '@/application/columnDrag'
+import { COLUMN } from '@/ds/Sortable'
 import { moveInto } from '@/application/moveTask'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -40,6 +46,63 @@ export interface Lane {
 type Drag =
   | { phase: 'dragging'; id: string; start: Lanes; lanes: Lanes }
   | { phase: 'landed'; lanes: Lanes; shownOver: string }
+
+// The same for a column: its new place shows until the sections change.
+type ColumnDrag =
+  | { phase: 'dragging'; id: string }
+  | { phase: 'landed'; order: string[]; shownOver: string }
+
+/** The sections a board admin can reorder, by dragging their header. */
+export interface DraggableColumns {
+  ids: string[]
+  nameOf: (sectionId: string) => string
+  onMove: (sectionId: string, move: SectionMove) => Promise<unknown>
+  preview: (sectionId: string) => ReactNode
+}
+
+const SORT_PREFIX = 'column:'
+
+/** A column's place among the sortable columns, apart from its cards' lane. */
+export const columnSortId = (sectionId: string): string =>
+  SORT_PREFIX + sectionId
+
+const sectionOf = (id: UniqueIdentifier): string =>
+  String(id).slice(SORT_PREFIX.length)
+
+const isColumn = (item: Pick<Active, 'data'>): boolean =>
+  item.data.current?.type === COLUMN
+
+// A column lands among columns, on the one under the pointer, a card among
+// cards and lanes.
+const collisions: CollisionDetection = args => {
+  const column = isColumn(args.active)
+  const within = {
+    ...args,
+    droppableContainers: args.droppableContainers.filter(
+      container => isColumn(container) === column
+    )
+  }
+  if (!column) return closestCorners(within)
+  const under = pointerWithin(within)
+  return under.length > 0 ? under : closestCenter(within)
+}
+
+// The arrow keys move a column to the next column, not onto the first card
+// of its own, which lies to its right too.
+const keyboardCoordinates: KeyboardCoordinateGetter = (event, args) => {
+  const { active, droppableContainers } = args.context
+  if (!active || !isColumn(active)) {
+    return sortableKeyboardCoordinates(event, args)
+  }
+  const columnsOnly = {
+    getEnabled: () => droppableContainers.getEnabled().filter(isColumn),
+    get: (id: UniqueIdentifier) => droppableContainers.get(id)
+  } as typeof droppableContainers
+  return sortableKeyboardCoordinates(event, {
+    ...args,
+    context: { ...args.context, droppableContainers: columnsOnly }
+  })
+}
 
 // Selecting text in a field on the card must not pick the card up. Not
 // `instanceof`: a panel opened from the card may be rendered in another
@@ -100,6 +163,7 @@ export function BoardDrag({
   onMove,
   preview,
   previewAtPointer = false,
+  columns,
   children
 }: {
   lanes: Lane[]
@@ -108,18 +172,25 @@ export function BoardDrag({
   preview: (taskId: string) => ReactNode
   /** The preview is smaller than the task, so it follows the pointer. */
   previewAtPointer?: boolean
-  children: (idsOf: (laneKey: string) => string[]) => ReactNode
+  columns?: DraggableColumns | undefined
+  /** `order` is the sections in the order to show them. */
+  children: (idsOf: (laneKey: string) => string[], order: string[]) => ReactNode
 }): ReactElement {
   const { t } = useI18n()
   const [drag, setDrag] = useState<Drag | null>(null)
+  const [columnDrag, setColumnDrag] = useState<ColumnDrag | null>(null)
+  const sectionIds = columns?.ids ?? []
+  const sectionSignature = JSON.stringify(sectionIds)
+  const order =
+    columnDrag?.phase === 'landed' && columnDrag.shownOver === sectionSignature
+      ? columnDrag.order
+      : sectionIds
   const sensors = useSensors(
     useSensor(CardMouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(CardTouchSensor, {
       activationConstraint: { delay: 250, tolerance: 8 }
     }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
+    useSensor(KeyboardSensor, { coordinateGetter: keyboardCoordinates })
   )
   const settled: Lanes = Object.fromEntries(
     lanes.map(lane => [lane.key, lane.taskIds])
@@ -135,28 +206,56 @@ export function BoardDrag({
     const key = laneOf(shown, String(id))
     return lanes.find(lane => lane.key === key)?.name ?? ''
   }
+  const section = (id: UniqueIdentifier) => columns?.nameOf(sectionOf(id)) ?? ''
+  const position = (id: UniqueIdentifier) => ({
+    section: section(id),
+    position: order.indexOf(sectionOf(id)) + 1,
+    count: order.length
+  })
   const announcements: Announcements = {
-    onDragStart: ({ active }) => t('drag.picked', { task: task(active.id) }),
+    onDragStart: ({ active }) =>
+      isColumn(active)
+        ? t('drag.columnPicked', { section: section(active.id) })
+        : t('drag.picked', { task: task(active.id) }),
     onDragOver: ({ active, over }) =>
-      over
-        ? t('drag.over', { task: task(active.id), place: place(over.id) })
-        : undefined,
+      !over
+        ? undefined
+        : isColumn(active)
+          ? t('drag.columnOver', {
+              ...position(over.id),
+              section: section(active.id)
+            })
+          : t('drag.over', { task: task(active.id), place: place(over.id) }),
     onDragEnd: ({ active, over }) =>
-      over
-        ? t('drag.dropped', { task: task(active.id), place: place(over.id) })
-        : t('drag.canceled', { task: task(active.id) }),
-    onDragCancel: ({ active }) => t('drag.canceled', { task: task(active.id) })
+      isColumn(active)
+        ? over
+          ? t('drag.columnDropped', {
+              ...position(over.id),
+              section: section(active.id)
+            })
+          : t('drag.columnCanceled', { section: section(active.id) })
+        : over
+          ? t('drag.dropped', { task: task(active.id), place: place(over.id) })
+          : t('drag.canceled', { task: task(active.id) }),
+    onDragCancel: ({ active }) =>
+      isColumn(active)
+        ? t('drag.columnCanceled', { section: section(active.id) })
+        : t('drag.canceled', { task: task(active.id) })
   }
 
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={collisions}
       accessibility={{
         announcements,
         screenReaderInstructions: { draggable: t('drag.instructions') }
       }}
       onDragStart={({ active }) => {
+        if (isColumn(active)) {
+          setColumnDrag({ phase: 'dragging', id: sectionOf(active.id) })
+          return
+        }
         setDrag({
           phase: 'dragging',
           id: String(active.id),
@@ -165,7 +264,7 @@ export function BoardDrag({
         })
       }}
       onDragOver={({ active, over }) => {
-        if (!over) return
+        if (!over || isColumn(active)) return
         setDrag(current =>
           current?.phase === 'dragging'
             ? {
@@ -181,6 +280,27 @@ export function BoardDrag({
         )
       }}
       onDragEnd={({ active, over }) => {
+        if (isColumn(active)) {
+          const moved = sectionOf(active.id)
+          const move = over
+            ? columnMove(order, moved, sectionOf(over.id))
+            : null
+          if (!columns || !over || !move) {
+            setColumnDrag(null)
+            return
+          }
+          setColumnDrag({
+            phase: 'landed',
+            order: reorder(order, moved, sectionOf(over.id)),
+            shownOver: sectionSignature
+          })
+          // A refused move leaves the sections as they were, so the dropped
+          // order would otherwise stay on screen.
+          columns.onMove(moved, move).catch(() => {
+            setColumnDrag(null)
+          })
+          return
+        }
         if (drag?.phase !== 'dragging' || !over) {
           setDrag(null)
           return
@@ -204,16 +324,21 @@ export function BoardDrag({
       }}
       onDragCancel={() => {
         setDrag(null)
+        setColumnDrag(null)
       }}
     >
-      {children(key => shown[key] ?? [])}
+      {children(key => shown[key] ?? [], order)}
       {/* A preview at the pointer would stretch on its way back to the
           task, so it just goes when dropped, as in Twake Drive. */}
       <DragOverlay
         modifiers={previewAtPointer ? [atPointer] : []}
         dropAnimation={previewAtPointer ? null : undefined}
       >
-        {drag?.phase === 'dragging' ? preview(drag.id) : null}
+        {drag?.phase === 'dragging'
+          ? preview(drag.id)
+          : columnDrag?.phase === 'dragging'
+            ? columns?.preview(columnDrag.id)
+            : null}
       </DragOverlay>
     </DndContext>
   )

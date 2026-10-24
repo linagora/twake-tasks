@@ -10,6 +10,7 @@ import {
 } from '@linagora/twake-mui'
 import {
   useId,
+  type CSSProperties,
   type HTMLAttributes,
   type KeyboardEventHandler,
   type ReactElement,
@@ -101,10 +102,18 @@ export function Column({
   actions,
   children,
   ref,
-  highlighted = false
+  highlighted = false,
+  handle,
+  drag = 'none',
+  style
 }: ColumnProps & {
   ref?: Ref<HTMLElement>
   highlighted?: boolean
+  /** Spread on the header, which then picks the column up to reorder it. */
+  handle?: HTMLAttributes<HTMLElement> & { ref?: Ref<HTMLElement> }
+  /** `placeholder` is the slot a dragged column leaves, `lifted` the column under the pointer. */
+  drag?: 'none' | 'placeholder' | 'lifted'
+  style?: CSSProperties
 }): ReactElement {
   const titleId = useId()
   return (
@@ -112,6 +121,8 @@ export function Column({
       ref={ref}
       component="section"
       aria-labelledby={titleId}
+      // eslint-disable-next-line no-restricted-syntax -- a drag's transform, every frame
+      style={style}
       sx={theme => ({
         flex: '0 0 18rem',
         display: 'flex',
@@ -122,10 +133,27 @@ export function Column({
         bgcolor: highlighted
           ? theme.alpha(theme.vars.palette.primary.main, 0.08)
           : 'background.default',
-        transition: 'background-color 120ms'
+        transition: 'background-color 120ms',
+        ...(drag === 'placeholder' && { opacity: 0.4 }),
+        ...(drag === 'lifted' && { boxShadow: theme.vars.shadows[8] })
       })}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box
+        {...handle}
+        sx={theme => ({
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          ...(handle && {
+            cursor: 'grab',
+            borderRadius: 1,
+            '&:focus-visible': {
+              outline: `2px solid ${theme.vars.palette.primary.main}`,
+              outlineOffset: '4px'
+            }
+          })
+        })}
+      >
         <Typography
           id={titleId}
           variant="subtitle1"

@@ -12,7 +12,12 @@
     "picked": "%{task} seleccionada.",
     "over": "%{task} está sobre %{place}.",
     "dropped": "%{task} soltada en %{place}.",
-    "canceled": "Se canceló el movimiento de %{task}."
+    "canceled": "Se canceló el movimiento de %{task}.",
+    "column": "sección arrastrable",
+    "columnPicked": "Sección %{section} seleccionada.",
+    "columnOver": "%{section} está ahora en la posición %{position} de %{count}.",
+    "columnDropped": "%{section} soltada en la posición %{position} de %{count}.",
+    "columnCanceled": "Se canceló el movimiento de la sección %{section}."
   },
   "app": {
     "name": "Twake Project",
