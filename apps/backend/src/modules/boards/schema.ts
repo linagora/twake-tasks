@@ -114,6 +114,7 @@ export const projectMembers = pgTable.withRLS(
   table => [
     primaryKey({ columns: [table.projectId, table.userId] }),
     index().on(table.userId),
+    index().on(table.tenant),
     foreignKey({
       columns: [table.tenant, table.projectId],
       foreignColumns: [projects.tenant, projects.id]
