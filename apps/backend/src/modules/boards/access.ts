@@ -85,28 +85,14 @@ export function membersOf(
     .orderBy(asc(projectMembers.email))
 }
 
-// The emails invited to each of the projects, not members until they sign
-// in. Only their admins see them.
-export async function invitedTo(
-  tx: Tx,
-  projectIds: string[]
-): Promise<Map<string, string[]>> {
-  const byProject = new Map<string, string[]>()
-  if (projectIds.length === 0) return byProject
+// The emails invited to the project, not members until they sign in.
+export async function invitedTo(tx: Tx, projectId: string): Promise<string[]> {
   const rows = await tx
-    .select({
-      projectId: projectInvites.projectId,
-      email: projectInvites.email
-    })
+    .select({ email: projectInvites.email })
     .from(projectInvites)
-    .where(inArray(projectInvites.projectId, projectIds))
+    .where(eq(projectInvites.projectId, projectId))
     .orderBy(asc(projectInvites.email))
-  for (const { projectId, email } of rows) {
-    const emails = byProject.get(projectId)
-    if (emails) emails.push(email)
-    else byProject.set(projectId, [email])
-  }
-  return byProject
+  return rows.map(row => row.email)
 }
 
 type Looks = Pick<Member, 'name' | 'avatar'>

@@ -493,10 +493,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     .where(and(eq(tasks.boardId, boardId), shown))
     .orderBy(asc(tasks.position))
   const members = await membersOf(tx, board)
-  const invited =
-    role === 'admin'
-      ? ((await invitedTo(tx, [board.projectId])).get(board.projectId) ?? [])
-      : []
+  const invited = role === 'admin' ? await invitedTo(tx, board.projectId) : []
   const boardLabels = await labelsOn(tx, board)
   const [picked] = await tx
     .select({ layout: boardLayouts.layout })
