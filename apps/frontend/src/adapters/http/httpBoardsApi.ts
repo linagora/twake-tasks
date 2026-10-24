@@ -125,6 +125,8 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     updateFilter: (filterId, filter) =>
       call('PATCH', route`/filters/${filterId}`, filter),
     deleteFilter: filterId => call('DELETE', route`/filters/${filterId}`),
+    setFilterFavorite: (filterId, favorite) =>
+      call(favorite ? 'PUT' : 'DELETE', route`/filters/${filterId}/favorite`),
     labelNames: async () =>
       (await call<{ labels: string[] }>('GET', '/labels')).labels,
     filteredTasks: async (filterId, zone) =>

@@ -290,6 +290,37 @@ describe('AppShell', () => {
     expect(again.queryByRole('link', { name: 'Design' })).toBe(null)
   })
 
+  it('lists the favourite filters under Filters, lit while open, until folded', async () => {
+    const boardsApi = fakeBoardsApi()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priority: 1 }
+    })
+    await boardsApi.createFilter({ name: 'Everything', criteria: {} })
+    await boardsApi.setFilterFavorite(id, true)
+    const first = renderRoute(`/filters/${id}`, { boardsApi })
+
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+    const pinned = await nav.findByRole('link', { name: 'Urgent' })
+    expect(pinned).toHaveAttribute('href', `/filters/${id}`)
+    expect(pinned).toHaveAttribute('aria-current', 'page')
+    const filters = nav.getByRole('link', { name: 'Filters' })
+    expect(filters).not.toHaveAttribute('aria-current')
+    expect(nav.queryByRole('link', { name: 'Everything' })).toBeNull()
+
+    fireEvent.click(nav.getByRole('button', { name: 'Fold filters' }))
+    expect(nav.queryByRole('link', { name: 'Urgent' })).toBeNull()
+    expect(filters).toHaveAttribute('aria-current', 'page')
+
+    first.unmount()
+    renderRoute('/today', { boardsApi })
+    const again = within(await screen.findByRole('list', { name: 'Main menu' }))
+    fireEvent.click(
+      await again.findByRole('button', { name: 'Unfold filters' })
+    )
+    expect(await again.findByRole('link', { name: 'Urgent' })).toBeVisible()
+  })
+
   it('makes a board from the + beside Boards, then opens it', async () => {
     const boardsApi = fakeBoardsApi()
     renderRoute('/today', { boardsApi })

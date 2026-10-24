@@ -546,6 +546,7 @@ export const savedFilters = pgTable.withRLS(
     userId: uuid('user_id').notNull(),
     name: text().notNull(),
     criteria: jsonb().notNull(),
+    favorite: boolean().notNull().default(false),
     createdAt: timestamptz('created_at').notNull().defaultNow()
   },
   table => [

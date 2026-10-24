@@ -65,7 +65,11 @@ import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useBoards, useUnreadNotifications } from '@/ui/boards/queries'
+import {
+  useBoards,
+  useFilters,
+  useUnreadNotifications
+} from '@/ui/boards/queries'
 import { AppFeedback } from '@/ui/shell/AppFeedback'
 import { PlatformBar } from '@/ui/shell/PlatformBar'
 import { NewTaskFromUrl } from '@/ui/shell/NewTaskDialog'
@@ -339,12 +343,7 @@ function AppNav({
         count={unread}
         countLabel={t('notifications.unread', { count: unread })}
       />
-      <AppNavLink
-        to="/filters"
-        icon={Filter}
-        label={t('filters.title')}
-        wideScreenOnly
-      />
+      <FiltersNav />
     </Nav>
   )
 }
@@ -355,8 +354,7 @@ function AppNavLink({
   icon,
   label,
   count = 0,
-  countLabel,
-  wideScreenOnly = false
+  countLabel
 }: {
   to: string
   active?: boolean
@@ -364,11 +362,9 @@ function AppNavLink({
   label: string
   count?: number
   countLabel?: string
-  wideScreenOnly?: boolean
 }): ReactElement {
-  const Item = wideScreenOnly ? WideScreenNavItem : BarNavItem
   return (
-    <Item>
+    <BarNavItem>
       <SidebarLink
         to={to}
         active={active}
@@ -379,7 +375,7 @@ function AppNavLink({
         </CountBadge>
         <NavText>{label}</NavText>
       </SidebarLink>
-    </Item>
+    </BarNavItem>
   )
 }
 
@@ -397,27 +393,48 @@ function ShelfLinks({ archivesLit }: { archivesLit: boolean }): ReactElement {
   )
 }
 
-const BOARDS_FOLDED = 'sidebar-boards-folded'
-
-// Folded until unfolded, then remembered on this device only, like a
-// filter's layout.
-function useBoardsFolded() {
+// Remembered on this device only, like a filter's layout.
+function useFolded(key: string, foldedFirst: boolean) {
   const [folded, setFolded] = useState(() => {
     try {
-      return localStorage.getItem(BOARDS_FOLDED) !== 'false'
+      const saved = localStorage.getItem(key)
+      return saved === null ? foldedFirst : saved === 'true'
     } catch {
-      return true
+      return foldedFirst
     }
   })
   const toggle = () => {
     setFolded(!folded)
     try {
-      localStorage.setItem(BOARDS_FOLDED, String(!folded))
+      localStorage.setItem(key, String(!folded))
     } catch {
       // Private browsing: the choice lasts until the page closes.
     }
   }
   return [folded, toggle] as const
+}
+
+function FoldButton({
+  folded,
+  label,
+  onClick
+}: {
+  folded: boolean
+  label: string
+  onClick: () => void
+}): ReactElement {
+  return (
+    <Tooltip disableInteractive title={label}>
+      <IconButton
+        size="xsmall"
+        aria-label={label}
+        aria-expanded={!folded}
+        onClick={onClick}
+      >
+        <Icon icon={folded ? Right : Bottom} size={12} />
+      </IconButton>
+    </Tooltip>
+  )
 }
 
 // Boards, then each active board under it, as the address books of Twake
@@ -435,9 +452,8 @@ function BoardsNav({
   const theme = useTheme()
   const phone = useMediaQuery(theme.breakpoints.down('lg'))
   const [creating, setCreating] = useState(false)
-  const [folded, toggleFolded] = useBoardsFolded()
+  const [folded, toggleFolded] = useFolded('sidebar-boards-folded', true)
   const listed = !phone && !folded
-  const foldLabel = t(folded ? 'boards.unfold' : 'boards.fold')
   const boards = (useBoards().data ?? [])
     .filter(board => !board.archived)
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -447,16 +463,11 @@ function BoardsNav({
       <BarNavItem
         secondaryAction={
           <WideScreenAction>
-            <Tooltip disableInteractive title={foldLabel}>
-              <IconButton
-                size="xsmall"
-                aria-label={foldLabel}
-                aria-expanded={!folded}
-                onClick={toggleFolded}
-              >
-                <Icon icon={folded ? Right : Bottom} size={12} />
-              </IconButton>
-            </Tooltip>
+            <FoldButton
+              folded={folded}
+              label={t(folded ? 'boards.unfold' : 'boards.fold')}
+              onClick={toggleFolded}
+            />
             <Tooltip disableInteractive title={t('newBoard.title')}>
               <IconButton
                 size="xsmall"
@@ -499,6 +510,53 @@ function BoardsNav({
           }}
         />
       )}
+    </>
+  )
+}
+
+// Filters, then each favorite filter under it, as Boards; the phone bottom
+// bar has no room for any of them.
+function FiltersNav(): ReactElement {
+  const { t } = useI18n()
+  const { pathname } = useLocation()
+  const openId = useMatch('/filters/:filterId')?.params.filterId
+  const [folded, toggleFolded] = useFolded('sidebar-filters-folded', false)
+  const favorites = (useFilters().data ?? []).filter(filter => filter.favorite)
+  const listed = folded ? [] : favorites
+  const onFilters = pathname === '/filters' || pathname.startsWith('/filters/')
+
+  return (
+    <>
+      <WideScreenNavItem
+        secondaryAction={
+          favorites.length > 0 && (
+            <FoldButton
+              folded={folded}
+              label={t(folded ? 'filters.unfold' : 'filters.fold')}
+              onClick={toggleFolded}
+            />
+          )
+        }
+      >
+        <SidebarLink
+          to="/filters"
+          active={onFilters && !listed.some(filter => filter.id === openId)}
+        >
+          <NavIcon icon={Filter} />
+          <NavText>{t('filters.title')}</NavText>
+        </SidebarLink>
+      </WideScreenNavItem>
+      {listed.map(filter => (
+        <WideScreenNavItem key={filter.id} variant="secondary">
+          <SidebarLink
+            to={`/filters/${filter.id}`}
+            active={filter.id === openId}
+          >
+            <NavIcon icon={Filter} />
+            <OneLineNavText title={filter.name}>{filter.name}</OneLineNavText>
+          </SidebarLink>
+        </WideScreenNavItem>
+      ))}
     </>
   )
 }

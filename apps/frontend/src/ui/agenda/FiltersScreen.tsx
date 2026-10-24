@@ -1,4 +1,13 @@
-import { Check, Filter, Icon, Pen, Plus, Trash } from '@linagora/twake-icons'
+import {
+  Check,
+  Filter,
+  Icon,
+  Pen,
+  Plus,
+  Star,
+  StarOutline,
+  Trash
+} from '@linagora/twake-icons'
 import {
   Alert,
   Button,
@@ -20,6 +29,7 @@ import {
   useDeleteFilter,
   useFilters,
   useLabelNames,
+  useSetFilterFavorite,
   useUpdateFilter
 } from '@/ui/boards/queries'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
@@ -116,6 +126,7 @@ export function FiltersScreen(): ReactElement {
               context={summary(filter.criteria)}
               trailing={
                 <>
+                  <FavoriteButton filter={filter} />
                   <IconButton
                     size="small"
                     onClick={() => {
@@ -153,6 +164,26 @@ export function FiltersScreen(): ReactElement {
         />
       )}
     </main>
+  )
+}
+
+function FavoriteButton({ filter }: { filter: SavedFilter }): ReactElement {
+  const { t } = useI18n()
+  const setFavorite = useSetFilterFavorite()
+  return (
+    <IconButton
+      size="small"
+      color={filter.favorite ? 'warning' : 'default'}
+      aria-label={t(filter.favorite ? 'boards.unstar' : 'boards.star', {
+        name: filter.name
+      })}
+      onClick={() => {
+        if (setFavorite.isPending) return
+        setFavorite.mutate({ filterId: filter.id, favorite: !filter.favorite })
+      }}
+    >
+      <Icon icon={filter.favorite ? Star : StarOutline} size={16} />
+    </IconButton>
   )
 }
 

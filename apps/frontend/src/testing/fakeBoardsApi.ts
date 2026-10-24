@@ -337,16 +337,24 @@ export function fakeBoardsApi(boards: Board[] = []) {
     createFilter: vi.fn<BoardsApi['createFilter']>(filter =>
       Promise.resolve().then(() => {
         const id = nextId()
-        filters.push({ id, ...structuredClone(filter) })
+        filters.push({ id, ...structuredClone(filter), favorite: false })
         return { id }
       })
     ),
     updateFilter: vi.fn<BoardsApi['updateFilter']>((filterId, filter) =>
       Promise.resolve().then(() => {
-        const index = filters.findIndex(each => each.id === filterId)
-        if (index < 0) throw new ApiError(404, 'not_found')
-        filters[index] = { id: filterId, ...structuredClone(filter) }
+        const saved = filters.find(each => each.id === filterId)
+        if (!saved) throw new ApiError(404, 'not_found')
+        Object.assign(saved, structuredClone(filter))
       })
+    ),
+    setFilterFavorite: vi.fn<BoardsApi['setFilterFavorite']>(
+      (filterId, favorite) =>
+        Promise.resolve().then(() => {
+          const filter = filters.find(each => each.id === filterId)
+          if (!filter) throw new ApiError(404, 'not_found')
+          filter.favorite = favorite
+        })
     ),
     deleteFilter: vi.fn<BoardsApi['deleteFilter']>(filterId =>
       Promise.resolve().then(() => {

@@ -78,7 +78,8 @@ export function createFilterStore(db: Db) {
           .select({
             id: savedFilters.id,
             name: savedFilters.name,
-            criteria: savedFilters.criteria
+            criteria: savedFilters.criteria,
+            favorite: savedFilters.favorite
           })
           .from(savedFilters)
           .orderBy(asc(savedFilters.name), asc(savedFilters.id))
@@ -131,7 +132,11 @@ export function createFilterStore(db: Db) {
     updateFilter(
       identity: Identity,
       filterId: string,
-      changes: { name?: string | undefined; criteria?: Criteria | undefined }
+      changes: {
+        name?: string | undefined
+        criteria?: Criteria | undefined
+        favorite?: boolean | undefined
+      }
     ) {
       return writeOrRefuse(db, identity, async tx => {
         const updated = await tx

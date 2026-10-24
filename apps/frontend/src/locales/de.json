@@ -529,6 +529,8 @@
   },
   "filters": {
     "title": "Filter",
+    "fold": "Filter einklappen",
+    "unfold": "Filter ausklappen",
     "empty": "Keine gespeicherten Filter",
     "emptyHint": "Speichern Sie Kriterien, nach denen Sie oft suchen, z. B. Ihre P1-Aufgaben.",
     "loadFailed": "Die Filter konnten nicht geladen werden.",

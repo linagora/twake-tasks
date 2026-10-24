@@ -646,6 +646,30 @@ export function registerBoards(
     }
   )
 
+  for (const [method, favorite] of [
+    ['PUT', true],
+    ['DELETE', false]
+  ] as const) {
+    app.route({
+      method,
+      url: '/filters/:filterId/favorite',
+      preHandler: deps.requireIdentity,
+      handler: async (request, reply) => {
+        const identity = request.identity
+        if (!identity) return reply.code(401).send()
+        const params = filterParams.safeParse(request.params)
+        if (!params.success) return reply.code(404).send({ error: 'not_found' })
+        const result = await filterStore.updateFilter(
+          identity,
+          params.data.filterId,
+          { favorite }
+        )
+        if (!result.ok) return refuse(reply, result.error)
+        return reply.code(204).send()
+      }
+    })
+  }
+
   app.get(
     '/filters/:filterId/tasks',
     { preHandler: deps.requireIdentity },

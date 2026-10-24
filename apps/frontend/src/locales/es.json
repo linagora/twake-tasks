@@ -529,6 +529,8 @@
   },
   "filters": {
     "title": "Filtros",
+    "fold": "Contraer los filtros",
+    "unfold": "Desplegar los filtros",
     "empty": "No hay filtros guardados",
     "emptyHint": "Guarda los criterios que buscas a menudo, como tus tareas P1.",
     "loadFailed": "No se pudieron cargar los filtros.",

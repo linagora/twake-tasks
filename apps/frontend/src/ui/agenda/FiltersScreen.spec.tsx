@@ -155,6 +155,32 @@ describe('FiltersScreen', () => {
     ).toHaveTextContent('All tasks')
   })
 
+  it('stars a filter as a favorite, and unstars it, keeping the focus on the star', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priority: 1 }
+    })
+    renderRoute('/filters', { boardsApi })
+
+    const star = await screen.findByRole('button', {
+      name: 'Add Urgent to favorites'
+    })
+    star.focus()
+    fireEvent.click(star)
+    const unstar = await screen.findByRole('button', {
+      name: 'Remove Urgent from favorites'
+    })
+    expect(unstar).toHaveFocus()
+    expect(boardsApi.setFilterFavorite).toHaveBeenCalledWith(id, true)
+
+    fireEvent.click(unstar)
+    expect(
+      await screen.findByRole('button', { name: 'Add Urgent to favorites' })
+    ).toHaveFocus()
+    expect(boardsApi.setFilterFavorite).toHaveBeenLastCalledWith(id, false)
+  })
+
   it('edits a saved filter in place', async () => {
     const boardsApi = boards()
     const { id } = await boardsApi.createFilter({
