@@ -8,12 +8,13 @@ import {
   type Authenticate
 } from './authenticator.ts'
 import type { Identity, IdentityProvider } from './oidc.ts'
-import { registerAuth } from './routes.ts'
+import { registerAuth, type AddressLimits } from './routes.ts'
 import type { AuthStore } from './store.ts'
 import { anIdentity } from './testing.ts'
 
 async function setUp(
-  authenticate: Authenticate = () => Promise.resolve(anIdentity())
+  authenticate: Authenticate = () => Promise.resolve(anIdentity()),
+  addressLimits?: AddressLimits
 ) {
   const app = createServer({
     logger: pino({ level: 'silent' }),
@@ -32,7 +33,12 @@ async function setUp(
     isRevoked: vi.fn(() => Promise.resolve(false)),
     revoke: vi.fn(() => Promise.resolve())
   } satisfies AuthStore
-  const requireIdentity = registerAuth(app, { authenticate, provider, store })
+  const requireIdentity = registerAuth(app, {
+    authenticate,
+    provider,
+    store,
+    addressLimits
+  })
   app.get('/whoami', { preHandler: requireIdentity }, request => ({
     email: request.identity?.email,
     organizationId: request.identity?.organizationId
@@ -220,6 +226,32 @@ describe('refused tokens from one address', () => {
     for (let i = 0; i < 30; i++) await call(app, `bad-${String(i)}`)
 
     expect((await call(app, 'good')).statusCode).toBe(200)
+  })
+
+  it('take the configured budget, and none at 0', async () => {
+    const limits = (max: number): AddressLimits => ({
+      refusedTokens: { max, windowSeconds: 10 },
+      logoutRefusals: { max, windowSeconds: 10 },
+      tokenChecks: 0
+    })
+    const { app: strict } = await setUp(
+      aRealAuthenticator().authenticate,
+      limits(2)
+    )
+    const { app: open } = await setUp(
+      aRealAuthenticator().authenticate,
+      limits(0)
+    )
+    for (let i = 0; i < 2; i++) {
+      await call(strict, `bad-${String(i)}`)
+      await call(open, `bad-${String(i)}`)
+    }
+    for (let i = 2; i < 40; i++) await call(open, `bad-${String(i)}`)
+
+    const refused = await call(strict, 'bad-2')
+    expect(refused.statusCode).toBe(429)
+    expect(Number(refused.headers['retry-after'])).toBeLessThanOrEqual(10)
+    expect((await call(open, 'bad-40')).statusCode).toBe(401)
   })
 
   it('count a token once, however often it comes back', async () => {

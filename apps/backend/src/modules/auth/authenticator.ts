@@ -32,8 +32,18 @@ export class IdentityProviderBusy extends Error {
 }
 
 const CACHE_TTL_MS = 60_000
-const MAX_REFUSED = 10_000
-const MAX_CHECKS_IN_FLIGHT = 50
+
+export interface AuthenticatorLimits {
+  // Per replica; 0 turns the cap off.
+  tokenChecks: number
+  // 0 for either keeps no refused token.
+  refusedTokenCache: { seconds: number; size: number }
+}
+
+const DEFAULT_LIMITS: AuthenticatorLimits = {
+  tokenChecks: 50,
+  refusedTokenCache: { seconds: 60, size: 10_000 }
+}
 
 export function sha256(value: string): string {
   return createHash('sha256').update(value).digest('base64url')
@@ -43,8 +53,11 @@ export function createAuthenticator(deps: {
   provider: IdentityProvider
   store: AuthStore
   now?: () => number
+  limits?: AuthenticatorLimits | undefined
 }): Authenticate {
   const now = deps.now ?? Date.now
+  const { tokenChecks, refusedTokenCache } = deps.limits ?? DEFAULT_LIMITS
+  const refusedTtlMs = refusedTokenCache.seconds * 1000
   const cache = new Map<string, { identity: Identity; until: number }>()
   // Keyed by hash and kept in order of refusal, so the oldest come first.
   const refused = new Map<string, number>()
@@ -67,7 +80,9 @@ export function createAuthenticator(deps: {
     accessToken: string,
     gate: IdentityProviderGate | undefined
   ): Promise<Identity | null> {
-    if (checks >= MAX_CHECKS_IN_FLIGHT) throw new IdentityProviderBusy()
+    if (tokenChecks > 0 && checks >= tokenChecks) {
+      throw new IdentityProviderBusy()
+    }
     checks++
     let identity: Identity | null
     try {
@@ -78,10 +93,12 @@ export function createAuthenticator(deps: {
     const at = now()
     evictExpired(at)
     if (!identity) {
-      if (refused.size >= MAX_REFUSED) {
-        refused.delete(refused.keys().next().value as string)
+      if (refusedTtlMs > 0 && refusedTokenCache.size > 0) {
+        if (refused.size >= refusedTokenCache.size) {
+          refused.delete(refused.keys().next().value as string)
+        }
+        refused.set(key, at + refusedTtlMs)
       }
-      refused.set(key, at + CACHE_TTL_MS)
       await gate?.refused()
       return null
     }

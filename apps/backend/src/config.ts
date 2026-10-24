@@ -32,6 +32,12 @@ const origins = commaSeparated.pipe(
   )
 )
 
+// 0 turns the limit off.
+const limit = (fallback: number) =>
+  z.coerce.number().int().min(0).default(fallback)
+const seconds = (fallback: number) =>
+  z.coerce.number().int().min(1).default(fallback)
+
 const configSchema = z
   .object({
     RABBITMQ_URL: z.url({ protocol: /^amqps?$/ }),
@@ -62,6 +68,45 @@ const configSchema = z
     HTTP_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
     HTTP_TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).default(2),
     REDIS_URL: z.url({ protocol: /^rediss?$/ }).optional(),
+    RATE_LIMIT_USER_REQUESTS_MAX: limit(600),
+    RATE_LIMIT_USER_REQUESTS_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_USER_WRITES_MAX: limit(120),
+    RATE_LIMIT_USER_WRITES_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_TASK_CREATES_MAX: limit(60),
+    RATE_LIMIT_TASK_CREATES_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_COMMENTS_MAX: limit(30),
+    RATE_LIMIT_COMMENTS_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_REACTIONS_MAX: limit(60),
+    RATE_LIMIT_REACTIONS_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_REMINDERS_MAX: limit(30),
+    RATE_LIMIT_REMINDERS_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_LABEL_EDITS_MAX: limit(30),
+    RATE_LIMIT_LABEL_EDITS_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_BOARD_CREATES_MAX: limit(20),
+    RATE_LIMIT_BOARD_CREATES_WINDOW_SECONDS: seconds(3600),
+    RATE_LIMIT_INVITES_MAX: limit(30),
+    RATE_LIMIT_INVITES_WINDOW_SECONDS: seconds(3600),
+    RATE_LIMIT_INVITES_DAILY_MAX: limit(100),
+    RATE_LIMIT_INVITES_DAILY_WINDOW_SECONDS: seconds(86_400),
+    RATE_LIMIT_SEARCH_MAX: limit(60),
+    RATE_LIMIT_SEARCH_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_OTHER_APP_SEARCH_MAX: limit(30),
+    RATE_LIMIT_OTHER_APP_SEARCH_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_PEOPLE_SEARCH_MAX: limit(60),
+    RATE_LIMIT_PEOPLE_SEARCH_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_HEAVY_READS_MAX: limit(120),
+    RATE_LIMIT_HEAVY_READS_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_STREAM_CONNECTS_MAX: limit(30),
+    RATE_LIMIT_STREAM_CONNECTS_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_OPEN_STREAMS: limit(10),
+    RATE_LIMIT_REFUSED_TOKENS_MAX: limit(30),
+    RATE_LIMIT_REFUSED_TOKENS_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_LOGOUT_REFUSALS_MAX: limit(60),
+    RATE_LIMIT_LOGOUT_REFUSALS_WINDOW_SECONDS: seconds(60),
+    RATE_LIMIT_TOKEN_CHECKS_PER_ADDRESS: limit(5),
+    RATE_LIMIT_TOKEN_CHECKS: limit(50),
+    RATE_LIMIT_REFUSED_TOKEN_CACHE_SECONDS: limit(60),
+    RATE_LIMIT_REFUSED_TOKEN_CACHE_SIZE: limit(10_000),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
       .default('info')
@@ -76,6 +121,75 @@ const configSchema = z
   .and(spaceIntegration)
 
 export type Config = z.infer<typeof configSchema>
+
+export interface Budget {
+  max: number
+  windowSeconds: number
+}
+
+const USER_BUDGETS = {
+  requests: 'USER_REQUESTS',
+  writes: 'USER_WRITES',
+  taskCreates: 'TASK_CREATES',
+  comments: 'COMMENTS',
+  reactions: 'REACTIONS',
+  reminders: 'REMINDERS',
+  labelEdits: 'LABEL_EDITS',
+  boardCreates: 'BOARD_CREATES',
+  invites: 'INVITES',
+  invitesDaily: 'INVITES_DAILY',
+  search: 'SEARCH',
+  otherAppSearch: 'OTHER_APP_SEARCH',
+  peopleSearch: 'PEOPLE_SEARCH',
+  heavyReads: 'HEAVY_READS',
+  streamConnects: 'STREAM_CONNECTS'
+} as const
+
+export type UserBudget = keyof typeof USER_BUDGETS
+
+type BudgetName =
+  (typeof USER_BUDGETS)[UserBudget] | 'REFUSED_TOKENS' | 'LOGOUT_REFUSALS'
+
+function budget(config: Config, name: BudgetName): Budget {
+  return {
+    max: config[`RATE_LIMIT_${name}_MAX`],
+    windowSeconds: config[`RATE_LIMIT_${name}_WINDOW_SECONDS`]
+  }
+}
+
+export interface RateLimits {
+  user: Record<UserBudget, Budget>
+  openStreams: number
+  address: {
+    refusedTokens: Budget
+    logoutRefusals: Budget
+    tokenChecks: number
+  }
+  tokenChecks: number
+  refusedTokenCache: { seconds: number; size: number }
+}
+
+export function rateLimits(config: Config): RateLimits {
+  return {
+    user: Object.fromEntries(
+      Object.entries(USER_BUDGETS).map(([group, name]) => [
+        group,
+        budget(config, name)
+      ])
+    ) as Record<UserBudget, Budget>,
+    openStreams: config.RATE_LIMIT_OPEN_STREAMS,
+    address: {
+      refusedTokens: budget(config, 'REFUSED_TOKENS'),
+      logoutRefusals: budget(config, 'LOGOUT_REFUSALS'),
+      tokenChecks: config.RATE_LIMIT_TOKEN_CHECKS_PER_ADDRESS
+    },
+    tokenChecks: config.RATE_LIMIT_TOKEN_CHECKS,
+    refusedTokenCache: {
+      seconds: config.RATE_LIMIT_REFUSED_TOKEN_CACHE_SECONDS,
+      size: config.RATE_LIMIT_REFUSED_TOKEN_CACHE_SIZE
+    }
+  }
+}
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const result = configSchema.safeParse({ SPACE_INTEGRATION: 'false', ...env })

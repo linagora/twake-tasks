@@ -8,7 +8,10 @@ import type { Identity, IdentityProvider } from './oidc.ts'
 import type { AuthStore } from './store.ts'
 import { anIdentity } from './testing.ts'
 
-function setUp(identity: Identity | null = anIdentity()) {
+function setUp(
+  identity: Identity | null = anIdentity(),
+  limits?: Parameters<typeof createAuthenticator>[0]['limits']
+) {
   let clock = Date.now()
   const revoked = new Set<string>()
   const provider: IdentityProvider = {
@@ -22,7 +25,8 @@ function setUp(identity: Identity | null = anIdentity()) {
   const authenticate = createAuthenticator({
     provider,
     store,
-    now: () => clock
+    now: () => clock,
+    limits
   })
   return {
     authenticate,
@@ -89,6 +93,75 @@ describe('createAuthenticator', () => {
     await authenticate('token-0')
     expect(identify).toHaveBeenCalledTimes(10_002)
   })
+
+  it('keeps refused tokens as long and as many as configured', async () => {
+    const { authenticate, identify, advance } = setUp(null, {
+      refusedTokenCache: { seconds: 5, size: 2 },
+      tokenChecks: 50
+    })
+
+    await authenticate('a')
+    await authenticate('b')
+    await authenticate('a')
+    expect(identify).toHaveBeenCalledTimes(2)
+    await authenticate('c')
+    await authenticate('a')
+    expect(identify).toHaveBeenCalledTimes(4)
+
+    advance(5_000)
+    await authenticate('c')
+    expect(identify).toHaveBeenCalledTimes(5)
+  })
+
+  it('keeps no refused token with a cache of 0', async () => {
+    const { authenticate, identify } = setUp(null, {
+      refusedTokenCache: { seconds: 0, size: 10 },
+      tokenChecks: 50
+    })
+
+    await authenticate('a')
+    await authenticate('a')
+
+    expect(identify).toHaveBeenCalledTimes(2)
+  })
+
+  it.each([
+    [2, 2],
+    [0, 60]
+  ])(
+    'with %i checks in flight allowed, takes %i at once',
+    async (tokenChecks, taken) => {
+      const pending: (() => void)[] = []
+      const { authenticate, identify } = setUp(anIdentity(), {
+        refusedTokenCache: { seconds: 60, size: 10_000 },
+        tokenChecks
+      })
+      vi.mocked(identify).mockImplementation(
+        () =>
+          new Promise(resolve => {
+            pending.push(() => {
+              resolve(anIdentity())
+            })
+          })
+      )
+
+      const results = Array.from({ length: 60 }, (_, i) =>
+        authenticate(`token-${String(i)}`).then(
+          () => 'checked',
+          (error: unknown) =>
+            error instanceof IdentityProviderBusy ? 'busy' : 'failed'
+        )
+      )
+      await vi.waitFor(() => {
+        expect(pending.length).toBe(taken)
+      })
+      for (const resolve of pending) resolve()
+
+      expect(
+        (await Promise.all(results)).filter(r => r === 'checked')
+      ).toHaveLength(taken)
+    }
+  )
 
   it('asks the provider once for the same token checked at the same time', async () => {
     const { authenticate, identify } = setUp()

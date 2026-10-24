@@ -1,6 +1,7 @@
 import { normalizeIP } from '@fastify/rate-limit'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
+import type { Budget } from '../../config.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import {
   IdentityProviderBusy,
@@ -33,19 +34,23 @@ function unauthorized(reply: FastifyReply, error: string | null) {
     .send({ error: 'unauthorized' })
 }
 
-const MAX_CHECKS_PER_ADDRESS = 5
-
-function tooManyRequests(reply: FastifyReply, retryAfter: number) {
+export function tooManyRequests(reply: FastifyReply, retryAfter: number) {
   return reply
     .code(429)
     .header('retry-after', retryAfter)
     .send({ error: 'too_many_requests' })
 }
 
-function failuresPerAddress(app: HttpServer, name: string, max: number) {
+function failuresPerAddress(app: HttpServer, name: string, budget: Budget) {
+  if (budget.max === 0) {
+    return {
+      blockedFor: () => Promise.resolve(null),
+      count: () => Promise.resolve()
+    }
+  }
   const limit = app.createRateLimit({
-    max,
-    timeWindow: 60_000,
+    max: budget.max,
+    timeWindow: budget.windowSeconds * 1000,
     keyGenerator: request => `${name}:${normalizeIP(request.ip)}`
   })
   return {
@@ -66,14 +71,31 @@ export type RequireIdentity = (
   reply: FastifyReply
 ) => Promise<FastifyReply | undefined>
 
+export interface AddressLimits {
+  refusedTokens: Budget
+  logoutRefusals: Budget
+  // 0 turns the cap off.
+  tokenChecks: number
+}
+
+const DEFAULT_ADDRESS_LIMITS: AddressLimits = {
+  refusedTokens: { max: 30, windowSeconds: 60 },
+  logoutRefusals: { max: 60, windowSeconds: 60 },
+  tokenChecks: 5
+}
+
 export function registerAuth(
   app: HttpServer,
   deps: {
     authenticate: Authenticate
     provider: IdentityProvider
     store: AuthStore
+    addressLimits?: AddressLimits | undefined
+    // Runs once the caller is known, and may answer in place of the route.
+    limitUser?: RequireIdentity | undefined
   }
 ): RequireIdentity {
+  const addressLimits = deps.addressLimits ?? DEFAULT_ADDRESS_LIMITS
   app.decorateRequest('identity', null)
   app.addContentTypeParser(
     'application/x-www-form-urlencoded',
@@ -85,8 +107,16 @@ export function registerAuth(
 
   // No user is known before a token is checked, so refused tokens count
   // against the caller's address.
-  const accessFailures = failuresPerAddress(app, 'access-token', 30)
-  const logoutFailures = failuresPerAddress(app, 'logout-token', 60)
+  const accessFailures = failuresPerAddress(
+    app,
+    'access-token',
+    addressLimits.refusedTokens
+  )
+  const logoutFailures = failuresPerAddress(
+    app,
+    'logout-token',
+    addressLimits.logoutRefusals
+  )
   // Failures are counted once the SSO answers, so checks running at the same
   // time from one address are capped too.
   const checksByAddress = new Map<string, number>()
@@ -101,7 +131,8 @@ export function registerAuth(
     return {
       async enter() {
         const checks = checksByAddress.get(address) ?? 0
-        if (checks >= MAX_CHECKS_PER_ADDRESS) return 1
+        const max = addressLimits.tokenChecks
+        if (max > 0 && checks >= max) return 1
         checksByAddress.set(address, checks + 1)
         const waitFor = await accessFailures.blockedFor(request)
         if (waitFor) leave()
@@ -138,6 +169,7 @@ export function registerAuth(
       return unauthorized(reply, 'invalid_token')
     }
     request.identity = identity
+    return deps.limitUser?.(request, reply)
   }
 
   app.post('/auth/backchannel-logout', async (request, reply) => {

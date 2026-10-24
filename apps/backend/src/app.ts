@@ -1,15 +1,18 @@
 import type { Redis } from 'ioredis'
 import type { Logger } from 'pino'
+import type { RateLimits } from './config.ts'
 import { versionStreams, type Changes } from './infra/changes.ts'
 import type { Db } from './infra/db.ts'
 import { createServer } from './infra/http.ts'
 import { registerRateLimit } from './infra/rateLimit.ts'
 import {
+  limitUsers,
   postgresAuthStore,
   registerAuth,
   type Authenticate,
   type IdentityProvider
 } from './modules/auth/index.ts'
+import { boardBudgets } from './modules/boards/budgets.ts'
 import { registerLive } from './modules/boards/live.ts'
 import { registerBoards } from './modules/boards/routes.ts'
 import { registerSettings } from './modules/settings/routes.ts'
@@ -25,6 +28,8 @@ export async function buildApp(deps: {
   isReady: () => Promise<boolean>
   proxyHops?: number | undefined
   redis?: Redis | undefined
+  // Without them, nothing is limited per user.
+  limits?: Pick<RateLimits, 'user' | 'openStreams' | 'address'> | undefined
 }) {
   const app = createServer({
     logger: deps.logger,
@@ -38,7 +43,10 @@ export async function buildApp(deps: {
       const requireIdentity = registerAuth(api, {
         authenticate: deps.authenticate,
         provider: deps.provider,
-        store: postgresAuthStore(deps.db)
+        store: postgresAuthStore(deps.db),
+        addressLimits: deps.limits?.address,
+        limitUser:
+          deps.limits && limitUsers(api, deps.limits.user, boardBudgets)
       })
       const streamVersions = versionStreams(api)
       registerBoards(api, {
@@ -51,7 +59,8 @@ export async function buildApp(deps: {
         db: deps.db,
         requireIdentity,
         changes: deps.boardChanges,
-        streamVersions
+        streamVersions,
+        openStreams: deps.limits?.openStreams
       })
       registerSettings(api, { db: deps.db, requireIdentity })
       return Promise.resolve()
