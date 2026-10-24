@@ -34,6 +34,16 @@ origin() {
 
 mkdir -p "$OUT"
 
+# Each live board stream holds two connections, one from the browser and one
+# to the backend, for as long as its tab stays open.
+worker_connections=${NGINX_WORKER_CONNECTIONS:-4096}
+case "$worker_connections" in
+  '' | *[!0-9]* | 0*) fail "NGINX_WORKER_CONNECTIONS must be a positive whole number" ;;
+esac
+echo "worker_connections $worker_connections;" >"$OUT/events.conf"
+# Runtimes may start the container with a soft limit of 1024 open files.
+echo "worker_rlimit_nofile $((worker_connections * 2));" >"$OUT/main.conf"
+
 : >"$OUT/env.js"
 for key in $RUNTIME_KEYS; do
   value=$(printenv "$key" || true)
