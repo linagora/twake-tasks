@@ -195,7 +195,15 @@
     "removeLabel": "Remove the label %{name}",
     "addAssignees": "Add assignees",
     "unassign": "Unassign %{name}",
-    "breadcrumb": "Where the task is"
+    "breadcrumb": "Where the task is",
+    "reactions": "Reactions",
+    "reaction": "%{emoji} from %{names}",
+    "addReaction": "Add a reaction",
+    "reactionFailed": "The reaction could not be saved.",
+    "quickReactions": "Usual reactions",
+    "moreEmoji": "More emoji",
+    "whoReacted": "See who reacted",
+    "moreReactions": "+%{count}"
   },
   "editor": {
     "toolbar": "Formatting",

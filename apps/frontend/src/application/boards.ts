@@ -61,11 +61,19 @@ export interface Description {
   version: number
 }
 
+export interface Reaction {
+  emoji: string
+  /** In the order they reacted. */
+  people: Person[]
+}
+
 export interface Comment {
   id: string
   author: Person
   body: string
   createdAt: string
+  /** Each emoji once, in the order it was first given. */
+  reactions: Reaction[]
 }
 
 /**
@@ -289,6 +297,18 @@ export interface BoardsApi {
   listHistory: (boardId: string, taskId: string) => Promise<HistoryEntry[]>
   listComments: (boardId: string, taskId: string) => Promise<Comment[]>
   addComment: (boardId: string, taskId: string, body: string) => Promise<void>
+  addReaction: (
+    boardId: string,
+    taskId: string,
+    commentId: string,
+    emoji: string
+  ) => Promise<void>
+  removeReaction: (
+    boardId: string,
+    taskId: string,
+    commentId: string,
+    emoji: string
+  ) => Promise<void>
   listReminders: (boardId: string, taskId: string) => Promise<Reminder[]>
   addReminder: (
     boardId: string,

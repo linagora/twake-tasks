@@ -20,6 +20,7 @@ import { userSettings } from '../settings/schema.ts'
 import { spaces } from '../spaces/schema.ts'
 import { bumpProjects } from './access.ts'
 import {
+  commentReactions,
   inviteEmails,
   notifications,
   projectMembers,
@@ -188,6 +189,7 @@ async function forget(
     )
     await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
     await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
+    await tx.delete(commentReactions).where(eq(commentReactions.userId, userId))
     await tx.delete(notifications).where(eq(notifications.userId, userId))
     await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
     await tx

@@ -195,7 +195,15 @@
     "removeLabel": "Label %{name} entfernen",
     "addAssignees": "Zuständige hinzufügen",
     "unassign": "%{name} entfernen",
-    "breadcrumb": "Ort der Aufgabe"
+    "breadcrumb": "Ort der Aufgabe",
+    "reactions": "Reaktionen",
+    "reaction": "%{emoji} von %{names}",
+    "addReaction": "Reaktion hinzufügen",
+    "reactionFailed": "Die Reaktion konnte nicht gespeichert werden.",
+    "quickReactions": "Übliche Reaktionen",
+    "moreEmoji": "Weitere Emoji",
+    "whoReacted": "Sehen, wer reagiert hat",
+    "moreReactions": "+%{count}"
   },
   "editor": {
     "toolbar": "Formatierung",
