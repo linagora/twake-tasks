@@ -20,7 +20,7 @@ describe('keyboard shortcuts', () => {
     press('q')
 
     expect(
-      await screen.findByRole('dialog', { name: 'Quick add' })
+      await screen.findByRole('dialog', { name: 'Create a task' })
     ).toBeVisible()
   })
 
@@ -60,6 +60,6 @@ describe('keyboard shortcuts', () => {
     const help = await screen.findByRole('dialog', {
       name: 'Keyboard shortcuts'
     })
-    expect(help).toHaveTextContent('Quick add')
+    expect(help).toHaveTextContent('Create a task')
   })
 })

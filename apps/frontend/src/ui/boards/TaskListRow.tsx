@@ -10,6 +10,7 @@ import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useNewTaskHighlight } from '@/ui/shell/NewTaskHighlight'
 
 // Sortable where the list can be reordered, as the cards of a board.
 function Row({
@@ -46,6 +47,7 @@ export function TaskListRow({
   const { t } = useI18n()
   const panel = useTaskPanel(task.key)
   const completion = useCompleteToggle(task, boardId, sections, editable)
+  const newTask = useNewTaskHighlight(task.key)
 
   return (
     <Row
@@ -53,6 +55,7 @@ export function TaskListRow({
       id={task.id}
       description={t('drag.card')}
       label={`${task.key} ${task.title}`}
+      highlighted={newTask.isNew}
       check={<CompleteCheckbox title={task.title} completion={completion} />}
       taskKey={task.key}
       done={completion.done}
@@ -64,6 +67,7 @@ export function TaskListRow({
           underline="none"
           className="u-ta-left"
           onClick={() => {
+            newTask.clear()
             panel.show()
           }}
         >

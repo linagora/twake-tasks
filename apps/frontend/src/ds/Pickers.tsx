@@ -1,6 +1,6 @@
 import '@/ds/dayjsLocales'
 
-import { Box, Popover } from '@linagora/twake-mui'
+import { Box, Chip, Popover } from '@linagora/twake-mui'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -219,6 +219,57 @@ export function EditorPopover({
         }}
       >
         {children}
+      </Box>
+    </Popover>
+  )
+}
+
+/** A day picked in one click, among quick picks or on the calendar. */
+export function DayPopover({
+  label,
+  anchor,
+  onClose,
+  value,
+  onChange,
+  picks
+}: {
+  label: string
+  anchor: HTMLElement | null
+  onClose: () => void
+  value: string
+  onChange: (day: string) => void
+  /** An empty day clears the value. */
+  picks: { label: string; day: string }[]
+}): ReactElement {
+  return (
+    <Popover
+      open={anchor !== null}
+      anchorEl={anchor}
+      onClose={onClose}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      slotProps={{
+        paper: {
+          role: 'dialog',
+          'aria-label': label,
+          sx: { width: 320, maxWidth: 'calc(100vw - 32px)' }
+        }
+      }}
+    >
+      <Box sx={{ p: 1.5, display: 'grid', gap: 1 }}>
+        <QuickPicks>
+          {picks.map(pick => (
+            <Chip
+              key={pick.label}
+              size="small"
+              label={pick.label}
+              variant={value === pick.day ? 'filled' : 'outlined'}
+              onClick={() => {
+                onChange(pick.day)
+              }}
+            />
+          ))}
+        </QuickPicks>
+        <DayCalendar value={value} onChange={onChange} />
       </Box>
     </Popover>
   )

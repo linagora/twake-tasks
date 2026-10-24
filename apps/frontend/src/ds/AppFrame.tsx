@@ -9,6 +9,7 @@ import {
   List,
   ListSubheader,
   NavItem,
+  NavText,
   Sidebar,
   styled,
   Typography,
@@ -213,6 +214,22 @@ export const BarNavItem = styled(NavItem)(({ theme }) => ({
 export const WideScreenNavItem = styled(BarNavItem)(({ theme }) => ({
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
+
+// An action beside a sidebar entry, which the phone bottom bar has no room for.
+export const WideScreenAction = styled('span')(({ theme }) => ({
+  display: 'flex',
+  [theme.breakpoints.down('lg')]: { display: 'none' }
+}))
+
+// NavText lays its text out as a flex item, which the text's own ellipsis
+// needs to be set on.
+export const OneLineNavText = styled(NavText)({
+  '& > span': {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  }
+})
 
 // twake-bar draws the app text logo 22px tall like the Twake wordmark, whose
 // box is all capitals. Ours also holds the j's dot and descender: scaled up

@@ -245,7 +245,6 @@ describe('archive and trash', () => {
     expect(
       screen.queryByRole('button', { name: 'Add a task to To do' })
     ).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Add task' })).toBeNull()
     fireEvent.click(
       (await boardMenu()).getByRole('menuitem', { name: 'Unarchive board' })
     )

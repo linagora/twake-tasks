@@ -7,7 +7,10 @@ import { afterEach } from 'vitest'
 // second on a busy machine.
 configure({ reactStrictMode: true, asyncUtilTimeout: 3000 })
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  localStorage.clear()
+})
 
 // jsdom does no layout. ProseMirror measures the caret to scroll it into view,
 // and a suggestion list scrolls its active option into view.

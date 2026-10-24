@@ -1,14 +1,17 @@
 import {
   Archive,
   Bell,
+  Bottom,
   Calendar,
   CalendarToday,
   Filter,
   Home,
   Icon,
   Logout,
+  Mosaic,
   Plus,
   Profile,
+  Right,
   Star
 } from '@linagora/twake-icons'
 import {
@@ -23,6 +26,7 @@ import {
   NavIcon,
   NavItem,
   NavText,
+  Tooltip,
   useMediaQuery,
   useTheme
 } from '@linagora/twake-mui'
@@ -33,7 +37,13 @@ import {
   type ReactElement,
   type RefObject
 } from 'react'
-import { Outlet, Link as RouterLink, useLocation } from 'react-router'
+import {
+  Outlet,
+  Link as RouterLink,
+  useLocation,
+  useMatch,
+  useNavigate
+} from 'react-router'
 
 import {
   AccountCard,
@@ -41,38 +51,45 @@ import {
   BarNavItem,
   BrandMark,
   CountBadge,
+  OneLineNavText,
   SidebarButton,
   SidebarSection,
   SidebarShelves,
   TopBar,
   TopBarSearch,
   TopBarSpacer,
+  WideScreenAction,
   WideScreenNavItem
 } from '@/ds/AppFrame'
 import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
+import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoards, useUnreadNotifications } from '@/ui/boards/queries'
 import { AppFeedback } from '@/ui/shell/AppFeedback'
 import { PlatformBar } from '@/ui/shell/PlatformBar'
-import { QuickAdd } from '@/ui/shell/QuickAdd'
+import { NewTaskFromUrl } from '@/ui/shell/NewTaskDialog'
+import { NewTaskHighlightProvider } from '@/ui/shell/NewTaskHighlight'
 import { SidebarLink } from '@/ui/shell/SidebarLink'
 import { ShortcutsHelp, useShortcuts } from '@/ui/shell/Shortcuts'
+import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 import { useSettings } from '@/ui/settings/useSettings'
 
 export function AppShell(): ReactElement {
-  const [quickAdd, setQuickAdd] = useState(false)
+  const { openNewTask } = useNewTaskParam()
+  const startNewTask = (): void => {
+    openNewTask()
+  }
   const [help, setHelp] = useState(false)
   const search = useRef<HTMLInputElement>(null)
   const { t } = useI18n()
   const lit = useLitEntry()
-  const openQuickAdd = (): void => {
-    setQuickAdd(true)
-  }
+  // A new task goes in the board it is created from, else in the Inbox.
+  const inBoardId = useMatch('/boards/:boardId/*')?.params.boardId
   useShortcuts({
-    quickAdd: openQuickAdd,
+    newTask: startNewTask,
     search: () => {
       search.current?.focus()
     },
@@ -83,30 +100,26 @@ export function AppShell(): ReactElement {
 
   return (
     <AppFrame
-      topBar={<Header searchRef={search} onQuickAdd={openQuickAdd} />}
+      topBar={<Header searchRef={search} onNewTask={startNewTask} />}
       sidebar={
         <>
           <SidebarButton
             startIcon={<Icon icon={Plus} />}
-            onClick={openQuickAdd}
+            onClick={startNewTask}
           >
-            {t('quickAdd.title')}
+            {t('newTask.open')}
           </SidebarButton>
-          <AppNav boardsLit={lit.boards} />
+          <AppNav boardsLit={lit.boards} boardLit={lit.board} />
           <Favorites lit={lit.favorite} onOpen={lit.openFavorite} />
           <ShelfLinks archivesLit={lit.archives} />
         </>
       }
     >
-      <Outlet />
-      <AppFeedback />
-      {quickAdd && (
-        <QuickAdd
-          onClose={() => {
-            setQuickAdd(false)
-          }}
-        />
-      )}
+      <NewTaskHighlightProvider>
+        <Outlet />
+        <AppFeedback />
+        <NewTaskFromUrl inBoardId={inBoardId} />
+      </NewTaskHighlightProvider>
       {help && (
         <ShortcutsHelp
           onClose={() => {
@@ -120,10 +133,10 @@ export function AppShell(): ReactElement {
 
 function Header({
   searchRef,
-  onQuickAdd
+  onNewTask
 }: {
   searchRef: RefObject<HTMLInputElement | null>
-  onQuickAdd: () => void
+  onNewTask: () => void
 }): ReactElement {
   const { t } = useI18n()
   const { sdk } = useSession()
@@ -136,12 +149,12 @@ function Header({
       <SearchField inputRef={searchRef} size={sdk ? 'small' : 'medium'} />
     </TopBarSearch>
   )
-  // Wide screens have the quick add in the sidebar.
-  const quickAdd = phone && (
+  // Wide screens have Create in the sidebar.
+  const newTaskButton = phone && (
     <IconButton
       color="primary"
-      aria-label={t('quickAdd.title')}
-      onClick={onQuickAdd}
+      aria-label={t('newTask.open')}
+      onClick={onNewTask}
     >
       <Icon icon={Plus} />
     </IconButton>
@@ -166,7 +179,7 @@ function Header({
                   <Icon icon={Filter} />
                 </IconButton>
               )}
-              {quickAdd}
+              {newTaskButton}
             </>
           )
         }}
@@ -186,7 +199,7 @@ function Header({
       </Link>
       {search}
       <TopBarSpacer />
-      {quickAdd}
+      {newTaskButton}
       <AccountMenu />
     </TopBar>
   )
@@ -270,16 +283,18 @@ function AccountMenu(): ReactElement {
 
 /**
  * The entry lit in the sidebar: a board keeps Boards lit, as the page it is
- * opened from, but for a favorite clicked in the sidebar, which stays lit
- * while its board is open.
+ * opened from, or its own entry under Boards, but for a favorite clicked in
+ * the sidebar, which stays lit while its board is open.
  */
 function useLitEntry(): {
   boards: boolean
   archives: boolean
+  board: string | null
   favorite: string | null
   openFavorite: (boardId: string) => void
 } {
   const { pathname } = useLocation()
+  const boardId = useMatch('/boards/:boardId/*')?.params.boardId ?? null
   const [favorite, setFavorite] = useState<string | null>(null)
   const inBoard = (boardId: string) =>
     pathname === `/boards/${boardId}` ||
@@ -295,23 +310,25 @@ function useLitEntry(): {
   return {
     boards: pathname === '/' || (onBoard && !onArchived),
     archives: pathname === '/archives' || (onBoard && onArchived),
+    board: onBoard && !onArchived ? boardId : null,
     favorite: onFavorite ? favorite : null,
     openFavorite: setFavorite
   }
 }
 
-function AppNav({ boardsLit }: { boardsLit: boolean }): ReactElement {
+function AppNav({
+  boardsLit,
+  boardLit
+}: {
+  boardsLit: boolean
+  boardLit: string | null
+}): ReactElement {
   const { t } = useI18n()
   const unread = useUnreadNotifications().data ?? 0
 
   return (
     <Nav aria-label={t('app.mainMenu')}>
-      <AppNavLink
-        to="/"
-        active={boardsLit}
-        icon={Home}
-        label={t('boards.title')}
-      />
+      <BoardsNav boardsLit={boardsLit} boardLit={boardLit} />
       <AppNavLink to="/today" icon={CalendarToday} label={t('agenda.today')} />
       <AppNavLink to="/upcoming" icon={Calendar} label={t('agenda.upcoming')} />
       <AppNavLink to="/mine" icon={Profile} label={t('agenda.mine')} />
@@ -377,6 +394,112 @@ function ShelfLinks({ archivesLit }: { archivesLit: boolean }): ReactElement {
         </SidebarLink>
       </NavItem>
     </SidebarShelves>
+  )
+}
+
+const BOARDS_FOLDED = 'sidebar-boards-folded'
+
+// Folded until unfolded, then remembered on this device only, like a
+// filter's layout.
+function useBoardsFolded() {
+  const [folded, setFolded] = useState(() => {
+    try {
+      return localStorage.getItem(BOARDS_FOLDED) !== 'false'
+    } catch {
+      return true
+    }
+  })
+  const toggle = () => {
+    setFolded(!folded)
+    try {
+      localStorage.setItem(BOARDS_FOLDED, String(!folded))
+    } catch {
+      // Private browsing: the choice lasts until the page closes.
+    }
+  }
+  return [folded, toggle] as const
+}
+
+// Boards, then each active board under it, as the address books of Twake
+// Contacts; its arrow folds them away and its + makes a board. Phones keep
+// the bottom bar entry only, so there, or folded, Boards stays lit on a board.
+function BoardsNav({
+  boardsLit,
+  boardLit
+}: {
+  boardsLit: boolean
+  boardLit: string | null
+}): ReactElement {
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  const theme = useTheme()
+  const phone = useMediaQuery(theme.breakpoints.down('lg'))
+  const [creating, setCreating] = useState(false)
+  const [folded, toggleFolded] = useBoardsFolded()
+  const listed = !phone && !folded
+  const foldLabel = t(folded ? 'boards.unfold' : 'boards.fold')
+  const boards = (useBoards().data ?? [])
+    .filter(board => !board.archived)
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  return (
+    <>
+      <BarNavItem
+        secondaryAction={
+          <WideScreenAction>
+            <Tooltip disableInteractive title={foldLabel}>
+              <IconButton
+                size="xsmall"
+                aria-label={foldLabel}
+                aria-expanded={!folded}
+                onClick={toggleFolded}
+              >
+                <Icon icon={folded ? Right : Bottom} size={12} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip disableInteractive title={t('newBoard.title')}>
+              <IconButton
+                size="xsmall"
+                aria-label={t('newBoard.title')}
+                onClick={() => {
+                  setCreating(true)
+                }}
+              >
+                <Icon icon={Plus} size={14} />
+              </IconButton>
+            </Tooltip>
+          </WideScreenAction>
+        }
+      >
+        <SidebarLink to="/" active={boardsLit && !(listed && boardLit)}>
+          <NavIcon icon={Home} />
+          <NavText>{t('boards.title')}</NavText>
+        </SidebarLink>
+      </BarNavItem>
+      {!folded &&
+        boards.map(board => (
+          <WideScreenNavItem key={board.id} variant="secondary">
+            <SidebarLink
+              to={`/boards/${board.id}`}
+              active={board.id === boardLit}
+            >
+              <NavIcon icon={Mosaic} />
+              <OneLineNavText title={board.name}>{board.name}</OneLineNavText>
+            </SidebarLink>
+          </WideScreenNavItem>
+        ))}
+      {creating && (
+        <NewBoardDialog
+          onClose={() => {
+            setCreating(false)
+          }}
+          onCreated={board => {
+            setCreating(false)
+            void navigate(`/boards/${board.id}`)
+          }}
+        />
+      )}
+    </>
   )
 }
 

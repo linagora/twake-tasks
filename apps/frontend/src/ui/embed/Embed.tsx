@@ -6,6 +6,7 @@ import {
   Navigate,
   Outlet,
   Link as RouterLink,
+  useMatch,
   useNavigate,
   useParams
 } from 'react-router'
@@ -16,6 +17,8 @@ import { TileGrid, Tile } from '@/ds/TileGrid'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
 import { useBoards, useProjects } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { NewTaskFromUrl } from '@/ui/shell/NewTaskDialog'
+import { NewTaskHighlightProvider } from '@/ui/shell/NewTaskHighlight'
 
 import { useReportBadges } from '@/ui/embed/badges'
 import { useReportMetadata } from '@/ui/embed/metadata'
@@ -31,6 +34,8 @@ function SpaceReporter({ space }: { space: TwakeSpaceConnection }): null {
 export function EmbedLayout(): ReactElement {
   const navigate = useNavigate()
   const space = getTwakeSpace()
+  const inBoardId = useMatch('/embed/projects/:projectId/boards/:boardId/*')
+    ?.params.boardId
 
   useEffect(() => {
     const show = (resourceId: string, path: string): Promise<void> =>
@@ -43,7 +48,10 @@ export function EmbedLayout(): ReactElement {
   return (
     <EmbedFrame>
       {space && <SpaceReporter space={space} />}
-      <Outlet />
+      <NewTaskHighlightProvider>
+        <Outlet />
+        <NewTaskFromUrl inBoardId={inBoardId} />
+      </NewTaskHighlightProvider>
     </EmbedFrame>
   )
 }

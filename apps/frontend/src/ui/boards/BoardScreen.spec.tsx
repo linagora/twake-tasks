@@ -421,21 +421,6 @@ describe('BoardScreen', () => {
     )
   })
 
-  it('adds a task to the first column from the header', async () => {
-    const board = designBoard()
-    const boardsApi = fakeBoardsApi([board])
-    renderRoute(`/boards/${board.id}`, { boardsApi })
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Add task' }))
-    const todo = within(screen.getByRole('region', { name: 'To do' }))
-    const title = todo.getByRole('textbox', { name: 'Task title' })
-    expect(title).toHaveFocus()
-    fireEvent.change(title, { target: { value: 'Banner' } })
-    fireEvent.submit(title)
-
-    expect(await todo.findByRole('button', { name: 'Banner' })).toBeVisible()
-  })
-
   it('closes the add task form on Escape or Cancel', async () => {
     const board = designBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
@@ -752,8 +737,16 @@ describe('BoardScreen', () => {
       await boardsApi.setFavorite(board.id, true)
       renderRoute(`/boards/${board.id}`, { boardsApi })
 
+      // The board is in the sidebar twice: under Boards and in the favorites.
+      const sidebarLinks = (name: string) =>
+        within(screen.getByRole('complementary')).queryAllByRole('link', {
+          name
+        })
       await heading('Design')
-      expect(await screen.findByRole('link', { name: 'Design' })).toBeVisible()
+      fireEvent.click(screen.getByRole('button', { name: 'Unfold boards' }))
+      await waitFor(() => {
+        expect(sidebarLinks('Design')).toHaveLength(2)
+      })
       fireEvent.click(screen.getByRole('button', { name: 'Board options' }))
       fireEvent.click(screen.getByRole('menuitem', { name: 'Rename board' }))
       const field = await screen.findByRole('textbox', { name: 'Board name' })
@@ -764,8 +757,10 @@ describe('BoardScreen', () => {
       await heading('Product')
       expect(boardsApi.renameBoard).toHaveBeenCalledWith(board.id, 'Product')
       expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
-      expect(await screen.findByRole('link', { name: 'Product' })).toBeVisible()
-      expect(screen.queryByRole('link', { name: 'Design' })).toBeNull()
+      await waitFor(() => {
+        expect(sidebarLinks('Product')).toHaveLength(2)
+      })
+      expect(sidebarLinks('Design')).toHaveLength(0)
     })
 
     it('renames from the menu after an edit was canceled', async () => {

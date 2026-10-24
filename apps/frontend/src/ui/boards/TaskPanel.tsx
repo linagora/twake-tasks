@@ -68,7 +68,7 @@ import { useDrivePicker } from '@/ui/drive/useDrivePicker'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-const MAX_DESCRIPTION = 50_000
+export const MAX_DESCRIPTION = 50_000
 
 export function TaskPanel({
   task,

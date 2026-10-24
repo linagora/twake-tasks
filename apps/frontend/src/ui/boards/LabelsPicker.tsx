@@ -1,16 +1,8 @@
-import { Icon, Pen } from '@linagora/twake-icons'
-import { IconButton, Typography } from '@linagora/twake-mui'
+import { Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 
-import { LabelChip } from '@/ds/Columns'
-import {
-  PickerCreate,
-  PickerEmpty,
-  PickerOption,
-  PickerPopover
-} from '@/ds/Picker'
-import { labelName, type Label, type Task } from '@/domain/board'
-import { LabelDialog } from '@/ui/boards/LabelDialog'
+import type { Label, Task } from '@/domain/board'
+import { LabelsMenu } from '@/ui/boards/LabelsMenu'
 import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -28,20 +20,12 @@ export function LabelsPicker({
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
-  const [search, setSearch] = useState('')
   const [chosen, setChosen] = useState(
     () => new Set(task.labels.map(label => label.id))
   )
-  const [editing, setEditing] = useState<{ label?: Label } | null>(null)
   const save = useBoardChange(boardId, (api, labelIds: string[]) =>
     api.setLabels(boardId, task.id, labelIds)
   )
-  const name = labelName(search)
-  const query = name.toLowerCase()
-  const folded = (label: Label) => labelName(label.name).toLowerCase()
-  const shown = labels.filter(label => folded(label).includes(query))
-  const creatable =
-    name !== '' && !labels.some(label => folded(label) === query)
 
   const apply = (next: Set<string>) => {
     setChosen(next)
@@ -58,75 +42,24 @@ export function LabelsPicker({
   }
 
   return (
-    <>
-      <PickerPopover
-        label={t('board.labelsTitle', { key: task.key })}
-        anchor={anchor}
-        onClose={onClose}
-        searchLabel={t('board.searchLabels')}
-        search={search}
-        onSearch={setSearch}
-        footer={
-          save.isError && (
-            <Typography role="alert" variant="caption" color="error">
-              {t('board.labelsFailed')}
-            </Typography>
-          )
-        }
-      >
-        {shown.map(label => (
-          <PickerOption
-            key={label.id}
-            checked={chosen.has(label.id)}
-            onToggle={() => {
-              toggle(label.id)
-            }}
-            action={
-              <IconButton
-                size="small"
-                aria-label={t('board.editLabel', { name: label.name })}
-                onClick={() => {
-                  setEditing({ label })
-                }}
-              >
-                <Icon icon={Pen} size={14} />
-              </IconButton>
-            }
-          >
-            <LabelChip name={label.name} color={label.color} highlight={name} />
-          </PickerOption>
-        ))}
-        {shown.length === 0 && (
-          <PickerEmpty>
-            {name ? t('board.noMatches') : t('board.noLabels')}
-          </PickerEmpty>
-        )}
-        <PickerCreate
-          onCreate={() => {
-            setEditing({})
-          }}
-        >
-          {creatable ? t('board.createLabel', { name }) : t('board.newLabel')}
-        </PickerCreate>
-      </PickerPopover>
-      {editing && (
-        <LabelDialog
-          boardId={boardId}
-          label={editing.label}
-          usedColors={labels.map(label => label.color)}
-          initialName={creatable ? name : ''}
-          onClose={() => {
-            setEditing(null)
-          }}
-          onSaved={saved => {
-            setEditing(null)
-            if (!editing.label) {
-              setSearch('')
-              apply(new Set(chosen).add(saved.id))
-            }
-          }}
-        />
-      )}
-    </>
+    <LabelsMenu
+      label={t('board.labelsTitle', { key: task.key })}
+      boardId={boardId}
+      labels={labels}
+      chosen={chosen}
+      onToggle={toggle}
+      onCreated={labelId => {
+        apply(new Set(chosen).add(labelId))
+      }}
+      anchor={anchor}
+      onClose={onClose}
+      footer={
+        save.isError && (
+          <Typography role="alert" variant="caption" color="error">
+            {t('board.labelsFailed')}
+          </Typography>
+        )
+      }
+    />
   )
 }

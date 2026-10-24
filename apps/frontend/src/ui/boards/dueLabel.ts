@@ -153,3 +153,13 @@ export function dueLabel(
     task.dueZone && task.dueZone !== localZone() ? ` ${task.dueZone}` : ''
   return `${day}, ${task.dueTime}${zone}`
 }
+
+const today = () => new Date(`${localToday()}T00:00:00Z`)
+
+export function inDays(days: number): string {
+  const day = today()
+  day.setUTCDate(day.getUTCDate() + days)
+  return day.toISOString().slice(0, 10)
+}
+
+export const untilNextMonday = (): number => 8 - (today().getUTCDay() || 7)

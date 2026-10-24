@@ -134,6 +134,109 @@ describe('board layouts', () => {
     ).toBeVisible()
   })
 
+  it('adds a task due on a day from its +', async () => {
+    const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
+    const { router } = renderRoute(`/boards/${board.id}`, {
+      boardsApi: fakeBoardsApi([board])
+    })
+    const day = formatDay(localToday(), 'en')
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: `Add a task due on ${day}` })
+    )
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a task' })
+    )
+    expect(router.state.location.search).toBe(`?new=task&due=${localToday()}`)
+    expect(dialog.getByRole('button', { name: 'Add details' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    )
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    expect(
+      dialog.getByRole('button', { name: /^Due date: / })
+    ).not.toHaveAccessibleName('Due date: No date')
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Title' }), {
+      target: { value: 'Moodboard' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(board.tasks).toContainEqual(
+        expect.objectContaining({ title: 'Moodboard', dueDate: localToday() })
+      )
+    })
+    expect(router.state.location.search).toBe('')
+  })
+
+  it('adds a task due on a day from a click on its empty part', async () => {
+    const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    fireEvent.click(
+      await screen.findByRole('region', {
+        name: formatDay(localToday(), 'en')
+      })
+    )
+
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a task' })
+    )
+    expect(dialog.getByRole('button', { name: 'Add details' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    )
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    expect(
+      dialog.getByRole('button', { name: /^Due date: / })
+    ).not.toHaveAccessibleName('Due date: No date')
+  })
+
+  it('opens a task rather than adding one when its chip in a day is clicked', async () => {
+    const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+    const today = await screen.findByRole('region', {
+      name: formatDay(localToday(), 'en')
+    })
+
+    fireEvent.click(within(today).getByRole('button', { name: 'Logo' }))
+
+    expect(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    ).toBeVisible()
+    expect(screen.queryByRole('dialog', { name: 'Create a task' })).toBe(null)
+  })
+
+  it('adds a task without a date from the + of No date', async () => {
+    const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
+    board.tasks = board.tasks.filter(task => task.dueDate !== null)
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Add a task without a date' })
+    )
+
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a task' })
+    )
+    expect(dialog.getByRole('button', { name: 'Add details' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    )
+  })
+
+  it('offers no way to add a task to a read only board', async () => {
+    const board = designBoard({
+      layout: 'calendar',
+      defaultLayout: 'calendar',
+      role: 'viewer'
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    await screen.findByRole('region', { name: formatDay(localToday(), 'en') })
+    expect(screen.queryByRole('button', { name: /^Add a task/ })).toBe(null)
+  })
+
   it('names the weekdays, marks today and comes back to it', async () => {
     const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
@@ -190,31 +293,6 @@ describe('board layouts', () => {
     expect(
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     ).toBeVisible()
-  })
-
-  it('adds a task due on a day from the header', async () => {
-    const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
-    const boardsApi = fakeBoardsApi([board])
-    renderRoute(`/boards/${board.id}`, { boardsApi })
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Add task' }))
-    const dialog = within(await screen.findByRole('dialog'))
-    fireEvent.change(dialog.getByRole('textbox', { name: 'Task title' }), {
-      target: { value: 'Moodboard' }
-    })
-    fireEvent.click(dialog.getByRole('button', { name: 'Add' }))
-
-    await waitFor(() => {
-      expect(boardsApi.editTask).toHaveBeenCalledWith(
-        board.id,
-        expect.any(String),
-        { dueDate: localToday() }
-      )
-    })
-    expect(boardsApi.createTask).toHaveBeenCalledWith(board.id, {
-      sectionId: board.sections[0]?.id,
-      title: 'Moodboard'
-    })
   })
 
   it('lets an admin make the current layout the board default', async () => {

@@ -31,7 +31,7 @@ const typing = (target: EventTarget | null) =>
     ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
 
 export function useShortcuts(actions: {
-  quickAdd: () => void
+  newTask: () => void
   search: () => void
   help: () => void
 }): void {
@@ -53,7 +53,7 @@ export function useShortcuts(actions: {
       g: () => {
         going.current = true
       },
-      q: actions.quickAdd,
+      q: actions.newTask,
       '/': actions.search,
       '?': actions.help
     }[event.key]
@@ -78,7 +78,7 @@ export function ShortcutsHelp({
   const { t } = useI18n()
   const titleId = useId()
   const rows = [
-    ['q', t('quickAdd.title')],
+    ['q', t('newTask.title')],
     ['/', t('search.label')],
     ...Object.entries(GO).map(([key, { label }]) => [
       t('shortcuts.then', { key }),

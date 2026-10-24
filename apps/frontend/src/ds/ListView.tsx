@@ -128,6 +128,7 @@ export function ListRow({
   moreLabels,
   ref,
   drag = 'none',
+  highlighted = false,
   ...rest
 }: Omit<HTMLAttributes<HTMLElement>, 'title'> & {
   label: string
@@ -143,6 +144,8 @@ export function ListRow({
   ref?: Ref<HTMLElement>
   /** `placeholder` is the slot a dragged row leaves, faded as in Twake Drive. */
   drag?: 'none' | 'placeholder'
+  /** The task just created, standing out as a selected one. */
+  highlighted?: boolean
 }): ReactElement {
   return (
     <Box
@@ -150,6 +153,7 @@ export function ListRow({
       ref={ref}
       component="li"
       aria-label={label}
+      data-new-task={highlighted ? '' : undefined}
       sx={theme => ({
         ...rowGrid,
         position: 'relative',
@@ -164,6 +168,12 @@ export function ListRow({
           outlineOffset: -2
         },
         ...(drag === 'placeholder' && { opacity: 0.5 }),
+        ...(highlighted && {
+          bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.08),
+          '&:hover, &:focus-within': {
+            bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.12)
+          }
+        }),
         '& .ListRow-title button': {
           display: 'block',
           maxWidth: '100%',
