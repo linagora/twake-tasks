@@ -10,8 +10,8 @@ const chips = ['Design', 'Content', 'Frontend', 'Urgent'].map(name => ({
   chip: <span data-testid={`chip-${name}`}>{name}</span>
 }))
 
-const moreLabel = (hidden: { name: string }[]) =>
-  `${String(hidden.length)} more: ${hidden.map(each => each.name).join(', ')}`
+const moreLabel = (count: number, names: string) =>
+  `${String(count)} more: ${names}`
 
 describe('countFitting', () => {
   it.each([
@@ -35,7 +35,9 @@ describe('FittingChips', () => {
   })
 
   it('names the chips that do not fit in a “+n” chip', async () => {
-    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(40)
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 40
+    } as DOMRect)
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(100)
 
     renderWithProviders(<FittingChips chips={chips} moreLabel={moreLabel} />)

@@ -1,5 +1,6 @@
 import { Box, Tooltip } from '@linagora/twake-mui'
 import {
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -25,7 +26,7 @@ export function FittingChips({
   moreLabel
 }: {
   chips: FittingChip[]
-  moreLabel: (hidden: FittingChip[]) => string
+  moreLabel: (count: number, names: string) => string
 }): ReactElement {
   const ref = useRef<HTMLDivElement>(null)
   // A renamed chip keeps its key but not its width.
@@ -44,9 +45,25 @@ export function FittingChips({
     if (ready || !row) return
     setMeasured({
       keys,
-      widths: [...row.children].map(child => (child as HTMLElement).offsetWidth)
+      // Unrounded, so that the widths add up to no more than the row.
+      widths: [...row.children].map(
+        child => child.getBoundingClientRect().width
+      )
     })
   }, [ready, keys])
+
+  // Chips measured in a fallback font are too narrow or too wide once the
+  // web font arrives.
+  useEffect(() => {
+    if (!('fonts' in document) || document.fonts.status === 'loaded') return
+    let live = true
+    void document.fonts.ready.then(() => {
+      if (live) setMeasured(null)
+    })
+    return () => {
+      live = false
+    }
+  }, [])
 
   useLayoutEffect(() => {
     const row = ref.current
@@ -64,6 +81,7 @@ export function FittingChips({
 
   const shown = ready ? countFitting(width, measured.widths) : chips.length
   const hidden = chips.slice(shown)
+  const hiddenNames = hidden.map(each => each.name).join(', ')
   return (
     <Box
       ref={ref}
@@ -85,8 +103,11 @@ export function FittingChips({
       ))}
       {!ready && <MoreChip label="" count={chips.length} unseen />}
       {ready && hidden.length > 0 && (
-        <Tooltip title={hidden.map(each => each.name).join(', ')}>
-          <MoreChip label={moreLabel(hidden)} count={hidden.length} />
+        <Tooltip title={hiddenNames}>
+          <MoreChip
+            label={moreLabel(hidden.length, hiddenNames)}
+            count={hidden.length}
+          />
         </Tooltip>
       )}
     </Box>

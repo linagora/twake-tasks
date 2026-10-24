@@ -57,11 +57,8 @@ export function TaskListRow({
         name: label.name,
         chip: <LabelChip name={label.name} color={label.color} />
       }))}
-      moreLabels={hidden =>
-        t('board.moreLabels', {
-          smart_count: hidden.length,
-          names: hidden.map(each => each.name).join(', ')
-        })
+      moreLabels={(count, names) =>
+        t('board.moreLabels', { smart_count: count, names })
       }
     />
   )

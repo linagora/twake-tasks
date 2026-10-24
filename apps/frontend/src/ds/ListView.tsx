@@ -120,7 +120,7 @@ export function ListRow({
   due: ReactNode
   priority: ReactNode
   labels: FittingChip[]
-  moreLabels: (hidden: FittingChip[]) => string
+  moreLabels: (count: number, names: string) => string
 }): ReactElement {
   return (
     <Box
@@ -184,7 +184,6 @@ export function ListRow({
         <Cell>{people}</Cell>
         <Cell>{due}</Cell>
         <Cell>{priority}</Cell>
-        {/* One line of labels keeps every row as high as the others. */}
         <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
           {labels.length > 0 && (
             <FittingChips chips={labels} moreLabel={moreLabels} />
