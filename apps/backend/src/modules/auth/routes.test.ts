@@ -31,6 +31,11 @@ function setUp(
     email: request.identity?.email,
     organizationId: request.identity?.organizationId
   }))
+  app.get(
+    '/search',
+    { preHandler: requireIdentity, config: { searchTokens: true } },
+    () => ({ ok: true })
+  )
   return { app, store }
 }
 
@@ -69,6 +74,22 @@ describe('requireIdentity', () => {
     })
 
     expect(response.statusCode).toBe(503)
+  })
+
+  it('lets a token good for search only through on search routes alone', async () => {
+    const { app } = setUp(() =>
+      Promise.resolve(anIdentity({ searchOnly: true }))
+    )
+    const headers = { authorization: 'Bearer token' }
+
+    const search = await app.inject({ method: 'GET', url: '/search', headers })
+    const other = await app.inject({ method: 'GET', url: '/whoami', headers })
+
+    expect(search.statusCode).toBe(200)
+    expect(other.statusCode).toBe(401)
+    expect(other.headers['www-authenticate']).toBe(
+      'Bearer error="invalid_token"'
+    )
   })
 
   it.each([

@@ -114,14 +114,18 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function setUp(tokens: Record<string, FakeToken> = {}) {
+async function setUp(
+  tokens: Record<string, FakeToken> = {},
+  searchAudiences: string[] = []
+) {
   const sso = fakeSso({ keys: [publicJwk] }, new Map(Object.entries(tokens)))
   vi.stubGlobal('fetch', sso.fetch)
   const provider = await discoverIdentityProvider({
     issuer: new URL(ISSUER),
     clientId: 'twaketasks-backend',
     clientSecret: 'secret',
-    audience: 'twaketasks'
+    audience: 'twaketasks',
+    searchAudiences
   })
   return { provider, sso }
 }
@@ -155,8 +159,33 @@ describe('identify', () => {
       email: 'alice@example.com',
       sessionId: 'session-1',
       organizationId: 'org-1',
-      organizationRole: 'member'
+      organizationRole: 'member',
+      searchOnly: false
     })
+  })
+
+  it.each([
+    ['only a search audience', ['twakespace'], true],
+    ['both audiences', ['twakespace', 'twaketasks'], false]
+  ])(
+    'marks whether a token carrying %s is good for search only',
+    async (_case, aud, searchOnly) => {
+      const token = validToken()
+      token.introspection = { ...token.introspection, aud }
+      const { provider } = await setUp({ token }, ['twakespace'])
+
+      await expect(provider.identify('token')).resolves.toMatchObject({
+        searchOnly
+      })
+    }
+  )
+
+  it('refuses a search audience that is not configured', async () => {
+    const token = validToken()
+    token.introspection = { ...token.introspection, aud: 'twakespace' }
+    const { provider } = await setUp({ token })
+
+    await expect(provider.identify('token')).resolves.toBeNull()
   })
 
   it.each([

@@ -60,9 +60,11 @@ const server = await buildApp({
       issuer: new URL(config.OIDC_ISSUER),
       clientId: config.OIDC_CLIENT_ID,
       clientSecret: config.OIDC_CLIENT_SECRET,
-      audience: config.OIDC_AUDIENCE
+      audience: config.OIDC_AUDIENCE,
+      searchAudiences: config.OIDC_SEARCH_AUDIENCES
     }
   })),
+  searchAllowedOrigins: config.SEARCH_ALLOWED_ORIGINS,
   isReady: async () => accepting && (await sql`select 1`).length === 1
 })
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })

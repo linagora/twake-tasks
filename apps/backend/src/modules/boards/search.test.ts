@@ -3,8 +3,10 @@ import { aUser, startApp, type TestUser } from '../../testing/app.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 
+const SPACE_ORIGIN = 'https://space.example.com'
+
 beforeAll(async () => {
-  api = await startApp()
+  api = await startApp({ searchAllowedOrigins: [SPACE_ORIGIN] })
 })
 
 afterAll(async () => {
@@ -112,5 +114,110 @@ describe('search', () => {
     const response = await api.as(aUser()).get('/search?q=%20')
 
     expect(response.statusCode).toBe(400)
+  })
+})
+
+describe('search from another app', () => {
+  const searchOnly = (user: TestUser) => ({
+    authorization: `Bearer ${api.tokenOf(user, { searchOnly: true })}`
+  })
+
+  it('takes a token good for search only on search, and nowhere else', async () => {
+    const owner = aUser()
+    await (await aBoardOf(owner, 'SPC')).add('Launch plan')
+    const headers = searchOnly(owner)
+
+    const found = await api.inject({
+      method: 'GET',
+      url: '/api/search?q=launch',
+      headers
+    })
+    const boards = await api.inject({
+      method: 'GET',
+      url: '/api/boards',
+      headers
+    })
+    const created = await api.inject({
+      method: 'POST',
+      url: '/api/boards',
+      headers,
+      payload: { name: 'Other', keyPrefix: 'OTH' }
+    })
+
+    expect(found.statusCode).toBe(200)
+    expect(found.json<{ tasks: { key: string }[] }>().tasks).toEqual([
+      expect.objectContaining({ key: 'SPC-1' })
+    ])
+    expect(boards.statusCode).toBe(401)
+    expect(created.statusCode).toBe(401)
+  })
+
+  it('lets the allowed origin read the results, and only that one', async () => {
+    const headers = searchOnly(aUser())
+    const allowed = await api.inject({
+      method: 'GET',
+      url: '/api/search?q=x',
+      headers: { ...headers, origin: SPACE_ORIGIN }
+    })
+    const unknown = await api.inject({
+      method: 'GET',
+      url: '/api/search?q=x',
+      headers: { ...headers, origin: 'https://evil.example.com' }
+    })
+
+    expect(allowed.headers['access-control-allow-origin']).toBe(SPACE_ORIGIN)
+    expect(allowed.headers['access-control-allow-credentials']).toBeUndefined()
+    expect(allowed.headers.vary).toMatch(/origin/i)
+    expect(unknown.headers['access-control-allow-origin']).toBeUndefined()
+  })
+
+  it('lets the allowed origin read a refusal', async () => {
+    const response = await api.inject({
+      method: 'GET',
+      url: '/api/search?q=x',
+      headers: { origin: SPACE_ORIGIN }
+    })
+
+    expect(response.statusCode).toBe(401)
+    expect(response.headers['access-control-allow-origin']).toBe(SPACE_ORIGIN)
+  })
+
+  it('answers the preflight of the allowed origin, and only that one', async () => {
+    const preflight = (origin: string) =>
+      api.inject({
+        method: 'OPTIONS',
+        url: '/api/search?q=x',
+        headers: {
+          origin,
+          'access-control-request-method': 'GET',
+          'access-control-request-headers': 'authorization'
+        }
+      })
+
+    const allowed = await preflight(SPACE_ORIGIN)
+    const unknown = await preflight('https://evil.example.com')
+
+    expect(allowed.statusCode).toBe(204)
+    expect(allowed.headers).toMatchObject({
+      'access-control-allow-origin': SPACE_ORIGIN,
+      'access-control-allow-methods': 'GET',
+      'access-control-allow-headers': 'Authorization'
+    })
+    expect(unknown.headers['access-control-allow-origin']).toBeUndefined()
+    expect(unknown.headers['access-control-allow-methods']).toBeUndefined()
+  })
+
+  it('allows no origin on the other routes', async () => {
+    const response = await api.inject({
+      method: 'GET',
+      url: '/api/boards',
+      headers: {
+        authorization: `Bearer ${api.tokenOf(aUser())}`,
+        origin: SPACE_ORIGIN
+      }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['access-control-allow-origin']).toBeUndefined()
   })
 })

@@ -1,5 +1,6 @@
 import type { FastifyReply } from 'fastify'
 import { z } from 'zod'
+import { allowOrigins } from '../../infra/cors.ts'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
@@ -277,7 +278,11 @@ function refuse(reply: FastifyReply, error: Refusal) {
 
 export function registerBoards(
   app: HttpServer,
-  deps: { db: Db; requireIdentity: RequireIdentity }
+  deps: {
+    db: Db
+    requireIdentity: RequireIdentity
+    searchAllowedOrigins: readonly string[]
+  }
 ) {
   const store = createBoardStore(deps.db)
   const taskStore = createTaskStore(deps.db)
@@ -816,7 +821,11 @@ export function registerBoards(
 
   app.get(
     '/search',
-    { preHandler: deps.requireIdentity },
+    {
+      onRequest: allowOrigins(app, '/search', deps.searchAllowedOrigins),
+      preHandler: deps.requireIdentity,
+      config: { searchTokens: true }
+    },
     async (request, reply) => {
       const identity = request.identity
       if (!identity) return reply.code(401).send()

@@ -9,6 +9,10 @@ declare module 'fastify' {
   interface FastifyRequest {
     identity: Identity | null
   }
+  interface FastifyContextConfig {
+    // Takes the tokens of OIDC_SEARCH_AUDIENCES too.
+    searchTokens?: boolean
+  }
 }
 
 // Longer than any access token issued in the revoked session can live.
@@ -57,7 +61,12 @@ export function registerAuth(
       request.log.error({ err: error }, 'access token check failed')
       return reply.code(503).send({ error: 'unavailable' })
     }
-    if (!identity) return unauthorized(reply, 'invalid_token')
+    if (
+      !identity ||
+      (identity.searchOnly && !request.routeOptions.config.searchTokens)
+    ) {
+      return unauthorized(reply, 'invalid_token')
+    }
     request.identity = identity
   }
 

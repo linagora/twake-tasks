@@ -17,6 +17,11 @@ SSO:
 - `OIDC_CLIENT_ID` (`twaketasks-backend`): the backend's confidential client.
 - `OIDC_AUDIENCE` (`twaketasks`): the audience access tokens must carry.
 
+Search from another app, such as TwakeSpace's Ctrl+K, which calls `GET /api/search?q=` from the browser with the user's own token:
+
+- `OIDC_SEARCH_AUDIENCES` (empty): other audiences, comma separated, whose tokens `GET /api/search` also takes, such as `twakespace`. Every other route still takes `OIDC_AUDIENCE` alone.
+- `SEARCH_ALLOWED_ORIGINS` (empty): bare origins, comma separated, such as `https://space.example.com`, allowed to call `GET /api/search` across origins. No other route allows any.
+
 Space mode:
 
 - `SPACE_INTEGRATION` (`false`). See [modes](modes.md#space-mode).

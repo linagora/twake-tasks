@@ -70,3 +70,39 @@ describe('the space integration setting', () => {
     })
   })
 })
+
+describe('the search settings', () => {
+  it('open search to no other audience and no other origin by default', () => {
+    expect(loadConfig(required)).toMatchObject({
+      OIDC_SEARCH_AUDIENCES: [],
+      SEARCH_ALLOWED_ORIGINS: []
+    })
+  })
+
+  it('read comma separated lists', () => {
+    expect(
+      loadConfig({
+        ...required,
+        OIDC_SEARCH_AUDIENCES: ' twakespace, ,other ',
+        SEARCH_ALLOWED_ORIGINS:
+          'https://space.example.com, http://localhost:5173'
+      })
+    ).toMatchObject({
+      OIDC_SEARCH_AUDIENCES: ['twakespace', 'other'],
+      SEARCH_ALLOWED_ORIGINS: [
+        'https://space.example.com',
+        'http://localhost:5173'
+      ]
+    })
+  })
+
+  it.each([
+    ['a path', 'https://space.example.com/'],
+    ['no scheme', 'space.example.com'],
+    ['a wildcard', '*']
+  ])('refuse an origin with %s', (_case, origin) => {
+    expect(() =>
+      loadConfig({ ...required, SEARCH_ALLOWED_ORIGINS: origin })
+    ).toThrow(/SEARCH_ALLOWED_ORIGINS/)
+  })
+})

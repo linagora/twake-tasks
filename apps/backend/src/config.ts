@@ -11,6 +11,27 @@ const spaceIntegration = z.discriminatedUnion('SPACE_INTEGRATION', [
   })
 ])
 
+const commaSeparated = z
+  .string()
+  .default('')
+  .transform(value =>
+    value
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean)
+  )
+
+const origins = commaSeparated.pipe(
+  z.array(
+    z
+      .url({ protocol: /^https?$/ })
+      .refine(
+        url => URL.canParse(url) && new URL(url).origin === url,
+        'must be a bare origin'
+      )
+  )
+)
+
 const configSchema = z
   .object({
     RABBITMQ_URL: z.url({ protocol: /^amqps?$/ }),
@@ -31,6 +52,8 @@ const configSchema = z
     OIDC_AUDIENCE: z.string().min(1).default('twaketasks'),
     OIDC_CLIENT_ID: z.string().min(1).default('twaketasks-backend'),
     OIDC_CLIENT_SECRET: z.string().min(1),
+    OIDC_SEARCH_AUDIENCES: commaSeparated,
+    SEARCH_ALLOWED_ORIGINS: origins,
     SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),
     MAIL_FROM: z.string().min(1).default('Twake Project <tasks@twake.app>'),
     HTTP_HOST: z.string().min(1).default('0.0.0.0'),

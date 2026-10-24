@@ -10,6 +10,7 @@ export function anIdentity(overrides: Partial<Identity> = {}): Identity {
     expiresAt: new Date(Date.now() + 300_000),
     organizationId: 'org-1',
     organizationRole: 'member',
+    searchOnly: false,
     ...overrides
   }
 }
