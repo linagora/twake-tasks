@@ -92,7 +92,8 @@ describe('twakeDrivePicker', () => {
       {
         theme: { type: 'light' },
         multiple: true,
-        sharingLink: { label: 'Insert the links' }
+        sharingLink: { label: 'Insert the links' },
+        downloadLink: false
       },
       ['GET']
     )
