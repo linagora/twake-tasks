@@ -56,11 +56,25 @@ const FREQUENT = [
 const fold = (text: string): string =>
   text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 
+// Newer emoji are missing from the fonts of many systems and show as a box.
+const NEWEST_VERSION = 15.1
+
 export async function fetchEmojis(lang: string): Promise<Emoji[]> {
-  const { default: data } = await LOADERS[resolveLanguage([lang])]()
+  const [{ default: data }, { default: versions }] = await Promise.all([
+    LOADERS[resolveLanguage([lang])](),
+    import('emojibase-data/versions/emoji.json')
+  ])
+  const tooNew = new Set(
+    Object.entries(versions)
+      .filter(([version]) => Number(version) > NEWEST_VERSION)
+      .flatMap(([, hexcodes]) => hexcodes)
+  )
   return data
     .filter(
-      emoji => emoji.group !== undefined && emoji.group !== COMPONENT_GROUP
+      emoji =>
+        emoji.group !== undefined &&
+        emoji.group !== COMPONENT_GROUP &&
+        !tooNew.has(emoji.hexcode)
     )
     .map(emoji => ({
       hexcode: emoji.hexcode,

@@ -45,6 +45,12 @@ describe('emojis', () => {
     expect(emojis.find(emoji => emoji.hexcode === '1F3FB')).toBe(undefined)
   })
 
+  it('leaves out the emoji too new for most fonts', async () => {
+    const emojis = await fetchEmojis('en')
+
+    expect(emojis.find(emoji => emoji.hexcode === '1F6D8')).toBe(undefined)
+  })
+
   it('falls back to English for a language it does not know', async () => {
     const emojis = await fetchEmojis('pt-BR')
 

@@ -19,9 +19,12 @@ import {
   useState,
   type MouseEvent,
   type ReactElement,
-  type ReactNode
+  type ReactNode,
+  type SVGAttributes
 } from 'react'
 import { find } from 'linkifyjs'
+
+import { EmojiPicker, type EmojiPickerOptions } from '@/ds/EmojiPicker'
 
 const SCHEME_OR_PATH = /^(?:[a-z][a-z\d+.-]*:|[/#?])/i
 
@@ -34,7 +37,19 @@ const hrefOf = (typed: string): string =>
     link => link.isLink && link.value === typed
   )?.href ?? (!typed || SCHEME_OR_PATH.test(typed) ? typed : `https://${typed}`)
 
-import { EmojiPicker, type EmojiPickerOptions } from '@/ds/EmojiPicker'
+// twake-icons has no face. The icon stylesheet fills every shape, so the
+// outline is drawn as filled shapes.
+const Smiley = (props: SVGAttributes<SVGSVGElement>): ReactElement => (
+  <svg {...props} viewBox="0 0 16 16">
+    <path
+      fillRule="evenodd"
+      d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm0 1.3a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 0 1 0-10.4Z"
+    />
+    <path d="M4.9 9.2a.65.65 0 0 1 .9.2A2.6 2.6 0 0 0 8 10.6a2.6 2.6 0 0 0 2.2-1.2.65.65 0 1 1 1.1.7A3.9 3.9 0 0 1 8 11.9a3.9 3.9 0 0 1-3.3-1.8.65.65 0 0 1 .2-.9Z" />
+    <circle cx="5.9" cy="6.4" r=".9" />
+    <circle cx="10.1" cy="6.4" r=".9" />
+  </svg>
+)
 
 export interface RichTextLabels {
   toolbar: string
@@ -274,7 +289,7 @@ export function Toolbar({
               setEmojiAnchor(event.currentTarget)
             }}
           >
-            <span aria-hidden>🙂</span>
+            <Icon icon={Smiley} size={16} />
           </Tool>
           <EmojiPicker
             anchor={emojiAnchor}

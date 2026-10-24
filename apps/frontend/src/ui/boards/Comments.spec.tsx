@@ -509,5 +509,19 @@ describe('Comments', () => {
         expect(screen.queryByLabelText('Search emoji')).toBe(null)
       })
     })
+
+    it('inserts the first emoji found on Enter in the search', async () => {
+      const { panel, editor } = await typeInComment('Shipped ')
+
+      fireEvent.click(panel.getByRole('button', { name: 'Emoji' }))
+      const search = await screen.findByLabelText('Search emoji')
+      fireEvent.change(search, { target: { value: 'party popper' } })
+      await screen.findByRole('button', { name: 'party popper' })
+      fireEvent.keyDown(search, { key: 'Enter' })
+
+      await waitFor(() => {
+        expect(editor).toHaveTextContent('Shipped 🎉')
+      })
+    })
   })
 })
