@@ -73,12 +73,14 @@ export function ListSection({
     <Box
       component="section"
       ref={ref}
-      sx={{
+      sx={theme => ({
         mb: 2,
         borderRadius: 1,
         transition: 'background-color 120ms',
-        ...(highlighted && { bgcolor: 'action.selected' })
-      }}
+        ...(highlighted && {
+          bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.08)
+        })
+      })}
     >
       <Typography variant="subtitle1" component="h2" sx={{ mb: 0.5 }}>
         <ButtonBase
@@ -156,7 +158,6 @@ export function ListRow({
         py: 0.5,
         borderBottom: 1,
         borderColor: 'divider',
-        bgcolor: 'background.paper',
         '&:hover, &:focus-within': { bgcolor: 'action.hover' },
         '&:focus-visible': {
           outline: `2px solid ${theme.vars.palette.primary.main}`,
@@ -252,10 +253,20 @@ export function ListDragPreview({
   return (
     <Paper
       elevation={8}
-      className="u-flex u-flex-items-center u-p-half u-maw-5"
-      sx={{ width: 'fit-content', gap: 1, cursor: 'grabbing' }}
+      className="u-flex u-flex-items-center u-p-half"
+      sx={{
+        width: 'fit-content',
+        maxWidth: 'min(16rem, 60vw)',
+        gap: 1,
+        cursor: 'grabbing'
+      }}
     >
-      <Typography variant="caption" color="textSecondary" noWrap>
+      <Typography
+        variant="caption"
+        color="textSecondary"
+        noWrap
+        sx={{ flexShrink: 0 }}
+      >
         {taskKey}
       </Typography>
       <Typography variant="body2" noWrap>
