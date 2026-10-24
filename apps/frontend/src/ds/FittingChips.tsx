@@ -28,7 +28,8 @@ export function FittingChips({
   moreLabel: (hidden: FittingChip[]) => string
 }): ReactElement {
   const ref = useRef<HTMLDivElement>(null)
-  const keys = chips.map(each => each.key).join('\n')
+  // A renamed chip keeps its key but not its width.
+  const keys = chips.map(each => `${each.key}\t${each.name}`).join('\n')
   const [measured, setMeasured] = useState<{
     keys: string
     widths: number[]
