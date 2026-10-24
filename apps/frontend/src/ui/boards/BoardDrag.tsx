@@ -20,6 +20,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { getEventCoordinates } from '@dnd-kit/utilities'
 import {
+  useRef,
   useState,
   type MouseEvent as ReactMouseEvent,
   type ReactElement,
@@ -205,6 +206,7 @@ export function BoardDrag({
   const { t } = useI18n()
   const [drag, setDrag] = useState<Drag | null>(null)
   const [columnDrag, setColumnDrag] = useState<ColumnDrag | null>(null)
+  const justPicked = useRef(false)
   const sectionIds = columns?.ids ?? []
   const sectionSignature = JSON.stringify(sectionIds)
   const order =
@@ -239,19 +241,26 @@ export function BoardDrag({
     count: order.length
   })
   const announcements: Announcements = {
-    onDragStart: ({ active }) =>
-      isColumn(active)
+    onDragStart: ({ active }) => {
+      justPicked.current = true
+      return isColumn(active)
         ? t('drag.columnPicked', { section: section(active.id) })
-        : t('drag.picked', { task: task(active.id) }),
-    onDragOver: ({ active, over }) =>
-      !over
+        : t('drag.picked', { task: task(active.id) })
+    },
+    // dnd-kit reports a first "over" as soon as the item is picked up, before
+    // any move. It would replace "Picked up" in the live region unread.
+    onDragOver: ({ active, over }) => {
+      const first = justPicked.current
+      justPicked.current = false
+      return !over || first
         ? undefined
         : isColumn(active)
           ? t('drag.columnOver', {
               ...position(over.id),
               section: section(active.id)
             })
-          : t('drag.over', { task: task(active.id), place: place(over.id) }),
+          : t('drag.over', { task: task(active.id), place: place(over.id) })
+    },
     onDragEnd: ({ active, over }) =>
       isColumn(active)
         ? over

@@ -223,7 +223,7 @@ test('moves a section from the keyboard, past its own cards', async ({
     .locator('..')
     .focus()
   await page.keyboard.press('Space')
-  await announced('To do is now in position 1 of 3.')
+  await announced('Picked up the section To do.')
   await page.keyboard.press('ArrowRight')
   await announced('To do is now in position 2 of 3.')
   await page.keyboard.press('Space')

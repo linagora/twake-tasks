@@ -34,6 +34,18 @@ function designBoard() {
 
 const column = (name: string) => screen.getByRole('region', { name })
 
+const dragAnnouncement = () =>
+  document.querySelector('[id^="DndLiveRegion"]')?.textContent
+
+const announcedOnPickUp = async (handle: Element | null) => {
+  if (!handle) return undefined
+  fireEvent.keyDown(handle, { key: ' ', code: 'Space' })
+  await act(() => new Promise(resolve => setTimeout(resolve, 50)))
+  const announced = dragAnnouncement()
+  fireEvent.keyDown(handle, { key: 'Escape', code: 'Escape' })
+  return announced
+}
+
 describe('BoardScreen', () => {
   it('shows each section with its tasks', async () => {
     const board = designBoard()
@@ -263,6 +275,27 @@ describe('BoardScreen', () => {
     const handle = heading.parentElement
     expect(handle).toHaveAttribute('aria-roledescription', 'draggable section')
     expect(handle).toHaveAttribute('tabindex', '0')
+  })
+
+  it('announces a card picked up from the keyboard', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const logo = await screen.findByRole('article', { name: 'DES-1 Logo' })
+    expect(await announcedOnPickUp(logo)).toBe('Picked up DES-1 Logo.')
+  })
+
+  it('announces a section picked up from the keyboard', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const heading = await screen.findByRole('heading', {
+      level: 2,
+      name: 'In progress'
+    })
+    expect(await announcedOnPickUp(heading.parentElement)).toBe(
+      'Picked up the section In progress.'
+    )
   })
 
   it('leaves Enter to the menu in a section header', async () => {
