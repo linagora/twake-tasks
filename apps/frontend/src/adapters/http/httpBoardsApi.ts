@@ -90,6 +90,7 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     void (async () => {
       let delay = RETRY_MS
       while (!stop.signal.aborted) {
+        let retryAfterMs = 0
         try {
           const response = await send(
             new Request(new URL(`/api${path}`, baseUrl), {
@@ -99,11 +100,15 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
           if (response.ok && response.body) {
             delay = RETRY_MS
             await readVersions(response.body, onVersion)
+          } else if (response.status === 429) {
+            retryAfterMs = Number(response.headers.get('retry-after')) * 1000
           }
         } catch {
           // Dropped: reconnect below, unless stopped.
         }
-        await new Promise(resolve => setTimeout(resolve, delay))
+        await new Promise(resolve =>
+          setTimeout(resolve, Math.max(delay, retryAfterMs || 0))
+        )
         delay = Math.min(delay * 2, MAX_RETRY_MS)
       }
     })()

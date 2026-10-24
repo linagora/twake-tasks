@@ -147,6 +147,26 @@ describe('httpBoardsApi', () => {
     expect(request?.url).toBe(`${BASE}/api/boards/b1/events`)
   })
 
+  it('waits as long as a refused stream is told to before opening it again', async () => {
+    vi.useFakeTimers()
+    try {
+      const send = vi.fn<Send>(() =>
+        Promise.resolve(
+          new Response(null, { status: 429, headers: { 'retry-after': '20' } })
+        )
+      )
+
+      const stop = httpBoardsApi(BASE, send).watchBoard('b1', vi.fn())
+      await vi.advanceTimersByTimeAsync(19_000)
+      expect(send).toHaveBeenCalledTimes(1)
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(send).toHaveBeenCalledTimes(2)
+      stop()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('previews a transfer by posting the target to the preview route', async () => {
     const preview = { droppedAssignees: [], createdLabels: ['Brand'] }
     const send = backend(200, preview)

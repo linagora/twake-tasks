@@ -1,7 +1,7 @@
 import { pino } from 'pino'
 import postgres from 'postgres'
 import { buildApp } from './app.ts'
-import { loadConfig } from './config.ts'
+import { loadConfig, rateLimits } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
 import { createRelay } from './events/outbox.ts'
 import { parkedRetries, parkIn } from './events/parking.ts'
@@ -41,6 +41,7 @@ import { settingsRoutes } from './modules/settings/events.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
+const limits = rateLimits(config)
 const logger = pino({ level: config.LOG_LEVEL })
 const spaces = config.SPACE_INTEGRATION === 'true'
 
@@ -62,10 +63,12 @@ const server = await buildApp({
   logger,
   proxyHops: config.HTTP_TRUSTED_PROXY_HOPS,
   redis,
+  limits,
   db,
   boardChanges,
   ...(await connectIdentityProvider({
     db,
+    limits,
     oidc: {
       issuer: new URL(config.OIDC_ISSUER),
       clientId: config.OIDC_CLIENT_ID,

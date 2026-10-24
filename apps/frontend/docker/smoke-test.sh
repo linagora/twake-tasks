@@ -19,6 +19,7 @@ docker run -d --name "$NAME" \
   -e SENTRY_FEEDBACK_ENABLED='true' \
   -e DRIVE_PICKER_ENABLED='true' \
   -e SEARCH_MIN_LENGTH='3' \
+  -e NGINX_WORKER_CONNECTIONS='2048' \
   -e CSP_FRAME_ANCESTORS='https://workplace.example.com' \
   -e CSP_IMG_SRC='https://avatars.example.com' \
   -e API_UPSTREAM='http://127.0.0.1:9' \
@@ -49,6 +50,7 @@ done
 
 expect '/healthz answers ok' "$(body "$BASE/healthz")" 'ok'
 expect 'nginx runs as uid 101' "$(docker exec "$NAME" stat -c %u /proc/1)" '101'
+expect 'nginx takes the connections set' "$(docker exec "$NAME" cat /tmp/nginx/events.conf)" 'worker_connections 2048;'
 expect '/ serves index.html' "$(body "$BASE/")" '*<div id="root"*'
 expect 'unknown routes fall back to index.html' "$(body "$BASE/tasks/42")" '*<div id="root"*'
 expect '/api goes to the backend' "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/api/boards")" '502'

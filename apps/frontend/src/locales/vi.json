@@ -4,7 +4,8 @@
     "notFoundHint": "Liên kết có thể bị hỏng, hoặc trang đã được chuyển đi.",
     "crash": "Đã xảy ra lỗi",
     "crashHint": "Màn hình này gặp sự cố. Tải lại trang thường sẽ khắc phục được.",
-    "reload": "Tải lại"
+    "reload": "Tải lại",
+    "tooManyRequests": "Quá nhiều yêu cầu. Vui lòng đợi một lát rồi thử lại."
   },
   "drag": {
     "card": "công việc có thể kéo",

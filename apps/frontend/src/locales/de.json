@@ -4,7 +4,8 @@
     "notFoundHint": "Der Link ist vielleicht fehlerhaft, oder die Seite wurde verschoben.",
     "crash": "Etwas ist schiefgelaufen",
     "crashHint": "Bei dieser Ansicht ist ein Problem aufgetreten. Neu laden hilft meistens.",
-    "reload": "Neu laden"
+    "reload": "Neu laden",
+    "tooManyRequests": "Zu viele Anfragen. Warten Sie einen Moment und versuchen Sie es dann erneut."
   },
   "drag": {
     "card": "verschiebbare Aufgabe",

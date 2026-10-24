@@ -11,6 +11,7 @@ import { useMemo, type ReactElement, type ReactNode } from 'react'
 import { PickersProvider } from '@/ds/Pickers'
 import { I18nProvider } from '@/ui/i18n/I18nProvider'
 import type { SupportedLanguage } from '@/ui/i18n/languages'
+import { TooManyRequests } from '@/ui/shell/TooManyRequests'
 
 export interface AppProvidersProps {
   lang: SupportedLanguage
@@ -37,7 +38,10 @@ export function AppProviders({
         <I18nProvider lang={lang}>
           <PickersProvider lang={lang}>
             <QueryClientProvider client={queryClient}>
-              <AlertProvider>{children}</AlertProvider>
+              <AlertProvider>
+                <TooManyRequests />
+                {children}
+              </AlertProvider>
             </QueryClientProvider>
           </PickersProvider>
         </I18nProvider>

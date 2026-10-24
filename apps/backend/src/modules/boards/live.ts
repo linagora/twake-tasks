@@ -5,7 +5,7 @@ import { z } from 'zod'
 import type { Changes, StreamVersions } from '../../infra/changes.ts'
 import { afterCommit, inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
-import type { RequireIdentity } from '../auth/index.ts'
+import { tooManyRequests, type RequireIdentity } from '../auth/index.ts'
 import { claimInvites, roleOn } from './access.ts'
 import { boards } from './schema.ts'
 
@@ -77,6 +77,9 @@ export async function listenForBoardChanges(
 
 const boardParams = z.object({ boardId: z.uuid() })
 
+// Only a hint: a stream frees its place whenever its tab closes.
+const STREAM_RETRY_AFTER_SECONDS = 30
+
 export function registerLive(
   app: HttpServer,
   deps: {
@@ -84,8 +87,13 @@ export function registerLive(
     requireIdentity: RequireIdentity
     changes: Changes
     streamVersions: StreamVersions
+    // Per user on this replica, where the streams live; 0 turns the cap off.
+    openStreams?: number | undefined
   }
 ) {
+  const maxOpen = deps.openStreams ?? 0
+  const openBy = new Map<string, number>()
+
   app.get(
     '/boards/:boardId/events',
     { preHandler: deps.requireIdentity },
@@ -95,6 +103,17 @@ export function registerLive(
       const params = boardParams.safeParse(request.params)
       if (!params.success) return reply.code(404).send({ error: 'not_found' })
       const { boardId } = params.data
+      const { userId } = identity
+      const open = openBy.get(userId) ?? 0
+      if (maxOpen > 0 && open >= maxOpen) {
+        return tooManyRequests(reply, STREAM_RETRY_AFTER_SECONDS)
+      }
+      openBy.set(userId, open + 1)
+      reply.raw.once('close', () => {
+        const left = (openBy.get(userId) ?? 1) - 1
+        if (left > 0) openBy.set(userId, left)
+        else openBy.delete(userId)
+      })
       const role = await inTenant(deps.db, identity, async tx => {
         await claimInvites(tx)
         return roleOn(tx, identity.userId, boardId)

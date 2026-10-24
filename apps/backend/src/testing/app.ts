@@ -144,7 +144,10 @@ function inMemoryBroker(): Broker & { close(): void } {
 }
 
 export async function startApp(
-  options: { searchAllowedOrigins?: string[] } = {}
+  options: {
+    searchAllowedOrigins?: string[]
+    limits?: Parameters<typeof buildApp>[0]['limits']
+  } = {}
 ) {
   const { sql, db } = createDb(inject('databaseUrl'))
   const broker = inMemoryBroker()
@@ -171,7 +174,8 @@ export async function startApp(
       ),
     searchAllowedOrigins: options.searchAllowedOrigins ?? [],
     searchMinLength: 2,
-    isReady: () => Promise.resolve(true)
+    isReady: () => Promise.resolve(true),
+    limits: options.limits
   })
 
   function tokenOf(user: TestUser, claims: Partial<Identity> = {}) {
@@ -208,6 +212,7 @@ export async function startApp(
     as,
     tokenOf,
     inject: app.inject.bind(app),
+    hasRoute: app.hasRoute.bind(app),
     listen: () => app.listen({ host: '127.0.0.1', port: 0 }),
     close: async () => {
       broker.close()

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { loadConfig } from './config.ts'
+import { loadConfig, rateLimits } from './config.ts'
 
 const required = {
   RABBITMQ_URL: 'amqp://rabbitmq:5672',
@@ -121,10 +121,57 @@ describe('the server settings', () => {
     ['HTTP_TRUSTED_PROXY_HOPS', '-1'],
     ['REDIS_URL', 'http://redis:6379'],
     ['DATABASE_STATEMENT_TIMEOUT_MS', '-1'],
-    ['SEARCH_MIN_LENGTH', '0']
+    ['SEARCH_MIN_LENGTH', '0'],
+    ['RATE_LIMIT_COMMENTS_MAX', '-1'],
+    ['RATE_LIMIT_COMMENTS_MAX', '1.5'],
+    ['RATE_LIMIT_COMMENTS_WINDOW_SECONDS', '0'],
+    ['RATE_LIMIT_OPEN_STREAMS', 'ten']
   ])('refuse %s=%s', (name, value) => {
     expect(() => loadConfig({ ...required, [name]: value })).toThrow(
       new RegExp(name)
     )
+  })
+})
+
+describe('the rate limits', () => {
+  it('default to the starting budgets', () => {
+    const limits = rateLimits(loadConfig(required))
+
+    expect(limits.user).toMatchObject({
+      requests: { max: 600, windowSeconds: 60 },
+      writes: { max: 120, windowSeconds: 60 },
+      comments: { max: 30, windowSeconds: 60 },
+      boardCreates: { max: 20, windowSeconds: 3600 },
+      invites: { max: 30, windowSeconds: 3600 },
+      invitesDaily: { max: 100, windowSeconds: 86_400 },
+      otherAppSearch: { max: 30, windowSeconds: 60 },
+      streamConnects: { max: 30, windowSeconds: 60 }
+    })
+    expect(limits).toMatchObject({
+      openStreams: 10,
+      address: {
+        refusedTokens: { max: 30, windowSeconds: 60 },
+        logoutRefusals: { max: 60, windowSeconds: 60 },
+        tokenChecks: 5
+      },
+      tokenChecks: 50,
+      refusedTokenCache: { seconds: 60, size: 10_000 }
+    })
+  })
+
+  it('read each budget and window, and take 0 to turn a limit off', () => {
+    const limits = rateLimits(
+      loadConfig({
+        ...required,
+        RATE_LIMIT_TASK_CREATES_MAX: '0',
+        RATE_LIMIT_TASK_CREATES_WINDOW_SECONDS: '10',
+        RATE_LIMIT_OPEN_STREAMS: '0',
+        RATE_LIMIT_TOKEN_CHECKS: '200'
+      })
+    )
+
+    expect(limits.user.taskCreates).toEqual({ max: 0, windowSeconds: 10 })
+    expect(limits.openStreams).toBe(0)
+    expect(limits.tokenChecks).toBe(200)
   })
 })

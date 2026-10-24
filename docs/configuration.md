@@ -66,10 +66,40 @@ Server:
 
 Rate limits:
 
-- `REDIS_URL`: a `redis://` or `rediss://` URL. The replicas share their rate limit counters there. Without it, each replica counts in memory. While Redis is unreachable, the limits let every request through and the backend logs a warning.
-- Tokens the SSO refuses count against the caller's address. Past 30 in a minute, that address gets 429 with `Retry-After` until the minute ends, except for tokens already checked. An address also gets 429 while 5 of its tokens are being checked.
-- Logout tokens that `POST /api/auth/backchannel-logout` refuses count the same way, with 60 a minute per address.
-- Each replica checks at most 50 tokens with the SSO at once, and answers 503 past that.
+- `REDIS_URL`: a `redis://` or `rediss://` URL. The replicas share their rate limit counters there. Without it, each replica counts in memory, so a budget then holds per replica. While Redis is unreachable, the limits let every request through and the backend logs a warning.
+- A request past a limit gets 429 with `Retry-After`, in seconds.
+- Every limit takes `0` to turn it off, for example on a large office behind one address.
+
+A budget is two variables: `<NAME>_MAX` requests in a window of `<NAME>_WINDOW_SECONDS`. Each window starts at its first request.
+
+Per user, once the token is checked. A user is counted across all their tokens, tabs and organizations. Each request draws on `RATE_LIMIT_USER_REQUESTS`, and on the budgets of its route:
+
+- `RATE_LIMIT_USER_REQUESTS` (`600` in `60`): every request.
+- `RATE_LIMIT_USER_WRITES` (`120` in `60`): every `POST`, `PUT`, `PATCH` and `DELETE`.
+- `RATE_LIMIT_TASK_CREATES` (`60` in `60`): new tasks and subtasks.
+- `RATE_LIMIT_COMMENTS` (`30` in `60`): new comments.
+- `RATE_LIMIT_REACTIONS` (`60` in `60`): reactions added or removed.
+- `RATE_LIMIT_REMINDERS` (`30` in `60`): new reminders.
+- `RATE_LIMIT_LABEL_EDITS` (`30` in `60`): labels created or changed.
+- `RATE_LIMIT_BOARD_CREATES` (`20` in `3600`): new boards.
+- `RATE_LIMIT_INVITES` (`30` in `3600`) and `RATE_LIMIT_INVITES_DAILY` (`100` in `86400`): invitations sent. The emails also keep their own limit of 20 an hour per inviter.
+- `RATE_LIMIT_SEARCH` (`60` in `60`): `GET /api/search` from Tasks.
+- `RATE_LIMIT_OTHER_APP_SEARCH` (`30` in `60`): `GET /api/search` with a token of `OIDC_SEARCH_AUDIENCES`, in place of `RATE_LIMIT_SEARCH`.
+- `RATE_LIMIT_PEOPLE_SEARCH` (`60` in `60`): people suggested when sharing a board.
+- `RATE_LIMIT_HEAVY_READS` (`120` in `60`): a board, my tasks, the agenda, a saved filter's tasks, a task's history and comments, a board's archive and trash, together.
+- `RATE_LIMIT_STREAM_CONNECTS` (`30` in `60`): live board streams opened.
+- `RATE_LIMIT_OPEN_STREAMS` (`10`): live board streams a user keeps open at once on each replica. Each open tab of a board holds one.
+
+Per address, before a user is known:
+
+- `RATE_LIMIT_REFUSED_TOKENS` (`30` in `60`): tokens the SSO refuses. Past that, the address gets 429 until the window ends, except for tokens already checked.
+- `RATE_LIMIT_TOKEN_CHECKS_PER_ADDRESS` (`5`): tokens of one address being checked at once. Past that, the address gets 429.
+- `RATE_LIMIT_LOGOUT_REFUSALS` (`60` in `60`): logout tokens that `POST /api/auth/backchannel-logout` refuses.
+
+Per replica:
+
+- `RATE_LIMIT_TOKEN_CHECKS` (`50`): tokens checked with the SSO at once. Past that, the backend answers 503.
+- `RATE_LIMIT_REFUSED_TOKEN_CACHE_SECONDS` (`60`) and `RATE_LIMIT_REFUSED_TOKEN_CACHE_SIZE` (`10000`): how long, and how many, refused tokens are remembered, so they are refused again without asking the SSO.
 
 ## Frontend
 
@@ -86,6 +116,7 @@ SSO, all required (the app refuses to start without them):
 Backend:
 
 - `API_UPSTREAM`: the backend's bare origin (`http://backend:8080`), which `/api/` is proxied to. Without it, `/api/` answers 404. nginx ignores the search domains of `resolv.conf`, so in Kubernetes give the service's full name.
+- `NGINX_WORKER_CONNECTIONS` (`4096`): connections each nginx worker holds at once. A live board stream holds two, one from the browser and one to the backend, for as long as its tab stays open. nginx raises its open file limit to twice this.
 
 Security headers. The image builds the Content Security Policy itself, adding the origins of `SSO_BASE_URL` and `SENTRY_DSN`. These add to it:
 
