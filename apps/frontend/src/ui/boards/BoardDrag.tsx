@@ -136,18 +136,24 @@ class CardTouchSensor extends TouchSensor {
 }
 
 // The preview follows the pointer from its corner, as Twake Drive shows a
-// file being moved; a drag from the keyboard keeps it over the task.
+// file being moved; a drag from the keyboard keeps it over the task. Near the
+// right edge of the window, it moves left of the pointer to stay in view.
 const POINTER_GAP = 8
-const atPointer: Modifier = ({
+export const atPointer: Modifier = ({
   activatorEvent,
   draggingNodeRect,
+  windowRect,
   transform
 }) => {
   const start = activatorEvent && getEventCoordinates(activatorEvent)
   if (!start || !draggingNodeRect) return transform
+  const left = Math.min(
+    start.x + transform.x + POINTER_GAP,
+    (windowRect?.width ?? Infinity) - draggingNodeRect.width - POINTER_GAP
+  )
   return {
     ...transform,
-    x: transform.x + start.x - draggingNodeRect.left + POINTER_GAP,
+    x: left - draggingNodeRect.left,
     y: transform.y + start.y - draggingNodeRect.top + POINTER_GAP
   }
 }
@@ -329,10 +335,13 @@ export function BoardDrag({
     >
       {children(key => shown[key] ?? [], order)}
       {/* A preview at the pointer would stretch on its way back to the
-          task, so it just goes when dropped, as in Twake Drive. */}
+          task, so it just goes when dropped, as in Twake Drive. Its box
+          fits the preview, not the task, for atPointer to measure it. */}
       <DragOverlay
         modifiers={previewAtPointer ? [atPointer] : []}
         dropAnimation={previewAtPointer ? null : undefined}
+        // eslint-disable-next-line no-restricted-syntax -- overrides the task's size dnd-kit sets inline
+        style={previewAtPointer ? { width: 'fit-content', height: 'auto' } : {}}
       >
         {drag?.phase === 'dragging'
           ? preview(drag.id)

@@ -15,7 +15,7 @@ import {
   DayCell,
   MonthGrid
 } from '@/ds/Calendar'
-import { ListHeader, ListSection } from '@/ds/ListView'
+import { ListHeader, ListSection, ListView } from '@/ds/ListView'
 import { DropListSection, SortableList } from '@/ds/Sortable'
 import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
 import { LAYOUTS, type Board, type Layout, type Task } from '@/domain/board'
@@ -101,7 +101,7 @@ export function ListLayout({
   }
 
   return (
-    <>
+    <ListView>
       <ListHeader
         columns={[
           t('layout.task'),
@@ -134,7 +134,7 @@ export function ListLayout({
           </DropListSection>
         )
       })}
-    </>
+    </ListView>
   )
 }
 
