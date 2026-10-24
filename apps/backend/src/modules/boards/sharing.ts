@@ -173,10 +173,11 @@ export function createSharingStore(db: Db) {
             target: [projectInvites.projectId, projectInvites.email],
             set: { role }
           })
-        // An e-mail goes out for a new invite or a change of role, within the
-        // limits of mayEmail. The job reads the invite when it runs, so it
-        // tells the role current at delivery.
+        // A new invite or a change of role is news to the board and sends an
+        // e-mail, within the limits of mayEmail. The job reads the invite when
+        // it runs, so it tells the role current at delivery.
         if (existing?.role === role) return
+        await bumpProjects(tx, [project.id])
         // Serialises one inviter's requests, so the ceiling holds in parallel.
         await tx.execute(
           sql`select pg_advisory_xact_lock(hashtextextended(${identity.userId}, 0))`
@@ -278,7 +279,7 @@ export function createSharingStore(db: Db) {
     cancelInvite(identity: Identity, boardId: string, inviteId: string) {
       return writeOrRefuse(db, identity, async tx => {
         const project = await sharingToChange(tx, identity, boardId)
-        await tx
+        const cancelled = await tx
           .delete(projectInvites)
           .where(
             and(
@@ -286,6 +287,8 @@ export function createSharingStore(db: Db) {
               eq(projectInvites.id, inviteId)
             )
           )
+          .returning({ id: projectInvites.id })
+        if (cancelled.length > 0) await bumpProjects(tx, [project.id])
       })
     },
 

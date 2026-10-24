@@ -24,19 +24,29 @@ afterAll(async () => {
   await sql.end()
 })
 
-async function aBoardOf(owner: TestUser, projectId?: string) {
-  return (
-    await api
-      .as(owner)
-      .post('/boards', { name: 'Design', keyPrefix: 'DES', projectId })
-  ).json<{ id: string; project: { id: string }; sections: { id: string }[] }>()
+async function aBoardOf(
+  owner: TestUser,
+  projectId?: string,
+  keyPrefix = 'DES'
+) {
+  const response = await api
+    .as(owner)
+    .post('/boards', { name: keyPrefix, keyPrefix, projectId })
+  expect(response.statusCode).toBe(201)
+  return response.json<{
+    id: string
+    project: { id: string }
+    sections: { id: string }[]
+  }>()
 }
 
 const openBoardStream = (user: TestUser, boardId: string) =>
   openStream(`${baseUrl}/api/boards/${boardId}/events`, api.tokenOf(user))
 
 async function nextVersion(stream: ReturnType<typeof openBoardStream>) {
-  return Number((await stream.messages.next()).value?.id)
+  const { value } = await stream.messages.next()
+  if (!value) throw new Error('the stream ended')
+  return Number(value.id)
 }
 
 describe('live board updates', () => {
@@ -85,7 +95,7 @@ describe('live board updates', () => {
   it('tells every board of the project of a label edit', async () => {
     const alice = aUser()
     const design = await aBoardOf(alice)
-    const ops = await aBoardOf(alice, design.project.id)
+    const ops = await aBoardOf(alice, design.project.id, 'OPS')
     const label = (
       await api.as(alice).post(`/boards/${design.id}/labels`, {
         name: 'Urgent'
@@ -140,6 +150,31 @@ describe('live board updates', () => {
       await nextVersion(stream),
       await nextVersion(stream)
     ]).toEqual([first + 1, first + 2, first + 3])
+    stream.close()
+  })
+
+  it('tells every board of the project of an invite sent, then cancelled', async () => {
+    const alice = aUser()
+    const design = await aBoardOf(alice)
+    const ops = await aBoardOf(alice, design.project.id, 'OPS')
+    const stream = openBoardStream(alice, ops.id)
+    const first = await nextVersion(stream)
+
+    await api.as(alice).post(`/boards/${design.id}/invites`, {
+      email: 'guest@example.com',
+      role: 'editor'
+    })
+    const { invites } = (
+      await api.as(alice).get(`/boards/${design.id}/sharing`)
+    ).json<{ invites: { id: string }[] }>()
+    await api
+      .as(alice)
+      .delete(`/boards/${design.id}/invites/${invites[0]?.id ?? ''}`)
+
+    expect([await nextVersion(stream), await nextVersion(stream)]).toEqual([
+      first + 1,
+      first + 2
+    ])
     stream.close()
   })
 
