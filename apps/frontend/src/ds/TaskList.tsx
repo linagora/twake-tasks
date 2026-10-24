@@ -121,7 +121,7 @@ export function TaskRow({
         '&:hover, &:focus-within': { bgcolor: 'action.hover' },
         '& a': { color: 'text.primary', textDecoration: 'none' },
         '& a::after': { content: '""', position: 'absolute', inset: 0 },
-        '& button': { position: 'relative', zIndex: 1 },
+        '& button, & [title]': { position: 'relative', zIndex: 1 },
         '& a:focus-visible': { outline: 'none' }
       }}
     >
