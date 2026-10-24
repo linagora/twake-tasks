@@ -3,8 +3,6 @@ import type { ComponentProps, ReactElement } from 'react'
 
 import { displayName } from '@/domain/person'
 
-export const PENDING = 'PersonAvatar-pending'
-
 export function PersonAvatar({
   email,
   name = null,
@@ -24,7 +22,7 @@ export function PersonAvatar({
   return (
     <Avatar
       size={size}
-      {...(pending && { className: PENDING })}
+      {...(pending && { className: 'PersonAvatar-pending' })}
       {...(avatar && { src: avatar })}
       color={nameToColor(email) ?? 'sunrise'}
       {...(label

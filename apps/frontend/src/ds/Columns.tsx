@@ -437,8 +437,15 @@ export function AvatarStack({
           letterSpacing: 0
         },
         '& > * + *': { ml: -0.5 },
-        // Someone invited, not a member until they sign in.
-        '& > .PersonAvatar-pending': { opacity: 0.5, filter: 'grayscale(1)' }
+        // Someone invited, not a member until they sign in: an outline, opaque
+        // so the avatar under the overlap does not show through.
+        '& > .PersonAvatar-pending': {
+          bgcolor: 'background.paper',
+          backgroundImage: 'none',
+          color: 'text.primary',
+          borderStyle: 'dashed',
+          borderColor: 'text.secondary'
+        }
       }}
     >
       {children}

@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   List,
+  Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
@@ -50,25 +51,27 @@ export function MemberStack({
       : [])
   ].join(', ')
   return (
-    <StackButton onClick={onClick} aria-haspopup="dialog" aria-label={label}>
-      <AvatarStack size={32}>
-        {people.slice(0, SHOWN).map(person => (
-          <PersonAvatar
-            key={person.userId}
-            email={person.email}
-            name={person.name}
-            avatar={person.avatar}
-            size={32}
-            pending={person.pending}
-          />
-        ))}
-        {hidden > 0 && (
-          <Avatar size={32} aria-hidden>
-            {`+${String(hidden)}`}
-          </Avatar>
-        )}
-      </AvatarStack>
-    </StackButton>
+    <Tooltip title={label}>
+      <StackButton onClick={onClick} aria-haspopup="dialog" aria-label={label}>
+        <AvatarStack size={32}>
+          {people.slice(0, SHOWN).map(person => (
+            <PersonAvatar
+              key={person.userId}
+              email={person.email}
+              name={person.name}
+              avatar={person.avatar}
+              size={32}
+              pending={person.pending}
+            />
+          ))}
+          {hidden > 0 && (
+            <Avatar size={32} aria-hidden>
+              {`+${String(hidden)}`}
+            </Avatar>
+          )}
+        </AvatarStack>
+      </StackButton>
+    </Tooltip>
   )
 }
 
