@@ -556,7 +556,8 @@
     "assignees": {
       "any": "Tous",
       "me": "Moi",
-      "nobody": "Personne"
+      "nobody": "Personne",
+      "someone": "Une personne qui n’est plus sur vos tableaux"
     },
     "dues": {
       "any": "Toutes",

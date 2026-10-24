@@ -556,7 +556,8 @@
     "assignees": {
       "any": "Beliebig",
       "me": "Mich",
-      "nobody": "Niemanden"
+      "nobody": "Niemanden",
+      "someone": "Jemand, der nicht mehr auf Ihren Boards ist"
     },
     "dues": {
       "any": "Beliebig",

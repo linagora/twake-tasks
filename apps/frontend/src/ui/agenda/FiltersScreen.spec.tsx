@@ -178,6 +178,86 @@ describe('FiltersScreen', () => {
     ).toHaveTextContent('All tasks')
   })
 
+  it('filters on other people, found by name', async () => {
+    const bob = {
+      userId: 'bob',
+      email: 'bob.durand@example.com',
+      name: 'Bob Durand'
+    }
+    const chloe = { userId: 'chloe', email: 'chloe@example.com', name: null }
+    const boardsApi = fakeBoardsApi([
+      aBoard({ members: [bob, chloe] }),
+      aBoard({ members: [bob] })
+    ])
+    renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
+    fireEvent.change(await screen.findByLabelText('Name'), {
+      target: { value: 'Team' }
+    })
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Assignee' }))
+    const picker = within(
+      await screen.findByRole('dialog', { name: 'Assignee' })
+    )
+    await waitFor(() => {
+      expect(picker.getAllByRole('menuitemcheckbox')).toHaveLength(4)
+    })
+    const rows = picker.getAllByRole('menuitemcheckbox')
+    expect(rows[0]).toHaveAccessibleName('Me')
+    expect(rows[1]).toHaveAccessibleName('Nobody')
+    expect(rows[2]).toHaveAccessibleName('Bob Durand bob.durand@example.com')
+    expect(rows[3]).toHaveAccessibleName('chloe@example.com')
+    fireEvent.click(picker.getByRole('menuitemcheckbox', { name: 'Me' }))
+    const search = picker.getByRole('textbox', { name: 'Search people' })
+    fireEvent.change(search, { target: { value: 'bo' } })
+    fireEvent.keyDown(search, { key: 'Enter' })
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(
+      screen.getByRole('combobox', { name: 'Assignee' })
+    ).toHaveTextContent('Me or Bob Durand')
+    fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
+
+    expect(
+      await screen.findByRole('listitem', { name: 'Team' })
+    ).toHaveTextContent('Assignee: Me or Bob Durand')
+    expect(boardsApi.createFilter).toHaveBeenCalledWith({
+      name: 'Team',
+      criteria: { assignee: ['me', 'bob'] }
+    })
+  })
+
+  it('names someone no longer on my boards, who can still be unpicked', async () => {
+    const boardsApi = fakeBoardsApi()
+    await boardsApi.createFilter({
+      name: 'Gone',
+      criteria: { assignee: ['nobody', 'zoe'] }
+    })
+    renderRoute('/filters', { boardsApi })
+
+    expect(
+      await screen.findByRole('listitem', { name: 'Gone' })
+    ).toHaveTextContent('Assignee: Nobody or Someone no longer on your boards')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Gone' }))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Assignee' }))
+    fireEvent.click(
+      await screen.findByRole('menuitemcheckbox', {
+        name: 'Someone no longer on your boards'
+      })
+    )
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
+
+    await waitFor(() => {
+      expect(boardsApi.updateFilter).toHaveBeenCalledWith(expect.any(String), {
+        name: 'Gone',
+        criteria: { assignee: ['nobody'] }
+      })
+    })
+  })
+
   it('pins a filter to the sidebar, and unpins it, keeping the focus on the star', async () => {
     const boardsApi = boards()
     const { id } = await boardsApi.createFilter({

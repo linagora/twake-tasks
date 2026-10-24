@@ -556,7 +556,8 @@
     "assignees": {
       "any": "Bất kỳ",
       "me": "Tôi",
-      "nobody": "Không ai"
+      "nobody": "Không ai",
+      "someone": "Người không còn trong bảng của bạn"
     },
     "dues": {
       "any": "Bất kỳ",

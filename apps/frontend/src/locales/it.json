@@ -556,7 +556,8 @@
     "assignees": {
       "any": "Qualsiasi",
       "me": "Io",
-      "nobody": "Nessuno"
+      "nobody": "Nessuno",
+      "someone": "Qualcuno che non è più nelle tue bacheche"
     },
     "dues": {
       "any": "Qualsiasi",

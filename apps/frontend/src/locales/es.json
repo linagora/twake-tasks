@@ -556,7 +556,8 @@
     "assignees": {
       "any": "Cualquiera",
       "me": "Mí",
-      "nobody": "Nadie"
+      "nobody": "Nadie",
+      "someone": "Alguien que ya no está en tus tableros"
     },
     "dues": {
       "any": "Cualquiera",

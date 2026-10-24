@@ -155,7 +155,8 @@ export interface Agenda {
 
 // Each criterion matches any of its values; a task must match every criterion.
 export interface FilterCriteria {
-  assignee?: ('me' | 'nobody')[]
+  /** `me`, `nobody`, or a user id. */
+  assignee?: string[]
   priority?: number[]
   label?: string[]
   due?: ('overdue' | 'today' | 'week' | 'none')[]
@@ -253,6 +254,8 @@ export interface BoardsApi {
   setFilterFavorite: (filterId: string, favorite: boolean) => Promise<void>
   /** The label names on the person's boards, one per spelling regardless of case. */
   labelNames: () => Promise<string[]>
+  /** The other members of the person's boards, once each. */
+  people: () => Promise<Person[]>
   /** Open tasks matching a saved filter, across the person's boards. */
   filteredTasks: (filterId: string, zone: string) => Promise<AgendaTask[]>
   /** Overdue tasks, then those due within `days` days of today in `zone`. */

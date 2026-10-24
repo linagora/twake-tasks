@@ -99,9 +99,9 @@ const newFilter = z.object({
   name: z.string().trim().min(1).max(100),
   criteria: z.strictObject({
     assignee: z
-      .array(z.enum(['me', 'nobody']))
+      .array(z.union([z.enum(['me', 'nobody']), z.uuid()]))
       .min(1)
-      .max(2)
+      .max(50)
       .optional(),
     priority: z.array(z.int().min(1).max(4)).min(1).max(4).optional(),
     label: z.array(z.string().trim().min(1).max(50)).min(1).max(50).optional(),
@@ -592,6 +592,18 @@ export function registerBoards(
       const result = await filterStore.labelNames(identity)
       if (!result.ok) return refuse(reply, result.error)
       return { labels: result.value }
+    }
+  )
+
+  app.get(
+    '/people',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await filterStore.people(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return { people: result.value }
     }
   )
 
