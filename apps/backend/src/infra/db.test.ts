@@ -19,6 +19,7 @@ import {
   createDb,
   inTenant,
   isTransient,
+  liftStatementTimeout,
   migrateDb
 } from './db.ts'
 
@@ -383,6 +384,46 @@ describe('afterCommit', () => {
 
     expect(ran).toEqual(['next'])
     expect(log.error).toHaveBeenCalledOnce()
+  })
+})
+
+describe('the statement timeout of a pool', () => {
+  const bounded = createDb(inject('databaseUrl'), console, {
+    statementTimeoutMs: 200
+  })
+  const codeOf = (work: Promise<unknown>) =>
+    work.then(
+      () => 'done',
+      (error: unknown) =>
+        isTransient(error) ? 'transient' : `other: ${String(error)}`
+    )
+
+  afterAll(async () => {
+    await bounded.sql.end()
+  })
+
+  it('cancels a statement that runs too long', async () => {
+    expect(
+      await codeOf(bounded.db.execute(statement`select pg_sleep(1)`))
+    ).toBe('transient')
+  })
+
+  it('can be lifted for one transaction, then holds again', async () => {
+    await expect(
+      bounded.db.transaction(async tx => {
+        await liftStatementTimeout(tx)
+        return (await tx.execute(statement`select pg_sleep(0.5)`)).length
+      })
+    ).resolves.toBe(1)
+    expect(
+      await codeOf(bounded.db.execute(statement`select pg_sleep(1)`))
+    ).toBe('transient')
+  })
+
+  it('is off unless asked for, as migrations need', async () => {
+    expect(await codeOf(db.execute(statement`select pg_sleep(0.5)`))).toBe(
+      'done'
+    )
   })
 })
 

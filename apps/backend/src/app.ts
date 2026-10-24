@@ -21,6 +21,7 @@ export async function buildApp(deps: {
   provider: IdentityProvider
   authenticate: Authenticate
   searchAllowedOrigins: readonly string[]
+  searchMinLength: number
   isReady: () => Promise<boolean>
   proxyHops?: number | undefined
   redis?: Redis | undefined
@@ -43,7 +44,8 @@ export async function buildApp(deps: {
       registerBoards(api, {
         db: deps.db,
         requireIdentity,
-        searchAllowedOrigins: deps.searchAllowedOrigins
+        searchAllowedOrigins: deps.searchAllowedOrigins,
+        searchMinLength: deps.searchMinLength
       })
       registerLive(api, {
         db: deps.db,

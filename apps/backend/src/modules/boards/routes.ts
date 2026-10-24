@@ -88,8 +88,6 @@ const peopleQuery = z.object({ q: z.string().trim().min(2).max(254) })
 
 const memberParams = boardParams.extend({ userId: z.uuid() })
 
-const searchQuery = z.object({ q: z.string().trim().min(1).max(200) })
-
 const agendaQuery = z.object({
   zone: z.string().max(64).refine(isTimeZone),
   days: z.coerce.number().int().min(1).max(60)
@@ -290,8 +288,12 @@ export function registerBoards(
     db: Db
     requireIdentity: RequireIdentity
     searchAllowedOrigins: readonly string[]
+    searchMinLength: number
   }
 ) {
+  const searchQuery = z.object({
+    q: z.string().trim().min(deps.searchMinLength).max(200)
+  })
   const store = createBoardStore(deps.db)
   const taskStore = createTaskStore(deps.db)
   const sectionStore = createSectionStore(deps.db)

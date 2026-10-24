@@ -48,10 +48,22 @@ export function tenantPolicy(
   })
 }
 
-function connect(url: string, max?: number) {
+// No idle_in_transaction_session_timeout: postgres.js 3.4.9 rejects the
+// transaction of a session the server ends, but a query its body sends next
+// writes to the closed socket and throws outside any promise, which ends the
+// process.
+interface PoolOptions {
+  poolMax?: number
+  statementTimeoutMs?: number
+}
+
+function connect(url: string, options: PoolOptions) {
   const client = postgres(url, {
     onnotice: () => undefined,
-    ...(max !== undefined && { max })
+    ...(options.poolMax !== undefined && { max: options.poolMax }),
+    ...(options.statementTimeoutMs !== undefined && {
+      connection: { statement_timeout: options.statementTimeoutMs }
+    })
   })
   return { sql: client, db: drizzle({ client }) }
 }
@@ -102,11 +114,17 @@ function runHooksOnCommit(
 export function createDb(
   url: string,
   log: HookLog = console,
-  options: { poolMax?: number } = {}
+  options: PoolOptions = {}
 ) {
-  const { sql, db } = connect(url, options.poolMax)
+  const { sql, db } = connect(url, options)
   runHooksOnCommit(db, log)
   return { sql, db }
+}
+
+// The pool's statement timeout bounds requests. Background work, such as a
+// purge or a space event, may legitimately run longer.
+export async function liftStatementTimeout(tx: Tx): Promise<void> {
+  await tx.execute(sql`select set_config('statement_timeout', '0', true)`)
 }
 
 /** Runs `hook` once the transaction commits, and never if it rolls back. */

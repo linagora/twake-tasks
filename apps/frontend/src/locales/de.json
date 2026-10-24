@@ -500,7 +500,8 @@
     "results": "Ergebnisse für „%{text}“",
     "empty": "Keine passenden Aufgaben",
     "emptyHint": "Versuchen Sie ein anderes Wort, oder prüfen Sie die Schreibweise.",
-    "failed": "Die Suche ist fehlgeschlagen."
+    "failed": "Die Suche ist fehlgeschlagen.",
+    "tooShort": "Geben Sie mindestens %{count} Zeichen ein, um zu suchen."
   },
   "notifications": {
     "title": "Benachrichtigungen",

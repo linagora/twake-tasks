@@ -500,7 +500,8 @@
     "results": "Risultati per «%{text}»",
     "empty": "Nessuna attività corrispondente",
     "emptyHint": "Prova un’altra parola o controlla l’ortografia.",
-    "failed": "Impossibile eseguire la ricerca."
+    "failed": "Impossibile eseguire la ricerca.",
+    "tooShort": "Digita almeno %{count} caratteri per cercare."
   },
   "notifications": {
     "title": "Notifiche",

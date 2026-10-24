@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { eq } from 'drizzle-orm'
+import { eq, sql as statement } from 'drizzle-orm'
 import { pino } from 'pino'
 import { afterAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../infra/db.ts'
@@ -92,6 +92,33 @@ describe('scheduler', () => {
     expect(await db.select().from(jobs).where(eq(jobs.kind, marker))).toEqual(
       []
     )
+  })
+
+  it('gives a job all the time it needs, past the timeout of requests', async () => {
+    const bounded = createDb(inject('databaseUrl'), logger, {
+      statementTimeoutMs: 100
+    })
+    const kind = aKind()
+    const scheduler = createScheduler({
+      db: bounded.db,
+      logger,
+      handlers: {
+        [kind]: async (_payload, tx) => {
+          await tx.execute(statement`select pg_sleep(0.3)`)
+          return undefined
+        }
+      }
+    })
+    try {
+      await schedule(db, { kind, payload: null, runAt: past() })
+
+      expect(await scheduler.runDue()).toBe(1)
+      expect(await db.select().from(jobs).where(eq(jobs.kind, kind))).toEqual(
+        []
+      )
+    } finally {
+      await bounded.sql.end()
+    }
   })
 
   it('keeps a job its handler moved to run again', async () => {

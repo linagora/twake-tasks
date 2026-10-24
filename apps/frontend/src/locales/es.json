@@ -500,7 +500,8 @@
     "results": "Resultados para «%{text}»",
     "empty": "Ninguna tarea coincide",
     "emptyHint": "Prueba con otra palabra o revisa la ortografía.",
-    "failed": "No se pudo buscar."
+    "failed": "No se pudo buscar.",
+    "tooShort": "Escribe al menos %{count} caracteres para buscar."
   },
   "notifications": {
     "title": "Notificaciones",

@@ -170,6 +170,7 @@ export async function startApp(
         )
       ),
     searchAllowedOrigins: options.searchAllowedOrigins ?? [],
+    searchMinLength: 2,
     isReady: () => Promise.resolve(true)
   })
 

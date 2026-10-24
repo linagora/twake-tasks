@@ -6,7 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { SearchBar } from '@/ds/SearchBar'
 import { Group } from '@/ui/agenda/AgendaScreen'
-import { useSearch } from '@/ui/boards/queries'
+import { SEARCH_MIN_LENGTH, useSearch } from '@/ui/boards/queries'
 import { OriginContext, PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -74,7 +74,12 @@ export function SearchScreen(): ReactElement {
         {results.isError && (
           <Typography role="alert">{t('search.failed')}</Typography>
         )}
-        {text !== '' && results.isPending && (
+        {text !== '' && text.length < SEARCH_MIN_LENGTH && (
+          <Typography>
+            {t('search.tooShort', { count: SEARCH_MIN_LENGTH })}
+          </Typography>
+        )}
+        {text.length >= SEARCH_MIN_LENGTH && results.isPending && (
           <ListSkeleton label={t('app.loading')} />
         )}
         {results.data?.length === 0 && (

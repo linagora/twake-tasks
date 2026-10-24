@@ -1,6 +1,6 @@
 import { and, asc, eq, inArray, lte, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
-import type { Db, Tx } from '../infra/db.ts'
+import { liftStatementTimeout, type Db, type Tx } from '../infra/db.ts'
 import { jobs } from './schema.ts'
 
 /** Resolves to "keep" when the handler moved its job to run again. */
@@ -51,6 +51,7 @@ export function createScheduler(deps: {
 
   const runOne = () =>
     deps.db.transaction(async tx => {
+      await liftStatementTimeout(tx)
       const [job] = await tx
         .select()
         .from(jobs)

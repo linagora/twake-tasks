@@ -63,6 +63,27 @@ describe('the server', () => {
     ).toEqual(['Failed query: select title from tasks'])
   })
 
+  it('answers a query cut off by a timeout as unavailable, and logs it', async () => {
+    const lines: LogLine[] = []
+    const app = serverLoggingTo(lines)
+    app.get('/slow', () => {
+      throw new Error('Failed query: select title from tasks', {
+        cause: Object.assign(
+          new Error('canceling statement due to statement timeout'),
+          { name: 'PostgresError', code: '57014' }
+        )
+      })
+    })
+
+    const response = await app.inject('/slow')
+
+    expect(response.statusCode).toBe(503)
+    expect(response.json()).toEqual({ error: 'unavailable' })
+    expect(
+      lines.filter(line => line.level >= 50).map(line => line.msg)
+    ).toEqual(['Failed query: select title from tasks'])
+  })
+
   it('still says what is wrong with a request it cannot read', async () => {
     const app = serverLoggingTo([])
     app.post('/echo', request => request.body)
