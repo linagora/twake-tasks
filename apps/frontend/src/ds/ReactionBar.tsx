@@ -1,8 +1,6 @@
-import { Dots, Icon } from '@linagora/twake-icons'
 import {
   Box,
   Chip,
-  IconButton,
   List,
   ListItem,
   Popover,
@@ -15,8 +13,6 @@ export interface ReactionChip {
   emoji: string
   count: number
   mine: boolean
-  /** Who reacted, by name, for the chip's accessible name. */
-  people: string
   /** Who reacted, each with an avatar, shown on hover and in the list. */
   who: ReactionPerson[]
   /** The chip's accessible name. */
@@ -133,24 +129,21 @@ export function ReactionBar({
         </Tooltip>
       ))}
       {hidden > 0 && (
-        <Typography variant="caption" color="textSecondary">
-          {labels.hidden(hidden)}
-        </Typography>
+        <Tooltip title={labels.who}>
+          <Chip
+            size="small"
+            variant="outlined"
+            sx={{ bgcolor: 'background.paper', color: 'text.secondary' }}
+            label={labels.hidden(hidden)}
+            aria-label={labels.who}
+            aria-haspopup="true"
+            aria-expanded={whoAnchor !== null}
+            onClick={event => {
+              setWhoAnchor(event.currentTarget)
+            }}
+          />
+        </Tooltip>
       )}
-      <Tooltip title={labels.who}>
-        <IconButton
-          size="small"
-          aria-label={labels.who}
-          aria-haspopup="true"
-          aria-expanded={whoAnchor !== null}
-          onClick={event => {
-            setWhoAnchor(event.currentTarget)
-          }}
-          sx={{ width: 24, height: 24 }}
-        >
-          <Icon icon={Dots} size={14} />
-        </IconButton>
-      </Tooltip>
       <Popover
         open={whoAnchor !== null}
         anchorEl={whoAnchor}

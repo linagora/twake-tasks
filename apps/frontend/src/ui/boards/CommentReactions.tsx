@@ -35,7 +35,6 @@ export function CommentReactions({
           emoji: reaction.emoji,
           count: reaction.people.length,
           mine: reaction.people.some(person => isSamePerson(person, me)),
-          people,
           who: reaction.people.map(person => ({
             key: person.email,
             name: displayName(person),

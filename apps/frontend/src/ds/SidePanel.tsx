@@ -562,7 +562,7 @@ export function FeedItem({
 }: {
   avatar: ReactNode
   label?: string
-  /** Shown next to the item's text while it is hovered or focused, as in Twake Chat. */
+  /** Shown at the item's end while it is hovered or focused. */
   actions?: ReactNode
   children: ReactNode
 }): ReactElement {
@@ -583,39 +583,20 @@ export function FeedItem({
       }}
     >
       <Box sx={{ pt: 0.25 }}>{avatar}</Box>
-      <Box
-        sx={{
-          minWidth: 0,
-          flex: 1,
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 0.5
-        }}
-      >
-        {/* As wide as its text, so the actions stay next to a short one. */}
+      <Box sx={{ minWidth: 0, flex: 1, '& p': { my: 0.5 } }}>{children}</Box>
+      {actions && (
         <Box
-          sx={{
-            minWidth: 0,
-            flex: actions ? '0 1 auto' : 1,
-            '& p': { my: 0.5 }
-          }}
+          className="feed-actions"
+          sx={theme => ({
+            flex: 'none',
+            display: 'flex',
+            mt: -0.5,
+            transition: theme.transitions.create('opacity')
+          })}
         >
-          {children}
+          {actions}
         </Box>
-        {actions && (
-          <Box
-            className="feed-actions"
-            sx={theme => ({
-              flex: 'none',
-              display: 'flex',
-              mt: -0.5,
-              transition: theme.transitions.create('opacity')
-            })}
-          >
-            {actions}
-          </Box>
-        )}
-      </Box>
+      )}
     </Box>
   )
 }
