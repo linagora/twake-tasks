@@ -175,6 +175,7 @@ export function ListRow({
         sx={{
           display: { xs: 'flex', md: 'contents' },
           gridColumn: { xs: '2 / -1', md: 'auto' },
+          minHeight: { xs: 24, md: 'auto' },
           alignItems: 'center',
           gap: 1,
           '&:empty': { display: 'none' },

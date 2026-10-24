@@ -39,7 +39,7 @@ export function FittingChips({
   const ready = measured?.keys === keys
 
   // Every chip and a “+n” chip are laid out once, unseen, to learn their
-  // widths; the row then keeps those that fit as it is resized.
+  // widths.
   useLayoutEffect(() => {
     const row = ref.current
     if (ready || !row) return
@@ -56,13 +56,9 @@ export function FittingChips({
   // web font arrives.
   useEffect(() => {
     if (!('fonts' in document) || document.fonts.status === 'loaded') return
-    let live = true
     void document.fonts.ready.then(() => {
-      if (live) setMeasured(null)
+      setMeasured(null)
     })
-    return () => {
-      live = false
-    }
   }, [])
 
   useLayoutEffect(() => {
@@ -82,6 +78,12 @@ export function FittingChips({
   const shown = ready ? countFitting(width, measured.widths) : chips.length
   const hidden = chips.slice(shown)
   const hiddenNames = hidden.map(each => each.name).join(', ')
+  const clipped =
+    ready &&
+    width > 0 &&
+    (measured.widths[0] ?? 0) +
+      (hidden.length > 0 ? GAP + (measured.widths.at(-1) ?? 0) : 0) >
+      width
   return (
     <Box
       ref={ref}
@@ -96,10 +98,12 @@ export function FittingChips({
         ...(ready && { '& > :first-of-type': { flexShrink: 1, minWidth: 0 } })
       }}
     >
-      {chips.slice(0, shown).map(each => (
-        <Box key={each.key} component="span" sx={{ display: 'flex' }}>
-          {each.chip}
-        </Box>
+      {chips.slice(0, shown).map((each, index) => (
+        <Tooltip key={each.key} title={index === 0 && clipped ? each.name : ''}>
+          <Box component="span" sx={{ display: 'flex' }}>
+            {each.chip}
+          </Box>
+        </Tooltip>
       ))}
       {!ready && <MoreChip label="" count={chips.length} unseen />}
       {ready && hidden.length > 0 && (
