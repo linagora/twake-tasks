@@ -3,7 +3,13 @@ import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { looksOn, roleOn } from './access.ts'
 import { commentReactions, comments } from './schema.ts'
-import { Refused, refuseIfShelved, taskOf, writeOrRefuse } from './tasks.ts'
+import {
+  bumpBoard,
+  Refused,
+  refuseIfShelved,
+  taskOf,
+  writeOrRefuse
+} from './tasks.ts'
 
 interface Reactor {
   userId: string
@@ -30,6 +36,8 @@ async function openTask(
 ) {
   const task = await visibleTask(tx, identity, boardId, taskId)
   await refuseIfShelved(tx, boardId, task)
+  // The board's viewers reload it, and with it the open comments.
+  await bumpBoard(tx, boardId)
   return task
 }
 
