@@ -213,12 +213,19 @@ test('moves a section from the keyboard, past its own cards', async ({
       .filter({ hasText: /^(To do|In progress|Done)$/ })
       .allTextContents()
 
+  // dnd-kit settles the section a column is over a render after each key,
+  // and a drop lands on the last one settled: wait for each announcement.
+  const announced = (text: string) =>
+    expect(page.getByRole('status').filter({ hasText: text })).toBeAttached()
+
   await page
     .getByRole('heading', { level: 2, name: 'To do', exact: true })
     .locator('..')
     .focus()
   await page.keyboard.press('Space')
+  await announced('To do is now in position 1 of 3.')
   await page.keyboard.press('ArrowRight')
+  await announced('To do is now in position 2 of 3.')
   await page.keyboard.press('Space')
   await expect.poll(headings).toEqual(['In progress', 'To do', 'Done'])
 
