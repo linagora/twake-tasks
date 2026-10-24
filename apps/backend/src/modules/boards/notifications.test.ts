@@ -31,7 +31,9 @@ afterAll(async () => {
 })
 
 async function aTeam(b2c = false) {
-  const alice = b2c ? aB2cUser() : aUser({ email: 'alice@example.com' })
+  const alice = b2c
+    ? aB2cUser()
+    : aUser({ email: 'alice@example.com', name: 'Alice Martin' })
   const bob = b2c
     ? aB2cUser()
     : aUser({ organizationId: alice.organizationId, email: 'bob@example.com' })
@@ -197,6 +199,19 @@ describe('following and notifications', () => {
       expect(mention).toMatchObject({ reason: 'mentioned', change: null })
       expect(mention?.commentExcerpt).toBe(
         `${`Look @carol@example.com ${words}`.slice(0, 120).trimEnd()}…`
+      )
+    })
+
+    it('quotes a mention as the name of the person it mentions, as the comment shows it', async () => {
+      const { alice, bob, path, inbox } = await aTeam()
+
+      await api.as(bob).post(`${path}/comments`, {
+        body: 'Please review @alice@example.com and @carol@example.com'
+      })
+
+      const [mention] = await inbox(alice)
+      expect(mention?.commentExcerpt).toBe(
+        'Please review @Alice Martin and @carol@example.com'
       )
     })
 

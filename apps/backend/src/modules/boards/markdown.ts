@@ -15,6 +15,17 @@ export function mentionedEmails(text: string): Set<string> {
   )
 }
 
+// A mention reads as the person's name, as it does in the app.
+export function withNames(
+  text: string,
+  nameOf: (email: string) => string | null | undefined
+): string {
+  return text.replace(MENTION, (mention, space: string, email: string) => {
+    const name = nameOf(email.toLowerCase())
+    return name ? `${space}@${name}` : mention
+  })
+}
+
 function textOf(node: Nodes): string {
   return CONTAINERS.has(node.type) && 'children' in node
     ? node.children.map(textOf).join('\n')

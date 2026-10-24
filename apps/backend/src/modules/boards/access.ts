@@ -68,6 +68,35 @@ export const memberLooks = {
   avatar: userSettings.avatar
 }
 
+export async function memberNames(
+  tx: Tx,
+  projectIds: string[],
+  emails: string[]
+): Promise<(projectId: string, email: string) => string | null | undefined> {
+  if (emails.length === 0) return () => undefined
+  const members = await tx
+    .select({
+      projectId: projectMembers.projectId,
+      email: projectMembers.email,
+      name: memberLooks.name
+    })
+    .from(projectMembers)
+    .leftJoin(userSettings, settingsOfMember)
+    .where(
+      and(
+        inArray(projectMembers.projectId, projectIds),
+        inArray(sql`lower(${projectMembers.email})`, emails)
+      )
+    )
+  const names = new Map(
+    members.map(member => [
+      `${member.projectId} ${member.email.toLowerCase()}`,
+      member.name
+    ])
+  )
+  return (projectId, email) => names.get(`${projectId} ${email}`)
+}
+
 // The people who can open a board: the members of its project.
 export function membersOf(
   tx: Tx,
