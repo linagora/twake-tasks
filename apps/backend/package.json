@@ -16,11 +16,13 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@fastify/rate-limit": "^11.2.1",
     "@linagora/rabbitmq-client": "^0.7.1",
     "amqplib": "^2.2.0",
     "drizzle-orm": "1.0.0-rc.4",
     "fastify": "^5.12.5",
     "fractional-indexing": "^4.0.0",
+    "ioredis": "^6.0.0",
     "jose": "^6.2.12",
     "mdast-util-from-markdown": "^2.1.0",
     "mdast-util-gfm-task-list-item": "^2.0.0",
