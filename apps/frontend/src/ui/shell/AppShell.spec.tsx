@@ -294,7 +294,7 @@ describe('AppShell', () => {
     const boardsApi = fakeBoardsApi()
     const { id } = await boardsApi.createFilter({
       name: 'Urgent',
-      criteria: { priority: 1 }
+      criteria: { priority: [1] }
     })
     await boardsApi.createFilter({ name: 'Everything', criteria: {} })
     await boardsApi.setFilterFavorite(id, true)

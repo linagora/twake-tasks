@@ -229,7 +229,7 @@ describe.each([
     await boardsOf(gone)
     await api
       .as(gone)
-      .post('/filters', { name: 'Mine', criteria: { priority: 1 } })
+      .post('/filters', { name: 'Mine', criteria: { priority: [1] } })
 
     await deliver(routingKey, body(gone))
 
@@ -346,7 +346,7 @@ describe('a deleted organization', () => {
       .post(`${path}/reminders`, { beforeMinutes: 30, zone: 'Europe/Paris' })
     await api
       .as(filterer)
-      .post('/filters', { name: 'Mine', criteria: { priority: 1 } })
+      .post('/filters', { name: 'Mine', criteria: { priority: [1] } })
   }
 
   it('erases everything the organization holds, and nothing of another', async () => {

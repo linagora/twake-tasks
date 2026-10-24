@@ -71,7 +71,7 @@ describe('saved filters', () => {
 
     const created = await api.as(owner).post('/filters', {
       name: 'Client fires',
-      criteria: { priority: 1, label: 'CLIENT' }
+      criteria: { priority: [1], label: ['CLIENT'] }
     })
     const { id } = created.json<{ id: string }>()
 
@@ -91,18 +91,65 @@ describe('saved filters', () => {
         id: string
       }>().id
 
-    expect(await keysOf(owner, await save({ assignee: 'me' }))).toEqual([
+    expect(await keysOf(owner, await save({ assignee: ['me'] }))).toEqual([
       'DES-1'
     ])
-    expect(await keysOf(owner, await save({ assignee: 'nobody' }))).toEqual([
+    expect(await keysOf(owner, await save({ assignee: ['nobody'] }))).toEqual([
       'DES-2',
       'DES-3'
     ])
-    expect(await keysOf(owner, await save({ due: 'overdue' }))).toEqual([
+    expect(await keysOf(owner, await save({ due: ['overdue'] }))).toEqual([
       'DES-2'
     ])
-    expect(await keysOf(owner, await save({ due: 'today' }))).toEqual(['DES-1'])
-    expect(await keysOf(owner, await save({ due: 'none' }))).toEqual(['DES-3'])
+    expect(await keysOf(owner, await save({ due: ['today'] }))).toEqual([
+      'DES-1'
+    ])
+    expect(await keysOf(owner, await save({ due: ['none'] }))).toEqual([
+      'DES-3'
+    ])
+  })
+
+  it('matches any of several values for one criterion, and all criteria', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    const client = await design.label('client')
+    const internal = await design.label('internal')
+    const mine = await design.add('P1, client', { priority: 1 }, [client])
+    await design.add('P2, internal, today', { priority: 2, dueDate: today }, [
+      internal
+    ])
+    await design.add(
+      'P3, client, late',
+      { priority: 3, dueDate: shift(today, -1, 'days') },
+      [client]
+    )
+    await design.add('P2, unlabeled', { priority: 2 })
+    await design.assign(mine.id, owner)
+    const keys = async (criteria: object) => {
+      const { id } = (
+        await api.as(owner).post('/filters', { name: 'Some', criteria })
+      ).json<{ id: string }>()
+      return keysOf(owner, id)
+    }
+
+    expect(await keys({ priority: [1, 2] })).toEqual([
+      'DES-2',
+      'DES-1',
+      'DES-4'
+    ])
+    expect(await keys({ label: ['Client', 'internal'] })).toEqual([
+      'DES-3',
+      'DES-2',
+      'DES-1'
+    ])
+    expect(await keys({ due: ['overdue', 'today'] })).toEqual([
+      'DES-3',
+      'DES-2'
+    ])
+    expect(await keys({ assignee: ['me', 'nobody'] })).toHaveLength(4)
+    expect(await keys({ priority: [2, 3], label: ['client'] })).toEqual([
+      'DES-3'
+    ])
   })
 
   it('keeps filters to the person who saved them, until deleted', async () => {
@@ -111,14 +158,14 @@ describe('saved filters', () => {
     const { id } = (
       await api
         .as(owner)
-        .post('/filters', { name: 'Urgent', criteria: { priority: 1 } })
+        .post('/filters', { name: 'Urgent', criteria: { priority: [1] } })
     ).json<{ id: string }>()
 
     expect(
       (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
     ).toEqual({
       filters: [
-        { id, name: 'Urgent', criteria: { priority: 1 }, favorite: false }
+        { id, name: 'Urgent', criteria: { priority: [1] }, favorite: false }
       ]
     })
     expect(
@@ -176,12 +223,12 @@ describe('saved filters', () => {
     const { id } = (
       await api
         .as(owner)
-        .post('/filters', { name: 'Clint', criteria: { label: 'client' } })
+        .post('/filters', { name: 'Clint', criteria: { label: ['client'] } })
     ).json<{ id: string }>()
 
     const renamed = await api.as(owner).patch(`/filters/${id}`, {
       name: 'Client fires',
-      criteria: { label: 'client', priority: 1 }
+      criteria: { label: ['client'], priority: [1] }
     })
 
     expect(renamed.statusCode).toBe(204)
@@ -192,7 +239,7 @@ describe('saved filters', () => {
         {
           id,
           name: 'Client fires',
-          criteria: { label: 'client', priority: 1 },
+          criteria: { label: ['client'], priority: [1] },
           favorite: false
         }
       ]
@@ -209,7 +256,7 @@ describe('saved filters', () => {
         {
           id,
           name: 'Clients',
-          criteria: { label: 'client', priority: 1 },
+          criteria: { label: ['client'], priority: [1] },
           favorite: false
         }
       ]
@@ -232,7 +279,7 @@ describe('saved filters', () => {
     const { id } = (
       await api
         .as(owner)
-        .post('/filters', { name: 'Urgent', criteria: { priority: 1 } })
+        .post('/filters', { name: 'Urgent', criteria: { priority: [1] } })
     ).json<{ id: string }>()
     const favorite = async () =>
       (await api.as(owner).get('/filters'))
@@ -259,12 +306,20 @@ describe('saved filters', () => {
     ).toBe(404)
   })
 
-  it('refuses unknown criteria', async () => {
-    const response = await api
-      .as(aUser())
-      .post('/filters', { name: 'Odd', criteria: { colour: 'red' } })
+  it('refuses unknown criteria, and a criterion with no values', async () => {
+    const user = aUser()
+    for (const criteria of [
+      { colour: ['red'] },
+      { priority: [] },
+      { priority: 1 },
+      { due: ['soon'] }
+    ]) {
+      const response = await api
+        .as(user)
+        .post('/filters', { name: 'Odd', criteria })
 
-    expect(response.statusCode).toBe(400)
+      expect(response.statusCode).toBe(400)
+    }
   })
 
   it('lists the label names on my boards to filter by', async () => {

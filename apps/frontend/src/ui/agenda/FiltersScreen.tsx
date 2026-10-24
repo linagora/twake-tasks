@@ -22,6 +22,7 @@ import { Link as RouterLink } from 'react-router'
 import type { FilterCriteria, SavedFilter } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { FormPanel } from '@/ds/FormPanel'
+import { MultiSelect } from '@/ds/MultiSelect'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import { Toast } from '@/ds/Toast'
 import {
@@ -37,38 +38,44 @@ import { PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
-const ASSIGNEES = ['', 'me', 'nobody'] as const
-const PRIORITIES = ['', '1', '2', '3', '4'] as const
-const DUES = ['', 'overdue', 'today', 'week', 'none'] as const
+const ASSIGNEES = ['me', 'nobody'] as const
+const PRIORITIES = ['1', '2', '3', '4'] as const
+const DUES = ['overdue', 'today', 'week', 'none'] as const
 
-// "Any" is an empty value, which MUI would otherwise draw the label over.
-const SELECT_SLOTS = {
-  select: { native: true },
-  inputLabel: { shrink: true }
-} as const
+const anyOf = (lang: string, values: string[]) =>
+  new Intl.ListFormat(lang, { type: 'disjunction' }).format(values)
 
 export function FiltersScreen(): ReactElement {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const filters = useFilters()
   const [form, setForm] = useState<SavedFilter | 'new' | null>(null)
   const [deleted, setDeleted] = useState<SavedFilter | null>(null)
   const unpinDeleted = useUnpinDeletedFilter()
   const shown = filters.data?.filter(filter => filter.id !== deleted?.id)
   useDocumentTitle(t('filters.title'))
-  const summary = (criteria: FilterCriteria) => {
+  const summary = ({ assignee, priority, label, due }: FilterCriteria) => {
     const parts = [
-      criteria.assignee && {
+      assignee && {
         name: t('filters.assignee'),
-        value: t(`filters.assignees.${criteria.assignee}`)
+        value: anyOf(
+          lang,
+          assignee.map(value => t(`filters.assignees.${value}`))
+        )
       },
-      criteria.priority !== undefined && {
+      priority && {
         name: t('filters.priority'),
-        value: t('board.priority', { level: criteria.priority })
+        value: anyOf(
+          lang,
+          priority.map(level => t('board.priority', { level }))
+        )
       },
-      criteria.label && { name: t('filters.label'), value: criteria.label },
-      criteria.due && {
+      label && { name: t('filters.label'), value: anyOf(lang, label) },
+      due && {
         name: t('filters.due'),
-        value: t(`filters.dues.${criteria.due}`)
+        value: anyOf(
+          lang,
+          due.map(value => t(`filters.dues.${value}`))
+        )
       }
     ].flatMap(part => (part ? [t('filters.criterion', part)] : []))
     return parts.length > 0 ? parts.join(' · ') : t('filters.everything')
@@ -259,25 +266,19 @@ export function FilterForm({
   const labelNames = useLabelNames()
   const initial = filter?.criteria ?? {}
   const [name, setName] = useState(filter?.name ?? '')
-  const [assignee, setAssignee] = useState<(typeof ASSIGNEES)[number]>(
-    initial.assignee ?? ''
-  )
-  const [priority, setPriority] = useState<(typeof PRIORITIES)[number]>(
-    String(initial.priority ?? '') as (typeof PRIORITIES)[number]
-  )
-  const [label, setLabel] = useState(initial.label ?? '')
-  const [due, setDue] = useState<(typeof DUES)[number]>(initial.due ?? '')
+  const [assignee, setAssignee] = useState(initial.assignee ?? [])
+  const [priority, setPriority] = useState((initial.priority ?? []).map(String))
+  const [label, setLabel] = useState(initial.label ?? [])
+  const [due, setDue] = useState(initial.due ?? [])
   const save = filter ? update : create
   // A label no board has any more stays choosable, so saving keeps it.
-  const labels = [
-    ...new Set([...(labelNames.data ?? []), ...(label ? [label] : [])])
-  ]
+  const labels = [...new Set([...(labelNames.data ?? []), ...label])]
 
   const criteria: FilterCriteria = {
-    ...(assignee && { assignee }),
-    ...(priority && { priority: Number(priority) }),
-    ...(label && { label }),
-    ...(due && { due })
+    ...(assignee.length > 0 && { assignee }),
+    ...(priority.length > 0 && { priority: priority.map(Number) }),
+    ...(label.length > 0 && { label }),
+    ...(due.length > 0 && { due })
   }
 
   return (
@@ -317,69 +318,61 @@ export function FilterForm({
         }}
         slotProps={{ htmlInput: { maxLength: 100 } }}
       />
-      <TextField
-        select
+      <AnyOf
         label={t('filters.assignee')}
         value={assignee}
-        onChange={event => {
-          setAssignee(event.target.value as typeof assignee)
-        }}
-        slotProps={SELECT_SLOTS}
-      >
-        {ASSIGNEES.map(value => (
-          <option key={value} value={value}>
-            {t(`filters.assignees.${value || 'any'}`)}
-          </option>
-        ))}
-      </TextField>
-      <TextField
-        select
+        onChange={setAssignee}
+        options={ASSIGNEES.map(value => ({
+          value,
+          name: t(`filters.assignees.${value}`)
+        }))}
+      />
+      <AnyOf
         label={t('filters.priority')}
         value={priority}
-        onChange={event => {
-          setPriority(event.target.value as typeof priority)
-        }}
-        slotProps={SELECT_SLOTS}
-      >
-        {PRIORITIES.map(value => (
-          <option key={value} value={value}>
-            {value
-              ? t('board.priority', { level: value })
-              : t('filters.assignees.any')}
-          </option>
-        ))}
-      </TextField>
-      <TextField
-        select
+        onChange={setPriority}
+        options={PRIORITIES.map(value => ({
+          value,
+          name: t('board.priority', { level: value })
+        }))}
+      />
+      <AnyOf
         label={t('filters.label')}
         value={label}
-        onChange={event => {
-          setLabel(event.target.value)
-        }}
-        slotProps={SELECT_SLOTS}
-      >
-        <option value="">{t('filters.assignees.any')}</option>
-        {labels.map(name => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </TextField>
-      <TextField
-        select
+        onChange={setLabel}
+        options={labels.map(value => ({ value, name: value }))}
+      />
+      <AnyOf
         label={t('filters.due')}
         value={due}
-        onChange={event => {
-          setDue(event.target.value as typeof due)
-        }}
-        slotProps={SELECT_SLOTS}
-      >
-        {DUES.map(value => (
-          <option key={value} value={value}>
-            {t(`filters.dues.${value || 'any'}`)}
-          </option>
-        ))}
-      </TextField>
+        onChange={setDue}
+        options={DUES.map(value => ({
+          value,
+          name: t(`filters.dues.${value}`)
+        }))}
+      />
     </FormPanel>
+  )
+}
+
+// Picking nothing matches any value.
+function AnyOf<T extends string>(props: {
+  label: string
+  options: { value: T; name: string }[]
+  value: T[]
+  onChange: (value: T[]) => void
+}): ReactElement {
+  const { t, lang } = useI18n()
+  const { options, value } = props
+  const picked = options.flatMap(option =>
+    value.includes(option.value) ? [option.name] : []
+  )
+  return (
+    <MultiSelect
+      {...props}
+      shown={
+        picked.length > 0 ? anyOf(lang, picked) : t('filters.assignees.any')
+      }
+    />
   )
 }
