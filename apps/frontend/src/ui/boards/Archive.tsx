@@ -183,7 +183,7 @@ export function ShelfScreen({
         steps={[boardStep]}
         current={title}
         heading
-        actions={<ShelfSwitch shelf={shelf} />}
+        actions={shown && <ShelfSwitch shelf={shelf} />}
       />
       {missing && (
         <EmptyState

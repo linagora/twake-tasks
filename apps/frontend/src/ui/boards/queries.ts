@@ -250,11 +250,9 @@ export function useBoards({
   })
 }
 
-// Reloads on a newer version: a change made elsewhere, or one missed while
-// the stream was reconnecting.
 /**
- * The board's name from the list of boards already loaded, read once without
- * watching it: the board opened from that list titles itself before it loads.
+ * The board's name from the list of boards already loaded, without subscribing
+ * to that list: the board opened from it titles itself before it loads.
  */
 export function useListedBoardName(boardId: string): string | null {
   const queryClient = useQueryClient()
@@ -265,6 +263,8 @@ export function useListedBoardName(boardId: string): string | null {
   )
 }
 
+// Reloads on a newer version: a change made elsewhere, or one missed while
+// the stream was reconnecting.
 export function useBoard(boardId: string): UseQueryResult<Board> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
