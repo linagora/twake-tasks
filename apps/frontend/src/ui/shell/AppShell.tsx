@@ -514,8 +514,7 @@ function BoardsNav({
   )
 }
 
-// Filters, then each favorite filter under it, as Boards; the phone bottom
-// bar has no room for any of them.
+// The phone bottom bar has no room for Filters or its favorites.
 function FiltersNav(): ReactElement {
   const { t } = useI18n()
   const { pathname } = useLocation()
