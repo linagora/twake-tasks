@@ -5,7 +5,6 @@ import {
   Calendar,
   CalendarToday,
   Filter,
-  Home,
   Icon,
   Logout,
   Mosaic,
@@ -61,6 +60,7 @@ import {
   WideScreenAction,
   WideScreenNavItem
 } from '@/ds/AppFrame'
+import { HomeIcon } from '@/ds/HomeIcon'
 import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
@@ -472,7 +472,7 @@ function BoardsNav({
         }
       >
         <SidebarLink to="/" active={boardsLit && !(listed && boardLit)}>
-          <NavIcon icon={Home} />
+          <NavIcon icon={HomeIcon} />
           <NavText>{t('boards.title')}</NavText>
         </SidebarLink>
       </BarNavItem>

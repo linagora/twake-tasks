@@ -89,9 +89,63 @@ describe('BoardScreen', () => {
       within(breadcrumb).getByRole('heading', { level: 1, name: 'Design' })
     ).toBeInTheDocument()
     expect(within(breadcrumb).queryByText('…')).toBe(null)
+    const boards = within(breadcrumb).getByRole('link', { name: 'Boards' })
+    expect(boards).toHaveTextContent(/^$/)
+    expect(boards.querySelector('svg')).not.toBe(null)
+  })
+
+  it('starts the breadcrumb of an archived board from the Archives', async () => {
+    const board = { ...designBoard(), archived: true }
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    await screen.findByRole('heading', { level: 1, name: 'Design' })
+    const breadcrumb = screen.getByRole('navigation', {
+      name: 'Where the page is'
+    })
     expect(
-      within(breadcrumb).getByRole('link', { name: 'Boards' })
-    ).toHaveTextContent(/^$/)
+      within(breadcrumb).getByRole('link', { name: 'Archives' })
+    ).toHaveAttribute('href', '/archives')
+    expect(within(breadcrumb).queryByRole('link', { name: 'Boards' })).toBe(
+      null
+    )
+  })
+
+  describe('the name of a board', () => {
+    const name = 'ux-audit-6 Website relaunch, content and design review'
+    const title = async (role: 'admin' | 'viewer') => {
+      const board = { ...designBoard(), name, role }
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+      const heading = await screen.findByRole('heading', { level: 1, name })
+      return within(heading).queryByRole('button') ?? heading
+    }
+
+    it.each(['admin', 'viewer'] as const)(
+      'shows in full on hover when its ellipsis cuts it, for an %s',
+      async role => {
+        const shown = await title(role)
+        Object.defineProperty(shown, 'scrollWidth', { value: 400 })
+        Object.defineProperty(shown, 'clientWidth', { value: 200 })
+
+        fireEvent.mouseOver(shown)
+
+        expect(await screen.findByRole('tooltip')).toHaveTextContent(name)
+      }
+    )
+
+    it('keeps the rename hint of a name that fits', async () => {
+      fireEvent.mouseOver(await title('admin'))
+
+      expect(await screen.findByRole('tooltip')).toHaveTextContent(
+        /^Rename board$/
+      )
+    })
+
+    it('has no tooltip on a name that fits', async () => {
+      fireEvent.mouseOver(await title('viewer'))
+
+      await new Promise(resolve => setTimeout(resolve, 300))
+      expect(screen.queryByRole('tooltip')).toBe(null)
+    })
   })
 
   it('shows a No section column only when a task has no section', async () => {

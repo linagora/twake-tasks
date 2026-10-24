@@ -256,13 +256,13 @@ export function useBoards({
   })
 }
 
-/** The board's name from the boards list already loaded, without subscribing to it. */
-export function useListedBoardName(boardId: string): string | null {
+/** The board from the boards list already loaded, without subscribing to it. */
+export function useListedBoard(boardId: string): BoardSummary | null {
   const queryClient = useQueryClient()
   return (
     queryClient
       .getQueryData<BoardSummary[]>(boardsKey)
-      ?.find(board => board.id === boardId)?.name ?? null
+      ?.find(board => board.id === boardId) ?? null
   )
 }
 

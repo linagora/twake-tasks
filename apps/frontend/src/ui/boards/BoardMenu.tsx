@@ -6,6 +6,7 @@ import {
   Icon,
   Pen,
   Restore,
+  Stack,
   Trash
 } from '@linagora/twake-icons'
 import { Divider, IconButton, Menu } from '@linagora/twake-mui'
@@ -89,7 +90,7 @@ export function BoardMenu({
           item(Check, t('layout.useAsDefault'), () => {
             setLayout.mutate({ layout: board.layout, everyone: true })
           })}
-        {item(Archive, t('archive.archivedTasks'), () => {
+        {item(Stack, t('archive.archivedTasks'), () => {
           onOpenShelf('archived')
         })}
         {item(Trash, t('archive.trash'), () => {

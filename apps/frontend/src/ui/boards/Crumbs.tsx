@@ -1,9 +1,11 @@
-import { Home, Icon, Right, type IconProps } from '@linagora/twake-icons'
+import { Archive, Icon, Right, type IconProps } from '@linagora/twake-icons'
 import { IconButton, Tooltip, Typography } from '@linagora/twake-mui'
 import { createContext, type ReactElement, type ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router'
 
 import { CrumbRow, CrumbSlot, CrumbStep, CrumbTrail } from '@/ds/CrumbBar'
+import { CutTooltip } from '@/ds/CutTooltip'
+import { HomeIcon } from '@/ds/HomeIcon'
 import { PageTitle } from '@/ds/PageHeader'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -27,7 +29,12 @@ export const BoardStepContext = createContext<Crumb | null>(null)
 
 export function useBoardsOrigin(): Origin {
   const { t } = useI18n()
-  return { icon: Home, label: t('boards.title'), to: '/' }
+  return { icon: HomeIcon, label: t('boards.title'), to: '/' }
+}
+
+export function useArchivesOrigin(): Origin {
+  const { t } = useI18n()
+  return { icon: Archive, label: t('boards.archives'), to: '/archives' }
 }
 
 function Page({
@@ -39,16 +46,18 @@ function Page({
 }): ReactElement {
   const Title = heading ? PageTitle : Typography
   return (
-    <Title
-      variant={heading ? 'h3' : 'body2'}
-      component={heading ? 'h1' : 'div'}
-      color="textPrimary"
-      aria-current="page"
-      // Not while renaming, which would cut the field's label.
-      noWrap={heading}
-    >
-      {children}
-    </Title>
+    <CutTooltip>
+      <Title
+        variant={heading ? 'h3' : 'body2'}
+        component={heading ? 'h1' : 'div'}
+        color="textPrimary"
+        aria-current="page"
+        // Not while renaming, which would cut the field's label.
+        noWrap={heading}
+      >
+        {children}
+      </Title>
+    </CutTooltip>
   )
 }
 
@@ -99,18 +108,19 @@ export function Crumbs({
         </Tooltip>
       )}
       {steps.map(step => (
-        <CrumbStep
-          key={step.to}
-          component={RouterLink}
-          to={step.to}
-          relative={step.relative ? 'path' : 'route'}
-          color="inherit"
-          underline="hover"
-          variant={heading ? 'h3' : 'body2'}
-          noWrap
-        >
-          {step.label}
-        </CrumbStep>
+        <CutTooltip key={step.to}>
+          <CrumbStep
+            component={RouterLink}
+            to={step.to}
+            relative={step.relative ? 'path' : 'route'}
+            color="inherit"
+            underline="hover"
+            variant={heading ? 'h3' : 'body2'}
+            noWrap
+          >
+            {step.label}
+          </CrumbStep>
+        </CutTooltip>
       ))}
       {current !== undefined && <Page heading={heading}>{current}</Page>}
     </CrumbTrail>
