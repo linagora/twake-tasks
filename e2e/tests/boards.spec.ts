@@ -128,6 +128,47 @@ test('completes a task from its card with Space, without picking it up', async (
   await expect(check()).toBeChecked()
 })
 
+test('drags a row of the list to another section and it stays there', async ({
+  page
+}) => {
+  await signIn(page, 'alice')
+  const { prefix } = await newBoard(page)
+  await addTask(page, 'Print the posters')
+  await page
+    .getByRole('group', { name: 'Layout' })
+    .getByRole('button', { name: 'List' })
+    .click()
+  const row = page.getByRole('listitem', {
+    name: `${prefix}-1 Print the posters`
+  })
+  const section = (name: string) =>
+    page.locator('section').filter({
+      has: page.getByRole('heading', { name: new RegExp(`^${name}`) })
+    })
+
+  const from = await row.boundingBox()
+  const to = await section('In progress').boundingBox()
+  if (!from || !to) throw new Error('The list is not laid out')
+  // By its title: a press on the checkbox does not pick the row up.
+  await page.mouse.move(from.x + 200, from.y + from.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(from.x + 220, from.y + from.height / 2 + 10, {
+    steps: 4
+  })
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, {
+    steps: 15
+  })
+  await page.mouse.up()
+  await expect(
+    section('In progress').getByRole('listitem')
+  ).toHaveAccessibleName(`${prefix}-1 Print the posters`)
+
+  await page.reload()
+  await expect(
+    section('In progress').getByRole('listitem')
+  ).toHaveAccessibleName(`${prefix}-1 Print the posters`)
+})
+
 test('notifies the person a task is assigned to', async ({ page, browser }) => {
   const bob = await asPerson(browser, 'bob')
   await signIn(page, 'alice')

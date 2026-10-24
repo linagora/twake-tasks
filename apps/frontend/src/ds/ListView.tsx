@@ -1,6 +1,6 @@
 import { Bottom, Icon, Right } from '@linagora/twake-icons'
-import { Box, ButtonBase, Typography } from '@linagora/twake-mui'
-import type { ReactElement, ReactNode } from 'react'
+import { Box, ButtonBase, Paper, Typography } from '@linagora/twake-mui'
+import type { HTMLAttributes, ReactElement, ReactNode, Ref } from 'react'
 
 import { FittingChips, type FittingChip } from '@/ds/FittingChips'
 
@@ -55,6 +55,8 @@ export function ListSection({
   expanded,
   onToggle,
   footer,
+  ref,
+  highlighted = false,
   children
 }: {
   label: string
@@ -62,10 +64,24 @@ export function ListSection({
   expanded: boolean
   onToggle: () => void
   footer?: ReactNode
+  ref?: Ref<HTMLElement>
+  /** A task dragged over it would land in it. */
+  highlighted?: boolean
   children: ReactNode
 }): ReactElement {
   return (
-    <Box component="section" sx={{ mb: 2 }}>
+    <Box
+      component="section"
+      ref={ref}
+      sx={theme => ({
+        mb: 2,
+        borderRadius: 1,
+        transition: 'background-color 120ms',
+        ...(highlighted && {
+          bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.08)
+        })
+      })}
+    >
       <Typography variant="subtitle1" component="h2" sx={{ mb: 0.5 }}>
         <ButtonBase
           aria-expanded={expanded}
@@ -109,8 +125,11 @@ export function ListRow({
   due,
   priority,
   labels,
-  moreLabels
-}: {
+  moreLabels,
+  ref,
+  drag = 'none',
+  ...rest
+}: Omit<HTMLAttributes<HTMLElement>, 'title'> & {
   label: string
   check: ReactNode
   taskKey: string
@@ -121,12 +140,17 @@ export function ListRow({
   priority: ReactNode
   labels: FittingChip[]
   moreLabels: (count: number, names: string) => string
+  ref?: Ref<HTMLElement>
+  /** `placeholder` is the slot a dragged row leaves, faded as in Twake Drive. */
+  drag?: 'none' | 'placeholder'
 }): ReactElement {
   return (
     <Box
+      {...rest}
+      ref={ref}
       component="li"
       aria-label={label}
-      sx={{
+      sx={theme => ({
         ...rowGrid,
         position: 'relative',
         listStyle: 'none',
@@ -135,6 +159,11 @@ export function ListRow({
         borderBottom: 1,
         borderColor: 'divider',
         '&:hover, &:focus-within': { bgcolor: 'action.hover' },
+        '&:focus-visible': {
+          outline: `2px solid ${theme.vars.palette.primary.main}`,
+          outlineOffset: -2
+        },
+        ...(drag === 'placeholder' && { opacity: 0.5 }),
         '& .ListRow-title button': {
           display: 'block',
           maxWidth: '100%',
@@ -150,7 +179,7 @@ export function ListRow({
         },
         '& .ListRow-title button:focus-visible': { outline: 'none' },
         '& .ListRow-check': { position: 'relative', zIndex: 1 }
-      }}
+      })}
     >
       <Box
         className="ListRow-check"
@@ -207,5 +236,42 @@ function Cell({ children }: { children: ReactNode }): ReactElement {
     >
       {children}
     </Box>
+  )
+}
+
+/**
+ * The row under the pointer while it is dragged: its key and title on a
+ * sheet as wide as they are, as Twake Drive shows a file being moved.
+ */
+export function ListDragPreview({
+  taskKey,
+  title
+}: {
+  taskKey: string
+  title: string
+}): ReactElement {
+  return (
+    <Paper
+      elevation={8}
+      className="u-flex u-flex-items-center u-p-half"
+      sx={{
+        width: 'fit-content',
+        maxWidth: 'min(16rem, 60vw)',
+        gap: 1,
+        cursor: 'grabbing'
+      }}
+    >
+      <Typography
+        variant="caption"
+        color="textSecondary"
+        noWrap
+        sx={{ flexShrink: 0 }}
+      >
+        {taskKey}
+      </Typography>
+      <Typography variant="body2" noWrap>
+        {title}
+      </Typography>
+    </Paper>
   )
 }

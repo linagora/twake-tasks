@@ -9,10 +9,12 @@ import {
   useSensors,
   type Active,
   type Announcements,
+  type Modifier,
   type Over,
   type UniqueIdentifier
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import { getEventCoordinates } from '@dnd-kit/utilities'
 import {
   useState,
   type MouseEvent as ReactMouseEvent,
@@ -70,6 +72,23 @@ class CardTouchSensor extends TouchSensor {
   ]
 }
 
+// The preview follows the pointer from its corner, as Twake Drive shows a
+// file being moved; a drag from the keyboard keeps it over the task.
+const POINTER_GAP = 8
+const atPointer: Modifier = ({
+  activatorEvent,
+  draggingNodeRect,
+  transform
+}) => {
+  const start = activatorEvent && getEventCoordinates(activatorEvent)
+  if (!start || !draggingNodeRect) return transform
+  return {
+    ...transform,
+    x: transform.x + start.x - draggingNodeRect.left + POINTER_GAP,
+    y: transform.y + start.y - draggingNodeRect.top + POINTER_GAP
+  }
+}
+
 const below = (active: Active, over: Over): boolean => {
   const top = active.rect.current.translated?.top
   return top !== undefined && top > over.rect.top + over.rect.height / 2
@@ -80,12 +99,15 @@ export function BoardDrag({
   titleOf,
   onMove,
   preview,
+  previewAtPointer = false,
   children
 }: {
   lanes: Lane[]
   titleOf: (taskId: string) => string
   onMove: (taskId: string, move: TaskMove) => void
   preview: (taskId: string) => ReactNode
+  /** The preview is smaller than the task, so it follows the pointer. */
+  previewAtPointer?: boolean
   children: (idsOf: (laneKey: string) => string[]) => ReactNode
 }): ReactElement {
   const { t } = useI18n()
@@ -185,7 +207,12 @@ export function BoardDrag({
       }}
     >
       {children(key => shown[key] ?? [])}
-      <DragOverlay>
+      {/* A preview at the pointer would stretch on its way back to the
+          task, so it just goes when dropped, as in Twake Drive. */}
+      <DragOverlay
+        modifiers={previewAtPointer ? [atPointer] : []}
+        dropAnimation={previewAtPointer ? null : undefined}
+      >
         {drag?.phase === 'dragging' ? preview(drag.id) : null}
       </DragOverlay>
     </DndContext>
