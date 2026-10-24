@@ -18,6 +18,7 @@ export async function buildApp(deps: {
   boardChanges: Changes
   provider: IdentityProvider
   authenticate: Authenticate
+  searchAllowedOrigins: readonly string[]
   isReady: () => Promise<boolean>
 }) {
   const app = createServer({ logger: deps.logger, isReady: deps.isReady })
@@ -30,7 +31,11 @@ export async function buildApp(deps: {
         store: postgresAuthStore(deps.db)
       })
       const streamVersions = versionStreams(api)
-      registerBoards(api, { db: deps.db, requireIdentity })
+      registerBoards(api, {
+        db: deps.db,
+        requireIdentity,
+        searchAllowedOrigins: deps.searchAllowedOrigins
+      })
       registerLive(api, {
         db: deps.db,
         requireIdentity,

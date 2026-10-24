@@ -15,6 +15,8 @@ export interface Identity {
   expiresAt: Date
   organizationId: string | null
   organizationRole: OrganizationRole | null
+  // The token was issued to another app, and is good on search routes alone.
+  searchOnly: boolean
 }
 
 export interface IdentityProvider {
@@ -27,6 +29,7 @@ export interface OidcOptions {
   clientId: string
   clientSecret: string
   audience: string
+  searchAudiences: readonly string[]
 }
 
 const BACKCHANNEL_LOGOUT_EVENT =
@@ -98,8 +101,16 @@ export async function discoverIdentityProvider(
       if (
         !token.active ||
         token.exp === undefined ||
-        token.exp * 1000 <= Date.now() ||
-        !hasAudience(token.aud, options.audience)
+        token.exp * 1000 <= Date.now()
+      ) {
+        return null
+      }
+      const searchOnly = !hasAudience(token.aud, options.audience)
+      if (
+        searchOnly &&
+        !options.searchAudiences.some(audience =>
+          hasAudience(token.aud, audience)
+        )
       ) {
         return null
       }
@@ -117,7 +128,8 @@ export async function discoverIdentityProvider(
         sessionId: claims.sid,
         expiresAt: new Date(token.exp * 1000),
         organizationId: claims.org_id ?? null,
-        organizationRole: claims.org_role ?? null
+        organizationRole: claims.org_role ?? null,
+        searchOnly
       }
     },
 

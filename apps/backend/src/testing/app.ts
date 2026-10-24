@@ -143,7 +143,9 @@ function inMemoryBroker(): Broker & { close(): void } {
   }
 }
 
-export async function startApp() {
+export async function startApp(
+  options: { searchAllowedOrigins?: string[] } = {}
+) {
   const { sql, db } = createDb(inject('databaseUrl'))
   const broker = inMemoryBroker()
   const boardChanges = createChanges()
@@ -167,10 +169,11 @@ export async function startApp() {
           JSON.parse(Buffer.from(token, 'base64url').toString()) as Identity
         )
       ),
+    searchAllowedOrigins: options.searchAllowedOrigins ?? [],
     isReady: () => Promise.resolve(true)
   })
 
-  function tokenOf(user: TestUser) {
+  function tokenOf(user: TestUser, claims: Partial<Identity> = {}) {
     return Buffer.from(
       JSON.stringify({
         subject: user.userId,
@@ -178,7 +181,8 @@ export async function startApp() {
         email: user.email,
         name: user.name ?? null,
         organizationId: user.organizationId,
-        organizationRole: user.organizationId ? 'member' : null
+        organizationRole: user.organizationId ? 'member' : null,
+        ...claims
       })
     ).toString('base64url')
   }
@@ -202,6 +206,7 @@ export async function startApp() {
   return {
     as,
     tokenOf,
+    inject: app.inject.bind(app),
     listen: () => app.listen({ host: '127.0.0.1', port: 0 }),
     close: async () => {
       broker.close()
