@@ -54,7 +54,6 @@ type ColumnDrag =
 
 /** The sections a board admin can reorder, by dragging their header. */
 export interface DraggableColumns {
-  /** The sections in their order. */
   ids: string[]
   nameOf: (sectionId: string) => string
   onMove: (sectionId: string, move: SectionMove) => Promise<unknown>
