@@ -24,8 +24,8 @@ import {
   accessibleBoards,
   claimInvites,
   invitedTo,
+  firstMembersOfProjects,
   membersOf,
-  membersOfProjects,
   roleIn,
   roleOn,
   type Member
@@ -294,12 +294,12 @@ export function createBoardStore(db: Db) {
             sql`${boardFavorites.userId} is null`,
             asc(boards.name)
           )
-        const members = await membersOfProjects(tx, [
+        const members = await firstMembersOfProjects(tx, [
           ...new Set(listed.map(board => board.project.id))
         ])
         return listed.map(board => ({
           ...board,
-          members: members.get(board.project.id) ?? []
+          ...(members.get(board.project.id) ?? { members: [], memberCount: 0 })
         }))
       })
     },

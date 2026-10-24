@@ -133,8 +133,8 @@ describe('BoardsScreen', () => {
     // Three people, then the others counted, as in Twake Drive's list.
     const opsPeople = ops.getByRole('img', { name: '5 members' })
     expect(opsPeople).toHaveTextContent(/\+2$/)
-    fireEvent.mouseOver(within(opsPeople).getByText('+2'))
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Dave, Erin')
+    fireEvent.mouseOver(opsPeople)
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('5 members')
     expect(launch.queryByText('Marketing')).toBeNull()
     expect(launch.getByRole('img', { name: '1 member' })).toBeVisible()
   })

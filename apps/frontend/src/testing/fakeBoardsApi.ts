@@ -133,7 +133,8 @@ function summaryOf(
     openTasks: counted.filter(task => task.completedAt === null).length,
     doneTasks: counted.filter(task => task.completedAt !== null).length,
     totalTasks: counted.length,
-    members: board.members,
+    members: board.members.slice(0, 3),
+    memberCount: board.members.length,
     ...share
   }
 }
