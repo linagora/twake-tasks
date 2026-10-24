@@ -1,4 +1,11 @@
-import { Button, IconButton, Link, Menu, Typography } from '@linagora/twake-mui'
+import {
+  Button,
+  Divider,
+  IconButton,
+  Link,
+  Menu,
+  Typography
+} from '@linagora/twake-mui'
 import {
   CheckList,
   Comment,
@@ -214,9 +221,10 @@ export function TaskCard({
         >
           {t('board.labels')}
         </IconMenuItem>
-        {destinations.map(destination => (
+        {destinations.length > 0 && <Divider />}
+        {destinations.map((destination, index) => (
           <IconMenuItem
-            icon={Moveto}
+            icon={index === 0 ? Moveto : undefined}
             key={destination.id ?? 'none'}
             onClick={choose(() => {
               onMove?.(destination.id)

@@ -12,10 +12,10 @@ import {
 import {
   Dots,
   Icon,
-  Left,
+  Next,
   Pen,
   Plus,
-  Right,
+  Previous,
   Trash
 } from '@linagora/twake-icons'
 import { useId, useState, type ReactElement } from 'react'
@@ -124,7 +124,7 @@ export function SectionMenu({
         </IconMenuItem>
         {previous && (
           <IconMenuItem
-            icon={Left}
+            icon={Previous}
             onClick={choose(() => {
               move.mutate({ beforeId: previous.id })
             })}
@@ -134,7 +134,7 @@ export function SectionMenu({
         )}
         {next && (
           <IconMenuItem
-            icon={Right}
+            icon={Next}
             onClick={choose(() => {
               move.mutate({ afterId: next.id })
             })}
