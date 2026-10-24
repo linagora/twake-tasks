@@ -197,8 +197,8 @@ const reactionParams = taskParams.extend({
 
 const graphemes = new Intl.Segmenter('en', { granularity: 'grapheme' })
 
-// One emoji, possibly a sequence of them joined into one, or a keycap like
-// 1\uFE0F\u20E3: nothing else.
+// One emoji, possibly a sequence of them joined into one, or a keycap such
+// as the digit one in a box: nothing else.
 const reactionEmoji = z
   .string()
   .max(32)

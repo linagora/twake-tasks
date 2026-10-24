@@ -14,7 +14,6 @@ type OnReact = (emoji: string, on: boolean) => void
 const isSamePerson = (a: Person, b: Person): boolean =>
   a.email.toLowerCase() === b.email.toLowerCase()
 
-/** The reactions under a comment. */
 export function CommentReactions({
   reactions,
   me,
@@ -61,7 +60,6 @@ export function CommentReactions({
   )
 }
 
-/** The button that appears over a comment to react to it. */
 export function ReactButton({
   reactions,
   me,
