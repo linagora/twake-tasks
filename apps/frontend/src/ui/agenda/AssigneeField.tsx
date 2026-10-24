@@ -5,7 +5,7 @@ import { useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { Highlight } from '@/ds/Highlight'
 import { PickerEmpty, PickerOption, PickerPopover } from '@/ds/Picker'
 import { displayName } from '@/domain/person'
-import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
+import { matchingPeople, matchScore, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { usePeople } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -14,7 +14,6 @@ import { useSession } from '@/ui/session/SessionGate'
 export const anyOf = (lang: string, values: string[]) =>
   new Intl.ListFormat(lang, { type: 'disjunction' }).format(values)
 
-/** The name of each assignee value: `me`, `nobody` or a user id. */
 export function useAssigneeName(): (value: string) => string {
   const { t } = useI18n()
   const people = usePeople()
@@ -22,8 +21,8 @@ export function useAssigneeName(): (value: string) => string {
     if (value === 'me' || value === 'nobody') {
       return t(`filters.assignees.${value}`)
     }
-    if (!people.data) return '…'
-    const person = people.data.find(each => each.userId === value)
+    if (people.isPending) return '…'
+    const person = people.data?.find(each => each.userId === value)
     return person ? displayName(person) : t('filters.assignees.someone')
   }
 }
@@ -53,13 +52,20 @@ export function AssigneeField({
 
   const query = search.trim()
   const known = people.data ?? []
-  const fixed: { value: string; start: ReactNode; email?: string }[] = [
+  // Me is also found by the person's own name and email.
+  const choices: {
+    value: string
+    start: ReactNode
+    email?: string
+    alias?: string
+  }[] = [
     {
       value: 'me',
-      start: <PersonAvatar email={user.email ?? ''} name={user.name} />
+      start: <PersonAvatar email={user.email ?? ''} name={user.name} />,
+      alias: `${user.name ?? ''} ${user.email ?? ''}`
     },
     { value: 'nobody', start: noOne },
-    ...(people.isSuccess && !query
+    ...(!people.isPending && !query
       ? value
           .filter(
             each =>
@@ -69,13 +75,19 @@ export function AssigneeField({
           )
           .map(each => ({ value: each, start: noOne }))
       : [])
-  ].filter(
+  ]
+  const fixed = choices.filter(
+    // Only a word start: "bo" is Bob, not Nobody.
     option =>
       !query ||
-      nameOf(option.value)
-        .toLowerCase()
-        .split(/\s+/)
-        .some(word => word.startsWith(query.toLowerCase()))
+      matchScore(
+        {
+          userId: option.value,
+          name: `${nameOf(option.value)} ${option.alias ?? ''}`,
+          email: ''
+        },
+        query
+      ) === 3
   )
   const shown = [
     ...fixed,

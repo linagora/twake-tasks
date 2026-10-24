@@ -1,6 +1,7 @@
 import {
   and,
   asc,
+  desc,
   eq,
   exists,
   gte,
@@ -179,7 +180,7 @@ export function createFilterStore(db: Db) {
           )
           .leftJoin(userSettings, settingsOfMember)
           .where(ne(projectMembers.userId, identity.userId))
-          .orderBy(projectMembers.userId)
+          .orderBy(projectMembers.userId, desc(projectMembers.joinedAt))
         return rows.sort((a, b) => a.email.localeCompare(b.email))
       })
     },
