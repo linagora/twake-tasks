@@ -35,8 +35,12 @@ export interface BoardSummary {
   joinedAt: string
   /** Who invited the person: null on their own boards and a space's. */
   sharedBy: { name: string | null; email: string } | null
-  /** The members of its project, who can open it. */
+  /**
+   * The first three members of its project by email, the ones a card draws,
+   * out of `memberCount`. The board itself lists them all.
+   */
   members: Person[]
+  memberCount: number
 }
 
 export interface Section {

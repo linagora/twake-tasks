@@ -2,6 +2,7 @@ import {
   Button,
   IconButton,
   Link,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme
@@ -132,15 +133,19 @@ function BoardItem({
 
 function BoardMembers({ board }: { board: BoardSummary }): ReactElement | null {
   const { t } = useI18n()
-  if (board.members.length === 0) return null
+  if (board.memberCount === 0) return null
+  const label = t('members.count', { smart_count: board.memberCount })
   return (
-    <div
-      role="img"
-      aria-label={t('members.count', { smart_count: board.members.length })}
-      className="u-flex"
-    >
-      <PeopleAvatars members={board.members} size={24} />
-    </div>
+    <Tooltip title={label}>
+      <div role="img" aria-label={label} className="u-flex">
+        <PeopleAvatars
+          members={board.members}
+          total={board.memberCount}
+          size={24}
+          named={false}
+        />
+      </div>
+    </Tooltip>
   )
 }
 

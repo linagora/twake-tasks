@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, lte, sql } from 'drizzle-orm'
 import type { Tx } from '../../infra/db.ts'
 import { userSettings } from '../settings/schema.ts'
 import { boards, projectInvites, projectMembers, projects } from './schema.ts'
@@ -95,28 +95,57 @@ export async function invitedTo(tx: Tx, projectId: string): Promise<string[]> {
   return rows.map(row => row.email)
 }
 
-// The members of each of the projects, in one query for a list of boards.
-export async function membersOfProjects(
+// As many as a board card draws.
+const FIRST_MEMBERS = 3
+
+interface FirstMembers {
+  members: Member[]
+  memberCount: number
+}
+
+// The first members of each of the projects and how many they are, in one
+// query for a list of boards: a project can have hundreds.
+export async function firstMembersOfProjects(
   tx: Tx,
   projectIds: string[]
-): Promise<Map<string, Member[]>> {
-  const byProject = new Map<string, Member[]>()
+): Promise<Map<string, FirstMembers>> {
+  const byProject = new Map<string, FirstMembers>()
   if (projectIds.length === 0) return byProject
-  const rows = await tx
+  const ranked = tx
     .select({
       projectId: projectMembers.projectId,
       userId: projectMembers.userId,
       email: projectMembers.email,
-      ...memberLooks
+      name: memberLooks.name.as('name'),
+      avatar: memberLooks.avatar,
+      rank: sql<number>`row_number() over (
+        partition by ${projectMembers.projectId}
+        order by ${projectMembers.email}
+      )`.as('rank'),
+      memberCount: sql<number>`count(*) over (
+        partition by ${projectMembers.projectId}
+      )::int`.as('member_count')
     })
     .from(projectMembers)
     .leftJoin(userSettings, settingsOfMember)
     .where(inArray(projectMembers.projectId, projectIds))
-    .orderBy(asc(projectMembers.email))
-  for (const { projectId, ...member } of rows) {
-    const members = byProject.get(projectId)
-    if (members) members.push(member)
-    else byProject.set(projectId, [member])
+    .as('ranked')
+  const rows = await tx
+    .select({
+      projectId: ranked.projectId,
+      userId: ranked.userId,
+      email: ranked.email,
+      name: ranked.name,
+      avatar: ranked.avatar,
+      memberCount: ranked.memberCount
+    })
+    .from(ranked)
+    .where(lte(ranked.rank, FIRST_MEMBERS))
+    .orderBy(asc(ranked.rank))
+  for (const { projectId, memberCount, ...member } of rows) {
+    const first = byProject.get(projectId)
+    if (first) first.members.push(member)
+    else byProject.set(projectId, { members: [member], memberCount })
   }
   return byProject
 }

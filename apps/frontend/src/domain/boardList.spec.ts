@@ -36,6 +36,7 @@ function board(
     joinedAt: '2026-01-01T00:00:00Z',
     sharedBy: null,
     members: [],
+    memberCount: 0,
     ...overrides
   }
 }

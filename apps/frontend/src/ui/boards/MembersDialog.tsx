@@ -24,21 +24,26 @@ const MAX_COUNT = 99
 /**
  * The first members of a board side by side, the rest counted. `named` names
  * the rest on the count's hover, unless a tooltip already covers the stack.
+ * `total` is the whole count when `members` holds only the first, as on a
+ * board card.
  */
 export function PeopleAvatars({
   members,
   size,
-  named = true
+  named = true,
+  total = members.length
 }: {
   members: (Person & { pending?: boolean })[]
   size: number
   named?: boolean
+  total?: number
 }): ReactElement {
   const shown = members.slice(0, SHOWN)
   const hidden = members.slice(SHOWN)
+  const rest = total - shown.length
   const count = (
     <Avatar size={size} color="none" border innerBorder aria-hidden>
-      {`+${String(Math.min(hidden.length, MAX_COUNT))}`}
+      {`+${String(Math.min(rest, MAX_COUNT))}`}
     </Avatar>
   )
   return (
@@ -53,7 +58,7 @@ export function PeopleAvatars({
           pending={person.pending === true}
         />
       ))}
-      {hidden.length > 0 &&
+      {rest > 0 &&
         (named ? (
           <Tooltip
             title={hidden.map(person => displayName(person)).join(', ')}
