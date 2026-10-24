@@ -10,6 +10,7 @@ import { NotificationsScreen } from '@/ui/boards/Notifications'
 import {
   EmbedBoardScreen,
   EmbedLayout,
+  EmbedNewTask,
   EmbedProjectScreen
 } from '@/ui/embed/Embed'
 import { AppShell } from '@/ui/shell/AppShell'
@@ -53,6 +54,7 @@ export const routes: RouteObject[] = [
         errorElement: <CrashScreen />,
         children: [
           { index: true, element: <EmbedProjectScreen /> },
+          { path: 'new', element: <EmbedNewTask /> },
           { path: 'boards/:boardId', element: <EmbedBoardScreen /> },
           {
             path: 'boards/:boardId/archived',

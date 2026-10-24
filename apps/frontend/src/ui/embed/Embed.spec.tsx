@@ -232,6 +232,52 @@ describe('the embedded view', () => {
     ).toBeNull()
   })
 
+  it("creates a task from the new path, on the project's first board, and shows it there", async () => {
+    const first = aBoard({ name: 'Roadmap', project: roadmap })
+    const { router } = renderRoute(`/embed/projects/${roadmap.id}/new`, {
+      boardsApi: projectBoardsApi([
+        aBoard({ name: 'Mine' }),
+        aBoard({ name: 'Old roadmap', project: roadmap, archived: true }),
+        first,
+        aBoard({ name: 'Launch', project: roadmap })
+      ])
+    })
+
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a task' })
+    )
+    expect(router.state.location.pathname).toBe(
+      `/embed/projects/${roadmap.id}/boards/${first.id}`
+    )
+    expect(router.state.historyAction).toBe('REPLACE')
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    expect(dialog.getByRole('combobox', { name: 'Board' })).toHaveTextContent(
+      'Roadmap'
+    )
+
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Title' }), {
+      target: { value: 'Ship it' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'See the task' }))
+
+    expect(router.state.location.pathname).toBe(
+      `/embed/projects/${roadmap.id}/boards/${first.id}`
+    )
+    expect(first.tasks).toMatchObject([{ key: 'DES-1', title: 'Ship it' }])
+    expect(router.state.location.search).toBe('?task=DES-1')
+  })
+
+  it('shows the project, with no form, from the new path when it has no board', async () => {
+    const { router } = renderRoute(`/embed/projects/${roadmap.id}/new`, {
+      boardsApi: projectBoardsApi([aBoard({ name: 'Mine' })])
+    })
+
+    expect(await screen.findByText('No boards yet')).toBeVisible()
+    expect(router.state.location.pathname).toBe(`/embed/projects/${roadmap.id}`)
+    expect(screen.queryByRole('dialog')).toBe(null)
+  })
+
   it('links an archived task to its board inside the frame', async () => {
     const board = aBoard({ name: 'Roadmap', project: roadmap })
     const logo = aTask(null, { key: 'DES-1', title: 'Logo' })
