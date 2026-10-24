@@ -1,12 +1,20 @@
 import {
   Button,
+  Divider,
   IconButton,
   Link,
   Menu,
-  MenuItem,
   Typography
 } from '@linagora/twake-mui'
-import { CheckList, Comment, Dots, Icon } from '@linagora/twake-icons'
+import {
+  CheckList,
+  Comment,
+  Dots,
+  Icon,
+  Label as LabelIcon,
+  Moveto,
+  PersonAdd
+} from '@linagora/twake-icons'
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
 
 import {
@@ -17,6 +25,7 @@ import {
   Meta,
   MetaChip
 } from '@/ds/Columns'
+import { IconMenuItem } from '@/ds/IconMenuItem'
 import { SortableCard } from '@/ds/Sortable'
 import type { Label, Person, Section, Task } from '@/domain/board'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
@@ -196,29 +205,33 @@ export function TaskCard({
           setMenuAnchor(null)
         }}
       >
-        <MenuItem
+        <IconMenuItem
+          icon={PersonAdd}
           onClick={choose(() => {
             setAssigning(menuAnchor)
           })}
         >
           {t('board.assign')}
-        </MenuItem>
-        <MenuItem
+        </IconMenuItem>
+        <IconMenuItem
+          icon={LabelIcon}
           onClick={choose(() => {
             setLabeling(menuAnchor)
           })}
         >
           {t('board.labels')}
-        </MenuItem>
-        {destinations.map(destination => (
-          <MenuItem
+        </IconMenuItem>
+        {destinations.length > 0 && <Divider />}
+        {destinations.map((destination, index) => (
+          <IconMenuItem
+            icon={index === 0 ? Moveto : undefined}
             key={destination.id ?? 'none'}
             onClick={choose(() => {
               onMove?.(destination.id)
             })}
           >
             {t('board.moveTo', { section: destination.name })}
-          </MenuItem>
+          </IconMenuItem>
         ))}
       </Menu>
       {assigning && (
