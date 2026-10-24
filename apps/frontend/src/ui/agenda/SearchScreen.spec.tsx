@@ -107,6 +107,16 @@ describe('SearchScreen', () => {
     })
   })
 
+  it('asks for two characters at least, without searching', async () => {
+    const { boardsApi } = boards()
+    renderRoute('/search?q=a', { boardsApi })
+
+    expect(
+      await screen.findByText('Type at least 2 characters to search.')
+    ).toBeVisible()
+    expect(boardsApi.search).not.toHaveBeenCalled()
+  })
+
   it('says when nothing matches', async () => {
     renderRoute('/search?q=zebra', { boardsApi: boards().boardsApi })
 

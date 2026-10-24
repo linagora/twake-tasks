@@ -99,13 +99,24 @@ function runHooksOnCommit(
   }) as Transaction
 }
 
+const requestTimeouts = new WeakMap<Db, number>()
+
+// The statement timeout bounds the work of `inTenant` alone, which serves
+// requests: jobs, events and migrations may legitimately run longer.
+// No idle_in_transaction_session_timeout: postgres.js 3.4.9 rejects the
+// transaction of a session the server ends, but the next query of its body
+// writes to the closed socket and throws outside any promise, which ends the
+// process.
 export function createDb(
   url: string,
   log: HookLog = console,
-  options: { poolMax?: number } = {}
+  options: { poolMax?: number; statementTimeoutMs?: number } = {}
 ) {
   const { sql, db } = connect(url, options.poolMax)
   runHooksOnCommit(db, log)
+  if (options.statementTimeoutMs !== undefined) {
+    requestTimeouts.set(db, options.statementTimeoutMs)
+  }
   return { sql, db }
 }
 
@@ -151,11 +162,16 @@ interface TenantIdentity {
   email: string
 }
 
-export async function asTenant(tx: Tx, identity: TenantIdentity) {
+export async function asTenant(
+  tx: Tx,
+  identity: TenantIdentity,
+  statementTimeoutMs = 0
+) {
   await tx.execute(
     sql`select set_config('app.org_id', ${identity.organizationId ?? ''}, true),
                set_config('app.user_id', ${identity.userId}, true),
-               set_config('app.user_email', ${identity.email}, true)`
+               set_config('app.user_email', ${identity.email}, true),
+               set_config('statement_timeout', ${String(statementTimeoutMs)}, true)`
   )
 }
 
@@ -174,7 +190,7 @@ export function inTenant<T>(
   work: (tx: Tx) => Promise<T>
 ): Promise<T> {
   return db.transaction(async tx => {
-    await asTenant(tx, identity)
+    await asTenant(tx, identity, requestTimeouts.get(db))
     return work(tx)
   })
 }

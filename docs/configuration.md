@@ -17,6 +17,10 @@ SSO:
 - `OIDC_CLIENT_ID` (`twaketasks-backend`): the backend's confidential client.
 - `OIDC_AUDIENCE` (`twaketasks`): the audience access tokens must carry.
 
+Search:
+
+- `SEARCH_MIN_LENGTH` (`2`): the fewest characters `GET /api/search?q=` takes, after trimming. A shorter query gets 400. The frontend sends a search from 2 characters, so a higher value refuses some of its searches.
+
 Search from another app, such as TwakeSpace's Ctrl+K, which calls `GET /api/search?q=` from the browser with the user's own token:
 
 - `OIDC_SEARCH_AUDIENCES` (empty): other audiences, comma separated, whose tokens `GET /api/search` also takes, such as `twakespace`. Every other route still takes `OIDC_AUDIENCE` alone.
@@ -51,7 +55,8 @@ RabbitMQ names, when the broker's differ:
 
 Database:
 
-- `DATABASE_POOL_MAX` (`20`): how many connections each replica keeps at most.
+- `DATABASE_POOL_MAX` (`20`): how many connections each replica keeps at most for requests, events and jobs. Each replica also keeps one more connection, which answers `/health/ready`, so a busy pool never fails the probe.
+- `DATABASE_STATEMENT_TIMEOUT_MS` (`5000`): how long a statement of a request may run before Postgres cancels it. The request then gets 503. Jobs, RabbitMQ events and migrations have no such limit. `0` turns it off.
 
 Server:
 

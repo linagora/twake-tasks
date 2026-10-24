@@ -15,11 +15,13 @@ import { PostgreSqlContainer } from '@testcontainers/postgresql'
 import postgres from 'postgres'
 import {
   afterCommit,
+  asTenant,
   assertRowLevelSecurity,
   createDb,
   inTenant,
   isTransient,
-  migrateDb
+  migrateDb,
+  type Tx
 } from './db.ts'
 
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -383,6 +385,46 @@ describe('afterCommit', () => {
 
     expect(ran).toEqual(['next'])
     expect(log.error).toHaveBeenCalledOnce()
+  })
+})
+
+describe('the statement timeout of requests', () => {
+  const bounded = createDb(inject('databaseUrl'), console, {
+    statementTimeoutMs: 200
+  })
+  const sleep = (seconds: number) => (tx: Tx) =>
+    tx.execute(statement`select pg_sleep(${seconds})`)
+  const codeOf = (work: Promise<unknown>) =>
+    work.then(
+      () => 'done',
+      (error: unknown) =>
+        isTransient(error) ? 'transient' : `other: ${String(error)}`
+    )
+
+  afterAll(async () => {
+    await bounded.sql.end()
+  })
+
+  it('cancels a statement of a request that runs too long', async () => {
+    expect(await codeOf(inTenant(bounded.db, aUser(), sleep(1)))).toBe(
+      'transient'
+    )
+  })
+
+  it('leaves the work of no one unbounded, such as jobs and events', async () => {
+    expect(await codeOf(bounded.db.transaction(sleep(0.5)))).toBe('done')
+    expect(
+      await codeOf(
+        bounded.db.transaction(async tx => {
+          await asTenant(tx, aUser())
+          return sleep(0.5)(tx)
+        })
+      )
+    ).toBe('done')
+  })
+
+  it('is off unless asked for', async () => {
+    expect(await codeOf(inTenant(db, aUser(), sleep(0.5)))).toBe('done')
   })
 })
 

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { aB2cUser, aUser, startApp, type TestUser } from '../../testing/app.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 
@@ -105,15 +105,24 @@ describe('search', () => {
   it('only finds tasks on boards I can see', async () => {
     const owner = aUser()
     const stranger = aUser({ organizationId: owner.organizationId })
+    const consumer = aB2cUser()
+    const otherConsumer = aB2cUser()
     await (await aBoardOf(owner, 'SEC')).add('Secret plan')
+    await (await aBoardOf(consumer, 'DIA')).add('Secret diary')
 
     expect(await search(stranger, 'secret')).toEqual([])
+    expect(await search(otherConsumer, 'secret')).toEqual([])
+    expect(await search(consumer, 'secret')).toEqual(['DIA-1'])
   })
 
-  it('refuses an empty query', async () => {
-    const response = await api.as(aUser()).get('/search?q=%20')
+  it('refuses a query shorter than two characters', async () => {
+    const responses = await Promise.all(
+      ['%20', 'a', '%20a%20'].map(q => api.as(aUser()).get(`/search?q=${q}`))
+    )
 
-    expect(response.statusCode).toBe(400)
+    expect(responses.map(response => response.statusCode)).toEqual([
+      400, 400, 400
+    ])
   })
 })
 

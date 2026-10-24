@@ -170,13 +170,23 @@ export function createBoardStore(db: Db) {
         sql`(${boards.keyPrefix} || '-' || ${tasks.number} ilike ${keyPattern}
           or exists (select 1 from unnest(${tasks.previousKeys}) as key where key ilike ${keyPattern}))`
       return inTenant(db, identity, async tx => {
+        // No index serves ilike under row level security, so the person's
+        // boards are read first: the planner then scans only their tasks,
+        // not every task of the organization.
+        const accessible = accessibleBoards(tx, identity.userId)
+        const boardIds = (
+          await tx.select({ id: accessible.boardId }).from(accessible)
+        ).map(board => board.id)
         const found = await tasksOf(
           tx,
           identity.userId,
-          or(
-            keyMatches(`${pattern}%`),
-            ilike(tasks.title, `%${pattern}%`),
-            ilike(tasks.descriptionText, `%${pattern}%`)
+          and(
+            inArray(tasks.boardId, boardIds),
+            or(
+              keyMatches(`${pattern}%`),
+              ilike(tasks.title, `%${pattern}%`),
+              ilike(tasks.descriptionText, `%${pattern}%`)
+            )
           ),
           SEARCH_LIMIT,
           sql`${keyMatches(pattern)} desc`

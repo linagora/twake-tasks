@@ -11,7 +11,7 @@ Both images listen on port 8080 and run as a non-root user. The frontend runs on
 
 Probes:
 
-- backend: `/health/live`, and `/health/ready`, which answers once the backend has started and while it reaches the database;
+- backend: `/health/live`, and `/health/ready`, which answers once the backend has started and while it reaches the database, over a connection of its own;
 - frontend: `/healthz`.
 
 The backend can run several replicas. RabbitMQ events, the jobs and the outbox relay are shared between them safely (see [architecture](architecture.md#backend)).

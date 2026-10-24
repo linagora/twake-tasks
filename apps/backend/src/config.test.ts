@@ -21,7 +21,9 @@ describe('the RabbitMQ names', () => {
       RABBITMQ_CONCURRENCY: 5,
       RABBITMQ_DEAD_LETTER_EXCHANGE: 'twake-tasks.dlx',
       RABBITMQ_LIVE_EXCHANGE: 'twake-tasks.live',
-      DATABASE_POOL_MAX: 20
+      DATABASE_POOL_MAX: 20,
+      DATABASE_STATEMENT_TIMEOUT_MS: 5000,
+      SEARCH_MIN_LENGTH: 2
     })
   })
 
@@ -117,7 +119,9 @@ describe('the server settings', () => {
 
   it.each([
     ['HTTP_TRUSTED_PROXY_HOPS', '-1'],
-    ['REDIS_URL', 'http://redis:6379']
+    ['REDIS_URL', 'http://redis:6379'],
+    ['DATABASE_STATEMENT_TIMEOUT_MS', '-1'],
+    ['SEARCH_MIN_LENGTH', '0']
   ])('refuse %s=%s', (name, value) => {
     expect(() => loadConfig({ ...required, [name]: value })).toThrow(
       new RegExp(name)

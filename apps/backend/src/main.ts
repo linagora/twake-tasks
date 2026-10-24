@@ -1,4 +1,5 @@
 import { pino } from 'pino'
+import postgres from 'postgres'
 import { buildApp } from './app.ts'
 import { loadConfig } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
@@ -44,10 +45,13 @@ const logger = pino({ level: config.LOG_LEVEL })
 const spaces = config.SPACE_INTEGRATION === 'true'
 
 const { sql, db } = createDb(config.DATABASE_URL, logger, {
-  poolMax: config.DATABASE_POOL_MAX
+  poolMax: config.DATABASE_POOL_MAX,
+  statementTimeoutMs: config.DATABASE_STATEMENT_TIMEOUT_MS
 })
 await assertRowLevelSecurity(sql)
 await migrateDb(db)
+// Readiness must not wait behind the requests that fill the pool.
+const probe = postgres(config.DATABASE_URL, { max: 1 })
 
 let accepting = false
 const boardChanges = createChanges()
@@ -71,7 +75,8 @@ const server = await buildApp({
     }
   })),
   searchAllowedOrigins: config.SEARCH_ALLOWED_ORIGINS,
-  isReady: async () => accepting && (await sql`select 1`).length === 1
+  searchMinLength: config.SEARCH_MIN_LENGTH,
+  isReady: async () => accepting && (await probe`select 1`).length === 1
 })
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })
 
@@ -189,6 +194,7 @@ async function shutdown(signal: string): Promise<void> {
     redis?.disconnect()
     await live.close()
     await sql.end({ timeout: 5 })
+    await probe.end({ timeout: 5 })
   } catch (error) {
     logger.error({ err: error }, 'shutdown failed')
     process.exitCode = 1

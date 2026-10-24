@@ -500,7 +500,8 @@
     "results": "Kết quả cho “%{text}”",
     "empty": "Không có công việc nào khớp",
     "emptyHint": "Thử một từ khác hoặc kiểm tra chính tả.",
-    "failed": "Không thể tìm kiếm."
+    "failed": "Không thể tìm kiếm.",
+    "tooShort": "Nhập ít nhất %{count} ký tự để tìm kiếm."
   },
   "notifications": {
     "title": "Thông báo",

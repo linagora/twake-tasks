@@ -500,7 +500,8 @@
     "results": "Results for “%{text}”",
     "empty": "No tasks match",
     "emptyHint": "Try another word, or check the spelling.",
-    "failed": "Couldn’t search."
+    "failed": "Couldn’t search.",
+    "tooShort": "Type at least %{count} characters to search."
   },
   "notifications": {
     "title": "Notifications",

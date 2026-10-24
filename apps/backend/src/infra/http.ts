@@ -4,6 +4,7 @@ import Fastify, {
   type FastifyError,
   type FastifyInstance
 } from 'fastify'
+import { isTransient } from './db.ts'
 
 export function createServer(deps: {
   logger: FastifyBaseLogger
@@ -29,9 +30,11 @@ export function createServer(deps: {
         ? error.statusCode
         : 500
     if (status < 500) return reply.send(error)
-    reply.code(status)
+    // Such as a query cut off by a timeout while the database is busy.
+    const unavailable = isTransient(error)
+    reply.code(unavailable ? 503 : status)
     reply.log.error({ req: request, res: reply, err: error }, error.message)
-    return reply.send({ error: 'server_error' })
+    return reply.send({ error: unavailable ? 'unavailable' : 'server_error' })
   })
 
   // Postgres text and jsonb cannot hold U+0000: a query would fail with it.
