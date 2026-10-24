@@ -237,6 +237,22 @@ describe('board layouts', () => {
     expect(screen.queryByRole('button', { name: /^Add a task/ })).toBe(null)
   })
 
+  it('offers no row to drag on a read only list', async () => {
+    const board = designBoard({
+      layout: 'list',
+      defaultLayout: 'list',
+      role: 'viewer'
+    })
+    const [todo] = board.sections
+    board.tasks.push(aTask(todo ?? null, { key: 'DES-3', title: 'Icons' }))
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    await screen.findByRole('listitem', { name: 'DES-3 Icons' })
+    for (const row of screen.getAllByRole('listitem')) {
+      expect(row).not.toHaveAttribute('aria-roledescription')
+    }
+  })
+
   it('names the weekdays, marks today and comes back to it', async () => {
     const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
