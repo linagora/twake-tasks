@@ -18,6 +18,7 @@ docker run -d --name "$NAME" \
   -e SENTRY_ENVIRONMENT='smoke' \
   -e SENTRY_FEEDBACK_ENABLED='true' \
   -e DRIVE_PICKER_ENABLED='true' \
+  -e SEARCH_MIN_LENGTH='3' \
   -e CSP_FRAME_ANCESTORS='https://workplace.example.com' \
   -e CSP_IMG_SRC='https://avatars.example.com' \
   -e API_UPSTREAM='http://127.0.0.1:9' \
@@ -56,6 +57,7 @@ expect '/.env.js comes from the environment' "$(body "$BASE/.env.js")" '*var SSO
 expect '/.env.js carries the Sentry DSN' "$(body "$BASE/.env.js")" '*var SENTRY_DSN = "https://public-key@errors.example.com/42"*'
 expect '/.env.js carries the feedback switch' "$(body "$BASE/.env.js")" '*var SENTRY_FEEDBACK_ENABLED = "true"*'
 expect '/.env.js carries the Drive picker switch' "$(body "$BASE/.env.js")" '*var DRIVE_PICKER_ENABLED = "true"*'
+expect '/.env.js carries the search minimum' "$(body "$BASE/.env.js")" '*var SEARCH_MIN_LENGTH = "3"*'
 expect '/.env.js is never cached' "$(header /.env.js Cache-Control)" 'no-store'
 script="$(body "$BASE/" | grep -o 'src="/static/js/index[^"]*"' | head -1 | cut -d'"' -f2)"
 expect 'hashed assets are cached for a year' "$(header "$script" Cache-Control)" '*immutable'

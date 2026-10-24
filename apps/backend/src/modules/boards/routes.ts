@@ -88,6 +88,8 @@ const peopleQuery = z.object({ q: z.string().trim().min(2).max(254) })
 
 const memberParams = boardParams.extend({ userId: z.uuid() })
 
+const searchQuery = z.object({ q: z.string().trim().max(200) })
+
 const agendaQuery = z.object({
   zone: z.string().max(64).refine(isTimeZone),
   days: z.coerce.number().int().min(1).max(60)
@@ -291,9 +293,6 @@ export function registerBoards(
     searchMinLength: number
   }
 ) {
-  const searchQuery = z.object({
-    q: z.string().trim().min(deps.searchMinLength).max(200)
-  })
   const store = createBoardStore(deps.db)
   const taskStore = createTaskStore(deps.db)
   const sectionStore = createSectionStore(deps.db)
@@ -879,6 +878,9 @@ export function registerBoards(
       if (!query.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
+      // Other apps search as the user types: a query too short to search
+      // finds nothing rather than failing.
+      if (query.data.q.length < deps.searchMinLength) return { tasks: [] }
       return { tasks: await store.search(identity, query.data.q) }
     }
   )
