@@ -12,6 +12,7 @@ import {
   type Active,
   type Announcements,
   type CollisionDetection,
+  type KeyboardCoordinateGetter,
   type Modifier,
   type Over,
   type UniqueIdentifier
@@ -69,8 +70,8 @@ export const columnSortId = (sectionId: string): string =>
 const sectionOf = (id: UniqueIdentifier): string =>
   String(id).slice(SORT_PREFIX.length)
 
-const isColumn = (active: Active): boolean =>
-  active.data.current?.type === COLUMN
+const isColumn = (item: Pick<Active, 'data'>): boolean =>
+  item.data.current?.type === COLUMN
 
 // A column lands among columns, on the one under the pointer, a card among
 // cards and lanes.
@@ -79,12 +80,29 @@ const collisions: CollisionDetection = args => {
   const within = {
     ...args,
     droppableContainers: args.droppableContainers.filter(
-      container => (container.data.current?.type === COLUMN) === column
+      container => isColumn(container) === column
     )
   }
   if (!column) return closestCorners(within)
   const under = pointerWithin(within)
   return under.length > 0 ? under : closestCenter(within)
+}
+
+// The arrow keys move a column to the next column, not onto the first card
+// of its own, which lies to its right too.
+const keyboardCoordinates: KeyboardCoordinateGetter = (event, args) => {
+  const { active, droppableContainers } = args.context
+  if (!active || !isColumn(active)) {
+    return sortableKeyboardCoordinates(event, args)
+  }
+  const columnsOnly = {
+    getEnabled: () => droppableContainers.getEnabled().filter(isColumn),
+    get: (id: UniqueIdentifier) => droppableContainers.get(id)
+  } as typeof droppableContainers
+  return sortableKeyboardCoordinates(event, {
+    ...args,
+    context: { ...args.context, droppableContainers: columnsOnly }
+  })
 }
 
 // Selecting text in a field on the card must not pick the card up. Not
@@ -173,9 +191,7 @@ export function BoardDrag({
     useSensor(CardTouchSensor, {
       activationConstraint: { delay: 250, tolerance: 8 }
     }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
+    useSensor(KeyboardSensor, { coordinateGetter: keyboardCoordinates })
   )
   const settled: Lanes = Object.fromEntries(
     lanes.map(lane => [lane.key, lane.taskIds])
