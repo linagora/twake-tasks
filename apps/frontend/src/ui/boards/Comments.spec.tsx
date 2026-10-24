@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { typeRichText } from '@/testing/richText'
@@ -84,6 +85,24 @@ describe('Comments', () => {
         .getAllByRole('img', { hidden: true })
         .map(img => img.getAttribute('src'))
     ).toContain('https://avatars.example.com/bob.png')
+  })
+
+  it('says when a comment mentions too many people, and keeps it to edit', async () => {
+    const { board, boardsApi } = logoBoard()
+    boardsApi.addComment.mockRejectedValueOnce(
+      new ApiError(400, 'too_many_mentions')
+    )
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    const editor = await panel.findByRole('textbox', { name: 'Comment' })
+    await typeRichText(editor, 'Everyone, look.')
+    fireEvent.click(panel.getByRole('button', { name: 'Send' }))
+
+    expect(await panel.findByRole('alert')).toHaveTextContent(
+      'This comment mentions too many people. Mention fewer and send it again.'
+    )
+    expect(editor).toHaveTextContent('Everyone, look.')
   })
 
   it('lets a viewer add a comment', async () => {

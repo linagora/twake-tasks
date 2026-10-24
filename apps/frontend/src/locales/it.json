@@ -169,6 +169,7 @@
     "send": "Invia",
     "commentsFailed": "Impossibile caricare i commenti.",
     "commentFailed": "Impossibile inviare il commento.",
+    "tooManyMentions": "Questo commento menziona troppe persone. Menzionane meno e invialo di nuovo.",
     "title": "Titolo",
     "options": "Opzioni dell’attività",
     "close": "Chiudi",
@@ -357,7 +358,8 @@
     "save": "Salva promemoria",
     "delete": "Elimina promemoria: %{reminder}",
     "failed": "Impossibile salvare il promemoria.",
-    "past": "Scegli un orario futuro."
+    "past": "Scegli un orario futuro.",
+    "tooMany": "Hai troppi promemoria in attesa. Eliminane alcuni prima di aggiungerne un altro."
   },
   "newTask": {
     "title": "Crea un'attività",

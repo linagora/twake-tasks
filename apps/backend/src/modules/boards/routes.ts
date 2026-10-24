@@ -273,6 +273,8 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   invalid_label: 400,
   invalid_dates: 400,
   invalid_reminder: 400,
+  too_many_mentions: 400,
+  too_many_reminders: 409,
   label_taken: 409,
   section_name_taken: 409,
   last_admin: 409,
@@ -291,14 +293,17 @@ export function registerBoards(
     requireIdentity: RequireIdentity
     searchAllowedOrigins: readonly string[]
     searchMinLength: number
+    // 0 for no cap.
+    mentionsPerComment: number
+    pendingReminders: number
   }
 ) {
   const store = createBoardStore(deps.db)
   const taskStore = createTaskStore(deps.db)
   const sectionStore = createSectionStore(deps.db)
   const labelStore = createLabelStore(deps.db)
-  const commentStore = createCommentStore(deps.db)
-  const reminderStore = createReminderStore(deps.db)
+  const commentStore = createCommentStore(deps.db, deps.mentionsPerComment)
+  const reminderStore = createReminderStore(deps.db, deps.pendingReminders)
   const filterStore = createFilterStore(deps.db)
   const layoutStore = createLayoutStore(deps.db)
   const sharingStore = createSharingStore(deps.db)

@@ -169,6 +169,7 @@
     "send": "Enviar",
     "commentsFailed": "No se pudieron cargar los comentarios.",
     "commentFailed": "No se pudo enviar el comentario.",
+    "tooManyMentions": "Este comentario menciona a demasiadas personas. Menciona a menos y vuelve a enviarlo.",
     "title": "Título",
     "options": "Opciones de la tarea",
     "close": "Cerrar",
@@ -357,7 +358,8 @@
     "save": "Guardar recordatorio",
     "delete": "Eliminar recordatorio: %{reminder}",
     "failed": "No se pudo guardar el recordatorio.",
-    "past": "Elige una hora futura."
+    "past": "Elige una hora futura.",
+    "tooMany": "Tienes demasiados recordatorios pendientes. Elimina algunos antes de añadir otro."
   },
   "newTask": {
     "title": "Crear una tarea",

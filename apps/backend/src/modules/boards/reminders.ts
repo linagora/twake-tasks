@@ -9,7 +9,11 @@ import {
   settingsOfMember
 } from './access.ts'
 import { plainText } from './markdown.ts'
-import { scheduleReminder, unscheduleReminder } from './reminderJobs.ts'
+import {
+  remindersWaitingFor,
+  scheduleReminder,
+  unscheduleReminder
+} from './reminderJobs.ts'
 import {
   boards,
   comments,
@@ -65,7 +69,7 @@ async function visibleTask(
 }
 
 // Reminders are personal: anyone who can open the board sets their own.
-export function createReminderStore(db: Db) {
+export function createReminderStore(db: Db, pendingReminders = 0) {
   return {
     listReminders(identity: Identity, boardId: string, taskId: string) {
       return writeOrRefuse(db, identity, async tx => {
@@ -96,6 +100,12 @@ export function createReminderStore(db: Db) {
         const relative = 'beforeMinutes' in reminder
         if (relative ? task.dueDate === null : reminder.at <= new Date()) {
           throw new Refused('invalid_reminder')
+        }
+        if (
+          pendingReminders > 0 &&
+          (await remindersWaitingFor(tx, identity.userId)) >= pendingReminders
+        ) {
+          throw new Refused('too_many_reminders')
         }
         const [row] = await tx
           .insert(taskReminders)

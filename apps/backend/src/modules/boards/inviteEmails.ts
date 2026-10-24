@@ -183,7 +183,7 @@ export function emailInvite(deps: {
     const name = plain(board.name)
     const project = plain(board.project)
     const body = messages.body(who, name, messages.as(role), project)
-    await deps.send({
+    const mail = {
       to: email,
       subject: messages.subject(who, name),
       text: `${body}\n\n${link}\n`,
@@ -206,7 +206,7 @@ export function emailInvite(deps: {
         },
         footer: `${escape(messages.why)}<br>${APP_NAME}`
       })
-    })
-    return undefined
+    }
+    return () => deps.send(mail)
   }
 }

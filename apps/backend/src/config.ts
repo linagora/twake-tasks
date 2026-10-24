@@ -64,6 +64,10 @@ const configSchema = z
     SEARCH_MIN_LENGTH: z.coerce.number().int().min(1).max(200).default(2),
     SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),
     MAIL_FROM: z.string().min(1).default('Twake Project <tasks@twake.app>'),
+    SMTP_TIMEOUT_SECONDS: seconds(60),
+    JOBS_CONCURRENCY: z.coerce.number().int().min(1).default(1),
+    JOBS_EMAIL_CONCURRENCY: z.coerce.number().int().min(1).default(2),
+    JOBS_LEASE_SECONDS: seconds(600),
     HTTP_HOST: z.string().min(1).default('0.0.0.0'),
     HTTP_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
     HTTP_TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).default(2),
@@ -99,6 +103,10 @@ const configSchema = z
     RATE_LIMIT_STREAM_CONNECTS_MAX: limit(30),
     RATE_LIMIT_STREAM_CONNECTS_WINDOW_SECONDS: seconds(60),
     RATE_LIMIT_OPEN_STREAMS: limit(10),
+    RATE_LIMIT_MENTIONS_PER_COMMENT: limit(20),
+    RATE_LIMIT_PENDING_REMINDERS: limit(100),
+    RATE_LIMIT_NOTIFICATION_EMAILS_MAX: limit(10),
+    RATE_LIMIT_NOTIFICATION_EMAILS_WINDOW_SECONDS: seconds(600),
     RATE_LIMIT_REFUSED_TOKENS_MAX: limit(30),
     RATE_LIMIT_REFUSED_TOKENS_WINDOW_SECONDS: seconds(60),
     RATE_LIMIT_LOGOUT_REFUSALS_MAX: limit(60),
@@ -117,6 +125,12 @@ const configSchema = z
     message:
       'RABBITMQ_QUEUE must differ from RABBITMQ_OLD_QUEUE, the queue of older versions that each start drains and unbinds',
     path: ['RABBITMQ_QUEUE']
+  })
+  // The SMTP timeouts apply to each step of a send, so one send can take a few.
+  .refine(env => env.JOBS_LEASE_SECONDS >= 5 * env.SMTP_TIMEOUT_SECONDS, {
+    message:
+      'JOBS_LEASE_SECONDS must be at least 5 times SMTP_TIMEOUT_SECONDS, or a slow send outlives its lease and another replica sends the mail again',
+    path: ['JOBS_LEASE_SECONDS']
   })
   .and(spaceIntegration)
 
@@ -148,7 +162,10 @@ const USER_BUDGETS = {
 export type UserBudget = keyof typeof USER_BUDGETS
 
 type BudgetName =
-  (typeof USER_BUDGETS)[UserBudget] | 'REFUSED_TOKENS' | 'LOGOUT_REFUSALS'
+  | (typeof USER_BUDGETS)[UserBudget]
+  | 'REFUSED_TOKENS'
+  | 'LOGOUT_REFUSALS'
+  | 'NOTIFICATION_EMAILS'
 
 function budget(config: Config, name: BudgetName): Budget {
   return {
@@ -160,6 +177,9 @@ function budget(config: Config, name: BudgetName): Budget {
 export interface RateLimits {
   user: Record<UserBudget, Budget>
   openStreams: number
+  mentionsPerComment: number
+  pendingReminders: number
+  notificationEmails: Budget
   address: {
     refusedTokens: Budget
     logoutRefusals: Budget
@@ -178,6 +198,9 @@ export function rateLimits(config: Config): RateLimits {
       ])
     ) as Record<UserBudget, Budget>,
     openStreams: config.RATE_LIMIT_OPEN_STREAMS,
+    mentionsPerComment: config.RATE_LIMIT_MENTIONS_PER_COMMENT,
+    pendingReminders: config.RATE_LIMIT_PENDING_REMINDERS,
+    notificationEmails: budget(config, 'NOTIFICATION_EMAILS'),
     address: {
       refusedTokens: budget(config, 'REFUSED_TOKENS'),
       logoutRefusals: budget(config, 'LOGOUT_REFUSALS'),

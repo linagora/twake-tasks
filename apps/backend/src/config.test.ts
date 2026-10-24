@@ -113,7 +113,13 @@ describe('the server settings', () => {
   it('trust two proxies and keep counters in memory by default', () => {
     const config = loadConfig(required)
 
-    expect(config).toMatchObject({ HTTP_TRUSTED_PROXY_HOPS: 2 })
+    expect(config).toMatchObject({
+      HTTP_TRUSTED_PROXY_HOPS: 2,
+      JOBS_CONCURRENCY: 1,
+      JOBS_EMAIL_CONCURRENCY: 2,
+      JOBS_LEASE_SECONDS: 600,
+      SMTP_TIMEOUT_SECONDS: 60
+    })
     expect(config.REDIS_URL).toBeUndefined()
   })
 
@@ -125,7 +131,12 @@ describe('the server settings', () => {
     ['RATE_LIMIT_COMMENTS_MAX', '-1'],
     ['RATE_LIMIT_COMMENTS_MAX', '1.5'],
     ['RATE_LIMIT_COMMENTS_WINDOW_SECONDS', '0'],
-    ['RATE_LIMIT_OPEN_STREAMS', 'ten']
+    ['RATE_LIMIT_OPEN_STREAMS', 'ten'],
+    ['RATE_LIMIT_NOTIFICATION_EMAILS_WINDOW_SECONDS', '0'],
+    ['JOBS_CONCURRENCY', '0'],
+    ['JOBS_LEASE_SECONDS', '0'],
+    ['JOBS_LEASE_SECONDS', '120'],
+    ['SMTP_TIMEOUT_SECONDS', '0']
   ])('refuse %s=%s', (name, value) => {
     expect(() => loadConfig({ ...required, [name]: value })).toThrow(
       new RegExp(name)
@@ -149,6 +160,9 @@ describe('the rate limits', () => {
     })
     expect(limits).toMatchObject({
       openStreams: 10,
+      mentionsPerComment: 20,
+      pendingReminders: 100,
+      notificationEmails: { max: 10, windowSeconds: 600 },
       address: {
         refusedTokens: { max: 30, windowSeconds: 60 },
         logoutRefusals: { max: 60, windowSeconds: 60 },

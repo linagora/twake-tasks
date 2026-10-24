@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, count, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { asTenant, type Tx } from '../../infra/db.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
@@ -43,6 +43,33 @@ export async function scheduleReminder(tx: Tx, job: Payload, at: Date | null) {
 
 export async function unscheduleReminder(tx: Tx, reminderId: string) {
   await tx.delete(jobs).where(eq(jobs.key, keyOf(reminderId)))
+}
+
+// A relative reminder keeps its job between due dates, so it stays counted.
+// The job of a deleted task's reminder is not. The lock holds a person's
+// concurrent additions to the count until each commits.
+export async function remindersWaitingFor(
+  tx: Tx,
+  userId: string
+): Promise<number> {
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`reminders:${userId}`}, 0))`
+  )
+  const [row] = await tx
+    .select({ count: count() })
+    .from(jobs)
+    .innerJoin(
+      taskReminders,
+      sql`${taskReminders.id} = (${jobs.payload}->>'reminderId')::uuid`
+    )
+    .where(
+      and(
+        // A literal, so a prepared plan still matches the partial index.
+        sql`${jobs.kind} = 'reminder'`,
+        sql`${jobs.payload}->>'userId' = ${userId}`
+      )
+    )
+  return row?.count ?? 0
 }
 
 // Every relative reminder of the task follows its due date, whoever set it.

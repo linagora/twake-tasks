@@ -26,6 +26,10 @@ import {
 } from './modules/boards/inviteEmails.ts'
 import { listenForBoardChanges } from './modules/boards/live.ts'
 import {
+  emailDigest,
+  NOTIFICATION_DIGEST_JOB
+} from './modules/boards/notificationDigest.ts'
+import {
   emailNotification,
   NOTIFICATION_EMAIL_JOB
 } from './modules/boards/notificationEmails.ts'
@@ -148,6 +152,16 @@ const send = createMailer(config, logger)
 const stopScheduler = createScheduler({
   db,
   logger,
+  leaseSeconds: config.JOBS_LEASE_SECONDS,
+  // A mail job spends most of its time on SMTP, after its transaction ended.
+  concurrency: kind =>
+    [
+      NOTIFICATION_EMAIL_JOB,
+      NOTIFICATION_DIGEST_JOB,
+      PROJECT_INVITE_EMAIL_JOB
+    ].includes(kind)
+      ? config.JOBS_EMAIL_CONCURRENCY
+      : config.JOBS_CONCURRENCY,
   handlers: {
     [REMINDER_JOB]: deliverReminder,
     [PURGE_JOB]: purgeTask,
@@ -155,6 +169,12 @@ const stopScheduler = createScheduler({
     [PURGE_SPACE_JOB]: purgeSpace,
     [NOTIFICATION_EMAIL_JOB]: emailNotification({
       appUrl: config.APP_URL,
+      budget: limits.notificationEmails,
+      send
+    }),
+    [NOTIFICATION_DIGEST_JOB]: emailDigest({
+      appUrl: config.APP_URL,
+      budget: limits.notificationEmails,
       send
     }),
     [PROJECT_INVITE_EMAIL_JOB]: emailInvite({

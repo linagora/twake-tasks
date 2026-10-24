@@ -1,5 +1,6 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { z } from 'zod'
+import type { Budget } from '../../config.ts'
 import { asTenant, type Tx } from '../../infra/db.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
 import { userSettings } from '../settings/schema.ts'
@@ -13,7 +14,8 @@ import {
   plain,
   type Language
 } from './mailLayout.ts'
-import { plainText } from './markdown.ts'
+import { mentionedEmails, MENTION, plainText } from './markdown.ts'
+import { sendCounted, takeEmail } from './notificationDigest.ts'
 import {
   NOTIFICATION_MESSAGES,
   type NotificationMessages,
@@ -130,17 +132,13 @@ async function nameOf(
   return member && { name: member.name || member.email, email: member.email }
 }
 
-const MENTION = /(^|\s)@([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]*[A-Za-z0-9])/g
-
 // A mention reads as the person's name, as it does in the app.
 async function withNames(
   tx: Tx,
   projectId: string,
   text: string
 ): Promise<string> {
-  const emails = [...text.matchAll(MENTION)].map(match =>
-    (match[2] ?? '').toLowerCase()
-  )
+  const emails = [...mentionedEmails(text)]
   if (emails.length === 0) return text
   const members = await tx
     .select({ email: projectMembers.email, name: memberLooks.name })
@@ -232,9 +230,11 @@ async function describe(
 }
 
 // Runs as the person notified, so nothing is sent once they can no longer
-// open the task or have already read the notification in the app.
+// open the task or have already read the notification in the app. Reminders,
+// which people set for themselves, are not counted against their budget.
 export function emailNotification(deps: {
   appUrl: string
+  budget: Budget
   send: (mail: Mail) => Promise<void>
 }): Handler {
   return async (raw, tx) => {
@@ -295,6 +295,17 @@ export function emailNotification(deps: {
         )
       )
     if (!row) return undefined
+    const counted = row.reason !== 'reminder' && deps.budget.max > 0
+    if (
+      counted &&
+      !(await takeEmail(tx, deps.budget, {
+        userId: job.userId,
+        email: row.email,
+        language: row.language
+      }))
+    ) {
+      return undefined
+    }
 
     const lang = languageOf(row.language)
     const messages = NOTIFICATION_MESSAGES[lang]
@@ -418,8 +429,8 @@ export function emailNotification(deps: {
       footer: `${escape(messages.why[why](row.key))}<br><a href="${escape(`${base}/notifications`)}" class="m-muted" style="color:${COLORS.muted};">${escape(messages.all)}</a> &middot; ${APP_NAME}`
     })
 
-    await deps.send({ to: row.email, subject, text, html })
-    return undefined
+    const send = () => deps.send({ to: row.email, subject, text, html })
+    return db => (counted ? sendCounted(db, job.userId, send) : send())
   }
 }
 

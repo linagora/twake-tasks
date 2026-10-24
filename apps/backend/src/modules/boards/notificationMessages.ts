@@ -37,6 +37,10 @@ export interface NotificationMessages {
   fallback: string
   why: Record<Why, (key: string) => string>
   all: string
+  digest: {
+    subject: Partial<Record<Intl.LDMLPluralRule, string>> & { other: string }
+    body: string
+  }
 }
 
 export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
@@ -102,7 +106,11 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       reminder: key =>
         `You get this email because you set a reminder on ${key}.`
     },
-    all: 'See all notifications'
+    all: 'See all notifications',
+    digest: {
+      subject: { one: '# more notification', other: '# more notifications' },
+      body: 'You got many notifications in a short time, so we did not email each one. They are all in the app.'
+    }
   },
   fr: {
     someone: 'Quelqu’un',
@@ -168,7 +176,11 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       reminder: key =>
         `Vous recevez cet e-mail car vous avez programmé un rappel sur ${key}.`
     },
-    all: 'Voir toutes les notifications'
+    all: 'Voir toutes les notifications',
+    digest: {
+      subject: { one: '# autre notification', other: '# autres notifications' },
+      body: "Vous avez reçu beaucoup de notifications en peu de temps, nous ne les avons donc pas toutes envoyées par e-mail. Elles sont toutes dans l'application."
+    }
   },
   de: {
     someone: 'Jemand',
@@ -234,7 +246,14 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       reminder: key =>
         `Du erhältst diese E-Mail, weil du eine Erinnerung für ${key} gesetzt hast.`
     },
-    all: 'Alle Benachrichtigungen ansehen'
+    all: 'Alle Benachrichtigungen ansehen',
+    digest: {
+      subject: {
+        one: '# weitere Benachrichtigung',
+        other: '# weitere Benachrichtigungen'
+      },
+      body: 'Du hast in kurzer Zeit viele Benachrichtigungen erhalten, daher haben wir nicht jede per E-Mail geschickt. Alle findest du in der App.'
+    }
   },
   it: {
     someone: 'Qualcuno',
@@ -299,7 +318,11 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       reminder: key =>
         `Ricevi questa email perché hai impostato un promemoria su ${key}.`
     },
-    all: 'Vedi tutte le notifiche'
+    all: 'Vedi tutte le notifiche',
+    digest: {
+      subject: { one: '# altra notifica', other: '# altre notifiche' },
+      body: "Hai ricevuto molte notifiche in poco tempo, quindi non le abbiamo inviate tutte per email. Le trovi tutte nell'app."
+    }
   },
   es: {
     someone: 'Alguien',
@@ -362,7 +385,11 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       reminder: key =>
         `Recibes este correo porque pusiste un recordatorio en ${key}.`
     },
-    all: 'Ver todas las notificaciones'
+    all: 'Ver todas las notificaciones',
+    digest: {
+      subject: { one: '# notificación más', other: '# notificaciones más' },
+      body: 'Recibiste muchas notificaciones en poco tiempo, así que no te enviamos cada una por correo. Están todas en la aplicación.'
+    }
   },
   ru: {
     someone: 'Кто-то',
@@ -425,7 +452,16 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       reminder: key =>
         `Вы получили это письмо, потому что поставили напоминание на ${key}.`
     },
-    all: 'Все уведомления'
+    all: 'Все уведомления',
+    digest: {
+      subject: {
+        one: 'Ещё # уведомление',
+        few: 'Ещё # уведомления',
+        many: 'Ещё # уведомлений',
+        other: 'Ещё # уведомления'
+      },
+      body: 'За короткое время пришло много уведомлений, поэтому мы не отправили каждое по почте. Все они есть в приложении.'
+    }
   },
   vi: {
     someone: 'Ai đó',
@@ -483,6 +519,10 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       following: key => `Bạn nhận email này vì bạn theo dõi ${key}.`,
       reminder: key => `Bạn nhận email này vì bạn đã đặt nhắc nhở cho ${key}.`
     },
-    all: 'Xem tất cả thông báo'
+    all: 'Xem tất cả thông báo',
+    digest: {
+      subject: { other: '# thông báo khác' },
+      body: 'Bạn nhận được nhiều thông báo trong thời gian ngắn nên chúng tôi không gửi email cho từng thông báo. Tất cả đều có trong ứng dụng.'
+    }
   }
 }

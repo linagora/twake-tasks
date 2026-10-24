@@ -36,6 +36,14 @@ Email:
 
 - `SMTP_URL`: an `smtp://` or `smtps://` URL. Without it, nothing is emailed.
 - `MAIL_FROM` (`Twake Project <tasks@twake.app>`).
+- `SMTP_TIMEOUT_SECONDS` (`60`): how long a mail waits on the SMTP server to connect, greet or answer before the send fails and its job is retried. The backend refuses to start unless `JOBS_LEASE_SECONDS` is at least 5 times this value.
+- `RATE_LIMIT_NOTIFICATION_EMAILS` (`10` in `600`): notification emails one person gets in a window. Past that, their notifications stay in the app, and one digest email, sent once the window ends, says how many more there are. Reminders are always emailed and not counted. `0` turns it off.
+
+Jobs (reminders, emails, purges), run by every replica:
+
+- `JOBS_CONCURRENCY` (`1`): jobs of each kind each replica runs at once. Each kind drains on its own, so a backlog of one kind never holds up another. A running job holds a database connection, so keep the total over every kind well under `DATABASE_POOL_MAX`.
+- `JOBS_EMAIL_CONCURRENCY` (`2`): the same for the notification, digest and invitation emails, which hold no connection while the mail is sent.
+- `JOBS_LEASE_SECONDS` (`600`): a job sends its mail after its transaction commits. Until it is done, no other replica runs it for this long. A replica that stops mid-send leaves the job to run again once the lease ends, so that mail may go out twice.
 
 RabbitMQ:
 
@@ -89,6 +97,11 @@ Per user, once the token is checked. A user is counted across all their tokens, 
 - `RATE_LIMIT_HEAVY_READS` (`120` in `60`): a board, my tasks, the agenda, a saved filter's tasks, a task's history and comments, a board's archive and trash, together.
 - `RATE_LIMIT_STREAM_CONNECTS` (`30` in `60`): live board streams opened.
 - `RATE_LIMIT_OPEN_STREAMS` (`10`): live board streams a user keeps open at once on each replica. Each open tab of a board holds one.
+
+Caps per user, refused with the error named (not a 429, as waiting does not help):
+
+- `RATE_LIMIT_MENTIONS_PER_COMMENT` (`20`): different people one comment mentions. Past that, the comment is refused with 400 `too_many_mentions`.
+- `RATE_LIMIT_PENDING_REMINDERS` (`100`): reminders a user has waiting in an organization. A reminder at a fixed time stops counting once it fires, one before the due date keeps counting until it or its task is deleted. Past that, a new one is refused with 409 `too_many_reminders`.
 
 Per address, before a user is known:
 

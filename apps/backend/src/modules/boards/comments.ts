@@ -2,6 +2,7 @@ import { and, asc, eq, inArray } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { looksOn, roleOn } from './access.ts'
+import { mentionedEmails } from './markdown.ts'
 import { commentReactions, comments } from './schema.ts'
 import {
   bumpBoard,
@@ -56,7 +57,7 @@ async function commentOf(tx: Tx, taskId: string, commentId: string) {
   return comment
 }
 
-export function createCommentStore(db: Db) {
+export function createCommentStore(db: Db, mentionsPerComment = 0) {
   return {
     listComments(identity: Identity, boardId: string, taskId: string) {
       return writeOrRefuse(db, identity, async tx => {
@@ -123,6 +124,12 @@ export function createCommentStore(db: Db) {
     ) {
       return writeOrRefuse(db, identity, async tx => {
         const task = await openTask(tx, identity, boardId, taskId)
+        if (
+          mentionsPerComment > 0 &&
+          mentionedEmails(body).size > mentionsPerComment
+        ) {
+          throw new Refused('too_many_mentions')
+        }
         const [comment] = await tx
           .insert(comments)
           .values({
