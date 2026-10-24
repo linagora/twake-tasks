@@ -89,7 +89,6 @@ describe('BoardScreen', () => {
       within(breadcrumb).getByRole('heading', { level: 1, name: 'Design' })
     ).toBeInTheDocument()
     expect(within(breadcrumb).queryByText('…')).toBe(null)
-    // As the root folder in Twake Drive's path: its icon alone.
     expect(
       within(breadcrumb).getByRole('link', { name: 'Boards' })
     ).toHaveTextContent(/^$/)

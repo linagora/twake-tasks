@@ -207,7 +207,6 @@ export function ShelfScreen({
   )
 }
 
-// The shelf shown, beside its title: the other one is one click away.
 function ShelfSwitch({ shelf }: { shelf: Shelf }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()

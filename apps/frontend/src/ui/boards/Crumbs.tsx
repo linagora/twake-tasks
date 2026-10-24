@@ -30,7 +30,6 @@ export function useBoardsOrigin(): Origin {
   return { icon: Home, label: t('boards.title'), to: '/' }
 }
 
-// The page itself: the page's heading, in bold, when the breadcrumb titles it.
 function Page({
   heading,
   children

@@ -34,10 +34,7 @@ export function CrumbSlot({ children }: { children: ReactNode }): ReactElement {
   )
 }
 
-/**
- * A breadcrumb with the page's actions beside it, as a page header did: they
- * go under it when short of room.
- */
+/** A breadcrumb with the page's actions beside it, or under it when short of room. */
 export function CrumbRow({
   actions,
   children

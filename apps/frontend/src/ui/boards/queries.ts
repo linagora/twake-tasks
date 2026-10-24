@@ -250,10 +250,7 @@ export function useBoards({
   })
 }
 
-/**
- * The board's name from the list of boards already loaded, without subscribing
- * to that list: the board opened from it titles itself before it loads.
- */
+/** The board's name from the boards list already loaded, without subscribing to it. */
 export function useListedBoardName(boardId: string): string | null {
   const queryClient = useQueryClient()
   return (
