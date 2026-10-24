@@ -31,9 +31,10 @@ import {
 import {
   dueLabel,
   formatDay,
-  localToday,
+  inDays,
   localZone,
-  recurrenceLabel
+  recurrenceLabel,
+  untilNextMonday
 } from '@/ui/boards/dueLabel'
 import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -70,16 +71,6 @@ const RECURRENCE_UNITS: Recurrence['unit'][] = [
   'months',
   'years'
 ]
-
-const today = () => new Date(`${localToday()}T00:00:00Z`)
-
-function inDays(days: number): string {
-  const day = today()
-  day.setUTCDate(day.getUTCDate() + days)
-  return day.toISOString().slice(0, 10)
-}
-
-const untilNextMonday = (): number => 8 - (today().getUTCDay() || 7)
 
 function Summary({ task }: { task: Task }): ReactElement {
   const { t, lang } = useI18n()

@@ -166,12 +166,15 @@ const shiftMonth = (month: string, amount: number) => {
 
 // Phones get a grid of day buttons with the picked day's tasks below it,
 // since seven columns leave no room for titles.
+/** With `onAdd`, each day and the tray of tasks without a date add one. */
 export function CalendarLayout({
   tasks,
-  item
+  item,
+  onAdd
 }: {
   tasks: Task[]
   item: (task: Task) => ReactElement
+  onAdd?: ((dueDate: string | null) => void) | undefined
 }): ReactElement {
   const { t, lang } = useI18n()
   const theme = useTheme()
@@ -182,6 +185,13 @@ export function CalendarLayout({
   const [trayOpen, setTrayOpen] = useState<boolean | null>(null)
   const undated = tasks.filter(task => task.dueDate === null)
   const dueOn = (day: string) => tasks.filter(task => task.dueDate === day)
+  const addOn = (day: string) =>
+    onAdd && {
+      label: t('layout.addOn', { date: formatDay(day, lang) }),
+      onAdd: () => {
+        onAdd(day)
+      }
+    }
   const title = new Intl.DateTimeFormat(lang, {
     month: 'long',
     year: 'numeric',
@@ -216,7 +226,7 @@ export function CalendarLayout({
       />
       <CalendarBody
         aside={
-          undated.length > 0 && (
+          (undated.length > 0 || onAdd) && (
             <CalendarTray
               label={t('layout.noDate')}
               count={undated.length}
@@ -224,6 +234,14 @@ export function CalendarLayout({
               onToggle={() => {
                 setTrayOpen(!(trayOpen ?? !compact))
               }}
+              add={
+                onAdd && {
+                  label: t('layout.addUndated'),
+                  onAdd: () => {
+                    onAdd(null)
+                  }
+                }
+              }
             >
               {undated.map(item)}
             </CalendarTray>
@@ -252,6 +270,7 @@ export function CalendarLayout({
                 number={Number(day.slice(8))}
                 outside={!day.startsWith(month)}
                 today={day === today}
+                add={addOn(day)}
               >
                 <ChipList>{dueOn(day).map(item)}</ChipList>
               </DayCell>
@@ -262,6 +281,7 @@ export function CalendarLayout({
           <DayAgenda
             label={formatDay(picked, lang)}
             empty={t('layout.nothingDue')}
+            add={addOn(picked)}
           >
             {dueOn(picked).map(item)}
           </DayAgenda>

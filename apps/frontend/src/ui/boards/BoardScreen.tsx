@@ -47,7 +47,6 @@ import {
 import { BoardDrag, columnSortId } from '@/ui/boards/BoardDrag'
 import { BoardMenu } from '@/ui/boards/BoardMenu'
 import { CalendarTask } from '@/ui/boards/CalendarTask'
-import { localToday } from '@/ui/boards/dueLabel'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
 import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
@@ -58,7 +57,6 @@ import {
   useBoardsOrigin,
   type Origin
 } from '@/ui/boards/Crumbs'
-import { NewDatedTask } from '@/ui/boards/NewDatedTask'
 import {
   useBoardChange,
   useBoardOf,
@@ -77,6 +75,7 @@ import { LinkedTaskPanel } from '@/ui/boards/TaskPanel'
 import { lineage } from '@/ui/boards/useTaskPanel'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 export function BoardScreen({
@@ -275,6 +274,7 @@ function BoardColumns({
     void navigate(shelf)
   }
   const [removal, setRemoval] = useState<Removal | null>(null)
+  const { openNewTask } = useNewTaskParam()
   const [adding, setAdding] = useState<string | null>(null)
   const stopAdding = (key: string): void => {
     setAdding(current => (current === key ? null : current))
@@ -330,7 +330,6 @@ function BoardColumns({
         }}
       />
     )
-  const first = columns[0]
   const tasksIn = (column: (typeof columns)[number]) =>
     topLevel.filter(task => task.sectionId === column.id)
   const listRow = (task: Task, sortable = false) => (
@@ -414,16 +413,6 @@ function BoardColumns({
             {t('sharing.share')}
           </UnavailableButton>
         </Tooltip>
-      )}
-      {editable && first && (
-        <Button
-          startIcon={<Icon icon={Plus} />}
-          onClick={() => {
-            setAdding(columnKey(first))
-          }}
-        >
-          {t('board.newTask')}
-        </Button>
       )}
       <BoardMenu
         board={board}
@@ -680,16 +669,13 @@ function BoardColumns({
         <CalendarLayout
           tasks={topLevel}
           item={task => <CalendarTask key={task.id} task={task} />}
-        />
-      )}
-      {board.layout === 'calendar' && first && adding !== null && (
-        <NewDatedTask
-          boardId={board.id}
-          sectionId={first.id}
-          day={localToday()}
-          onClose={() => {
-            setAdding(null)
-          }}
+          onAdd={
+            editable
+              ? dueDate => {
+                  openNewTask(dueDate ?? undefined)
+                }
+              : undefined
+          }
         />
       )}
       <LinkedTask board={board} editable={editable} settled={settled} />

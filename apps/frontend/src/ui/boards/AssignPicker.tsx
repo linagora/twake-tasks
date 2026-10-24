@@ -1,22 +1,10 @@
-import { Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 
-import {
-  PickerEmpty,
-  PickerError,
-  PickerGroup,
-  PickerOption,
-  PickerPopover,
-  PickerUnavailable
-} from '@/ds/Picker'
-import { Highlight } from '@/ds/Highlight'
+import { PickerError } from '@/ds/Picker'
 import type { Person, Task } from '@/domain/board'
-import { displayName } from '@/domain/person'
-import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
-import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useBoardChange, useSharing } from '@/ui/boards/queries'
+import { PeopleMenu } from '@/ui/boards/PeopleMenu'
+import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
-import { useSession } from '@/ui/session/SessionGate'
 
 export function AssignPicker({
   task,
@@ -37,26 +25,11 @@ export function AssignPicker({
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
-  const { user } = useSession()
   const initial = () => new Set(task.assignees.map(person => person.userId))
   const [pinned] = useState(initial)
-  const [search, setSearch] = useState('')
   const [chosen, setChosen] = useState(initial)
   const assign = useBoardChange(boardId, (api, userIds: string[]) =>
     api.setAssignees(boardId, task.id, userIds)
-  )
-
-  const ordered = suggestionOrder(members, pinned, user.email, tasks)
-  const query = search.trim()
-  const shown = matchingPeople(ordered, query)
-  const sharing = useSharing(boardId, shareable)
-  const invited = matchingPeople(
-    (sharing.data?.invites ?? []).map(({ id, email }) => ({
-      userId: id,
-      email,
-      name: null
-    })),
-    query
   )
 
   const save = (next: Set<string>) => {
@@ -74,16 +47,17 @@ export function AssignPicker({
   }
 
   return (
-    <PickerPopover
+    <PeopleMenu
       label={t('board.assignTitle', { key: task.key })}
+      boardId={boardId}
+      members={members}
+      tasks={tasks}
+      shareable={shareable}
+      pinned={pinned}
+      chosen={chosen}
+      onToggle={toggle}
       anchor={anchor}
       onClose={onClose}
-      searchLabel={t('board.searchPeople')}
-      search={search}
-      onSearch={setSearch}
-      onPickFirst={() => {
-        if (shown[0]) toggle(shown[0].userId)
-      }}
       footer={
         assign.isError && (
           <PickerError
@@ -96,52 +70,6 @@ export function AssignPicker({
           </PickerError>
         )
       }
-    >
-      {shown.map(person => (
-        <PickerOption
-          key={person.userId}
-          checked={chosen.has(person.userId)}
-          onToggle={() => {
-            toggle(person.userId)
-          }}
-          start={
-            <PersonAvatar
-              email={person.email}
-              name={person.name}
-              avatar={person.avatar}
-            />
-          }
-        >
-          <Typography variant="body2" className="u-ellipsis">
-            <Highlight text={displayName(person)} query={query} />
-          </Typography>
-          {displayName(person) !== person.email && (
-            <Typography
-              variant="caption"
-              color="textSecondary"
-              component="div"
-              className="u-ellipsis"
-            >
-              <Highlight text={person.email} query={query} />
-            </Typography>
-          )}
-        </PickerOption>
-      ))}
-      {invited.length > 0 && (
-        <PickerGroup>{t('board.pendingGroup')}</PickerGroup>
-      )}
-      {invited.map(person => (
-        <PickerUnavailable
-          key={person.userId}
-          start={<PersonAvatar email={person.email} />}
-          hint={t('board.pendingHint')}
-        >
-          <Highlight text={person.email} query={query} />
-        </PickerUnavailable>
-      ))}
-      {shown.length === 0 && invited.length === 0 && (
-        <PickerEmpty>{t('board.noPeopleMatch', { search: query })}</PickerEmpty>
-      )}
-    </PickerPopover>
+    />
   )
 }

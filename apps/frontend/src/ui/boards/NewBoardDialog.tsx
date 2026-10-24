@@ -3,12 +3,12 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   TextField
 } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
+import { ClosableTitle } from '@/ds/ClosableTitle'
 import type { Board } from '@/domain/board'
 import { useCreateBoard } from '@/ui/boards/queries'
 import { focusOnMount } from '@/ui/focusOnMount'
@@ -52,7 +52,12 @@ export function NewBoardDialog({
           )
         }}
       >
-        <DialogTitle id={titleId}>{t('newBoard.title')}</DialogTitle>
+        <ClosableTitle
+          id={titleId}
+          title={t('newBoard.title')}
+          closeLabel={t('newBoard.close')}
+          onClose={onClose}
+        />
         <DialogContent>
           <TextField
             label={t('newBoard.name')}
@@ -89,9 +94,6 @@ export function NewBoardDialog({
           {error && !prefixTaken && <p role="alert">{t('newBoard.failed')}</p>}
         </DialogContent>
         <DialogActions>
-          <Button variant="text" onClick={onClose}>
-            {t('newBoard.cancel')}
-          </Button>
           <Button type="submit" disabled={create.isPending || !name.trim()}>
             {t('newBoard.create')}
           </Button>

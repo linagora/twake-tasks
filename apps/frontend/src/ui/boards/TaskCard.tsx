@@ -36,6 +36,7 @@ import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useNewTaskHighlight } from '@/ui/shell/NewTaskHighlight'
 
 export function TaskCard({
   task,
@@ -65,6 +66,7 @@ export function TaskCard({
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
   const [labeling, setLabeling] = useState<HTMLElement | null>(null)
   const panel = useTaskPanel(task.key)
+  const newTask = useNewTaskHighlight(task.key)
   const editable = onMove !== undefined
   const completion = useCompleteToggle(task, boardId, sections, editable)
   const [showSubtasks, setShowSubtasks] = useState(false)
@@ -108,6 +110,7 @@ export function TaskCard({
           underline={completion.done ? 'none' : 'hover'}
           className="u-ta-left"
           onClick={() => {
+            newTask.clear()
             panel.show()
           }}
         >
@@ -160,6 +163,7 @@ export function TaskCard({
   )
   const frame = {
     label: `${task.key} ${task.title}`,
+    highlighted: newTask.isNew,
     menu: onMove && (
       <IconButton
         size="small"

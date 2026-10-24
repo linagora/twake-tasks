@@ -38,10 +38,10 @@ describe('AppShell', () => {
       const bar = within(await screen.findByRole('banner'))
       expect(bar.getByText('Twake Project')).toBeInTheDocument()
       expect(bar.getByRole('searchbox', { name: 'Search' })).toBeInTheDocument()
-      expect(bar.queryByRole('button', { name: 'Quick add' })).toBe(null)
+      expect(bar.queryByRole('button', { name: 'Create task' })).toBe(null)
       expect(
         within(screen.getByRole('complementary')).getByRole('button', {
-          name: 'Quick add'
+          name: 'Create task'
         })
       ).toBeInTheDocument()
       expect(createSdk).toHaveBeenCalledWith({
@@ -207,7 +207,7 @@ describe('AppShell', () => {
     expect(favourites.queryByRole('link', { name: 'Design' })).toBeNull()
   })
 
-  it('keeps Boards lit on a board, but for one opened from its favourite', async () => {
+  it('lights a board under Boards, or Boards while folded, but for one opened from its favourite', async () => {
     const boardsApi = fakeBoardsApi([
       { ...aBoard(), id: 'board-2', name: 'Launch' }
     ])
@@ -219,23 +219,102 @@ describe('AppShell', () => {
       await screen.findByRole('list', { name: 'Favorites' })
     )
     const favourite = await favourites.findByRole('link', { name: 'Launch' })
-    expect(nav.getByRole('link', { name: 'Boards' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    )
+    const boards = nav.getByRole('link', { name: 'Boards' })
+    expect(boards).toHaveAttribute('aria-current', 'page')
+    fireEvent.click(nav.getByRole('button', { name: 'Unfold boards' }))
+    const listed = await nav.findByRole('link', { name: 'Launch' })
+    expect(listed).toHaveAttribute('aria-current', 'page')
+    expect(boards).not.toHaveAttribute('aria-current')
     expect(favourite).not.toHaveAttribute('aria-current')
 
     fireEvent.click(favourite)
     await waitFor(() => {
       expect(favourite).toHaveAttribute('aria-current', 'page')
     })
-    expect(nav.getByRole('link', { name: 'Boards' })).not.toHaveAttribute(
-      'aria-current'
-    )
+    expect(listed).not.toHaveAttribute('aria-current')
 
     fireEvent.click(nav.getByRole('link', { name: 'Today' }))
     await waitFor(() => {
       expect(favourite).not.toHaveAttribute('aria-current')
+    })
+  })
+
+  it('lists the active boards under Boards, by name, and marks the current one', async () => {
+    const boardsApi = fakeBoardsApi([
+      { ...aBoard(), id: 'board-1', name: 'Launch' },
+      { ...aBoard(), id: 'board-2', name: 'Design' },
+      { ...aBoard(), id: 'board-3', name: 'Old', archived: true }
+    ])
+    renderRoute('/boards/board-1', { boardsApi })
+
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+    fireEvent.click(nav.getByRole('button', { name: 'Unfold boards' }))
+    expect(await nav.findByRole('link', { name: 'Design' })).toBeVisible()
+    expect(
+      nav.getAllByRole('link').map(link => link.getAttribute('href'))
+    ).toEqual([
+      '/',
+      '/boards/board-2',
+      '/boards/board-1',
+      '/today',
+      '/upcoming',
+      '/mine',
+      '/notifications',
+      '/filters'
+    ])
+    expect(nav.getByRole('link', { name: 'Launch' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    )
+    expect(nav.getByRole('link', { name: 'Boards' })).not.toHaveAttribute(
+      'aria-current'
+    )
+  })
+
+  it('keeps the boards under Boards folded until unfolded, and remembers it', async () => {
+    const boardsApi = fakeBoardsApi([{ ...aBoard(), name: 'Design' }])
+    const first = renderRoute('/today', { boardsApi })
+
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+    const unfold = await nav.findByRole('button', { name: 'Unfold boards' })
+    expect(unfold).toHaveAttribute('aria-expanded', 'false')
+    expect(nav.queryByRole('link', { name: 'Design' })).toBe(null)
+    fireEvent.click(unfold)
+    expect(await nav.findByRole('link', { name: 'Design' })).toBeVisible()
+
+    first.unmount()
+    renderRoute('/today', { boardsApi })
+    const again = within(await screen.findByRole('list', { name: 'Main menu' }))
+    expect(await again.findByRole('link', { name: 'Design' })).toBeVisible()
+    fireEvent.click(again.getByRole('button', { name: 'Fold boards' }))
+    expect(again.queryByRole('link', { name: 'Design' })).toBe(null)
+  })
+
+  it('makes a board from the + beside Boards, then opens it', async () => {
+    const boardsApi = fakeBoardsApi()
+    renderRoute('/today', { boardsApi })
+
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+    fireEvent.click(nav.getByRole('button', { name: 'Unfold boards' }))
+    fireEvent.click(nav.getByRole('button', { name: 'New board' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    fireEvent.change(dialog.getByLabelText(/^Name/), {
+      target: { value: 'Roadmap' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(boardsApi.createBoard).toHaveBeenCalledWith({
+      name: 'Roadmap',
+      keyPrefix: 'ROA'
+    })
+    await waitFor(() => {
+      expect(nav.getByRole('link', { name: 'Roadmap' })).toHaveAttribute(
+        'aria-current',
+        'page'
+      )
     })
   })
 

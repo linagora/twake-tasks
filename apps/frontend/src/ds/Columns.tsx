@@ -190,6 +190,8 @@ export interface CardProps {
   label: string
   menu?: ReactNode
   children: ReactNode
+  /** The task just created, standing out as a selected one. */
+  highlighted?: boolean
   // Capture phase: the drag sensor owns the card's own onKeyDown.
   onKeyDownCapture?: KeyboardEventHandler<HTMLElement>
 }
@@ -201,6 +203,7 @@ export function Card({
   children,
   ref,
   drag = 'none',
+  highlighted = false,
   ...rest
 }: CardProps &
   HTMLAttributes<HTMLElement> & {
@@ -214,6 +217,7 @@ export function Card({
       ref={ref}
       component="article"
       aria-label={label}
+      data-new-task={highlighted ? '' : undefined}
       sx={theme => ({
         position: 'relative',
         display: 'flex',
@@ -231,6 +235,11 @@ export function Card({
           outline: `2px solid ${theme.vars.palette.primary.main}`,
           outlineOffset: 2
         },
+        ...(highlighted && {
+          bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.08),
+          borderColor: 'primary.main',
+          '&:hover': { boxShadow: 2 }
+        }),
         ...(drag === 'placeholder' && {
           opacity: 0.4,
           '&:hover': {}

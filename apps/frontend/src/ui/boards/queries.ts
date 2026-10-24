@@ -33,7 +33,12 @@ import {
 } from '@/application/boards'
 import type { Board, BoardSummary, Layout, Person } from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
-import { findBoard, quickAdd, type QuickAdded } from '@/application/quickAdd'
+import {
+  canAddTo,
+  createTask,
+  defaultBoard,
+  type NewTaskDraft
+} from '@/application/newTask'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
 
@@ -674,40 +679,49 @@ export function useUnreadByProject(): UseQueryResult<ProjectUnread[]> {
   })
 }
 
-export function useQuickAdd(
-  defaultBoardId: string | undefined
-): UseMutationResult<QuickAdded, Error, string> {
+export function useNewTask(): UseMutationResult<
+  { boardId: string; key: string },
+  Error,
+  { boardId: string; draft: NewTaskDraft }
+> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (line: string) =>
-      quickAdd(api, line, localToday(), defaultBoardId),
-    onSuccess: ({ boardId }) =>
-      queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+    mutationFn: ({ boardId, draft }) => createTask(api, boardId, draft),
+    // Settled, not succeeded: the task exists once its first request is done,
+    // even if adding its details fails. The boards list holds the counts.
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['agenda'] }),
+        queryClient.invalidateQueries({ queryKey: ['search'] }),
+        queryClient.invalidateQueries({ queryKey: boardsKey })
+      ])
   })
 }
 
-/** The boards quick add can name, and the one the task goes to so far. */
-export function useQuickAddBoard(
-  name: string | undefined,
-  defaultBoardId: string | undefined
+/**
+ * The boards a new task can go in, the one it goes in (`picked`, else the
+ * default one), and that board's members and labels.
+ */
+export function useNewTaskBoard(
+  picked: string | undefined,
+  inBoardId?: string
 ): {
-  boards: BoardSummary[] | undefined
-  summary: BoardSummary | undefined
+  targets: BoardSummary[] | undefined
+  chosen: BoardSummary | undefined
   board: Board | undefined
 } {
   const api = useBoardsApi()
-  const boards = useBoards().data
-  const summary = boards && findBoard(boards, name, defaultBoardId)
+  const targets = useBoards().data?.filter(canAddTo)
+  const chosen =
+    targets &&
+    (targets.find(each => each.id === picked) ??
+      defaultBoard(targets, inBoardId))
   const named = useQuery({
-    queryKey: boardKey(summary?.id ?? ''),
-    queryFn: summary ? () => api.getBoard(summary.id) : skipToken
+    queryKey: boardKey(chosen?.id ?? ''),
+    queryFn: chosen ? () => api.getBoard(chosen.id) : skipToken
   })
-  return {
-    boards: boards?.filter(each => !each.archived),
-    summary,
-    board: named.data
-  }
+  return { targets, chosen, board: named.data }
 }
 
 export function useSetLayout(

@@ -214,6 +214,12 @@ export const WideScreenNavItem = styled(BarNavItem)(({ theme }) => ({
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
 
+// An action beside a sidebar entry, which the phone bottom bar has no room for.
+export const WideScreenAction = styled('span')(({ theme }) => ({
+  display: 'flex',
+  [theme.breakpoints.down('lg')]: { display: 'none' }
+}))
+
 // twake-bar draws the app text logo 22px tall like the Twake wordmark, whose
 // box is all capitals. Ours also holds the j's dot and descender: scaled up
 // and moved down, its capitals and baseline meet the wordmark's.

@@ -1,13 +1,53 @@
-import { Bottom, Icon, Left, Right } from '@linagora/twake-icons'
+import {
+  Bottom,
+  CalendarToday,
+  Icon,
+  Left,
+  Plus,
+  Right
+} from '@linagora/twake-icons'
 import {
   Box,
   Button,
   ButtonBase,
+  ButtonGroup,
   IconButton,
-  Typography
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
+/** Creating an item in a day or a tray: what its button says, and does */
+export interface CalendarAdd {
+  label: string
+  onAdd: () => void
+}
+
+function AddButton({
+  add,
+  className
+}: {
+  add: CalendarAdd
+  className?: string
+}): ReactElement {
+  return (
+    <Tooltip disableInteractive title={add.label}>
+      <IconButton
+        size="xsmall"
+        className={className}
+        aria-label={add.label}
+        onClick={add.onAdd}
+      >
+        <Icon icon={Plus} size={12} />
+      </IconButton>
+    </Tooltip>
+  )
+}
+
+// As in Twake Calendar: the step buttons around Today, then the period. A
+// phone keeps icons only. Could go upstream to twake-ui with Calendar's.
 export function CalendarToolbar({
   title,
   previousLabel,
@@ -25,24 +65,79 @@ export function CalendarToolbar({
   onNext: () => void
   onToday: () => void
 }): ReactElement {
+  const theme = useTheme()
+  const compact = useMediaQuery(theme.breakpoints.down('md'))
+
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+      {compact ? (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <IconButton aria-label={previousLabel} onClick={onPrevious}>
+            <Icon icon={Left} size={16} />
+          </IconButton>
+          <Tooltip disableInteractive title={todayLabel}>
+            <IconButton
+              color="primary"
+              size="small"
+              aria-label={todayLabel}
+              onClick={onToday}
+              sx={{ border: 1, borderRadius: '12px', width: 38, height: 38 }}
+            >
+              <Icon icon={CalendarToday} size={16} />
+            </IconButton>
+          </Tooltip>
+          <IconButton aria-label={nextLabel} onClick={onNext}>
+            <Icon icon={Right} size={16} />
+          </IconButton>
+        </Box>
+      ) : (
+        <ButtonGroup
+          variant="outlined"
+          sx={theme => ({
+            // Twake Calendar's outlined buttons: grey until hovered
+            // Doubled: ButtonGroup's own border colours are more specific
+            '&& .MuiButtonGroup-grouped': {
+              bgcolor: 'background.paper',
+              // Calendar's grey 900 at 28 %: Twake's theme has no greys
+              borderColor: theme.alpha(theme.vars.palette.text.primary, 0.28),
+              color: theme.alpha(theme.vars.palette.text.primary, 0.9),
+              '&:hover': {
+                bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.04),
+                borderColor: theme.alpha(theme.vars.palette.primary.main, 0.32),
+                color: 'primary.main'
+              }
+            },
+            '& button:first-of-type': { borderRadius: '12px 0 0 12px' },
+            '& button:last-of-type': { borderRadius: '0 12px 12px 0' }
+          })}
+        >
+          <Tooltip disableInteractive title={previousLabel}>
+            <Button aria-label={previousLabel} onClick={onPrevious}>
+              <Icon icon={Left} size={14} />
+            </Button>
+          </Tooltip>
+          <Button onClick={onToday}>{todayLabel}</Button>
+          <Tooltip disableInteractive title={nextLabel}>
+            <Button aria-label={nextLabel} onClick={onNext}>
+              <Icon icon={Right} size={14} />
+            </Button>
+          </Tooltip>
+        </ButtonGroup>
+      )}
       <Typography
         variant="h5"
         component="h2"
-        sx={{ flex: 1, textTransform: 'capitalize' }}
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          fontSize: compact ? 18 : 22,
+          fontWeight: 400,
+          textTransform: 'capitalize'
+        }}
+        noWrap
       >
         {title}
       </Typography>
-      <Button variant="secondary" size="small" onClick={onToday}>
-        {todayLabel}
-      </Button>
-      <IconButton size="small" aria-label={previousLabel} onClick={onPrevious}>
-        <Icon icon={Left} size={14} />
-      </IconButton>
-      <IconButton size="small" aria-label={nextLabel} onClick={onNext}>
-        <Icon icon={Right} size={14} />
-      </IconButton>
     </Box>
   )
 }
@@ -144,17 +239,23 @@ const dayTone = (outside: boolean) => ({
   color: outside ? 'text.disabled' : 'text.secondary'
 })
 
+/**
+ * With `add`, a + shows on hover or focus, and a click on the empty part of
+ * the day does the same: the + is what a keyboard reaches.
+ */
 export function DayCell({
   label,
   number,
   outside,
   today,
+  add,
   children
 }: {
   label: string
   number: number
   outside: boolean
   today: boolean
+  add?: CalendarAdd | undefined
   children: ReactNode
 }): ReactElement {
   return (
@@ -162,17 +263,40 @@ export function DayCell({
       component="section"
       aria-label={label}
       aria-current={today ? 'date' : undefined}
+      onClick={
+        add &&
+        ((event: { target: EventTarget; currentTarget: EventTarget }) => {
+          if (event.target === event.currentTarget) add.onAdd()
+        })
+      }
       sx={{
         ...dayTone(outside),
         minHeight: '7rem',
         minWidth: 0,
         p: 0.5,
         display: 'grid',
+        gridAutoRows: 'min-content',
         alignContent: 'start',
-        gap: 0.5
+        gap: 0.5,
+        ...(add && {
+          cursor: 'pointer',
+          '@media (hover: hover)': { '& .DayCell-add': { opacity: 0 } },
+          '&:hover .DayCell-add, & .DayCell-add:focus-visible': { opacity: 1 }
+        })
       }}
     >
-      <DayNumber number={number} today={today} />
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          pointerEvents: 'none',
+          '& button': { pointerEvents: 'auto' }
+        }}
+      >
+        <DayNumber number={number} today={today} />
+        {add && <AddButton add={add} className="DayCell-add" />}
+      </Box>
       {children}
     </Box>
   )
@@ -230,16 +354,20 @@ export function DayButton({
 
 export function CalendarChip({
   done,
+  highlighted = false,
   onClick,
   children
 }: {
   done: boolean
+  /** The task just created, standing out as a selected one. */
+  highlighted?: boolean
   onClick: () => void
   children: ReactNode
 }): ReactElement {
   return (
     <ButtonBase
       className="CalendarChip"
+      data-new-task={highlighted ? '' : undefined}
       onClick={onClick}
       sx={theme => ({
         justifyContent: 'flex-start',
@@ -255,7 +383,13 @@ export function CalendarChip({
         '&:focus-visible': {
           outline: `2px solid ${theme.vars.palette.primary.main}`,
           outlineOffset: -2
-        }
+        },
+        ...(highlighted && {
+          bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.12),
+          '&:hover': {
+            bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.16)
+          }
+        })
       })}
     >
       <Box
@@ -290,17 +424,23 @@ export function CalendarTray({
   count,
   expanded,
   onToggle,
+  add,
   children
 }: {
   label: string
   count: number
   expanded: boolean
   onToggle: () => void
+  add?: CalendarAdd | undefined
   children: ReactNode
 }): ReactElement {
   return (
     <Box component="section">
-      <Typography variant="subtitle1" component="h2" sx={{ mb: 1 }}>
+      <Typography
+        variant="subtitle1"
+        component="h2"
+        sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}
+      >
         <ButtonBase
           aria-expanded={expanded}
           onClick={onToggle}
@@ -321,6 +461,7 @@ export function CalendarTray({
             {count}
           </Typography>
         </ButtonBase>
+        {add && <AddButton add={add} />}
       </Typography>
       {expanded && (
         <ChipList label={label} roomy>
@@ -334,17 +475,22 @@ export function CalendarTray({
 export function DayAgenda({
   label,
   empty,
+  add,
   children
 }: {
   label: string
   empty: string
+  add?: CalendarAdd | undefined
   children: ReactNode[]
 }): ReactElement {
   return (
     <Box component="section" aria-label={label} sx={{ mt: 2 }}>
-      <Typography variant="subtitle2" component="h3" sx={{ mb: 1 }}>
-        {label}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+        <Typography variant="subtitle2" component="h3">
+          {label}
+        </Typography>
+        {add && <AddButton add={add} />}
+      </Box>
       {children.length > 0 ? (
         <ChipList roomy>{children}</ChipList>
       ) : (
