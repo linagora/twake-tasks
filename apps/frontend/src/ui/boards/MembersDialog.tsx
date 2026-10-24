@@ -50,7 +50,7 @@ export function PeopleAvatars({
           name={person.name}
           avatar={person.avatar}
           size={size}
-          pending={person.pending}
+          pending={person.pending === true}
         />
       ))}
       {hidden.length > 0 &&

@@ -344,7 +344,9 @@ describe('BoardsScreen', () => {
     const boardsApi = fakeBoardsApi()
     renderRoute('/', { boardsApi, lang: 'fr' })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Nouveau' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Créer un tableau' })
+    )
     const dialog = screen.getByRole('dialog', { name: 'Nouveau tableau' })
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Nom' }), {
       target: { value: 'Équipe' }
