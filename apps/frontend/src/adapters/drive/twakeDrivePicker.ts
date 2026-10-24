@@ -83,7 +83,8 @@ export function twakeDrivePicker(sdk: Sdk, idToken: string): DrivePicker {
         {
           theme: { type: options.theme },
           multiple: true,
-          sharingLink: { label: options.linkLabel }
+          sharingLink: { label: options.linkLabel },
+          downloadLink: false
         },
         ['GET']
       )
