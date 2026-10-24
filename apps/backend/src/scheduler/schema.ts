@@ -18,5 +18,11 @@ export const jobs = pgTable(
     lastError: text('last_error'),
     createdAt: timestamptz('created_at').notNull().defaultNow()
   },
-  table => [index().on(table.runAt)]
+  table => [
+    index().on(table.runAt),
+    // Counts a person's reminders, to cap them.
+    index('jobs_reminder_user_index')
+      .on(sql`(${table.payload}->>'userId')`)
+      .where(sql`${table.kind} = 'reminder'`)
+  ]
 )

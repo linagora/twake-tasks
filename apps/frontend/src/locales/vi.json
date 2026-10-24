@@ -169,6 +169,7 @@
     "send": "Gửi",
     "commentsFailed": "Không thể tải bình luận.",
     "commentFailed": "Không thể gửi bình luận.",
+    "tooManyMentions": "Bình luận này nhắc đến quá nhiều người. Hãy nhắc ít người hơn rồi gửi lại.",
     "title": "Tiêu đề",
     "options": "Tùy chọn công việc",
     "close": "Đóng",
@@ -357,7 +358,8 @@
     "save": "Lưu lời nhắc",
     "delete": "Xóa lời nhắc: %{reminder}",
     "failed": "Không thể lưu lời nhắc.",
-    "past": "Hãy chọn một thời điểm trong tương lai."
+    "past": "Hãy chọn một thời điểm trong tương lai.",
+    "tooMany": "Bạn có quá nhiều lời nhắc đang chờ. Hãy xóa bớt trước khi thêm lời nhắc mới."
   },
   "newTask": {
     "title": "Tạo công việc",

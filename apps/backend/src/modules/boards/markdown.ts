@@ -6,6 +6,15 @@ import { gfmTaskListItem } from 'micromark-extension-gfm-task-list-item'
 
 const CONTAINERS = new Set(['root', 'list', 'listItem', 'blockquote'])
 
+// The mentions the database's comment trigger notifies.
+export const MENTION = /(^|\s)@([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]*[A-Za-z0-9])/g
+
+export function mentionedEmails(text: string): Set<string> {
+  return new Set(
+    [...text.matchAll(MENTION)].map(match => (match[2] ?? '').toLowerCase())
+  )
+}
+
 function textOf(node: Nodes): string {
   return CONTAINERS.has(node.type) && 'children' in node
     ? node.children.map(textOf).join('\n')

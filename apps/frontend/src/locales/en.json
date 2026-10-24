@@ -169,6 +169,7 @@
     "send": "Send",
     "commentsFailed": "The comments could not be loaded.",
     "commentFailed": "The comment could not be sent.",
+    "tooManyMentions": "This comment mentions too many people. Mention fewer and send it again.",
     "title": "Title",
     "options": "Task options",
     "close": "Close",
@@ -357,7 +358,8 @@
     "save": "Save reminder",
     "delete": "Delete reminder: %{reminder}",
     "failed": "The reminder could not be saved.",
-    "past": "Pick a time in the future."
+    "past": "Pick a time in the future.",
+    "tooMany": "You have too many reminders waiting. Delete some before adding another."
   },
   "newTask": {
     "title": "Create a task",

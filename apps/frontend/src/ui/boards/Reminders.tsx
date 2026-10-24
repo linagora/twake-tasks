@@ -167,7 +167,10 @@ export function Reminders({
             {add.error instanceof ApiError &&
             add.error.code === 'invalid_reminder'
               ? t('reminders.past')
-              : t('reminders.failed')}
+              : add.error instanceof ApiError &&
+                  add.error.code === 'too_many_reminders'
+                ? t('reminders.tooMany')
+                : t('reminders.failed')}
           </Typography>
         )}
         <EditorActions>

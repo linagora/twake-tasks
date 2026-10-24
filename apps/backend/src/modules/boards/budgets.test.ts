@@ -26,7 +26,9 @@ beforeAll(async () => {
       RATE_LIMIT_COMMENTS_MAX: '2',
       RATE_LIMIT_SEARCH_MAX: '3',
       RATE_LIMIT_OTHER_APP_SEARCH_MAX: '1',
-      RATE_LIMIT_OPEN_STREAMS: '2'
+      RATE_LIMIT_OPEN_STREAMS: '2',
+      RATE_LIMIT_MENTIONS_PER_COMMENT: '2',
+      RATE_LIMIT_PENDING_REMINDERS: '2'
     })
   })
   baseUrl = await api.listen()
@@ -92,6 +94,44 @@ describe('per user budgets', () => {
     expect((await search()).statusCode).toBe(200)
     expect((await search()).statusCode).toBe(429)
     expect((await api.as(alice).get('/search?q=logo')).statusCode).toBe(200)
+  })
+})
+
+describe('caps', () => {
+  it('refuse a comment that mentions more people than the cap, counting each person once', async () => {
+    const alice = aUser()
+    const { boardId, taskId } = await aTaskOf(alice)
+    const path = `/boards/${boardId}/tasks/${taskId}/comments`
+
+    const three = await api.as(alice).post(path, {
+      body: '@ann@example.com @bea@example.com @cid@example.com hello'
+    })
+    const twoTwice = await api.as(alice).post(path, {
+      body: '@ann@example.com @bea@example.com and @ANN@example.com again'
+    })
+
+    expect(three.statusCode).toBe(400)
+    expect(three.json()).toEqual({ error: 'too_many_mentions' })
+    expect(twoTwice.statusCode).toBe(201)
+  })
+
+  it('refuse a reminder past the cap of waiting ones, and free a place when one goes', async () => {
+    const alice = aUser()
+    const { boardId, taskId } = await aTaskOf(alice)
+    const path = `/boards/${boardId}/tasks/${taskId}/reminders`
+    const at = new Date(Date.now() + 86_400_000).toISOString()
+    const first = (await api.as(alice).post(path, { at })).json<{
+      id: string
+    }>()
+    await api.as(alice).post(path, { at })
+
+    const third = await api.as(alice).post(path, { at })
+    await api.as(alice).delete(`${path}/${first.id}`)
+    const again = await api.as(alice).post(path, { at })
+
+    expect(third.statusCode).toBe(409)
+    expect(third.json()).toEqual({ error: 'too_many_reminders' })
+    expect(again.statusCode).toBe(201)
   })
 })
 

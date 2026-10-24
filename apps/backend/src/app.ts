@@ -29,7 +29,16 @@ export async function buildApp(deps: {
   proxyHops?: number | undefined
   redis?: Redis | undefined
   // Without them, nothing is limited per user.
-  limits?: Pick<RateLimits, 'user' | 'openStreams' | 'address'> | undefined
+  limits?:
+    | Pick<
+        RateLimits,
+        | 'user'
+        | 'openStreams'
+        | 'address'
+        | 'mentionsPerComment'
+        | 'pendingReminders'
+      >
+    | undefined
 }) {
   const app = createServer({
     logger: deps.logger,
@@ -53,7 +62,9 @@ export async function buildApp(deps: {
         db: deps.db,
         requireIdentity,
         searchAllowedOrigins: deps.searchAllowedOrigins,
-        searchMinLength: deps.searchMinLength
+        searchMinLength: deps.searchMinLength,
+        mentionsPerComment: deps.limits?.mentionsPerComment ?? 0,
+        pendingReminders: deps.limits?.pendingReminders ?? 0
       })
       registerLive(api, {
         db: deps.db,

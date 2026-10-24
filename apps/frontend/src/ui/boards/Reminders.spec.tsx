@@ -135,6 +135,20 @@ describe('Reminders', () => {
     )
   })
 
+  it('says when too many reminders are waiting', async () => {
+    const { boardsApi, openEditor } = await openLogo('2026-11-02')
+    boardsApi.addReminder.mockRejectedValueOnce(
+      new ApiError(409, 'too_many_reminders')
+    )
+
+    const editor = await openEditor()
+    fireEvent.click(editor.getByRole('button', { name: 'Save reminder' }))
+
+    expect(await editor.findByRole('alert')).toHaveTextContent(
+      'You have too many reminders waiting. Delete some before adding another.'
+    )
+  })
+
   it('drops the past-time message once the reminder is changed', async () => {
     const { boardsApi, openEditor } = await openLogo('2026-11-02')
     boardsApi.addReminder.mockRejectedValueOnce(

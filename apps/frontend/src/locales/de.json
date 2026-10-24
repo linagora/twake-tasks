@@ -169,6 +169,7 @@
     "send": "Senden",
     "commentsFailed": "Die Kommentare konnten nicht geladen werden.",
     "commentFailed": "Der Kommentar konnte nicht gesendet werden.",
+    "tooManyMentions": "Dieser Kommentar erwähnt zu viele Personen. Erwähnen Sie weniger und senden Sie ihn erneut.",
     "title": "Titel",
     "options": "Aufgabenoptionen",
     "close": "Schließen",
@@ -357,7 +358,8 @@
     "save": "Erinnerung speichern",
     "delete": "Erinnerung löschen: %{reminder}",
     "failed": "Die Erinnerung konnte nicht gespeichert werden.",
-    "past": "Wählen Sie einen Zeitpunkt in der Zukunft."
+    "past": "Wählen Sie einen Zeitpunkt in der Zukunft.",
+    "tooMany": "Sie haben zu viele ausstehende Erinnerungen. Löschen Sie einige, bevor Sie eine neue hinzufügen."
   },
   "newTask": {
     "title": "Aufgabe erstellen",

@@ -4,6 +4,7 @@ import { createDb } from '../../infra/db.ts'
 import { createScheduler } from '../../scheduler/scheduler.ts'
 import { aUser, joinBoard, startApp } from '../../testing/app.ts'
 import { userSettings } from '../settings/schema.ts'
+import { emailDigest, NOTIFICATION_DIGEST_JOB } from './notificationDigest.ts'
 import {
   emailNotification,
   NOTIFICATION_EMAIL_JOB,
@@ -22,19 +23,22 @@ afterAll(async () => {
   await sql.end()
 })
 
-function aMailbox() {
+function aMailbox(budget = { max: 0, windowSeconds: 600 }) {
   const sent: Mail[] = []
+  const deps = {
+    appUrl: 'https://tasks.example.com/',
+    budget,
+    send: (mail: Mail) => {
+      sent.push(mail)
+      return Promise.resolve()
+    }
+  }
   const scheduler = createScheduler({
     db,
     logger: pino({ level: 'silent' }),
     handlers: {
-      [NOTIFICATION_EMAIL_JOB]: emailNotification({
-        appUrl: 'https://tasks.example.com/',
-        send: mail => {
-          sent.push(mail)
-          return Promise.resolve()
-        }
-      })
+      [NOTIFICATION_EMAIL_JOB]: emailNotification(deps),
+      [NOTIFICATION_DIGEST_JOB]: emailDigest(deps)
     }
   })
   // The job queue is shared with the other test files, which may have filled
@@ -268,6 +272,73 @@ describe('notification emails', () => {
     expect(mail?.html).toContain('&lt;b&gt;Logo&lt;/b&gt; &amp; co')
     expect(mail?.html).not.toContain('<b>Logo</b>')
     expect(mail?.html).toContain('Ouvrir la tâche')
+  })
+
+  it('holds the emails past a person’s budget, then sends one digest counting them', async () => {
+    const { alice, bob, board } = await aTask()
+    const mailbox = aMailbox({ max: 2, windowSeconds: 600 })
+    for (const title of ['One', 'Two', 'Three', 'Four', 'Five']) {
+      const task = (
+        await api
+          .as(alice)
+          .post(`/boards/${board.id}/tasks`, { sectionId: null, title })
+      ).json<{ id: string }>()
+      await api
+        .as(alice)
+        .put(`/boards/${board.id}/tasks/${task.id}/assignees`, {
+          userIds: [bob.userId]
+        })
+    }
+    await mailbox.deliver()
+    const toBob = () => mailbox.sent.filter(mail => mail.to === bob.email)
+    expect(toBob()).toHaveLength(2)
+
+    await sql`update notification_email_budgets
+      set window_start = window_start - interval '1 hour'
+      where user_id = ${bob.userId}`
+    await sql`update jobs set run_at = now()
+      where kind = ${NOTIFICATION_DIGEST_JOB} and payload->>'userId' = ${bob.userId}`
+    await mailbox.deliver()
+    await mailbox.deliver()
+
+    expect(toBob().slice(2)).toEqual([
+      {
+        to: bob.email,
+        subject: '3 more notifications',
+        text: expect.stringContaining(
+          'https://tasks.example.com/notifications'
+        ) as string,
+        html: expect.stringContaining('See all notifications') as string
+      }
+    ])
+  })
+
+  it('sends a digest only for what is still held once a budget has room again', async () => {
+    const { alice, bob, board, task } = await aTask()
+    const mailbox = aMailbox({ max: 1, windowSeconds: 600 })
+    await api.as(alice).put(`/boards/${board.id}/tasks/${task.id}/assignees`, {
+      userIds: [bob.userId]
+    })
+    await api.as(alice).post(`/boards/${board.id}/tasks/${task.id}/comments`, {
+      body: `@${bob.email} have a look`
+    })
+    await mailbox.deliver()
+    await sql`update notification_email_budgets
+      set window_start = window_start - interval '1 hour'
+      where user_id = ${bob.userId}`
+    await sql`update jobs set run_at = now()
+      where kind = ${NOTIFICATION_DIGEST_JOB} and payload->>'userId' = ${bob.userId}`
+    await mailbox.deliver()
+    await mailbox.deliver()
+
+    expect(
+      mailbox.sent
+        .filter(mail => mail.to === bob.email)
+        .map(mail => mail.subject)
+    ).toEqual([
+      `Alice Martin assigned you ${task.key} Logo`,
+      '1 more notification'
+    ])
   })
 
   it('sends nothing to someone the task left behind when it moved boards', async () => {

@@ -1,6 +1,7 @@
 import { Button, Typography } from '@linagora/twake-mui'
 import { useMemo, useState, type ReactElement } from 'react'
 
+import { ApiError } from '@/application/boards'
 import { Highlight } from '@/ds/Highlight'
 import { RichText, RichTextEditor } from '@/ds/RichText'
 import { Feed, FeedItem } from '@/ds/SidePanel'
@@ -222,7 +223,10 @@ export function Comments({
           />
           {add.isError && (
             <Typography role="alert" variant="caption">
-              {t('task.commentFailed')}
+              {add.error instanceof ApiError &&
+              add.error.code === 'too_many_mentions'
+                ? t('task.tooManyMentions')
+                : t('task.commentFailed')}
             </Typography>
           )}
         </form>
