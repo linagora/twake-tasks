@@ -56,7 +56,15 @@ Database:
 Server:
 
 - `HTTP_HOST` (`0.0.0.0`), `HTTP_PORT` (`8080`).
+- `HTTP_TRUSTED_PROXY_HOPS` (`2`): how many proxies in front of the backend add the address they got the request from to `X-Forwarded-For`. The backend trusts that many hops when it reads the caller's address. `2` fits the chart: the ingress, then the frontend's nginx. Set `0` when nothing proxies the backend. Too low groups every caller under the proxy's address. Too high lets a caller pick its own.
 - `LOG_LEVEL` (`info`): `fatal`, `error`, `warn`, `info`, `debug` or `trace`.
+
+Rate limits:
+
+- `REDIS_URL`: a `redis://` or `rediss://` URL. The replicas share their rate limit counters there. Without it, each replica counts in memory. While Redis is unreachable, the limits let every request through and the backend logs a warning.
+- Tokens the SSO refuses count against the caller's address. Past 30 in a minute, that address gets 429 with `Retry-After` until the minute ends, except for tokens already checked.
+- Logout tokens that `POST /api/auth/backchannel-logout` refuses count the same way, with 60 a minute per address.
+- Each replica checks at most 50 tokens with the SSO at once, and answers 503 past that.
 
 ## Frontend
 
