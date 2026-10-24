@@ -189,6 +189,34 @@ describe('archive and trash', () => {
     expect(router.state.location.search).toBe('?task=DES-2')
   })
 
+  it('opens a full page link to an archived task as a full page among the archived tasks', async () => {
+    const board = aBoard({ name: 'Design' })
+    const logo = aTask(board.sections[0] ?? null, {
+      key: 'DES-1',
+      title: 'Logo'
+    })
+    board.tasks = [logo]
+    const boardsApi = fakeBoardsApi([board])
+    await boardsApi.archiveTask(board.id, logo.id)
+    const { router } = renderRoute(
+      `/boards/${board.id}?task=DES-1&panel=full`,
+      { boardsApi }
+    )
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        `/boards/${board.id}/archived`
+      )
+    })
+    expect(router.state.location.search).toBe('?task=DES-1&panel=full')
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+    expect(
+      panel.getByRole('button', { name: 'Open in side peek' })
+    ).toBeVisible()
+  })
+
   it('says where a deleted task went and opens the trash from there', async () => {
     logoBoard()
 

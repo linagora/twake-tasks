@@ -183,10 +183,11 @@ function LinkedTask({
 
   // Twake's alert says the task is gone, as other apps say theirs.
   const { showAlert } = useAlert()
+  const full = params.get('panel') === 'full' ? '&panel=full' : ''
   useEffect(() => {
     if (!looking || searching) return
     if (shelf) {
-      void navigate(`${shelf}?task=${encodeURIComponent(lost)}`, {
+      void navigate(`${shelf}?task=${encodeURIComponent(lost)}${full}`, {
         relative: 'path',
         replace: true
       })
@@ -206,7 +207,7 @@ function LinkedTask({
       },
       { replace: true }
     )
-  }, [looking, lost, shelf, searching, navigate, setParams, showAlert, t])
+  }, [looking, lost, shelf, full, searching, navigate, setParams, showAlert, t])
 
   return (
     <>
