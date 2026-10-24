@@ -2,7 +2,7 @@ import {
   Bottom,
   CalendarToday,
   Flag,
-  GroupList,
+  Folder,
   Icon,
   Label,
   Mosaic,
@@ -222,6 +222,11 @@ export function NewTaskDialog({
       {
         onSuccess: task => {
           onCreated({ ...task, title: title.trim() })
+        },
+        // Create disables itself while the request runs, which drops the
+        // focus to the page.
+        onError: () => {
+          titleRef.current?.focus()
         }
       }
     )
@@ -323,7 +328,7 @@ export function NewTaskDialog({
                   {section && (
                     <Property
                       id={sectionLabelId}
-                      icon={<Icon icon={GroupList} />}
+                      icon={<Icon icon={Folder} />}
                       label={t('newTask.section')}
                     >
                       <PropertySelect

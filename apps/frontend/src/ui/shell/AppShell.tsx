@@ -51,6 +51,7 @@ import {
   BarNavItem,
   BrandMark,
   CountBadge,
+  OneLineNavText,
   SidebarButton,
   SidebarSection,
   SidebarShelves,
@@ -483,7 +484,7 @@ function BoardsNav({
               active={board.id === boardLit}
             >
               <NavIcon icon={Mosaic} />
-              <NavText>{board.name}</NavText>
+              <OneLineNavText title={board.name}>{board.name}</OneLineNavText>
             </SidebarLink>
           </WideScreenNavItem>
         ))}
