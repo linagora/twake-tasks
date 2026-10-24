@@ -115,14 +115,26 @@ describe('search', () => {
     expect(await search(consumer, 'secret')).toEqual(['DIA-1'])
   })
 
-  it('refuses a query shorter than two characters', async () => {
+  it('finds nothing for a query shorter than two characters', async () => {
+    const owner = aUser()
+    await (await aBoardOf(owner, 'ONE')).add('a')
     const responses = await Promise.all(
-      ['%20', 'a', '%20a%20'].map(q => api.as(aUser()).get(`/search?q=${q}`))
+      ['', '%20', 'a', '%20a%20'].map(q => api.as(owner).get(`/search?q=${q}`))
     )
 
-    expect(responses.map(response => response.statusCode)).toEqual([
-      400, 400, 400
-    ])
+    expect(
+      responses.map(response => [response.statusCode, response.json<unknown>()])
+    ).toEqual(Array(4).fill([200, { tasks: [] }]))
+  })
+
+  it('refuses a missing or oversized query', async () => {
+    const responses = await Promise.all(
+      ['/search', `/search?q=${'a'.repeat(201)}`].map(url =>
+        api.as(aUser()).get(url)
+      )
+    )
+
+    expect(responses.map(response => response.statusCode)).toEqual([400, 400])
   })
 })
 

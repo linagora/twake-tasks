@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { findEmptyState } from '@/testing/emptyState'
@@ -113,6 +113,20 @@ describe('SearchScreen', () => {
 
     expect(
       await screen.findByText('Type at least 2 characters to search.')
+    ).toBeVisible()
+    expect(boardsApi.search).not.toHaveBeenCalled()
+  })
+
+  it('asks for as many characters as the settings say', async () => {
+    window.SEARCH_MIN_LENGTH = '3'
+    onTestFinished(() => {
+      delete window.SEARCH_MIN_LENGTH
+    })
+    const { boardsApi } = boards()
+    renderRoute('/search?q=ab', { boardsApi })
+
+    expect(
+      await screen.findByText('Type at least 3 characters to search.')
     ).toBeVisible()
     expect(boardsApi.search).not.toHaveBeenCalled()
   })

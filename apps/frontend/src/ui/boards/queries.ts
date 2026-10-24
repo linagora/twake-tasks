@@ -120,15 +120,17 @@ export function useCompleteAgendaTask(): UseMutationResult<
   })
 }
 
-// The backend's default SEARCH_MIN_LENGTH.
-export const SEARCH_MIN_LENGTH = 2
+export function searchMinLength(): number {
+  const length = Number(window.SEARCH_MIN_LENGTH)
+  return Number.isInteger(length) && length >= 1 ? length : 2
+}
 
 export function useSearch(text: string): UseQueryResult<AgendaTask[]> {
   const api = useBoardsApi()
   return useQuery({
     queryKey: ['search', text],
     queryFn: () => api.search(text),
-    enabled: text.trim().length >= SEARCH_MIN_LENGTH
+    enabled: text.trim().length >= searchMinLength()
   })
 }
 

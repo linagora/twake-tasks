@@ -19,7 +19,7 @@ SSO:
 
 Search:
 
-- `SEARCH_MIN_LENGTH` (`2`): the fewest characters `GET /api/search?q=` takes, after trimming. A shorter query gets 400. The frontend sends a search from 2 characters, so a higher value refuses some of its searches.
+- `SEARCH_MIN_LENGTH` (`2`): the fewest characters `GET /api/search?q=` searches for, after trimming. A shorter query finds no task, without touching the database. Give the frontend's `SEARCH_MIN_LENGTH` the same value.
 
 Search from another app, such as TwakeSpace's Ctrl+K, which calls `GET /api/search?q=` from the browser with the user's own token:
 
@@ -95,6 +95,10 @@ Security headers. The image builds the Content Security Policy itself, adding th
 - `PERMISSIONS_POLICY`: replaces the default policy, which turns off the accelerometer, geolocation, gyroscope, magnetometer, payment and USB.
 
 Sources are space separated, and must not hold double quotes, backslashes, dollar signs, semicolons or commas.
+
+Search:
+
+- `SEARCH_MIN_LENGTH` (`2`): the fewest characters the search screen searches for. Give it the backend's `SEARCH_MIN_LENGTH`.
 
 Error reporting: `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_FEEDBACK_ENABLED`. See [error reporting](error-reporting.md).
 
