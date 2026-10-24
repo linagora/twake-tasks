@@ -25,7 +25,12 @@ import {
 import { useCallback, useId, useRef, useState, type ReactElement } from 'react'
 import { useNavigate } from 'react-router'
 
-import { defaultSection, type NewTaskDraft } from '@/application/newTask'
+import {
+  defaultSection,
+  UnfinishedTask,
+  type NewTaskDraft,
+  type StartedTask
+} from '@/application/newTask'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { LabelChip } from '@/ds/Columns'
 import { DayPopover } from '@/ds/Pickers'
@@ -171,6 +176,7 @@ export function NewTaskDialog({
     focusOnMount(element)
   }, [])
   const create = useNewTask()
+  const [started, setStarted] = useState<StartedTask | undefined>(undefined)
   const { targets, chosen, board } = useNewTaskBoard(picked, inBoardId)
 
   const change = (changes: Partial<typeof facts>) => {
@@ -217,7 +223,8 @@ export function NewTaskDialog({
           title,
           description,
           ...(section && { sectionId: section.id })
-        }
+        },
+        started
       },
       {
         onSuccess: task => {
@@ -225,7 +232,8 @@ export function NewTaskDialog({
         },
         // Create disables itself while the request runs, which drops the
         // focus to the page.
-        onError: () => {
+        onError: error => {
+          if (error instanceof UnfinishedTask) setStarted(error.task)
           titleRef.current?.focus()
         }
       }
@@ -322,6 +330,7 @@ export function NewTaskDialog({
                           label: each.name
                         }))}
                         onChange={pickBoard}
+                        disabled={started !== undefined}
                       />
                     )}
                   </Property>
@@ -339,6 +348,7 @@ export function NewTaskDialog({
                           label: each.name
                         }))}
                         onChange={setPickedSection}
+                        disabled={started !== undefined}
                       />
                     </Property>
                   )}
@@ -445,7 +455,7 @@ export function NewTaskDialog({
             )}
             {create.isError && (
               <Typography role="alert" variant="body2" color="error">
-                {t('newTask.failed')}
+                {t(started ? 'newTask.unfinished' : 'newTask.failed')}
               </Typography>
             )}
           </Stack>
@@ -459,7 +469,7 @@ export function NewTaskDialog({
               description.length > MAX_DESCRIPTION
             }
           >
-            {t('newTask.create')}
+            {t(started ? 'newTask.save' : 'newTask.create')}
           </Button>
         </DialogActions>
       </form>

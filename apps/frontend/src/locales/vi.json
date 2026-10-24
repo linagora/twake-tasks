@@ -376,6 +376,8 @@
     "dueDateOf": "Hạn chót: %{date}",
     "create": "Tạo",
     "failed": "Không thể tạo công việc.",
+    "unfinished": "Công việc đã được tạo, nhưng một số chi tiết chưa được lưu. Hãy lưu lại để thêm chúng.",
+    "save": "Lưu",
     "created": "Đã tạo “%{title}”",
     "seeTask": "Xem công việc"
   },

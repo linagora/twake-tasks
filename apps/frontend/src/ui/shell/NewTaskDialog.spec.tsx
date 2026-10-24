@@ -298,6 +298,46 @@ describe('NewTaskDialog', () => {
     expect(title()).toHaveValue('Logo')
   })
 
+  it('finishes the task already created when saved again after its details failed', async () => {
+    const { dialog, title, create, design, boardsApi } = await openNewTask()
+    boardsApi.setLabels.mockRejectedValueOnce(new Error('offline'))
+    fireEvent.change(title(), { target: { value: 'Logo' } })
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    await typeRichText(
+      dialog.getByRole('textbox', { name: 'Description' }),
+      'Three variants'
+    )
+    fireEvent.click(dialog.getByRole('button', { name: 'Add labels' }))
+    const label = await screen.findByRole('dialog', {
+      name: 'Label the new task'
+    })
+    fireEvent.click(
+      within(label).getByRole('menuitemcheckbox', { name: 'ops' })
+    )
+    fireEvent.keyDown(label, { key: 'Escape' })
+    fireEvent.click(create())
+
+    expect(await dialog.findByRole('alert')).toHaveTextContent(
+      'The task was created, but some of its details were not saved.'
+    )
+    expect(dialog.getByRole('combobox', { name: 'Board' })).toHaveAttribute(
+      'aria-disabled',
+      'true'
+    )
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBe(null)
+    })
+    expect(boardsApi.createTask).toHaveBeenCalledTimes(1)
+    expect(design.tasks).toMatchObject([
+      { key: 'DES-1', title: 'Logo', labels: [{ id: 'l1' }] }
+    ])
+    expect(
+      await boardsApi.getDescription(design.id, design.tasks[0]?.id ?? '')
+    ).toMatchObject({ markdown: 'Three variants' })
+  })
+
   it('creates the task once when submitted again while creating', async () => {
     const { title, create, boardsApi } = await openNewTask()
     const createTask = boardsApi.createTask.getMockImplementation()

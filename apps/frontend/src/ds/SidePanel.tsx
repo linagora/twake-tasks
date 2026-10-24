@@ -399,16 +399,19 @@ export function PropertySelect({
   labelId,
   value,
   options,
-  onChange
+  onChange,
+  disabled
 }: {
   labelId: string
   value: string
   options: { value: string; label: string }[]
   onChange: (value: string) => void
+  disabled?: boolean
 }): ReactElement {
   return (
     <Select
       size="small"
+      disabled={disabled}
       value={value}
       displayEmpty
       SelectDisplayProps={{ 'aria-labelledby': labelId }}
@@ -419,8 +422,11 @@ export function PropertySelect({
         ...theme.typography.body2,
         ml: -1,
         '& .MuiSelect-select': { py: 0.75, pl: 1, minHeight: 'auto' },
-        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
-        '&:hover': { bgcolor: 'action.hover' },
+        '&, &.Mui-disabled': {
+          bgcolor: 'transparent',
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' }
+        },
+        '&:hover:not(.Mui-disabled)': { bgcolor: 'action.hover' },
         '&:hover .MuiOutlinedInput-notchedOutline': {
           borderColor: 'transparent'
         }

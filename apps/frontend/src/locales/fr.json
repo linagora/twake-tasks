@@ -376,6 +376,8 @@
     "dueDateOf": "Échéance : %{date}",
     "create": "Créer",
     "failed": "La tâche n'a pas pu être créée.",
+    "unfinished": "La tâche a été créée, mais certains de ses détails n'ont pas été enregistrés. Enregistrez à nouveau pour les ajouter.",
+    "save": "Enregistrer",
     "created": "« %{title} » a été créée",
     "seeTask": "Voir la tâche"
   },

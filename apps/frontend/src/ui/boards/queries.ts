@@ -37,7 +37,8 @@ import {
   canAddTo,
   createTask,
   defaultBoard,
-  type NewTaskDraft
+  type NewTaskDraft,
+  type StartedTask
 } from '@/application/newTask'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
@@ -682,12 +683,13 @@ export function useUnreadByProject(): UseQueryResult<ProjectUnread[]> {
 export function useNewTask(): UseMutationResult<
   { boardId: string; key: string },
   Error,
-  { boardId: string; draft: NewTaskDraft }
+  { boardId: string; draft: NewTaskDraft; started?: StartedTask | undefined }
 > {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ boardId, draft }) => createTask(api, boardId, draft),
+    mutationFn: ({ boardId, draft, started }) =>
+      createTask(api, boardId, draft, started),
     // Settled, not succeeded: the task exists once its first request is done,
     // even if adding its details fails. The boards list holds the counts.
     onSettled: () =>
