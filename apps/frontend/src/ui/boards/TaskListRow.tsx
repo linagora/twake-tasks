@@ -8,6 +8,7 @@ import { CompleteCheckbox } from '@/ui/boards/CompleteCheckbox'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
+import { useI18n } from '@/ui/i18n/useI18n'
 
 export function TaskListRow({
   task,
@@ -20,6 +21,7 @@ export function TaskListRow({
   sections: Section[]
   editable: boolean
 }): ReactElement {
+  const { t } = useI18n()
   const panel = useTaskPanel(task.key)
   const completion = useCompleteToggle(task, boardId, sections, editable)
 
