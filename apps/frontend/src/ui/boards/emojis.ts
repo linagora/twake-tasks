@@ -9,7 +9,7 @@ export interface Emoji extends EmojiChoice {
   tags: string[]
 }
 
-// Each language is a chunk of its own, fetched the first time a comment is written.
+// Each language is a chunk of its own, fetched the first time a task opens.
 const LOADERS: Record<
   SupportedLanguage,
   () => Promise<{ default: CompactEmoji[] }>
