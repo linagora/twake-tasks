@@ -531,6 +531,8 @@
     "title": "Filtri",
     "fold": "Comprimi i filtri",
     "unfold": "Espandi i filtri",
+    "star": "Fissa %{name} nella barra laterale",
+    "unstar": "Togli %{name} dalla barra laterale",
     "empty": "Nessun filtro salvato",
     "emptyHint": "Salva i criteri che cerchi spesso, come le tue attività P1.",
     "loadFailed": "Impossibile caricare i filtri.",

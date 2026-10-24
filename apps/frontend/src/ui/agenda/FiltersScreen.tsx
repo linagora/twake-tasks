@@ -28,6 +28,7 @@ import {
   useCreateFilter,
   useDeleteFilter,
   useFilters,
+  useUnpinDeletedFilter,
   useLabelNames,
   useSetFilterFavorite,
   useUpdateFilter
@@ -51,6 +52,7 @@ export function FiltersScreen(): ReactElement {
   const filters = useFilters()
   const [form, setForm] = useState<SavedFilter | 'new' | null>(null)
   const [deleted, setDeleted] = useState<SavedFilter | null>(null)
+  const unpinDeleted = useUnpinDeletedFilter()
   const shown = filters.data?.filter(filter => filter.id !== deleted?.id)
   useDocumentTitle(t('filters.title'))
   const summary = (criteria: FilterCriteria) => {
@@ -143,6 +145,7 @@ export function FiltersScreen(): ReactElement {
                         setForm(null)
                       }
                       setDeleted(filter)
+                      unpinDeleted(filter, true)
                     }}
                     aria-label={t('filters.delete', { name: filter.name })}
                   >
@@ -174,7 +177,7 @@ function FavoriteButton({ filter }: { filter: SavedFilter }): ReactElement {
     <IconButton
       size="small"
       color={filter.favorite ? 'warning' : 'default'}
-      aria-label={t(filter.favorite ? 'boards.unstar' : 'boards.star', {
+      aria-label={t(filter.favorite ? 'filters.unstar' : 'filters.star', {
         name: filter.name
       })}
       onClick={() => {
@@ -198,6 +201,7 @@ function DeletedNotice({
 }): ReactElement {
   const { t } = useI18n()
   const { mutate: remove } = useDeleteFilter()
+  const unpinDeleted = useUnpinDeletedFilter()
   const undone = useRef(false)
   const leaving = useRef<number>(undefined)
   useEffect(() => {
@@ -228,6 +232,7 @@ function DeletedNotice({
             size="small"
             onClick={() => {
               undone.current = true
+              unpinDeleted(filter, false)
               onClose()
             }}
           >

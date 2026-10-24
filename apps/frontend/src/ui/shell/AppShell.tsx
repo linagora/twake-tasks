@@ -398,7 +398,7 @@ function useFolded(key: string, foldedFirst: boolean) {
   const [folded, setFolded] = useState(() => {
     try {
       const saved = localStorage.getItem(key)
-      return saved === null ? foldedFirst : saved === 'true'
+      return saved === null ? foldedFirst : saved !== 'false'
     } catch {
       return foldedFirst
     }

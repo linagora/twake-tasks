@@ -183,6 +183,23 @@ export function useUpdateFilter(
   })
 }
 
+/** Unpins a filter while its deletion can still be undone, or pins it back. */
+export function useUnpinDeletedFilter(): (
+  filter: SavedFilter,
+  deleted: boolean
+) => void {
+  const queryClient = useQueryClient()
+  return (filter, deleted) => {
+    queryClient.setQueryData<SavedFilter[]>(filtersKey, filters =>
+      filters?.map(each =>
+        each.id === filter.id
+          ? { ...each, favorite: !deleted && filter.favorite }
+          : each
+      )
+    )
+  }
+}
+
 export function useDeleteFilter(): UseMutationResult<void, Error, string> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
