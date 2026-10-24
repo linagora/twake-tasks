@@ -1,18 +1,23 @@
 import {
   and,
   asc,
+  desc,
   eq,
   exists,
   gte,
   inArray,
   isNull,
   lt,
+  ne,
   notExists,
   or,
   sql
 } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { userSettings } from '../settings/schema.ts'
+import { memberLooks, settingsOfMember } from './access.ts'
 import { shift, todayIn } from './recurrence.ts'
 import {
   labels,
@@ -30,7 +35,8 @@ type Due = 'overdue' | 'today' | 'week' | 'none'
 
 // Each criterion matches any of its values; a task must match every criterion.
 export interface Criteria {
-  assignee?: ('me' | 'nobody')[] | undefined
+  /** `me`, `nobody`, or a user id. */
+  assignee?: string[] | undefined
   priority?: number[] | undefined
   label?: string[] | undefined
   due?: Due[] | undefined
@@ -58,14 +64,14 @@ function matching(tx: Tx, userId: string, criteria: Criteria, today: string) {
     assignee &&
       or(
         ...assignee.map(each =>
-          each === 'me'
-            ? assignedTo(tx, userId)
-            : notExists(
+          each === 'nobody'
+            ? notExists(
                 tx
                   .select({ one: sql`1` })
                   .from(taskAssignees)
                   .where(eq(taskAssignees.taskId, tasks.id))
               )
+            : assignedTo(tx, each === 'me' ? userId : each)
         )
       ),
     priority && inArray(tasks.priority, priority),
@@ -145,6 +151,37 @@ export function createFilterStore(db: Db) {
             sql`${labels.name} collate "C" desc`
           )
         return rows.map(row => row.name)
+      })
+    },
+
+    people(identity: Identity) {
+      const mine = alias(projectMembers, 'mine')
+      return writeOrRefuse(db, identity, async tx => {
+        const rows = await tx
+          .selectDistinctOn([projectMembers.userId], {
+            userId: projectMembers.userId,
+            email: projectMembers.email,
+            ...memberLooks
+          })
+          .from(projectMembers)
+          .innerJoin(
+            projects,
+            and(
+              eq(projects.id, projectMembers.projectId),
+              isNull(projects.deletedAt)
+            )
+          )
+          .innerJoin(
+            mine,
+            and(
+              eq(mine.projectId, projects.id),
+              eq(mine.userId, identity.userId)
+            )
+          )
+          .leftJoin(userSettings, settingsOfMember)
+          .where(ne(projectMembers.userId, identity.userId))
+          .orderBy(projectMembers.userId, desc(projectMembers.joinedAt))
+        return rows.sort((a, b) => a.email.localeCompare(b.email))
       })
     },
 

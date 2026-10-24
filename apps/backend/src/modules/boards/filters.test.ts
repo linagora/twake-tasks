@@ -109,6 +109,48 @@ describe('saved filters', () => {
     ])
   })
 
+  it('filters by the people picked, on the boards I can see only', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const design = (
+      await api.as(alice).post('/boards', { name: 'DES', keyPrefix: 'DES' })
+    ).json<{ id: string }>()
+    await api.as(alice).post(`/boards/${design.id}/invites`, {
+      email: bob.email,
+      role: 'editor'
+    })
+    await api.as(bob).get('/boards')
+    const path = `/boards/${design.id}/tasks`
+    const add = async (title: string, userIds: string[]) => {
+      const task = (
+        await api.as(alice).post(path, { sectionId: null, title })
+      ).json<{ id: string }>()
+      await api.as(alice).put(`${path}/${task.id}/assignees`, { userIds })
+    }
+    await add('Bob’s', [bob.userId])
+    await add('Mine', [alice.userId])
+    await add('Ours', [alice.userId, bob.userId])
+    await add('Nobody’s', [])
+    const bobs = await aBoardOf(bob, 'BOB')
+    const hidden = await bobs.add('Bob’s, hidden')
+    await bobs.assign(hidden.id, bob)
+    const keys = async (assignee: string[]) => {
+      const { id } = (
+        await api
+          .as(alice)
+          .post('/filters', { name: 'Some', criteria: { assignee } })
+      ).json<{ id: string }>()
+      return (await keysOf(alice, id)).sort()
+    }
+
+    expect(await keys([bob.userId])).toEqual(['DES-1', 'DES-3'])
+    expect(await keys([bob.userId, 'nobody'])).toEqual([
+      'DES-1',
+      'DES-3',
+      'DES-4'
+    ])
+  })
+
   it('matches any of several values for one criterion, and all criteria', async () => {
     const owner = aUser()
     const design = await aBoardOf(owner, 'DES')
@@ -312,7 +354,8 @@ describe('saved filters', () => {
       { colour: ['red'] },
       { priority: [] },
       { priority: 1 },
-      { due: ['soon'] }
+      { due: ['soon'] },
+      { assignee: ['someone'] }
     ]) {
       const response = await api
         .as(user)
@@ -334,6 +377,30 @@ describe('saved filters', () => {
     const response = await api.as(owner).get('/labels')
 
     expect(response.json()).toEqual({ labels: ['client', 'urgent'] })
+  })
+
+  it('lists the other people on my boards to filter by, once each', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId, name: 'Bob' })
+    for (const keyPrefix of ['DES', 'HOM']) {
+      const board = (
+        await api.as(alice).post('/boards', { name: keyPrefix, keyPrefix })
+      ).json<{ id: string }>()
+      await api.as(alice).post(`/boards/${board.id}/invites`, {
+        email: bob.email,
+        role: 'viewer'
+      })
+    }
+    await api.as(bob).get('/boards')
+    await aBoardOf(aUser({ organizationId: alice.organizationId }), 'OTH')
+
+    const response = await api.as(alice).get('/people')
+
+    expect(response.json()).toEqual({
+      people: [
+        { userId: bob.userId, email: bob.email, name: 'Bob', avatar: null }
+      ]
+    })
   })
 
   it('names the parent of a sub-task', async () => {

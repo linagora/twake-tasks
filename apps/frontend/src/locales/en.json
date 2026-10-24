@@ -556,7 +556,8 @@
     "assignees": {
       "any": "Any",
       "me": "Me",
-      "nobody": "Nobody"
+      "nobody": "Nobody",
+      "someone": "Someone no longer on your boards"
     },
     "dues": {
       "any": "Any",

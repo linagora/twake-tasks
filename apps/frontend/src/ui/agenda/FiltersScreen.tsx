@@ -26,6 +26,11 @@ import { MultiSelect } from '@/ds/MultiSelect'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import { Toast } from '@/ds/Toast'
 import {
+  AssigneeField,
+  anyOf,
+  useAssigneeName
+} from '@/ui/agenda/AssigneeField'
+import {
   useCreateFilter,
   useDeleteFilter,
   useFilters,
@@ -38,16 +43,13 @@ import { PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
-const ASSIGNEES = ['me', 'nobody'] as const
 const PRIORITIES = ['1', '2', '3', '4'] as const
 const DUES = ['overdue', 'today', 'week', 'none'] as const
-
-const anyOf = (lang: string, values: string[]) =>
-  new Intl.ListFormat(lang, { type: 'disjunction' }).format(values)
 
 export function FiltersScreen(): ReactElement {
   const { t, lang } = useI18n()
   const filters = useFilters()
+  const assigneeName = useAssigneeName()
   const [form, setForm] = useState<SavedFilter | 'new' | null>(null)
   const [deleted, setDeleted] = useState<SavedFilter | null>(null)
   const unpinDeleted = useUnpinDeletedFilter()
@@ -57,10 +59,7 @@ export function FiltersScreen(): ReactElement {
     const parts = [
       assignee && {
         name: t('filters.assignee'),
-        value: anyOf(
-          lang,
-          assignee.map(value => t(`filters.assignees.${value}`))
-        )
+        value: anyOf(lang, assignee.map(assigneeName))
       },
       priority && {
         name: t('filters.priority'),
@@ -318,15 +317,7 @@ export function FilterForm({
         }}
         slotProps={{ htmlInput: { maxLength: 100 } }}
       />
-      <AnyOf
-        label={t('filters.assignee')}
-        value={assignee}
-        onChange={setAssignee}
-        options={ASSIGNEES.map(value => ({
-          value,
-          name: t(`filters.assignees.${value}`)
-        }))}
-      />
+      <AssigneeField value={assignee} onChange={setAssignee} />
       <AnyOf
         label={t('filters.priority')}
         value={priority}

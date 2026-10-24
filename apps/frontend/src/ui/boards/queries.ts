@@ -141,6 +141,11 @@ export function useLabelNames(): UseQueryResult<string[]> {
   return useQuery({ queryKey: ['labels'], queryFn: () => api.labelNames() })
 }
 
+export function usePeople(): UseQueryResult<Person[]> {
+  const api = useBoardsApi()
+  return useQuery({ queryKey: ['people'], queryFn: () => api.people() })
+}
+
 export function useCreateFilter(): UseMutationResult<
   { id: string },
   Error,

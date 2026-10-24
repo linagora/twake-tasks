@@ -374,6 +374,15 @@ export function fakeBoardsApi(boards: Board[] = []) {
         ].sort()
       )
     ),
+    people: vi.fn<BoardsApi['people']>(() =>
+      Promise.resolve([
+        ...new Map(
+          [...store.values()].flatMap(board =>
+            board.members.map(member => [member.userId, member])
+          )
+        ).values()
+      ])
+    ),
     filteredTasks: vi.fn<BoardsApi['filteredTasks']>(filterId =>
       Promise.resolve().then(() => {
         const filter = filters.find(candidate => candidate.id === filterId)
