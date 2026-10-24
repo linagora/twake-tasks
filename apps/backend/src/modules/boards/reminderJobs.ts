@@ -46,11 +46,15 @@ export async function unscheduleReminder(tx: Tx, reminderId: string) {
 }
 
 // A relative reminder keeps its job between due dates, so it stays counted.
-// The job of a deleted task's reminder is not.
+// The job of a deleted task's reminder is not. The lock holds a person's
+// concurrent additions to the count until each commits.
 export async function remindersWaitingFor(
   tx: Tx,
   userId: string
 ): Promise<number> {
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`reminders:${userId}`}, 0))`
+  )
   const [row] = await tx
     .select({ count: count() })
     .from(jobs)
@@ -60,7 +64,8 @@ export async function remindersWaitingFor(
     )
     .where(
       and(
-        eq(jobs.kind, REMINDER_JOB),
+        // A literal, so a prepared plan still matches the partial index.
+        sql`${jobs.kind} = 'reminder'`,
         sql`${jobs.payload}->>'userId' = ${userId}`
       )
     )

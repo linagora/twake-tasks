@@ -36,7 +36,7 @@ Email:
 
 - `SMTP_URL`: an `smtp://` or `smtps://` URL. Without it, nothing is emailed.
 - `MAIL_FROM` (`Twake Project <tasks@twake.app>`).
-- `SMTP_TIMEOUT_SECONDS` (`60`): how long a mail waits on the SMTP server to connect, greet or answer before the send fails and its job is retried. Keep it well under `JOBS_LEASE_SECONDS`.
+- `SMTP_TIMEOUT_SECONDS` (`60`): how long a mail waits on the SMTP server to connect, greet or answer before the send fails and its job is retried. The backend refuses to start unless `JOBS_LEASE_SECONDS` is at least 5 times this value.
 - `RATE_LIMIT_NOTIFICATION_EMAILS` (`10` in `600`): notification emails one person gets in a window. Past that, their notifications stay in the app, and one digest email, sent once the window ends, says how many more there are. Reminders are always emailed and not counted. `0` turns it off.
 
 Jobs (reminders, emails, purges), run by every replica:

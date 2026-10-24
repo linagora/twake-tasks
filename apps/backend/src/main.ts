@@ -153,7 +153,7 @@ const stopScheduler = createScheduler({
   db,
   logger,
   leaseSeconds: config.JOBS_LEASE_SECONDS,
-  // A job sending a mail holds no database connection while it waits on SMTP.
+  // A mail job spends most of its time on SMTP, after its transaction ended.
   concurrency: kind =>
     [
       NOTIFICATION_EMAIL_JOB,

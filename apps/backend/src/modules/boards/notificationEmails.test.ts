@@ -313,6 +313,36 @@ describe('notification emails', () => {
     ])
   })
 
+  it('gives a failed send its place in the budget back', async () => {
+    const { alice, bob, board, task } = await aTask()
+    const mailbox = aMailbox({ max: 1, windowSeconds: 600 })
+    const failing = createScheduler({
+      db,
+      logger: pino({ level: 'silent' }),
+      handlers: {
+        [NOTIFICATION_EMAIL_JOB]: emailNotification({
+          appUrl: 'https://tasks.example.com/',
+          budget: { max: 1, windowSeconds: 600 },
+          send: () => Promise.reject(new Error('mail server down'))
+        })
+      }
+    })
+    await api.as(alice).put(`/boards/${board.id}/tasks/${task.id}/assignees`, {
+      userIds: [bob.userId]
+    })
+    await failing.runDue()
+
+    await sql`update jobs set run_at = now()
+      where kind = ${NOTIFICATION_EMAIL_JOB} and payload->>'userId' = ${bob.userId}`
+    await mailbox.deliver()
+
+    expect(
+      mailbox.sent
+        .filter(mail => mail.to === bob.email)
+        .map(mail => mail.subject)
+    ).toEqual([`Alice Martin assigned you ${task.key} Logo`])
+  })
+
   it('sends a digest only for what is still held once a budget has room again', async () => {
     const { alice, bob, board, task } = await aTask()
     const mailbox = aMailbox({ max: 1, windowSeconds: 600 })

@@ -15,7 +15,7 @@ import {
   type Language
 } from './mailLayout.ts'
 import { mentionedEmails, MENTION, plainText } from './markdown.ts'
-import { takeEmail } from './notificationDigest.ts'
+import { sendCounted, takeEmail } from './notificationDigest.ts'
 import {
   NOTIFICATION_MESSAGES,
   type NotificationMessages,
@@ -295,8 +295,9 @@ export function emailNotification(deps: {
         )
       )
     if (!row) return undefined
+    const counted = row.reason !== 'reminder' && deps.budget.max > 0
     if (
-      row.reason !== 'reminder' &&
+      counted &&
       !(await takeEmail(tx, deps.budget, {
         userId: job.userId,
         email: row.email,
@@ -428,7 +429,8 @@ export function emailNotification(deps: {
       footer: `${escape(messages.why[why](row.key))}<br><a href="${escape(`${base}/notifications`)}" class="m-muted" style="color:${COLORS.muted};">${escape(messages.all)}</a> &middot; ${APP_NAME}`
     })
 
-    return () => deps.send({ to: row.email, subject, text, html })
+    const send = () => deps.send({ to: row.email, subject, text, html })
+    return db => (counted ? sendCounted(db, job.userId, send) : send())
   }
 }
 

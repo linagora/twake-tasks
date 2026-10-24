@@ -67,13 +67,23 @@ export function createScheduler(deps: {
   const leaseMs = (deps.leaseSeconds ?? 600) * 1000
   const due = (kind: string) => and(eq(jobs.kind, kind), lte(jobs.runAt, now()))
 
-  async function retryLater(db: Db | Tx, job: JobRow, error: unknown) {
+  // A leased job scheduled again under its key meanwhile is left as it is.
+  async function retryLater(
+    db: Db | Tx,
+    job: JobRow,
+    error: unknown,
+    lease?: Date
+  ) {
     const attempts = job.attempts + 1
     const message = error instanceof Error ? error.message : String(error)
     deps.logger.warn({ err: error, job: job.id, attempts }, 'job failed')
+    const same = and(
+      eq(jobs.id, job.id),
+      lease ? eq(jobs.runAt, lease) : undefined
+    )
     if (attempts >= MAX_ATTEMPTS) {
       deps.logger.error({ job: job.id, kind: job.kind }, 'job dropped')
-      await db.delete(jobs).where(eq(jobs.id, job.id))
+      await db.delete(jobs).where(same)
       return
     }
     await db
@@ -83,7 +93,7 @@ export function createScheduler(deps: {
         lastError: message,
         runAt: sql`now() + ${`${String(30 * attempts ** 2)} seconds`}::interval`
       })
-      .where(eq(jobs.id, job.id))
+      .where(same)
   }
 
   async function runOne(kind: string): Promise<boolean> {
@@ -119,12 +129,11 @@ export function createScheduler(deps: {
     if (after) {
       try {
         await after(deps.db)
-        // Unless scheduled again under its key meanwhile.
         await deps.db
           .delete(jobs)
           .where(and(eq(jobs.id, job.id), eq(jobs.runAt, lease)))
       } catch (error) {
-        await retryLater(deps.db, job, error)
+        await retryLater(deps.db, job, error, lease)
       }
     }
     return true

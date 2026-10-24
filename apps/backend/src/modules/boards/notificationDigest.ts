@@ -56,6 +56,23 @@ async function takeSlot(
     .where(eq(budgets.userId, userId))
 }
 
+/** Sends a mail that took a slot, and frees the slot when the send fails. */
+export async function sendCounted(
+  db: Db,
+  userId: string,
+  send: () => Promise<void>
+) {
+  try {
+    await send()
+  } catch (error) {
+    await db
+      .update(budgets)
+      .set({ sent: sql`greatest(${budgets.sent} - 1, 0)` })
+      .where(eq(budgets.userId, userId))
+    throw error
+  }
+}
+
 /**
  * Counts one notification email to the person against the budget. Past it,
  * the email is held, and one digest counts every held email once the window
@@ -142,7 +159,9 @@ export function emailDigest(deps: {
     await takeSlot(tx, to.userId, row)
     const count = row.held
     return async (db: Db) => {
-      await deps.send(digestMail(deps.appUrl, to, count))
+      await sendCounted(db, to.userId, () =>
+        deps.send(digestMail(deps.appUrl, to, count))
+      )
       const [left] = await db
         .update(budgets)
         .set({

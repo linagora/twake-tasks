@@ -126,6 +126,12 @@ const configSchema = z
       'RABBITMQ_QUEUE must differ from RABBITMQ_OLD_QUEUE, the queue of older versions that each start drains and unbinds',
     path: ['RABBITMQ_QUEUE']
   })
+  // The SMTP timeouts apply to each step of a send, so one send can take a few.
+  .refine(env => env.JOBS_LEASE_SECONDS >= 5 * env.SMTP_TIMEOUT_SECONDS, {
+    message:
+      'JOBS_LEASE_SECONDS must be at least 5 times SMTP_TIMEOUT_SECONDS, or a slow send outlives its lease and another replica sends the mail again',
+    path: ['JOBS_LEASE_SECONDS']
+  })
   .and(spaceIntegration)
 
 export type Config = z.infer<typeof configSchema>

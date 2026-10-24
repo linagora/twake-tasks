@@ -135,6 +135,7 @@ describe('the server settings', () => {
     ['RATE_LIMIT_NOTIFICATION_EMAILS_WINDOW_SECONDS', '0'],
     ['JOBS_CONCURRENCY', '0'],
     ['JOBS_LEASE_SECONDS', '0'],
+    ['JOBS_LEASE_SECONDS', '120'],
     ['SMTP_TIMEOUT_SECONDS', '0']
   ])('refuse %s=%s', (name, value) => {
     expect(() => loadConfig({ ...required, [name]: value })).toThrow(

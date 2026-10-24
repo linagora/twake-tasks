@@ -123,13 +123,13 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
       body: string
     ) {
       return writeOrRefuse(db, identity, async tx => {
+        const task = await openTask(tx, identity, boardId, taskId)
         if (
           mentionsPerComment > 0 &&
           mentionedEmails(body).size > mentionsPerComment
         ) {
           throw new Refused('too_many_mentions')
         }
-        const task = await openTask(tx, identity, boardId, taskId)
         const [comment] = await tx
           .insert(comments)
           .values({
