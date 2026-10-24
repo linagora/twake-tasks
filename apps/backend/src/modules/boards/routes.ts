@@ -197,12 +197,13 @@ const reactionParams = taskParams.extend({
 
 const graphemes = new Intl.Segmenter('en', { granularity: 'grapheme' })
 
-// One emoji, possibly a sequence of them joined into one: nothing else.
+// One emoji, possibly a sequence of them joined into one, or a keycap like
+// 1\uFE0F\u20E3: nothing else.
 const reactionEmoji = z
   .string()
   .max(32)
   .regex(
-    /^(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}])(?:[\p{Extended_Pictographic}\p{Regional_Indicator}\p{Emoji_Modifier}\u{E0020}-\u{E007F}]|\u200D|\uFE0F|\u20E3)+$/u
+    /^(?:[#*0-9]\uFE0F?\u20E3|(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}])(?:[\p{Extended_Pictographic}\p{Regional_Indicator}\p{Emoji_Modifier}\u{E0020}-\u{E007F}]|\u200D|\uFE0F)+)$/u
   )
   .refine(text => [...graphemes.segment(text)].length === 1)
 

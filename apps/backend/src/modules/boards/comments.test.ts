@@ -236,13 +236,14 @@ describe('comment reactions', () => {
     const alice = aUser()
     const { reaction, reactionsOf } = await aComment(alice)
 
-    for (const emoji of ['👩🏽‍💻', '🇫🇷', '❤️']) {
+    for (const emoji of ['👩🏽‍💻', '🇫🇷', '❤️', '1️⃣']) {
       expect((await api.as(alice).put(reaction(emoji))).statusCode).toBe(204)
     }
     expect((await reactionsOf(alice))?.map(r => r.emoji)).toEqual([
       '👩🏽‍💻',
       '🇫🇷',
-      '❤️'
+      '❤️',
+      '1️⃣'
     ])
   })
 
