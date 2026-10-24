@@ -8,17 +8,21 @@ export function PersonAvatar({
   name = null,
   avatar = null,
   label,
-  size = 24
+  size = 24,
+  pending = false
 }: {
   email: string
   name?: string | null
   avatar?: string | null | undefined
   label?: string
   size?: ComponentProps<typeof Avatar>['size']
+  /** Invited, not a member yet: greyed in a stack. */
+  pending?: boolean
 }): ReactElement {
   return (
     <Avatar
       size={size}
+      {...(pending && { className: 'PersonAvatar-pending' })}
       {...(avatar && { src: avatar })}
       color={nameToColor(email) ?? 'sunrise'}
       {...(label

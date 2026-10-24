@@ -68,6 +68,28 @@ describe('sharing a board', () => {
     expect(await invitesOn(owner, boardId)).toEqual([])
   })
 
+  it('gives the admins of a board the emails it invited, until they sign in', async () => {
+    const owner = aUser()
+    const editor = aUser({ organizationId: owner.organizationId })
+    const guest = aUser({ organizationId: owner.organizationId })
+    const boardId = await aBoardOf(owner)
+    const invitedOn = async (user: TestUser) =>
+      (await api.as(user).get(`/boards/${boardId}`)).json<{
+        invited: string[]
+      }>().invited
+
+    await invite(owner, boardId, editor.email, 'editor')
+    await boardIdsOf(editor)
+    await invite(owner, boardId, guest.email, 'viewer')
+
+    expect(await invitedOn(owner)).toEqual([guest.email])
+    expect(await invitedOn(editor)).toEqual([])
+
+    await boardIdsOf(guest)
+
+    expect(await invitedOn(owner)).toEqual([])
+  })
+
   it('opens the board of an invite before the guest listed their boards', async () => {
     const owner = aUser()
     const guest = aUser({ organizationId: owner.organizationId })

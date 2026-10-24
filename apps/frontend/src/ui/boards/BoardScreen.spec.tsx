@@ -613,6 +613,19 @@ describe('BoardScreen', () => {
       ).toBeVisible()
     })
 
+    it('shows the people invited, greyed until they sign in', async () => {
+      const board = { ...designBoard(), invited: ['carol@example.com'] }
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+      const stack = await screen.findByRole('button', {
+        name: '2 members, 1 invited'
+      })
+      expect(stack.querySelectorAll('.PersonAvatar-pending')).toHaveLength(1)
+      expect(stack.querySelector('.PersonAvatar-pending')).toHaveTextContent(
+        'C'
+      )
+    })
+
     it.each([
       [
         'a viewer',

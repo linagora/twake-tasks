@@ -559,7 +559,8 @@
     "completeFailed": "Impossibile completare l’attività."
   },
   "members": {
-    "count": "%{smart_count} membro |||| %{smart_count} membri"
+    "count": "%{smart_count} membro |||| %{smart_count} membri",
+    "invitedCount": "%{smart_count} invitato |||| %{smart_count} invitati"
   },
   "page": {
     "breadcrumb": "Posizione della pagina"

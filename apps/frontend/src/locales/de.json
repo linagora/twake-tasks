@@ -559,7 +559,8 @@
     "completeFailed": "Die Aufgabe konnte nicht erledigt werden."
   },
   "members": {
-    "count": "%{smart_count} Mitglied |||| %{smart_count} Mitglieder"
+    "count": "%{smart_count} Mitglied |||| %{smart_count} Mitglieder",
+    "invitedCount": "%{smart_count} eingeladen"
   },
   "page": {
     "breadcrumb": "Ort der Seite"

@@ -23,6 +23,7 @@ import { userSettings } from '../settings/schema.ts'
 import {
   accessibleBoards,
   claimInvites,
+  invitedTo,
   membersOf,
   roleIn,
   roleOn,
@@ -492,6 +493,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     .where(and(eq(tasks.boardId, boardId), shown))
     .orderBy(asc(tasks.position))
   const members = await membersOf(tx, board)
+  const invited = role === 'admin' ? await invitedTo(tx, board.projectId) : []
   const boardLabels = await labelsOn(tx, board)
   const [picked] = await tx
     .select({ layout: boardLayouts.layout })
@@ -511,6 +513,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     version: board.version,
     role,
     members,
+    invited,
     labels: boardLabels,
     sections: sectionRows,
     tasks: await describeTasks(tx, board, rows, members, boardLabels)
