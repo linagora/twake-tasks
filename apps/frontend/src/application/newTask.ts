@@ -36,44 +36,83 @@ export const defaultSection = <T extends Pick<Section, 'category'>>(
 ): T | undefined =>
   sections.find(each => each.category === 'unstarted') ?? sections[0]
 
+export interface StartedTask {
+  id: string
+  key: string
+}
+
+/** The task exists, but some of its details could not be added. */
+export class UnfinishedTask extends Error {
+  constructor(
+    readonly task: StartedTask,
+    options: { cause: unknown }
+  ) {
+    super('The task was created without all its details', options)
+  }
+}
+
 /**
  * The task lands in the section picked, else in the default one, if the
- * board has sections.
+ * board has sections. Given the task an earlier call left unfinished, it
+ * sets that task's details to the draft instead of creating another one.
  */
 export async function createTask(
   api: BoardsApi,
   boardId: string,
-  draft: NewTaskDraft
+  draft: NewTaskDraft,
+  started?: StartedTask
 ): Promise<{ boardId: string; key: string }> {
-  const sectionId =
-    draft.sectionId ??
-    defaultSection((await api.getBoard(boardId)).sections)?.id ??
-    null
-
-  const task = await api.createTask(boardId, {
-    title: draft.title.trim(),
-    sectionId
-  })
-
-  const changes: TaskChanges = {
-    ...(draft.priority && { priority: draft.priority }),
-    ...(draft.dueDate && { dueDate: draft.dueDate })
+  const task =
+    started ??
+    (await api.createTask(boardId, {
+      title: draft.title.trim(),
+      sectionId:
+        draft.sectionId ??
+        defaultSection((await api.getBoard(boardId)).sections)?.id ??
+        null
+    }))
+  try {
+    await addDetails(api, boardId, task.id, draft, started !== undefined)
+  } catch (error) {
+    throw new UnfinishedTask(task, { cause: error })
   }
+  return { boardId, key: task.key }
+}
+
+async function addDetails(
+  api: BoardsApi,
+  boardId: string,
+  taskId: string,
+  draft: NewTaskDraft,
+  finishing: boolean
+): Promise<void> {
+  // Finishing, any detail may already be saved, or changed since.
+  const changes: TaskChanges = finishing
+    ? {
+        title: draft.title.trim(),
+        priority: draft.priority,
+        dueDate: draft.dueDate
+      }
+    : {
+        ...(draft.priority && { priority: draft.priority }),
+        ...(draft.dueDate && { dueDate: draft.dueDate })
+      }
   if (Object.keys(changes).length > 0) {
-    await api.editTask(boardId, task.id, changes)
+    await api.editTask(boardId, taskId, changes)
   }
-  if (draft.description.trim()) {
-    await api.setDescription(boardId, task.id, {
+  const saved = finishing
+    ? await api.getDescription(boardId, taskId)
+    : { markdown: '', version: 0 }
+  if (draft.description.trim() !== saved.markdown.trim()) {
+    await api.setDescription(boardId, taskId, {
       markdown: draft.description,
-      version: 0
+      version: saved.version
     })
   }
-  if (draft.labelIds.length > 0) {
-    await api.setLabels(boardId, task.id, draft.labelIds)
+  if (finishing || draft.labelIds.length > 0) {
+    await api.setLabels(boardId, taskId, draft.labelIds)
   }
-  if (draft.assigneeIds.length > 0) {
-    await api.setAssignees(boardId, task.id, draft.assigneeIds)
+  if (finishing || draft.assigneeIds.length > 0) {
+    await api.setAssignees(boardId, taskId, draft.assigneeIds)
   }
-
-  return { boardId, key: task.key }
 }

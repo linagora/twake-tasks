@@ -376,6 +376,8 @@
     "dueDateOf": "Vencimiento: %{date}",
     "create": "Crear",
     "failed": "No se pudo crear la tarea.",
+    "unfinished": "La tarea se creó, pero algunos de sus detalles no se guardaron. Guarde de nuevo para añadirlos.",
+    "save": "Guardar",
     "created": "«%{title}» se ha creado",
     "seeTask": "Ver la tarea"
   },

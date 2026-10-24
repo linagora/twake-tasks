@@ -376,6 +376,8 @@
     "dueDateOf": "Due date: %{date}",
     "create": "Create",
     "failed": "The task could not be created.",
+    "unfinished": "The task was created, but some of its details were not saved. Save again to add them.",
+    "save": "Save",
     "created": "“%{title}” has been created",
     "seeTask": "See the task"
   },

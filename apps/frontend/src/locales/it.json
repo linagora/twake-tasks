@@ -376,6 +376,8 @@
     "dueDateOf": "Scadenza: %{date}",
     "create": "Crea",
     "failed": "Impossibile creare l'attività.",
+    "unfinished": "L'attività è stata creata, ma alcuni dettagli non sono stati salvati. Salva di nuovo per aggiungerli.",
+    "save": "Salva",
     "created": "«%{title}» è stata creata",
     "seeTask": "Vedi l'attività"
   },
