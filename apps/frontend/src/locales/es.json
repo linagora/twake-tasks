@@ -110,6 +110,7 @@
     "comments": "%{smart_count} comentario |||| %{smart_count} comentarios",
     "subtaskProgress": "Subtareas, %{done} de %{total} hechas",
     "moreAssignees": "%{smart_count} persona asignada más |||| %{smart_count} personas asignadas más",
+    "moreLabels": "%{smart_count} etiqueta más: %{names} |||| %{smart_count} etiquetas más: %{names}",
     "options": "Opciones de %{key}",
     "moveTo": "Mover a %{section}",
     "assign": "Asignar",

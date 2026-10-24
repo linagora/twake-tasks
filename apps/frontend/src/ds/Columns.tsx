@@ -404,7 +404,13 @@ export function LabelChip({
         ...(remove && { pr: 0.25, gap: 0.25 })
       })}
     >
-      <Highlight text={name} query={highlight} />
+      {/* An inline-flex box puts no ellipsis on its own text. */}
+      <Box
+        component="span"
+        sx={{ overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}
+      >
+        <Highlight text={name} query={highlight} />
+      </Box>
       {remove && <ChipRemove {...remove} size={16} />}
     </Box>
   )
