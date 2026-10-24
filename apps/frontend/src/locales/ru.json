@@ -203,7 +203,11 @@
     "descriptionPlaceholder": "Добавьте подробности, шаги или ссылки…",
     "sendHint": "Ctrl+Enter, чтобы отправить",
     "mentionsLabel": "Кого упомянуть",
-    "drive": "Вставить ссылку на файл из Twake Drive"
+    "drive": "Вставить ссылку на файл из Twake Drive",
+    "emoji": "Эмодзи",
+    "emojiSearch": "Поиск эмодзи",
+    "emojiList": "Эмодзи",
+    "emojiNone": "Эмодзи не найдены"
   },
   "drive": {
     "title": "Twake Drive",

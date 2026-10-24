@@ -11,6 +11,7 @@ import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useAddComment, useComments } from '@/ui/boards/queries'
 import { useUnsaved } from '@/ui/boards/unsaved'
+import { useEmojiInput } from '@/ui/boards/useEmojiInput'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { useDrivePicker } from '@/ui/drive/useDrivePicker'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -36,6 +37,7 @@ export function Comments({
   const { user } = useSession()
   const labels = useRichTextLabels()
   const drive = useDrivePicker()
+  const emojiInput = useEmojiInput()
   const comments = useComments(boardId, task.id)
   const add = useAddComment(boardId, task.id)
   const [body, setBody] = useState('')
@@ -127,42 +129,49 @@ export function Comments({
             onSubmit={send}
             mentions={names}
             linkPicker={drive.linkPicker}
-            suggestions={{
-              trigger: '@',
-              label: t('editor.mentionsLabel'),
-              search: query =>
-                mentionable(query).map(person => ({
-                  key: person.userId,
-                  insert: [
-                    { type: 'mention', attrs: { email: person.email } },
-                    { type: 'text', text: ' ' }
-                  ],
-                  label: (
-                    <>
-                      <PersonAvatar
-                        email={person.email}
-                        name={person.name}
-                        avatar={person.avatar}
-                      />
-                      <div className="u-ellipsis">
-                        <Typography variant="body2" className="u-ellipsis">
-                          <Highlight text={displayName(person)} query={query} />
-                        </Typography>
-                        {displayName(person) !== person.email && (
-                          <Typography
-                            variant="caption"
-                            color="textSecondary"
-                            component="div"
-                            className="u-ellipsis"
-                          >
-                            <Highlight text={person.email} query={query} />
+            emoji={emojiInput.emoji}
+            suggestions={[
+              {
+                trigger: '@',
+                label: t('editor.mentionsLabel'),
+                search: query =>
+                  mentionable(query).map(person => ({
+                    key: person.userId,
+                    insert: [
+                      { type: 'mention', attrs: { email: person.email } },
+                      { type: 'text', text: ' ' }
+                    ],
+                    label: (
+                      <>
+                        <PersonAvatar
+                          email={person.email}
+                          name={person.name}
+                          avatar={person.avatar}
+                        />
+                        <div className="u-ellipsis">
+                          <Typography variant="body2" className="u-ellipsis">
+                            <Highlight
+                              text={displayName(person)}
+                              query={query}
+                            />
                           </Typography>
-                        )}
-                      </div>
-                    </>
-                  )
-                }))
-            }}
+                          {displayName(person) !== person.email && (
+                            <Typography
+                              variant="caption"
+                              color="textSecondary"
+                              component="div"
+                              className="u-ellipsis"
+                            >
+                              <Highlight text={person.email} query={query} />
+                            </Typography>
+                          )}
+                        </div>
+                      </>
+                    )
+                  }))
+              },
+              emojiInput.suggestions
+            ]}
             footer={
               <>
                 <Typography

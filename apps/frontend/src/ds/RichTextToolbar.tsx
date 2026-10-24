@@ -19,9 +19,12 @@ import {
   useState,
   type MouseEvent,
   type ReactElement,
-  type ReactNode
+  type ReactNode,
+  type SVGAttributes
 } from 'react'
 import { find } from 'linkifyjs'
+
+import { EmojiPicker, type EmojiPickerOptions } from '@/ds/EmojiPicker'
 
 const SCHEME_OR_PATH = /^(?:[a-z][a-z\d+.-]*:|[/#?])/i
 
@@ -33,6 +36,20 @@ const hrefOf = (typed: string): string =>
   find(typed, { defaultProtocol: 'https' }).find(
     link => link.isLink && link.value === typed
   )?.href ?? (!typed || SCHEME_OR_PATH.test(typed) ? typed : `https://${typed}`)
+
+// twake-icons has no face. The icon stylesheet fills every shape, so the
+// outline is drawn as filled shapes.
+const Smiley = (props: SVGAttributes<SVGSVGElement>): ReactElement => (
+  <svg {...props} viewBox="0 0 16 16">
+    <path
+      fillRule="evenodd"
+      d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm0 1.3a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 0 1 0-10.4Z"
+    />
+    <path d="M4.9 9.2a.65.65 0 0 1 .9.2A2.6 2.6 0 0 0 8 10.6a2.6 2.6 0 0 0 2.2-1.2.65.65 0 1 1 1.1.7A3.9 3.9 0 0 1 8 11.9a3.9 3.9 0 0 1-3.3-1.8.65.65 0 0 1 .2-.9Z" />
+    <circle cx="5.9" cy="6.4" r=".9" />
+    <circle cx="10.1" cy="6.4" r=".9" />
+  </svg>
+)
 
 export interface RichTextLabels {
   toolbar: string
@@ -57,13 +74,16 @@ export interface LinkPicker {
 export function Toolbar({
   editor,
   labels,
-  linkPicker
+  linkPicker,
+  emoji
 }: {
   editor: Editor
   labels: RichTextLabels
   linkPicker?: LinkPicker | undefined
+  emoji?: EmojiPickerOptions | undefined
 }): ReactElement {
   const [linkAnchor, setLinkAnchor] = useState<HTMLElement | null>(null)
+  const [emojiAnchor, setEmojiAnchor] = useState<HTMLElement | null>(null)
   const [url, setUrl] = useState('')
   const active = useEditorState({
     editor,
@@ -259,6 +279,30 @@ export function Toolbar({
           </Button>
         </Box>
       </Popover>
+      {emoji && (
+        <>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+          <Tool
+            label={emoji.labels.open}
+            pressed={emojiAnchor !== null}
+            onClick={event => {
+              setEmojiAnchor(event.currentTarget)
+            }}
+          >
+            <Icon icon={Smiley} size={16} />
+          </Tool>
+          <EmojiPicker
+            anchor={emojiAnchor}
+            options={emoji}
+            onPick={picked => {
+              chain().insertContent(picked.unicode).run()
+            }}
+            onClose={() => {
+              setEmojiAnchor(null)
+            }}
+          />
+        </>
+      )}
     </Box>
   )
 }

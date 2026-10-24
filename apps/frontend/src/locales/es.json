@@ -203,7 +203,11 @@
     "descriptionPlaceholder": "Añade detalles, pasos o enlaces…",
     "sendHint": "Ctrl+Intro para enviar",
     "mentionsLabel": "Personas para mencionar",
-    "drive": "Enlazar un archivo de Twake Drive"
+    "drive": "Enlazar un archivo de Twake Drive",
+    "emoji": "Emoji",
+    "emojiSearch": "Buscar emoji",
+    "emojiList": "Emoji",
+    "emojiNone": "No se encontró ningún emoji"
   },
   "drive": {
     "title": "Twake Drive",

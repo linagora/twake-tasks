@@ -444,4 +444,84 @@ describe('Comments', () => {
       ).not.toBeInTheDocument()
     })
   })
+
+  describe('emoji', () => {
+    async function typeInComment(text: string) {
+      const { board, logo, boardsApi } = logoBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      const panel = await openLogo()
+      const editor = await panel.findByRole('textbox', { name: 'Comment' })
+      editor.focus()
+      await typeRichText(editor, text)
+      return { board, logo, boardsApi, panel, editor }
+    }
+
+    it('suggests emoji as :name is typed and inserts the one chosen', async () => {
+      const { board, logo, boardsApi, panel, editor } =
+        await typeInComment('Great :thumb')
+
+      // The names load in the background, after the first keystrokes of a test.
+      const list = await waitFor(async () => {
+        await typeRichText(editor, 'Great :thumbs')
+        return screen.getByRole('listbox', { name: 'Emoji' })
+      })
+      fireEvent.click(within(list).getByRole('option', { name: 'thumbs up' }))
+
+      await waitFor(() => {
+        expect(editor.textContent).toBe('Great 👍️')
+      })
+      fireEvent.click(panel.getByRole('button', { name: 'Send' }))
+      await waitFor(() => {
+        expect(boardsApi.addComment).toHaveBeenCalledWith(
+          board.id,
+          logo.id,
+          'Great 👍️'
+        )
+      })
+    })
+
+    it('suggests nothing for a smiley typed as text', async () => {
+      await typeInComment('Done :)')
+
+      await waitFor(() => {
+        expect(screen.queryByRole('listbox')).toBe(null)
+      })
+    })
+
+    it('inserts the emoji picked from the button', async () => {
+      const { panel, editor } = await typeInComment('Shipped ')
+
+      fireEvent.click(panel.getByRole('button', { name: 'Emoji' }))
+      fireEvent.change(await screen.findByLabelText('Search emoji'), {
+        target: { value: 'party' }
+      })
+      fireEvent.click(
+        within(screen.getByRole('group', { name: 'Emoji' })).getByRole(
+          'button',
+          { name: 'party popper' }
+        )
+      )
+
+      await waitFor(() => {
+        expect(editor).toHaveTextContent('Shipped 🎉')
+      })
+      await waitFor(() => {
+        expect(screen.queryByLabelText('Search emoji')).toBe(null)
+      })
+    })
+
+    it('inserts the first emoji found on Enter in the search', async () => {
+      const { panel, editor } = await typeInComment('Shipped ')
+
+      fireEvent.click(panel.getByRole('button', { name: 'Emoji' }))
+      const search = await screen.findByLabelText('Search emoji')
+      fireEvent.change(search, { target: { value: 'party popper' } })
+      await screen.findByRole('button', { name: 'party popper' })
+      fireEvent.keyDown(search, { key: 'Enter' })
+
+      await waitFor(() => {
+        expect(editor).toHaveTextContent('Shipped 🎉')
+      })
+    })
+  })
 })

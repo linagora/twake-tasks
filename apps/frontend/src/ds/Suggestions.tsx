@@ -1,4 +1,5 @@
 import { List, ListItemButton, Paper, Popper } from '@linagora/twake-mui'
+import { PluginKey } from '@tiptap/pm/state'
 import { Extension, type Content, type Editor } from '@tiptap/react'
 import { Suggestion, type SuggestionProps } from '@tiptap/suggestion'
 import { useEffect, useMemo, type ReactElement, type ReactNode } from 'react'
@@ -39,13 +40,16 @@ export interface SuggestionBridge extends SuggestionHandlers {
 }
 
 export function suggestionsExtension(bridge: SuggestionBridge) {
+  // Each trigger needs a plugin key of its own, or the second one replaces the first.
+  const name = `suggestions-${bridge.trigger}`
   return Extension.create({
-    name: 'suggestions',
+    name,
     priority: 1000,
     addProseMirrorPlugins() {
       return [
         Suggestion<SuggestionOption, SuggestionOption>({
           editor: this.editor,
+          pluginKey: new PluginKey(name),
           char: bridge.trigger,
           dismissOnOutsideClick: false,
           items: ({ query }) => bridge.search(query),
