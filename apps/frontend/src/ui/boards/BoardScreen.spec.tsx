@@ -74,6 +74,26 @@ describe('BoardScreen', () => {
     ).toBeInTheDocument()
   })
 
+  it('titles a board opened from the boards with its name while it loads', async () => {
+    const board = designBoard()
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.getBoard.mockReturnValue(new Promise(() => undefined))
+    renderRoute('/', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('link', { name: /Design/ }))
+
+    const breadcrumb = await screen.findByRole('navigation', {
+      name: 'Where the page is'
+    })
+    expect(
+      within(breadcrumb).getByRole('heading', { level: 1, name: 'Design' })
+    ).toBeInTheDocument()
+    expect(within(breadcrumb).queryByText('…')).toBe(null)
+    expect(
+      within(breadcrumb).getByRole('link', { name: 'Boards' })
+    ).toHaveTextContent(/^$/)
+  })
+
   it('shows a No section column only when a task has no section', async () => {
     const board = designBoard()
     board.tasks.push(aTask(null, { key: 'DES-3', title: 'Loose' }))
@@ -516,8 +536,8 @@ describe('BoardScreen', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
     expect(
-      await screen.findByText('Design', { selector: '[aria-current="page"]' })
-    ).toBeVisible()
+      await screen.findByRole('heading', { level: 1, name: 'Design' })
+    ).toHaveAttribute('aria-current', 'page')
     const crumbs = within(
       screen.getByRole('navigation', { name: 'Where the page is' })
     )

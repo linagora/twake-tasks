@@ -250,6 +250,16 @@ export function useBoards({
   })
 }
 
+/** The board's name from the boards list already loaded, without subscribing to it. */
+export function useListedBoardName(boardId: string): string | null {
+  const queryClient = useQueryClient()
+  return (
+    queryClient
+      .getQueryData<BoardSummary[]>(boardsKey)
+      ?.find(board => board.id === boardId)?.name ?? null
+  )
+}
+
 // Reloads on a newer version: a change made elsewhere, or one missed while
 // the stream was reconnecting.
 export function useBoard(boardId: string): UseQueryResult<Board> {

@@ -401,7 +401,6 @@
     "undo": "Отменить",
     "viewArchived": "Открыть архив задач",
     "viewTrash": "Открыть корзину",
-    "back": "Назад к %{board}",
     "shelves": "Скрытые задачи",
     "archivedShelf": "Архив",
     "trashShelf": "Корзина",

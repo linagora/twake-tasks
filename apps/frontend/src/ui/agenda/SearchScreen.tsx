@@ -69,11 +69,8 @@ export function SearchScreen(): ReactElement {
 
   return (
     <OriginContext value={origin}>
-      <main className="u-p-2">
-        <PageCrumbs origin={origin} />
-        <Typography variant="h3" component="h1" className="u-mb-2">
-          {t('search.label')}
-        </Typography>
+      <main className="u-ph-2 u-pt-half u-pb-2">
+        <PageCrumbs origin={origin} heading />
         {results.isError && (
           <Typography role="alert">{t('search.failed')}</Typography>
         )}

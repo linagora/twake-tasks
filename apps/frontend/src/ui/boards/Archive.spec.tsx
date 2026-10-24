@@ -95,7 +95,7 @@ describe('archive and trash', () => {
     await removeLogo('Archive')
     const shelf = await openShelf('Trash')
     expect(await findEmptyState('The trash is empty')).toBeVisible()
-    fireEvent.click(shelf.getByRole('button', { name: 'Archived' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Archived' }))
     expect(
       await screen.findByRole('heading', { name: 'Archived tasks', level: 1 })
     ).toBeVisible()
@@ -103,7 +103,11 @@ describe('archive and trash', () => {
       await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
     ).toBeVisible()
 
-    fireEvent.click(shelf.getByRole('link', { name: 'Back to Design' }))
+    fireEvent.click(
+      within(
+        screen.getByRole('navigation', { name: 'Where the page is' })
+      ).getByRole('link', { name: 'Design' })
+    )
     expect(
       await screen.findByRole('button', { name: 'Board options' })
     ).toBeVisible()

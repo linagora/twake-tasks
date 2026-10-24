@@ -49,11 +49,13 @@ import {
   BoardStepContext,
   OriginContext,
   PageCrumbs,
-  useBoardsOrigin
+  useBoardsOrigin,
+  type Origin
 } from '@/ui/boards/Crumbs'
 import { NewDatedTask } from '@/ui/boards/NewDatedTask'
 import {
   useBoardOf,
+  useListedBoardName,
   useCreateTask,
   useHiddenTasks,
   useMoveTask,
@@ -82,6 +84,10 @@ export function BoardScreen({
   const { t } = useI18n()
   const { boardId = '', projectId } = useParams()
   const { board, shown, missing } = useBoardOf(boardId, projectId)
+  // Opened from the boards, its name is known already: the breadcrumb shows it
+  // at once rather than "…" then the name.
+  const listedName = useListedBoardName(boardId)
+  const name = shown?.name ?? (missing ? null : listedName) ?? '…'
   const boardsOrigin = {
     ...useBoardsOrigin(),
     to: '../..',
@@ -95,12 +101,12 @@ export function BoardScreen({
 
   return (
     <OriginContext value={boardsOrigin}>
-      <BoardStepContext
-        value={{ to: '.', label: shown?.name ?? '…', relative: true }}
-      >
-        <main className={flush ? undefined : 'u-p-2'}>
-          {back && (
-            <PageCrumbs origin={boardsOrigin} current={shown?.name ?? '…'} />
+      <BoardStepContext value={{ to: '.', label: name, relative: true }}>
+        <main className={flush ? undefined : 'u-ph-2 u-pt-half u-pb-2'}>
+          {/* Once loaded, the board titles itself with its breadcrumb. */}
+          {back && !(shown && !waiting) && (
+            // The size of the board's own title, so that nothing moves once it loads.
+            <PageCrumbs origin={boardsOrigin} current={name} heading />
           )}
           {missing && (
             <EmptyState
@@ -118,7 +124,11 @@ export function BoardScreen({
             <ColumnsSkeleton label={t('app.loading')} />
           )}
           {shown && !waiting && (
-            <BoardColumns board={shown} settled={!board.isFetching} />
+            <BoardColumns
+              board={shown}
+              settled={!board.isFetching}
+              origin={back ? boardsOrigin : undefined}
+            />
           )}
         </main>
       </BoardStepContext>
@@ -210,10 +220,13 @@ function LinkedTask({
 
 function BoardColumns({
   board,
-  settled
+  settled,
+  origin
 }: {
   board: Board
   settled: boolean
+  /** Where its breadcrumb starts, which then titles the page. */
+  origin?: Origin | undefined
 }): ReactElement {
   const { t } = useI18n()
   const move = useMoveTask(board.id)
@@ -300,101 +313,120 @@ function BoardColumns({
   const tasksIn = (column: (typeof columns)[number]) =>
     topLevel.filter(task => task.sectionId === column.id)
 
-  return (
-    <RemovalNotices.Provider value={setRemoval}>
-      <PageHeader
-        title={
-          <BoardTitle
-            board={board}
-            renaming={renaming}
-            onRename={setRenaming}
+  const headerActions = (
+    <>
+      <LayoutSwitch board={board} />
+      {board.role !== 'admin' && (
+        <Tooltip
+          title={
+            board.archived
+              ? t('archive.boardArchived')
+              : t(`board.${board.role}Hint`)
+          }
+          describeChild
+        >
+          <Chip
+            variant="outlined"
+            size="small"
+            label={t(`sharing.roles.${board.role}`)}
+            aria-haspopup="dialog"
+            onClick={() => {
+              setListing(true)
+            }}
           />
+        </Tooltip>
+      )}
+      {board.members.length > 0 && (
+        <MemberStack
+          members={board.members}
+          onClick={() => {
+            if (shareable) setSharing(true)
+            else setListing(true)
+          }}
+        />
+      )}
+      {shareable ? (
+        <Button
+          variant="secondary"
+          startIcon={<Icon icon={Share} />}
+          onClick={() => {
+            setSharing(true)
+          }}
+        >
+          {t('sharing.share')}
+        </Button>
+      ) : (
+        <Tooltip title={whyNot ?? ''} describeChild>
+          <UnavailableButton
+            variant="secondary"
+            startIcon={<Icon icon={Share} />}
+            aria-disabled="true"
+            disableRipple
+          >
+            {t('sharing.share')}
+          </UnavailableButton>
+        </Tooltip>
+      )}
+      {editable && first && (
+        <Button
+          startIcon={<Icon icon={Plus} />}
+          onClick={() => {
+            setAdding(columnKey(first))
+          }}
+        >
+          {t('board.newTask')}
+        </Button>
+      )}
+      <BoardMenu
+        board={board}
+        onOpenShelf={openShelf}
+        onRename={
+          renamable
+            ? () => {
+                setRenaming(true)
+              }
+            : undefined
         }
-        actions={
-          <>
-            <LayoutSwitch board={board} />
-            {board.role !== 'admin' && (
-              <Tooltip
-                title={
-                  board.archived
-                    ? t('archive.boardArchived')
-                    : t(`board.${board.role}Hint`)
-                }
-                describeChild
-              >
-                <Chip
-                  variant="outlined"
-                  size="small"
-                  label={t(`sharing.roles.${board.role}`)}
-                  aria-haspopup="dialog"
-                  onClick={() => {
-                    setListing(true)
-                  }}
-                />
-              </Tooltip>
-            )}
-            {board.members.length > 0 && (
-              <MemberStack
-                members={board.members}
-                onClick={() => {
-                  if (shareable) setSharing(true)
-                  else setListing(true)
-                }}
-              />
-            )}
-            {shareable ? (
-              <Button
-                variant="secondary"
-                startIcon={<Icon icon={Share} />}
-                onClick={() => {
-                  setSharing(true)
-                }}
-              >
-                {t('sharing.share')}
-              </Button>
-            ) : (
-              <Tooltip title={whyNot ?? ''} describeChild>
-                <UnavailableButton
-                  variant="secondary"
-                  startIcon={<Icon icon={Share} />}
-                  aria-disabled="true"
-                  disableRipple
-                >
-                  {t('sharing.share')}
-                </UnavailableButton>
-              </Tooltip>
-            )}
-            {editable && first && (
-              <Button
-                startIcon={<Icon icon={Plus} />}
-                onClick={() => {
-                  setAdding(columnKey(first))
-                }}
-              >
-                {t('board.newTask')}
-              </Button>
-            )}
-            <BoardMenu
-              board={board}
-              onOpenShelf={openShelf}
-              onRename={
-                renamable
-                  ? () => {
-                      setRenaming(true)
-                    }
-                  : undefined
+        onMove={
+          movable
+            ? () => {
+                setMoving(true)
               }
-              onMove={
-                movable
-                  ? () => {
-                      setMoving(true)
-                    }
-                  : undefined
-              }
-            />
-          </>
+            : undefined
         }
       />
+    </>
+  )
+
+  return (
+    <RemovalNotices.Provider value={setRemoval}>
+      {origin ? (
+        <PageCrumbs
+          origin={origin}
+          current={
+            <BoardTitle
+              board={board}
+              renaming={renaming}
+              onRename={setRenaming}
+              bare
+            />
+          }
+          // A heading would take the name of the field that renames it.
+          heading={!renaming}
+          actions={headerActions}
+        />
+      ) : (
+        <PageHeader
+          title={
+            <BoardTitle
+              board={board}
+              renaming={renaming}
+              onRename={setRenaming}
+            />
+          }
+          actions={headerActions}
+        />
+      )}
       {board.archived && (
         <Alert severity="info" className="u-mb-1">
           {t('archive.boardArchived')}
@@ -564,11 +596,14 @@ function BoardColumns({
 function BoardTitle({
   board,
   renaming,
-  onRename
+  onRename,
+  bare = false
 }: {
   board: Board
   renaming: boolean
   onRename: (renaming: boolean) => void
+  /** Without its heading, for a breadcrumb that is one. */
+  bare?: boolean
 }): ReactElement {
   const { t } = useI18n()
   const renamable = board.role === 'admin' && !board.archived && !board.inbox
@@ -586,23 +621,26 @@ function BoardTitle({
       />
     )
   }
-  return (
+  const name = renamable ? (
+    <Tooltip title={t('board.rename')} describeChild>
+      <TitleButton
+        focusOnMount={returned}
+        onClick={() => {
+          setReturned(false)
+          onRename(true)
+        }}
+      >
+        {board.name}
+      </TitleButton>
+    </Tooltip>
+  ) : (
+    board.name
+  )
+  return bare ? (
+    <>{name}</>
+  ) : (
     <PageTitle variant="h3" component="h1" noWrap>
-      {renamable ? (
-        <Tooltip title={t('board.rename')} describeChild>
-          <TitleButton
-            focusOnMount={returned}
-            onClick={() => {
-              setReturned(false)
-              onRename(true)
-            }}
-          >
-            {board.name}
-          </TitleButton>
-        </Tooltip>
-      ) : (
-        board.name
-      )}
+      {name}
     </PageTitle>
   )
 }

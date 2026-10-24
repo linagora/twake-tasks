@@ -118,17 +118,15 @@ export function NotificationsScreen(): ReactElement {
   ]
 
   return (
-    <main className="u-p-2">
+    <main className="u-ph-2 u-pt-half u-pb-2">
       <PageCrumbs
         origin={{
           icon: Bell,
           label: t('notifications.title'),
           to: '/notifications'
         }}
+        heading
       />
-      <Typography variant="h3" component="h1" className="u-mb-2">
-        {t('notifications.title')}
-      </Typography>
       {notifications.isError && (
         <Typography role="alert">{t('notifications.loadFailed')}</Typography>
       )}

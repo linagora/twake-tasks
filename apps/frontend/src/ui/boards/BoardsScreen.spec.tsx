@@ -11,6 +11,18 @@ const boardNames = (list: HTMLElement) =>
     .map(link => link.textContent)
 
 describe('BoardsScreen', () => {
+  it('titles the page with its breadcrumb, with no title repeating it', async () => {
+    renderRoute('/', { boardsApi: fakeBoardsApi() })
+
+    const crumbs = within(
+      await screen.findByRole('navigation', { name: 'Where the page is' })
+    )
+    expect(
+      crumbs.getByRole('heading', { level: 1, name: 'Boards' })
+    ).toHaveAttribute('aria-current', 'page')
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+  })
+
   it('lists active boards, and archived ones under their own tab', async () => {
     const project = aProject({ name: 'Product' })
     const boardsApi = fakeBoardsApi([

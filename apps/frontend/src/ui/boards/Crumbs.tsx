@@ -1,9 +1,10 @@
-import { Home, Icon, type IconProps } from '@linagora/twake-icons'
-import { Breadcrumbs, Link, Typography } from '@linagora/twake-mui'
-import { createContext, type ReactElement } from 'react'
+import { Home, Icon, Right, type IconProps } from '@linagora/twake-icons'
+import { IconButton, Tooltip, Typography } from '@linagora/twake-mui'
+import { createContext, type ReactElement, type ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router'
 
-import { CrumbSlot } from '@/ds/CrumbBar'
+import { CrumbRow, CrumbSlot, CrumbStep, CrumbTrail } from '@/ds/CrumbBar'
+import { PageTitle } from '@/ds/PageHeader'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export interface Crumb {
@@ -29,12 +30,25 @@ export function useBoardsOrigin(): Origin {
   return { icon: Home, label: t('boards.title'), to: '/' }
 }
 
-function OriginLabel({ origin }: { origin: Origin }): ReactElement {
+function Page({
+  heading,
+  children
+}: {
+  heading: boolean
+  children: ReactNode
+}): ReactElement {
+  const Title = heading ? PageTitle : Typography
   return (
-    <>
-      <Icon icon={origin.icon} size={16} className="u-mr-half" />
-      {origin.label}
-    </>
+    <Title
+      variant={heading ? 'h3' : 'body2'}
+      component={heading ? 'h1' : 'div'}
+      color="textPrimary"
+      aria-current="page"
+      // Not while renaming, which would cut the field's label.
+      noWrap={heading}
+    >
+      {children}
+    </Title>
   )
 }
 
@@ -46,79 +60,89 @@ export function Crumbs({
   label,
   origin,
   steps = [],
-  current
+  current,
+  heading = false
 }: {
   label: string
   /** None in a peek, which sits beside the page it starts from. */
   origin?: Origin | undefined
   steps?: Crumb[] | undefined
   /** None when the page is the origin itself. */
-  current?: string | undefined
+  current?: ReactNode
+  /**
+   * The page's title, as Twake Drive's path is: the page is its heading, so
+   * that no title repeats it.
+   */
+  heading?: boolean
 }): ReactElement {
   return (
-    <Breadcrumbs aria-label={label} className="u-miw-0">
+    <CrumbTrail
+      aria-label={label}
+      className="u-miw-0"
+      separator={<Icon icon={Right} size={16} />}
+    >
       {origin === undefined ? null : current === undefined ? (
-        <Typography
-          variant="body2"
-          color="textPrimary"
-          aria-current="page"
-          className="u-flex u-flex-items-center"
-        >
-          <OriginLabel origin={origin} />
-        </Typography>
+        <Page heading={heading}>{origin.label}</Page>
       ) : (
-        <Link
-          component={RouterLink}
-          to={origin.to}
-          relative={origin.relative ? 'path' : 'route'}
-          color="inherit"
-          underline="hover"
-          variant="body2"
-          className="u-flex u-flex-items-center"
-        >
-          <OriginLabel origin={origin} />
-        </Link>
+        // As the root folder in Twake Drive's path: its icon alone.
+        <Tooltip title={origin.label}>
+          <IconButton
+            component={RouterLink}
+            to={origin.to}
+            relative={origin.relative ? 'path' : 'route'}
+            size="small"
+            aria-label={origin.label}
+            color="inherit"
+          >
+            <Icon icon={origin.icon} size={16} />
+          </IconButton>
+        </Tooltip>
       )}
       {steps.map(step => (
-        <Link
+        <CrumbStep
           key={step.to}
           component={RouterLink}
           to={step.to}
           relative={step.relative ? 'path' : 'route'}
           color="inherit"
           underline="hover"
-          variant="body2"
+          variant={heading ? 'h3' : 'body2'}
+          noWrap
         >
           {step.label}
-        </Link>
+        </CrumbStep>
       ))}
-      {current !== undefined && (
-        <Typography variant="body2" color="textPrimary" aria-current="page">
-          {current}
-        </Typography>
-      )}
-    </Breadcrumbs>
+      {current !== undefined && <Page heading={heading}>{current}</Page>}
+    </CrumbTrail>
   )
 }
 
 export function PageCrumbs({
   origin,
   steps,
-  current
+  current,
+  heading = false,
+  actions
 }: {
   origin: Origin
   steps?: Crumb[] | undefined
-  current?: string | undefined
+  current?: ReactNode
+  /** The breadcrumb is the page's title, with its actions beside it. */
+  heading?: boolean
+  actions?: ReactNode
 }): ReactElement {
   const { t } = useI18n()
   return (
     <CrumbSlot>
-      <Crumbs
-        label={t('page.breadcrumb')}
-        origin={origin}
-        steps={steps}
-        current={current}
-      />
+      <CrumbRow actions={actions}>
+        <Crumbs
+          label={t('page.breadcrumb')}
+          origin={origin}
+          steps={steps}
+          current={current}
+          heading={heading}
+        />
+      </CrumbRow>
     </CrumbSlot>
   )
 }

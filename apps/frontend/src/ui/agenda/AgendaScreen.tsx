@@ -27,7 +27,6 @@ import {
 } from '@/ds/Columns'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Highlight } from '@/ds/Highlight'
-import { PageHeader } from '@/ds/PageHeader'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import {
   AgendaTaskPanel,
@@ -358,17 +357,11 @@ export function AgendaScreen(
 
   return (
     <OriginContext value={origin}>
-      <main className="u-p-2">
+      <main className="u-ph-2 u-pt-half u-pb-2">
         <PageCrumbs
           origin={origin}
           current={'origin' in props ? title || '…' : undefined}
-        />
-        <PageHeader
-          title={
-            <Typography variant="h3" component="h1">
-              {title}
-            </Typography>
-          }
+          heading
           actions={actions}
         />
         {form}

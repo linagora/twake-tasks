@@ -401,7 +401,6 @@
     "undo": "Deshacer",
     "viewArchived": "Ver tareas archivadas",
     "viewTrash": "Ver papelera",
-    "back": "Volver a %{board}",
     "shelves": "Tareas ocultas",
     "archivedShelf": "Archivadas",
     "trashShelf": "Papelera",

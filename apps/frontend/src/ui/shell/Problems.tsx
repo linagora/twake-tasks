@@ -21,7 +21,7 @@ export function NotFoundScreen({
   useDocumentTitle(t('problems.notFound'))
   const { to, label } = back ?? { to: '/', label: t('board.back') }
   return (
-    <main className="u-p-2">
+    <main className="u-ph-2 u-pt-half u-pb-2">
       <PageCrumbs origin={origin} current={t('problems.notFound')} />
       <EmptyState
         icon={Compass}
