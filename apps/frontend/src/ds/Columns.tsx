@@ -145,10 +145,11 @@ export function Column({
           alignItems: 'center',
           gap: 1,
           ...(handle && {
-            cursor: drag === 'lifted' ? 'grabbing' : 'grab',
+            cursor: 'grab',
             borderRadius: 1,
             '&:focus-visible': {
-              outline: `2px solid ${theme.vars.palette.primary.main}`
+              outline: `2px solid ${theme.vars.palette.primary.main}`,
+              outlineOffset: '4px'
             }
           })
         })}

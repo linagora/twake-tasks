@@ -242,8 +242,9 @@ function BoardColumns({
     (api, { sectionId, to }: { sectionId: string; to: SectionMove }) =>
       api.moveSection(board.id, sectionId, to)
   )
-  const taskPreview = (task: Task) => (
-    <Card label={`${task.key} ${task.title}`} drag="lifted">
+  // Only the column is lifted when it carries its cards along.
+  const taskPreview = (task: Task, drag: 'lifted' | 'none' = 'lifted') => (
+    <Card label={`${task.key} ${task.title}`} drag={drag}>
       <Typography variant="caption" color="textSecondary">
         {task.key}
       </Typography>
@@ -557,7 +558,9 @@ function BoardColumns({
                         drag="lifted"
                       >
                         {tasks.map(task => (
-                          <Fragment key={task.id}>{taskPreview(task)}</Fragment>
+                          <Fragment key={task.id}>
+                            {taskPreview(task, 'none')}
+                          </Fragment>
                         ))}
                       </Column>
                     )
