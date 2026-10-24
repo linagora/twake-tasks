@@ -26,7 +26,7 @@ export function useAgendaTaskPanel(
     ...panel,
     // A task opened beside a peek closes the one in it.
     show: () => {
-      if (params.has('task')) refresh()
+      if (params.has('task') && params.get('task') !== task.key) refresh()
       panel.show()
     },
     close: () => {

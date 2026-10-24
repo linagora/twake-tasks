@@ -144,6 +144,24 @@ describe('AgendaScreen', () => {
     })
   })
 
+  it('keeps Today as it is when the open task is clicked again', async () => {
+    const { boardsApi } = boards()
+    renderRoute('/today', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Poster' }))
+    await screen.findByRole('dialog', { name: /^DES-2 Poster/ })
+    await waitFor(() => {
+      expect(boardsApi.agenda).toHaveBeenCalledTimes(1)
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Poster' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Logo' }))
+
+    await screen.findByRole('dialog', { name: /^DES-1 Logo/ })
+    await waitFor(() => {
+      expect(boardsApi.agenda).toHaveBeenCalledTimes(2)
+    })
+  })
+
   it('shows the key, board, priority, assignees and labels of each task', async () => {
     const { design, boardsApi } = boards()
     design.tasks[0] = aTask(null, {
