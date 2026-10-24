@@ -1,4 +1,4 @@
-import { Box, styled } from '@linagora/twake-mui'
+import { Box, Breadcrumbs, Link, styled } from '@linagora/twake-mui'
 import {
   createContext,
   useContext,
@@ -75,9 +75,20 @@ export function CrumbRow({
   )
 }
 
-/** A step before the page, in a breadcrumb that titles it: not bold. */
-export const CrumbStep = styled('span')({
-  display: 'inline-flex',
-  alignItems: 'center',
-  fontWeight: 400
+/**
+ * A breadcrumb on one line: the long names are cut short, the steps before
+ * the page first. The origin's icon and the separators stay whole.
+ */
+export const CrumbTrail = styled(Breadcrumbs)({
+  '& .MuiBreadcrumbs-ol': { flexWrap: 'nowrap' },
+  '& .MuiBreadcrumbs-li': { minWidth: '3em', flexShrink: 1e6 },
+  '& .MuiBreadcrumbs-li:last-of-type': { minWidth: 0, flexShrink: 1 },
+  '& .MuiBreadcrumbs-li:has(> .MuiIconButton-root), & .MuiBreadcrumbs-separator':
+    { flexShrink: 0, minWidth: 'auto' }
 })
+
+/** A step before the page: not bold, cut short when long. */
+export const CrumbStep = styled(Link)({
+  display: 'block',
+  fontWeight: 400
+}) as typeof Link

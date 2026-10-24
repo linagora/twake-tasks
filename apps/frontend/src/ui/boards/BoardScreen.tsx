@@ -411,7 +411,8 @@ function BoardColumns({
               bare
             />
           }
-          heading
+          // A heading would take the name of the field that renames it.
+          heading={!renaming}
           actions={headerActions}
         />
       ) : (

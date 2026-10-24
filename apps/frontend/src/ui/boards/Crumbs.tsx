@@ -1,9 +1,9 @@
 import { Home, Icon, Right, type IconProps } from '@linagora/twake-icons'
-import { Breadcrumbs, IconButton, Link, Tooltip } from '@linagora/twake-mui'
+import { IconButton, Tooltip, Typography } from '@linagora/twake-mui'
 import { createContext, type ReactElement, type ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router'
 
-import { CrumbRow, CrumbSlot, CrumbStep } from '@/ds/CrumbBar'
+import { CrumbRow, CrumbSlot, CrumbStep, CrumbTrail } from '@/ds/CrumbBar'
 import { PageTitle } from '@/ds/PageHeader'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -30,11 +30,7 @@ export function useBoardsOrigin(): Origin {
   return { icon: Home, label: t('boards.title'), to: '/' }
 }
 
-// Every breadcrumb has the size of a page title, as Twake Drive's path: the
-// strip keeps its look from a page to a task opened over it.
-const VARIANT = 'h3'
-
-// The page itself, in bold: the page's heading when the breadcrumb titles it.
+// The page itself: the page's heading, in bold, when the breadcrumb titles it.
 function Page({
   heading,
   children
@@ -42,16 +38,18 @@ function Page({
   heading: boolean
   children: ReactNode
 }): ReactElement {
+  const Title = heading ? PageTitle : Typography
   return (
-    <PageTitle
-      variant={VARIANT}
-      component={heading ? 'h1' : 'span'}
+    <Title
+      variant={heading ? 'h3' : 'body2'}
+      component={heading ? 'h1' : 'div'}
       color="textPrimary"
       aria-current="page"
-      className="u-flex u-flex-items-center"
+      // Not while renaming, which would cut the field's label.
+      noWrap={heading}
     >
       {children}
-    </PageTitle>
+    </Title>
   )
 }
 
@@ -79,7 +77,7 @@ export function Crumbs({
   heading?: boolean
 }): ReactElement {
   return (
-    <Breadcrumbs
+    <CrumbTrail
       aria-label={label}
       className="u-miw-0"
       separator={<Icon icon={Right} size={16} />}
@@ -102,20 +100,21 @@ export function Crumbs({
         </Tooltip>
       )}
       {steps.map(step => (
-        <Link
+        <CrumbStep
           key={step.to}
           component={RouterLink}
           to={step.to}
           relative={step.relative ? 'path' : 'route'}
           color="inherit"
           underline="hover"
-          variant={VARIANT}
+          variant={heading ? 'h3' : 'body2'}
+          noWrap
         >
-          <CrumbStep>{step.label}</CrumbStep>
-        </Link>
+          {step.label}
+        </CrumbStep>
       ))}
       {current !== undefined && <Page heading={heading}>{current}</Page>}
-    </Breadcrumbs>
+    </CrumbTrail>
   )
 }
 
