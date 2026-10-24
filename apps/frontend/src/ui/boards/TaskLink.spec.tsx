@@ -48,6 +48,17 @@ describe('a link to a task', () => {
     ).toBeInTheDocument()
   })
 
+  it('stacks a linked sub-task on top of its parent, with the focus', async () => {
+    const { board, boardsApi } = logoWithSketch()
+
+    renderRoute(`/boards/${board.id}?task=DES-2`, { boardsApi })
+
+    const child = await screen.findByRole('dialog', { name: 'DES-2 Sketch' })
+    const parent = screen.getByRole('dialog', { name: 'DES-1 Logo' })
+    expect(parent.nextElementSibling).toBe(child)
+    expect(child).toHaveFocus()
+  })
+
   it('follows the sub-task shown, and goes back to its parent on close', async () => {
     const { board, boardsApi } = logoWithSketch()
     const { router } = renderRoute(`/boards/${board.id}?task=DES-1`, {

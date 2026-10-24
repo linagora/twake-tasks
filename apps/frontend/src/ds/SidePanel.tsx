@@ -16,7 +16,9 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
+  useState,
   type ReactElement,
   type ReactNode,
   type RefObject,
@@ -146,6 +148,8 @@ function Widen(props: SVGProps<SVGSVGElement>): ReactElement {
   )
 }
 
+const InPanelContext = createContext(false)
+
 /**
  * An open task: the content (two thirds) under its header, and a bar of
  * properties (one third) from the top. In a narrow panel, the properties sit
@@ -155,7 +159,19 @@ function Widen(props: SVGProps<SVGSVGElement>): ReactElement {
  * in use, or expanded over the whole content. On a phone, both take the whole
  * content.
  */
-export function SidePanel({
+export function SidePanel(props: Parameters<typeof Panel>[0]): ReactElement {
+  const nested = useContext(InPanelContext)
+  const [placed, setPlaced] = useState(!nested)
+  // Opened from a link, a sub-task's panel mounts with its parent's and would
+  // portal in first, under it. Waiting one commit puts it on top, focused.
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the second render is the point
+    setPlaced(true)
+  }, [])
+  return <InPanelContext value>{placed && <Panel {...props} />}</InPanelContext>
+}
+
+function Panel({
   label,
   onClose,
   unsaved,
