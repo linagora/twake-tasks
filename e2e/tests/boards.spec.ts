@@ -198,6 +198,34 @@ test('drags a section by its header and it stays in its new place', async ({
   await expect.poll(headings).toEqual(['In progress', 'To do', 'Done'])
 })
 
+test('moves a section from the keyboard, past its own cards', async ({
+  page
+}) => {
+  await signIn(page, 'alice')
+  await newBoard(page)
+  await addTask(page, 'Print the posters')
+  await expect(
+    page.getByRole('article', { name: /Print the posters$/ })
+  ).toBeVisible()
+  const headings = () =>
+    page
+      .getByRole('heading', { level: 2 })
+      .filter({ hasText: /^(To do|In progress|Done)$/ })
+      .allTextContents()
+
+  await page
+    .getByRole('heading', { level: 2, name: 'To do', exact: true })
+    .locator('..')
+    .focus()
+  await page.keyboard.press('Space')
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('Space')
+  await expect.poll(headings).toEqual(['In progress', 'To do', 'Done'])
+
+  await page.reload()
+  await expect.poll(headings).toEqual(['In progress', 'To do', 'Done'])
+})
+
 test('notifies the person a task is assigned to', async ({ page, browser }) => {
   const bob = await asPerson(browser, 'bob')
   await signIn(page, 'alice')
