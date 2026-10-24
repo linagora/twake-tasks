@@ -1,10 +1,10 @@
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Budget } from '../../config.ts'
 import { asTenant, type Tx } from '../../infra/db.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
 import { userSettings } from '../settings/schema.ts'
-import { memberLooks, settingsOfMember } from './access.ts'
+import { memberLooks, memberNames, settingsOfMember } from './access.ts'
 import {
   APP_NAME,
   COLORS,
@@ -14,7 +14,7 @@ import {
   plain,
   type Language
 } from './mailLayout.ts'
-import { mentionedEmails, MENTION, plainText } from './markdown.ts'
+import { mentionedEmails, plainText, withNames } from './markdown.ts'
 import { sendCounted, takeEmail } from './notificationDigest.ts'
 import {
   NOTIFICATION_MESSAGES,
@@ -132,30 +132,15 @@ async function nameOf(
   return member && { name: member.name || member.email, email: member.email }
 }
 
-// A mention reads as the person's name, as it does in the app.
-async function withNames(
+async function withMemberNames(
   tx: Tx,
   projectId: string,
   text: string
 ): Promise<string> {
-  const emails = [...mentionedEmails(text)]
-  if (emails.length === 0) return text
-  const members = await tx
-    .select({ email: projectMembers.email, name: memberLooks.name })
-    .from(projectMembers)
-    .leftJoin(userSettings, settingsOfMember)
-    .where(
-      and(
-        eq(projectMembers.projectId, projectId),
-        inArray(sql`lower(${projectMembers.email})`, emails)
-      )
-    )
-  const names = new Map(
-    members.map(member => [member.email.toLowerCase(), member.name])
-  )
-  return text.replace(MENTION, (mention, space: string, email: string) => {
-    const name = names.get(email.toLowerCase())
-    return name ? `${space}@${plain(name)}` : mention
+  const nameOf = await memberNames(tx, [projectId], [...mentionedEmails(text)])
+  return withNames(text, email => {
+    const name = nameOf(projectId, email)
+    return name && plain(name)
   })
 }
 
@@ -371,7 +356,7 @@ export function emailNotification(deps: {
             : task
 
     const quote = comment
-      ? await withNames(tx, row.projectId, plain(plainText(comment.body)))
+      ? await withMemberNames(tx, row.projectId, plain(plainText(comment.body)))
       : ''
     const chars = Array.from(quote)
     const excerpt =

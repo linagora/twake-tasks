@@ -5,10 +5,11 @@ import { userSettings } from '../settings/schema.ts'
 import {
   accessibleBoards,
   memberLooks,
+  memberNames,
   roleOn,
   settingsOfMember
 } from './access.ts'
-import { plainText } from './markdown.ts'
+import { mentionedEmails, plainText, withNames } from './markdown.ts'
 import {
   remindersWaitingFor,
   scheduleReminder,
@@ -28,8 +29,8 @@ import { Refused, refuseIfShelved, taskOf, writeOrRefuse } from './tasks.ts'
 
 const EXCERPT_LENGTH = 120
 
-function excerptOf(markdown: string): string {
-  const chars = Array.from(plainText(markdown).replace(/\s+/g, ' ').trim())
+function excerptOf(text: string): string {
+  const chars = Array.from(text.replace(/\s+/g, ' ').trim())
   return chars.length > EXCERPT_LENGTH
     ? `${chars.slice(0, EXCERPT_LENGTH).join('').trimEnd()}…`
     : chars.join('')
@@ -253,6 +254,7 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
             taskId: notifications.taskId,
             key: sql<string>`${boards.keyPrefix} || '-' || ${tasks.number}`,
             title: tasks.title,
+            projectId: boards.projectId,
             createdAt: notifications.createdAt,
             readAt: notifications.readAt,
             actorId: notifications.actorId,
@@ -289,8 +291,20 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
           )
           .orderBy(desc(notifications.createdAt))
           .limit(50)
-        return rows.map(
+        const quoted = rows.map(({ comment, ...row }) => ({
+          ...row,
+          quote: comment === null ? null : plainText(comment)
+        }))
+        const nameOf = await memberNames(
+          tx,
+          quoted.map(row => row.projectId),
+          quoted.flatMap(({ quote }) =>
+            quote ? [...mentionedEmails(quote)] : []
+          )
+        )
+        return quoted.map(
           ({
+            projectId,
             actorId,
             actorEmail,
             actorName,
@@ -300,7 +314,7 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
             to,
             name,
             at,
-            comment,
+            quote,
             ...row
           }) => {
             // No actor for a reminder, nor for someone who left the project
@@ -321,7 +335,12 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
                 actor && field !== null && at !== null
                   ? { actor, field, from, to, name, at }
                   : null,
-              commentExcerpt: comment === null ? null : excerptOf(comment)
+              commentExcerpt:
+                quote === null
+                  ? null
+                  : excerptOf(
+                      withNames(quote, email => nameOf(projectId, email))
+                    )
             }
           }
         )
