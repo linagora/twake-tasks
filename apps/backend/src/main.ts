@@ -9,6 +9,7 @@ import { createChanges } from './infra/changes.ts'
 import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
+import { connectRedis } from './infra/rateLimit.ts'
 import {
   connectLive,
   requestSpaceSync,
@@ -50,8 +51,13 @@ await migrateDb(db)
 
 let accepting = false
 const boardChanges = createChanges()
+const redis = config.REDIS_URL
+  ? connectRedis(config.REDIS_URL, logger)
+  : undefined
 const server = await buildApp({
   logger,
+  proxyHops: config.HTTP_TRUSTED_PROXY_HOPS,
+  redis,
   db,
   boardChanges,
   ...(await connectIdentityProvider({
@@ -180,6 +186,7 @@ async function shutdown(signal: string): Promise<void> {
     await stopRelay()
     await publisher.close()
     await server.close()
+    redis?.disconnect()
     await live.close()
     await sql.end({ timeout: 5 })
   } catch (error) {

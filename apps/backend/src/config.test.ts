@@ -106,3 +106,21 @@ describe('the search settings', () => {
     ).toThrow(/SEARCH_ALLOWED_ORIGINS/)
   })
 })
+
+describe('the server settings', () => {
+  it('trust two proxies and keep counters in memory by default', () => {
+    const config = loadConfig(required)
+
+    expect(config).toMatchObject({ HTTP_TRUSTED_PROXY_HOPS: 2 })
+    expect(config.REDIS_URL).toBeUndefined()
+  })
+
+  it.each([
+    ['HTTP_TRUSTED_PROXY_HOPS', '-1'],
+    ['REDIS_URL', 'http://redis:6379']
+  ])('refuse %s=%s', (name, value) => {
+    expect(() => loadConfig({ ...required, [name]: value })).toThrow(
+      new RegExp(name)
+    )
+  })
+})
