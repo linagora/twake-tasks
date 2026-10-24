@@ -77,6 +77,15 @@ export function EmbedBoardScreen(): ReactElement {
   )
 }
 
+export function EmbedNewTask(): ReactElement | null {
+  const { projectId = '' } = useParams()
+  const { boards, shown } = useProjectBoards(projectId)
+  const first = shown[0]
+  if (first) return <Navigate to={`../boards/${first.id}?new=task`} replace />
+  if (boards.isPending) return null
+  return <Navigate to=".." replace />
+}
+
 export function EmbedProjectScreen(): ReactElement {
   const { t } = useI18n()
   const { projectId = '' } = useParams()
