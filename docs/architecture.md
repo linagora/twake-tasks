@@ -12,6 +12,7 @@ flowchart LR
   backend <--> rabbitmq[[RabbitMQ]]
   backend -. space mode .-> ldaprest[ldap-rest]
   backend -. optional .-> smtp[SMTP]
+  backend -. optional .-> redis[(Redis)]
   twakespace[TwakeSpace] -. frames /embed .-> frontend
 ```
 
@@ -32,11 +33,13 @@ flowchart LR
 ## Organizations
 
 - A person belongs to the organization named by the `org_id` claim of the SSO. People without one are B2C users.
-- Every table has row level security, keyed on the organization. B2C rows have no organization, and a B2C user only sees the rows they have access to.
-- The backend refuses to connect as a superuser, since a superuser skips row level security.
+- The tables of projects, boards, tasks and their content have row level security, keyed on the organization. B2C rows have no organization, and a B2C user only sees the rows they have access to.
+- The backend refuses to connect with a role that has `SUPERUSER` or `BYPASSRLS`, since either skips row level security.
 
 ## Projects
 
 - Each person gets a Personal project holding their Inbox.
 - People create projects, and share them by invitation, with the roles viewer, editor and admin.
 - In [space mode](modes.md#space-mode), each TwakeSpace space also gets a managed project, whose members come from the space.
+
+What people do inside projects is in [features](features.md).

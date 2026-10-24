@@ -22,7 +22,7 @@ The backend talks to the rest of Twake Workplace through RabbitMQ only. The exch
 
 ## Deletions
 
-Deleting an organization, a space or a person records the time of the deletion in the `last_changes` table, kept forever, under `organization:<id>:deleted`, `space:<id>:deleted`, `user:<uuid>:deleted` or `email:<email>:deleted`. The time is the event's `timestamp`, or the time Tasks handles it when the event has none.
+Deleting an organization, a space or a person records the time of the deletion in the `last_changes` table, kept forever, under `organization:<id>:deleted`, `space:<id>:deleted`, `user:<uuid>:deleted` or `email:<email>:deleted`. The time is the event's `timestamp`, or the time the backend handles it when the event has none.
 
 - A space event dated no later than its organization's deletion is dropped, so neither a creation nor a sync brings the organization's spaces back. A repair, which has no time, never applies to a deleted organization. A space event waits for its organization's deletion in progress, if any.
 - A space event for a space deleted and then purged is dropped and logged, never parked: space ids are never reused.
@@ -31,7 +31,7 @@ Deleting an organization, a space or a person records the time of the deletion i
 
 ## Parked events
 
-- An update, member event or deletion for a space Tasks has never seen, with no row and no recorded deletion, is parked: stored in the `parked_events` table and acknowledged. The space's `twake.space.created` may only be late.
+- An update, member event or deletion for a space the backend has never seen, with no row and no recorded deletion, is parked: stored in the `parked_events` table and acknowledged. The space's `twake.space.created` may only be late.
 - Every replica looks for parked events to retry 5 seconds after its previous pass ended, oldest first. A pass takes only the events whose space is now known, or that waited 30 minutes, and claims them for a minute so no other replica retries them meanwhile.
 - A retried event that applies leaves the table. One whose retry fails is tried again after its claim ends.
 - An event rejected on retry, or one that waited 30 minutes, RabbitMQ's default `consumer_timeout`, and still does not apply, is published to `twake-tasks.dlx` with its message id and the headers `x-twake-tasks-exchange`, `x-twake-tasks-routing-key` and `x-twake-tasks-reason`. It leaves the table once published, and stays while the publish fails.
