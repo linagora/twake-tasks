@@ -110,7 +110,7 @@ export function Column({
   ref?: Ref<HTMLElement>
   highlighted?: boolean
   /** Spread on the header, which then picks the column up to reorder it. */
-  handle?: HTMLAttributes<HTMLElement>
+  handle?: HTMLAttributes<HTMLElement> & { ref?: Ref<HTMLElement> }
   /** `placeholder` is the slot a dragged column leaves, `lifted` the column under the pointer. */
   drag?: 'none' | 'placeholder' | 'lifted'
   style?: CSSProperties

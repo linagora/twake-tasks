@@ -148,6 +148,7 @@ export function SortableColumn({
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id })
   const {
     setNodeRef,
+    setActivatorNodeRef,
     attributes,
     listeners,
     transform,
@@ -166,7 +167,9 @@ export function SortableColumn({
         setDropRef(node)
       }}
       highlighted={isOver}
-      handle={{ ...attributes, ...listeners }}
+      // As the activator, Space and Enter pick the column up only from its
+      // header, and still open the section menu inside it.
+      handle={{ ...attributes, ...listeners, ref: setActivatorNodeRef }}
       drag={isDragging ? 'placeholder' : 'none'}
       // eslint-disable-next-line no-restricted-syntax -- changes every frame of a drag; sx would mint a class per frame
       style={{ transform: CSS.Translate.toString(transform), transition }}

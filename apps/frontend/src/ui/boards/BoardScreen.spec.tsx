@@ -211,6 +211,18 @@ describe('BoardScreen', () => {
     expect(handle).toHaveAttribute('tabindex', '0')
   })
 
+  it('leaves Enter to the menu in a section header', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const options = await screen.findByRole('button', {
+      name: 'Options for To do'
+    })
+    expect(fireEvent.keyDown(options, { key: 'Enter', code: 'Enter' })).toBe(
+      true
+    )
+  })
+
   it('keeps the sections in place for an editor', async () => {
     const board = { ...designBoard(), role: 'editor' as const }
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
