@@ -149,9 +149,10 @@ test('drags a row of the list to another section and it stays there', async ({
   const from = await row.boundingBox()
   const to = await section('In progress').boundingBox()
   if (!from || !to) throw new Error('The list is not laid out')
-  await page.mouse.move(from.x + 40, from.y + from.height / 2)
+  // By its title: a press on the checkbox does not pick the row up.
+  await page.mouse.move(from.x + 200, from.y + from.height / 2)
   await page.mouse.down()
-  await page.mouse.move(from.x + 60, from.y + from.height / 2 + 10, {
+  await page.mouse.move(from.x + 220, from.y + from.height / 2 + 10, {
     steps: 4
   })
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, {
