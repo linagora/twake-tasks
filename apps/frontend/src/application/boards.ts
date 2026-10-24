@@ -153,11 +153,12 @@ export interface Agenda {
   tasks: AgendaTask[]
 }
 
+// Each criterion matches any of its values; a task must match every criterion.
 export interface FilterCriteria {
-  assignee?: 'me' | 'nobody'
-  priority?: number
-  label?: string
-  due?: 'overdue' | 'today' | 'week' | 'none'
+  assignee?: ('me' | 'nobody')[]
+  priority?: number[]
+  label?: string[]
+  due?: ('overdue' | 'today' | 'week' | 'none')[]
 }
 
 export interface SavedFilter {

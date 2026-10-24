@@ -4,9 +4,11 @@ import {
   eq,
   exists,
   gte,
+  inArray,
   isNull,
   lt,
   notExists,
+  or,
   sql
 } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
@@ -24,49 +26,66 @@ import {
 import { assignedTo, openTasksOf } from './store.ts'
 import { Refused, writeOrRefuse } from './tasks.ts'
 
+type Due = 'overdue' | 'today' | 'week' | 'none'
+
+// Each criterion matches any of its values; a task must match every criterion.
 export interface Criteria {
-  assignee?: 'me' | 'nobody' | undefined
-  priority?: number | undefined
-  label?: string | undefined
-  due?: 'overdue' | 'today' | 'week' | 'none' | undefined
+  assignee?: ('me' | 'nobody')[] | undefined
+  priority?: number[] | undefined
+  label?: string[] | undefined
+  due?: Due[] | undefined
+}
+
+function dueIs(due: Due, today: string) {
+  switch (due) {
+    case 'overdue':
+      return lt(tasks.dueDate, today)
+    case 'today':
+      return eq(tasks.dueDate, today)
+    case 'week':
+      return and(
+        gte(tasks.dueDate, today),
+        lt(tasks.dueDate, shift(today, 7, 'days'))
+      )
+    case 'none':
+      return isNull(tasks.dueDate)
+  }
 }
 
 function matching(tx: Tx, userId: string, criteria: Criteria, today: string) {
   const { assignee, priority, label, due } = criteria
   return and(
-    assignee === 'me' ? assignedTo(tx, userId) : undefined,
-    assignee === 'nobody'
-      ? notExists(
-          tx
-            .select({ one: sql`1` })
-            .from(taskAssignees)
-            .where(eq(taskAssignees.taskId, tasks.id))
+    assignee &&
+      or(
+        ...assignee.map(each =>
+          each === 'me'
+            ? assignedTo(tx, userId)
+            : notExists(
+                tx
+                  .select({ one: sql`1` })
+                  .from(taskAssignees)
+                  .where(eq(taskAssignees.taskId, tasks.id))
+              )
         )
-      : undefined,
-    priority === undefined ? undefined : eq(tasks.priority, priority),
-    label === undefined
-      ? undefined
-      : exists(
-          tx
-            .select({ one: sql`1` })
-            .from(taskLabels)
-            .innerJoin(labels, eq(labels.id, taskLabels.labelId))
-            .where(
-              and(
-                eq(taskLabels.taskId, tasks.id),
-                eq(sql`lower(${labels.name})`, label.toLowerCase())
+      ),
+    priority && inArray(tasks.priority, priority),
+    label &&
+      exists(
+        tx
+          .select({ one: sql`1` })
+          .from(taskLabels)
+          .innerJoin(labels, eq(labels.id, taskLabels.labelId))
+          .where(
+            and(
+              eq(taskLabels.taskId, tasks.id),
+              inArray(
+                sql`lower(${labels.name})`,
+                label.map(name => name.toLowerCase())
               )
             )
-        ),
-    due === 'overdue' ? lt(tasks.dueDate, today) : undefined,
-    due === 'today' ? eq(tasks.dueDate, today) : undefined,
-    due === 'week'
-      ? and(
-          gte(tasks.dueDate, today),
-          lt(tasks.dueDate, shift(today, 7, 'days'))
-        )
-      : undefined,
-    due === 'none' ? isNull(tasks.dueDate) : undefined
+          )
+      ),
+    due && or(...due.map(each => dueIs(each, today)))
   )
 }
 

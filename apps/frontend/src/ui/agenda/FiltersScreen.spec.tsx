@@ -8,18 +8,33 @@ import { localZone } from '@/ui/boards/dueLabel'
 
 function boards() {
   const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
-  design.labels = [{ id: 'l1', name: 'client', color: null }]
+  const client = { id: 'l1', name: 'client', color: null }
+  const internal = { id: 'l2', name: 'internal', color: null }
+  design.labels = [client, internal]
   design.tasks = [
-    aTask(null, {
-      key: 'DES-1',
-      title: 'Logo',
-      priority: 1,
-      labels: [{ id: 'l1', name: 'client', color: null }]
-    }),
+    aTask(null, { key: 'DES-1', title: 'Logo', priority: 1, labels: [client] }),
     aTask(null, { key: 'DES-2', title: 'Poster', priority: 1 }),
-    aTask(null, { key: 'DES-3', title: 'Flyer' })
+    aTask(null, { key: 'DES-3', title: 'Flyer' }),
+    aTask(null, {
+      key: 'DES-4',
+      title: 'Banner',
+      priority: 2,
+      labels: [internal]
+    })
   ]
   return fakeBoardsApi([design])
+}
+
+async function pick(criterion: string, ...options: string[]) {
+  fireEvent.mouseDown(screen.getByRole('combobox', { name: criterion }))
+  const list = await screen.findByRole('listbox', { name: criterion })
+  for (const option of options) {
+    fireEvent.click(await within(list).findByRole('option', { name: option }))
+  }
+  fireEvent.keyDown(list, { key: 'Escape' })
+  await waitFor(() => {
+    expect(screen.queryByRole('listbox')).toBeNull()
+  })
 }
 
 describe('FiltersScreen', () => {
@@ -40,8 +55,10 @@ describe('FiltersScreen', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
     for (const name of ['Assignee', 'Priority', 'Label', 'Due']) {
+      const field = await screen.findByRole('combobox', { name })
+      expect(field).toHaveTextContent('Any')
       expect(
-        await screen.findByText(name, { selector: 'label' })
+        document.getElementById(field.getAttribute('aria-labelledby') ?? '')
       ).toHaveAttribute('data-shrink', 'true')
     }
   })
@@ -55,12 +72,11 @@ describe('FiltersScreen', () => {
     fireEvent.change(await screen.findByLabelText('Name'), {
       target: { value: 'Client fires' }
     })
-    fireEvent.change(screen.getByRole('combobox', { name: 'Priority' }), {
-      target: { value: '1' }
-    })
-    const label = screen.getByRole('combobox', { name: 'Label' })
-    await within(label).findByRole('option', { name: 'client' })
-    fireEvent.change(label, { target: { value: 'client' } })
+    await pick('Priority', 'P1', 'P2')
+    await pick('Label', 'client', 'internal')
+    expect(
+      screen.getByRole('combobox', { name: 'Priority' })
+    ).toHaveTextContent('P1 or P2')
     fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
     fireEvent.click(await screen.findByRole('link', { name: 'Client fires' }))
 
@@ -68,10 +84,11 @@ describe('FiltersScreen', () => {
       await screen.findByRole('heading', { name: 'Client fires' })
     ).toBeVisible()
     expect(await screen.findByText('Logo')).toBeVisible()
+    expect(screen.getByText('Banner')).toBeVisible()
     expect(screen.queryByText('Poster')).not.toBeInTheDocument()
     expect(boardsApi.createFilter).toHaveBeenCalledWith({
       name: 'Client fires',
-      criteria: { priority: 1, label: 'client' }
+      criteria: { priority: [1, 2], label: ['client', 'internal'] }
     })
     expect(boardsApi.filteredTasks).toHaveBeenCalledWith(
       expect.any(String),
@@ -142,14 +159,20 @@ describe('FiltersScreen', () => {
     const boardsApi = boards()
     await boardsApi.createFilter({
       name: 'Client fires',
-      criteria: { priority: 1, label: 'client' }
+      criteria: {
+        priority: [1],
+        label: ['client'],
+        due: ['overdue', 'today', 'week']
+      }
     })
     await boardsApi.createFilter({ name: 'Everything', criteria: {} })
     renderRoute('/filters', { boardsApi })
 
     expect(
       await screen.findByRole('listitem', { name: 'Client fires' })
-    ).toHaveTextContent('Priority: P1 · Label: client')
+    ).toHaveTextContent(
+      'Priority: P1 · Label: client · Due: Overdue, Today, or Next 7 days'
+    )
     expect(
       screen.getByRole('listitem', { name: 'Everything' })
     ).toHaveTextContent('All tasks')
@@ -159,7 +182,7 @@ describe('FiltersScreen', () => {
     const boardsApi = boards()
     const { id } = await boardsApi.createFilter({
       name: 'Urgent',
-      criteria: { priority: 1 }
+      criteria: { priority: [1] }
     })
     renderRoute('/filters', { boardsApi })
 
@@ -185,7 +208,7 @@ describe('FiltersScreen', () => {
     const boardsApi = boards()
     const { id } = await boardsApi.createFilter({
       name: 'Urgent',
-      criteria: { priority: 1 }
+      criteria: { priority: [1] }
     })
     await boardsApi.setFilterFavorite(id, true)
     renderRoute('/filters', { boardsApi })
@@ -205,7 +228,7 @@ describe('FiltersScreen', () => {
     const boardsApi = boards()
     const { id } = await boardsApi.createFilter({
       name: 'Design work',
-      criteria: { label: 'client' }
+      criteria: { label: ['client'] }
     })
     renderRoute('/filters', { boardsApi })
 
@@ -215,22 +238,45 @@ describe('FiltersScreen', () => {
     expect(screen.getByRole('heading', { name: 'Edit filter' })).toBeVisible()
     const name = screen.getByLabelText('Name')
     expect(name).toHaveValue('Design work')
-    const label = screen.getByRole('combobox', { name: 'Label' })
-    await within(label).findByRole('option', { name: 'client' })
-    expect(label).toHaveValue('client')
-    fireEvent.change(name, { target: { value: 'Client fires' } })
-    fireEvent.change(screen.getByRole('combobox', { name: 'Priority' }), {
-      target: { value: '1' }
-    })
+    expect(screen.getByRole('combobox', { name: 'Label' })).toHaveTextContent(
+      'client'
+    )
+    fireEvent.change(name, { target: { value: 'Internal fires' } })
+    await pick('Priority', 'P1', 'P3')
+    await pick('Label', 'client', 'internal')
     fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
 
     expect(
-      await screen.findByRole('listitem', { name: 'Client fires' })
-    ).toHaveTextContent('Priority: P1 · Label: client')
+      await screen.findByRole('listitem', { name: 'Internal fires' })
+    ).toHaveTextContent('Priority: P1 or P3 · Label: internal')
     expect(screen.queryByRole('heading', { name: 'Edit filter' })).toBeNull()
     expect(boardsApi.updateFilter).toHaveBeenCalledWith(id, {
-      name: 'Client fires',
-      criteria: { priority: 1, label: 'client' }
+      name: 'Internal fires',
+      criteria: { priority: [1, 3], label: ['internal'] }
+    })
+  })
+
+  it('looks for any task again once every value of a criterion is unpicked', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priority: [1] }
+    })
+    renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Urgent' }))
+    await pick('Priority', 'P1')
+    expect(
+      screen.getByRole('combobox', { name: 'Priority' })
+    ).toHaveTextContent('Any')
+    fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
+
+    expect(
+      await screen.findByRole('listitem', { name: 'Urgent' })
+    ).toHaveTextContent('All tasks')
+    expect(boardsApi.updateFilter).toHaveBeenCalledWith(id, {
+      name: 'Urgent',
+      criteria: {}
     })
   })
 
@@ -238,15 +284,13 @@ describe('FiltersScreen', () => {
     const boardsApi = boards()
     const { id } = await boardsApi.createFilter({
       name: 'Urgent',
-      criteria: { priority: 1 }
+      criteria: { priority: [1] }
     })
     renderRoute(`/filters/${id}`, { boardsApi })
 
     expect(await screen.findByText('Poster')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'Edit filter' }))
-    const label = screen.getByRole('combobox', { name: 'Label' })
-    await within(label).findByRole('option', { name: 'client' })
-    fireEvent.change(label, { target: { value: 'client' } })
+    await pick('Label', 'client')
     fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
 
     await waitFor(() => {
@@ -258,7 +302,10 @@ describe('FiltersScreen', () => {
 
   it('deletes a filter once its undo notice closes', async () => {
     const boardsApi = boards()
-    await boardsApi.createFilter({ name: 'Urgent', criteria: { priority: 1 } })
+    await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priority: [1] }
+    })
     renderRoute('/filters', { boardsApi })
 
     fireEvent.click(
@@ -286,8 +333,14 @@ describe('FiltersScreen', () => {
 
   it('brings a deleted filter back on undo', async () => {
     const boardsApi = boards()
-    await boardsApi.createFilter({ name: 'Urgent', criteria: { priority: 1 } })
-    await boardsApi.createFilter({ name: 'Mine', criteria: { assignee: 'me' } })
+    await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priority: [1] }
+    })
+    await boardsApi.createFilter({
+      name: 'Mine',
+      criteria: { assignee: ['me'] }
+    })
     renderRoute('/filters', { boardsApi })
 
     fireEvent.click(
@@ -308,7 +361,10 @@ describe('FiltersScreen', () => {
 
   it('deletes a filter whose notice is still open when the page is left', async () => {
     const boardsApi = boards()
-    await boardsApi.createFilter({ name: 'Urgent', criteria: { priority: 1 } })
+    await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priority: [1] }
+    })
     const { unmount } = renderRoute('/filters', { boardsApi })
 
     fireEvent.click(

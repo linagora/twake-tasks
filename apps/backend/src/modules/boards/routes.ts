@@ -98,10 +98,18 @@ const agendaQuery = z.object({
 const newFilter = z.object({
   name: z.string().trim().min(1).max(100),
   criteria: z.strictObject({
-    assignee: z.enum(['me', 'nobody']).optional(),
-    priority: z.int().min(1).max(4).optional(),
-    label: z.string().trim().min(1).max(50).optional(),
-    due: z.enum(['overdue', 'today', 'week', 'none']).optional()
+    assignee: z
+      .array(z.enum(['me', 'nobody']))
+      .min(1)
+      .max(2)
+      .optional(),
+    priority: z.array(z.int().min(1).max(4)).min(1).max(4).optional(),
+    label: z.array(z.string().trim().min(1).max(50)).min(1).max(50).optional(),
+    due: z
+      .array(z.enum(['overdue', 'today', 'week', 'none']))
+      .min(1)
+      .max(4)
+      .optional()
   })
 })
 

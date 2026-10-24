@@ -379,12 +379,14 @@ export function fakeBoardsApi(boards: Board[] = []) {
         const filter = filters.find(candidate => candidate.id === filterId)
         if (!filter) throw new ApiError(404, 'not_found')
         const { priority, label } = filter.criteria
+        const labels = label?.map(name => name.toLowerCase())
         return openTasks().filter(
           task =>
-            (priority === undefined || task.priority === priority) &&
-            (label === undefined ||
-              task.labels.some(
-                each => each.name.toLowerCase() === label.toLowerCase()
+            (priority === undefined ||
+              (task.priority !== null && priority.includes(task.priority))) &&
+            (labels === undefined ||
+              task.labels.some(each =>
+                labels.includes(each.name.toLowerCase())
               ))
         )
       })
