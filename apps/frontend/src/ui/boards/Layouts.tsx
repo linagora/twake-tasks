@@ -124,12 +124,12 @@ export function ListLayout({
         // A folded section still takes the tasks dropped on its title.
         return column.dropId === undefined ? (
           <ListSection key={column.key} {...section}>
-            {column.tasks.map(row)}
+            {column.tasks.map(task => row(task))}
           </ListSection>
         ) : (
           <DropListSection key={column.key} id={column.dropId} {...section}>
             <SortableList ids={column.tasks.map(task => task.id)}>
-              {column.tasks.map(row)}
+              {column.tasks.map(task => row(task))}
             </SortableList>
           </DropListSection>
         )
