@@ -158,6 +158,26 @@ export const atPointer: Modifier = ({
   }
 }
 
+// A preview the size of the task keeps the place it was grabbed at, until
+// it would leave the window. A task grabbed already past an edge stays where
+// it was rather than jumping away from the pointer.
+export const inWindow: Modifier = ({
+  draggingNodeRect,
+  windowRect,
+  transform
+}) => {
+  if (!draggingNodeRect || !windowRect) return transform
+  const start = draggingNodeRect.left
+  const left = Math.max(
+    Math.min(0, start),
+    Math.min(
+      start + transform.x,
+      Math.max(windowRect.width - draggingNodeRect.width, start)
+    )
+  )
+  return { ...transform, x: left - start }
+}
+
 const below = (active: Active, over: Over): boolean => {
   const top = active.rect.current.translated?.top
   return top !== undefined && top > over.rect.top + over.rect.height / 2
@@ -338,7 +358,7 @@ export function BoardDrag({
           task, so it just goes when dropped, as in Twake Drive. Its box
           fits the preview, not the task, for atPointer to measure it. */}
       <DragOverlay
-        modifiers={previewAtPointer ? [atPointer] : []}
+        modifiers={[previewAtPointer ? atPointer : inWindow]}
         dropAnimation={previewAtPointer ? null : undefined}
         // eslint-disable-next-line no-restricted-syntax -- overrides the task's size dnd-kit sets inline
         style={previewAtPointer ? { width: 'fit-content', height: 'auto' } : {}}
