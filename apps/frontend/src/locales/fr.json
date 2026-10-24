@@ -4,7 +4,8 @@
     "notFoundHint": "Le lien est peut-être cassé, ou la page a été déplacée.",
     "crash": "Un problème est survenu",
     "crashHint": "Cet écran a rencontré un problème. Recharger la page suffit en général.",
-    "reload": "Recharger"
+    "reload": "Recharger",
+    "tooManyRequests": "Trop de requêtes. Patientez un instant, puis réessayez."
   },
   "drag": {
     "card": "tâche déplaçable",

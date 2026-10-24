@@ -4,7 +4,8 @@
     "notFoundHint": "Il link potrebbe essere errato, oppure la pagina è stata spostata.",
     "crash": "Si è verificato un errore",
     "crashHint": "Questa schermata ha riscontrato un problema. Di solito basta ricaricare.",
-    "reload": "Ricarica"
+    "reload": "Ricarica",
+    "tooManyRequests": "Troppe richieste. Attendi un momento, poi riprova."
   },
   "drag": {
     "card": "attività trascinabile",

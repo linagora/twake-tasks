@@ -4,7 +4,8 @@
     "notFoundHint": "Puede que el enlace esté roto o que la página se haya movido.",
     "crash": "Algo salió mal",
     "crashHint": "Esta pantalla tuvo un problema. Recargar suele solucionarlo.",
-    "reload": "Recargar"
+    "reload": "Recargar",
+    "tooManyRequests": "Demasiadas solicitudes. Espere un momento y vuelva a intentarlo."
   },
   "drag": {
     "card": "tarea arrastrable",

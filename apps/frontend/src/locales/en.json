@@ -4,7 +4,8 @@
     "notFoundHint": "The link may be broken, or the page was moved.",
     "crash": "Something went wrong",
     "crashHint": "This screen ran into a problem. Reloading usually fixes it.",
-    "reload": "Reload"
+    "reload": "Reload",
+    "tooManyRequests": "Too many requests. Wait a moment, then try again."
   },
   "drag": {
     "card": "draggable task",
