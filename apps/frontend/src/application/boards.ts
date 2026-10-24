@@ -164,7 +164,10 @@ export interface SavedFilter {
   id: string
   name: string
   criteria: FilterCriteria
+  favorite: boolean
 }
+
+export type FilterFields = Pick<SavedFilter, 'name' | 'criteria'>
 
 export interface Sharing {
   members: (Person & { role: Role })[]
@@ -243,12 +246,10 @@ export interface BoardsApi {
   setMemberRole: (boardId: string, userId: string, role: Role) => Promise<void>
   removeMember: (boardId: string, userId: string) => Promise<void>
   listFilters: () => Promise<SavedFilter[]>
-  createFilter: (filter: Omit<SavedFilter, 'id'>) => Promise<{ id: string }>
-  updateFilter: (
-    filterId: string,
-    filter: Omit<SavedFilter, 'id'>
-  ) => Promise<void>
+  createFilter: (filter: FilterFields) => Promise<{ id: string }>
+  updateFilter: (filterId: string, filter: FilterFields) => Promise<void>
   deleteFilter: (filterId: string) => Promise<void>
+  setFilterFavorite: (filterId: string, favorite: boolean) => Promise<void>
   /** The label names on the person's boards, one per spelling regardless of case. */
   labelNames: () => Promise<string[]>
   /** Open tasks matching a saved filter, across the person's boards. */

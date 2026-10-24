@@ -529,6 +529,10 @@
   },
   "filters": {
     "title": "Bộ lọc",
+    "fold": "Thu gọn các bộ lọc",
+    "unfold": "Mở rộng các bộ lọc",
+    "star": "Ghim %{name} vào thanh bên",
+    "unstar": "Bỏ ghim %{name} khỏi thanh bên",
     "empty": "Chưa có bộ lọc nào",
     "emptyHint": "Lưu các tiêu chí bạn hay dùng, như các công việc P1 của bạn.",
     "loadFailed": "Không thể tải bộ lọc.",

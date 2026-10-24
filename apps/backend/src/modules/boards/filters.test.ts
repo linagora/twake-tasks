@@ -116,7 +116,11 @@ describe('saved filters', () => {
 
     expect(
       (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
-    ).toEqual({ filters: [{ id, name: 'Urgent', criteria: { priority: 1 } }] })
+    ).toEqual({
+      filters: [
+        { id, name: 'Urgent', criteria: { priority: 1 }, favorite: false }
+      ]
+    })
     expect(
       (await api.as(other).get('/filters')).json<{ filters: unknown[] }>()
         .filters
@@ -185,7 +189,12 @@ describe('saved filters', () => {
       (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
     ).toEqual({
       filters: [
-        { id, name: 'Client fires', criteria: { label: 'client', priority: 1 } }
+        {
+          id,
+          name: 'Client fires',
+          criteria: { label: 'client', priority: 1 },
+          favorite: false
+        }
       ]
     })
     expect(await keysOf(owner, id)).toEqual(['DES-1'])
@@ -197,7 +206,12 @@ describe('saved filters', () => {
       (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
     ).toEqual({
       filters: [
-        { id, name: 'Clients', criteria: { label: 'client', priority: 1 } }
+        {
+          id,
+          name: 'Clients',
+          criteria: { label: 'client', priority: 1 },
+          favorite: false
+        }
       ]
     })
     expect(
@@ -210,6 +224,39 @@ describe('saved filters', () => {
     expect((await api.as(owner).patch(`/filters/${id}`, {})).statusCode).toBe(
       400
     )
+  })
+
+  it('stars a filter as a favorite, for its owner only, until unstarred', async () => {
+    const owner = aUser()
+    const other = aUser({ organizationId: owner.organizationId })
+    const { id } = (
+      await api
+        .as(owner)
+        .post('/filters', { name: 'Urgent', criteria: { priority: 1 } })
+    ).json<{ id: string }>()
+    const favorite = async () =>
+      (await api.as(owner).get('/filters'))
+        .json<{ filters: { favorite: boolean }[] }>()
+        .filters.map(filter => filter.favorite)
+
+    expect(await favorite()).toEqual([false])
+    expect(
+      (await api.as(owner).put(`/filters/${id}/favorite`)).statusCode
+    ).toBe(204)
+    expect(
+      (await api.as(owner).put(`/filters/${id}/favorite`)).statusCode
+    ).toBe(204)
+    expect(await favorite()).toEqual([true])
+    expect(
+      (await api.as(other).put(`/filters/${id}/favorite`)).statusCode
+    ).toBe(404)
+    expect(
+      (await api.as(owner).delete(`/filters/${id}/favorite`)).statusCode
+    ).toBe(204)
+    expect(await favorite()).toEqual([false])
+    expect(
+      (await api.as(owner).put('/filters/not-a-uuid/favorite')).statusCode
+    ).toBe(404)
   })
 
   it('refuses unknown criteria', async () => {

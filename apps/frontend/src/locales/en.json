@@ -529,6 +529,10 @@
   },
   "filters": {
     "title": "Filters",
+    "fold": "Fold filters",
+    "unfold": "Unfold filters",
+    "star": "Pin %{name} to the sidebar",
+    "unstar": "Unpin %{name} from the sidebar",
     "empty": "No saved filters",
     "emptyHint": "Save the criteria you look for often, like your P1 tasks.",
     "loadFailed": "Couldn’t load filters.",

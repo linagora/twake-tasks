@@ -155,6 +155,52 @@ describe('FiltersScreen', () => {
     ).toHaveTextContent('All tasks')
   })
 
+  it('pins a filter to the sidebar, and unpins it, keeping the focus on the star', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priority: 1 }
+    })
+    renderRoute('/filters', { boardsApi })
+
+    const star = await screen.findByRole('button', {
+      name: 'Pin Urgent to the sidebar'
+    })
+    star.focus()
+    fireEvent.click(star)
+    const unstar = await screen.findByRole('button', {
+      name: 'Unpin Urgent from the sidebar'
+    })
+    expect(unstar).toHaveFocus()
+    expect(boardsApi.setFilterFavorite).toHaveBeenCalledWith(id, true)
+
+    fireEvent.click(unstar)
+    expect(
+      await screen.findByRole('button', { name: 'Pin Urgent to the sidebar' })
+    ).toHaveFocus()
+    expect(boardsApi.setFilterFavorite).toHaveBeenLastCalledWith(id, false)
+  })
+
+  it('takes a pinned filter out of the sidebar while its deletion can be undone', async () => {
+    const boardsApi = boards()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priority: 1 }
+    })
+    await boardsApi.setFilterFavorite(id, true)
+    renderRoute('/filters', { boardsApi })
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+    await nav.findByRole('link', { name: 'Urgent' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Urgent' }))
+    await waitFor(() => {
+      expect(nav.queryByRole('link', { name: 'Urgent' })).toBeNull()
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+
+    expect(await nav.findByRole('link', { name: 'Urgent' })).toBeVisible()
+  })
+
   it('edits a saved filter in place', async () => {
     const boardsApi = boards()
     const { id } = await boardsApi.createFilter({

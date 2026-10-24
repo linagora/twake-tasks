@@ -16,6 +16,7 @@ import {
   type BoardsApi,
   type Comment,
   type Description,
+  type FilterFields,
   type HiddenTask,
   type HistoryEntry,
   type NewBoard,
@@ -143,30 +144,60 @@ export function useLabelNames(): UseQueryResult<string[]> {
 export function useCreateFilter(): UseMutationResult<
   { id: string },
   Error,
-  Omit<SavedFilter, 'id'>
+  FilterFields
 > {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (filter: Omit<SavedFilter, 'id'>) => api.createFilter(filter),
+    mutationFn: (filter: FilterFields) => api.createFilter(filter),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
+  })
+}
+
+export function useSetFilterFavorite(): UseMutationResult<
+  void,
+  Error,
+  { filterId: string; favorite: boolean }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ filterId, favorite }) =>
+      api.setFilterFavorite(filterId, favorite),
     onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
   })
 }
 
 export function useUpdateFilter(
   filterId: string
-): UseMutationResult<void, Error, Omit<SavedFilter, 'id'>> {
+): UseMutationResult<void, Error, FilterFields> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (filter: Omit<SavedFilter, 'id'>) =>
-      api.updateFilter(filterId, filter),
+    mutationFn: (filter: FilterFields) => api.updateFilter(filterId, filter),
     onSettled: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: filtersKey }),
         queryClient.invalidateQueries({ queryKey: ['agenda', { filterId }] })
       ])
   })
+}
+
+/** Unpins a filter while its deletion can still be undone, or pins it back. */
+export function useUnpinDeletedFilter(): (
+  filter: SavedFilter,
+  deleted: boolean
+) => void {
+  const queryClient = useQueryClient()
+  return (filter, deleted) => {
+    queryClient.setQueryData<SavedFilter[]>(filtersKey, filters =>
+      filters?.map(each =>
+        each.id === filter.id
+          ? { ...each, favorite: !deleted && filter.favorite }
+          : each
+      )
+    )
+  }
 }
 
 export function useDeleteFilter(): UseMutationResult<void, Error, string> {

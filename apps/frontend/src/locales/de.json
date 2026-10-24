@@ -529,6 +529,10 @@
   },
   "filters": {
     "title": "Filter",
+    "fold": "Filter einklappen",
+    "unfold": "Filter ausklappen",
+    "star": "%{name} an die Seitenleiste anheften",
+    "unstar": "%{name} von der Seitenleiste lösen",
     "empty": "Keine gespeicherten Filter",
     "emptyHint": "Speichern Sie Kriterien, nach denen Sie oft suchen, z. B. Ihre P1-Aufgaben.",
     "loadFailed": "Die Filter konnten nicht geladen werden.",

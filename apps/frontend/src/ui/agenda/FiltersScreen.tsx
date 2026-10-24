@@ -1,4 +1,13 @@
-import { Check, Filter, Icon, Pen, Plus, Trash } from '@linagora/twake-icons'
+import {
+  Check,
+  Filter,
+  Icon,
+  Pen,
+  Plus,
+  Star,
+  StarOutline,
+  Trash
+} from '@linagora/twake-icons'
 import {
   Alert,
   Button,
@@ -19,7 +28,9 @@ import {
   useCreateFilter,
   useDeleteFilter,
   useFilters,
+  useUnpinDeletedFilter,
   useLabelNames,
+  useSetFilterFavorite,
   useUpdateFilter
 } from '@/ui/boards/queries'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
@@ -41,6 +52,7 @@ export function FiltersScreen(): ReactElement {
   const filters = useFilters()
   const [form, setForm] = useState<SavedFilter | 'new' | null>(null)
   const [deleted, setDeleted] = useState<SavedFilter | null>(null)
+  const unpinDeleted = useUnpinDeletedFilter()
   const shown = filters.data?.filter(filter => filter.id !== deleted?.id)
   useDocumentTitle(t('filters.title'))
   const summary = (criteria: FilterCriteria) => {
@@ -116,6 +128,7 @@ export function FiltersScreen(): ReactElement {
               context={summary(filter.criteria)}
               trailing={
                 <>
+                  <FavoriteButton filter={filter} />
                   <IconButton
                     size="small"
                     onClick={() => {
@@ -132,6 +145,7 @@ export function FiltersScreen(): ReactElement {
                         setForm(null)
                       }
                       setDeleted(filter)
+                      unpinDeleted(filter, true)
                     }}
                     aria-label={t('filters.delete', { name: filter.name })}
                   >
@@ -156,6 +170,26 @@ export function FiltersScreen(): ReactElement {
   )
 }
 
+function FavoriteButton({ filter }: { filter: SavedFilter }): ReactElement {
+  const { t } = useI18n()
+  const setFavorite = useSetFilterFavorite()
+  return (
+    <IconButton
+      size="small"
+      color={filter.favorite ? 'warning' : 'default'}
+      aria-label={t(filter.favorite ? 'filters.unstar' : 'filters.star', {
+        name: filter.name
+      })}
+      onClick={() => {
+        if (setFavorite.isPending) return
+        setFavorite.mutate({ filterId: filter.id, favorite: !filter.favorite })
+      }}
+    >
+      <Icon icon={filter.favorite ? Star : StarOutline} size={16} />
+    </IconButton>
+  )
+}
+
 // The filter is deleted when the notice goes, by timeout or by leaving the
 // page, unless Undo was clicked.
 function DeletedNotice({
@@ -167,6 +201,7 @@ function DeletedNotice({
 }): ReactElement {
   const { t } = useI18n()
   const { mutate: remove } = useDeleteFilter()
+  const unpinDeleted = useUnpinDeletedFilter()
   const undone = useRef(false)
   const leaving = useRef<number>(undefined)
   useEffect(() => {
@@ -197,6 +232,7 @@ function DeletedNotice({
             size="small"
             onClick={() => {
               undone.current = true
+              unpinDeleted(filter, false)
               onClose()
             }}
           >

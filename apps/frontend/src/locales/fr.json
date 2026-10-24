@@ -529,6 +529,10 @@
   },
   "filters": {
     "title": "Filtres",
+    "fold": "Replier les filtres",
+    "unfold": "Déplier les filtres",
+    "star": "Épingler %{name} dans la barre latérale",
+    "unstar": "Désépingler %{name} de la barre latérale",
     "empty": "Aucun filtre enregistré",
     "emptyHint": "Enregistrez les critères que vous utilisez souvent, comme vos tâches P1.",
     "loadFailed": "Impossible de charger les filtres.",
