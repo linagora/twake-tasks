@@ -1,4 +1,4 @@
-import { liftStatementTimeout, type Db, type Tx } from '../infra/db.ts'
+import type { Db, Tx } from '../infra/db.ts'
 import { processedEvents } from './schema.ts'
 
 export interface EventKey {
@@ -14,7 +14,6 @@ export function postgresDeduplicator(db: Db, consumer: string): Deduplicator {
   return {
     once: (key, process) =>
       db.transaction(async tx => {
-        await liftStatementTimeout(tx)
         const claimed = await tx
           .insert(processedEvents)
           .values({ consumer, ...key })

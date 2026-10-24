@@ -48,22 +48,10 @@ export function tenantPolicy(
   })
 }
 
-// No idle_in_transaction_session_timeout: postgres.js 3.4.9 rejects the
-// transaction of a session the server ends, but a query its body sends next
-// writes to the closed socket and throws outside any promise, which ends the
-// process.
-interface PoolOptions {
-  poolMax?: number
-  statementTimeoutMs?: number
-}
-
-function connect(url: string, options: PoolOptions) {
+function connect(url: string, max?: number) {
   const client = postgres(url, {
     onnotice: () => undefined,
-    ...(options.poolMax !== undefined && { max: options.poolMax }),
-    ...(options.statementTimeoutMs !== undefined && {
-      connection: { statement_timeout: options.statementTimeoutMs }
-    })
+    ...(max !== undefined && { max })
   })
   return { sql: client, db: drizzle({ client }) }
 }
@@ -111,20 +99,25 @@ function runHooksOnCommit(
   }) as Transaction
 }
 
+const requestTimeouts = new WeakMap<Db, number>()
+
+// The statement timeout bounds the work of `inTenant` alone, which serves
+// requests: jobs, events and migrations may legitimately run longer.
+// No idle_in_transaction_session_timeout: postgres.js 3.4.9 rejects the
+// transaction of a session the server ends, but the next query of its body
+// writes to the closed socket and throws outside any promise, which ends the
+// process.
 export function createDb(
   url: string,
   log: HookLog = console,
-  options: PoolOptions = {}
+  options: { poolMax?: number; statementTimeoutMs?: number } = {}
 ) {
-  const { sql, db } = connect(url, options)
+  const { sql, db } = connect(url, options.poolMax)
   runHooksOnCommit(db, log)
+  if (options.statementTimeoutMs !== undefined) {
+    requestTimeouts.set(db, options.statementTimeoutMs)
+  }
   return { sql, db }
-}
-
-// The pool's statement timeout bounds requests. Background work, such as a
-// purge or a space event, may legitimately run longer.
-export async function liftStatementTimeout(tx: Tx): Promise<void> {
-  await tx.execute(sql`select set_config('statement_timeout', '0', true)`)
 }
 
 /** Runs `hook` once the transaction commits, and never if it rolls back. */
@@ -169,11 +162,16 @@ interface TenantIdentity {
   email: string
 }
 
-export async function asTenant(tx: Tx, identity: TenantIdentity) {
+export async function asTenant(
+  tx: Tx,
+  identity: TenantIdentity,
+  statementTimeoutMs = 0
+) {
   await tx.execute(
     sql`select set_config('app.org_id', ${identity.organizationId ?? ''}, true),
                set_config('app.user_id', ${identity.userId}, true),
-               set_config('app.user_email', ${identity.email}, true)`
+               set_config('app.user_email', ${identity.email}, true),
+               set_config('statement_timeout', ${String(statementTimeoutMs)}, true)`
   )
 }
 
@@ -192,7 +190,7 @@ export function inTenant<T>(
   work: (tx: Tx) => Promise<T>
 ): Promise<T> {
   return db.transaction(async tx => {
-    await asTenant(tx, identity)
+    await asTenant(tx, identity, requestTimeouts.get(db))
     return work(tx)
   })
 }

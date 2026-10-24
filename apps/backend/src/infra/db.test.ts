@@ -15,12 +15,13 @@ import { PostgreSqlContainer } from '@testcontainers/postgresql'
 import postgres from 'postgres'
 import {
   afterCommit,
+  asTenant,
   assertRowLevelSecurity,
   createDb,
   inTenant,
   isTransient,
-  liftStatementTimeout,
-  migrateDb
+  migrateDb,
+  type Tx
 } from './db.ts'
 
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -387,10 +388,12 @@ describe('afterCommit', () => {
   })
 })
 
-describe('the statement timeout of a pool', () => {
+describe('the statement timeout of requests', () => {
   const bounded = createDb(inject('databaseUrl'), console, {
     statementTimeoutMs: 200
   })
+  const sleep = (seconds: number) => (tx: Tx) =>
+    tx.execute(statement`select pg_sleep(${seconds})`)
   const codeOf = (work: Promise<unknown>) =>
     work.then(
       () => 'done',
@@ -402,28 +405,26 @@ describe('the statement timeout of a pool', () => {
     await bounded.sql.end()
   })
 
-  it('cancels a statement that runs too long', async () => {
-    expect(
-      await codeOf(bounded.db.execute(statement`select pg_sleep(1)`))
-    ).toBe('transient')
-  })
-
-  it('can be lifted for one transaction, then holds again', async () => {
-    await expect(
-      bounded.db.transaction(async tx => {
-        await liftStatementTimeout(tx)
-        return (await tx.execute(statement`select pg_sleep(0.5)`)).length
-      })
-    ).resolves.toBe(1)
-    expect(
-      await codeOf(bounded.db.execute(statement`select pg_sleep(1)`))
-    ).toBe('transient')
-  })
-
-  it('is off unless asked for, as migrations need', async () => {
-    expect(await codeOf(db.execute(statement`select pg_sleep(0.5)`))).toBe(
-      'done'
+  it('cancels a statement of a request that runs too long', async () => {
+    expect(await codeOf(inTenant(bounded.db, aUser(), sleep(1)))).toBe(
+      'transient'
     )
+  })
+
+  it('leaves the work of no one unbounded, such as jobs and events', async () => {
+    expect(await codeOf(bounded.db.transaction(sleep(0.5)))).toBe('done')
+    expect(
+      await codeOf(
+        bounded.db.transaction(async tx => {
+          await asTenant(tx, aUser())
+          return sleep(0.5)(tx)
+        })
+      )
+    ).toBe('done')
+  })
+
+  it('is off unless asked for', async () => {
+    expect(await codeOf(inTenant(db, aUser(), sleep(0.5)))).toBe('done')
   })
 })
 

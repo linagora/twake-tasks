@@ -55,8 +55,8 @@ RabbitMQ names, when the broker's differ:
 
 Database:
 
-- `DATABASE_POOL_MAX` (`20`): how many connections each replica keeps at most for requests, events and jobs. Each replica also keeps one more connection, which runs the migrations at start and then answers `/health/ready`, so a busy pool never fails the probe.
-- `DATABASE_STATEMENT_TIMEOUT_MS` (`5000`): how long a statement of the pool may run before Postgres cancels it. The request then gets 503. Jobs and RabbitMQ events lift it for their own transaction, and the migrations run without it. `0` turns it off.
+- `DATABASE_POOL_MAX` (`20`): how many connections each replica keeps at most for requests, events and jobs. Each replica also keeps one more connection, which answers `/health/ready`, so a busy pool never fails the probe.
+- `DATABASE_STATEMENT_TIMEOUT_MS` (`5000`): how long a statement of a request may run before Postgres cancels it. The request then gets 503. Jobs, RabbitMQ events and migrations have no such limit. `0` turns it off.
 
 Server:
 
