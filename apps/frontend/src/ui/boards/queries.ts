@@ -850,6 +850,20 @@ export function useRenameBoard(
   })
 }
 
+export function useSetBoardArchived(): UseMutationResult<
+  void,
+  Error,
+  { boardId: string; archived: boolean }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ boardId, archived }) =>
+      api.setBoardArchived(boardId, archived),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: boardsKey })
+  })
+}
+
 export function useSetFavorite(): UseMutationResult<
   void,
   Error,

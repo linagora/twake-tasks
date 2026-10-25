@@ -66,7 +66,8 @@ import {
   useCreateTask,
   useHiddenTasks,
   useMoveTask,
-  useRenameBoard
+  useRenameBoard,
+  useSetBoardArchived
 } from '@/ui/boards/queries'
 import { markBoardSeen } from '@/ui/boards/seenBoards'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
@@ -472,11 +473,7 @@ function BoardColumns({
           actions={headerActions}
         />
       )}
-      {board.archived && (
-        <Alert severity="info" className="u-mb-1">
-          {t('archive.boardArchived')}
-        </Alert>
-      )}
+      {board.archived && <ArchivedBanner board={board} />}
       {sharing && (
         <ShareDialog
           board={board}
@@ -699,6 +696,33 @@ function BoardColumns({
         />
       )}
     </RemovalNotices.Provider>
+  )
+}
+
+function ArchivedBanner({ board }: { board: Board }): ReactElement {
+  const { t } = useI18n()
+  const unarchive = useSetBoardArchived()
+  return (
+    <Alert
+      severity={unarchive.isError ? 'error' : 'info'}
+      className="u-mb-1"
+      action={
+        board.role === 'admin' && (
+          <Button
+            variant="text"
+            size="small"
+            disabled={unarchive.isPending}
+            onClick={() => {
+              unarchive.mutate({ boardId: board.id, archived: false })
+            }}
+          >
+            {t('archive.unarchive')}
+          </Button>
+        )
+      }
+    >
+      {t(unarchive.isError ? 'archive.failed' : 'archive.boardArchived')}
+    </Alert>
   )
 }
 

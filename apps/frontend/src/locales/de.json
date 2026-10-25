@@ -437,7 +437,13 @@
     "restored": "%{key} ist wieder auf dem Board",
     "openTask": "Öffnen",
     "inTrash": "Im Papierkorb, wird in %{smart_count} Tag endgültig gelöscht. |||| Im Papierkorb, wird in %{smart_count} Tagen endgültig gelöscht.",
-    "isArchived": "Diese Aufgabe ist archiviert."
+    "isArchived": "Diese Aufgabe ist archiviert.",
+    "confirmBoardTitle": "„%{name}“ archivieren?",
+    "confirmBoardText": "Es wird für alle Mitglieder schreibgeschützt. Sie können die Archivierung jederzeit unter Archiv aufheben.",
+    "cancel": "Abbrechen",
+    "boardArchivedToast": "„%{name}“ archiviert",
+    "unarchive": "Archivierung aufheben",
+    "boardUnarchivedToast": "„%{name}“ ist wieder unter Boards"
   },
   "sharing": {
     "share": "Teilen",

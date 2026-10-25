@@ -437,7 +437,13 @@
     "restored": "%{key} ha vuelto al tablero",
     "openTask": "Abrir",
     "inTrash": "En la papelera, se eliminará definitivamente en %{smart_count} día. |||| En la papelera, se eliminará definitivamente en %{smart_count} días.",
-    "isArchived": "Esta tarea está archivada."
+    "isArchived": "Esta tarea está archivada.",
+    "confirmBoardTitle": "¿Archivar «%{name}»?",
+    "confirmBoardText": "Pasa a ser de solo lectura para todos sus miembros. Puedes desarchivarlo cuando quieras desde Archivados.",
+    "cancel": "Cancelar",
+    "boardArchivedToast": "«%{name}» archivado",
+    "unarchive": "Desarchivar",
+    "boardUnarchivedToast": "«%{name}» vuelve a estar en Tableros"
   },
   "sharing": {
     "share": "Compartir",

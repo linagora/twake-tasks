@@ -316,11 +316,105 @@ describe('archive and trash', () => {
     expect(icon('Archived tasks')).not.toBe(icon('Archive board'))
   })
 
+  it('asks before archiving a board, and Cancel keeps it', async () => {
+    const { boardsApi } = logoBoard()
+
+    fireEvent.click(
+      (await boardMenu()).getByRole('menuitem', { name: 'Archive board' })
+    )
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Archive “Design”?' })
+    )
+    expect(
+      dialog.getByText(
+        'It becomes read only for everyone on it. You can unarchive it at any time from Archives.'
+      )
+    ).toBeVisible()
+    const cancel = dialog.getByRole('button', { name: 'Cancel' })
+    await waitFor(() => {
+      expect(cancel).toHaveFocus()
+    })
+    fireEvent.click(cancel)
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(boardsApi.setBoardArchived).not.toHaveBeenCalled()
+    expect(
+      screen.getByRole('button', { name: 'Add a task to To do' })
+    ).toBeVisible()
+  })
+
+  it('archives a board, with an Undo that brings it back', async () => {
+    const { board, boardsApi } = logoBoard()
+
+    fireEvent.click(
+      (await boardMenu()).getByRole('menuitem', { name: 'Archive board' })
+    )
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: 'Archive board'
+      })
+    )
+
+    expect(
+      await screen.findByText('This board is archived and read only.')
+    ).toBeVisible()
+    expect(boardsApi.setBoardArchived).toHaveBeenCalledWith(board.id, true)
+    fireEvent.click(
+      within(
+        await screen.findByRole('status', { name: '“Design” archived' })
+      ).getByRole('button', { name: 'Undo' })
+    )
+
+    expect(
+      await screen.findByRole('button', { name: 'Add a task to To do' })
+    ).toBeVisible()
+    expect(boardsApi.setBoardArchived).toHaveBeenLastCalledWith(board.id, false)
+  })
+
+  it('unarchives a board from its banner, for an admin only', async () => {
+    const { board, boardsApi } = logoBoard({ archived: true })
+
+    const banner = within(await screen.findByRole('alert'))
+    expect(
+      banner.getByText('This board is archived and read only.')
+    ).toBeVisible()
+    await waitFor(() => {
+      expect(boardsApi.listBoards).toHaveBeenCalled()
+    })
+    const listed = boardsApi.listBoards.mock.calls.length
+    fireEvent.click(banner.getByRole('button', { name: 'Unarchive' }))
+
+    expect(
+      await screen.findByRole('button', { name: 'Add a task to To do' })
+    ).toBeVisible()
+    expect(boardsApi.setBoardArchived).toHaveBeenCalledWith(board.id, false)
+    await waitFor(() => {
+      expect(boardsApi.listBoards.mock.calls.length).toBeGreaterThan(listed)
+    })
+  })
+
+  it('shows an archived board banner without Unarchive to an editor', async () => {
+    logoBoard({ archived: true, role: 'editor' })
+
+    const banner = within(await screen.findByRole('alert'))
+    expect(
+      banner.getByText('This board is archived and read only.')
+    ).toBeVisible()
+    expect(banner.queryByRole('button')).toBeNull()
+  })
+
   it('archives a board, which becomes read only', async () => {
     const { board, boardsApi } = logoBoard()
 
     fireEvent.click(
       (await boardMenu()).getByRole('menuitem', { name: 'Archive board' })
+    )
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: 'Archive board'
+      })
     )
 
     expect(

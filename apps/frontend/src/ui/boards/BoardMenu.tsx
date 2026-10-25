@@ -9,13 +9,26 @@ import {
   Stack,
   Trash
 } from '@linagora/twake-icons'
-import { Divider, IconButton, Menu } from '@linagora/twake-mui'
-import { useState, type ElementType, type ReactElement } from 'react'
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  Menu,
+  Typography
+} from '@linagora/twake-mui'
+import { useId, useState, type ElementType, type ReactElement } from 'react'
 
 import type { Shelf } from '@/application/boards'
 import { IconMenuItem } from '@/ds/IconMenuItem'
+import { Toast } from '@/ds/Toast'
 import type { Board } from '@/domain/board'
-import { useBoardChange, useSetLayout } from '@/ui/boards/queries'
+import { useSetBoardArchived, useSetLayout } from '@/ui/boards/queries'
+import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function BoardMenu({
@@ -31,13 +44,13 @@ export function BoardMenu({
 }): ReactElement {
   const { t } = useI18n()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
-  // The editor opens once the menu is gone, which gives the focus back to its
-  // button first: the editor would lose the focus and close at once
-  const [renaming, setRenaming] = useState(false)
+  // The editor and the dialog open once the menu is gone, which gives the focus
+  // back to its button first: the editor would lose the focus and close at once
+  const [next, setNext] = useState<'rename' | 'archive' | null>(null)
+  const [confirming, setConfirming] = useState(false)
+  const [archivedNotice, setArchivedNotice] = useState(false)
   const setLayout = useSetLayout(board.id)
-  const archive = useBoardChange(board.id, (api, archived: boolean) =>
-    api.setBoardArchived(board.id, archived)
-  )
+  const archive = useSetBoardArchived()
   const admin = board.role === 'admin'
   const close = (): void => {
     setAnchor(null)
@@ -75,9 +88,9 @@ export function BoardMenu({
         slotProps={{
           transition: {
             onExited: () => {
-              if (!renaming) return
-              setRenaming(false)
-              onRename?.()
+              setNext(null)
+              if (next === 'rename') onRename?.()
+              if (next === 'archive') setConfirming(true)
             }
           }
         }}
@@ -102,7 +115,7 @@ export function BoardMenu({
           !board.inbox &&
           onRename &&
           item(Pen, t('board.rename'), () => {
-            setRenaming(true)
+            setNext('rename')
           })}
         {onMove && item(FolderMoveto, t('moveBoard.action'), onMove)}
         {admin &&
@@ -113,10 +126,132 @@ export function BoardMenu({
               board.archived ? 'archive.unarchiveBoard' : 'archive.archiveBoard'
             ),
             () => {
-              archive.mutate(!board.archived)
+              if (board.archived) {
+                setArchivedNotice(false)
+                archive.mutate({ boardId: board.id, archived: false })
+              } else setNext('archive')
             }
           )}
       </Menu>
+      {confirming && (
+        <ArchiveBoardDialog
+          name={board.name}
+          onCancel={() => {
+            setConfirming(false)
+          }}
+          onArchive={() => {
+            setConfirming(false)
+            archive.mutate(
+              { boardId: board.id, archived: true },
+              {
+                onSuccess: () => {
+                  setArchivedNotice(true)
+                }
+              }
+            )
+          }}
+        />
+      )}
+      {/* Unarchived elsewhere, from the banner, the notice has nothing to undo. */}
+      {archivedNotice && board.archived ? (
+        <BoardArchivedNotice
+          board={board}
+          undo={archive}
+          onClose={() => {
+            setArchivedNotice(false)
+          }}
+        />
+      ) : (
+        archive.isError && (
+          <Toast
+            open
+            autoHideDuration={6000}
+            onClose={(_, reason) => {
+              if (reason !== 'clickaway') archive.reset()
+            }}
+          >
+            <Alert severity="error">{t('archive.failed')}</Alert>
+          </Toast>
+        )
+      )}
     </>
+  )
+}
+
+function ArchiveBoardDialog({
+  name,
+  onCancel,
+  onArchive
+}: {
+  name: string
+  onCancel: () => void
+  onArchive: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const titleId = useId()
+  return (
+    <Dialog open onClose={onCancel} aria-labelledby={titleId} size="small">
+      <DialogTitle id={titleId}>
+        {t('archive.confirmBoardTitle', { name })}
+      </DialogTitle>
+      <DialogContent>
+        <Typography>{t('archive.confirmBoardText')}</Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button variant="text" ref={focusOnMount} onClick={onCancel}>
+          {t('archive.cancel')}
+        </Button>
+        <Button onClick={onArchive}>{t('archive.archiveBoard')}</Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+function BoardArchivedNotice({
+  board,
+  undo,
+  onClose
+}: {
+  board: Board
+  undo: ReturnType<typeof useSetBoardArchived>
+  onClose: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const labelId = useId()
+  return (
+    <Toast
+      open
+      autoHideDuration={undo.isError ? null : 6000}
+      onClose={(_, reason) => {
+        if (reason !== 'clickaway') onClose()
+      }}
+    >
+      <Alert
+        severity={undo.isError ? 'error' : 'info'}
+        role={undo.isError ? 'alert' : 'status'}
+        aria-labelledby={labelId}
+        action={
+          <Button
+            variant="text"
+            size="small"
+            disabled={undo.isPending}
+            onClick={() => {
+              undo.mutate(
+                { boardId: board.id, archived: false },
+                { onSuccess: onClose }
+              )
+            }}
+          >
+            {t('archive.undo')}
+          </Button>
+        }
+      >
+        <span id={labelId}>
+          {undo.isError
+            ? t('archive.failed')
+            : t('archive.boardArchivedToast', { name: board.name })}
+        </span>
+      </Alert>
+    </Toast>
   )
 }

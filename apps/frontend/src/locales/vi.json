@@ -437,7 +437,13 @@
     "restored": "%{key} đã trở lại bảng",
     "openTask": "Mở",
     "inTrash": "Trong thùng rác, sẽ bị xóa vĩnh viễn sau %{smart_count} ngày.",
-    "isArchived": "Công việc này đã được lưu trữ."
+    "isArchived": "Công việc này đã được lưu trữ.",
+    "confirmBoardTitle": "Lưu trữ “%{name}”?",
+    "confirmBoardText": "Bảng sẽ chỉ đọc với mọi thành viên. Bạn có thể bỏ lưu trữ bất cứ lúc nào trong Lưu trữ.",
+    "cancel": "Hủy",
+    "boardArchivedToast": "Đã lưu trữ “%{name}”",
+    "unarchive": "Bỏ lưu trữ",
+    "boardUnarchivedToast": "“%{name}” đã trở lại Bảng"
   },
   "sharing": {
     "share": "Chia sẻ",
