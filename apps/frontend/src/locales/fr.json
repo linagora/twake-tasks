@@ -437,7 +437,13 @@
     "restored": "%{key} est de retour sur le tableau",
     "openTask": "Ouvrir",
     "inTrash": "Dans la corbeille, supprimée définitivement dans %{smart_count} jour. |||| Dans la corbeille, supprimée définitivement dans %{smart_count} jours.",
-    "isArchived": "Cette tâche est archivée."
+    "isArchived": "Cette tâche est archivée.",
+    "confirmBoardTitle": "Archiver « %{name} » ?",
+    "confirmBoardText": "Il passe en lecture seule pour tous ses membres. Vous pourrez le désarchiver à tout moment depuis Archives.",
+    "cancel": "Annuler",
+    "boardArchivedToast": "« %{name} » archivé",
+    "unarchive": "Désarchiver",
+    "boardUnarchivedToast": "« %{name} » est de retour dans Tableaux"
   },
   "sharing": {
     "share": "Partager",

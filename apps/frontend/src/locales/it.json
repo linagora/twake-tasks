@@ -437,7 +437,13 @@
     "restored": "%{key} è di nuovo sulla bacheca",
     "openTask": "Apri",
     "inTrash": "Nel cestino, verrà eliminata definitivamente tra %{smart_count} giorno. |||| Nel cestino, verrà eliminata definitivamente tra %{smart_count} giorni.",
-    "isArchived": "Questa attività è archiviata."
+    "isArchived": "Questa attività è archiviata.",
+    "confirmBoardTitle": "Archiviare “%{name}”?",
+    "confirmBoardText": "Diventa di sola lettura per tutti i membri. Puoi ripristinarla in qualsiasi momento da Archivio.",
+    "cancel": "Annulla",
+    "boardArchivedToast": "“%{name}” archiviata",
+    "unarchive": "Ripristina",
+    "boardUnarchivedToast": "“%{name}” è di nuovo tra le Bacheche"
   },
   "sharing": {
     "share": "Condividi",

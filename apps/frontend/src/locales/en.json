@@ -437,7 +437,13 @@
     "restored": "%{key} is back on the board",
     "openTask": "Open",
     "inTrash": "In the trash, deleted for good in %{smart_count} day. |||| In the trash, deleted for good in %{smart_count} days.",
-    "isArchived": "This task is archived."
+    "isArchived": "This task is archived.",
+    "confirmBoardTitle": "Archive “%{name}”?",
+    "confirmBoardText": "It becomes read only for everyone on it. You can unarchive it at any time from Archives.",
+    "cancel": "Cancel",
+    "boardArchivedToast": "“%{name}” archived",
+    "unarchive": "Unarchive",
+    "boardUnarchivedToast": "“%{name}” is back in Boards"
   },
   "sharing": {
     "share": "Share",

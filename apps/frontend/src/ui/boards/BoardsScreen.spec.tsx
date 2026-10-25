@@ -63,6 +63,45 @@ describe('BoardsScreen', () => {
     ).toBeVisible()
   })
 
+  it('unarchives an admin board from Archives, which offers to open it', async () => {
+    const old = aBoard({ name: 'Old plans', keyPrefix: 'OLD', archived: true })
+    const boardsApi = fakeBoardsApi([
+      old,
+      aBoard({
+        name: 'Shared',
+        keyPrefix: 'SHA',
+        archived: true,
+        role: 'editor'
+      })
+    ])
+    const { router } = renderRoute('/archives', { boardsApi })
+
+    const archived = await screen.findByRole('list', { name: 'Archives' })
+    expect(
+      within(
+        within(archived).getByRole('listitem', { name: 'Shared' })
+      ).queryByRole('button', { name: 'Unarchive' })
+    ).toBeNull()
+    fireEvent.click(
+      within(
+        within(archived).getByRole('listitem', { name: 'Old plans' })
+      ).getByRole('button', { name: 'Unarchive' })
+    )
+
+    await waitFor(() => {
+      expect(boardNames(archived)).toEqual(['Shared'])
+    })
+    expect(boardsApi.setBoardArchived).toHaveBeenCalledWith(old.id, false)
+    fireEvent.click(
+      within(
+        await screen.findByRole('status', {
+          name: '“Old plans” is back in Boards'
+        })
+      ).getByRole('button', { name: 'Open' })
+    )
+    expect(router.state.location.pathname).toBe(`/boards/${old.id}`)
+  })
+
   it('lists every board together, the personal ones first, marking those of a space', async () => {
     const personal = aProject({ name: 'Personal', personal: true })
     const acme = aProject({ name: 'Acme', managed: true })
