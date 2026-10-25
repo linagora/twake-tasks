@@ -69,10 +69,16 @@ async function readVersions(
 }
 
 export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
-  async function call<T>(method: string, path: string, body?: object) {
+  async function call<T>(
+    method: string,
+    path: string,
+    body?: object,
+    keepalive = false
+  ) {
     const response = await send(
       new Request(new URL(`/api${path}`, baseUrl), {
         method,
+        keepalive,
         ...(body && {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(body)
@@ -129,7 +135,9 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     createFilter: filter => call('POST', '/filters', filter),
     updateFilter: (filterId, filter) =>
       call('PATCH', route`/filters/${filterId}`, filter),
-    deleteFilter: filterId => call('DELETE', route`/filters/${filterId}`),
+    // Sent as the page unloads when the undo notice is still open.
+    deleteFilter: filterId =>
+      call('DELETE', route`/filters/${filterId}`, undefined, true),
     setFilterFavorite: (filterId, favorite) =>
       call(favorite ? 'PUT' : 'DELETE', route`/filters/${filterId}/favorite`),
     labelNames: async () =>

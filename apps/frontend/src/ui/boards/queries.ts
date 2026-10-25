@@ -210,6 +210,23 @@ export function useUnpinDeletedFilter(): (
   }
 }
 
+// For a page that is unloading: the request starts synchronously, where a
+// mutation would start it after an await. A page restored from the back-forward
+// cache then shows the server's list.
+export function useDeleteFilterNow(): (filterId: string) => void {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return filterId => {
+    void api
+      .deleteFilter(filterId)
+      .catch(() => undefined)
+      .finally(() => queryClient.invalidateQueries({ queryKey: filtersKey }))
+    queryClient.setQueryData<SavedFilter[]>(filtersKey, filters =>
+      filters?.filter(filter => filter.id !== filterId)
+    )
+  }
+}
+
 export function useDeleteFilter(): UseMutationResult<void, Error, string> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()

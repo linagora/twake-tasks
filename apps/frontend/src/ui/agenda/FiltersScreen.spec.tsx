@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -458,5 +458,29 @@ describe('FiltersScreen', () => {
     await waitFor(() => {
       expect(boardsApi.deleteFilter).toHaveBeenCalledTimes(1)
     })
+  })
+
+  it('deletes a filter whose notice is still open when the page unloads', async () => {
+    const boardsApi = boards()
+    await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priority: [1] }
+    })
+    const { unmount } = renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Delete Urgent' })
+    )
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'))
+    })
+
+    expect(boardsApi.deleteFilter).toHaveBeenCalledTimes(1)
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
+    })
+    unmount()
+    await new Promise(resolve => setTimeout(resolve, 10))
+    expect(boardsApi.deleteFilter).toHaveBeenCalledTimes(1)
   })
 })

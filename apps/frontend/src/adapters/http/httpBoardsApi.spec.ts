@@ -46,6 +46,16 @@ describe('httpBoardsApi', () => {
     expect(send).not.toHaveBeenCalled()
   })
 
+  it('keeps a filter deletion alive past the page unloading', async () => {
+    const send = backend(204)
+
+    await httpBoardsApi(BASE, send).deleteFilter('f1')
+
+    const [request] = send.mock.calls[0] ?? []
+    expect(request?.method).toBe('DELETE')
+    expect(request?.keepalive).toBe(true)
+  })
+
   it('posts a new board as JSON', async () => {
     const send = backend(201, { id: 'b1', name: 'Design' })
 
