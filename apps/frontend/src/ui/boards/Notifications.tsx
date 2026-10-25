@@ -1,13 +1,13 @@
+import { Bell, Clock, Comment, Eye, Icon, People } from '@linagora/twake-icons'
 import {
-  Bell,
-  Clock,
-  Comment,
-  Eye,
-  EyeClosed,
-  Icon,
-  People
-} from '@linagora/twake-icons'
-import { IconButton, Link, Tooltip, Typography } from '@linagora/twake-mui'
+  Button,
+  IconButton,
+  Link,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme
+} from '@linagora/twake-mui'
 import { useEffect, useReducer, type ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
@@ -62,29 +62,49 @@ export function FollowButton({
   const following = useFollowing(boardId, task.id)
   const set = useSetFollowing(boardId, task.id)
   const followed = set.isPending ? set.variables : following.data === true
+  const theme = useTheme()
+  const iconOnly = useMediaQuery(theme.breakpoints.down('md'))
+  const label = followed
+    ? t('notifications.followingTask')
+    : t('notifications.follow')
+  const props = {
+    size: 'small',
+    'aria-pressed': followed,
+    disabled: !following.isSuccess,
+    onClick: () => {
+      set.mutate(!followed)
+    }
+  } as const
 
-  // An eye, open and coloured while followed, as the "watch" of trackers.
-  const button = (
+  // An eye, coloured while followed, as the "watch" of trackers.
+  const button = iconOnly ? (
     <IconButton
-      size="small"
+      {...props}
       color={followed ? 'primary' : 'default'}
-      aria-label={
-        followed ? t('notifications.followingTask') : t('notifications.follow')
-      }
-      aria-pressed={followed}
-      disabled={!following.isSuccess}
-      onClick={() => {
-        set.mutate(!followed)
-      }}
+      aria-label={label}
     >
-      <Icon icon={followed ? Eye : EyeClosed} />
+      <Icon icon={Eye} />
     </IconButton>
+  ) : (
+    <Button
+      {...props}
+      color={followed ? 'primary' : 'inherit'}
+      startIcon={<Icon icon={Eye} />}
+    >
+      {label}
+    </Button>
   )
   // A disabled button gets no hover, so no tooltip until it is known.
   if (!following.isSuccess) return button
   return (
     <Tooltip
-      title={followed ? t('notifications.unfollow') : t('notifications.follow')}
+      title={
+        followed
+          ? t('notifications.unfollow')
+          : iconOnly
+            ? t('notifications.follow')
+            : ''
+      }
       describeChild={followed}
     >
       {button}

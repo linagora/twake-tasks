@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { onAPhone } from '@/testing/phone'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { typeRichText } from '@/testing/richText'
 
@@ -29,16 +30,16 @@ describe('TaskPanel', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const panel = await openLogo()
-    fireEvent.click(panel.getByRole('button', { name: 'Mark complete' }))
+    const complete = panel.getByRole('button', { name: 'Mark complete' })
+    expect(complete).toHaveTextContent('Mark complete')
+    fireEvent.click(complete)
 
     await waitFor(() => {
       expect(boardsApi.moveTask).toHaveBeenCalledWith(board.id, logo.id, {
         sectionId: board.sections[2]?.id
       })
     })
-    fireEvent.click(
-      await panel.findByRole('button', { name: 'Mark incomplete' })
-    )
+    fireEvent.click(await panel.findByRole('button', { name: 'Completed' }))
 
     await waitFor(() => {
       expect(boardsApi.moveTask).toHaveBeenLastCalledWith(board.id, logo.id, {
@@ -48,6 +49,21 @@ describe('TaskPanel', () => {
     expect(
       await panel.findByRole('button', { name: 'Mark complete' })
     ).toBeEnabled()
+  })
+
+  it('completes from an icon on a phone, named by its action', async () => {
+    onAPhone()
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    const complete = panel.getByRole('button', { name: 'Mark complete' })
+    expect(complete).toHaveTextContent('')
+    fireEvent.click(complete)
+
+    expect(
+      await panel.findByRole('button', { name: 'Mark incomplete' })
+    ).toHaveTextContent('')
   })
 
   it('says why a board without a Done section cannot complete the task', async () => {
