@@ -49,7 +49,8 @@ export function BoardCard({
   tag,
   meta,
   members,
-  action
+  action,
+  footerAction
 }: {
   label: string
   badge: string
@@ -64,6 +65,8 @@ export function BoardCard({
   /** The people of the board, at the end of its last row. */
   members?: ReactNode
   action?: ReactNode
+  /** On the last row, before the people. */
+  footerAction?: ReactNode
 }): ReactElement {
   return (
     <Card
@@ -158,7 +161,8 @@ export function BoardCard({
         }}
       >
         {chip}
-        <Box sx={{ ml: 'auto' }}>{members}</Box>
+        <Box sx={{ ml: 'auto' }}>{footerAction}</Box>
+        <Box>{members}</Box>
       </Box>
     </Card>
   )

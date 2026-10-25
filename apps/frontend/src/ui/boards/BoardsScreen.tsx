@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   IconButton,
   Link,
@@ -15,16 +16,21 @@ import {
   Star,
   StarOutline
 } from '@linagora/twake-icons'
-import { useEffect, useRef, useState, type ReactElement } from 'react'
+import { useEffect, useId, useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { BoardCard, BoardChip, CardGrid, CreateCard } from '@/ds/TileGrid'
+import { Toast } from '@/ds/Toast'
 import type { BoardSummary, ProjectSummary } from '@/domain/board'
 import { listBoards } from '@/domain/boardList'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PeopleAvatars } from '@/ui/boards/MembersDialog'
-import { useBoards, useSetFavorite } from '@/ui/boards/queries'
+import {
+  useBoards,
+  useSetBoardArchived,
+  useSetFavorite
+} from '@/ui/boards/queries'
 import {
   PageCrumbs,
   useArchivesOrigin,
@@ -83,10 +89,12 @@ export function useProjectName(): (project: ProjectSummary) => string {
 
 function BoardItem({
   board,
-  fresh
+  fresh,
+  onUnarchive
 }: {
   board: BoardSummary
   fresh: boolean
+  onUnarchive?: (() => void) | undefined
 }): ReactElement {
   const { t } = useI18n()
   return (
@@ -130,6 +138,13 @@ function BoardItem({
             : t('boards.openTasks', { smart_count: board.openTasks })
       }
       members={<BoardMembers board={board} />}
+      footerAction={
+        onUnarchive && (
+          <Button variant="text" size="small" onClick={onUnarchive}>
+            {t('archive.unarchive')}
+          </Button>
+        )
+      }
       action={<FavoriteButton board={board} />}
     />
   )
@@ -163,6 +178,9 @@ export function BoardsScreen({
   const navigate = useNavigate()
   const boards = useBoards()
   const [creating, setCreating] = useState(false)
+  const unarchive = useSetBoardArchived()
+  const [unarchived, setUnarchived] = useState<BoardSummary | null>(null)
+  const unarchivedId = useId()
   const boardsOrigin = useBoardsOrigin()
   const archivesOrigin = useArchivesOrigin()
   const archives = shelf === 'archived'
@@ -243,9 +261,60 @@ export function BoardsScreen({
               key={board.id}
               board={board}
               fresh={isNewlyShared(board)}
+              onUnarchive={
+                archives && board.role === 'admin'
+                  ? () => {
+                      setUnarchived(null)
+                      unarchive.mutate(
+                        { boardId: board.id, archived: false },
+                        {
+                          onSuccess: () => {
+                            setUnarchived(board)
+                          }
+                        }
+                      )
+                    }
+                  : undefined
+              }
             />
           ))}
         </CardGrid>
+      )}
+      {(unarchived ?? unarchive.isError) && (
+        <Toast
+          open
+          autoHideDuration={6000}
+          onClose={(_, reason) => {
+            if (reason === 'clickaway') return
+            setUnarchived(null)
+            unarchive.reset()
+          }}
+        >
+          {unarchived ? (
+            <Alert
+              severity="info"
+              role="status"
+              aria-labelledby={unarchivedId}
+              action={
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => {
+                    void navigate(`/boards/${unarchived.id}`)
+                  }}
+                >
+                  {t('archive.openTask')}
+                </Button>
+              }
+            >
+              <span id={unarchivedId}>
+                {t('archive.boardUnarchivedToast', { name: unarchived.name })}
+              </span>
+            </Alert>
+          ) : (
+            <Alert severity="error">{t('archive.failed')}</Alert>
+          )}
+        </Toast>
       )}
       {creating && (
         <NewBoardDialog
