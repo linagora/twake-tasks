@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, onTestFinished } from 'vitest'
 
-import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { aBoard, aProject, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 
@@ -137,5 +137,71 @@ describe('SearchScreen', () => {
     expect(await findEmptyState('No tasks match')).toHaveTextContent(
       'Try another word, or check the spelling.'
     )
+    expect(
+      screen.queryByRole('region', { name: 'Boards' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('lists the active boards whose name matches, ignoring case and accents', async () => {
+    const launch = aBoard({
+      name: 'Product lâunch',
+      keyPrefix: 'PRO',
+      project: aProject({ name: 'Marketing', managed: true })
+    })
+    const archived = aBoard({
+      name: 'Old launch',
+      keyPrefix: 'OLD',
+      archived: true
+    })
+    renderRoute('/search?q=LAUNCH', {
+      boardsApi: fakeBoardsApi([launch, archived])
+    })
+
+    const found = within(await screen.findByRole('region', { name: 'Boards' }))
+    const row = found.getByRole('listitem', { name: 'Product lâunch' })
+    expect(found.getAllByRole('listitem')).toHaveLength(1)
+    expect(row).toHaveTextContent('PRO')
+    expect(row).toHaveTextContent('Space')
+    expect(
+      [...row.querySelectorAll('mark')].map(mark => mark.textContent)
+    ).toEqual(['lâunch'])
+    expect(
+      within(row).getByRole('link', { name: 'Product lâunch' })
+    ).toHaveAttribute('href', `/boards/${launch.id}`)
+  })
+
+  it('matches a board by its key prefix', async () => {
+    renderRoute('/search?q=mkt', {
+      boardsApi: fakeBoardsApi([
+        aBoard({ name: 'Marketing', keyPrefix: 'MKT' }),
+        aBoard({ name: 'Other', keyPrefix: 'AMKT' })
+      ])
+    })
+
+    const found = within(await screen.findByRole('region', { name: 'Boards' }))
+    expect(found.getAllByRole('listitem')).toHaveLength(1)
+    expect(
+      found.getByRole('listitem', { name: 'Marketing' })
+    ).toBeInTheDocument()
+  })
+
+  it('shows five matching boards, and the others on demand', async () => {
+    const many = Array.from({ length: 7 }, (_, index) =>
+      aBoard({
+        name: `Launch ${String(index + 1)}`,
+        keyPrefix: `L${String(index)}`
+      })
+    )
+    renderRoute('/search?q=launch', { boardsApi: fakeBoardsApi(many) })
+
+    const found = within(await screen.findByRole('region', { name: 'Boards' }))
+    expect(found.getAllByRole('listitem')).toHaveLength(5)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show all 7 boards' }))
+
+    expect(found.getAllByRole('listitem')).toHaveLength(7)
+    expect(
+      screen.queryByRole('button', { name: /Show all/ })
+    ).not.toBeInTheDocument()
   })
 })

@@ -507,7 +507,8 @@
     "empty": "Keine passenden Aufgaben",
     "emptyHint": "Versuchen Sie ein anderes Wort, oder prüfen Sie die Schreibweise.",
     "failed": "Die Suche ist fehlgeschlagen.",
-    "tooShort": "Geben Sie mindestens %{count} Zeichen ein, um zu suchen."
+    "tooShort": "Geben Sie mindestens %{count} Zeichen ein, um zu suchen.",
+    "allBoards": "Alle %{smart_count} Boards anzeigen"
   },
   "notifications": {
     "title": "Benachrichtigungen",

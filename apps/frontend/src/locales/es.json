@@ -507,7 +507,8 @@
     "empty": "Ninguna tarea coincide",
     "emptyHint": "Prueba con otra palabra o revisa la ortografía.",
     "failed": "No se pudo buscar.",
-    "tooShort": "Escribe al menos %{count} caracteres para buscar."
+    "tooShort": "Escribe al menos %{count} caracteres para buscar.",
+    "allBoards": "Mostrar los %{smart_count} tableros"
   },
   "notifications": {
     "title": "Notificaciones",

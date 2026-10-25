@@ -1,7 +1,7 @@
 import { Box } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 
-const fold = (text: string) =>
+export const fold = (text: string): string =>
   text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 
 // Matches ignore case and accents, so each folded character keeps the

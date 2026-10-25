@@ -507,7 +507,8 @@
     "empty": "No tasks match",
     "emptyHint": "Try another word, or check the spelling.",
     "failed": "Couldn’t search.",
-    "tooShort": "Type at least %{count} characters to search."
+    "tooShort": "Type at least %{count} characters to search.",
+    "allBoards": "Show all %{smart_count} boards"
   },
   "notifications": {
     "title": "Notifications",

@@ -507,7 +507,8 @@
     "empty": "Nessuna attività corrispondente",
     "emptyHint": "Prova un’altra parola o controlla l’ortografia.",
     "failed": "Impossibile eseguire la ricerca.",
-    "tooShort": "Digita almeno %{count} caratteri per cercare."
+    "tooShort": "Digita almeno %{count} caratteri per cercare.",
+    "allBoards": "Mostra tutte le %{smart_count} bacheche"
   },
   "notifications": {
     "title": "Notifiche",
