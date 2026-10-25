@@ -141,6 +141,17 @@ describe('FiltersScreen', () => {
     expect(screen.getByText('DES-2 · Design · Sub-task of Logo')).toBeVisible()
   })
 
+  it('says when no open task matches the filter', async () => {
+    const boardsApi = fakeBoardsApi()
+    const { id } = await boardsApi.createFilter({ name: 'All', criteria: {} })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    expect(
+      await findEmptyState('No open task matches this filter')
+    ).toBeVisible()
+    expect(screen.queryByText('You are all caught up.')).toBeNull()
+  })
+
   it('says so when the filter does not exist, with a way back to the filters', async () => {
     renderRoute('/filters/unknown', { boardsApi: boards() })
 

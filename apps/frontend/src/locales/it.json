@@ -589,11 +589,13 @@
     "mine": "Le mie attività",
     "noDate": "Nessuna data",
     "overdue": "In ritardo",
-    "empty": "Nessuna scadenza",
-    "emptyHint": "Sei in pari con tutto.",
+    "scope": "Le attività assegnate a te e quelle non assegnate delle tue bacheche fuori dagli spazi.",
+    "mineScope": "Le attività aperte assegnate a te su qualsiasi bacheca.",
+    "todayEmpty": "Niente in scadenza oggi",
+    "upcomingEmpty": "Niente in scadenza nei prossimi giorni",
+    "filterEmpty": "Nessuna attività aperta corrisponde a questo filtro",
     "loadFailed": "Impossibile caricare le tue attività.",
     "mineEmpty": "Nulla assegnato a te",
-    "mineEmptyHint": "Le attività assegnate a te in qualsiasi bacheca compaiono qui.",
     "completeFailed": "Impossibile completare l’attività."
   },
   "members": {

@@ -589,11 +589,13 @@
     "mine": "Meine Aufgaben",
     "noDate": "Kein Datum",
     "overdue": "Überfällig",
-    "empty": "Nichts fällig",
-    "emptyHint": "Sie sind auf dem neuesten Stand.",
+    "scope": "Ihnen zugewiesene Aufgaben und nicht zugewiesene Aufgaben Ihrer Boards außerhalb von Bereichen.",
+    "mineScope": "Offene Aufgaben, die Ihnen auf einem beliebigen Board zugewiesen sind.",
+    "todayEmpty": "Heute nichts fällig",
+    "upcomingEmpty": "In den nächsten Tagen nichts fällig",
+    "filterEmpty": "Keine offene Aufgabe entspricht diesem Filter",
     "loadFailed": "Ihre Aufgaben konnten nicht geladen werden.",
     "mineEmpty": "Ihnen ist nichts zugewiesen",
-    "mineEmptyHint": "Aufgaben, die Ihnen in einem beliebigen Board zugewiesen sind, erscheinen hier.",
     "completeFailed": "Die Aufgabe konnte nicht erledigt werden."
   },
   "members": {

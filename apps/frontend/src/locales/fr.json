@@ -589,11 +589,13 @@
     "mine": "Mes tâches",
     "noDate": "Sans date",
     "overdue": "En retard",
-    "empty": "Rien à faire",
-    "emptyHint": "Vous êtes à jour.",
+    "scope": "Les tâches qui vous sont assignées, et les tâches sans responsable de vos tableaux hors espaces.",
+    "mineScope": "Les tâches ouvertes qui vous sont assignées, sur tous les tableaux.",
+    "todayEmpty": "Rien à faire aujourd’hui",
+    "upcomingEmpty": "Rien à faire dans les prochains jours",
+    "filterEmpty": "Aucune tâche ouverte ne correspond à ce filtre",
     "loadFailed": "Vos tâches n'ont pas pu être chargées.",
     "mineEmpty": "Rien ne vous est assigné",
-    "mineEmptyHint": "Les tâches qui vous sont assignées, sur tous les tableaux, apparaissent ici.",
     "completeFailed": "Impossible de terminer la tâche."
   },
   "members": {

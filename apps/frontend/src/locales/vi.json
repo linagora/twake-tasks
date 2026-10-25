@@ -589,11 +589,13 @@
     "mine": "Việc của tôi",
     "noDate": "Không có ngày",
     "overdue": "Quá hạn",
-    "empty": "Không có việc đến hạn",
-    "emptyHint": "Bạn đã xong hết mọi việc.",
+    "scope": "Công việc được giao cho bạn và công việc chưa giao trên các bảng của bạn ngoài không gian.",
+    "mineScope": "Công việc đang mở được giao cho bạn trên mọi bảng.",
+    "todayEmpty": "Hôm nay không có việc đến hạn",
+    "upcomingEmpty": "Không có việc đến hạn trong những ngày tới",
+    "filterEmpty": "Không có công việc đang mở nào khớp với bộ lọc này",
     "loadFailed": "Không thể tải công việc.",
     "mineEmpty": "Chưa có việc nào giao cho bạn",
-    "mineEmptyHint": "Công việc được giao cho bạn trên mọi bảng sẽ hiện ở đây.",
     "completeFailed": "Không thể hoàn thành công việc."
   },
   "members": {

@@ -308,20 +308,64 @@ describe('AgendaScreen', () => {
     ).toHaveAttribute('href', '/mine')
   })
 
-  it('says when there is nothing to do', async () => {
-    renderRoute('/today', { boardsApi: fakeBoardsApi() })
+  it('says which tasks Today, Upcoming and My tasks hold', async () => {
+    const { boardsApi } = boards()
+    renderRoute('/today', { boardsApi })
 
-    expect(await findEmptyState('Nothing due')).toHaveTextContent(
-      'You are all caught up.'
+    expect(await screen.findByText('Logo')).toBeVisible()
+    expect(
+      screen.getByText(
+        'Tasks assigned to you, and unassigned tasks of your boards outside spaces.'
+      )
+    ).toBeVisible()
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'My tasks' }
+      )
     )
+    expect(
+      await screen.findByText('Open tasks assigned to you on any board.')
+    ).toBeVisible()
   })
 
-  it('says when nothing is assigned to me', async () => {
-    renderRoute('/mine', { boardsApi: fakeBoardsApi() })
+  it.each([
+    ['/today', 'Nothing due today', 0],
+    ['/upcoming', 'Nothing due in the coming days', 1]
+  ])(
+    'offers to create a task when %s says "%s", due on day +%i',
+    async (path, title, offset) => {
+      const { router } = renderRoute(path, { boardsApi: fakeBoardsApi() })
 
-    expect(await findEmptyState('Nothing assigned to you')).toHaveTextContent(
-      'Tasks assigned to you on any board show up here.'
-    )
+      const empty = within(await findEmptyState(title))
+      expect(
+        screen.getAllByText(
+          'Tasks assigned to you, and unassigned tasks of your boards outside spaces.'
+        )
+      ).toHaveLength(1)
+      expect(screen.queryByText('You are all caught up.')).toBeNull()
+      fireEvent.click(empty.getByRole('button', { name: 'Create task' }))
+
+      expect(
+        await screen.findByRole('dialog', { name: 'Create a task' })
+      ).toBeVisible()
+      expect(router.state.location.search).toBe(`?new=task&due=${day(offset)}`)
+    }
+  )
+
+  it('offers to create a task when nothing is assigned to me', async () => {
+    const { router } = renderRoute('/mine', { boardsApi: fakeBoardsApi() })
+
+    const empty = await findEmptyState('Nothing assigned to you')
+    expect(
+      screen.getByText('Open tasks assigned to you on any board.')
+    ).toBeVisible()
+    fireEvent.click(within(empty).getByRole('button', { name: 'Create task' }))
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Create a task' })
+    ).toBeVisible()
+    expect(router.state.location.search).toBe('?new=task')
   })
 
   it('shows placeholders while the tasks load', async () => {

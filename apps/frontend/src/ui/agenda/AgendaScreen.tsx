@@ -5,6 +5,7 @@ import {
   Filter,
   Icon,
   Pen,
+  Plus,
   Profile
 } from '@linagora/twake-icons'
 import { Button, Checkbox, Link, Typography } from '@linagora/twake-mui'
@@ -34,7 +35,7 @@ import {
 } from '@/ui/agenda/AgendaTaskPanel'
 import { FilterForm } from '@/ui/agenda/FiltersScreen'
 import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
-import { formatDay } from '@/ui/boards/dueLabel'
+import { formatDay, inDays } from '@/ui/boards/dueLabel'
 import { LayoutToggle } from '@/ui/boards/Layouts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import {
@@ -45,6 +46,7 @@ import {
 } from '@/ui/boards/queries'
 import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
 import { NotFoundScreen } from '@/ui/shell/Problems'
+import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 const contextOf = (task: AgendaTask, t: I18nApi['t']): string =>
@@ -364,24 +366,24 @@ export function AgendaScreen(
           heading
           actions={actions}
         />
+        {typeof view === 'string' && (
+          <Typography variant="body2" color="textSecondary" className="u-mb-1">
+            {t(EMPTY_AGENDA[view].scope)}
+          </Typography>
+        )}
         {form}
         {agenda.isError && (
           <Typography role="alert">{t('agenda.loadFailed')}</Typography>
         )}
         {agenda.isPending && <ListSkeleton label={t('app.loading')} />}
         {empty &&
-          (view === 'mine' ? (
-            <EmptyState
-              icon={Profile}
-              title={t('agenda.mineEmpty')}
-              text={t('agenda.mineEmptyHint')}
-            />
+          (typeof view === 'string' ? (
+            <AgendaEmpty view={view} />
           ) : (
             <EmptyState
-              icon={CheckCircle}
+              icon={Filter}
               illustrated
-              title={t('agenda.empty')}
-              text={t('agenda.emptyHint')}
+              title={t('agenda.filterEmpty')}
             />
           ))}
         {agenda.data &&
@@ -393,6 +395,54 @@ export function AgendaScreen(
           ))}
       </main>
     </OriginContext>
+  )
+}
+
+const EMPTY_AGENDA = {
+  today: {
+    icon: CheckCircle,
+    scope: 'agenda.scope',
+    title: 'agenda.todayEmpty',
+    due: 0
+  },
+  upcoming: {
+    icon: CheckCircle,
+    scope: 'agenda.scope',
+    title: 'agenda.upcomingEmpty',
+    due: 1
+  },
+  mine: {
+    icon: Profile,
+    scope: 'agenda.mineScope',
+    title: 'agenda.mineEmpty',
+    due: null
+  }
+} as const
+
+function AgendaEmpty({
+  view
+}: {
+  view: 'today' | 'upcoming' | 'mine'
+}): ReactElement {
+  const { t } = useI18n()
+  const { openNewTask } = useNewTaskParam()
+  const { icon, title, due } = EMPTY_AGENDA[view]
+  return (
+    <EmptyState
+      icon={icon}
+      illustrated
+      title={t(title)}
+      action={
+        <Button
+          startIcon={<Icon icon={Plus} />}
+          onClick={() => {
+            openNewTask(due === null ? undefined : inDays(due))
+          }}
+        >
+          {t('newTask.open')}
+        </Button>
+      }
+    />
   )
 }
 
