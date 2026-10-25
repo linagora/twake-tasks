@@ -18,7 +18,8 @@ export const canAddTo = (board: BoardSummary): boolean =>
 
 /**
  * The board a task is added to unless another is picked: the one it is
- * opened from, as long as tasks can be added to it, else the Inbox.
+ * opened from, as long as tasks can be added to it, else the Inbox, else the
+ * first one.
  */
 export function defaultBoard(
   summaries: BoardSummary[],
@@ -27,7 +28,7 @@ export function defaultBoard(
   const current = summaries.find(each => each.id === inBoardId)
   return current && canAddTo(current)
     ? current
-    : summaries.find(each => each.inbox)
+    : (summaries.find(each => each.inbox) ?? summaries[0])
 }
 
 /** The board's first open section, else its first one. */

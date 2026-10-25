@@ -382,7 +382,8 @@
     "unfinished": "The task was created, but some of its details were not saved. Save again to add them.",
     "save": "Save",
     "created": "“%{title}” has been created",
-    "seeTask": "See the task"
+    "seeTask": "See the task",
+    "nowhere": "You can't add tasks here."
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",

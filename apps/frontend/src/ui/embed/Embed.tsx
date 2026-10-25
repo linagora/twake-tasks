@@ -11,6 +11,7 @@ import {
   useParams
 } from 'react-router'
 
+import { canAddTo } from '@/application/newTask'
 import { EmbedFrame } from '@/ds/AppFrame'
 import { EmptyState } from '@/ds/EmptyState'
 import { TileGrid, Tile } from '@/ds/TileGrid'
@@ -36,6 +37,7 @@ export function EmbedLayout(): ReactElement {
   const space = getTwakeSpace()
   const inBoardId = useMatch('/embed/projects/:projectId/boards/:boardId/*')
     ?.params.boardId
+  const inProjectId = useMatch('/embed/projects/:projectId/*')?.params.projectId
 
   useEffect(() => {
     const show = (resourceId: string, path: string): Promise<void> =>
@@ -50,7 +52,7 @@ export function EmbedLayout(): ReactElement {
       {space && <SpaceReporter space={space} />}
       <NewTaskHighlightProvider>
         <Outlet />
-        <NewTaskFromUrl inBoardId={inBoardId} />
+        <NewTaskFromUrl inBoardId={inBoardId} inProjectId={inProjectId} />
       </NewTaskHighlightProvider>
     </EmbedFrame>
   )
@@ -80,7 +82,7 @@ export function EmbedBoardScreen(): ReactElement {
 export function EmbedNewTask(): ReactElement | null {
   const { projectId = '' } = useParams()
   const { boards, shown } = useProjectBoards(projectId)
-  const first = shown[0]
+  const first = shown.find(canAddTo) ?? shown[0]
   if (first) return <Navigate to={`../boards/${first.id}?new=task`} replace />
   if (boards.isPending) return null
   return <Navigate to=".." replace />

@@ -382,7 +382,8 @@
     "unfinished": "Công việc đã được tạo, nhưng một số chi tiết chưa được lưu. Hãy lưu lại để thêm chúng.",
     "save": "Lưu",
     "created": "Đã tạo “%{title}”",
-    "seeTask": "Xem công việc"
+    "seeTask": "Xem công việc",
+    "nowhere": "Bạn không thể thêm công việc ở đây."
   },
   "shortcuts": {
     "title": "Phím tắt",

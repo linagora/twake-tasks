@@ -382,7 +382,8 @@
     "unfinished": "La tarea se creó, pero algunos de sus detalles no se guardaron. Guarde de nuevo para añadirlos.",
     "save": "Guardar",
     "created": "«%{title}» se ha creado",
-    "seeTask": "Ver la tarea"
+    "seeTask": "Ver la tarea",
+    "nowhere": "No puedes añadir tareas aquí."
   },
   "shortcuts": {
     "title": "Atajos de teclado",

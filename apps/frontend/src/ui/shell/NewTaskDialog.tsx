@@ -77,9 +77,11 @@ export interface CreatedTask {
  * stays in the app or in the project the embed shows.
  */
 export function NewTaskFromUrl({
-  inBoardId
+  inBoardId,
+  inProjectId
 }: {
   inBoardId?: string | undefined
+  inProjectId?: string | undefined
 }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -92,6 +94,7 @@ export function NewTaskFromUrl({
       {creating && (
         <NewTaskDialog
           inBoardId={inBoardId}
+          inProjectId={inProjectId}
           dueDate={dueDate}
           onClose={closeNewTask}
           onCreated={task => {
@@ -137,15 +140,17 @@ export function NewTaskFromUrl({
 
 /**
  * Opened from a board, the task goes in that board unless another is picked,
- * else in the Inbox.
+ * else in the Inbox. Opened from a project, only its boards are offered.
  */
 export function NewTaskDialog({
   inBoardId,
+  inProjectId,
   dueDate,
   onClose,
   onCreated
 }: {
   inBoardId?: string | undefined
+  inProjectId?: string | undefined
   dueDate?: string | undefined
   onClose: () => void
   onCreated: (task: CreatedTask) => void
@@ -177,7 +182,11 @@ export function NewTaskDialog({
   }, [])
   const create = useNewTask()
   const [started, setStarted] = useState<StartedTask | undefined>(undefined)
-  const { targets, chosen, board } = useNewTaskBoard(picked, inBoardId)
+  const { targets, chosen, board } = useNewTaskBoard(
+    picked,
+    inBoardId,
+    inProjectId
+  )
 
   const change = (changes: Partial<typeof facts>) => {
     if (!create.isIdle && !create.isPending) create.reset()
@@ -452,6 +461,11 @@ export function NewTaskDialog({
                   </Property>
                 </Properties>
               </>
+            )}
+            {targets?.length === 0 && (
+              <Typography role="status" variant="body2" color="textSecondary">
+                {t('newTask.nowhere')}
+              </Typography>
             )}
             {create.isError && (
               <Typography role="alert" variant="body2" color="error">

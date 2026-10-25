@@ -122,4 +122,14 @@ describe('defaultBoard', () => {
       expect(defaultBoard(await api.listBoards(), design.id)?.id).toBe(inbox.id)
     }
   )
+
+  it('is the first board when none is the Inbox', async () => {
+    const { design } = boards()
+    const roadmap = aBoard({ name: 'Roadmap' })
+    const api = fakeBoardsApi([design, roadmap])
+
+    expect(defaultBoard(await api.listBoards(), 'elsewhere')?.id).toBe(
+      design.id
+    )
+  })
 })
