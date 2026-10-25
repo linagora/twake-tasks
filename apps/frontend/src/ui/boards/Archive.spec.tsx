@@ -132,6 +132,10 @@ describe('archive and trash', () => {
       'href',
       `/boards/${board.id}`
     )
+    expect(crumbs.getByRole('link', { name: 'Trash' })).toHaveAttribute(
+      'href',
+      `/boards/${board.id}/trash`
+    )
     expect(
       panel.getByText('In the trash, deleted for good in 30 days.')
     ).toBeVisible()
@@ -142,6 +146,36 @@ describe('archive and trash', () => {
     expect(await findEmptyState('The trash is empty')).toBeVisible()
     expect(boardsApi.restoreTask).toHaveBeenCalledWith(board.id, logo.id)
     expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+  })
+
+  it('links a trashed sub-task’s parent to the board, which lists it', async () => {
+    const board = aBoard({ name: 'Design' })
+    const logo = aTask(board.sections[0] ?? null, {
+      key: 'DES-1',
+      title: 'Logo'
+    })
+    const icons = aTask(board.sections[0] ?? null, {
+      key: 'DES-2',
+      title: 'Icons',
+      parentId: logo.id
+    })
+    board.tasks = [logo, icons]
+    const boardsApi = fakeBoardsApi([board])
+    await boardsApi.trashTask(board.id, icons.id)
+    renderRoute(`/boards/${board.id}/trash`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Icons' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-2 Icons' })
+    )
+    const crumbs = within(
+      panel.getByRole('navigation', { name: 'Where the task is' })
+    )
+
+    expect(crumbs.getByRole('link', { name: 'DES-1' })).toHaveAttribute(
+      'href',
+      `/boards/${board.id}?task=DES-1`
+    )
   })
 
   it('says a task is back on the board when its row restores it from the trash', async () => {

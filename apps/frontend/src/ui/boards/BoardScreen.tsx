@@ -52,7 +52,7 @@ import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
 import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
 import {
-  BoardStepContext,
+  BoardStepsContext,
   OriginContext,
   PageCrumbs,
   useArchivesOrigin,
@@ -114,7 +114,7 @@ export function BoardScreen({
 
   return (
     <OriginContext value={origin}>
-      <BoardStepContext value={{ to: '.', label: name, relative: true }}>
+      <BoardStepsContext value={[{ to: '.', label: name, relative: true }]}>
         <main className={flush ? undefined : 'u-ph-2 u-pt-half u-pb-2'}>
           {/* Once loaded, the board titles itself with its breadcrumb. */}
           {back && !(shown && !waiting) && (
@@ -144,7 +144,7 @@ export function BoardScreen({
             />
           )}
         </main>
-      </BoardStepContext>
+      </BoardStepsContext>
     </OriginContext>
   )
 }

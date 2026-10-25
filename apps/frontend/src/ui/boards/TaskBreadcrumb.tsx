@@ -4,7 +4,7 @@ import { useLocation } from 'react-router'
 import { useInPeek } from '@/ds/SidePanel'
 import type { Board, Task } from '@/domain/board'
 import {
-  BoardStepContext,
+  BoardStepsContext,
   Crumbs,
   OriginContext,
   useBoardsOrigin
@@ -13,8 +13,8 @@ import { useI18n } from '@/ui/i18n/useI18n'
 
 /**
  * Where a task was opened from: the page (Today, My tasks, Boards…), its
- * board and the tasks it is a sub-task of when opened in its board, then its
- * key.
+ * board (and shelf) and the tasks it is a sub-task of when opened in its
+ * board, then its key.
  */
 export function TaskBreadcrumb({
   task,
@@ -24,13 +24,13 @@ export function TaskBreadcrumb({
   board: Board | undefined
 }): ReactElement {
   const { t } = useI18n()
-  const { pathname, search } = useLocation()
+  const { search } = useLocation()
   const inPeek = useInPeek()
   const boards = useBoardsOrigin()
   const origin = useContext(OriginContext) ?? boards
-  const boardStep = useContext(BoardStepContext)
+  const boardSteps = useContext(BoardStepsContext)
   const ancestors: Task[] = []
-  if (boardStep) {
+  if (boardSteps) {
     for (
       let parent = board?.tasks.find(each => each.id === task.parentId);
       parent;
@@ -40,10 +40,16 @@ export function TaskBreadcrumb({
     }
   }
 
+  // Parents open on the board: a shelf lists none of a hidden task's parents.
+  const boardPath = boardSteps?.[0]?.to ?? '.'
   const parents = ancestors.map(parent => {
     const params = new URLSearchParams(search)
     params.set('task', parent.key)
-    return { to: `${pathname}?${params.toString()}`, label: parent.key }
+    return {
+      to: `${boardPath}?${params.toString()}`,
+      label: parent.key,
+      relative: true
+    }
   })
 
   // A peek sits beside the page and its board: the task's own path is enough.
@@ -51,7 +57,7 @@ export function TaskBreadcrumb({
     <Crumbs
       label={t('task.breadcrumb')}
       origin={inPeek ? undefined : origin}
-      steps={inPeek || !boardStep ? parents : [boardStep, ...parents]}
+      steps={inPeek || !boardSteps ? parents : [...boardSteps, ...parents]}
       current={task.key}
     />
   )
