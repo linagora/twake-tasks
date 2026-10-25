@@ -469,7 +469,9 @@
     "managedBoard": "The members of this board are the members of the space %{space}. Manage them in TwakeSpace.",
     "archivedBoard": "An archived board can't be shared.",
     "adminOnly": "Only an admin can share this board.",
-    "help": "Sharing this board shares its project %{project} with everyone on it.",
+    "helpSingle": "People you invite can open this board.",
+    "helpProject": "People you invite can open every board of the project “%{project}”: %{boards}.",
+    "helpMore": "and %{smart_count} more",
     "sameOrganization": "An invite only works for an account in your own organization."
   },
   "moveBoard": {

@@ -25,6 +25,7 @@ import { displayName } from '@/domain/person'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import {
   useBoardChange,
+  useBoards,
   usePeopleSuggestions,
   useSharing
 } from '@/ui/boards/queries'
@@ -120,6 +121,7 @@ export function ShareDialog({
 }): ReactElement {
   const { t } = useI18n()
   const sharing = useSharing(board.id)
+  const boards = useBoards()
   const [email, setEmail] = useState('')
   const suggestions = usePeopleSuggestions(board.id, email)
   const [role, setRole] = useState<Role>('editor')
@@ -148,6 +150,15 @@ export function ShareDialog({
   const failure = invite.error ?? change.error ?? cancel.error
   const admins =
     sharing.data?.members.filter(member => member.role === 'admin').length ?? 0
+  const projectBoards = boards.data && [
+    board.name,
+    ...boards.data
+      .filter(
+        summary =>
+          summary.project.id === board.project.id && summary.id !== board.id
+      )
+      .map(summary => summary.name)
+  ]
 
   return (
     <Dialog open onClose={onClose}>
@@ -158,7 +169,21 @@ export function ShareDialog({
       />
       <DialogContent className="u-pb-1-half">
         <Typography variant="body2" color="textSecondary" className="u-mb-1">
-          {t('sharing.help', { project: board.project.name })}{' '}
+          {projectBoards &&
+            `${
+              projectBoards.length > 1
+                ? t('sharing.helpProject', {
+                    project: board.project.name,
+                    boards:
+                      projectBoards.length > 5
+                        ? `${projectBoards.slice(0, 5).join(', ')} ${t(
+                            'sharing.helpMore',
+                            { smart_count: projectBoards.length - 5 }
+                          )}`
+                        : projectBoards.join(', ')
+                  })
+                : t('sharing.helpSingle')
+            } `}
           {t('sharing.sameOrganization')}
         </Typography>
         <InviteRow

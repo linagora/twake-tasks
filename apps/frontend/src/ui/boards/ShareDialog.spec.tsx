@@ -330,14 +330,43 @@ describe('sharing a board', () => {
     })
   })
 
-  it('names the project in the sharing help', async () => {
+  it('speaks of the board alone when it is the only one of its project', async () => {
     const { dialog } = await openSharing()
     expect(
-      dialog.getByText(
-        /Sharing this board shares its project Design with everyone on it\./
+      await dialog.findByText(
+        'People you invite can open this board. An invite only works for an account in your own organization.'
       )
     ).toBeVisible()
   })
+
+  it.each([
+    [['Roadmap'], 'Design, Roadmap'],
+    [['B2', 'B3', 'B4', 'B5', 'B6', 'B7'], 'Design, B2, B3, B4, B5 and 2 more']
+  ])(
+    'names the boards of the project the invite opens: %j',
+    async (others, listed) => {
+      const project = aProject({ name: 'Website' })
+      const board = aBoard({ name: 'Design', project })
+      const boardsApi = fakeBoardsApi([
+        ...others.map(name => aBoard({ name, project })),
+        board,
+        aBoard({ name: 'Elsewhere' })
+      ])
+      boardsApi.sharings.set(board.id, { members: [me], invites: [] })
+      boardsApi.projects.push({ ...project, role: 'admin' })
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      fireEvent.click(await screen.findByRole('button', { name: 'Share' }))
+      const dialog = within(
+        await screen.findByRole('dialog', { name: 'Share Design' })
+      )
+
+      expect(
+        await dialog.findByText(
+          `People you invite can open every board of the project “Website”: ${listed}. An invite only works for an account in your own organization.`
+        )
+      ).toBeVisible()
+    }
+  )
 
   it('says an invite only works inside the organization', async () => {
     const { dialog } = await openSharing()

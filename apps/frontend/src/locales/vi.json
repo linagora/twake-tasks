@@ -469,7 +469,9 @@
     "managedBoard": "Thành viên của bảng này là thành viên của không gian %{space}. Quản lý họ trong TwakeSpace.",
     "archivedBoard": "Không thể chia sẻ bảng đã lưu trữ.",
     "adminOnly": "Chỉ quản trị viên mới có thể chia sẻ bảng này.",
-    "help": "Chia sẻ bảng này sẽ chia sẻ dự án %{project} với tất cả thành viên của dự án.",
+    "helpSingle": "Những người bạn mời có thể mở bảng này.",
+    "helpProject": "Những người bạn mời có thể mở mọi bảng của dự án “%{project}”: %{boards}.",
+    "helpMore": "và %{smart_count} bảng khác",
     "sameOrganization": "Lời mời chỉ có tác dụng với tài khoản thuộc tổ chức của bạn."
   },
   "moveBoard": {

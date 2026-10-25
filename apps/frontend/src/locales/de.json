@@ -469,7 +469,9 @@
     "managedBoard": "Die Mitglieder dieses Boards sind die des Bereichs %{space}. Verwalten Sie sie in TwakeSpace.",
     "archivedBoard": "Ein archiviertes Board kann nicht geteilt werden.",
     "adminOnly": "Nur ein Admin kann dieses Board teilen.",
-    "help": "Wenn Sie dieses Board teilen, teilen Sie sein Projekt %{project} mit allen darin.",
+    "helpSingle": "Eingeladene Personen können dieses Board öffnen.",
+    "helpProject": "Eingeladene Personen können alle Boards des Projekts „%{project}“ öffnen: %{boards}.",
+    "helpMore": "und %{smart_count} weitere",
     "sameOrganization": "Eine Einladung funktioniert nur für ein Konto Ihrer eigenen Organisation."
   },
   "moveBoard": {
