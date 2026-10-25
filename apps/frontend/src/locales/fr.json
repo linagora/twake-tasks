@@ -507,7 +507,8 @@
     "empty": "Aucune tâche ne correspond",
     "emptyHint": "Essayez un autre mot ou vérifiez l'orthographe.",
     "failed": "La recherche a échoué.",
-    "tooShort": "Saisissez au moins %{count} caractères pour rechercher."
+    "tooShort": "Saisissez au moins %{count} caractères pour rechercher.",
+    "allBoards": "Afficher les %{smart_count} tableaux"
   },
   "notifications": {
     "title": "Notifications",

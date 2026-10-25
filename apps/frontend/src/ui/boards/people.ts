@@ -1,8 +1,6 @@
 import type { Person, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
-
-const fold = (text: string): string =>
-  text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+import { fold } from '@/ds/Highlight'
 
 const isSubsequence = (needle: string, haystack: string): boolean => {
   let at = 0
