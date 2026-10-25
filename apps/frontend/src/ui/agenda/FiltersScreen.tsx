@@ -16,7 +16,13 @@ import {
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { useEffect, useRef, useState, type ReactElement } from 'react'
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type ReactElement
+} from 'react'
 import { Link as RouterLink } from 'react-router'
 
 import type { FilterCriteria, SavedFilter } from '@/application/boards'
@@ -33,6 +39,7 @@ import {
 import {
   useCreateFilter,
   useDeleteFilter,
+  useDeleteFilterNow,
   useFilters,
   useUnpinDeletedFilter,
   useLabelNames,
@@ -207,16 +214,28 @@ function DeletedNotice({
 }): ReactElement {
   const { t } = useI18n()
   const { mutate: remove } = useDeleteFilter()
+  const removeNow = useDeleteFilterNow()
   const unpinDeleted = useUnpinDeletedFilter()
-  const undone = useRef(false)
+  const settled = useRef(false)
   const leaving = useRef<number>(undefined)
+  // An unloading page runs no effect cleanup and no timer. Closing the notice
+  // keeps a page restored from the back-forward cache from offering an Undo
+  // that can no longer work.
+  const unload = useEffectEvent(() => {
+    if (settled.current) return
+    settled.current = true
+    removeNow(filter.id)
+    onClose()
+  })
   useEffect(() => {
+    window.addEventListener('pagehide', unload)
     // StrictMode unmounts once right after mounting: only a real unmount
     // lets the timer run.
     window.clearTimeout(leaving.current)
     return () => {
+      window.removeEventListener('pagehide', unload)
       leaving.current = window.setTimeout(() => {
-        if (!undone.current) remove(filter.id)
+        if (!settled.current) remove(filter.id)
       })
     }
   }, [filter.id, remove])
@@ -237,7 +256,7 @@ function DeletedNotice({
             variant="text"
             size="small"
             onClick={() => {
-              undone.current = true
+              settled.current = true
               unpinDeleted(filter, false)
               onClose()
             }}
