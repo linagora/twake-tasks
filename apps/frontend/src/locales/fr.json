@@ -469,7 +469,9 @@
     "managedBoard": "Les membres de ce tableau sont ceux de l'espace %{space}. Gérez-les dans TwakeSpace.",
     "archivedBoard": "Un tableau archivé ne peut pas être partagé.",
     "adminOnly": "Seul un administrateur peut partager ce tableau.",
-    "help": "Partager ce tableau partage son projet %{project} avec tous ses membres.",
+    "helpSingle": "Les personnes que vous invitez peuvent ouvrir ce tableau.",
+    "helpProject": "Les personnes que vous invitez peuvent ouvrir tous les tableaux du projet « %{project} » : %{boards}.",
+    "helpMore": "et %{smart_count} autre |||| et %{smart_count} autres",
     "sameOrganization": "Une invitation ne fonctionne que pour un compte de votre propre organisation."
   },
   "moveBoard": {

@@ -469,7 +469,9 @@
     "managedBoard": "Los miembros de este tablero son los del espacio %{space}. Gestiónalos en TwakeSpace.",
     "archivedBoard": "Un tablero archivado no se puede compartir.",
     "adminOnly": "Solo un administrador puede compartir este tablero.",
-    "help": "Compartir este tablero comparte su proyecto %{project} con todas las personas que lo integran.",
+    "helpSingle": "Las personas que invites pueden abrir este tablero.",
+    "helpProject": "Las personas que invites pueden abrir todos los tableros del proyecto «%{project}»: %{boards}.",
+    "helpMore": "y %{smart_count} más",
     "sameOrganization": "Una invitación solo funciona para una cuenta de tu propia organización."
   },
   "moveBoard": {

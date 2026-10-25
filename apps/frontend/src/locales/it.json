@@ -469,7 +469,9 @@
     "managedBoard": "I membri di questa bacheca sono quelli dello spazio %{space}. Gestiscili in TwakeSpace.",
     "archivedBoard": "Una bacheca archiviata non può essere condivisa.",
     "adminOnly": "Solo un amministratore può condividere questa bacheca.",
-    "help": "Condividere questa bacheca condivide il suo progetto %{project} con tutte le persone che ne fanno parte.",
+    "helpSingle": "Le persone che inviti possono aprire questa bacheca.",
+    "helpProject": "Le persone che inviti possono aprire tutte le bacheche del progetto “%{project}”: %{boards}.",
+    "helpMore": "e un'altra |||| e altre %{smart_count}",
     "sameOrganization": "Un invito funziona solo per un account della tua stessa organizzazione."
   },
   "moveBoard": {
