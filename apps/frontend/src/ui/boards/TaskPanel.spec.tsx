@@ -39,7 +39,9 @@ describe('TaskPanel', () => {
         sectionId: board.sections[2]?.id
       })
     })
-    fireEvent.click(await panel.findByRole('button', { name: 'Completed' }))
+    const completed = await panel.findByRole('button', { name: 'Completed' })
+    expect(completed).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(completed)
 
     await waitFor(() => {
       expect(boardsApi.moveTask).toHaveBeenLastCalledWith(board.id, logo.id, {

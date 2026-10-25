@@ -310,7 +310,14 @@ function CompleteButton({
       </Tooltip>
     )
   }
-  return <Button {...props} disabled={disabled} onClick={toggle} />
+  return (
+    <Button
+      {...props}
+      aria-pressed={done}
+      disabled={disabled}
+      onClick={toggle}
+    />
+  )
 }
 
 function DiscardDialog({
