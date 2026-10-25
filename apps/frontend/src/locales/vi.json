@@ -127,6 +127,7 @@
     "options": "Tùy chọn cho %{key}",
     "moveTo": "Chuyển đến %{section}",
     "assign": "Giao việc",
+    "dueDate": "Ngày đến hạn…",
     "assignTitle": "Giao %{key}",
     "save": "Lưu",
     "cancel": "Hủy",

@@ -127,6 +127,7 @@
     "options": "Options for %{key}",
     "moveTo": "Move to %{section}",
     "assign": "Assign",
+    "dueDate": "Due date…",
     "assignTitle": "Assign %{key}",
     "save": "Save",
     "cancel": "Cancel",

@@ -144,7 +144,7 @@ export function Dates({
   )
 }
 
-function DatesEditor({
+export function DatesEditor({
   task,
   boardId,
   anchor,

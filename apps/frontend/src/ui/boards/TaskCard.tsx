@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Divider,
   IconButton,
@@ -7,13 +8,18 @@ import {
   Typography
 } from '@linagora/twake-mui'
 import {
+  Archive,
+  CalendarToday,
   CheckList,
   Comment,
   Dots,
+  FolderMoveto,
   Icon,
   Label as LabelIcon,
+  Link as LinkIcon,
   Moveto,
-  PersonAdd
+  PersonAdd,
+  Trash
 } from '@linagora/twake-icons'
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
 
@@ -27,12 +33,17 @@ import {
 } from '@/ds/Columns'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { SortableCard } from '@/ds/Sortable'
+import { Toast } from '@/ds/Toast'
 import type { Label, Person, Section, Task } from '@/domain/board'
+import { useRemoveTask } from '@/ui/boards/Archive'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
 import { CompleteCheckbox } from '@/ui/boards/CompleteCheckbox'
+import { useCopyLink } from '@/ui/boards/CopyLink'
+import { DatesEditor } from '@/ui/boards/Dates'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { Subtasks } from '@/ui/boards/Subtasks'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
+import { TransferDialog, useTransferable } from '@/ui/boards/TransferTask'
 import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -65,6 +76,14 @@ export function TaskCard({
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
   const [labeling, setLabeling] = useState<HTMLElement | null>(null)
+  const [dating, setDating] = useState<HTMLElement | null>(null)
+  const [moving, setMoving] = useState(false)
+  const stopMoving = () => {
+    setMoving(false)
+  }
+  const transferable = useTransferable(task, boardId)
+  const link = useCopyLink(boardId, task.key, false)
+  const remove = useRemoveTask(boardId, task)
   const panel = useTaskPanel(task.key)
   const newTask = useNewTaskHighlight(task.key)
   const editable = onMove !== undefined
@@ -225,10 +244,18 @@ export function TaskCard({
         >
           {t('board.labels')}
         </IconMenuItem>
-        {destinations.length > 0 && <Divider />}
-        {destinations.map((destination, index) => (
+        <IconMenuItem
+          icon={CalendarToday}
+          onClick={choose(() => {
+            setDating(menuAnchor)
+          })}
+        >
+          {t('board.dueDate')}
+        </IconMenuItem>
+        {(destinations.length > 0 || transferable) && <Divider />}
+        {destinations.map(destination => (
           <IconMenuItem
-            icon={index === 0 ? Moveto : undefined}
+            icon={Moveto}
             key={destination.id ?? 'none'}
             onClick={choose(() => {
               onMove?.(destination.id)
@@ -237,7 +264,74 @@ export function TaskCard({
             {t('board.moveTo', { section: destination.name })}
           </IconMenuItem>
         ))}
+        {transferable && (
+          <IconMenuItem
+            icon={FolderMoveto}
+            onClick={choose(() => {
+              setMoving(true)
+            })}
+          >
+            {t('transfer.title')}
+          </IconMenuItem>
+        )}
+        <Divider />
+        <IconMenuItem
+          icon={LinkIcon}
+          onClick={event => {
+            setMenuAnchor(null)
+            link.copy(event.currentTarget)
+          }}
+        >
+          {t('task.copyLink')}
+        </IconMenuItem>
+        <Divider />
+        <IconMenuItem
+          icon={Archive}
+          onClick={choose(() => {
+            remove.mutate('archived')
+          })}
+        >
+          {t('archive.archive')}
+        </IconMenuItem>
+        <IconMenuItem
+          icon={Trash}
+          onClick={choose(() => {
+            remove.mutate('trash')
+          })}
+        >
+          {t('archive.delete')}
+        </IconMenuItem>
       </Menu>
+      {link.notice}
+      <Toast
+        open={remove.isError}
+        autoHideDuration={4000}
+        onClose={() => {
+          remove.reset()
+        }}
+      >
+        <Alert severity="error" role="alert">
+          {t('archive.failed')}
+        </Alert>
+      </Toast>
+      {dating && (
+        <DatesEditor
+          task={task}
+          boardId={boardId}
+          anchor={dating}
+          onClose={() => {
+            setDating(null)
+          }}
+        />
+      )}
+      {moving && (
+        <TransferDialog
+          task={task}
+          boardId={boardId}
+          onMoved={stopMoving}
+          onClose={stopMoving}
+        />
+      )}
       {assigning && (
         <AssignPicker
           task={task}

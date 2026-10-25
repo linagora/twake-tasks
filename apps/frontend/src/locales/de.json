@@ -127,6 +127,7 @@
     "options": "Optionen für %{key}",
     "moveTo": "Nach %{section} verschieben",
     "assign": "Zuweisen",
+    "dueDate": "Fälligkeit…",
     "assignTitle": "%{key} zuweisen",
     "save": "Speichern",
     "cancel": "Abbrechen",

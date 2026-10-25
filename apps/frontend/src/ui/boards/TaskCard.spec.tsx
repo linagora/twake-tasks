@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import type { Board, Section, Task } from '@/domain/board'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -181,6 +181,123 @@ describe('TaskCard', () => {
       renderCard(board, board.sections[0] ?? null, task)
 
       expect(await checkbox()).toBeDisabled()
+    })
+  })
+
+  describe('menu', () => {
+    function renderBoard() {
+      const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
+      board.tasks = [
+        aTask(board.sections[0] ?? null, { key: 'DES-1', title: 'Logo' })
+      ]
+      const ops = aBoard({ name: 'Ops', keyPrefix: 'OPS' })
+      const boardsApi = fakeBoardsApi([board, ops])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      return { board, boardsApi }
+    }
+    async function openMenu() {
+      const card = within(
+        await screen.findByRole('article', { name: 'DES-1 Logo' })
+      )
+      fireEvent.click(card.getByRole('button', { name: 'Options for DES-1' }))
+      return within(await screen.findByRole('menu'))
+    }
+
+    it('offers the everyday task actions in order', async () => {
+      renderBoard()
+
+      const menu = await openMenu()
+
+      await waitFor(() => {
+        expect(
+          menu.getAllByRole('menuitem').map(item => item.textContent)
+        ).toEqual([
+          'Assign',
+          'Labels',
+          'Due date…',
+          'Move to In progress',
+          'Move to Done',
+          'Move to another board',
+          'Copy link',
+          'Archive',
+          'Delete'
+        ])
+      })
+    })
+
+    it('edits the due date without opening the task', async () => {
+      const { board, boardsApi } = renderBoard()
+
+      const menu = await openMenu()
+      fireEvent.click(menu.getByRole('menuitem', { name: 'Due date…' }))
+      const dates = within(await screen.findByRole('dialog', { name: 'Dates' }))
+      fireEvent.click(dates.getByRole('button', { name: 'Today' }))
+      fireEvent.click(dates.getByRole('button', { name: 'Save dates' }))
+
+      await waitFor(() => {
+        expect(boardsApi.editTask).toHaveBeenCalledWith(
+          board.id,
+          board.tasks[0]?.id,
+          expect.objectContaining({ dueDate: expect.any(String) as string })
+        )
+      })
+      expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+    })
+
+    it('copies the link of the task', async () => {
+      const writeText = vi.fn(() => Promise.resolve())
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText },
+        configurable: true
+      })
+      const { board } = renderBoard()
+
+      const menu = await openMenu()
+      fireEvent.click(menu.getByRole('menuitem', { name: 'Copy link' }))
+
+      expect(await screen.findByText('Link copied')).toBeInTheDocument()
+      expect(writeText).toHaveBeenCalledWith(
+        `${window.location.origin}/boards/${board.id}?task=DES-1`
+      )
+    })
+
+    it.each([
+      ['Archive', 'archiveTask', 'DES-1 archived'],
+      ['Delete', 'trashTask', 'DES-1 moved to the trash']
+    ] as const)(
+      '%s removes the card, with an undo',
+      async (item, call, notice) => {
+        const { board, boardsApi } = renderBoard()
+        const taskId = board.tasks[0]?.id
+
+        const menu = await openMenu()
+        fireEvent.click(menu.getByRole('menuitem', { name: item }))
+
+        expect(await screen.findByText(notice)).toBeInTheDocument()
+        expect(boardsApi[call]).toHaveBeenCalledWith(board.id, taskId)
+        await waitFor(() => {
+          expect(
+            screen.queryByRole('article', { name: 'DES-1 Logo' })
+          ).toBeNull()
+        })
+        fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+        expect(
+          await screen.findByRole('article', { name: 'DES-1 Logo' })
+        ).toBeInTheDocument()
+      }
+    )
+
+    it('opens the move to another board dialog', async () => {
+      renderBoard()
+
+      const menu = await openMenu()
+      fireEvent.click(
+        await menu.findByRole('menuitem', { name: 'Move to another board' })
+      )
+
+      expect(
+        await screen.findByRole('form', { name: 'Move to another board' })
+      ).toBeInTheDocument()
     })
   })
 
