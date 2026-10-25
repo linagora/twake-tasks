@@ -24,8 +24,11 @@ export interface Origin extends Crumb {
 /** The page a task is opened from, for its breadcrumb to start there. */
 export const OriginContext = createContext<Origin | null>(null)
 
-/** The board a task is opened in, a step of its breadcrumb. */
-export const BoardStepContext = createContext<Crumb | null>(null)
+/**
+ * The steps of a task's breadcrumb to the page it is opened in: its board,
+ * then the board's archived tasks or trash.
+ */
+export const BoardStepsContext = createContext<Crumb[] | null>(null)
 
 export function useBoardsOrigin(): Origin {
   const { t } = useI18n()

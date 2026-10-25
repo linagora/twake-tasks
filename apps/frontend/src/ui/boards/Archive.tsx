@@ -30,7 +30,7 @@ import { Assignees, PriorityChip } from '@/ui/boards/TaskFacts'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import {
-  BoardStepContext,
+  BoardStepsContext,
   OriginContext,
   PageCrumbs,
   useArchivesOrigin,
@@ -203,9 +203,11 @@ export function ShelfScreen({
       {board.isPending && <ListSkeleton label={t('app.loading')} />}
       {shown && (
         <OriginContext value={origin}>
-          <BoardStepContext value={boardStep}>
+          <BoardStepsContext
+            value={[boardStep, { to: '.', label: title, relative: true }]}
+          >
             <ShelfTasks board={shown} shelf={shelf} title={title} />
-          </BoardStepContext>
+          </BoardStepsContext>
         </OriginContext>
       )}
     </main>
