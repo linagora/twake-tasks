@@ -589,11 +589,13 @@
     "mine": "Mis tareas",
     "noDate": "Sin fecha",
     "overdue": "Atrasadas",
-    "empty": "Nada pendiente",
-    "emptyHint": "Estás al día.",
+    "scope": "Las tareas asignadas a ti y las tareas sin asignar de tus tableros fuera de los espacios.",
+    "mineScope": "Las tareas abiertas asignadas a ti en cualquier tablero.",
+    "todayEmpty": "Nada pendiente para hoy",
+    "upcomingEmpty": "Nada pendiente en los próximos días",
+    "filterEmpty": "Ninguna tarea abierta coincide con este filtro",
     "loadFailed": "No se pudieron cargar tus tareas.",
     "mineEmpty": "No tienes nada asignado",
-    "mineEmptyHint": "Aquí aparecen las tareas que te asignen en cualquier tablero.",
     "completeFailed": "No se pudo completar la tarea."
   },
   "members": {

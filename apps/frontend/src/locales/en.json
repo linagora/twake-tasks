@@ -589,11 +589,13 @@
     "mine": "My tasks",
     "noDate": "No date",
     "overdue": "Overdue",
-    "empty": "Nothing due",
-    "emptyHint": "You are all caught up.",
+    "scope": "Tasks assigned to you, and unassigned tasks of your boards outside spaces.",
+    "mineScope": "Open tasks assigned to you on any board.",
+    "todayEmpty": "Nothing due today",
+    "upcomingEmpty": "Nothing due in the coming days",
+    "filterEmpty": "No open task matches this filter",
     "loadFailed": "Your tasks could not be loaded.",
     "mineEmpty": "Nothing assigned to you",
-    "mineEmptyHint": "Tasks assigned to you on any board show up here.",
     "completeFailed": "Couldn’t complete the task."
   },
   "members": {
