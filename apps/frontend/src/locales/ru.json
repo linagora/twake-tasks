@@ -127,6 +127,7 @@
     "options": "Действия с %{key}",
     "moveTo": "Переместить в %{section}",
     "assign": "Назначить",
+    "dueDate": "Срок…",
     "assignTitle": "Назначить %{key}",
     "save": "Сохранить",
     "cancel": "Отмена",

@@ -11,7 +11,7 @@ import {
 import { useEffect, useId, useRef, useState, type ReactElement } from 'react'
 
 import type { TransferPreview } from '@/application/boards'
-import type { Task } from '@/domain/board'
+import type { BoardSummary, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import {
   useBoard,
@@ -154,7 +154,45 @@ function ConfirmTransfer({
   )
 }
 
-export function TransferTask({
+const isTarget = (board: BoardSummary, boardId: string) =>
+  board.id !== boardId && board.role !== 'viewer' && !board.archived
+
+export function useTransferable(task: Task, boardId: string): boolean {
+  const boards = useBoards()
+  return (
+    task.parentId === null &&
+    (boards.data?.some(board => isTarget(board, boardId)) ?? false)
+  )
+}
+
+export function TransferDialog({
+  task,
+  boardId,
+  onMoved,
+  onClose
+}: {
+  task: Task
+  boardId: string
+  onMoved: () => void
+  onClose: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const titleId = useId()
+
+  return (
+    <Dialog open onClose={onClose} aria-labelledby={titleId} size="small">
+      <DialogTitle id={titleId}>{t('transfer.title')}</DialogTitle>
+      <TransferTask
+        task={task}
+        boardId={boardId}
+        onMoved={onMoved}
+        onCancel={onClose}
+      />
+    </Dialog>
+  )
+}
+
+function TransferTask({
   task,
   boardId,
   onMoved,
@@ -213,11 +251,7 @@ export function TransferTask({
       }
     })
   }
-  const targets =
-    boards.data?.filter(
-      board =>
-        board.id !== boardId && board.role !== 'viewer' && !board.archived
-    ) ?? []
+  const targets = boards.data?.filter(board => isTarget(board, boardId)) ?? []
   if (targets.length === 0) return null
   const targetName = targets.find(board => board.id === target)?.name ?? ''
   // Unmounting mid-request drops the mutate callbacks, so the move would land

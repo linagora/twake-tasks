@@ -25,15 +25,11 @@ export function taskUrl(
   return url.toString()
 }
 
-export function CopyLinkButton({
-  boardId,
-  taskKey,
-  expanded
-}: {
-  boardId: string
-  taskKey: string
+export function useCopyLink(
+  boardId: string,
+  taskKey: string,
   expanded: boolean
-}): ReactElement {
+): { copy: (clicked: HTMLElement) => void; notice: ReactElement } {
   const { t } = useI18n()
   // Kept apart from the outcome so the toast keeps its message while it fades.
   const [open, setOpen] = useState(false)
@@ -41,9 +37,9 @@ export function CopyLinkButton({
 
   // Written with the clipboard of the window that was clicked: in TwakeSpace
   // the panel is in the overlay's document, which owns the user activation.
-  const copy = async (button: HTMLElement) => {
+  const copy = async (clicked: HTMLElement) => {
     const clipboard =
-      button.ownerDocument.defaultView?.navigator.clipboard ??
+      clicked.ownerDocument.defaultView?.navigator.clipboard ??
       navigator.clipboard
     try {
       await clipboard.writeText(taskUrl(boardId, taskKey, expanded))
@@ -54,19 +50,11 @@ export function CopyLinkButton({
     setOpen(true)
   }
 
-  return (
-    <>
-      <Tooltip title={t('task.copyLink')}>
-        <IconButton
-          size="small"
-          aria-label={t('task.copyLink')}
-          onClick={event => {
-            void copy(event.currentTarget)
-          }}
-        >
-          <Icon icon={Link} />
-        </IconButton>
-      </Tooltip>
+  return {
+    copy: clicked => {
+      void copy(clicked)
+    },
+    notice: (
       <Toast
         open={open}
         autoHideDuration={4000}
@@ -81,6 +69,36 @@ export function CopyLinkButton({
           {outcome === 'failed' ? t('task.copyFailed') : t('task.linkCopied')}
         </Alert>
       </Toast>
+    )
+  }
+}
+
+export function CopyLinkButton({
+  boardId,
+  taskKey,
+  expanded
+}: {
+  boardId: string
+  taskKey: string
+  expanded: boolean
+}): ReactElement {
+  const { t } = useI18n()
+  const link = useCopyLink(boardId, taskKey, expanded)
+
+  return (
+    <>
+      <Tooltip title={t('task.copyLink')}>
+        <IconButton
+          size="small"
+          aria-label={t('task.copyLink')}
+          onClick={event => {
+            link.copy(event.currentTarget)
+          }}
+        >
+          <Icon icon={Link} />
+        </IconButton>
+      </Tooltip>
+      {link.notice}
     </>
   )
 }

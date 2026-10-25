@@ -45,7 +45,6 @@ import { History } from '@/ui/boards/History'
 import { FollowButton } from '@/ui/boards/Notifications'
 import {
   useBoard,
-  useBoards,
   useCreateTask,
   useDescription,
   useSetDescription
@@ -53,7 +52,7 @@ import {
 import { Subtasks } from '@/ui/boards/Subtasks'
 import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
-import { TransferTask } from '@/ui/boards/TransferTask'
+import { TransferDialog, useTransferable } from '@/ui/boards/TransferTask'
 import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useEmojiInput } from '@/ui/boards/useEmojiInput'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
@@ -380,16 +379,8 @@ function TaskMenu({
   const { t } = useI18n()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const [moving, setMoving] = useState(false)
-  const titleId = useId()
   const remove = useRemoveTask(boardId, task)
-  const boards = useBoards()
-  const movable =
-    task.parentId === null &&
-    (boards.data?.some(
-      board =>
-        board.id !== boardId && board.role !== 'viewer' && !board.archived
-    ) ??
-      false)
+  const movable = useTransferable(task, boardId)
   const choose = (action: () => void) => () => {
     setAnchor(null)
     action()
@@ -448,24 +439,14 @@ function TaskMenu({
         </IconMenuItem>
       </Menu>
       {moving && (
-        <Dialog
-          open
+        <TransferDialog
+          task={task}
+          boardId={boardId}
+          onMoved={onRemoved}
           onClose={() => {
             setMoving(false)
           }}
-          aria-labelledby={titleId}
-          size="small"
-        >
-          <DialogTitle id={titleId}>{t('transfer.title')}</DialogTitle>
-          <TransferTask
-            task={task}
-            boardId={boardId}
-            onMoved={onRemoved}
-            onCancel={() => {
-              setMoving(false)
-            }}
-          />
-        </Dialog>
+        />
       )}
     </>
   )

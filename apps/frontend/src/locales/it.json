@@ -127,6 +127,7 @@
     "options": "Opzioni per %{key}",
     "moveTo": "Sposta in %{section}",
     "assign": "Assegna",
+    "dueDate": "Scadenza…",
     "assignTitle": "Assegna %{key}",
     "save": "Salva",
     "cancel": "Annulla",
