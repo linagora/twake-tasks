@@ -382,7 +382,8 @@
     "unfinished": "L'attività è stata creata, ma alcuni dettagli non sono stati salvati. Salva di nuovo per aggiungerli.",
     "save": "Salva",
     "created": "«%{title}» è stata creata",
-    "seeTask": "Vedi l'attività"
+    "seeTask": "Vedi l'attività",
+    "nowhere": "Non puoi aggiungere attività qui."
   },
   "shortcuts": {
     "title": "Scorciatoie da tastiera",

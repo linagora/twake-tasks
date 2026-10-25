@@ -268,6 +268,69 @@ describe('the embedded view', () => {
     expect(router.state.location.search).toBe('?task=DES-1')
   })
 
+  it("offers only the project's boards to a new task", async () => {
+    const first = aBoard({ name: 'Roadmap', project: roadmap })
+    renderRoute(`/embed/projects/${roadmap.id}/new`, {
+      boardsApi: projectBoardsApi([
+        aBoard({ name: 'Inbox', inbox: true }),
+        aBoard({ name: 'Elsewhere', project: aProject({ managed: true }) }),
+        first,
+        aBoard({ name: 'Launch', project: roadmap }),
+        aBoard({ name: 'Watched', project: roadmap, role: 'viewer' })
+      ])
+    })
+
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a task' })
+    )
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    fireEvent.mouseDown(dialog.getByRole('combobox', { name: 'Board' }))
+
+    const options = await screen.findAllByRole('option')
+    expect(options.map(option => option.textContent)).toEqual([
+      'Roadmap',
+      'Launch'
+    ])
+  })
+
+  it('says a task cannot be added to a project the person only views', async () => {
+    const inbox = aBoard({ name: 'Inbox', inbox: true })
+    renderRoute(`/embed/projects/${roadmap.id}/new`, {
+      boardsApi: projectBoardsApi([
+        inbox,
+        aBoard({ name: 'Roadmap', project: roadmap, role: 'viewer' })
+      ])
+    })
+
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a task' })
+    )
+    expect(await dialog.findByText("You can't add tasks here.")).toBeVisible()
+    expect(dialog.getByRole('button', { name: 'Create' })).toBeDisabled()
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    expect(dialog.queryByRole('combobox', { name: 'Board' })).toBe(null)
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Title' }), {
+      target: { value: 'Ship it' }
+    })
+    fireEvent.submit(dialog.getByRole('button', { name: 'Create' }))
+    expect(inbox.tasks).toEqual([])
+  })
+
+  it('opens a new task on the first board the person can add to', async () => {
+    const launch = aBoard({ name: 'Launch', project: roadmap })
+    const { router } = renderRoute(`/embed/projects/${roadmap.id}/new`, {
+      boardsApi: projectBoardsApi([
+        aBoard({ name: 'Watched', project: roadmap, role: 'viewer' }),
+        launch
+      ])
+    })
+
+    await screen.findByRole('dialog', { name: 'Create a task' })
+    expect(router.state.location.pathname).toBe(
+      `/embed/projects/${roadmap.id}/boards/${launch.id}`
+    )
+  })
+
   it('shows the project, with no form, from the new path when it has no board', async () => {
     const { router } = renderRoute(`/embed/projects/${roadmap.id}/new`, {
       boardsApi: projectBoardsApi([aBoard({ name: 'Mine' })])

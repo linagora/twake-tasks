@@ -382,7 +382,8 @@
     "unfinished": "Die Aufgabe wurde erstellt, aber einige Details wurden nicht gespeichert. Speichern Sie erneut, um sie hinzuzufügen.",
     "save": "Speichern",
     "created": "„%{title}“ wurde erstellt",
-    "seeTask": "Aufgabe ansehen"
+    "seeTask": "Aufgabe ansehen",
+    "nowhere": "Sie können hier keine Aufgaben hinzufügen."
   },
   "shortcuts": {
     "title": "Tastenkürzel",

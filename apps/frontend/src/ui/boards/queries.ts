@@ -788,14 +788,19 @@ export function useNewTask(): UseMutationResult<
  */
 export function useNewTaskBoard(
   picked: string | undefined,
-  inBoardId?: string
+  inBoardId?: string,
+  inProjectId?: string
 ): {
   targets: BoardSummary[] | undefined
   chosen: BoardSummary | undefined
   board: Board | undefined
 } {
   const api = useBoardsApi()
-  const targets = useBoards().data?.filter(canAddTo)
+  const targets = useBoards().data?.filter(
+    each =>
+      canAddTo(each) &&
+      (inProjectId === undefined || each.project.id === inProjectId)
+  )
   const chosen =
     targets &&
     (targets.find(each => each.id === picked) ??

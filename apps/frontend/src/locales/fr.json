@@ -382,7 +382,8 @@
     "unfinished": "La tâche a été créée, mais certains de ses détails n'ont pas été enregistrés. Enregistrez à nouveau pour les ajouter.",
     "save": "Enregistrer",
     "created": "« %{title} » a été créée",
-    "seeTask": "Voir la tâche"
+    "seeTask": "Voir la tâche",
+    "nowhere": "Vous ne pouvez pas ajouter de tâches ici."
   },
   "shortcuts": {
     "title": "Raccourcis clavier",
