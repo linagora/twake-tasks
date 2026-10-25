@@ -8,14 +8,15 @@ import {
   ColorList,
   Popover,
   TextField,
-  Typography,
-  type InputBaseComponentProps
+  Typography
 } from '@linagora/twake-mui'
-import { useState, type ChangeEvent, type ReactElement } from 'react'
-import { HexColorInput, HexColorPicker } from 'react-colorful'
+import { useState, type ReactElement } from 'react'
+import { HexColorPicker } from 'react-colorful'
 
 // The blue of folders, which twake-mui's swatches hold.
 const FALLBACK_COLOR = '#2D83FF'
+// The API takes six digits only, not the shorthand.
+const FULL_HEX = /^#[0-9A-F]{6}$/i
 
 /**
  * The first of twake-mui's swatches that `used` holds the least, so things
@@ -147,6 +148,7 @@ function CustomColor({
   onSave: (color: string) => void
 }): ReactElement {
   const [picked, setPicked] = useState(color.toUpperCase())
+  const [hex, setHex] = useState(picked)
   return (
     <Box
       sx={{
@@ -160,6 +162,7 @@ function CustomColor({
         color={picked}
         onChange={next => {
           setPicked(next.toUpperCase())
+          setHex(next.toUpperCase())
         }}
       />
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -169,13 +172,21 @@ function CustomColor({
         <TextField
           variant="standard"
           size="small"
-          value={picked}
+          value={hex}
           slotProps={{
-            input: { inputComponent: HexInput },
-            htmlInput: { 'aria-label': 'Hex' }
+            htmlInput: {
+              'aria-label': 'Hex',
+              spellCheck: false,
+              // Upper-casing the value itself would move the caret to the end.
+              style: { textTransform: 'uppercase' }
+            }
           }}
           onChange={event => {
-            setPicked(event.target.value.toUpperCase())
+            const next = `#${event.target.value
+              .replace(/[^0-9A-F]/gi, '')
+              .slice(0, 6)}`
+            setHex(next)
+            if (FULL_HEX.test(next)) setPicked(next.toUpperCase())
           }}
         />
       </Box>
@@ -185,42 +196,14 @@ function CustomColor({
         </Button>
         <Button
           variant="secondary"
-          // The API takes six digits only, not the shorthand the input lets through.
-          disabled={!/^#[0-9A-F]{6}$/.test(picked)}
+          disabled={!FULL_HEX.test(hex)}
           onClick={() => {
-            onSave(picked)
+            onSave(hex.toUpperCase())
           }}
         >
           {saveLabel}
         </Button>
       </Box>
     </Box>
-  )
-}
-
-// HexColorInput takes `color` and calls back with a string, where MUI gives
-// an input `value` and expects an event.
-function HexInput({
-  id,
-  className,
-  value,
-  onChange,
-  onFocus,
-  onBlur,
-  'aria-label': ariaLabel
-}: InputBaseComponentProps): ReactElement {
-  return (
-    <HexColorInput
-      id={id}
-      className={className}
-      aria-label={ariaLabel}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      prefixed
-      color={typeof value === 'string' ? value : ''}
-      onChange={next => {
-        onChange?.({ target: { value: next } } as ChangeEvent<HTMLInputElement>)
-      }}
-    />
   )
 }

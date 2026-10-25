@@ -106,6 +106,36 @@ describe('ColorField', () => {
     expect(custom.getByRole('button', { name: 'Save' })).toBeDisabled()
   })
 
+  it('saves only the six digits the hex field shows', async () => {
+    renderWithProviders(<Field initial={null} />)
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Choose the color' })
+    )
+    const palette = within(
+      screen.getByRole('dialog', { name: 'Choose the color' })
+    )
+      .getAllByRole('button')
+      .at(-1)
+    if (!palette) throw new Error('No palette')
+    fireEvent.click(palette)
+    const custom = within(screen.getByRole('dialog', { name: 'Custom color' }))
+    const hex = custom.getByRole('textbox', { name: 'Hex' })
+    const save = custom.getByRole('button', { name: 'Save' })
+
+    fireEvent.change(hex, { target: { value: '12ab34' } })
+    expect(save).toBeEnabled()
+    for (const partial of ['12ab', '', '12ab3', 'zzzzzz']) {
+      fireEvent.change(hex, { target: { value: partial } })
+      expect(save).toBeDisabled()
+    }
+    fireEvent.change(hex, { target: { value: '#56cd78' } })
+    expect(hex).toHaveValue('#56cd78')
+    fireEvent.click(save)
+
+    expect(picked()).toHaveTextContent('#56CD78')
+  })
+
   it('goes back to the swatches when the custom color is cancelled', async () => {
     renderWithProviders(<Field initial={first} />)
 
