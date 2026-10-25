@@ -10,6 +10,7 @@ import {
 } from '@/testing/fakeBoardsApi'
 import { followZone } from '@/ui/boards/dueLabel'
 import { findEmptyState } from '@/testing/emptyState'
+import { onAPhone } from '@/testing/phone'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 function aBoardWithLogo() {
@@ -47,7 +48,7 @@ describe('following a task', () => {
     )
   })
 
-  it('is an eye, with the action in its tooltip', async () => {
+  it('is a labelled eye, with Unfollow in its tooltip once followed', async () => {
     const { board, boardsApi } = aBoardWithLogo()
     renderRoute(`/boards/${board.id}`, { boardsApi })
     fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
@@ -56,20 +57,35 @@ describe('following a task', () => {
     )
 
     const follow = await panel.findByRole('button', { name: 'Follow' })
-    fireEvent.mouseOver(follow)
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Follow')
+    expect(follow).toHaveTextContent('Follow')
     expect(follow).toHaveAttribute('aria-pressed', 'false')
-    const closed = follow.querySelector('svg')?.innerHTML
+    const eye = follow.querySelector('svg')?.innerHTML
     fireEvent.click(follow)
 
     const following = await panel.findByRole('button', {
       name: 'Following'
     })
-    expect(following.querySelector('svg')?.innerHTML).not.toBe(closed)
+    expect(following).toHaveTextContent('Following')
+    expect(following.querySelector('svg')?.innerHTML).toBe(eye)
     expect(following).toHaveAttribute('aria-pressed', 'true')
     fireEvent.mouseOver(following)
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Unfollow')
     expect(following).toHaveAccessibleDescription('Unfollow')
+  })
+
+  it('is an eye alone on a phone, named by its label', async () => {
+    onAPhone()
+    const { board, boardsApi } = aBoardWithLogo()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+
+    const follow = await panel.findByRole('button', { name: 'Follow' })
+    expect(follow).toHaveTextContent('')
+    fireEvent.mouseOver(follow)
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Follow')
   })
 })
 

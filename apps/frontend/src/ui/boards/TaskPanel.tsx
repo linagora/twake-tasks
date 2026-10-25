@@ -34,8 +34,7 @@ import {
   HeaderToggle,
   Inline,
   PanelSection,
-  SidePanel,
-  useInPeek
+  SidePanel
 } from '@/ds/SidePanel'
 import { UnavailableButton } from '@/ds/PageHeader'
 import { MAX_TASK_DEPTH, type Section, type Task } from '@/domain/board'
@@ -262,8 +261,7 @@ function CompleteButton({
 }): ReactElement {
   const { t } = useI18n()
   const theme = useTheme()
-  const inPeek = useInPeek()
-  const iconOnly = useMediaQuery(theme.breakpoints.down('md')) || inPeek
+  const iconOnly = useMediaQuery(theme.breakpoints.down('md'))
   const { done, disabled, noDoneSection, toggle } = useCompleteToggle(
     task,
     boardId,
@@ -312,7 +310,14 @@ function CompleteButton({
       </Tooltip>
     )
   }
-  return <Button {...props} disabled={disabled} onClick={toggle} />
+  return (
+    <Button
+      {...props}
+      aria-pressed={done}
+      disabled={disabled}
+      onClick={toggle}
+    />
+  )
 }
 
 function DiscardDialog({

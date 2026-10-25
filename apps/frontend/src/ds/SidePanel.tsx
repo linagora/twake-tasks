@@ -68,7 +68,7 @@ function useFocusWhileOpen(
 
 const PeekContext = createContext(false)
 
-/** True in a peek, whose header has room for the task's key and icons only. */
+/** True in a peek, which sits beside the page it was opened from. */
 export function useInPeek(): boolean {
   return useContext(PeekContext)
 }
@@ -245,7 +245,15 @@ function Panel({
             position: 'sticky',
             top: 0,
             zIndex: 2,
-            bgcolor: 'background.paper'
+            bgcolor: 'background.paper',
+            // Short of room, the breadcrumb is cut first, then the labels of
+            // the actions, so that Close never leaves the header.
+            '& > .MuiBreadcrumbs-root': { flexShrink: 1e6 },
+            '& > .MuiButton-root': {
+              minWidth: 0,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap'
+            }
           }}
         >
           {host && (
