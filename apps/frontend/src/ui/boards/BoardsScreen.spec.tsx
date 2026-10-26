@@ -202,7 +202,7 @@ describe('BoardsScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows the key, the kind and the open tasks of each board', async () => {
+  it('shows the kind and the open tasks of each board', async () => {
     const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
     design.tasks = [
       aTask(null, { key: 'DES-1', title: 'Logo' }),
@@ -232,7 +232,8 @@ describe('BoardsScreen', () => {
     const opsCard = within(screen.getByRole('listitem', { name: 'Ops' }))
     const inboxCard = within(screen.getByRole('listitem', { name: 'Inbox' }))
 
-    expect(designCard.getByText('DES')).toBeVisible()
+    // The key prefix shows on the tasks, not on the card.
+    expect(designCard.queryByText('DES')).toBeNull()
     expect(designCard.getByText('2 open tasks')).toBeVisible()
     expect(
       designCard.getByRole('img', { name: 'Project board' })
