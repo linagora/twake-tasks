@@ -185,6 +185,27 @@ describe('the embedded view', () => {
     ).not.toBeInTheDocument()
   })
 
+  it("lists a shareable board's members read-only, from its avatars", async () => {
+    const team = aProject({ name: 'Team' })
+    const board = aBoard({
+      name: 'Team',
+      project: team,
+      members: [
+        { userId: 'alice', email: 'alice@example.com', name: 'Alice Martin' }
+      ]
+    })
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.projects.push({ ...team, role: 'admin' })
+    renderRoute(`/embed/projects/${team.id}/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: '1 member' }))
+
+    expect(
+      await screen.findByRole('dialog', { name: 'People with access' })
+    ).toBeVisible()
+    expect(screen.queryByRole('dialog', { name: 'Share Team' })).toBeNull()
+  })
+
   it('pads the page once, in the frame', async () => {
     const board = aBoard({ name: 'Roadmap', project: roadmap })
     renderRoute(`/embed/projects/${roadmap.id}/boards/${board.id}`, {

@@ -244,7 +244,7 @@ function BoardColumns({
   settled: boolean
   /** Where its breadcrumb starts, which then titles the page. */
   origin?: Origin | undefined
-  /** Left out in an embed, whose host shares the project with its members. */
+  /** Off in an embed, whose host shares the project: no Share, read-only avatars. */
   shareButton: boolean
 }): ReactElement {
   const { t } = useI18n()
@@ -400,7 +400,7 @@ function BoardColumns({
           members={board.members}
           invited={board.invited}
           onClick={() => {
-            if (shareable) setSharing(true)
+            if (shareable && shareButton) setSharing(true)
             else setListing(true)
           }}
         />
