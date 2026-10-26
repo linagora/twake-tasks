@@ -241,7 +241,11 @@ export const PlatformBarFrame = styled('div')({
 // The main action above the nav, as wide as its entries. The sidebar is a
 // bottom bar on phones, which has no room for it.
 export const SidebarButton = styled(Button)(({ theme }) => ({
-  margin: '24px 16px 0',
+  // As the Create button of Twake Drive.
+  margin: '16px 16px 0',
+  borderRadius: 12,
+  fontSize: theme.typography.pxToRem(14),
+  lineHeight: 1.4,
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
 
