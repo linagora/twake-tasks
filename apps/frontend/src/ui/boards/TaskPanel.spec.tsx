@@ -318,7 +318,6 @@ describe('TaskPanel', () => {
 
     const panel = await openLogo()
     fireEvent.mouseDown(panel.getByRole('combobox', { name: 'Priority' }))
-    // Each one shown as on a card.
     const option = await screen.findByRole('option', { name: 'Priority 2' })
     expect(option).toHaveTextContent('P2')
     fireEvent.click(option)

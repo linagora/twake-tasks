@@ -346,10 +346,7 @@ function PriorityRow({
     api.editTask(boardId, task.id, { priority })
   )
   const name = (level: Task['priority']) =>
-    level === null ? t('task.noPriority') : t('board.priority', { level })
-  // Shown as on the task's card and row, once it has one.
-  const shown = (level: Task['priority']) =>
-    level === null ? name(level) : <PriorityChip priority={level} />
+    level === null ? t('task.noPriority') : <PriorityChip priority={level} />
 
   return (
     <Property
@@ -363,8 +360,7 @@ function PriorityRow({
           value={task.priority === null ? '' : String(task.priority)}
           options={[null, ...PRIORITIES].map(level => ({
             value: level === null ? '' : String(level),
-            label: name(level),
-            shown: shown(level)
+            label: name(level)
           }))}
           onChange={value => {
             edit.mutate(
@@ -373,7 +369,7 @@ function PriorityRow({
           }}
         />
       ) : (
-        <Typography variant="body2">{shown(task.priority)}</Typography>
+        <Typography variant="body2">{name(task.priority)}</Typography>
       )}
     </Property>
   )

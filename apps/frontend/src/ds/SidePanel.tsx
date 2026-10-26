@@ -428,8 +428,7 @@ export function PropertySelect({
 }: {
   labelId: string
   value: string
-  /** An option shows `shown`, when given, in the list and once chosen. */
-  options: { value: string; label: string; shown?: ReactNode }[]
+  options: { value: string; label: ReactNode }[]
   onChange: (value: string) => void
   disabled?: boolean
 }): ReactElement {
@@ -439,10 +438,6 @@ export function PropertySelect({
       disabled={disabled}
       value={value}
       displayEmpty
-      renderValue={value => {
-        const chosen = options.find(option => option.value === value)
-        return chosen?.shown ?? chosen?.label
-      }}
       SelectDisplayProps={{ 'aria-labelledby': labelId }}
       onChange={event => {
         onChange(event.target.value)
@@ -463,7 +458,7 @@ export function PropertySelect({
     >
       {options.map(option => (
         <MenuItem key={option.value} value={option.value}>
-          {option.shown ?? option.label}
+          {option.label}
         </MenuItem>
       ))}
     </Select>
