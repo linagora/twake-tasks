@@ -133,6 +133,7 @@ export function BoardCard({
               flex: '1 1 auto',
               minWidth: 0,
               lineHeight: 1.3,
+              textTransform: 'uppercase',
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
