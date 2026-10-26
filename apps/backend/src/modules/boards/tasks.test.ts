@@ -218,6 +218,7 @@ describe('tasks', () => {
     const bob = aUser({ organizationId: alice.organizationId })
     const { board, todo, done } = await aBoard(alice)
     const logo = await aTask(alice, board.id, todo.id, 'Logo')
+    const notes = await aTask(alice, board.id, null, 'Notes')
     await joinBoard(db, alice, board.id, bob, 'viewer')
     const before = await boardOf(alice, board.id)
     const task = `/boards/${board.id}/tasks/${logo}`
@@ -228,7 +229,9 @@ describe('tasks', () => {
         title: 'Fonts'
       }),
       await api.as(bob).post(`${task}/move`, { sectionId: done.id }),
-      await api.as(bob).post(`${task}/complete`, { state: 'completed' }),
+      await api.as(bob).post(`/boards/${board.id}/tasks/${notes}/complete`, {
+        state: 'completed'
+      }),
       await api.as(bob).patch(task, { title: 'New logo' }),
       await api.as(bob).patch(task, { priority: 1, dueDate: '2026-11-02' })
     ]
