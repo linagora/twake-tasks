@@ -177,7 +177,7 @@ describe('NewTaskDialog', () => {
       )
     )
     fireEvent.mouseDown(dialog.getByRole('combobox', { name: 'Priority' }))
-    fireEvent.click(await screen.findByRole('option', { name: 'P1' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Priority 1' }))
     fireEvent.click(create())
 
     await waitFor(() => {
@@ -197,6 +197,23 @@ describe('NewTaskDialog', () => {
       design.tasks[0]?.id,
       { markdown: 'Three variants', version: 0 }
     )
+  })
+
+  it('shows the priority as on a card, with its flag and colour', async () => {
+    const { dialog } = await openNewTask()
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+
+    fireEvent.mouseDown(dialog.getByRole('combobox', { name: 'Priority' }))
+    const option = await screen.findByRole('option', { name: 'Priority 2' })
+    expect(option).toHaveTextContent('P2')
+    fireEvent.click(option)
+
+    expect(
+      within(dialog.getByRole('combobox', { name: 'Priority' })).getByRole(
+        'img',
+        { name: 'Priority 2' }
+      )
+    ).toHaveTextContent('P2')
   })
 
   it('creates the task in the board picked, without the assignees picked before', async () => {
