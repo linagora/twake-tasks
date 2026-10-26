@@ -16,6 +16,13 @@ Required in every mode. The backend connects at start, then:
 
 See [events](events.md) for the exchanges, routing keys and queue.
 
+## AMQP clients
+
+The backend talks to RabbitMQ through two clients:
+
+- `@linagora/rabbitmq-client` runs the event consumer, the activity publisher, the live exchange and the space sync request.
+- `amqplib` only counts the messages waiting on a queue and removes the old queue's bindings. The first client never removes a binding, and declares it again when it reconnects.
+
 ## OIDC provider
 
 LemonLDAP in Twake Workplace, or any provider that offers discovery, introspection, userinfo and back-channel logout. It needs two clients:
@@ -45,3 +52,11 @@ Optional. With `REDIS_URL`, the backend replicas share their rate limit counters
 ## ldap-rest
 
 Only in [space mode](modes.md#space-mode). The backend reads organizations, spaces, members and groups from its API, signing each request with HMAC SHA-256 as `LDAP_REST_SERVICE_ID`, with `LDAP_REST_SECRET`. It also publishes the space events the backend consumes.
+
+## Frontend peers
+
+No frontend code imports `@mui/lab` or `cozy-intent`. They stay in the frontend's dependencies because `@linagora/twake-mui` requires both as peers, and neither peer is optional.
+
+## Drizzle
+
+`drizzle-orm` and `drizzle-kit` are pinned to the release candidate `1.0.0-rc.4`. Once 1.0 is stable, move both in one PR. That PR is ready when `npm run db:generate` produces no migration and the backend tests pass.
