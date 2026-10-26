@@ -1,6 +1,7 @@
 import type { Logger } from 'pino'
 import { z } from 'zod'
 import type { Tx } from '../infra/db.ts'
+import type { Metrics } from '../infra/metrics.ts'
 import type { Delivery } from '../infra/rabbitmq.ts'
 import type { Deduplicator } from './dedupe.ts'
 import { parsePlatformEvent, type PlatformEvent } from './envelope.ts'
@@ -51,10 +52,11 @@ export function createMessageHandler(deps: {
   dedupe: Deduplicator
   park: Park
   logger: Logger
+  metrics?: Metrics | undefined
 }) {
-  const { routes, dedupe, park, logger } = deps
+  const { routes, dedupe, park, logger, metrics } = deps
 
-  return async (delivery: Delivery): Promise<Outcome> => {
+  const handle = async (delivery: Delivery): Promise<Outcome> => {
     const context = {
       routingKey: delivery.routingKey,
       messageId: delivery.messageId
@@ -105,5 +107,18 @@ export function createMessageHandler(deps: {
     }
     logger.info({ ...context, duplicate: !processed }, 'event handled')
     return processed ? 'processed' : 'duplicate'
+  }
+
+  return async (delivery: Delivery): Promise<Outcome> => {
+    const routingKey = routes.has(delivery.routingKey)
+      ? delivery.routingKey
+      : 'other'
+    let outcome: Outcome | 'failed' = 'failed'
+    try {
+      outcome = await handle(delivery)
+      return outcome
+    } finally {
+      metrics?.eventsConsumed.inc({ routing_key: routingKey, outcome })
+    }
   }
 }

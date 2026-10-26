@@ -1,6 +1,18 @@
-import { and, asc, eq, exists, inArray, lt, lte, or, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  eq,
+  exists,
+  inArray,
+  lt,
+  lte,
+  or,
+  sql
+} from 'drizzle-orm'
 import type { Logger } from 'pino'
 import type { Db } from '../infra/db.ts'
+import type { Metrics } from '../infra/metrics.ts'
 import type { Delivery } from '../infra/rabbitmq.ts'
 import { spaces } from '../modules/spaces/schema.ts'
 import type { Outcome, Park } from './router.ts'
@@ -37,8 +49,9 @@ export function parkedRetries(deps: {
   logger: Logger
   handle: (delivery: Delivery) => Promise<Outcome>
   deadLetter: DeadLetter
+  metrics?: Metrics | undefined
 }) {
-  const { db, logger, handle, deadLetter } = deps
+  const { db, logger, handle, deadLetter, metrics } = deps
 
   // Only rows whose space arrived, or that waited long enough, so the others
   // cost nothing. Claimed rather than locked, so replicas share the rows and
@@ -130,6 +143,10 @@ export function parkedRetries(deps: {
 
   const retryOnce = async () => {
     for (const row of await claim()) await retry(row)
+    if (metrics) {
+      const [parked] = await db.select({ count: count() }).from(parkedEvents)
+      metrics.eventsParked.set(parked?.count ?? 0)
+    }
   }
 
   return {

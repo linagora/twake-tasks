@@ -6,6 +6,7 @@ import { buildApp } from '../app.ts'
 import { eq } from 'drizzle-orm'
 import { createChanges } from '../infra/changes.ts'
 import { createDb, inTenant, type Db } from '../infra/db.ts'
+import type { Metrics } from '../infra/metrics.ts'
 import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
 import type { Role } from '../modules/boards/access.ts'
@@ -147,6 +148,7 @@ export async function startApp(
   options: {
     searchAllowedOrigins?: string[]
     limits?: Parameters<typeof buildApp>[0]['limits']
+    metrics?: Metrics
   } = {}
 ) {
   const { sql, db } = createDb(inject('databaseUrl'))
@@ -175,7 +177,8 @@ export async function startApp(
     searchAllowedOrigins: options.searchAllowedOrigins ?? [],
     searchMinLength: 2,
     isReady: () => Promise.resolve(true),
-    limits: options.limits
+    limits: options.limits,
+    metrics: options.metrics
   })
 
   function tokenOf(user: TestUser, claims: Partial<Identity> = {}) {

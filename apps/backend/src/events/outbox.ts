@@ -1,6 +1,9 @@
-import { asc, inArray, isNull, lt, sql } from 'drizzle-orm'
+import { setTimeout as delay } from 'node:timers/promises'
+import { Gauge, type Registry } from '@prometheus-io/client'
+import { asc, count, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import type { Db, Tx } from '../infra/db.ts'
+import type { Metrics } from '../infra/metrics.ts'
 import {
   isKnownType,
   type PublishedEvent,
@@ -21,11 +24,72 @@ export async function enqueue(tx: Tx, event: PublishedEvent) {
   await tx.insert(outbox).values({ event })
 }
 
+const backlog = async (db: Db) => {
+  const [row] = await db
+    .select({
+      pending: count(),
+      waited: sql<number>`coalesce(extract(epoch from now() - min(${outbox.createdAt})), 0)::float8`
+    })
+    .from(outbox)
+    .where(isNull(outbox.sentAt))
+  return row
+}
+
+type Backlog = NonNullable<Awaited<ReturnType<typeof backlog>>>
+
+// Well under Prometheus' scrape timeout: a slow database costs these two
+// series, not the whole scrape.
+const BACKLOG_TIMEOUT_MS = 1000
+
+const backlogInTime = (db: Db) =>
+  Promise.race([
+    backlog(db),
+    delay(BACKLOG_TIMEOUT_MS, undefined, { ref: false }).then(() => {
+      throw new Error('outbox backlog read timed out')
+    })
+  ])
+
+// Read when scraped, so every replica reports the same outbox whichever one
+// relays. A failed read reports no series rather than a stale one, so an
+// alert on the series being absent fires.
+export function measureOutbox(db: Db, registry: Registry, logger: Logger) {
+  // Both gauges are collected at once, so they share one read.
+  let reading: Promise<Backlog | undefined> | undefined
+  const read = () =>
+    (reading ??= backlogInTime(db)
+      .catch((error: unknown) => {
+        logger.warn({ err: error }, 'outbox backlog unreadable')
+        return undefined
+      })
+      .finally(() => {
+        reading = undefined
+      }))
+  const gauge = (name: string, help: string, value: (row: Backlog) => number) =>
+    new Gauge({
+      name,
+      help,
+      registers: [registry],
+      async collect() {
+        const row = await read()
+        if (row) this.set(value(row))
+        else this.remove()
+      }
+    })
+  gauge('outbox_pending', 'Events waiting in the outbox', row => row.pending)
+  gauge(
+    'outbox_oldest_pending_seconds',
+    'How long the oldest event has waited in the outbox',
+    row => row.waited
+  )
+}
+
 export function createRelay(deps: {
   db: Db
   logger: Logger
   publish: (event: PublishedEvent) => Promise<void>
+  metrics?: Metrics | undefined
 }) {
+  const metrics = deps.metrics
   let processedPrunedAt = -Infinity
   const locked = async (tx: Tx) => {
     const [lock] = await tx.execute<{ locked: boolean }>(
@@ -70,6 +134,7 @@ export function createRelay(deps: {
           await deps.publish(event.data)
         } catch (error) {
           deps.logger.warn({ err: error, outbox: row.id }, 'relay failed')
+          metrics?.outboxPublishFailures.inc()
           break
         }
         sent.push(row.id)
@@ -79,6 +144,7 @@ export function createRelay(deps: {
           .update(outbox)
           .set({ sentAt: sql`now()` })
           .where(inArray(outbox.id, sent))
+        metrics?.outboxPublished.inc(sent.length)
       }
       await tx
         .delete(outbox)

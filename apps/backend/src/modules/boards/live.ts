@@ -5,6 +5,7 @@ import { z } from 'zod'
 import type { Changes, StreamVersions } from '../../infra/changes.ts'
 import { afterCommit, inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
+import type { Metrics } from '../../infra/metrics.ts'
 import { tooManyRequests, type RequireIdentity } from '../auth/index.ts'
 import { claimInvites, roleOn } from './access.ts'
 import { boards } from './schema.ts'
@@ -89,6 +90,7 @@ export function registerLive(
     streamVersions: StreamVersions
     // Per user on this replica, where the streams live; 0 turns the cap off.
     openStreams?: number | undefined
+    metrics?: Metrics | undefined
   }
 ) {
   const maxOpen = deps.openStreams ?? 0
@@ -96,7 +98,7 @@ export function registerLive(
 
   app.get(
     '/boards/:boardId/events',
-    { preHandler: deps.requireIdentity },
+    { preHandler: deps.requireIdentity, config: { stream: true } },
     async (request, reply) => {
       const identity = request.identity
       if (!identity) return reply.code(401).send()
@@ -114,6 +116,10 @@ export function registerLive(
         if (left > 0) openBy.set(userId, left)
         else openBy.delete(userId)
       })
+      // Before any await: a caller gone meanwhile closes without a listener.
+      const streams = deps.metrics?.liveStreamsOpen
+      streams?.inc()
+      reply.raw.once('close', () => streams?.dec())
       const role = await inTenant(deps.db, identity, async tx => {
         await claimInvites(tx)
         return roleOn(tx, identity.userId, boardId)

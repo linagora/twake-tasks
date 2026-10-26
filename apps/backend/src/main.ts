@@ -3,13 +3,14 @@ import postgres from 'postgres'
 import { buildApp } from './app.ts'
 import { loadConfig, rateLimits } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
-import { createRelay } from './events/outbox.ts'
+import { createRelay, measureOutbox } from './events/outbox.ts'
 import { parkedRetries, parkIn } from './events/parking.ts'
 import { createMessageHandler } from './events/router.ts'
 import { createChanges } from './infra/changes.ts'
 import { assertRowLevelSecurity, createDb, migrateLocked } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
+import { createMetrics } from './infra/metrics.ts'
 import { connectRedis } from './infra/rateLimit.ts'
 import {
   connectLive,
@@ -48,6 +49,7 @@ const config = loadConfig()
 const limits = rateLimits(config)
 const logger = pino({ level: config.LOG_LEVEL })
 const spaces = config.SPACE_INTEGRATION === 'true'
+const metrics = config.METRICS_ENABLED ? createMetrics() : undefined
 
 const { sql, db } = createDb(config.DATABASE_URL, logger, {
   poolMax: config.DATABASE_POOL_MAX,
@@ -68,6 +70,7 @@ const server = await buildApp({
   proxyHops: config.HTTP_TRUSTED_PROXY_HOPS,
   redis,
   limits,
+  metrics,
   db,
   boardChanges,
   ...(await connectIdentityProvider({
@@ -99,7 +102,7 @@ const publisher = await startPublisher(
   config.RABBITMQ_ACTIVITY_EXCHANGE,
   logger
 )
-const handle = createMessageHandler({
+const handling = {
   // The queue stays bound to space events either way, since its first binding
   // fixes its dead letter key; without the integration they find no route.
   routes: new Map([
@@ -110,7 +113,8 @@ const handle = createMessageHandler({
   dedupe: postgresDeduplicator(db, 'twake-tasks'),
   park: parkIn(db),
   logger
-})
+}
+const handle = createMessageHandler({ ...handling, metrics })
 const consumer = await startConsumer(
   config.RABBITMQ_URL,
   {
@@ -129,8 +133,10 @@ const consumer = await startConsumer(
 const stopParkedRetries = parkedRetries({
   db,
   logger,
-  handle,
-  deadLetter: (delivery, reason) => consumer.deadLetter(delivery, reason)
+  // Uncounted: a delivery was counted once, when it came off the queue.
+  handle: createMessageHandler(handling),
+  deadLetter: (delivery, reason) => consumer.deadLetter(delivery, reason),
+  metrics
 }).start()
 // A sync request fans out to every app and every space, so it is sent only
 // while no space is known, once the queue is bound to receive the answers.
@@ -153,6 +159,7 @@ const stopScheduler = createScheduler({
   db,
   logger,
   leaseSeconds: config.JOBS_LEASE_SECONDS,
+  metrics,
   // A mail job spends most of its time on SMTP, after its transaction ended.
   concurrency: kind =>
     [
@@ -195,8 +202,10 @@ if (spaces) await planReconcile(db)
 const stopRelay = createRelay({
   db,
   logger,
-  publish: event => publisher.publish(event)
+  publish: event => publisher.publish(event),
+  metrics
 }).start(500)
+if (metrics) measureOutbox(db, metrics.registry, logger)
 accepting = true
 logger.info('twake-tasks backend started')
 

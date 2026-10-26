@@ -2,9 +2,18 @@ import Fastify, {
   LogController,
   type FastifyBaseLogger,
   type FastifyError,
-  type FastifyInstance
+  type FastifyInstance,
+  type FastifyRequest
 } from 'fastify'
 import { isTransient } from './db.ts'
+import type { Metrics } from './metrics.ts'
+
+declare module 'fastify' {
+  interface FastifyContextConfig {
+    // A stream lasts as long as its tab: its duration says nothing of latency.
+    stream?: boolean
+  }
+}
 
 export function createServer(deps: {
   logger: FastifyBaseLogger
@@ -12,13 +21,14 @@ export function createServer(deps: {
   // The proxies between the caller and the server, each adding the address
   // it got the request from to X-Forwarded-For.
   proxyHops?: number | undefined
+  metrics?: Metrics | undefined
 }): HttpServer {
   const proxyHops = deps.proxyHops ?? 0
   const app = Fastify({
     loggerInstance: deps.logger,
     trustProxy: (_address, hop) => hop < proxyHops,
     logController: new LogController({
-      disableRequestLogging: request => request.url.startsWith('/health/')
+      disableRequestLogging: request => isProbe(request.url)
     })
   })
 
@@ -53,8 +63,44 @@ export function createServer(deps: {
       .send({ status: ready ? 'ok' : 'unavailable' })
   })
 
+  const metrics = deps.metrics
+  if (metrics) {
+    const labels = (request: FastifyRequest) => ({
+      method: request.method,
+      route: request.routeOptions.url ?? 'unmatched'
+    })
+    // A stream hijacks its reply, and a caller that leaves closes it without
+    // the 'finish' that onResponse waits for.
+    app.addHook('onRequest', async (request, reply) => {
+      if (!request.routeOptions.config.stream) return
+      reply.raw.once('close', () => {
+        metrics.httpRequests.inc({
+          ...labels(request),
+          status: reply.statusCode
+        })
+      })
+    })
+    app.addHook('onResponse', async (request, reply) => {
+      if (request.routeOptions.config.stream || isProbe(request.url)) return
+      metrics.httpRequests.inc({ ...labels(request), status: reply.statusCode })
+      metrics.httpRequestDuration.observe(
+        labels(request),
+        reply.elapsedTime / 1000
+      )
+    })
+
+    app.get('/metrics', async (_request, reply) =>
+      reply
+        .type(metrics.registry.contentType)
+        .send(await metrics.registry.metrics())
+    )
+  }
+
   return app
 }
+
+const isProbe = (url: string) =>
+  url.startsWith('/health/') || url === '/metrics'
 
 // A loop, not recursion: a deeply nested body would overflow the stack.
 function holdsNul(value: unknown): boolean {
