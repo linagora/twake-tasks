@@ -58,6 +58,44 @@ describe('board layouts', () => {
     expect(row.getByText('Urgent')).toBeVisible()
   })
 
+  it('sorts each section by a column, up, down, then back to its order', async () => {
+    const board = designBoard({ layout: 'list', defaultLayout: 'list' })
+    const [todo] = board.sections
+    board.tasks = [
+      aTask(todo ?? null, { key: 'DES-1', title: 'Logo', priority: 3 }),
+      aTask(todo ?? null, { key: 'DES-2', title: 'Banner', priority: 1 }),
+      aTask(todo ?? null, { key: 'DES-3', title: 'Flyer' })
+    ]
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+    const order = () =>
+      within(screen.getByRole('list', { name: 'To do' }))
+        .getAllByRole('listitem')
+        .map(row => row.getAttribute('aria-label'))
+
+    const priority = await screen.findByRole('button', {
+      name: 'Sort by Priority'
+    })
+    fireEvent.click(priority)
+    expect(order()).toEqual(['DES-2 Banner', 'DES-1 Logo', 'DES-3 Flyer'])
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Priority, sorted A to Z: sort Z to A'
+      })
+    )
+    // The tasks without a priority stay last.
+    expect(order()).toEqual(['DES-1 Logo', 'DES-2 Banner', 'DES-3 Flyer'])
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: "Priority, sorted Z to A: back to the board's order"
+      })
+    )
+    expect(order()).toEqual(['DES-1 Logo', 'DES-2 Banner', 'DES-3 Flyer'])
+    fireEvent.click(screen.getByRole('button', { name: 'Sort by Task' }))
+    expect(order()).toEqual(['DES-2 Banner', 'DES-3 Flyer', 'DES-1 Logo'])
+  })
+
   it('completes a task outside sections in place', async () => {
     const board = designBoard({ layout: 'list', defaultLayout: 'list' })
     Object.assign(board.tasks[0] ?? {}, { sectionId: null })

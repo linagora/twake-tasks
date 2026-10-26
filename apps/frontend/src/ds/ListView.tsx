@@ -1,5 +1,11 @@
 import { Bottom, Icon, Right } from '@linagora/twake-icons'
-import { Box, ButtonBase, Paper, Typography } from '@linagora/twake-mui'
+import {
+  Box,
+  ButtonBase,
+  Paper,
+  TableSortLabel,
+  Typography
+} from '@linagora/twake-mui'
 import type { HTMLAttributes, ReactElement, ReactNode, Ref } from 'react'
 
 import { FittingChips, type FittingChip } from '@/ds/FittingChips'
@@ -23,33 +29,63 @@ export function ListView({ children }: { children: ReactNode }): ReactElement {
   return <Box sx={{ container: 'list / inline-size' }}>{children}</Box>
 }
 
+export interface ListColumn {
+  name: string
+  /** Its order, `null` when the list is not sorted by it. */
+  sorted: 'asc' | 'desc' | null
+  /** What a click on it does, to read to those who cannot see the arrow. */
+  sortLabel: string
+  onSort: () => void
+}
+
+/**
+ * The names of the columns, each sorting the list on a click as in Twake
+ * Drive: its arrow shows on hover, and stays on the column sorted.
+ */
 export function ListHeader({
+  label,
   columns
 }: {
-  columns: [string, string, string, string, string]
+  label: string
+  columns: [ListColumn, ListColumn, ListColumn, ListColumn, ListColumn]
 }): ReactElement {
   return (
     <Box
-      aria-hidden
+      role="group"
+      aria-label={label}
       sx={{
-        ...rowGrid,
-        display: 'none',
-        [COLUMNS]: { ...columnGrid, display: 'grid' },
+        // Narrow, the facts go under the titles, and the sort a row of its own.
+        display: 'flex',
+        flexWrap: 'wrap',
+        columnGap: 2,
+        px: 1.5,
+        [COLUMNS]: { ...rowGrid, ...columnGrid },
         py: 1,
         mb: 1,
         borderBottom: 1,
         borderColor: 'divider'
       }}
     >
-      <span />
+      <Box
+        component="span"
+        sx={{ display: 'none', [COLUMNS]: { display: 'block' } }}
+      />
       {columns.map((column, index) => (
         <Typography
-          key={column}
+          key={column.name}
           variant="caption"
           color="textSecondary"
           sx={{ gridColumn: index === 0 ? 'span 2' : undefined }}
         >
-          {column}
+          <TableSortLabel
+            active={column.sorted !== null}
+            direction={column.sorted ?? 'asc'}
+            aria-label={column.sortLabel}
+            onClick={column.onSort}
+            sx={{ font: 'inherit', color: 'inherit' }}
+          >
+            {column.name}
+          </TableSortLabel>
         </Typography>
       ))}
     </Box>

@@ -505,7 +505,11 @@
     "due": "Hạn",
     "complete": "Hoàn thành %{title}",
     "today": "Hôm nay",
-    "nothingDue": "Không có việc nào đến hạn hôm đó."
+    "nothingDue": "Không có việc nào đến hạn hôm đó.",
+    "sortTitle": "Sắp xếp danh sách",
+    "sortBy": "Sắp xếp theo %{column}",
+    "sortedUp": "%{column}, sắp xếp từ A đến Z: sắp xếp từ Z đến A",
+    "sortedDown": "%{column}, sắp xếp từ Z đến A: trở lại thứ tự của bảng"
   },
   "search": {
     "label": "Tìm kiếm",

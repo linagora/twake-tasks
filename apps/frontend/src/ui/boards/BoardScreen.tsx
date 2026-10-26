@@ -677,7 +677,7 @@ function BoardColumns({
                 footer: addTask(column),
                 dropId: laneKey(column)
               }))}
-              row={task => listRow(task, true)}
+              row={(task, sorted) => listRow(task, !sorted)}
             />
           )}
         </BoardDrag>

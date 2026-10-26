@@ -505,7 +505,11 @@
     "due": "Fällig",
     "complete": "%{title} erledigen",
     "today": "Heute",
-    "nothingDue": "An diesem Tag ist nichts fällig."
+    "nothingDue": "An diesem Tag ist nichts fällig.",
+    "sortTitle": "Liste sortieren",
+    "sortBy": "Nach %{column} sortieren",
+    "sortedUp": "%{column}, von A bis Z sortiert: von Z bis A sortieren",
+    "sortedDown": "%{column}, von Z bis A sortiert: zur Reihenfolge des Boards zurück"
   },
   "search": {
     "label": "Suchen",

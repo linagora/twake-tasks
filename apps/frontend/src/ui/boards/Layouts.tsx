@@ -1,7 +1,7 @@
 import { Calendar, Icon, List, Mosaic } from '@linagora/twake-icons'
 import { ToggleButton, useMediaQuery, useTheme } from '@linagora/twake-mui'
 import dayjs from 'dayjs'
-import { useState, type ReactElement, type ReactNode } from 'react'
+import { useMemo, useState, type ReactElement, type ReactNode } from 'react'
 
 import '@/ds/dayjsLocales'
 
@@ -15,10 +15,21 @@ import {
   DayCell,
   MonthGrid
 } from '@/ds/Calendar'
-import { ListHeader, ListSection, ListView } from '@/ds/ListView'
+import {
+  ListHeader,
+  ListSection,
+  ListView,
+  type ListColumn
+} from '@/ds/ListView'
 import { DropListSection, SortableList } from '@/ds/Sortable'
 import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
 import { LAYOUTS, type Board, type Layout, type Task } from '@/domain/board'
+import {
+  nextSort,
+  sortTasks,
+  type TaskSort,
+  type TaskSortKey
+} from '@/domain/taskSort'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
 import { useSetLayout } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -88,9 +99,33 @@ export function ListLayout({
     /** Where its tasks are dropped, when the list can be reordered. */
     dropId?: string
   }[]
-  row: (task: Task) => ReactElement
+  /** `sorted`, the list is in the order of a column, which a drag would undo. */
+  row: (task: Task, sorted: boolean) => ReactElement
 }): ReactElement {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
+  const [sort, setSort] = useState<TaskSort | null>(null)
+  const collator = useMemo(
+    () => new Intl.Collator(lang, { sensitivity: 'base', numeric: true }),
+    [lang]
+  )
+  const header = (key: TaskSortKey, name: string): ListColumn => {
+    const sorted = sort?.key === key ? sort.order : null
+    return {
+      name,
+      sorted,
+      sortLabel: t(
+        sorted === 'asc'
+          ? 'layout.sortedUp'
+          : sorted === 'desc'
+            ? 'layout.sortedDown'
+            : 'layout.sortBy',
+        { column: name }
+      ),
+      onSort: () => {
+        setSort(current => nextSort(current, key))
+      }
+    }
+  }
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   const toggle = (key: string) => {
     setCollapsed(keys => {
@@ -103,18 +138,22 @@ export function ListLayout({
   return (
     <ListView>
       <ListHeader
+        label={t('layout.sortTitle')}
         columns={[
-          t('layout.task'),
-          t('task.assignees'),
-          t('layout.due'),
-          t('task.priority'),
-          t('task.labels')
+          header('title', t('layout.task')),
+          header('assignees', t('task.assignees')),
+          header('due', t('layout.due')),
+          header('priority', t('task.priority')),
+          header('labels', t('task.labels'))
         ]}
       />
       {columns.map(column => {
+        const tasks = sort
+          ? sortTasks(column.tasks, sort, collator)
+          : column.tasks
         const section = {
           label: column.name,
-          count: column.tasks.length,
+          count: tasks.length,
           expanded: !collapsed.has(column.key),
           onToggle: () => {
             toggle(column.key)
@@ -122,14 +161,14 @@ export function ListLayout({
           footer: column.footer
         }
         // A folded section still takes the tasks dropped on its title.
-        return column.dropId === undefined ? (
+        return column.dropId === undefined || sort ? (
           <ListSection key={column.key} {...section}>
-            {column.tasks.map(task => row(task))}
+            {tasks.map(task => row(task, sort !== null))}
           </ListSection>
         ) : (
           <DropListSection key={column.key} id={column.dropId} {...section}>
-            <SortableList ids={column.tasks.map(task => task.id)}>
-              {column.tasks.map(task => row(task))}
+            <SortableList ids={tasks.map(task => task.id)}>
+              {tasks.map(task => row(task, false))}
             </SortableList>
           </DropListSection>
         )

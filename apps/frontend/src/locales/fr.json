@@ -505,7 +505,11 @@
     "due": "Échéance",
     "complete": "Terminer %{title}",
     "today": "Aujourd’hui",
-    "nothingDue": "Rien à rendre ce jour-là."
+    "nothingDue": "Rien à rendre ce jour-là.",
+    "sortTitle": "Trier la liste",
+    "sortBy": "Trier par %{column}",
+    "sortedUp": "%{column}, trié de A à Z : trier de Z à A",
+    "sortedDown": "%{column}, trié de Z à A : revenir à l'ordre du board"
   },
   "search": {
     "label": "Rechercher",
