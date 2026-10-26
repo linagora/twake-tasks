@@ -4,6 +4,7 @@ import {
   Dots,
   FolderMoveto,
   Icon,
+  Palette,
   Pen,
   Restore,
   Stack,
@@ -27,6 +28,7 @@ import type { Shelf } from '@/application/boards'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { Toast } from '@/ds/Toast'
 import type { Board } from '@/domain/board'
+import { BackgroundDialog } from '@/ui/boards/Backgrounds'
 import { useSetBoardArchived, useSetLayout } from '@/ui/boards/queries'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -46,8 +48,11 @@ export function BoardMenu({
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   // The editor and the dialog open once the menu is gone, which gives the focus
   // back to its button first: the editor would lose the focus and close at once
-  const [next, setNext] = useState<'rename' | 'archive' | null>(null)
+  const [next, setNext] = useState<'rename' | 'archive' | 'background' | null>(
+    null
+  )
   const [confirming, setConfirming] = useState(false)
+  const [choosing, setChoosing] = useState(false)
   const [archivedNotice, setArchivedNotice] = useState(false)
   const setLayout = useSetLayout(board.id)
   const archive = useSetBoardArchived()
@@ -91,6 +96,7 @@ export function BoardMenu({
               setNext(null)
               if (next === 'rename') onRename?.()
               if (next === 'archive') setConfirming(true)
+              if (next === 'background') setChoosing(true)
             }
           }
         }}
@@ -109,13 +115,18 @@ export function BoardMenu({
         {item(Trash, t('archive.trash'), () => {
           onOpenShelf('trash')
         })}
-        {admin && !board.inbox && <Divider />}
+        {admin && <Divider />}
         {admin &&
           !board.archived &&
           !board.inbox &&
           onRename &&
           item(Pen, t('board.rename'), () => {
             setNext('rename')
+          })}
+        {admin &&
+          !board.archived &&
+          item(Palette, t('background.change'), () => {
+            setNext('background')
           })}
         {onMove && item(FolderMoveto, t('moveBoard.action'), onMove)}
         {admin &&
@@ -133,6 +144,14 @@ export function BoardMenu({
             }
           )}
       </Menu>
+      {choosing && (
+        <BackgroundDialog
+          board={board}
+          onClose={() => {
+            setChoosing(false)
+          }}
+        />
+      )}
       {confirming && (
         <ArchiveBoardDialog
           name={board.name}
@@ -178,7 +197,7 @@ export function BoardMenu({
   )
 }
 
-function ArchiveBoardDialog({
+export function ArchiveBoardDialog({
   name,
   onCancel,
   onArchive

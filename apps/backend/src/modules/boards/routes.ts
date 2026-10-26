@@ -5,6 +5,11 @@ import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
 import { createArchiveStore } from './archive.ts'
+import {
+  BACKGROUND_TYPES,
+  createBackgroundStore,
+  MAX_BACKGROUND_BYTES
+} from './backgrounds.ts'
 import { createCommentStore } from './comments.ts'
 import { createFilterStore } from './filters.ts'
 import { historyOf } from './history.ts'
@@ -13,6 +18,7 @@ import { createLayoutStore } from './layouts.ts'
 import { createSharingStore } from './sharing.ts'
 import { createReminderStore } from './reminders.ts'
 import {
+  BACKGROUNDS,
   durationUnit,
   LAYOUTS,
   memberRole,
@@ -73,6 +79,15 @@ function isTimeZone(zone: string): boolean {
 }
 
 const layoutChoice = z.object({ layout: z.enum(LAYOUTS) })
+
+const backgroundChoice = z.strictObject({
+  background: z.enum(BACKGROUNDS).exclude(['custom']).nullable()
+})
+
+const backgroundImageParams = z.object({
+  boardId: z.uuid(),
+  imageId: z.uuid()
+})
 
 const role = z.enum(memberRole.enumValues)
 
@@ -306,6 +321,7 @@ export function registerBoards(
   const reminderStore = createReminderStore(deps.db, deps.pendingReminders)
   const filterStore = createFilterStore(deps.db)
   const layoutStore = createLayoutStore(deps.db)
+  const backgroundStore = createBackgroundStore(deps.db)
   const sharingStore = createSharingStore(deps.db)
   const archiveStore = createArchiveStore(deps.db)
   const transferStore = createTransferStore(deps.db)
@@ -994,6 +1010,91 @@ export function registerBoards(
       }
     )
   }
+
+  app.put(
+    '/boards/:boardId/background',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = boardParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = backgroundChoice.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await backgroundStore.setBackground(
+        identity,
+        params.data.boardId,
+        body.data.background
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  // The picture comes as is, its type in the content type.
+  void app.register((scope, _options, done) => {
+    scope.addContentTypeParser(
+      BACKGROUND_TYPES,
+      { parseAs: 'buffer', bodyLimit: MAX_BACKGROUND_BYTES },
+      (_request, body, done) => {
+        done(null, body)
+      }
+    )
+    scope.put(
+      '/boards/:boardId/background/image',
+      { preHandler: deps.requireIdentity, bodyLimit: MAX_BACKGROUND_BYTES },
+      async (request, reply) => {
+        const identity = request.identity
+        if (!identity) return reply.code(401).send()
+        const params = boardParams.safeParse(request.params)
+        if (!params.success) {
+          return reply.code(404).send({ error: 'not_found' })
+        }
+        const contentType = request.headers['content-type'] ?? ''
+        if (
+          !BACKGROUND_TYPES.includes(contentType) ||
+          !Buffer.isBuffer(request.body) ||
+          request.body.length === 0
+        ) {
+          return reply.code(400).send({ error: 'invalid_request' })
+        }
+        const result = await backgroundStore.setBackgroundImage(
+          identity,
+          params.data.boardId,
+          contentType,
+          request.body
+        )
+        if (!result.ok) return refuse(reply, result.error)
+        return reply.code(201).send(result.value)
+      }
+    )
+    done()
+  })
+
+  // Each picture has its own id, so it never changes once fetched.
+  app.get(
+    '/boards/:boardId/background/:imageId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = backgroundImageParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const image = await backgroundStore.backgroundImage(
+        identity,
+        params.data.boardId,
+        params.data.imageId
+      )
+      if (!image) return reply.code(404).send({ error: 'not_found' })
+      return reply
+        .header('cache-control', 'private, max-age=31536000, immutable')
+        .header('x-content-type-options', 'nosniff')
+        .type(image.contentType)
+        .send(image.content)
+    }
+  )
 
   app.post(
     '/boards/:boardId/tasks',

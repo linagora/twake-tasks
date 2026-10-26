@@ -65,11 +65,9 @@
     "emptyArchivedHint": "Le bacheche che archivi restano qui, in sola lettura.",
     "loadFailed": "Impossibile caricare le bacheche.",
     "projectNotFound": "Questo progetto non esiste, oppure non puoi aprirlo.",
-    "star": "Aggiungi %{name} ai preferiti",
-    "unstar": "Rimuovi %{name} dai preferiti",
-    "personal": "Bacheca personale",
-    "space": "Bacheca di spazio",
-    "projectBoard": "Bacheca di progetto",
+    "menu": "Opzioni per %{name}",
+    "addFavorite": "Aggiungi ai preferiti",
+    "removeFavorite": "Rimuovi dai preferiti",
     "personalProject": "Personale",
     "defaultChip": "Predefinito",
     "defaultHint": "Le nuove attività vengono create qui per impostazione predefinita. Questa bacheca non può essere condivisa.",
@@ -152,6 +150,7 @@
     "addFailed": "Impossibile aggiungere l’attività.",
     "rename": "Rinomina bacheca",
     "renameName": "Nome della bacheca",
+    "renameSave": "Rinomina",
     "renameFailed": "Impossibile rinominare la bacheca."
   },
   "task": {
@@ -506,6 +505,26 @@
     "complete": "Completa %{title}",
     "today": "Oggi",
     "nothingDue": "Nessuna scadenza in questo giorno."
+  },
+  "background": {
+    "change": "Cambia sfondo",
+    "title": "Sfondo della bacheca",
+    "choices": "Sfondi",
+    "none": "Nessuno sfondo",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple"
+    },
+    "mine": "La mia immagine",
+    "import": "Dal mio computer",
+    "failed": "Impossibile cambiare lo sfondo.",
+    "close": "Chiudi"
   },
   "search": {
     "label": "Cerca",

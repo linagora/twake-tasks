@@ -1,16 +1,18 @@
 import {
-  Avatar,
   Box,
   Card,
   CardActionArea,
   Chip,
-  nameToColor,
   Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
+import { backdropOf } from '@/ds/Pictures'
+
 const CARD_RADIUS = '20px'
+
+const SHADOW = 'rgb(0 0 0 / 0.55)'
 
 export function CardGrid({
   label,
@@ -37,36 +39,37 @@ export function CardGrid({
   )
 }
 
-// `title` is a link that stretches over the whole card; `action` sits above
+// `title` is a link that stretches over the whole card; `menu` sits above
 // that stretch so it keeps its own click.
 export function BoardCard({
   label,
-  badge,
-  badgeLabel,
   title,
   flag,
   chip,
-  tag,
   meta,
   members,
-  action,
-  footerAction
+  menu,
+  footerAction,
+  cover,
+  lightCover = false
 }: {
   label: string
-  badge: string
-  badgeLabel: string
   title: ReactNode
   /** A short word next to the title, such as "New". */
   flag?: string | undefined
   /** Where the board belongs, when that tells something: personal, a space. */
   chip?: ReactNode
-  tag: string
   meta: string
   /** The people of the board, at the end of its last row. */
   members?: ReactNode
-  action?: ReactNode
+  /** Shown on hover or focus; touch screens always show it. */
+  menu?: ReactNode
   /** On the last row, before the people. */
   footerAction?: ReactNode
+  /** The picture along the top, with the name on it. */
+  cover: string
+  /** A pale `cover`, on which the name is dark. */
+  lightCover?: boolean
 }): ReactElement {
   return (
     <Card
@@ -88,20 +91,40 @@ export function BoardCard({
           outlineColor: 'primary.main',
           outlineOffset: -2
         },
-        '& a:focus-visible': { outline: 'none' }
+        '& a:focus-visible': { outline: 'none' },
+        '& [data-card-menu]': { opacity: 0, transition: 'opacity 120ms' },
+        '&:hover [data-card-menu], &:focus-within [data-card-menu], & [data-card-menu]:has([aria-expanded="true"])':
+          { opacity: 1 },
+        '@media (hover: none)': { '& [data-card-menu]': { opacity: 1 } }
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar
-          variant="rounded"
-          size={40}
-          color={nameToColor(label) ?? 'sunrise'}
-          role="img"
-          aria-label={badgeLabel}
-          sx={{ borderRadius: 2, fontWeight: 600 }}
-        >
-          {badge}
-        </Avatar>
+      <Box
+        data-testid="board-cover"
+        sx={{
+          ...backdropOf(cover),
+          // The picture keeps its colours: a grey shadow around the white name
+          // and menu keeps them readable on a dark one, a pale one takes them
+          // dark.
+          ...(lightCover
+            ? { color: 'grey.900' }
+            : {
+                color: 'common.white',
+                textShadow: `0 0 2px ${SHADOW}, 0 1px 6px ${SHADOW}`,
+                '& svg': { filter: `drop-shadow(0 0 2px ${SHADOW})` }
+              }),
+          minHeight: 88,
+          mt: -1.5,
+          mx: -1.5,
+          p: 1.5,
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 1.5,
+          borderTopLeftRadius: CARD_RADIUS,
+          borderTopRightRadius: CARD_RADIUS,
+          '&& a': { color: 'inherit' },
+          '&& .MuiIconButton-root': { color: 'inherit' }
+        }}
+      >
         <Tooltip title={label} placement="top-start">
           <Typography
             variant="h6"
@@ -110,6 +133,7 @@ export function BoardCard({
               flex: '1 1 auto',
               minWidth: 0,
               lineHeight: 1.3,
+              textTransform: 'uppercase',
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
@@ -128,24 +152,16 @@ export function BoardCard({
             sx={{ flexShrink: 0, height: 20, fontWeight: 600 }}
           />
         )}
-        {action && (
-          <Box sx={{ position: 'relative', zIndex: 1, m: -0.5 }}>{action}</Box>
+        {menu && (
+          <Box
+            data-card-menu=""
+            sx={{ position: 'relative', zIndex: 1, m: -0.5 }}
+          >
+            {menu}
+          </Box>
         )}
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography
-          variant="caption"
-          sx={{
-            px: 0.75,
-            borderRadius: 1,
-            fontWeight: 600,
-            letterSpacing: '0.04em',
-            color: 'text.secondary',
-            bgcolor: 'action.hover'
-          }}
-        >
-          {tag}
-        </Typography>
         <Typography variant="caption" color="textSecondary" noWrap>
           {meta}
         </Typography>

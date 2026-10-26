@@ -37,6 +37,8 @@ function board(
     sharedBy: null,
     members: [],
     memberCount: 0,
+    background: null,
+    backgroundImage: null,
     ...overrides
   }
 }

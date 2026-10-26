@@ -65,11 +65,9 @@
     "emptyArchivedHint": "Archivierte Boards bleiben hier, schreibgeschützt.",
     "loadFailed": "Die Boards konnten nicht geladen werden.",
     "projectNotFound": "Dieses Projekt existiert nicht, oder Sie können es nicht öffnen.",
-    "star": "%{name} zu den Favoriten hinzufügen",
-    "unstar": "%{name} aus den Favoriten entfernen",
-    "personal": "Persönliches Board",
-    "space": "Space-Board",
-    "projectBoard": "Projekt-Board",
+    "menu": "Optionen für %{name}",
+    "addFavorite": "Zu Favoriten hinzufügen",
+    "removeFavorite": "Aus Favoriten entfernen",
     "personalProject": "Persönlich",
     "defaultChip": "Standard",
     "defaultHint": "Neue Aufgaben werden standardmäßig hier erstellt. Dieses Board kann nicht geteilt werden.",
@@ -152,6 +150,7 @@
     "addFailed": "Die Aufgabe konnte nicht hinzugefügt werden.",
     "rename": "Board umbenennen",
     "renameName": "Board-Name",
+    "renameSave": "Umbenennen",
     "renameFailed": "Das Board konnte nicht umbenannt werden."
   },
   "task": {
@@ -506,6 +505,26 @@
     "complete": "%{title} erledigen",
     "today": "Heute",
     "nothingDue": "An diesem Tag ist nichts fällig."
+  },
+  "background": {
+    "change": "Hintergrund ändern",
+    "title": "Hintergrund des Boards",
+    "choices": "Hintergründe",
+    "none": "Kein Hintergrund",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple"
+    },
+    "mine": "Mein Bild",
+    "import": "Von meinem Computer",
+    "failed": "Der Hintergrund konnte nicht geändert werden.",
+    "close": "Schließen"
   },
   "search": {
     "label": "Suchen",

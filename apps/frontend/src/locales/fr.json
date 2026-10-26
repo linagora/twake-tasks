@@ -65,11 +65,9 @@
     "emptyArchivedHint": "Les tableaux archivés restent ici, en lecture seule.",
     "loadFailed": "Les tableaux n'ont pas pu être chargés.",
     "projectNotFound": "Ce projet n'existe pas, ou vous ne pouvez pas l'ouvrir.",
-    "star": "Ajouter %{name} aux favoris",
-    "unstar": "Retirer %{name} des favoris",
-    "personal": "Tableau personnel",
-    "space": "Tableau d'espace",
-    "projectBoard": "Tableau de projet",
+    "menu": "Options de %{name}",
+    "addFavorite": "Ajouter aux favoris",
+    "removeFavorite": "Retirer des favoris",
     "personalProject": "Personnel",
     "defaultChip": "Par défaut",
     "defaultHint": "Les nouvelles tâches sont créées ici par défaut. Ce tableau ne peut pas être partagé.",
@@ -152,6 +150,7 @@
     "addFailed": "La tâche n'a pas pu être ajoutée.",
     "rename": "Renommer le tableau",
     "renameName": "Nom du tableau",
+    "renameSave": "Renommer",
     "renameFailed": "Le tableau n'a pas pu être renommé."
   },
   "task": {
@@ -506,6 +505,26 @@
     "complete": "Terminer %{title}",
     "today": "Aujourd’hui",
     "nothingDue": "Rien à rendre ce jour-là."
+  },
+  "background": {
+    "change": "Changer le fond d’écran",
+    "title": "Fond d’écran du tableau",
+    "choices": "Fonds d’écran",
+    "none": "Pas de fond d'écran",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple"
+    },
+    "mine": "Mon image",
+    "import": "Depuis mon ordinateur",
+    "failed": "Le fond d’écran n’a pas pu être changé.",
+    "close": "Fermer"
   },
   "search": {
     "label": "Rechercher",

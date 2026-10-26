@@ -221,6 +221,37 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       call('PUT', route`/boards/${boardId}/layout`, { layout }),
     setDefaultLayout: (boardId, layout) =>
       call('PUT', route`/boards/${boardId}/default-layout`, { layout }),
+    setBackground: (boardId, background) =>
+      call('PUT', route`/boards/${boardId}/background`, { background }),
+    setBackgroundImage: async (boardId, image) => {
+      const response = await send(
+        new Request(
+          new URL(`/api${route`/boards/${boardId}/background/image`}`, baseUrl),
+          {
+            method: 'PUT',
+            headers: { 'content-type': image.type },
+            body: image
+          }
+        )
+      )
+      if (!response.ok) {
+        throw new ApiError(response.status, await errorCode(response))
+      }
+    },
+    backgroundImage: async (boardId, imageId) => {
+      const response = await send(
+        new Request(
+          new URL(
+            `/api${route`/boards/${boardId}/background/${imageId}`}`,
+            baseUrl
+          )
+        )
+      )
+      if (!response.ok) {
+        throw new ApiError(response.status, await errorCode(response))
+      }
+      return response.blob()
+    },
     setFavorite: (boardId, favorite) =>
       call(favorite ? 'PUT' : 'DELETE', route`/boards/${boardId}/favorite`),
     createTask: (boardId, task) =>

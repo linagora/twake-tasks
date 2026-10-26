@@ -33,6 +33,7 @@ import {
 import { shown } from './archive.ts'
 import {
   sections,
+  boardBackgroundImages,
   boardFavorites,
   boardLayouts,
   boards,
@@ -238,6 +239,8 @@ export function createBoardStore(db: Db) {
             keyPrefix: boards.keyPrefix,
             project: projectSummary,
             inbox: boards.inbox,
+            background: boards.background,
+            backgroundImage: boardBackgroundImages.id,
             role: accessible.role,
             joinedAt: accessible.joinedAt,
             sharedBy: sql<{ name: string | null; email: string } | null>`
@@ -281,6 +284,10 @@ export function createBoardStore(db: Db) {
           .from(boards)
           .innerJoin(accessible, eq(accessible.boardId, boards.id))
           .innerJoin(projects, eq(projects.id, boards.projectId))
+          .leftJoin(
+            boardBackgroundImages,
+            eq(boardBackgroundImages.boardId, boards.id)
+          )
           .leftJoin(
             inviter,
             and(
@@ -513,6 +520,10 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
   const members = await membersOf(tx, board)
   const invited = role === 'admin' ? await invitedTo(tx, board.projectId) : []
   const boardLabels = await labelsOn(tx, board)
+  const [image] = await tx
+    .select({ id: boardBackgroundImages.id })
+    .from(boardBackgroundImages)
+    .where(eq(boardBackgroundImages.boardId, boardId))
   const [picked] = await tx
     .select({ layout: boardLayouts.layout })
     .from(boardLayouts)
@@ -527,6 +538,8 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     keyPrefix: board.keyPrefix,
     project,
     inbox: board.inbox,
+    background: board.background,
+    backgroundImage: image?.id ?? null,
     archived: board.archivedAt !== null,
     version: board.version,
     role,
