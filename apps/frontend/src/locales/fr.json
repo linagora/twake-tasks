@@ -509,7 +509,8 @@
     "sortTitle": "Trier la liste",
     "sortBy": "Trier par %{column}",
     "sortedUp": "%{column}, trié de A à Z : trier de Z à A",
-    "sortedDown": "%{column}, trié de Z à A : revenir à l'ordre du board"
+    "sortedDown": "%{column}, trié de Z à A : revenir à l'ordre du board",
+    "editCell": "Modifier %{column} de %{key}"
   },
   "search": {
     "label": "Rechercher",

@@ -96,6 +96,83 @@ describe('board layouts', () => {
     expect(order()).toEqual(['DES-2 Banner', 'DES-3 Flyer', 'DES-1 Logo'])
   })
 
+  it("changes a priority from its cell, with the panel's choices", async () => {
+    const board = designBoard({ layout: 'list', defaultLayout: 'list' })
+    Object.assign(board.tasks[0] ?? {}, { priority: 3 })
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Change Priority of DES-1' })
+    )
+    const menu = within(await screen.findByRole('menu', { name: 'Priority' }))
+    expect(
+      menu.getAllByRole('menuitem').map(item => item.getAttribute('aria-label'))
+    ).toEqual(['None', 'Priority 1', 'Priority 2', 'Priority 3', 'Priority 4'])
+    fireEvent.click(menu.getByRole('menuitem', { name: 'Priority 2' }))
+
+    await waitFor(() => {
+      expect(boardsApi.editTask).toHaveBeenCalledWith(
+        board.id,
+        board.tasks[0]?.id,
+        { priority: 2 }
+      )
+    })
+    expect(
+      within(
+        await screen.findByRole('listitem', { name: 'DES-1 Logo' })
+      ).getByLabelText('Priority 2')
+    ).toBeVisible()
+  })
+
+  it("opens the panel's pickers from the other cells", async () => {
+    const board = designBoard({ layout: 'list', defaultLayout: 'list' })
+    const ann = { userId: 'ann', email: 'ann@example.com', name: 'Ann Lee' }
+    board.members = [ann]
+    Object.assign(board.tasks[0] ?? {}, {
+      assignees: [ann],
+      labels: [{ id: 'urgent', name: 'Urgent', color: null }]
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Change Assignees of DES-1' })
+    )
+    expect(
+      await screen.findByRole('dialog', { name: 'Assign DES-1' })
+    ).toBeVisible()
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: 'Escape'
+    })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Change Labels of DES-1' })
+    )
+    expect(
+      await screen.findByRole('dialog', { name: 'Labels of DES-1' })
+    ).toBeVisible()
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: 'Escape'
+    })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Change Due of DES-1' })
+    )
+    expect(await screen.findByRole('dialog', { name: 'Dates' })).toBeVisible()
+  })
+
+  it('leaves the cells as they are to a viewer', async () => {
+    const board = designBoard({
+      layout: 'list',
+      defaultLayout: 'list',
+      role: 'viewer'
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    await screen.findByRole('listitem', { name: 'DES-1 Logo' })
+    expect(screen.queryByRole('button', { name: /^Change / })).toBeNull()
+  })
+
   it('completes a task outside sections in place', async () => {
     const board = designBoard({ layout: 'list', defaultLayout: 'list' })
     Object.assign(board.tasks[0] ?? {}, { sectionId: null })

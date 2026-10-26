@@ -509,7 +509,8 @@
     "sortTitle": "Ordenar la lista",
     "sortBy": "Ordenar por %{column}",
     "sortedUp": "%{column}, ordenado de la A a la Z: ordenar de la Z a la A",
-    "sortedDown": "%{column}, ordenado de la Z a la A: volver al orden del tablero"
+    "sortedDown": "%{column}, ordenado de la Z a la A: volver al orden del tablero",
+    "editCell": "Cambiar %{column} de %{key}"
   },
   "search": {
     "label": "Buscar",

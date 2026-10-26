@@ -509,7 +509,8 @@
     "sortTitle": "Sắp xếp danh sách",
     "sortBy": "Sắp xếp theo %{column}",
     "sortedUp": "%{column}, sắp xếp từ A đến Z: sắp xếp từ Z đến A",
-    "sortedDown": "%{column}, sắp xếp từ Z đến A: trở lại thứ tự của bảng"
+    "sortedDown": "%{column}, sắp xếp từ Z đến A: trở lại thứ tự của bảng",
+    "editCell": "Thay đổi %{column} của %{key}"
   },
   "search": {
     "label": "Tìm kiếm",

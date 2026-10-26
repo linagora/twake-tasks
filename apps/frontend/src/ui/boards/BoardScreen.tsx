@@ -358,8 +358,12 @@ function BoardColumns({
       key={task.id}
       sortable={sortable}
       task={task}
+      tasks={board.tasks}
       boardId={board.id}
       sections={board.sections}
+      members={board.members}
+      labels={board.labels}
+      shareable={shareable}
       editable={editable}
     />
   )

@@ -20,7 +20,7 @@ import {
   PropertySelect,
   TitleInput
 } from '@/ds/SidePanel'
-import { isShareable, type Board, type Task } from '@/domain/board'
+import { isShareable, PRIORITIES, type Board, type Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
 import { useProjectName } from '@/ui/boards/BoardsScreen'
@@ -32,8 +32,6 @@ import { Reminders } from '@/ui/boards/Reminders'
 import { PriorityChip } from '@/ui/boards/TaskFacts'
 import { EMBED_PREFIX } from '@/ui/embed/twakeSpace'
 import { useI18n } from '@/ui/i18n/useI18n'
-
-const PRIORITIES = [1, 2, 3, 4] as const
 
 export function TaskProperties({
   task,

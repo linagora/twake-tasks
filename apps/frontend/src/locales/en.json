@@ -509,7 +509,8 @@
     "sortTitle": "Sort the list",
     "sortBy": "Sort by %{column}",
     "sortedUp": "%{column}, sorted A to Z: sort Z to A",
-    "sortedDown": "%{column}, sorted Z to A: back to the board's order"
+    "sortedDown": "%{column}, sorted Z to A: back to the board's order",
+    "editCell": "Change %{column} of %{key}"
   },
   "search": {
     "label": "Search",

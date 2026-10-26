@@ -509,7 +509,8 @@
     "sortTitle": "Ordina l'elenco",
     "sortBy": "Ordina per %{column}",
     "sortedUp": "%{column}, ordinato dalla A alla Z: ordina dalla Z alla A",
-    "sortedDown": "%{column}, ordinato dalla Z alla A: torna all'ordine della bacheca"
+    "sortedDown": "%{column}, ordinato dalla Z alla A: torna all'ordine della bacheca",
+    "editCell": "Modifica %{column} di %{key}"
   },
   "search": {
     "label": "Cerca",

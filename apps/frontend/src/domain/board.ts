@@ -6,6 +6,8 @@ export type SectionCategory =
 
 export type Priority = 1 | 2 | 3 | 4
 
+export const PRIORITIES: readonly Priority[] = [1, 2, 3, 4]
+
 /**
  * A project holds boards and gives them their members, labels and key
  * prefixes. A personal project is never shared; a managed one takes its

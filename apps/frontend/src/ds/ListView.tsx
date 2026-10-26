@@ -169,6 +169,7 @@ export function ListRow({
   priority,
   labels,
   moreLabels,
+  edits = {},
   ref,
   drag = 'none',
   highlighted = false,
@@ -184,6 +185,8 @@ export function ListRow({
   priority: ReactNode
   labels: FittingChip[]
   moreLabels: (count: number, names: string) => string
+  /** The cells a click edits, each with its own picker. */
+  edits?: Partial<Record<EditableCell, CellEdit>> | undefined
   ref?: Ref<HTMLElement>
   /** `placeholder` is the slot a dragged row leaves, faded as in Twake Drive. */
   drag?: 'none' | 'placeholder'
@@ -232,7 +235,10 @@ export function ListRow({
           inset: 0
         },
         '& .ListRow-title button:focus-visible': { outline: 'none' },
-        '& .ListRow-check': { position: 'relative', zIndex: 1 }
+        '& .ListRow-check, & .ListCell-button': {
+          position: 'relative',
+          zIndex: 1
+        }
       })}
     >
       <Box
@@ -266,12 +272,20 @@ export function ListRow({
           [COLUMNS]: { display: 'contents' }
         }}
       >
-        <Cell>{people}</Cell>
-        <Cell>{due}</Cell>
-        <Cell>{priority}</Cell>
-        <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
-          {labels.length > 0 && (
-            <FittingChips chips={labels} moreLabel={moreLabels} />
+        <Cell edit={edits.people}>{people}</Cell>
+        <Cell edit={edits.due}>{due}</Cell>
+        <Cell edit={edits.priority}>{priority}</Cell>
+        <Box sx={{ flex: '1 1 0', minWidth: 0, display: 'flex' }}>
+          {edits.labels ? (
+            <CellButton {...edits.labels} empty={labels.length === 0}>
+              {labels.length > 0 && (
+                <FittingChips chips={labels} moreLabel={moreLabels} />
+              )}
+            </CellButton>
+          ) : (
+            labels.length > 0 && (
+              <FittingChips chips={labels} moreLabel={moreLabels} />
+            )
           )}
         </Box>
       </Box>
@@ -279,19 +293,82 @@ export function ListRow({
   )
 }
 
-function Cell({ children }: { children: ReactNode }): ReactElement {
+function Cell({
+  edit,
+  children
+}: {
+  edit: CellEdit | undefined
+  children: ReactNode
+}): ReactElement {
   return (
     <Box
       sx={{
         display: 'flex',
         alignItems: 'center',
         gap: 0.5,
-        '&:empty': { display: 'none' },
-        [COLUMNS]: { '&:empty': { display: 'flex' } }
+        // Under the title, a cell with nothing to show leaves no gap.
+        '&:empty, &:has(> .ListCell-empty)': { display: 'none' },
+        [COLUMNS]: {
+          '&:empty, &:has(> .ListCell-empty)': { display: 'flex' }
+        }
       }}
     >
-      {children}
+      {edit ? (
+        <CellButton {...edit} empty={!hasContent(children)}>
+          {children}
+        </CellButton>
+      ) : (
+        children
+      )}
     </Box>
+  )
+}
+
+const hasContent = (node: ReactNode): boolean =>
+  node !== null && node !== undefined && node !== false && node !== ''
+
+export type EditableCell = 'people' | 'due' | 'priority' | 'labels'
+
+export interface CellEdit {
+  label: string
+  onClick: (anchor: HTMLElement) => void
+}
+
+/**
+ * A cell that edits what it shows on a click, above the row's own link,
+ * which opens the task from anywhere else.
+ */
+function CellButton({
+  label,
+  empty,
+  onClick,
+  children
+}: CellEdit & { empty: boolean; children: ReactNode }): ReactElement {
+  return (
+    <ButtonBase
+      aria-label={label}
+      aria-haspopup="dialog"
+      className={empty ? 'ListCell-button ListCell-empty' : 'ListCell-button'}
+      onClick={event => {
+        onClick(event.currentTarget)
+      }}
+      sx={theme => ({
+        flex: '1 1 auto',
+        minWidth: 0,
+        minHeight: 32,
+        justifyContent: 'flex-start',
+        gap: 0.5,
+        mx: -0.5,
+        px: 0.5,
+        borderRadius: 1,
+        '&:hover': { bgcolor: 'action.selected' },
+        '&:focus-visible': {
+          outline: `2px solid ${theme.vars.palette.primary.main}`
+        }
+      })}
+    >
+      {children}
+    </ButtonBase>
   )
 }
 
