@@ -61,9 +61,31 @@ All on the `space` exchange. An event dated more than a day ahead is rejected, s
 
 ## Published
 
-- `twake.space.sync.requested` on `space`, at start, in space mode, while no space is known yet.
-- `com.twake.tasks.space.provisioned.v1` on `activity`, once a space has its project. A CloudEvent whose data holds the space id and the project (`{ kind: 'project', id }`), which tells TwakeSpace the project to show for the space.
-- `com.twake.tasks.task.commented.v1` on `activity`, once per project member a comment mentions (`@email`), other than its author. Its data holds the task as `object`, and `recipients: [{ uuid, email, reason: 'mentioned' }]` for that member. It carries no comment text. A comment that mentions no one publishes nothing.
+`twake.space.sync.requested` goes on `space`, at start, in space mode, while no space is known yet. It is sent directly, with `{ timestamp }` as its body.
+
+Every other event is a CloudEvent on `activity`, routed by its type. It is written to the outbox in the transaction of the change, and the relay publishes it once committed, in order. The relay checks each event against its schema in [`published.ts`](../apps/backend/src/events/published.ts) first: an event that does not match is logged as an error, with its type and the paths that failed, and dropped, so it does not hold back the events after it. A field the schema does not list is published as is, and consumers should ignore the fields they do not know. During a rolling upgrade, a replica on the previous release may relay the outbox, so it also publishes, unchecked, a type it does not know and a value its schema does not list.
+
+- `com.twake.tasks.space.provisioned.v1`, once a space has its project, which tells TwakeSpace the project to show for the space. It carries the space's organization as `twakeorg`. Data: `{ space_id, resource: { kind: 'project', id } }`.
+
+Task events carry the CloudEvent fields `twakeorg` (absent for a B2C task), and `twakeactorid` and `twakeactor` (the uuid and email of the person who made the change, absent when the change has none). Their data holds the task as `object`: `{ type: 'task', id, key, title, board: { id, name }, container: { kind: 'project', id } }`, plus the fields listed below.
+
+- `com.twake.tasks.task.created.v1`: no other field.
+- `com.twake.tasks.task.updated.v1`, once per changed field: `changes: { <field>: { from, to } }`. A field is one of:
+  - `title`: text.
+  - `priority`: 1 to 4, or null.
+  - `dueDate`: `YYYY-MM-DD`, followed by ` HH:mm` and the time zone when set, or null.
+  - `deadline`: `YYYY-MM-DD`, or null.
+  - `duration`: `{ amount, unit: 'minutes' | 'days' }`, or null.
+  - `recurrence`: `{ every, unit: 'days' | 'weeks' | 'months' | 'years', fromCompletion }`, or null.
+  - `completion`: from `'completed'` or null to `'canceled'`, when a task is canceled.
+  - `description`: always null to null. The text is not published.
+  - `labels`: the id of the label added (`to`) or removed (`from`).
+- `com.twake.tasks.task.completed.v1` and `com.twake.tasks.task.reopened.v1`: no other field.
+- `com.twake.tasks.task.assigned.v1`: `assignee: { id }`, and `recipients: [{ uuid, email, reason: 'assigned' }]` when the assignee is a member of the task's project.
+- `com.twake.tasks.task.unassigned.v1`: `assignee: { id }`.
+- `com.twake.tasks.task.moved.v1`, when a task changes section or board: `changes: { section: { from, to }, board?: { from, to } }`, with ids. A section is null for a task outside sections, and `board` is there only when the board changed.
+- `com.twake.tasks.task.deleted.v1` and `com.twake.tasks.task.restored.v1`, when a task goes to the trash and comes back from it: no other field. Archiving is not published.
+- `com.twake.tasks.task.commented.v1`, once per project member a comment mentions (`@email`), other than its author: `recipients: [{ uuid, email, reason: 'mentioned' }]` for that member. It carries no comment text. A comment that mentions no one publishes nothing.
 
 ## Live updates
 

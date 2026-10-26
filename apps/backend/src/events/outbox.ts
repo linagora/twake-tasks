@@ -1,7 +1,11 @@
 import { asc, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import type { Db, Tx } from '../infra/db.ts'
-import type { OutgoingEvent } from './envelope.ts'
+import {
+  isKnownType,
+  type PublishedEvent,
+  publishedEvent
+} from './published.ts'
 import { outbox, processedEvents } from './schema.ts'
 
 const BATCH = 100
@@ -13,14 +17,14 @@ const PRUNE_PROCESSED_EVERY_MS = 60 * 60 * 1000
 // Any constant shared by every replica: only the holder relays, so events leave in order.
 const RELAY_LOCK = 0x7461736b
 
-export async function enqueue(tx: Tx, event: OutgoingEvent) {
+export async function enqueue(tx: Tx, event: PublishedEvent) {
   await tx.insert(outbox).values({ event })
 }
 
 export function createRelay(deps: {
   db: Db
   logger: Logger
-  publish: (event: OutgoingEvent) => Promise<void>
+  publish: (event: PublishedEvent) => Promise<void>
 }) {
   let processedPrunedAt = -Infinity
   const locked = async (tx: Tx) => {
@@ -42,8 +46,28 @@ export function createRelay(deps: {
         .limit(BATCH)
       const sent: number[] = []
       for (const row of pending) {
+        const type = (row.event as { type?: unknown } | null)?.type
+        const event = isKnownType(type)
+          ? publishedEvent.safeParse(row.event)
+          : { success: true as const, data: row.event as PublishedEvent }
+        // Dropped rather than retried, since it would block every later event.
+        if (!event.success) {
+          deps.logger.error(
+            {
+              outbox: row.id,
+              type,
+              issues: event.error.issues.map(({ code, path }) => ({
+                code,
+                path: path.join('.')
+              }))
+            },
+            'relay dropped an invalid event'
+          )
+          sent.push(row.id)
+          continue
+        }
         try {
-          await deps.publish(row.event as OutgoingEvent)
+          await deps.publish(event.data)
         } catch (error) {
           deps.logger.warn({ err: error, outbox: row.id }, 'relay failed')
           break

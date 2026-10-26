@@ -12,7 +12,7 @@ import {
 } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import { z } from 'zod'
-import type { OutgoingEvent, PlatformEvent } from '../../events/envelope.ts'
+import type { PlatformEvent } from '../../events/envelope.ts'
 import {
   deletedEmailKey,
   deletedOrganizationKey,
@@ -23,6 +23,7 @@ import {
   recordDeletion
 } from '../../events/lastChanges.ts'
 import { enqueue } from '../../events/outbox.ts'
+import type { PublishedEvent } from '../../events/published.ts'
 import {
   NotYetKnownError,
   parseOrDrop,
@@ -281,7 +282,7 @@ async function upsertMembers(
   if (changed.length > 0) await bumpProjects(tx, [projectId])
 }
 
-function provisioned(space: SpaceRef, projectId: string): OutgoingEvent {
+function provisioned(space: SpaceRef, projectId: string): PublishedEvent {
   return {
     specversion: '1.0',
     id: `tasks-space-provisioned-${space.id}`,
