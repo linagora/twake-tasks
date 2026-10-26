@@ -5,7 +5,14 @@ type ObjectOf = <S extends z.core.$ZodLooseShape>(
   shape: S
 ) => z.ZodObject<S, z.core.$ZodObjectConfig>
 
-const schemaOf = (object: ObjectOf) => {
+const schemaOf = (strict: boolean) => {
+  const object: ObjectOf = strict ? z.strictObject : z.looseObject
+  // Open outside tests, since a newer release may add a value.
+  const oneOf = <V extends string>(values: readonly [V, ...V[]]) =>
+    strict ? z.enum(values) : z.string()
+  const one = <T extends z.ZodType>(item: T) =>
+    strict ? z.tuple([item]) : z.array(item)
+
   const envelope = {
     specversion: z.literal('1.0'),
     id: z.string(),
@@ -22,14 +29,14 @@ const schemaOf = (object: ObjectOf) => {
     key: z.string(),
     title: z.string(),
     board: object({ id: z.string(), name: z.string() }),
-    container: object({ kind: z.literal('project'), id: z.string() })
+    container: object({ kind: oneOf(['project']), id: z.string() })
   })
 
   const recipient = <R extends string>(reason: R) =>
     object({
       uuid: z.string(),
       email: z.string(),
-      reason: z.literal(reason)
+      reason: oneOf([reason])
     })
 
   const change = <T extends z.ZodType>(value: T) =>
@@ -56,17 +63,17 @@ const schemaOf = (object: ObjectOf) => {
         duration: change(
           object({
             amount: z.int(),
-            unit: z.enum(durationUnit.enumValues)
+            unit: oneOf(durationUnit.enumValues)
           }).nullable()
         ),
         recurrence: change(
           object({
             every: z.int(),
-            unit: z.enum(recurrenceUnit.enumValues),
+            unit: oneOf(recurrenceUnit.enumValues),
             fromCompletion: z.boolean()
           }).nullable()
         ),
-        completion: change(z.enum(['completed', 'canceled']).nullable()),
+        completion: change(oneOf(['completed', 'canceled']).nullable()),
         description: change(z.null()),
         labels: change(z.string().nullable())
       }).partial()
@@ -75,7 +82,7 @@ const schemaOf = (object: ObjectOf) => {
     taskEvent('reopened', {}),
     taskEvent('assigned', {
       assignee: object({ id: z.string() }),
-      recipients: z.tuple([recipient('assigned')]).optional()
+      recipients: one(recipient('assigned')).optional()
     }),
     taskEvent('unassigned', {
       assignee: object({ id: z.string() })
@@ -83,7 +90,7 @@ const schemaOf = (object: ObjectOf) => {
     taskEvent('deleted', {}),
     taskEvent('restored', {}),
     taskEvent('commented', {
-      recipients: z.tuple([recipient('mentioned')])
+      recipients: one(recipient('mentioned'))
     }),
     taskEvent('moved', {
       changes: object({
@@ -96,17 +103,21 @@ const schemaOf = (object: ObjectOf) => {
       type: z.literal('com.twake.tasks.space.provisioned.v1'),
       data: object({
         space_id: z.string(),
-        resource: object({ kind: z.literal('project'), id: z.string() })
+        resource: object({ kind: oneOf(['project']), id: z.string() })
       })
     })
   ])
 }
 
-// Loose, so a replica still on the previous release relays a field added since
-// instead of dropping its event.
-export const publishedEvent = schemaOf(z.looseObject)
+// Loose, so a replica still on the previous release relays a field or value
+// added since instead of dropping its event.
+export const publishedEvent = schemaOf(false)
 
 // For tests, so a field added to an event without its schema fails them.
-export const strictPublishedEvent = schemaOf(z.strictObject)
+export const strictPublishedEvent = schemaOf(true)
+
+// A type added since the previous release is relayed unchecked.
+export const isKnownType = (type: unknown) =>
+  publishedEvent.options.some(option => option.shape.type.value === type)
 
 export type PublishedEvent = z.infer<typeof publishedEvent>

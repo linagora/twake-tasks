@@ -112,6 +112,24 @@ describe('outbox', () => {
     )
     expect(JSON.stringify(error.mock.calls)).not.toContain('secret')
   })
+
+  it('relays a type or a value added by a newer release', async () => {
+    const newType = { ...anEvent(), type: 'com.twake.tasks.space.archived.v1' }
+    const event = anEvent()
+    const newValue = {
+      ...event,
+      data: { ...event.data, resource: { kind: 'space', id: randomUUID() } }
+    }
+    await db.transaction(async tx => {
+      await tx.insert(outbox).values({ event: newType })
+      await tx.insert(outbox).values({ event: newValue })
+    })
+    const { sent, publish } = recorder()
+
+    await drain(createRelay({ db, logger, publish }))
+
+    expect(sent).toEqual(expect.arrayContaining([newType.id, newValue.id]))
+  })
 })
 
 describe('processed events', () => {

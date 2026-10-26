@@ -1,7 +1,11 @@
 import { asc, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import type { Db, Tx } from '../infra/db.ts'
-import { type PublishedEvent, publishedEvent } from './published.ts'
+import {
+  isKnownType,
+  type PublishedEvent,
+  publishedEvent
+} from './published.ts'
 import { outbox, processedEvents } from './schema.ts'
 
 const BATCH = 100
@@ -42,13 +46,16 @@ export function createRelay(deps: {
         .limit(BATCH)
       const sent: number[] = []
       for (const row of pending) {
-        const event = publishedEvent.safeParse(row.event)
+        const type = (row.event as { type?: unknown } | null)?.type
+        const event = isKnownType(type)
+          ? publishedEvent.safeParse(row.event)
+          : { success: true as const, data: row.event as PublishedEvent }
         // Dropped rather than retried, since it would block every later event.
         if (!event.success) {
           deps.logger.error(
             {
               outbox: row.id,
-              type: (row.event as { type?: unknown } | null)?.type,
+              type,
               issues: event.error.issues.map(({ code, path }) => ({
                 code,
                 path: path.join('.')
