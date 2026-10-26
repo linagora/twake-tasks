@@ -316,7 +316,6 @@
     "moveRight": "Mover a la derecha",
     "delete": "Eliminar",
     "name": "Nombre",
-    "status": "Tipo de sección",
     "save": "Guardar",
     "cancel": "Cancelar",
     "deleteTitle": "¿Eliminar %{section}?",
@@ -331,14 +330,6 @@
       "started": "En curso",
       "completed": "Hecho",
       "canceled": "Cancelado"
-    },
-    "help": {
-      "backlog": "Las tareas no se marcan como hechas ni canceladas. Las tareas movidas aquí desde una sección Hecho o Cancelado se reabren.",
-      "unstarted": "Las tareas no se marcan como hechas ni canceladas. Las tareas movidas aquí desde una sección Hecho o Cancelado se reabren.",
-      "started": "Las tareas no se marcan como hechas ni canceladas. Las tareas movidas aquí desde una sección Hecho o Cancelado se reabren.",
-      "completed": "Las tareas movidas aquí dentro de este tablero se marcan como hechas. Una tarea recurrente con fecha de vencimiento sigue abierta y pasa a su siguiente vencimiento.",
-      "canceled": "Las tareas movidas aquí se marcan como canceladas.",
-      "editing": "Las tareas que ya están en esta sección se marcarán como hechas, canceladas o reabiertas según el nuevo tipo, sin recurrencia."
     }
   },
   "reminders": {

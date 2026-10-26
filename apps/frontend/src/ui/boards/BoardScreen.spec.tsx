@@ -581,15 +581,14 @@ describe('BoardScreen', () => {
     fireEvent.change(dialog.getByRole('textbox', { name: 'Name' }), {
       target: { value: 'Review' }
     })
-    fireEvent.change(dialog.getByRole('combobox', { name: 'Section type' }), {
-      target: { value: 'started' }
-    })
+    // A section is named only, with no type to pick.
+    expect(dialog.queryByRole('combobox')).toBeNull()
     fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByRole('region', { name: 'Review' })).toBeVisible()
     expect(boardsApi.createSection).toHaveBeenCalledWith(board.id, {
       name: 'Review',
-      category: 'started'
+      category: 'unstarted'
     })
   })
 

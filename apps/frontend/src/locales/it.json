@@ -316,7 +316,6 @@
     "moveRight": "Sposta a destra",
     "delete": "Elimina",
     "name": "Nome",
-    "status": "Tipo di sezione",
     "save": "Salva",
     "cancel": "Annulla",
     "deleteTitle": "Eliminare %{section}?",
@@ -331,14 +330,6 @@
       "started": "In corso",
       "completed": "Completate",
       "canceled": "Annullate"
-    },
-    "help": {
-      "backlog": "Le attività non vengono segnate come completate o annullate. Le attività spostate qui da una sezione Completate o Annullate vengono riaperte.",
-      "unstarted": "Le attività non vengono segnate come completate o annullate. Le attività spostate qui da una sezione Completate o Annullate vengono riaperte.",
-      "started": "Le attività non vengono segnate come completate o annullate. Le attività spostate qui da una sezione Completate o Annullate vengono riaperte.",
-      "completed": "Le attività spostate qui all’interno di questa bacheca vengono segnate come completate. Un’attività ricorrente con una data di scadenza resta aperta e passa alla scadenza successiva.",
-      "canceled": "Le attività spostate qui vengono segnate come annullate.",
-      "editing": "Le attività già presenti in questa sezione verranno segnate come completate, annullate o riaperte in base al nuovo tipo, senza ricorrenza."
     }
   },
   "reminders": {
