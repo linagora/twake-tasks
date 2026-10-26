@@ -16,7 +16,7 @@ import { useId, useState, type ReactElement } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 
 import type { SavedFilter } from '@/application/boards'
-import { useDeleteFilter } from '@/ui/boards/queries'
+import type { DeletedViewState } from '@/ui/agenda/DeletedViewNotice'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { SidebarPlaceMenuItem } from '@/ui/shell/SidebarSections'
 
@@ -29,7 +29,6 @@ export function ViewMenu({ view }: { view: SavedFilter }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
   const { pathname, search } = useLocation()
-  const remove = useDeleteFilter()
   const titleId = useId()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const [confirming, setConfirming] = useState(false)
@@ -101,11 +100,6 @@ export function ViewMenu({ view }: { view: SavedFilter }): ReactElement {
             <Typography>{t('filters.deleteText')}</Typography>
           </DialogContent>
           <DialogActions>
-            {remove.isError && (
-              <Typography role="alert" variant="caption" color="error">
-                {t('filters.deleteFailed')}
-              </Typography>
-            )}
             <Button
               variant="text"
               onClick={() => {
@@ -117,13 +111,11 @@ export function ViewMenu({ view }: { view: SavedFilter }): ReactElement {
             <Button
               color="error"
               startIcon={<Icon icon={Trash} />}
-              disabled={remove.isPending}
               onClick={() => {
-                remove.mutate(view.id, {
-                  onSuccess: () => {
-                    void navigate('/filters', { replace: true })
-                  }
-                })
+                setConfirming(false)
+                // The list of views deletes it, with an Undo for a while.
+                const state: DeletedViewState = { deletedView: view }
+                void navigate('/filters', { state })
               }}
             >
               {t('filters.deleteConfirm')}

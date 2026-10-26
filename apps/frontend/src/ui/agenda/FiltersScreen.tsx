@@ -67,6 +67,7 @@ import { PageHeader } from '@/ds/PageHeader'
 import { DEFAULT_VIEW_ICON, viewIcon, type IconComponent } from '@/ds/viewIcons'
 import { GROUPINGS, LAYOUTS, type Grouping, type Layout } from '@/domain/board'
 import { CriteriaFields } from '@/ui/agenda/CriteriaFields'
+import { DeletedViewNotice, deletedViewOf } from '@/ui/agenda/DeletedViewNotice'
 import { SettingPicker } from '@/ui/agenda/SettingPicker'
 import { useCriteriaSummary } from '@/ui/agenda/useCriteriaSummary'
 import { ViewMenu } from '@/ui/agenda/ViewMenu'
@@ -86,6 +87,14 @@ export function FiltersScreen(): ReactElement {
   const { t } = useI18n()
   const filters = useFilters()
   const [, setParams] = useSearchParams()
+  const { state, pathname, search } = useLocation() as {
+    state: unknown
+    pathname: string
+    search: string
+  }
+  const navigate = useNavigate()
+  const deleted = deletedViewOf(state)
+  const shown = filters.data?.filter(filter => filter.id !== deleted?.id)
   useDocumentTitle(t('filters.title'))
   const summary = useCriteriaSummary()
 
@@ -116,7 +125,7 @@ export function FiltersScreen(): ReactElement {
         <Typography role="alert">{t('filters.loadFailed')}</Typography>
       )}
       {filters.isPending && <ListSkeleton label={t('app.loading')} rows={2} />}
-      {filters.data?.length === 0 && (
+      {shown?.length === 0 && (
         <EmptyState
           icon={Eye}
           illustrated
@@ -124,9 +133,9 @@ export function FiltersScreen(): ReactElement {
           text={t('filters.emptyHint')}
         />
       )}
-      {filters.data && filters.data.length > 0 && (
+      {shown && shown.length > 0 && (
         <List aria-label={t('filters.saved')}>
-          {filters.data.map((filter, index) => (
+          {shown.map((filter, index) => (
             <Fragment key={filter.id}>
               {index > 0 && <Divider component="li" variant="inset" />}
               <ViewRow filter={filter} summary={summary(filter.criteria)} />
@@ -135,6 +144,15 @@ export function FiltersScreen(): ReactElement {
         </List>
       )}
       <NewViewFromUrl />
+      {deleted && (
+        <DeletedViewNotice
+          key={deleted.id}
+          view={deleted}
+          onClose={() => {
+            void navigate({ pathname, search }, { replace: true, state: null })
+          }}
+        />
+      )}
     </main>
   )
 }

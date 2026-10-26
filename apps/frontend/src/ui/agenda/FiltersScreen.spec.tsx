@@ -592,9 +592,38 @@ describe('FiltersScreen', () => {
         await screen.findByRole('dialog', { name: 'Delete “Urgent”?' })
       ).getByRole('button', { name: 'Delete' })
     )
+
+    // Back on the list, which says so, the view is deleted once that goes.
+    expect(await screen.findByText('View Urgent deleted.')).toBeVisible()
+    expect(screen.queryByRole('link', { name: 'Urgent' })).toBeNull()
+    expect(boardsApi.deleteFilter).not.toHaveBeenCalled()
+    fireEvent.keyDown(document.body, { key: 'Escape' })
     await waitFor(() => {
       expect(boardsApi.deleteFilter).toHaveBeenCalledWith(id)
     })
+  })
+
+  it('keeps a view whose deletion is undone', async () => {
+    const boardsApi = boards()
+    await boardsApi.createFilter({ name: 'Urgent', criteria: {} })
+    renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Actions of Urgent' })
+    )
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: 'Delete view' })
+    )
+    fireEvent.click(
+      within(
+        await screen.findByRole('dialog', { name: 'Delete “Urgent”?' })
+      ).getByRole('button', { name: 'Delete' })
+    )
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }))
+
+    expect(await screen.findByRole('link', { name: 'Urgent' })).toBeVisible()
+    await new Promise(resolve => setTimeout(resolve, 50))
+    expect(boardsApi.deleteFilter).not.toHaveBeenCalled()
   })
 
   it('goes back from the edit page of a view to the list it was opened from', async () => {

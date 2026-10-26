@@ -609,7 +609,8 @@
       "today": "Hôm nay",
       "week": "7 ngày tới",
       "none": "Không có ngày"
-    }
+    },
+    "viewDeleted": "Đã xóa chế độ xem %{name}."
   },
   "agenda": {
     "subtaskOf": "Việc con của %{title}",

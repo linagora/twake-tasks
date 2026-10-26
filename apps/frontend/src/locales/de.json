@@ -609,7 +609,8 @@
       "today": "Heute",
       "week": "Nächste 7 Tage",
       "none": "Kein Datum"
-    }
+    },
+    "viewDeleted": "Ansicht %{name} gelöscht."
   },
   "agenda": {
     "subtaskOf": "Teilaufgabe von %{title}",

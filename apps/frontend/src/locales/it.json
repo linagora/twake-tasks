@@ -609,7 +609,8 @@
       "today": "Oggi",
       "week": "Prossimi 7 giorni",
       "none": "Nessuna data"
-    }
+    },
+    "viewDeleted": "Vista %{name} eliminata."
   },
   "agenda": {
     "subtaskOf": "Sottoattività di %{title}",
