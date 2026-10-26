@@ -65,9 +65,10 @@ const BOUNDARIES = {
     ...WIRE
   ],
   adapters: layers('ui', 'ds', 'app'),
-  ui: layers('adapters', 'app'),
+  ui: [...layers('adapters', 'app'), ...WIRE],
   ds: [
     ...layers('domain', 'application', 'adapters', 'ui', 'app'),
+    ...WIRE,
     'react-router',
     'twake-i18n',
     '@tanstack/*'

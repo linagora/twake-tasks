@@ -15,7 +15,7 @@
     "dev": "npm run contract && node --watch --env-file-if-exists=.env src/main.ts",
     "start": "node dist/main.js",
     "migrate": "node dist/migrate.js",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "npm run contract && drizzle-kit generate"
   },
   "dependencies": {
     "@fastify/rate-limit": "^11.2.1",

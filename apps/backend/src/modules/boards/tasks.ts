@@ -1,3 +1,4 @@
+import type { REFUSALS } from '@twake-tasks/api-contract'
 import {
   and,
   asc,
@@ -27,27 +28,10 @@ import {
 import { moveReminders } from './reminderJobs.ts'
 import { boards, sections, taskAssignees, tasks } from './schema.ts'
 
-export type Refusal =
-  | 'not_found'
-  | 'forbidden'
-  | 'archived'
-  | 'invalid_section'
-  | 'stale_neighbours'
-  | 'section_not_empty'
-  | 'invalid_assignee'
-  | 'stale_version'
-  | 'invalid_parent'
-  | 'too_deep'
-  | 'invalid_label'
-  | 'invalid_dates'
-  | 'invalid_reminder'
-  | 'too_many_mentions'
-  | 'too_many_reminders'
-  | 'label_taken'
-  | 'section_name_taken'
-  | 'last_admin'
-  | 'key_prefix_taken'
-  | 'same_board'
+export type Refusal = Exclude<
+  (typeof REFUSALS)['options'][number],
+  'invalid_request' | 'unavailable' | 'server_error'
+>
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
 // Thrown, not returned, so the transaction rolls back whatever ran before it.
