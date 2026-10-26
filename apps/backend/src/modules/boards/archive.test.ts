@@ -1,9 +1,10 @@
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray, sql as raw } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
 import { jobs } from '../../scheduler/schema.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 import { PURGE_JOB, purgeTask } from './archive.ts'
+import { REMINDER_JOB } from './reminderJobs.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -142,6 +143,51 @@ describe('archive and trash', () => {
     await db.transaction(tx => purgeTask(job?.payload, tx))
 
     expect(await listed(owner, boardId, 'trash')).toEqual([])
+  })
+
+  it('purges the reminder jobs of a trashed task and its sub-tasks', async () => {
+    const owner = aUser()
+    const colleague = aUser({ organizationId: owner.organizationId })
+    const { boardId, ids } = await aBoard(owner, ['Logo'])
+    const [logo = ''] = ids
+    await joinBoard(db, owner, boardId, colleague, 'viewer')
+    const sketch = (
+      await api
+        .as(owner)
+        .post(`/boards/${boardId}/tasks`, { parentId: logo, title: 'Sketch' })
+    ).json<{ id: string }>().id
+    await api
+      .as(owner)
+      .patch(`/boards/${boardId}/tasks/${sketch}`, { dueDate: '2099-03-10' })
+    await api.as(owner).post(`/boards/${boardId}/tasks/${logo}/reminders`, {
+      at: '2099-01-01T10:00:00Z'
+    })
+    await api
+      .as(colleague)
+      .post(`/boards/${boardId}/tasks/${sketch}/reminders`, {
+        beforeMinutes: 30,
+        zone: 'Europe/Paris'
+      })
+    const ofThese = () =>
+      db
+        .select({ key: jobs.key })
+        .from(jobs)
+        .where(
+          and(
+            eq(jobs.kind, REMINDER_JOB),
+            inArray(raw`${jobs.payload}->>'taskId'`, [logo, sketch])
+          )
+        )
+    expect(await ofThese()).toHaveLength(2)
+
+    await api.as(owner).delete(`/boards/${boardId}/tasks/${logo}`)
+    const [job] = await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.key, `${PURGE_JOB}:${logo}`))
+    await db.transaction(tx => purgeTask(job?.payload, tx))
+
+    expect(await ofThese()).toEqual([])
   })
 
   it('moves a task between visible neighbours across a hidden one', async () => {

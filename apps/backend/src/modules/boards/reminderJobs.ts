@@ -41,13 +41,9 @@ export async function scheduleReminder(tx: Tx, job: Payload, at: Date | null) {
   })
 }
 
-export async function unscheduleReminder(tx: Tx, reminderId: string) {
-  await tx.delete(jobs).where(eq(jobs.key, keyOf(reminderId)))
-}
-
 // A relative reminder keeps its job between due dates, so it stays counted.
-// The job of a deleted task's reminder is not. The lock holds a person's
-// concurrent additions to the count until each commits.
+// The lock holds a person's concurrent additions to the count until each
+// commits.
 export async function remindersWaitingFor(
   tx: Tx,
   userId: string
