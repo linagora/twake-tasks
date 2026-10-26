@@ -2,7 +2,8 @@ import Fastify, {
   LogController,
   type FastifyBaseLogger,
   type FastifyError,
-  type FastifyInstance
+  type FastifyInstance,
+  type FastifyRequest
 } from 'fastify'
 import { isTransient } from './db.ts'
 import type { Metrics } from './metrics.ts'
@@ -27,8 +28,7 @@ export function createServer(deps: {
     loggerInstance: deps.logger,
     trustProxy: (_address, hop) => hop < proxyHops,
     logController: new LogController({
-      disableRequestLogging: request =>
-        request.url.startsWith('/health/') || request.url === '/metrics'
+      disableRequestLogging: request => isProbe(request.url)
     })
   })
 
@@ -65,15 +65,28 @@ export function createServer(deps: {
 
   const metrics = deps.metrics
   if (metrics) {
+    const labels = (request: FastifyRequest) => ({
+      method: request.method,
+      route: request.routeOptions.url ?? 'unmatched'
+    })
+    // A stream hijacks its reply, and a caller that leaves closes it without
+    // the 'finish' that onResponse waits for.
+    app.addHook('onRequest', async (request, reply) => {
+      if (!request.routeOptions.config.stream) return
+      reply.raw.once('close', () => {
+        metrics.httpRequests.inc({
+          ...labels(request),
+          status: reply.statusCode
+        })
+      })
+    })
     app.addHook('onResponse', async (request, reply) => {
-      const labels = {
-        method: request.method,
-        route: request.routeOptions.url ?? 'unmatched'
-      }
-      metrics.httpRequests.inc({ ...labels, status: reply.statusCode })
-      if (!request.routeOptions.config.stream) {
-        metrics.httpRequestDuration.observe(labels, reply.elapsedTime / 1000)
-      }
+      if (request.routeOptions.config.stream || isProbe(request.url)) return
+      metrics.httpRequests.inc({ ...labels(request), status: reply.statusCode })
+      metrics.httpRequestDuration.observe(
+        labels(request),
+        reply.elapsedTime / 1000
+      )
     })
 
     app.get('/metrics', async (_request, reply) =>
@@ -85,6 +98,9 @@ export function createServer(deps: {
 
   return app
 }
+
+const isProbe = (url: string) =>
+  url.startsWith('/health/') || url === '/metrics'
 
 // A loop, not recursion: a deeply nested body would overflow the stack.
 function holdsNul(value: unknown): boolean {

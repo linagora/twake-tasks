@@ -1,5 +1,7 @@
 import { pino } from 'pino'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { openStream } from '../testing/stream.ts'
+import { createChanges, versionStreams } from './changes.ts'
 import { createServer } from './http.ts'
 import { createMetrics } from './metrics.ts'
 
@@ -146,22 +148,53 @@ describe('the server', () => {
     expect(scraped.body).not.toContain('b-42')
   })
 
-  it('counts a stream, but leaves it out of the request durations', async () => {
+  it('counts a stream once its caller left, but leaves it out of the request durations', async () => {
     const metrics = createMetrics()
     const app = createServer({
       logger: pino({ level: 'silent' }),
       isReady: () => Promise.resolve(true),
       metrics
     })
-    app.get('/events', { config: { stream: true } }, () => ({ ok: true }))
+    const streamVersions = versionStreams(app)
+    const changes = createChanges()
+    app.get('/events', { config: { stream: true } }, (request, reply) =>
+      streamVersions(request, reply, {
+        changes,
+        key: 'board',
+        current: () => Promise.resolve(1)
+      })
+    )
+    const url = await app.listen({ host: '127.0.0.1', port: 0 })
 
-    await app.inject('/events')
+    const stream = openStream(`${url}/events`, 'token')
+    await stream.messages.next()
+    stream.close()
+    const counted =
+      'http_requests_total{method="GET",route="/events",status="200"} 1'
+    await vi.waitFor(async () => {
+      expect((await app.inject('/metrics')).body).toContain(counted)
+    })
+    const scraped = await app.inject('/metrics')
+    await app.close()
+
+    expect(scraped.body).toContain(counted)
+    expect(scraped.body).not.toContain('route="/events"}')
+  })
+
+  it('leaves health checks and scrapes out of the request metrics', async () => {
+    const metrics = createMetrics()
+    const app = createServer({
+      logger: pino({ level: 'silent' }),
+      isReady: () => Promise.resolve(true),
+      metrics
+    })
+
+    await app.inject('/health/live')
+    await app.inject('/health/ready')
+    await app.inject('/metrics')
     const scraped = await app.inject('/metrics')
 
-    expect(scraped.body).toContain(
-      'http_requests_total{method="GET",route="/events",status="200"} 1'
-    )
-    expect(scraped.body).not.toContain('route="/events"}')
+    expect(scraped.body).not.toMatch(/route="\/(health|metrics)/)
   })
 
   it('serves no metrics when they are off', async () => {
