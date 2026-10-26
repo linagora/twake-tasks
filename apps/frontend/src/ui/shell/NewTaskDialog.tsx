@@ -324,7 +324,7 @@ export function NewTaskDialog({
                   onChange={setDescription}
                   onSubmit={handleSubmit}
                 />
-                <Properties>
+                <Properties ownWidth>
                   <Property
                     id={boardLabelId}
                     icon={<Icon icon={Mosaic} />}
