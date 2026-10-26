@@ -171,6 +171,20 @@ describe('the embedded view', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('offers no Share button on a board', async () => {
+    const board = aBoard({ name: 'Roadmap', project: roadmap })
+    renderRoute(`/embed/projects/${roadmap.id}/boards/${board.id}`, {
+      boardsApi: projectBoardsApi([board])
+    })
+
+    expect(
+      await screen.findByRole('heading', { name: 'Roadmap' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Share' })
+    ).not.toBeInTheDocument()
+  })
+
   it('pads the page once, in the frame', async () => {
     const board = aBoard({ name: 'Roadmap', project: roadmap })
     renderRoute(`/embed/projects/${roadmap.id}/boards/${board.id}`, {
