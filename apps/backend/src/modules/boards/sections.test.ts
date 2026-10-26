@@ -239,4 +239,31 @@ describe('sections', () => {
       'Done'
     ])
   })
+
+  it('refuses a viewer every change to sections', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const { board, todo, doing, done } = await aBoard(alice)
+    await joinBoard(db, alice, board.id, bob, 'viewer')
+    const before = await boardOf(alice, board.id)
+    const path = (id: string) => `/boards/${board.id}/sections/${id}`
+
+    const responses = [
+      await api.as(bob).post(`/boards/${board.id}/sections`, {
+        name: 'Review',
+        category: 'started'
+      }),
+      await api.as(bob).patch(path(todo.id), { name: 'Later' }),
+      await api.as(bob).post(`${path(done.id)}/move`, {
+        afterId: todo.id,
+        beforeId: doing.id
+      }),
+      await api.as(bob).delete(path(doing.id))
+    ]
+
+    expect(responses.map(response => response.statusCode)).toEqual([
+      403, 403, 403, 403
+    ])
+    expect(await boardOf(alice, board.id)).toEqual(before)
+  })
 })

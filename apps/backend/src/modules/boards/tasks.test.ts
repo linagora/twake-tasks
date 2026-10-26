@@ -1,5 +1,6 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
+import { createDb } from '../../infra/db.ts'
+import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 
 interface Board {
   id: string
@@ -14,6 +15,7 @@ interface Board {
 }
 
 let api: Awaited<ReturnType<typeof startApp>>
+const { sql, db } = createDb(inject('databaseUrl'))
 
 beforeAll(async () => {
   api = await startApp()
@@ -21,6 +23,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await api.close()
+  await sql.end()
 })
 
 async function aBoard(user: TestUser) {
@@ -47,10 +50,14 @@ async function aTask(
   ).json<{ id: string }>().id
 }
 
+async function boardOf(user: TestUser, boardId: string) {
+  return (await api.as(user).get(`/boards/${boardId}`)).json<
+    Board & { version: number }
+  >()
+}
+
 async function versionOf(user: TestUser, boardId: string) {
-  return (await api.as(user).get(`/boards/${boardId}`)).json<{
-    version: number
-  }>().version
+  return (await boardOf(user, boardId)).version
 }
 
 function titlesIn(tasks: Board['tasks'], sectionId: string | null) {
@@ -204,5 +211,31 @@ describe('tasks', () => {
     })
     expect(invalid.statusCode).toBe(400)
     expect(empty.statusCode).toBe(400)
+  })
+
+  it('refuses a viewer creating, moving, completing or editing a task', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const { board, todo, done } = await aBoard(alice)
+    const logo = await aTask(alice, board.id, todo.id, 'Logo')
+    await joinBoard(db, alice, board.id, bob, 'viewer')
+    const before = await boardOf(alice, board.id)
+    const task = `/boards/${board.id}/tasks/${logo}`
+
+    const responses = [
+      await api.as(bob).post(`/boards/${board.id}/tasks`, {
+        sectionId: todo.id,
+        title: 'Fonts'
+      }),
+      await api.as(bob).post(`${task}/move`, { sectionId: done.id }),
+      await api.as(bob).post(`${task}/complete`, { state: 'completed' }),
+      await api.as(bob).patch(task, { title: 'New logo' }),
+      await api.as(bob).patch(task, { priority: 1, dueDate: '2026-11-02' })
+    ]
+
+    expect(responses.map(response => response.statusCode)).toEqual([
+      403, 403, 403, 403, 403
+    ])
+    expect(await boardOf(alice, board.id)).toEqual(before)
   })
 })
