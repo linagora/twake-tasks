@@ -46,7 +46,6 @@ export function BoardCard({
   title,
   flag,
   chip,
-  tag,
   meta,
   members,
   action,
@@ -60,7 +59,6 @@ export function BoardCard({
   flag?: string | undefined
   /** Where the board belongs, when that tells something: personal, a space. */
   chip?: ReactNode
-  tag: string
   meta: string
   /** The people of the board, at the end of its last row. */
   members?: ReactNode
@@ -132,24 +130,9 @@ export function BoardCard({
           <Box sx={{ position: 'relative', zIndex: 1, m: -0.5 }}>{action}</Box>
         )}
       </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography
-          variant="caption"
-          sx={{
-            px: 0.75,
-            borderRadius: 1,
-            fontWeight: 600,
-            letterSpacing: '0.04em',
-            color: 'text.secondary',
-            bgcolor: 'action.hover'
-          }}
-        >
-          {tag}
-        </Typography>
-        <Typography variant="caption" color="textSecondary" noWrap>
-          {meta}
-        </Typography>
-      </Box>
+      <Typography variant="caption" color="textSecondary" noWrap>
+        {meta}
+      </Typography>
       {/* Above the stretched link, so the pointer reaches the tooltips. */}
       <Box
         sx={{

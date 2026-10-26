@@ -127,7 +127,6 @@ function BoardItem({
           />
         ) : undefined
       }
-      tag={board.keyPrefix}
       meta={
         fresh && board.sharedBy
           ? t('boards.sharedBy', {
