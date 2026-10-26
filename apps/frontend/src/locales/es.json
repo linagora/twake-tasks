@@ -65,8 +65,7 @@
     "emptyArchivedHint": "Los tableros que archives se quedan aquí, en solo lectura.",
     "loadFailed": "No se pudieron cargar los tableros.",
     "projectNotFound": "Este proyecto no existe o no puedes abrirlo.",
-    "star": "Añadir %{name} a favoritos",
-    "unstar": "Quitar %{name} de favoritos",
+    "menu": "Opciones de %{name}",
     "personal": "Tablero personal",
     "space": "Tablero de espacio",
     "projectBoard": "Tablero de proyecto",
@@ -152,6 +151,7 @@
     "addFailed": "No se pudo añadir la tarea.",
     "rename": "Renombrar tablero",
     "renameName": "Nombre del tablero",
+    "renameSave": "Renombrar",
     "renameFailed": "No se pudo renombrar el tablero."
   },
   "task": {

@@ -65,8 +65,7 @@
     "emptyArchivedHint": "Các bảng đã lưu trữ nằm ở đây, chỉ để xem.",
     "loadFailed": "Không thể tải các bảng.",
     "projectNotFound": "Dự án này không tồn tại, hoặc bạn không thể mở nó.",
-    "star": "Thêm %{name} vào mục yêu thích",
-    "unstar": "Bỏ %{name} khỏi mục yêu thích",
+    "menu": "Tùy chọn cho %{name}",
     "personal": "Bảng cá nhân",
     "space": "Bảng không gian",
     "projectBoard": "Bảng dự án",
@@ -152,6 +151,7 @@
     "addFailed": "Không thể thêm công việc.",
     "rename": "Đổi tên bảng",
     "renameName": "Tên bảng",
+    "renameSave": "Đổi tên",
     "renameFailed": "Không thể đổi tên bảng."
   },
   "task": {

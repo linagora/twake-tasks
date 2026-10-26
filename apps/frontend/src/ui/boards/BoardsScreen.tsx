@@ -1,22 +1,14 @@
 import {
   Alert,
   Button,
-  IconButton,
   Link,
   Tooltip,
   Typography,
   useMediaQuery,
   useTheme
 } from '@linagora/twake-mui'
-import {
-  Archive,
-  Icon,
-  Mosaic,
-  Plus,
-  Star,
-  StarOutline
-} from '@linagora/twake-icons'
-import { useEffect, useId, useRef, useState, type ReactElement } from 'react'
+import { Archive, Icon, Mosaic, Plus } from '@linagora/twake-icons'
+import { useId, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
@@ -28,13 +20,10 @@ import {
   type ProjectSummary
 } from '@/domain/board'
 import { listBoards } from '@/domain/boardList'
+import { BoardCardMenu } from '@/ui/boards/BoardCardMenu'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PeopleAvatars } from '@/ui/boards/MembersDialog'
-import {
-  useBoards,
-  useSetBoardArchived,
-  useSetFavorite
-} from '@/ui/boards/queries'
+import { useBoards, useSetBoardArchived } from '@/ui/boards/queries'
 import {
   PageCrumbs,
   useArchivesOrigin,
@@ -45,45 +34,6 @@ import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 type Shelf = 'active' | 'archived'
-
-function FavoriteButton({ board }: { board: BoardSummary }): ReactElement {
-  const { t } = useI18n()
-  const setFavorite = useSetFavorite()
-  const button = useRef<HTMLButtonElement>(null)
-  const pressed = useRef(false)
-
-  // The list moves a toggled board, and moving a node drops its focus.
-  useEffect(() => {
-    if (!pressed.current) return
-    pressed.current = false
-    button.current?.focus()
-  }, [board.favorite])
-
-  return (
-    <IconButton
-      ref={button}
-      size="small"
-      color={board.favorite ? 'warning' : 'default'}
-      aria-label={t(board.favorite ? 'boards.unstar' : 'boards.star', {
-        name: board.name
-      })}
-      onClick={() => {
-        if (setFavorite.isPending) return
-        pressed.current = document.activeElement === button.current
-        setFavorite.mutate(
-          { boardId: board.id, favorite: !board.favorite },
-          {
-            onError: () => {
-              pressed.current = false
-            }
-          }
-        )
-      }}
-    >
-      <Icon icon={board.favorite ? Star : StarOutline} />
-    </IconButton>
-  )
-}
 
 export function useProjectName(): (project: ProjectSummary) => string {
   const { t } = useI18n()
@@ -148,7 +98,7 @@ function BoardItem({
           </Button>
         )
       }
-      action={<FavoriteButton board={board} />}
+      action={<BoardCardMenu board={board} />}
     />
   )
 }

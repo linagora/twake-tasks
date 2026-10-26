@@ -12,9 +12,7 @@ import {
   People,
   Plus,
   Right,
-  Stack as StackIcon,
-  Star,
-  StarOutline
+  Stack as StackIcon
 } from '@linagora/twake-icons'
 import {
   Button,
@@ -22,7 +20,6 @@ import {
   DialogActions,
   DialogContent,
   Divider,
-  IconButton,
   List,
   ListItem,
   ListItemButton,
@@ -77,7 +74,6 @@ import { LAYOUT_ICONS } from '@/ui/boards/Layouts'
 import {
   useCreateFilter,
   useFilters,
-  useSetFilterFavorite,
   useUpdateFilter
 } from '@/ui/boards/queries'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
@@ -148,7 +144,7 @@ const ListItemLink: ComponentType<
   ComponentProps<typeof ListItemButton> & { href: string }
 > = ListItemButton
 
-// A view in the list of views, a link to it with its star and menu at its end.
+// A view in the list of views, a link to it with its menu at its end.
 function ViewRow({
   filter,
   summary
@@ -166,48 +162,9 @@ function ViewRow({
       </ListItemIcon>
       <ListItemText primary={filter.name} secondary={summary} />
       <ListItemSecondaryAction>
-        <FavoriteButton filter={filter} />
         <ViewMenu view={filter} />
       </ListItemSecondaryAction>
     </ListItemLink>
-  )
-}
-
-function FavoriteButton({ filter }: { filter: SavedFilter }): ReactElement {
-  const { t } = useI18n()
-  const setFavorite = useSetFilterFavorite()
-  const button = useRef<HTMLButtonElement>(null)
-  const pressed = useRef(false)
-
-  // The list moves a toggled view, and moving a node drops its focus.
-  useEffect(() => {
-    if (!pressed.current) return
-    pressed.current = false
-    button.current?.focus()
-  }, [filter.favorite])
-
-  return (
-    <IconButton
-      ref={button}
-      color={filter.favorite ? 'warning' : 'default'}
-      aria-label={t(filter.favorite ? 'boards.unstar' : 'boards.star', {
-        name: filter.name
-      })}
-      onClick={() => {
-        if (setFavorite.isPending) return
-        pressed.current = document.activeElement === button.current
-        setFavorite.mutate(
-          { filterId: filter.id, favorite: !filter.favorite },
-          {
-            onError: () => {
-              pressed.current = false
-            }
-          }
-        )
-      }}
-    >
-      <Icon icon={filter.favorite ? Star : StarOutline} />
-    </IconButton>
   )
 }
 

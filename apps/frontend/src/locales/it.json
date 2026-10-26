@@ -65,8 +65,7 @@
     "emptyArchivedHint": "Le bacheche che archivi restano qui, in sola lettura.",
     "loadFailed": "Impossibile caricare le bacheche.",
     "projectNotFound": "Questo progetto non esiste, oppure non puoi aprirlo.",
-    "star": "Aggiungi %{name} ai preferiti",
-    "unstar": "Rimuovi %{name} dai preferiti",
+    "menu": "Opzioni per %{name}",
     "personal": "Bacheca personale",
     "space": "Bacheca di spazio",
     "projectBoard": "Bacheca di progetto",
@@ -152,6 +151,7 @@
     "addFailed": "Impossibile aggiungere l’attività.",
     "rename": "Rinomina bacheca",
     "renameName": "Nome della bacheca",
+    "renameSave": "Rinomina",
     "renameFailed": "Impossibile rinominare la bacheca."
   },
   "task": {

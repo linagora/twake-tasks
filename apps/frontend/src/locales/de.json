@@ -65,8 +65,7 @@
     "emptyArchivedHint": "Archivierte Boards bleiben hier, schreibgeschützt.",
     "loadFailed": "Die Boards konnten nicht geladen werden.",
     "projectNotFound": "Dieses Projekt existiert nicht, oder Sie können es nicht öffnen.",
-    "star": "%{name} zu den Favoriten hinzufügen",
-    "unstar": "%{name} aus den Favoriten entfernen",
+    "menu": "Optionen für %{name}",
     "personal": "Persönliches Board",
     "space": "Space-Board",
     "projectBoard": "Projekt-Board",
@@ -152,6 +151,7 @@
     "addFailed": "Die Aufgabe konnte nicht hinzugefügt werden.",
     "rename": "Board umbenennen",
     "renameName": "Board-Name",
+    "renameSave": "Umbenennen",
     "renameFailed": "Das Board konnte nicht umbenannt werden."
   },
   "task": {

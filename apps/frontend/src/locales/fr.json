@@ -65,8 +65,7 @@
     "emptyArchivedHint": "Les tableaux archivés restent ici, en lecture seule.",
     "loadFailed": "Les tableaux n'ont pas pu être chargés.",
     "projectNotFound": "Ce projet n'existe pas, ou vous ne pouvez pas l'ouvrir.",
-    "star": "Ajouter %{name} aux favoris",
-    "unstar": "Retirer %{name} des favoris",
+    "menu": "Options de %{name}",
     "personal": "Tableau personnel",
     "space": "Tableau d'espace",
     "projectBoard": "Tableau de projet",
@@ -152,6 +151,7 @@
     "addFailed": "La tâche n'a pas pu être ajoutée.",
     "rename": "Renommer le tableau",
     "renameName": "Nom du tableau",
+    "renameSave": "Renommer",
     "renameFailed": "Le tableau n'a pas pu être renommé."
   },
   "task": {

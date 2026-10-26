@@ -76,6 +76,19 @@ async function openNewView(
   return { ...rendered, dialog }
 }
 
+// Places a board or view in the sidebar from the menu of its row or card.
+async function showIn(menu: string, where: string) {
+  fireEvent.click(await screen.findByRole('button', { name: menu }))
+  fireEvent.click(
+    await screen.findByRole('menuitem', { name: 'Show in the sidebar' })
+  )
+  fireEvent.click(
+    within(
+      await screen.findByRole('menu', { name: 'Show in the sidebar' })
+    ).getByRole('menuitemradio', { name: where })
+  )
+}
+
 describe('FiltersScreen', () => {
   it('shows the criteria in use, and adds the others from a menu', async () => {
     renderRoute('/filters', { boardsApi: boards() })
@@ -521,24 +534,21 @@ describe('FiltersScreen', () => {
     )
   })
 
-  it('stars a view, which goes first and into the favorites', async () => {
+  it('puts a view in the favorites from its menu, where it goes first', async () => {
     const boardsApi = boards()
     await boardsApi.createFilter({ name: 'Alpha', criteria: {} })
     await boardsApi.createFilter({ name: 'Beta', criteria: {} })
     renderRoute('/filters', { boardsApi })
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Add Beta to favorites' })
-    )
+    // No star on the row: its menu places it.
+    expect(screen.queryByRole('button', { name: /favorites$/ })).toBeNull()
+    await showIn('Actions of Beta', 'Favorites')
 
     const favourites = within(
       await screen.findByRole('list', { name: 'Favorites' })
     )
     expect(await favourites.findByRole('link', { name: 'Beta' })).toBeVisible()
     expect(favourites.queryByRole('link', { name: 'Alpha' })).toBeNull()
-    expect(
-      screen.getByRole('button', { name: 'Remove Beta from favorites' })
-    ).toBeVisible()
     await waitFor(() => {
       expect(
         within(screen.getByRole('list', { name: 'Saved views' }))
@@ -548,7 +558,7 @@ describe('FiltersScreen', () => {
     })
   })
 
-  it('ends each view of the list with its star and menu', async () => {
+  it('ends each view of the list with its menu', async () => {
     const boardsApi = boards()
     const { id } = await boardsApi.createFilter({
       name: 'Urgent',
@@ -556,11 +566,10 @@ describe('FiltersScreen', () => {
     })
     renderRoute('/filters', { boardsApi })
 
-    expect(
-      await screen.findByRole('button', { name: 'Add Urgent to favorites' })
-    ).toBeVisible()
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Actions of Urgent' })
+    )
     expect(screen.queryByText('Saved views')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Actions of Urgent' }))
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit view' }))
 
     expect(

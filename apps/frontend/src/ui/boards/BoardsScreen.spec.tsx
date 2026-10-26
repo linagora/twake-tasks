@@ -10,6 +10,19 @@ const boardNames = (list: HTMLElement) =>
     .getAllByRole('link')
     .map(link => link.textContent)
 
+// Places a board or view in the sidebar from the menu of its row or card.
+async function showIn(menu: string, where: string) {
+  fireEvent.click(await screen.findByRole('button', { name: menu }))
+  fireEvent.click(
+    await screen.findByRole('menuitem', { name: 'Show in the sidebar' })
+  )
+  fireEvent.click(
+    within(
+      await screen.findByRole('menu', { name: 'Show in the sidebar' })
+    ).getByRole('menuitemradio', { name: where })
+  )
+}
+
 describe('BoardsScreen', () => {
   it('titles the page with its breadcrumb, with no title repeating it', async () => {
     renderRoute('/', { boardsApi: fakeBoardsApi() })
@@ -247,7 +260,7 @@ describe('BoardsScreen', () => {
     )
   })
 
-  it('puts a starred board first, after the create card, until it is unstarred', async () => {
+  it('puts a board in the favorites from its menu first, until taken out', async () => {
     const project = aProject({ name: 'Product' })
     const boardsApi = fakeBoardsApi([
       aBoard({ name: 'Design', project }),
@@ -255,13 +268,13 @@ describe('BoardsScreen', () => {
     ])
     renderRoute('/', { boardsApi })
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Add Front UI to favorites' })
-    )
-    const unstar = await screen.findByRole('button', {
-      name: 'Remove Front UI from favorites'
-    })
+    // No star on the card: its menu places it.
+    expect(screen.queryByRole('button', { name: /favorites$/ })).toBeNull()
+    await showIn('Options for Front UI', 'Favorites')
     const list = screen.getByRole('list', { name: 'Boards' })
+    await waitFor(() => {
+      expect(boardNames(list)).toEqual(['Front UI', 'Design'])
+    })
 
     expect(
       within(screen.getByRole('main')).queryByRole('heading', { level: 2 })
@@ -270,14 +283,13 @@ describe('BoardsScreen', () => {
       /^Create a board/
     )
     expect(boardNames(list)).toEqual(['Front UI', 'Design'])
-    fireEvent.click(unstar)
-    expect(
-      await screen.findByRole('button', { name: 'Add Front UI to favorites' })
-    ).toBeInTheDocument()
-    expect(boardNames(screen.getByRole('list', { name: 'Boards' }))).toEqual([
-      'Design',
-      'Front UI'
-    ])
+    await showIn('Options for Front UI', 'Not in the sidebar')
+    await waitFor(() => {
+      expect(boardNames(screen.getByRole('list', { name: 'Boards' }))).toEqual([
+        'Design',
+        'Front UI'
+      ])
+    })
   })
 
   it('shows the whole name of a board when hovered', async () => {
@@ -474,5 +486,39 @@ describe('BoardsScreen', () => {
     expect(
       within(dialog).getByRole('button', { name: 'Create' })
     ).toBeDisabled()
+  })
+
+  it('renames a board from the menu of its card', async () => {
+    renderRoute('/', {
+      boardsApi: fakeBoardsApi([aBoard({ name: 'Design' })])
+    })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for Design' })
+    )
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: 'Rename board' })
+    )
+    const dialog = within(await screen.findByRole('dialog'))
+    fireEvent.change(dialog.getByLabelText(/Board name/), {
+      target: { value: 'Brand' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Rename' }))
+
+    expect(await screen.findByRole('link', { name: 'Brand' })).toBeVisible()
+  })
+
+  it('leaves the sidebar only in the menu of a board one does not run', async () => {
+    renderRoute('/', {
+      boardsApi: fakeBoardsApi([aBoard({ name: 'Design', role: 'editor' })])
+    })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for Design' })
+    )
+
+    expect(
+      (await screen.findAllByRole('menuitem')).map(item => item.textContent)
+    ).toEqual(['Show in the sidebar'])
   })
 })
