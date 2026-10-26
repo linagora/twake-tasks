@@ -233,7 +233,7 @@ describe('BoardsScreen', () => {
     const inboxCard = within(screen.getByRole('listitem', { name: 'Inbox' }))
 
     // The key prefix shows on the tasks, not on the card.
-    expect(designCard.queryByText('DES')).toBeNull()
+    expect(designCard.queryByText(/DES/)).toBeNull()
     expect(designCard.getByText('2 open tasks')).toBeVisible()
     expect(
       designCard.getByRole('img', { name: 'Project board' })

@@ -130,11 +130,9 @@ export function BoardCard({
           <Box sx={{ position: 'relative', zIndex: 1, m: -0.5 }}>{action}</Box>
         )}
       </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography variant="caption" color="textSecondary" noWrap>
-          {meta}
-        </Typography>
-      </Box>
+      <Typography variant="caption" color="textSecondary" noWrap>
+        {meta}
+      </Typography>
       {/* Above the stretched link, so the pointer reaches the tooltips. */}
       <Box
         sx={{
