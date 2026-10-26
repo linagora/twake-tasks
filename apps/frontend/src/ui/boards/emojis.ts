@@ -3,6 +3,7 @@ import type { CompactEmoji } from 'emojibase'
 
 import type { EmojiChoice } from '@/ds/EmojiPicker'
 import { resolveLanguage, type SupportedLanguage } from '@/ui/i18n/languages'
+import { keys } from '@/ui/queries/keys'
 
 export interface Emoji extends EmojiChoice {
   hexcode: string
@@ -144,7 +145,7 @@ export function findEmojis(
 export function useEmojis(lang: string): Emoji[] {
   return (
     useQuery({
-      queryKey: ['emojis', resolveLanguage([lang])],
+      queryKey: keys.emojis(resolveLanguage([lang])),
       queryFn: () => fetchEmojis(lang),
       staleTime: Infinity,
       gcTime: Infinity
