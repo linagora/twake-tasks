@@ -479,11 +479,17 @@ export const TitleInput = styled(InputBase)(({ theme }) => ({
 }))
 
 export function Properties({
-  children
+  children,
+  ownWidth = false
 }: {
   children: ReactNode
+  /**
+   * Lines the fields up by the width the list itself is given, as in a
+   * dialog, rather than by the side panel's.
+   */
+  ownWidth?: boolean
 }): ReactElement {
-  return (
+  const list = (
     <Box
       component="dl"
       sx={{
@@ -501,6 +507,11 @@ export function Properties({
     >
       {children}
     </Box>
+  )
+  return ownWidth ? (
+    <Box sx={{ containerType: 'inline-size' }}>{list}</Box>
+  ) : (
+    list
   )
 }
 
