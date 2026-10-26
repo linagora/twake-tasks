@@ -1,3 +1,6 @@
+import type * as wire from '@twake-tasks/api-contract'
+import type { z } from 'zod'
+
 import {
   ApiError,
   type AgendaTask,
@@ -15,6 +18,11 @@ import {
 import type { BoardSummary, Person } from '@/domain/board'
 
 export type Send = (request: Request) => Promise<Response>
+
+// What the backend's schema accepts, so tsc fails when a request drifts.
+type Body<K extends keyof typeof wire> = (typeof wire)[K] extends z.ZodType
+  ? z.input<(typeof wire)[K]>
+  : never
 
 async function errorCode(response: Response): Promise<string | null> {
   try {
@@ -125,16 +133,23 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
 
   return {
     settings: () => call('GET', '/settings'),
-    agenda: (zone, days) =>
-      call(
+    agenda: (zone, days) => {
+      const query = { zone, days } satisfies z.output<typeof wire.agendaQuery>
+      return call(
         'GET',
-        `/agenda?${new URLSearchParams({ zone, days: String(days) }).toString()}`
-      ),
+        `/agenda?${new URLSearchParams({ ...query, days: String(days) }).toString()}`
+      )
+    },
     listFilters: async () =>
       (await call<{ filters: SavedFilter[] }>('GET', '/filters')).filters,
-    createFilter: filter => call('POST', '/filters', filter),
+    createFilter: filter =>
+      call('POST', '/filters', filter satisfies Body<'newFilter'>),
     updateFilter: (filterId, filter) =>
-      call('PATCH', route`/filters/${filterId}`, filter),
+      call(
+        'PATCH',
+        route`/filters/${filterId}`,
+        filter satisfies Body<'filterChanges'>
+      ),
     // Sent as the page unloads when the undo notice is still open.
     deleteFilter: filterId =>
       call('DELETE', route`/filters/${filterId}`, undefined, true),
@@ -149,14 +164,14 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
         await call<{ tasks: AgendaTask[] }>(
           'GET',
           route`/filters/${filterId}/tasks` +
-            `?${new URLSearchParams({ zone }).toString()}`
+            `?${new URLSearchParams({ zone } satisfies Body<'zoneQuery'>).toString()}`
         )
       ).tasks,
     search: async text =>
       (
         await call<{ tasks: SearchResult[] }>(
           'GET',
-          `/search?${new URLSearchParams({ q: text }).toString()}`
+          `/search?${new URLSearchParams({ q: text } satisfies Body<'searchQuery'>).toString()}`
         )
       ).tasks,
     myTasks: async () =>
@@ -166,14 +181,19 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     getBoard: boardId => call('GET', route`/boards/${boardId}`),
     watchBoard: (boardId, onVersion) =>
       watch(route`/boards/${boardId}/events`, onVersion),
-    createBoard: board => call('POST', '/boards', board),
+    createBoard: board =>
+      call('POST', '/boards', board satisfies Body<'newBoard'>),
     transferTask: (boardId, taskId, to) =>
-      call('POST', route`/boards/${boardId}/tasks/${taskId}/transfer`, to),
+      call(
+        'POST',
+        route`/boards/${boardId}/tasks/${taskId}/transfer`,
+        to satisfies Body<'transferTarget'>
+      ),
     previewTransfer: (boardId, taskId, to) =>
       call(
         'POST',
         route`/boards/${boardId}/tasks/${taskId}/transfer/preview`,
-        to
+        to satisfies Body<'transferTarget'>
       ),
     archiveTask: (boardId, taskId) =>
       call('POST', route`/boards/${boardId}/tasks/${taskId}/archive`, {}),
@@ -189,7 +209,9 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
         )
       ).tasks,
     renameBoard: (boardId, name) =>
-      call('PATCH', route`/boards/${boardId}`, { name }),
+      call('PATCH', route`/boards/${boardId}`, {
+        name
+      } satisfies Body<'boardRename'>),
     setBoardArchived: (boardId, archived) =>
       call(
         'POST',
@@ -199,44 +221,71 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     listProjects: async () =>
       (await call<{ projects: Project[] }>('GET', '/projects')).projects,
     moveToProject: (boardId, projectId) =>
-      call('POST', route`/boards/${boardId}/move`, { projectId }),
+      call('POST', route`/boards/${boardId}/move`, {
+        projectId
+      } satisfies Body<'boardMove'>),
     getSharing: boardId => call('GET', route`/boards/${boardId}/sharing`),
     suggestPeople: async (boardId, query) =>
       (
         await call<{ people: Person[] }>(
           'GET',
           route`/boards/${boardId}/sharing/people` +
-            `?${new URLSearchParams({ q: query }).toString()}`
+            `?${new URLSearchParams({ q: query } satisfies Body<'peopleQuery'>).toString()}`
         )
       ).people,
     invite: (boardId, email, role) =>
-      call('POST', route`/boards/${boardId}/invites`, { email, role }),
+      call('POST', route`/boards/${boardId}/invites`, {
+        email,
+        role
+      } satisfies Body<'newInvite'>),
     cancelInvite: (boardId, inviteId) =>
       call('DELETE', route`/boards/${boardId}/invites/${inviteId}`),
     setMemberRole: (boardId, userId, role) =>
-      call('PUT', route`/boards/${boardId}/members/${userId}`, { role }),
+      call('PUT', route`/boards/${boardId}/members/${userId}`, {
+        role
+      } satisfies Body<'roleChange'>),
     removeMember: (boardId, userId) =>
       call('DELETE', route`/boards/${boardId}/members/${userId}`),
     setLayout: (boardId, layout) =>
-      call('PUT', route`/boards/${boardId}/layout`, { layout }),
+      call('PUT', route`/boards/${boardId}/layout`, {
+        layout
+      } satisfies Body<'layoutChoice'>),
     setDefaultLayout: (boardId, layout) =>
-      call('PUT', route`/boards/${boardId}/default-layout`, { layout }),
+      call('PUT', route`/boards/${boardId}/default-layout`, {
+        layout
+      } satisfies Body<'layoutChoice'>),
     setFavorite: (boardId, favorite) =>
       call(favorite ? 'PUT' : 'DELETE', route`/boards/${boardId}/favorite`),
     createTask: (boardId, task) =>
-      call('POST', route`/boards/${boardId}/tasks`, task),
+      call(
+        'POST',
+        route`/boards/${boardId}/tasks`,
+        task satisfies Body<'newTask'>
+      ),
     moveTask: (boardId, taskId, move) =>
-      call('POST', route`/boards/${boardId}/tasks/${taskId}/move`, move),
+      call(
+        'POST',
+        route`/boards/${boardId}/tasks/${taskId}/move`,
+        move satisfies Body<'taskMove'>
+      ),
     completeTask: (boardId, taskId, state) =>
       call('POST', route`/boards/${boardId}/tasks/${taskId}/complete`, {
         state
-      }),
+      } satisfies Body<'completion'>),
     editTask: (boardId, taskId, changes) =>
-      call('PATCH', route`/boards/${boardId}/tasks/${taskId}`, changes),
+      call(
+        'PATCH',
+        route`/boards/${boardId}/tasks/${taskId}`,
+        changes satisfies Body<'taskChanges'>
+      ),
     getDescription: (boardId, taskId) =>
       call('GET', route`/boards/${boardId}/tasks/${taskId}/description`),
     setDescription: (boardId, taskId, edit) =>
-      call('PUT', route`/boards/${boardId}/tasks/${taskId}/description`, edit),
+      call(
+        'PUT',
+        route`/boards/${boardId}/tasks/${taskId}/description`,
+        edit satisfies Body<'descriptionEdit'>
+      ),
     listHistory: async (boardId, taskId) =>
       (
         await call<{ entries: HistoryEntry[] }>(
@@ -254,7 +303,7 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     addComment: async (boardId, taskId, body) => {
       await call('POST', route`/boards/${boardId}/tasks/${taskId}/comments`, {
         body
-      })
+      } satisfies Body<'newComment'>)
     },
     addReaction: async (boardId, taskId, commentId, emoji) => {
       await call(
@@ -279,7 +328,7 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       await call(
         'POST',
         route`/boards/${boardId}/tasks/${taskId}/reminders`,
-        reminder
+        reminder satisfies Body<'newReminder'>
       )
     },
     deleteReminder: (boardId, taskId, reminderId) =>
@@ -313,26 +362,48 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     setAssignees: (boardId, taskId, userIds) =>
       call('PUT', route`/boards/${boardId}/tasks/${taskId}/assignees`, {
         userIds
-      }),
+      } satisfies Body<'assignment'>),
     createLabel: (boardId, label) =>
-      call('POST', route`/boards/${boardId}/labels`, label),
+      call(
+        'POST',
+        route`/boards/${boardId}/labels`,
+        label satisfies Body<'newLabel'>
+      ),
     editLabel: (boardId, labelId, changes) =>
-      call('PATCH', route`/boards/${boardId}/labels/${labelId}`, changes),
+      call(
+        'PATCH',
+        route`/boards/${boardId}/labels/${labelId}`,
+        changes satisfies Body<'labelChanges'>
+      ),
     setLabels: (boardId, taskId, labelIds) =>
       call('PUT', route`/boards/${boardId}/tasks/${taskId}/labels`, {
         labelIds
-      }),
+      } satisfies Body<'labeling'>),
     createSection: (boardId, section) =>
-      call('POST', route`/boards/${boardId}/sections`, section),
+      call(
+        'POST',
+        route`/boards/${boardId}/sections`,
+        section satisfies Body<'newSection'>
+      ),
     editSection: (boardId, sectionId, changes) =>
-      call('PATCH', route`/boards/${boardId}/sections/${sectionId}`, changes),
+      call(
+        'PATCH',
+        route`/boards/${boardId}/sections/${sectionId}`,
+        changes satisfies Body<'sectionChanges'>
+      ),
     moveSection: (boardId, sectionId, move) =>
-      call('POST', route`/boards/${boardId}/sections/${sectionId}/move`, move),
+      call(
+        'POST',
+        route`/boards/${boardId}/sections/${sectionId}/move`,
+        move satisfies Body<'sectionMove'>
+      ),
     deleteSection: (boardId, sectionId, tasksTo) =>
       call(
         'DELETE',
         route`/boards/${boardId}/sections/${sectionId}`,
-        tasksTo === undefined ? undefined : { tasksTo }
+        tasksTo === undefined
+          ? undefined
+          : ({ tasksTo } satisfies Body<'sectionDeletion'>)
       )
   }
 }

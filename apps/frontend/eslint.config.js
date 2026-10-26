@@ -51,24 +51,18 @@ const FRAMEWORKS = [
 ]
 
 // The wire format stays in adapters/http/, which maps it to our own types.
-const WIRE = ['zod', '@twake-tasks/api-contract']
+const WIRE = {
+  group: ['zod', '@twake-tasks/api-contract'],
+  message: 'Only adapters/http/ imports the wire format.'
+}
 
 const BOUNDARIES = {
-  domain: [
-    ...layers(...LAYERS.filter(l => l !== 'domain')),
-    ...FRAMEWORKS,
-    ...WIRE
-  ],
-  application: [
-    ...layers('adapters', 'ui', 'ds', 'app'),
-    ...FRAMEWORKS,
-    ...WIRE
-  ],
+  domain: [...layers(...LAYERS.filter(l => l !== 'domain')), ...FRAMEWORKS],
+  application: [...layers('adapters', 'ui', 'ds', 'app'), ...FRAMEWORKS],
   adapters: layers('ui', 'ds', 'app'),
-  ui: [...layers('adapters', 'app'), ...WIRE],
+  ui: layers('adapters', 'app'),
   ds: [
     ...layers('domain', 'application', 'adapters', 'ui', 'app'),
-    ...WIRE,
     'react-router',
     'twake-i18n',
     '@tanstack/*'
@@ -76,8 +70,8 @@ const BOUNDARIES = {
   app: []
 }
 
-const restrictImports = layer => {
-  const patterns = [...EVERYWHERE]
+const restrictImports = (layer, { wire = false } = {}) => {
+  const patterns = wire ? [...EVERYWHERE] : [...EVERYWHERE, WIRE]
   if (layer !== 'ds') patterns.push(...RAW_UI)
   if (BOUNDARIES[layer].length > 0) {
     patterns.push({
@@ -165,10 +159,20 @@ export default defineConfig(
     files: [KEYS_FILE, 'src/**/*.spec.{ts,tsx}'],
     rules: { 'no-restricted-syntax': ['error', ...FORBIDDEN_SYNTAX, NO_SX] }
   },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [WIRE] }] }
+  },
   ...LAYERS.map(layer => ({
     files: [`src/${layer}/**/*.{ts,tsx}`],
     rules: { 'no-restricted-imports': restrictImports(layer) }
   })),
+  {
+    files: ['src/adapters/http/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': restrictImports('adapters', { wire: true })
+    }
+  },
   {
     files: ['src/ds/**/*.{ts,tsx}'],
     rules: { 'no-restricted-syntax': ['error', ...FORBIDDEN_SYNTAX] }
@@ -179,11 +183,14 @@ export default defineConfig(
       'no-restricted-imports': [
         'error',
         {
-          patterns: EVERYWHERE.filter(
-            p =>
-              !p.group.includes('@sentry/*') &&
-              !p.group.includes('@linagora/twake-feedback/sentry')
-          )
+          patterns: [
+            ...EVERYWHERE.filter(
+              p =>
+                !p.group.includes('@sentry/*') &&
+                !p.group.includes('@linagora/twake-feedback/sentry')
+            ),
+            WIRE
+          ]
         }
       ]
     }

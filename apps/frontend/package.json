@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "contract": "npm run build --workspace @twake-tasks/api-contract",
     "dev": "rsbuild dev",
     "build": "rsbuild build",
     "preview": "rsbuild preview",
@@ -13,7 +12,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run contract && npm run lint && npm run format:check && npm run typecheck && npm run test && npm run build"
+    "check": "npm run check --workspace @twake-tasks/api-contract && npm run lint && npm run format:check && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
