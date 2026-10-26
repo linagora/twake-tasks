@@ -7,6 +7,13 @@ import Fastify, {
 import { isTransient } from './db.ts'
 import type { Metrics } from './metrics.ts'
 
+declare module 'fastify' {
+  interface FastifyContextConfig {
+    // A stream lasts as long as its tab: its duration says nothing of latency.
+    stream?: boolean
+  }
+}
+
 export function createServer(deps: {
   logger: FastifyBaseLogger
   isReady: () => Promise<boolean>
@@ -64,7 +71,9 @@ export function createServer(deps: {
         route: request.routeOptions.url ?? 'unmatched'
       }
       metrics.httpRequests.inc({ ...labels, status: reply.statusCode })
-      metrics.httpRequestDuration.observe(labels, reply.elapsedTime / 1000)
+      if (!request.routeOptions.config.stream) {
+        metrics.httpRequestDuration.observe(labels, reply.elapsedTime / 1000)
+      }
     })
 
     app.get('/metrics', async (_request, reply) =>

@@ -146,6 +146,24 @@ describe('the server', () => {
     expect(scraped.body).not.toContain('b-42')
   })
 
+  it('counts a stream, but leaves it out of the request durations', async () => {
+    const metrics = createMetrics()
+    const app = createServer({
+      logger: pino({ level: 'silent' }),
+      isReady: () => Promise.resolve(true),
+      metrics
+    })
+    app.get('/events', { config: { stream: true } }, () => ({ ok: true }))
+
+    await app.inject('/events')
+    const scraped = await app.inject('/metrics')
+
+    expect(scraped.body).toContain(
+      'http_requests_total{method="GET",route="/events",status="200"} 1'
+    )
+    expect(scraped.body).not.toContain('route="/events"}')
+  })
+
   it('serves no metrics when they are off', async () => {
     const response = await serverLoggingTo([]).inject('/metrics')
 

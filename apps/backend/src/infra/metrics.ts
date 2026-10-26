@@ -54,16 +54,6 @@ export function createMetrics() {
       help: 'Failed publications from the outbox',
       registers
     }),
-    outboxPending: new Gauge({
-      name: 'outbox_pending',
-      help: 'Events waiting in the outbox',
-      registers
-    }),
-    outboxOldestPending: new Gauge({
-      name: 'outbox_oldest_pending_seconds',
-      help: 'How long the oldest event has waited in the outbox',
-      registers
-    }),
     eventsConsumed: new Counter({
       name: 'events_consumed_total',
       help: 'RabbitMQ events consumed, by outcome',

@@ -1,3 +1,4 @@
+import { Gauge, type Registry } from '@prometheus-io/client'
 import { asc, count, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import type { Db, Tx } from '../infra/db.ts'
@@ -20,6 +21,41 @@ const RELAY_LOCK = 0x7461736b
 
 export async function enqueue(tx: Tx, event: PublishedEvent) {
   await tx.insert(outbox).values({ event })
+}
+
+const backlog = async (db: Db) => {
+  const [row] = await db
+    .select({
+      pending: count(),
+      waited: sql<number>`coalesce(extract(epoch from now() - min(${outbox.createdAt})), 0)::float8`
+    })
+    .from(outbox)
+    .where(isNull(outbox.sentAt))
+  return row
+}
+
+// Read when scraped, so every replica reports the same outbox whichever one
+// relays. A failed read keeps the last value rather than failing the scrape.
+export function measureOutbox(db: Db, registry: Registry) {
+  const registers = [registry]
+  new Gauge({
+    name: 'outbox_pending',
+    help: 'Events waiting in the outbox',
+    registers,
+    async collect() {
+      const row = await backlog(db).catch(() => undefined)
+      if (row) this.set(row.pending)
+    }
+  })
+  new Gauge({
+    name: 'outbox_oldest_pending_seconds',
+    help: 'How long the oldest event has waited in the outbox',
+    registers,
+    async collect() {
+      const row = await backlog(db).catch(() => undefined)
+      if (row) this.set(row.waited)
+    }
+  })
 }
 
 export function createRelay(deps: {
@@ -84,17 +120,6 @@ export function createRelay(deps: {
           .set({ sentAt: sql`now()` })
           .where(inArray(outbox.id, sent))
         metrics?.outboxPublished.inc(sent.length)
-      }
-      if (metrics) {
-        const [backlog] = await tx
-          .select({
-            pending: count(),
-            waited: sql<number>`coalesce(extract(epoch from now() - min(${outbox.createdAt})), 0)::float8`
-          })
-          .from(outbox)
-          .where(isNull(outbox.sentAt))
-        metrics.outboxPending.set(backlog?.pending ?? 0)
-        metrics.outboxOldestPending.set(backlog?.waited ?? 0)
       }
       await tx
         .delete(outbox)

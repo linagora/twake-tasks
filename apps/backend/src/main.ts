@@ -3,7 +3,7 @@ import postgres from 'postgres'
 import { buildApp } from './app.ts'
 import { loadConfig, rateLimits } from './config.ts'
 import { postgresDeduplicator } from './events/dedupe.ts'
-import { createRelay } from './events/outbox.ts'
+import { createRelay, measureOutbox } from './events/outbox.ts'
 import { parkedRetries, parkIn } from './events/parking.ts'
 import { createMessageHandler } from './events/router.ts'
 import { createChanges } from './infra/changes.ts'
@@ -204,6 +204,7 @@ const stopRelay = createRelay({
   publish: event => publisher.publish(event),
   metrics
 }).start(500)
+if (metrics) measureOutbox(db, metrics.registry)
 accepting = true
 logger.info('twake-tasks backend started')
 

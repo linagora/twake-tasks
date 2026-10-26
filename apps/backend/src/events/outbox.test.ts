@@ -5,7 +5,7 @@ import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import { createDb } from '../infra/db.ts'
 import { createMetrics } from '../infra/metrics.ts'
 import type { OutgoingEvent } from './envelope.ts'
-import { createRelay, enqueue } from './outbox.ts'
+import { createRelay, enqueue, measureOutbox } from './outbox.ts'
 import type { PublishedEvent } from './published.ts'
 import { outbox, processedEvents } from './schema.ts'
 
@@ -132,7 +132,18 @@ describe('outbox', () => {
     expect(sent).toEqual(expect.arrayContaining([newType.id, newValue.id]))
   })
 
-  it('counts what it publishes, what fails and what waits', async () => {
+  it('measures what waits when scraped, on a replica that never relayed', async () => {
+    await db.transaction(tx => enqueue(tx, anEvent()))
+    const metrics = createMetrics()
+    measureOutbox(db, metrics.registry)
+
+    const scraped = await metrics.registry.metrics()
+
+    expect(scraped).toMatch(/^outbox_pending [1-9]/m)
+    expect(scraped).toMatch(/^outbox_oldest_pending_seconds [\d.]+$/m)
+  })
+
+  it('counts what it publishes and what fails', async () => {
     await db.transaction(async tx => {
       await enqueue(tx, anEvent())
       await enqueue(tx, anEvent())
@@ -147,8 +158,6 @@ describe('outbox', () => {
     )
 
     expect(waiting).toContain('outbox_publish_failures_total 1')
-    expect(waiting).toMatch(/^outbox_pending [1-9]/m)
-    expect(waiting).toMatch(/^outbox_oldest_pending_seconds [\d.]+$/m)
     expect(await metrics.registry.metrics()).toMatch(
       /^outbox_published_total ([2-9]|\d{2,})$/m
     )

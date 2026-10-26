@@ -98,7 +98,7 @@ export function registerLive(
 
   app.get(
     '/boards/:boardId/events',
-    { preHandler: deps.requireIdentity },
+    { preHandler: deps.requireIdentity, config: { stream: true } },
     async (request, reply) => {
       const identity = request.identity
       if (!identity) return reply.code(401).send()
