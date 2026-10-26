@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { eq, inArray, sql as raw } from 'drizzle-orm'
+import { eq, sql as raw } from 'drizzle-orm'
 import { pino } from 'pino'
 import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import { asOrganization, createDb } from '../infra/db.ts'
@@ -9,7 +9,7 @@ import { spaceRoutes } from '../modules/spaces/events.ts'
 import { postgresDeduplicator } from './dedupe.ts'
 import { parkedRetries, parkIn, type DeadLetter } from './parking.ts'
 import { createMessageHandler, type Outcome } from './router.ts'
-import { parkedEvents, processedEvents } from './schema.ts'
+import { parkedEvents } from './schema.ts'
 
 // Only this file parks events, so its retry passes see no one else's.
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -203,33 +203,5 @@ describe('parked events', () => {
     await due(added)
     await retries(deadLetter).retryOnce()
     expect(await parked(added)).toEqual([])
-  })
-})
-
-describe('processed events', () => {
-  it('are forgotten after 30 days', async () => {
-    const [old, recent] = [randomUUID(), randomUUID()]
-    await db.insert(processedEvents).values([
-      {
-        consumer: 'parking-test',
-        source: 'space',
-        id: old,
-        processedAt: raw`now() - interval '31 days'`
-      },
-      {
-        consumer: 'parking-test',
-        source: 'space',
-        id: recent,
-        processedAt: raw`now() - interval '29 days'`
-      }
-    ])
-
-    await retries().retryOnce()
-
-    const kept = await db
-      .select({ id: processedEvents.id })
-      .from(processedEvents)
-      .where(inArray(processedEvents.id, [old, recent]))
-    expect(kept).toEqual([{ id: recent }])
   })
 })

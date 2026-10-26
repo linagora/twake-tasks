@@ -2,10 +2,14 @@ import { asc, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import type { Db, Tx } from '../infra/db.ts'
 import type { OutgoingEvent } from './envelope.ts'
-import { outbox } from './schema.ts'
+import { outbox, processedEvents } from './schema.ts'
 
 const BATCH = 100
 const KEEP_SENT = '1 day'
+// Far longer than any redelivery of a consumed event. Pruned under the relay's
+// lock, so by one replica at a time.
+const KEEP_PROCESSED = '30 days'
+const PRUNE_PROCESSED_EVERY_MS = 60 * 60 * 1000
 // Any constant shared by every replica: only the holder relays, so events leave in order.
 const RELAY_LOCK = 0x7461736b
 
@@ -18,6 +22,7 @@ export function createRelay(deps: {
   logger: Logger
   publish: (event: OutgoingEvent) => Promise<void>
 }) {
+  let processedPrunedAt = -Infinity
   // A failure stops the batch so later events wait for it; what was already
   // published is marked sent, and the rest is retried on the next run.
   const relayOnce = () =>
@@ -51,6 +56,17 @@ export function createRelay(deps: {
       await tx
         .delete(outbox)
         .where(lt(outbox.sentAt, sql`now() - ${KEEP_SENT}::interval`))
+      if (Date.now() - processedPrunedAt >= PRUNE_PROCESSED_EVERY_MS) {
+        processedPrunedAt = Date.now()
+        await tx
+          .delete(processedEvents)
+          .where(
+            lt(
+              processedEvents.processedAt,
+              sql`now() - ${KEEP_PROCESSED}::interval`
+            )
+          )
+      }
       return sent.length
     })
 

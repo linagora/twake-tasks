@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto'
+import { inArray, sql as raw } from 'drizzle-orm'
 import { pino } from 'pino'
 import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import { createDb } from '../infra/db.ts'
 import type { OutgoingEvent } from './envelope.ts'
 import { createRelay, enqueue } from './outbox.ts'
+import { processedEvents } from './schema.ts'
 
 const { sql, db } = createDb(inject('databaseUrl'))
 const logger = pino({ level: 'silent' })
@@ -80,5 +82,46 @@ describe('outbox', () => {
     await drain(createRelay({ db, logger, publish }))
 
     expect(sent).toContain(event.id)
+  })
+})
+
+describe('processed events', () => {
+  const processed = (age: string) => {
+    const id = randomUUID()
+    return {
+      id,
+      insert: () =>
+        db.insert(processedEvents).values({
+          consumer: 'outbox-test',
+          source: 'space',
+          id,
+          processedAt: raw`now() - ${age}::interval`
+        })
+    }
+  }
+  const kept = async (...ids: string[]) =>
+    (
+      await db
+        .select({ id: processedEvents.id })
+        .from(processedEvents)
+        .where(inArray(processedEvents.id, ids))
+    ).map(row => row.id)
+
+  it('are forgotten after 30 days, at most once an hour', async () => {
+    const [old, recent, later] = [
+      processed('31 days'),
+      processed('29 days'),
+      processed('31 days')
+    ]
+    await old.insert()
+    await recent.insert()
+    const relay = createRelay({ db, logger, publish: recorder().publish })
+
+    await relay.relayOnce()
+    expect(await kept(old.id, recent.id)).toEqual([recent.id])
+
+    await later.insert()
+    await relay.relayOnce()
+    expect(await kept(later.id)).toEqual([later.id])
   })
 })
