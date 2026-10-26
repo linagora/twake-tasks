@@ -31,7 +31,10 @@ describe('TaskPanel', () => {
     const panel = await openLogo()
 
     expect(
-      panel.queryByRole('button', { name: 'Mark complete' })
+      panel.queryByRole('button', { name: /complete/i })
+    ).not.toBeInTheDocument()
+    expect(
+      panel.queryByRole('checkbox', { name: /complete/i })
     ).not.toBeInTheDocument()
   })
 
