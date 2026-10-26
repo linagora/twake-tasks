@@ -73,6 +73,7 @@ export function FollowButton({
       aria-pressed={followed}
       disabled={!following.isSuccess}
       onClick={() => {
+        if (set.isPending) return
         set.mutate(!followed)
       }}
       aria-label={label}

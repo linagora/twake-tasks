@@ -1,4 +1,11 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+  within
+} from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { Notification } from '@/application/boards'
@@ -59,8 +66,11 @@ describe('following a task', () => {
     expect(follow).toHaveTextContent('')
     expect(follow).toHaveAttribute('aria-pressed', 'false')
     fireEvent.mouseOver(follow)
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Follow')
+    const tooltip = await screen.findByRole('tooltip')
+    expect(tooltip).toHaveTextContent('Follow')
     const crossed = follow.querySelector('svg')?.innerHTML
+    fireEvent.mouseLeave(follow)
+    await waitForElementToBeRemoved(tooltip)
     fireEvent.click(follow)
 
     const following = await panel.findByRole('button', {
@@ -74,6 +84,28 @@ describe('following a task', () => {
       expect(screen.getByRole('tooltip')).toHaveTextContent('Unfollow')
     })
     expect(following).toHaveAccessibleDescription('Unfollow')
+  })
+
+  it('sends no second request while the first is pending', async () => {
+    const { board, logo, boardsApi } = aBoardWithLogo()
+    const request = Promise.withResolvers<undefined>()
+    boardsApi.setFollowing.mockReturnValueOnce(request.promise)
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+
+    fireEvent.click(await panel.findByRole('button', { name: 'Follow' }))
+    fireEvent.click(await panel.findByRole('button', { name: 'Following' }))
+    await act(() => Promise.resolve())
+    expect(boardsApi.setFollowing).toHaveBeenCalledTimes(1)
+    expect(boardsApi.setFollowing).toHaveBeenCalledWith(board.id, logo.id, true)
+
+    request.resolve(undefined)
+    expect(
+      await panel.findByRole('button', { name: 'Following' })
+    ).toBeVisible()
   })
 })
 
