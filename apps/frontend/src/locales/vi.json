@@ -177,9 +177,6 @@
     "copyLink": "Sao chép liên kết",
     "expand": "Mở toàn trang",
     "peek": "Mở ở khung bên",
-    "markComplete": "Đánh dấu hoàn thành",
-    "markIncomplete": "Đánh dấu chưa hoàn thành",
-    "noDoneSection": "Bảng này không có mục Hoàn thành.",
     "linkCopied": "Đã sao chép liên kết",
     "copyFailed": "Không thể sao chép liên kết.",
     "board": "Bảng",
@@ -503,7 +500,6 @@
     "addUndated": "Thêm công việc không có ngày",
     "task": "Công việc",
     "due": "Hạn",
-    "complete": "Hoàn thành %{title}",
     "today": "Hôm nay",
     "nothingDue": "Không có việc nào đến hạn hôm đó."
   },
@@ -594,8 +590,7 @@
     "upcomingEmpty": "Không có việc đến hạn trong những ngày tới",
     "filterEmpty": "Không có công việc đang mở nào khớp với bộ lọc này",
     "loadFailed": "Không thể tải công việc.",
-    "mineEmpty": "Chưa có việc nào giao cho bạn",
-    "completeFailed": "Không thể hoàn thành công việc."
+    "mineEmpty": "Chưa có việc nào giao cho bạn"
   },
   "members": {
     "count": "%{smart_count} thành viên",

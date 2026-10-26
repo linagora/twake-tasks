@@ -177,9 +177,6 @@
     "copyLink": "Copy link",
     "expand": "Open as full page",
     "peek": "Open in side peek",
-    "markComplete": "Mark complete",
-    "markIncomplete": "Mark incomplete",
-    "noDoneSection": "This board has no Done section.",
     "linkCopied": "Link copied",
     "copyFailed": "The link could not be copied.",
     "board": "Board",
@@ -503,7 +500,6 @@
     "addUndated": "Add a task without a date",
     "task": "Task",
     "due": "Due",
-    "complete": "Complete %{title}",
     "today": "Today",
     "nothingDue": "Nothing due this day."
   },
@@ -594,8 +590,7 @@
     "upcomingEmpty": "Nothing due in the coming days",
     "filterEmpty": "No open task matches this filter",
     "loadFailed": "Your tasks could not be loaded.",
-    "mineEmpty": "Nothing assigned to you",
-    "completeFailed": "Couldn’t complete the task."
+    "mineEmpty": "Nothing assigned to you"
   },
   "members": {
     "count": "%{smart_count} member |||| %{smart_count} members",

@@ -189,3 +189,15 @@ export interface Board {
   sections: Section[]
   tasks: Task[]
 }
+
+/**
+ * A task in a section is done by being in a completed section; a task
+ * outside sections, once completed.
+ */
+export const isDone = (
+  task: Pick<Task, 'sectionId' | 'completedAt'>,
+  sections: readonly Pick<Section, 'id' | 'category'>[]
+): boolean => {
+  const section = sections.find(each => each.id === task.sectionId)
+  return section ? section.category === 'completed' : task.completedAt !== null
+}

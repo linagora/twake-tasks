@@ -8,7 +8,7 @@ import {
   Plus,
   Profile
 } from '@linagora/twake-icons'
-import { Button, Checkbox, Link, Typography } from '@linagora/twake-mui'
+import { Button, Link, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 import { useParams } from 'react-router'
 
@@ -38,12 +38,7 @@ import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
 import { formatDay, inDays } from '@/ui/boards/dueLabel'
 import { LayoutToggle } from '@/ui/boards/Layouts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
-import {
-  useAgenda,
-  useCompleteAgendaTask,
-  useFilters,
-  type AgendaView
-} from '@/ui/boards/queries'
+import { useAgenda, useFilters, type AgendaView } from '@/ui/boards/queries'
 import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
 import { NotFoundScreen } from '@/ui/shell/Problems'
 import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
@@ -95,33 +90,11 @@ function AgendaRow({
   highlight: string
 }): ReactElement {
   const { t } = useI18n()
-  const complete = useCompleteAgendaTask()
   const panel = useAgendaTaskPanel(task)
-  const done = task.completedAt !== null
 
   return (
     <TaskRow
       label={`${task.key} ${task.title}`}
-      check={
-        <Checkbox
-          size="small"
-          checked={done || complete.isPending || complete.isSuccess}
-          disabled={
-            done ||
-            task.canceledAt !== null ||
-            !task.completable ||
-            complete.isPending
-          }
-          slotProps={{
-            input: {
-              'aria-label': t('layout.complete', { title: task.title })
-            }
-          }}
-          onChange={() => {
-            complete.mutate(task)
-          }}
-        />
-      }
       title={
         <>
           <Link
@@ -144,11 +117,6 @@ function AgendaRow({
       }
       facts={
         <>
-          {complete.isError && (
-            <Typography role="alert" variant="caption" color="error">
-              {t('agenda.completeFailed')}
-            </Typography>
-          )}
           {task.priority !== null && <PriorityChip priority={task.priority} />}
           {showDue && <DueChip task={task} />}
           {task.labels.map(label => (

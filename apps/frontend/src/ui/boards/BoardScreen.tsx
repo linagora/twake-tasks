@@ -358,9 +358,7 @@ function BoardColumns({
       key={task.id}
       sortable={sortable}
       task={task}
-      boardId={board.id}
       sections={board.sections}
-      editable={editable}
     />
   )
   // The board and the list drag their tasks alike, among the sections.

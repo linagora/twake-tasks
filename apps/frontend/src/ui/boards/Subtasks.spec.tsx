@@ -34,30 +34,10 @@ describe('Sub-tasks', () => {
 
     const card = await logoCard()
 
-    expect(card.getByRole('checkbox', { name: 'Sketch' })).not.toBeChecked()
+    expect(card.getByRole('button', { name: 'Sketch' })).toBeVisible()
     expect(
       screen.queryByRole('region', { name: 'No section' })
     ).not.toBeInTheDocument()
-  })
-
-  it('completes a sub-task with its checkbox', async () => {
-    const { board, sketch, boardsApi } = logoWithSketch()
-    renderRoute(`/boards/${board.id}`, { boardsApi })
-
-    fireEvent.click(
-      (await logoCard()).getByRole('checkbox', { name: 'Sketch' })
-    )
-
-    await waitFor(() => {
-      expect(boardsApi.completeTask).toHaveBeenCalledWith(
-        board.id,
-        sketch.id,
-        'completed'
-      )
-    })
-    expect(
-      await (await logoCard()).findByRole('checkbox', { name: 'Sketch' })
-    ).toBeChecked()
   })
 
   it('adds a sub-task from its parent', async () => {
@@ -82,7 +62,7 @@ describe('Sub-tasks', () => {
     })
     fireEvent.click(panel.getByRole('button', { name: 'Close' }))
     expect(
-      await (await logoCard()).findByRole('checkbox', { name: 'Colors' })
+      await (await logoCard()).findByRole('button', { name: 'Colors' })
     ).toBeInTheDocument()
   })
 

@@ -177,9 +177,6 @@
     "copyLink": "Copia link",
     "expand": "Apri a pagina intera",
     "peek": "Apri in un pannello laterale",
-    "markComplete": "Segna come completata",
-    "markIncomplete": "Segna come non completata",
-    "noDoneSection": "Questa bacheca non ha una sezione Fatto.",
     "linkCopied": "Link copiato",
     "copyFailed": "Impossibile copiare il link.",
     "board": "Bacheca",
@@ -503,7 +500,6 @@
     "addUndated": "Aggiungi un'attività senza data",
     "task": "Attività",
     "due": "Scadenza",
-    "complete": "Completa %{title}",
     "today": "Oggi",
     "nothingDue": "Nessuna scadenza in questo giorno."
   },
@@ -594,8 +590,7 @@
     "upcomingEmpty": "Niente in scadenza nei prossimi giorni",
     "filterEmpty": "Nessuna attività aperta corrisponde a questo filtro",
     "loadFailed": "Impossibile caricare le tue attività.",
-    "mineEmpty": "Nulla assegnato a te",
-    "completeFailed": "Impossibile completare l’attività."
+    "mineEmpty": "Nulla assegnato a te"
   },
   "members": {
     "count": "%{smart_count} membro |||| %{smart_count} membri",

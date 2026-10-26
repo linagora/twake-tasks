@@ -1,9 +1,8 @@
-import { Checkbox, Link } from '@linagora/twake-mui'
+import { Link } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
 
 import { Checklist } from '@/ds/Columns'
 import type { Task } from '@/domain/board'
-import { useBoardChange } from '@/ui/boards/queries'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 
 export function Subtasks({
@@ -48,21 +47,9 @@ function Subtask({
   editable: boolean
 }): ReactElement {
   const panel = useTaskPanel(task.key, tasks)
-  const complete = useBoardChange(boardId, (api, done: boolean) =>
-    api.completeTask(boardId, task.id, done ? 'completed' : null)
-  )
 
   return (
     <li>
-      <Checkbox
-        size="small"
-        checked={task.completedAt !== null}
-        disabled={!editable || task.canceledAt !== null || complete.isPending}
-        slotProps={{ input: { 'aria-label': task.title } }}
-        onChange={event => {
-          complete.mutate(event.target.checked)
-        }}
-      />
       <Link
         component="button"
         variant="body2"
@@ -71,7 +58,7 @@ function Subtask({
         className="u-ta-left"
         onClick={panel.show}
       >
-        {task.title}
+        {task.completedAt === null ? task.title : <del>{task.title}</del>}
       </Link>
       <Subtasks
         parentId={task.id}

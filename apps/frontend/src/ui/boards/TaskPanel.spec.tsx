@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
-import { onAPhone } from '@/testing/phone'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { typeRichText } from '@/testing/richText'
 
@@ -37,50 +36,6 @@ describe('TaskPanel', () => {
     expect(
       panel.queryByRole('checkbox', { name: /complete/i })
     ).not.toBeInTheDocument()
-  })
-
-  it('completes the task from its header on a phone, then reopens it', async () => {
-    onAPhone()
-    const { board, logo, boardsApi } = logoBoard()
-    renderRoute(`/boards/${board.id}`, { boardsApi })
-
-    const panel = await openLogo()
-    fireEvent.click(panel.getByRole('button', { name: 'Mark complete' }))
-
-    await waitFor(() => {
-      expect(boardsApi.moveTask).toHaveBeenCalledWith(board.id, logo.id, {
-        sectionId: board.sections[2]?.id
-      })
-    })
-    fireEvent.click(
-      await panel.findByRole('button', { name: 'Mark incomplete' })
-    )
-
-    await waitFor(() => {
-      expect(boardsApi.moveTask).toHaveBeenLastCalledWith(board.id, logo.id, {
-        sectionId: board.sections[0]?.id
-      })
-    })
-  })
-
-  it('says on a phone why a board without a Done section cannot complete the task', async () => {
-    onAPhone()
-    const { board, boardsApi } = logoBoard()
-    board.sections = board.sections.filter(
-      section => section.category !== 'completed'
-    )
-    renderRoute(`/boards/${board.id}`, { boardsApi })
-
-    const panel = await openLogo()
-    const button = panel.getByRole('button', { name: 'Mark complete' })
-    expect(button).toHaveAttribute('aria-disabled', 'true')
-    fireEvent.click(button)
-    fireEvent.mouseOver(button)
-
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      'This board has no Done section.'
-    )
-    expect(boardsApi.moveTask).not.toHaveBeenCalled()
   })
 
   it('shows the description as formatted text', async () => {
@@ -476,7 +431,7 @@ describe('TaskPanel', () => {
     ])
   })
 
-  it('lists the sub-tasks and completes one', async () => {
+  it('lists the sub-tasks, with no checkbox', async () => {
     const { board, logo, boardsApi } = logoBoard()
     const sketch = aTask(null, {
       key: 'DES-2',
@@ -488,15 +443,8 @@ describe('TaskPanel', () => {
 
     const panel = await openLogo()
     const subtasks = within(panel.getByRole('list', { name: 'Sub-tasks' }))
-    fireEvent.click(subtasks.getByRole('checkbox', { name: 'Sketch' }))
-
-    await waitFor(() => {
-      expect(boardsApi.completeTask).toHaveBeenCalledWith(
-        board.id,
-        sketch.id,
-        'completed'
-      )
-    })
+    expect(subtasks.getByRole('button', { name: 'Sketch' })).toBeVisible()
+    expect(subtasks.queryByRole('checkbox')).toBeNull()
   })
 
   it('closes from its close button', async () => {

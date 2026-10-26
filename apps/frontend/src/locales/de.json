@@ -177,9 +177,6 @@
     "copyLink": "Link kopieren",
     "expand": "Als ganze Seite öffnen",
     "peek": "In der Seitenansicht öffnen",
-    "markComplete": "Als erledigt markieren",
-    "markIncomplete": "Als nicht erledigt markieren",
-    "noDoneSection": "Dieses Board hat keinen Abschnitt „Erledigt“.",
     "linkCopied": "Link kopiert",
     "copyFailed": "Der Link konnte nicht kopiert werden.",
     "board": "Board",
@@ -503,7 +500,6 @@
     "addUndated": "Aufgabe ohne Datum hinzufügen",
     "task": "Aufgabe",
     "due": "Fällig",
-    "complete": "%{title} erledigen",
     "today": "Heute",
     "nothingDue": "An diesem Tag ist nichts fällig."
   },
@@ -594,8 +590,7 @@
     "upcomingEmpty": "In den nächsten Tagen nichts fällig",
     "filterEmpty": "Keine offene Aufgabe entspricht diesem Filter",
     "loadFailed": "Ihre Aufgaben konnten nicht geladen werden.",
-    "mineEmpty": "Ihnen ist nichts zugewiesen",
-    "completeFailed": "Die Aufgabe konnte nicht erledigt werden."
+    "mineEmpty": "Ihnen ist nichts zugewiesen"
   },
   "members": {
     "count": "%{smart_count} Mitglied |||| %{smart_count} Mitglieder",

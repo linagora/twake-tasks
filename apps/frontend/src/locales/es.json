@@ -177,9 +177,6 @@
     "copyLink": "Copiar enlace",
     "expand": "Abrir a página completa",
     "peek": "Abrir en un panel lateral",
-    "markComplete": "Marcar como completada",
-    "markIncomplete": "Marcar como no completada",
-    "noDoneSection": "Este tablero no tiene una sección Hecho.",
     "linkCopied": "Enlace copiado",
     "copyFailed": "No se pudo copiar el enlace.",
     "board": "Tablero",
@@ -503,7 +500,6 @@
     "addUndated": "Añadir una tarea sin fecha",
     "task": "Tarea",
     "due": "Vencimiento",
-    "complete": "Completar %{title}",
     "today": "Hoy",
     "nothingDue": "Nada vence este día."
   },
@@ -594,8 +590,7 @@
     "upcomingEmpty": "Nada pendiente en los próximos días",
     "filterEmpty": "Ninguna tarea abierta coincide con este filtro",
     "loadFailed": "No se pudieron cargar tus tareas.",
-    "mineEmpty": "No tienes nada asignado",
-    "completeFailed": "No se pudo completar la tarea."
+    "mineEmpty": "No tienes nada asignado"
   },
   "members": {
     "count": "%{smart_count} miembro |||| %{smart_count} miembros",
