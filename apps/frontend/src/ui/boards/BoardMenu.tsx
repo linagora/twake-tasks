@@ -197,7 +197,7 @@ export function BoardMenu({
   )
 }
 
-function ArchiveBoardDialog({
+export function ArchiveBoardDialog({
   name,
   onCancel,
   onArchive

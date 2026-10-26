@@ -65,8 +65,9 @@
     "emptyArchivedHint": "Archivierte Boards bleiben hier, schreibgeschützt.",
     "loadFailed": "Die Boards konnten nicht geladen werden.",
     "projectNotFound": "Dieses Projekt existiert nicht, oder Sie können es nicht öffnen.",
-    "star": "%{name} zu den Favoriten hinzufügen",
-    "unstar": "%{name} aus den Favoriten entfernen",
+    "menu": "Optionen für %{name}",
+    "addFavorite": "Zu Favoriten hinzufügen",
+    "removeFavorite": "Aus Favoriten entfernen",
     "personalProject": "Persönlich",
     "defaultChip": "Standard",
     "defaultHint": "Neue Aufgaben werden standardmäßig hier erstellt. Dieses Board kann nicht geteilt werden.",
@@ -149,6 +150,7 @@
     "addFailed": "Die Aufgabe konnte nicht hinzugefügt werden.",
     "rename": "Board umbenennen",
     "renameName": "Board-Name",
+    "renameSave": "Umbenennen",
     "renameFailed": "Das Board konnte nicht umbenannt werden."
   },
   "task": {

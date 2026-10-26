@@ -39,7 +39,7 @@ export function CardGrid({
   )
 }
 
-// `title` is a link that stretches over the whole card; `action` sits above
+// `title` is a link that stretches over the whole card; `menu` sits above
 // that stretch so it keeps its own click.
 export function BoardCard({
   label,
@@ -49,7 +49,7 @@ export function BoardCard({
   tag,
   meta,
   members,
-  action,
+  menu,
   footerAction,
   cover,
   lightCover = false
@@ -64,7 +64,8 @@ export function BoardCard({
   meta: string
   /** The people of the board, at the end of its last row. */
   members?: ReactNode
-  action?: ReactNode
+  /** Shown on hover or focus; touch screens always show it. */
+  menu?: ReactNode
   /** On the last row, before the people. */
   footerAction?: ReactNode
   /** The picture along the top, with the name on it. */
@@ -92,7 +93,11 @@ export function BoardCard({
           outlineColor: 'primary.main',
           outlineOffset: -2
         },
-        '& a:focus-visible': { outline: 'none' }
+        '& a:focus-visible': { outline: 'none' },
+        '& [data-card-menu]': { opacity: 0, transition: 'opacity 120ms' },
+        '&:hover [data-card-menu], &:focus-within [data-card-menu], & [data-card-menu]:has([aria-expanded="true"])':
+          { opacity: 1 },
+        '@media (hover: none)': { '& [data-card-menu]': { opacity: 1 } }
       }}
     >
       <Box
@@ -148,8 +153,13 @@ export function BoardCard({
             sx={{ flexShrink: 0, height: 20, fontWeight: 600 }}
           />
         )}
-        {action && (
-          <Box sx={{ position: 'relative', zIndex: 1, m: -0.5 }}>{action}</Box>
+        {menu && (
+          <Box
+            data-card-menu=""
+            sx={{ position: 'relative', zIndex: 1, m: -0.5 }}
+          >
+            {menu}
+          </Box>
         )}
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

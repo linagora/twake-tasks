@@ -65,8 +65,9 @@
     "emptyArchivedHint": "Los tableros que archives se quedan aquí, en solo lectura.",
     "loadFailed": "No se pudieron cargar los tableros.",
     "projectNotFound": "Este proyecto no existe o no puedes abrirlo.",
-    "star": "Añadir %{name} a favoritos",
-    "unstar": "Quitar %{name} de favoritos",
+    "menu": "Opciones de %{name}",
+    "addFavorite": "Añadir a favoritos",
+    "removeFavorite": "Quitar de favoritos",
     "personalProject": "Personal",
     "defaultChip": "Predeterminado",
     "defaultHint": "Las tareas nuevas se crean aquí por defecto. Este tablero no se puede compartir.",
@@ -149,6 +150,7 @@
     "addFailed": "No se pudo añadir la tarea.",
     "rename": "Renombrar tablero",
     "renameName": "Nombre del tablero",
+    "renameSave": "Renombrar",
     "renameFailed": "No se pudo renombrar el tablero."
   },
   "task": {
