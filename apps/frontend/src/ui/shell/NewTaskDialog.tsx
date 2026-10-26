@@ -44,6 +44,7 @@ import { LabelsMenu } from '@/ui/boards/LabelsMenu'
 import { PeopleMenu } from '@/ui/boards/PeopleMenu'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useNewTask, useNewTaskBoard } from '@/ui/boards/queries'
+import { PriorityChip } from '@/ui/boards/TaskFacts'
 import { MAX_DESCRIPTION } from '@/ui/boards/TaskPanel'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { focusOnMount } from '@/ui/focusOnMount'
@@ -446,9 +447,11 @@ export function NewTaskDialog({
                       options={[null, ...PRIORITIES].map(level => ({
                         value: level === null ? '' : String(level),
                         label:
-                          level === null
-                            ? t('task.noPriority')
-                            : t('board.priority', { level })
+                          level === null ? (
+                            t('task.noPriority')
+                          ) : (
+                            <PriorityChip priority={level} />
+                          )
                       }))}
                       onChange={value => {
                         change({
