@@ -200,6 +200,49 @@ describe('sharing a board', () => {
     })
   })
 
+  it.each([
+    ['removing a member', 'Bob Durand', 'Remove'],
+    ['cancelling an invite', 'eve@example.com', 'Cancel invite']
+  ])(
+    'keeps the keyboard in the dialog after %s',
+    async (_name, person, action) => {
+      const board = aBoard({ name: 'Design' })
+      const boardsApi = fakeBoardsApi([board])
+      boardsApi.sharings.set(board.id, {
+        members: [
+          me,
+          {
+            userId: 'bob',
+            email: 'bob@example.com',
+            name: 'Bob Durand',
+            role: 'editor'
+          }
+        ],
+        invites: [{ id: 'inv', email: 'eve@example.com', role: 'editor' }]
+      })
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      fireEvent.click(await screen.findByRole('button', { name: 'Share' }))
+      const dialog = within(await screen.findByRole('dialog'))
+      const row = within(await dialog.findByRole('listitem', { name: person }))
+      const role = row.getByRole('button', {
+        name: `Role of ${person}: Editor`
+      })
+
+      act(() => {
+        role.focus()
+      })
+      fireEvent.click(role)
+      fireEvent.click(screen.getByRole('menuitem', { name: action }))
+
+      await waitFor(() => {
+        expect(dialog.queryByRole('listitem', { name: person })).toBeNull()
+      })
+      await waitFor(() => {
+        expect(dialog.getByRole('combobox', { name: 'Email' })).toHaveFocus()
+      })
+    }
+  )
+
   it('names the dialog after its title only', async () => {
     await openSharing()
     const label = document.getElementById(

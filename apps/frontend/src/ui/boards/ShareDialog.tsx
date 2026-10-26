@@ -13,7 +13,7 @@ import {
   MenuItem,
   Typography
 } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import { useRef, useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { ClosableTitle } from '@/ds/ClosableTitle'
@@ -139,6 +139,12 @@ export function ShareDialog({
   const cancel = useBoardChange(board.id, (api, inviteId: string) =>
     api.cancelInvite(board.id, inviteId)
   )
+  const content = useRef<HTMLDivElement>(null)
+  // The removed row unmounts with the focused role button, which would drop
+  // focus to the body, outside the dialog's Escape handler.
+  const refocus = (): void => {
+    content.current?.querySelector('input')?.focus()
+  }
   // Clears the last action's message. A pending action keeps running: a
   // reset would drop its onSuccess and re-enable Invite mid-request.
   const start = (): void => {
@@ -167,7 +173,7 @@ export function ShareDialog({
         closeLabel={t('sharing.close')}
         onClose={onClose}
       />
-      <DialogContent className="u-pb-1-half">
+      <DialogContent ref={content} className="u-pb-1-half">
         <Typography variant="body2" color="textSecondary" className="u-mb-1">
           {projectBoards &&
             `${
@@ -275,7 +281,11 @@ export function ShareDialog({
                   label: t('sharing.remove'),
                   run: () => {
                     start()
-                    change.mutate({ userId: member.userId, role: null })
+                    // mutate's own onSuccess only runs for the latest call, so a
+                    // role change sent meanwhile would skip the refocus.
+                    change
+                      .mutateAsync({ userId: member.userId, role: null })
+                      .then(refocus, () => undefined)
                   }
                 }}
               />
@@ -295,7 +305,9 @@ export function ShareDialog({
                   label: t('sharing.cancelInvite'),
                   run: () => {
                     start()
-                    cancel.mutate(pending.id)
+                    cancel
+                      .mutateAsync(pending.id)
+                      .then(refocus, () => undefined)
                   }
                 }}
               />
