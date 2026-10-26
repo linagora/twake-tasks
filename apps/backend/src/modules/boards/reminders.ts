@@ -10,11 +10,7 @@ import {
   settingsOfMember
 } from './access.ts'
 import { mentionedEmails, plainText, withNames } from './markdown.ts'
-import {
-  remindersWaitingFor,
-  scheduleReminder,
-  unscheduleReminder
-} from './reminderJobs.ts'
+import { remindersWaitingFor, scheduleReminder } from './reminderJobs.ts'
 import {
   boards,
   comments,
@@ -156,7 +152,6 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
           )
           .returning({ id: taskReminders.id })
         if (deleted.length === 0) throw new Refused('not_found')
-        await unscheduleReminder(tx, reminderId)
         return null
       })
     },
