@@ -132,6 +132,21 @@ describe('TaskPanel', () => {
     })
   })
 
+  it('is ready to type in once its pencil is clicked', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(
+      await panel.findByRole('button', { name: 'Edit description' })
+    )
+
+    const editor = await panel.findByRole('textbox', { name: 'Description' })
+    await waitFor(() => {
+      expect(editor).toHaveFocus()
+    })
+  })
+
   describe('emoji in the description', () => {
     async function editDescription() {
       const { board, logo, boardsApi } = logoBoard()

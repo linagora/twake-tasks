@@ -223,7 +223,8 @@ export function RichTextEditor({
   mentions,
   linkPicker,
   emoji,
-  footer
+  footer,
+  focusOnOpen = false
 }: {
   label: string
   initial: string
@@ -239,6 +240,8 @@ export function RichTextEditor({
   /** Adds a button that inserts an emoji. */
   emoji?: EmojiPickerOptions
   footer?: ReactNode
+  /** Takes the focus once open, as asked from a button, the caret after the text it starts from. */
+  focusOnOpen?: boolean
 }): ReactElement {
   // The editor keeps the callbacks it was created with, so it reads the latest ones here.
   const latest = useRef({ onChange, onSubmit, mentions })
@@ -338,6 +341,7 @@ export function RichTextEditor({
     ]),
     content: initial,
     contentType: 'markdown',
+    autofocus: focusOnOpen ? 'end' : false,
     editorProps: {
       attributes: {
         role: 'textbox',
