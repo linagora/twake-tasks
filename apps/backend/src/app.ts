@@ -4,6 +4,7 @@ import type { RateLimits } from './config.ts'
 import { versionStreams, type Changes } from './infra/changes.ts'
 import type { Db } from './infra/db.ts'
 import { createServer } from './infra/http.ts'
+import type { Metrics } from './infra/metrics.ts'
 import { registerRateLimit } from './infra/rateLimit.ts'
 import {
   limitUsers,
@@ -28,6 +29,7 @@ export async function buildApp(deps: {
   isReady: () => Promise<boolean>
   proxyHops?: number | undefined
   redis?: Redis | undefined
+  metrics?: Metrics | undefined
   // Without them, nothing is limited per user.
   limits?:
     | Pick<
@@ -43,7 +45,8 @@ export async function buildApp(deps: {
   const app = createServer({
     logger: deps.logger,
     isReady: deps.isReady,
-    proxyHops: deps.proxyHops
+    proxyHops: deps.proxyHops,
+    metrics: deps.metrics
   })
   await registerRateLimit(app, deps.redis)
   // The frontend serves its own routes, such as /boards/<id>, on the same origin.
@@ -71,7 +74,8 @@ export async function buildApp(deps: {
         requireIdentity,
         changes: deps.boardChanges,
         streamVersions,
-        openStreams: deps.limits?.openStreams
+        openStreams: deps.limits?.openStreams,
+        metrics: deps.metrics
       })
       registerSettings(api, { db: deps.db, requireIdentity })
       return Promise.resolve()

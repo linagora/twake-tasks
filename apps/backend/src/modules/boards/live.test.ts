@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb, inTenant } from '../../infra/db.ts'
+import { createMetrics } from '../../infra/metrics.ts'
 import {
   aB2cUser,
   aUser,
@@ -228,5 +229,35 @@ describe('live board updates', () => {
 
     expect((await stream.response).status).toBe(404)
     stream.close()
+  })
+})
+
+describe('the metrics of a replica', () => {
+  it('count the requests by route and the streams open, outside /api', async () => {
+    const metrics = createMetrics()
+    const replica = await startApp({ metrics })
+    const url = await replica.listen()
+    const alice = aUser()
+    const board = (
+      await replica.as(alice).post('/boards', { name: 'MET', keyPrefix: 'MET' })
+    ).json<{ id: string }>()
+    const stream = openStream(
+      `${url}/api/boards/${board.id}/events`,
+      replica.tokenOf(alice)
+    )
+    await stream.messages.next()
+
+    const scraped = await replica.inject('/metrics')
+    const underApi = await replica.inject('/api/metrics')
+    stream.close()
+    await replica.close()
+
+    expect(scraped.statusCode).toBe(200)
+    expect(scraped.body).toContain('live_streams_open 1')
+    expect(scraped.body).toContain(
+      'http_requests_total{method="POST",route="/api/boards",status="201"} 1'
+    )
+    expect(scraped.body).not.toContain(board.id)
+    expect(underApi.statusCode).toBe(404)
   })
 })

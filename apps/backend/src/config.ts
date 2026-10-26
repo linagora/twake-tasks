@@ -118,7 +118,8 @@ const configSchema = z
     RATE_LIMIT_REFUSED_TOKEN_CACHE_SIZE: limit(10_000),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
-      .default('info')
+      .default('info'),
+    METRICS_ENABLED: z.stringbool().default(true)
   })
   // Draining the queue also unbinds it, so naming it twice would leave Tasks
   // deaf to every event.

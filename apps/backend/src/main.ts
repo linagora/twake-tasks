@@ -10,6 +10,7 @@ import { createChanges } from './infra/changes.ts'
 import { assertRowLevelSecurity, createDb, migrateLocked } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
+import { createMetrics } from './infra/metrics.ts'
 import { connectRedis } from './infra/rateLimit.ts'
 import {
   connectLive,
@@ -48,6 +49,7 @@ const config = loadConfig()
 const limits = rateLimits(config)
 const logger = pino({ level: config.LOG_LEVEL })
 const spaces = config.SPACE_INTEGRATION === 'true'
+const metrics = config.METRICS_ENABLED ? createMetrics() : undefined
 
 const { sql, db } = createDb(config.DATABASE_URL, logger, {
   poolMax: config.DATABASE_POOL_MAX,
@@ -68,6 +70,7 @@ const server = await buildApp({
   proxyHops: config.HTTP_TRUSTED_PROXY_HOPS,
   redis,
   limits,
+  metrics,
   db,
   boardChanges,
   ...(await connectIdentityProvider({

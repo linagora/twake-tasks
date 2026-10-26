@@ -141,6 +141,13 @@ describe('the server settings', () => {
     expect(config.REDIS_URL).toBeUndefined()
   })
 
+  it('serve metrics unless turned off', () => {
+    expect(loadConfig(required).METRICS_ENABLED).toBe(true)
+    expect(
+      loadConfig({ ...required, METRICS_ENABLED: 'false' }).METRICS_ENABLED
+    ).toBe(false)
+  })
+
   it.each([
     ['HTTP_TRUSTED_PROXY_HOPS', '-1'],
     ['REDIS_URL', 'http://redis:6379'],
@@ -154,7 +161,8 @@ describe('the server settings', () => {
     ['JOBS_CONCURRENCY', '0'],
     ['JOBS_LEASE_SECONDS', '0'],
     ['JOBS_LEASE_SECONDS', '120'],
-    ['SMTP_TIMEOUT_SECONDS', '0']
+    ['SMTP_TIMEOUT_SECONDS', '0'],
+    ['METRICS_ENABLED', 'maybe']
   ])('refuse %s=%s', (name, value) => {
     expect(() => loadConfig({ ...required, [name]: value })).toThrow(
       new RegExp(name)

@@ -5,6 +5,7 @@ import Fastify, {
   type FastifyInstance
 } from 'fastify'
 import { isTransient } from './db.ts'
+import type { Metrics } from './metrics.ts'
 
 export function createServer(deps: {
   logger: FastifyBaseLogger
@@ -12,13 +13,15 @@ export function createServer(deps: {
   // The proxies between the caller and the server, each adding the address
   // it got the request from to X-Forwarded-For.
   proxyHops?: number | undefined
+  metrics?: Metrics | undefined
 }): HttpServer {
   const proxyHops = deps.proxyHops ?? 0
   const app = Fastify({
     loggerInstance: deps.logger,
     trustProxy: (_address, hop) => hop < proxyHops,
     logController: new LogController({
-      disableRequestLogging: request => request.url.startsWith('/health/')
+      disableRequestLogging: request =>
+        request.url.startsWith('/health/') || request.url === '/metrics'
     })
   })
 
@@ -52,6 +55,24 @@ export function createServer(deps: {
       .code(ready ? 200 : 503)
       .send({ status: ready ? 'ok' : 'unavailable' })
   })
+
+  const metrics = deps.metrics
+  if (metrics) {
+    app.addHook('onResponse', async (request, reply) => {
+      const labels = {
+        method: request.method,
+        route: request.routeOptions.url ?? 'unmatched'
+      }
+      metrics.httpRequests.inc({ ...labels, status: reply.statusCode })
+      metrics.httpRequestDuration.observe(labels, reply.elapsedTime / 1000)
+    })
+
+    app.get('/metrics', async (_request, reply) =>
+      reply
+        .type(metrics.registry.contentType)
+        .send(await metrics.registry.metrics())
+    )
+  }
 
   return app
 }

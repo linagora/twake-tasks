@@ -1,6 +1,7 @@
 import { pino } from 'pino'
 import { describe, expect, it } from 'vitest'
 import { createServer } from './http.ts'
+import { createMetrics } from './metrics.ts'
 
 interface LogLine {
   level: number
@@ -118,5 +119,36 @@ describe('the server', () => {
     )
 
     expect(responses.map(response => response.statusCode)).toEqual([200, 400])
+  })
+
+  it('labels a request with its route, never its URL', async () => {
+    const metrics = createMetrics()
+    const app = createServer({
+      logger: pino({ level: 'silent' }),
+      isReady: () => Promise.resolve(true),
+      metrics
+    })
+    app.get('/boards/:boardId', () => ({ ok: true }))
+
+    await app.inject('/boards/b-42')
+    await app.inject('/nowhere/b-42')
+    const scraped = await app.inject('/metrics')
+
+    expect(scraped.body).toContain(
+      'http_requests_total{method="GET",route="/boards/:boardId",status="200"} 1'
+    )
+    expect(scraped.body).toContain(
+      'http_requests_total{method="GET",route="unmatched",status="404"} 1'
+    )
+    expect(scraped.body).toContain(
+      'http_request_duration_seconds_count{method="GET",route="/boards/:boardId"} 1'
+    )
+    expect(scraped.body).not.toContain('b-42')
+  })
+
+  it('serves no metrics when they are off', async () => {
+    const response = await serverLoggingTo([]).inject('/metrics')
+
+    expect(response.statusCode).toBe(404)
   })
 })
