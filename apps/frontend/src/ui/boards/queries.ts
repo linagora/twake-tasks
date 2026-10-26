@@ -32,10 +32,15 @@ import {
   type TaskMove,
   type TransferPreview
 } from '@/application/boards'
-import type { Board, BoardSummary, Layout, Person } from '@/domain/board'
+import {
+  isEditable,
+  type Board,
+  type BoardSummary,
+  type Layout,
+  type Person
+} from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
 import {
-  canAddTo,
   createTask,
   defaultBoard,
   type NewTaskDraft,
@@ -793,7 +798,7 @@ export function useNewTaskBoard(
   const api = useBoardsApi()
   const targets = useBoards().data?.filter(
     each =>
-      canAddTo(each) &&
+      isEditable(each) &&
       (inProjectId === undefined || each.project.id === inProjectId)
   )
   const chosen =

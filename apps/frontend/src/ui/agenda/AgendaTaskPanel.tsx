@@ -2,6 +2,7 @@ import type { ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
 
 import type { AgendaTask } from '@/application/boards'
+import { isEditable } from '@/domain/board'
 import {
   useBoard,
   useBoards,
@@ -50,8 +51,7 @@ export function AgendaTaskPanel({
   const board = useBoard(task.boardId).data
   const summary = useBoards().data?.find(each => each.id === task.boardId)
   const fresh = board?.tasks.find(each => each.id === task.id) ?? task
-  const editable =
-    summary !== undefined && summary.role !== 'viewer' && !summary.archived
+  const editable = summary !== undefined && isEditable(summary)
   return (
     <TaskPanel
       task={fresh}

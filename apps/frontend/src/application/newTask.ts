@@ -1,5 +1,10 @@
 import type { BoardsApi, TaskChanges } from '@/application/boards'
-import type { BoardSummary, Priority, Section } from '@/domain/board'
+import {
+  isEditable,
+  type BoardSummary,
+  type Priority,
+  type Section
+} from '@/domain/board'
 
 export interface NewTaskDraft {
   title: string
@@ -13,9 +18,6 @@ export interface NewTaskDraft {
   sectionId?: string
 }
 
-export const canAddTo = (board: BoardSummary): boolean =>
-  !board.archived && board.role !== 'viewer'
-
 /**
  * The board a task is added to unless another is picked: the one it is
  * opened from, as long as tasks can be added to it, else the Inbox, else the
@@ -26,7 +28,7 @@ export function defaultBoard(
   inBoardId?: string
 ): BoardSummary | undefined {
   const current = summaries.find(each => each.id === inBoardId)
-  return current && canAddTo(current)
+  return current && isEditable(current)
     ? current
     : (summaries.find(each => each.inbox) ?? summaries[0])
 }

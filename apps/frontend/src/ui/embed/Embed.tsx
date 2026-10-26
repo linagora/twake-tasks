@@ -11,7 +11,7 @@ import {
   useParams
 } from 'react-router'
 
-import { canAddTo } from '@/application/newTask'
+import { isEditable } from '@/domain/board'
 import { EmbedFrame } from '@/ds/AppFrame'
 import { EmptyState } from '@/ds/EmptyState'
 import { TileGrid, Tile } from '@/ds/TileGrid'
@@ -82,7 +82,7 @@ export function EmbedBoardScreen(): ReactElement {
 export function EmbedNewTask(): ReactElement | null {
   const { projectId = '' } = useParams()
   const { boards, shown } = useProjectBoards(projectId)
-  const first = shown.find(canAddTo) ?? shown[0]
+  const first = shown.find(isEditable) ?? shown[0]
   if (first) return <Navigate to={`../boards/${first.id}?new=task`} replace />
   if (boards.isPending) return null
   return <Navigate to=".." replace />
