@@ -76,7 +76,8 @@ Server:
 - `HTTP_HOST` (`0.0.0.0`), `HTTP_PORT` (`8080`).
 - `HTTP_TRUSTED_PROXY_HOPS` (`2`): how many proxies in front of the backend add the address they got the request from to `X-Forwarded-For`. The backend trusts that many hops when it reads the caller's address. `2` fits the chart: the ingress, then the frontend's nginx. Set `0` when nothing proxies the backend. Too low groups every caller under the proxy's address. Too high lets a caller pick its own.
 - `LOG_LEVEL` (`info`): `fatal`, `error`, `warn`, `info`, `debug` or `trace`.
-- `METRICS_ENABLED` (`true`): whether the backend serves Prometheus metrics on `GET /metrics`, on `HTTP_PORT`. The path is outside `/api`, so the frontend's nginx never proxies it: scrape the backend directly. `false` removes the route and stops measuring.
+- `METRICS_ENABLED` (`true`): whether the backend serves Prometheus metrics on `GET /metrics`, on `HTTP_PORT`. The path is outside `/api`, so the frontend's nginx never proxies it: scrape the backend directly. `false` removes the route and the metrics; the scheduler still reads its backlog to log late jobs.
+  - `events_parked`, `jobs_due` and `outbox_pending` are read from the database, so every replica reports the same global value: aggregate them with `max()`, not `sum()`.
 
 Rate limits:
 
