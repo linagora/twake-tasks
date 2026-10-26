@@ -102,7 +102,7 @@ const publisher = await startPublisher(
   config.RABBITMQ_ACTIVITY_EXCHANGE,
   logger
 )
-const handle = createMessageHandler({
+const handling = {
   // The queue stays bound to space events either way, since its first binding
   // fixes its dead letter key; without the integration they find no route.
   routes: new Map([
@@ -112,9 +112,9 @@ const handle = createMessageHandler({
   ]),
   dedupe: postgresDeduplicator(db, 'twake-tasks'),
   park: parkIn(db),
-  logger,
-  metrics
-})
+  logger
+}
+const handle = createMessageHandler({ ...handling, metrics })
 const consumer = await startConsumer(
   config.RABBITMQ_URL,
   {
@@ -133,7 +133,8 @@ const consumer = await startConsumer(
 const stopParkedRetries = parkedRetries({
   db,
   logger,
-  handle,
+  // Uncounted: a delivery was counted once, when it came off the queue.
+  handle: createMessageHandler(handling),
   deadLetter: (delivery, reason) => consumer.deadLetter(delivery, reason),
   metrics
 }).start()

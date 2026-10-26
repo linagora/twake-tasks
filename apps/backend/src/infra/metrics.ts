@@ -56,7 +56,7 @@ export function createMetrics() {
     }),
     eventsConsumed: new Counter({
       name: 'events_consumed_total',
-      help: 'RabbitMQ events consumed, by outcome',
+      help: 'RabbitMQ events taken off the queue, by the outcome of their first handling',
       labelNames: ['routing_key', 'outcome'],
       registers
     }),
