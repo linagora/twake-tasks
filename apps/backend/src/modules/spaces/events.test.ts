@@ -16,7 +16,7 @@ import {
 } from '../../testing/app.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { outbox } from '../../events/schema.ts'
-import { publishedEvent } from '../../events/published.ts'
+import { strictPublishedEvent } from '../../events/published.ts'
 import {
   knowsAnySpace,
   PURGE_SPACE_JOB,
@@ -162,7 +162,7 @@ describe('twake.space.created', () => {
         }
       }
     })
-    expect(() => publishedEvent.parse(queued[0]?.event)).not.toThrow()
+    expect(() => strictPublishedEvent.parse(queued[0]?.event)).not.toThrow()
   })
 
   it('gives two spaces of an organization the same key prefix when their names start alike', async () => {

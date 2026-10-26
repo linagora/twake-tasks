@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
-import { publishedEvent } from './published.ts'
+import { publishedEvent, strictPublishedEvent } from './published.ts'
 
 describe('published events', () => {
   it('are each documented', async () => {
@@ -14,5 +14,21 @@ describe('published events', () => {
       .filter(type => !doc.includes(`\`${type}\``))
 
     expect(missing).toEqual([])
+  })
+
+  it('relay a field added since, which the tests refuse', () => {
+    const event = {
+      specversion: '1.0',
+      id: 'evt-1',
+      source: 'twake://tasks',
+      type: 'com.twake.tasks.space.provisioned.v1',
+      data: {
+        space_id: 'space-1',
+        resource: { kind: 'project', id: 'project-1', name: 'Ops' }
+      }
+    }
+
+    expect(publishedEvent.safeParse(event).success).toBe(true)
+    expect(strictPublishedEvent.safeParse(event).success).toBe(false)
   })
 })

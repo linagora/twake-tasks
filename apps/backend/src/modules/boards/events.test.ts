@@ -1,7 +1,7 @@
 import { asc, sql as raw } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { OutgoingEvent } from '../../events/envelope.ts'
-import { publishedEvent } from '../../events/published.ts'
+import { strictPublishedEvent } from '../../events/published.ts'
 import { outbox } from '../../events/schema.ts'
 import { createDb } from '../../infra/db.ts'
 import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
@@ -50,7 +50,7 @@ async function eventsOf(taskId: string) {
     .orderBy(asc(outbox.id))
     .then(rows =>
       rows.map((row): { event: OutgoingEvent } => ({
-        event: publishedEvent.parse(row.event)
+        event: strictPublishedEvent.parse(row.event)
       }))
     )
 }
