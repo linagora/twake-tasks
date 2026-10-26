@@ -1,9 +1,8 @@
-import type { LAYOUTS } from '@twake-tasks/api-contract'
 import { eq } from 'drizzle-orm'
 import type { Db } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { roleOn } from './access.ts'
-import { boardLayouts, boards } from './schema.ts'
+import { boardLayouts, boards, type LAYOUTS } from './schema.ts'
 import { bumpBoard, checkRole, Refused, writeOrRefuse } from './tasks.ts'
 
 export type Layout = (typeof LAYOUTS)[number]

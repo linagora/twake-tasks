@@ -38,6 +38,7 @@ import {
   transferTarget,
   zoneQuery
 } from '@twake-tasks/api-contract'
+import type * as wire from '@twake-tasks/api-contract'
 import type { FastifyReply } from 'fastify'
 import { allowOrigins } from '../../infra/cors.ts'
 import type { Db } from '../../infra/db.ts'
@@ -51,10 +52,53 @@ import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
 import { createSharingStore } from './sharing.ts'
 import { createReminderStore } from './reminders.ts'
+import type * as db from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
 import { createTaskStore, type Refusal } from './tasks.ts'
 import { createTransferStore } from './transfer.ts'
+
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false
+type Assert<T extends true> = T
+type Values<T extends readonly string[]> = T[number]
+
+// The contract declares its own enums, so tsc fails here when they drift.
+export type ContractMatchesBackend = [
+  Assert<
+    Same<
+      Values<typeof wire.MEMBER_ROLES>,
+      (typeof db.memberRole.enumValues)[number]
+    >
+  >,
+  Assert<
+    Same<
+      Values<typeof wire.SECTION_CATEGORIES>,
+      (typeof db.sectionCategory.enumValues)[number]
+    >
+  >,
+  Assert<
+    Same<
+      Values<typeof wire.DURATION_UNITS>,
+      (typeof db.durationUnit.enumValues)[number]
+    >
+  >,
+  Assert<
+    Same<
+      Values<typeof wire.RECURRENCE_UNITS>,
+      (typeof db.recurrenceUnit.enumValues)[number]
+    >
+  >,
+  Assert<Same<Values<typeof wire.LAYOUTS>, Values<typeof db.LAYOUTS>>>,
+  Assert<
+    Same<
+      Exclude<
+        (typeof wire.REFUSALS)['options'][number],
+        'invalid_request' | 'unavailable' | 'server_error'
+      >,
+      Refusal
+    >
+  >
+]
 
 const REFUSAL_STATUS: Record<Refusal, number> = {
   not_found: 404,

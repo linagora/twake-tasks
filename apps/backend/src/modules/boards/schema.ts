@@ -1,10 +1,3 @@
-import {
-  DURATION_UNITS,
-  LAYOUTS,
-  MEMBER_ROLES,
-  RECURRENCE_UNITS,
-  SECTION_CATEGORIES
-} from '@twake-tasks/api-contract'
 import { sql, type SQL } from 'drizzle-orm'
 import {
   bigint,
@@ -36,13 +29,26 @@ import {
   timestamptz
 } from '../../infra/db.ts'
 
-export const memberRole = pgEnum('member_role', MEMBER_ROLES)
+export const memberRole = pgEnum('member_role', ['viewer', 'editor', 'admin'])
 
-export const sectionCategory = pgEnum('section_category', SECTION_CATEGORIES)
+export const sectionCategory = pgEnum('section_category', [
+  'backlog',
+  'unstarted',
+  'started',
+  'completed',
+  'canceled'
+])
 
-export const durationUnit = pgEnum('duration_unit', DURATION_UNITS)
+export const durationUnit = pgEnum('duration_unit', ['minutes', 'days'])
 
-export const recurrenceUnit = pgEnum('recurrence_unit', RECURRENCE_UNITS)
+export const recurrenceUnit = pgEnum('recurrence_unit', [
+  'days',
+  'weeks',
+  'months',
+  'years'
+])
+
+export const LAYOUTS = ['board', 'list', 'calendar'] as const
 
 export const boardLayout = pgEnum('board_layout', LAYOUTS)
 
