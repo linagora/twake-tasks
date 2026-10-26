@@ -221,7 +221,10 @@ export function ListRow({
             bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.12)
           }
         }),
+        // Static, so that its stretch covers the whole row: a click anywhere
+        // on the row opens the task, as on a card.
         '& .ListRow-title button': {
+          position: 'static',
           display: 'block',
           maxWidth: '100%',
           overflow: 'hidden',
