@@ -23,7 +23,6 @@ import {
 } from '@linagora/twake-icons'
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
 
-import { shownLabels } from '@/application/hiddenFacts'
 import {
   BoardChip,
   Card,
@@ -48,7 +47,6 @@ import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { TransferDialog, useTransferable } from '@/ui/boards/TransferTask'
 import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
-import { useHiddenFacts } from '@/ui/boards/HiddenFacts'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useNewTaskHighlight } from '@/ui/shell/NewTaskHighlight'
 
@@ -95,7 +93,6 @@ export function TaskCard({
   const remove = useRemoveTask(boardId, task)
   const panel = useTaskPanel(task.key)
   const newTask = useNewTaskHighlight(task.key)
-  const hidden = useHiddenFacts()
   const editable = onMove !== undefined
   const completion = useCompleteToggle(task, boardId, sections, editable)
   const [showSubtasks, setShowSubtasks] = useState(false)
@@ -129,8 +126,8 @@ export function TaskCard({
             ? task.key
             : `${task.key} · ${t('agenda.subtaskOf', { title: parentTitle })}`}
         </Typography>
-        {boardName && !hidden.board && <BoardChip name={boardName} />}
-        {shownLabels(task.labels, hidden).map(label => (
+        {boardName && <BoardChip name={boardName} />}
+        {task.labels.map(label => (
           <LabelChip key={label.id} name={label.name} color={label.color} />
         ))}
       </Meta>
@@ -151,10 +148,8 @@ export function TaskCard({
       </CardTitle>
       {(facts || task.assignees.length > 0) && (
         <Meta>
-          {task.priority !== null && !hidden.priority && (
-            <PriorityChip priority={task.priority} />
-          )}
-          {!hidden.due && <DueChip task={task} />}
+          {task.priority !== null && <PriorityChip priority={task.priority} />}
+          <DueChip task={task} />
           {children.length > 0 && (
             <Button
               variant="text"
@@ -182,9 +177,7 @@ export function TaskCard({
               {task.commentCount}
             </MetaChip>
           )}
-          {task.assignees.length > 0 && !hidden.assignees && (
-            <Assignees people={task.assignees} />
-          )}
+          {task.assignees.length > 0 && <Assignees people={task.assignees} />}
         </Meta>
       )}
       {showSubtasks && (

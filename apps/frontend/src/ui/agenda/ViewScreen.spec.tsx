@@ -319,7 +319,7 @@ describe('ViewScreen', () => {
     expect(row).toHaveTextContent('Design')
   })
 
-  it('leaves the board column out of a list grouped by board', async () => {
+  it('keeps the board column in a list grouped by board', async () => {
     const { boardsApi, id } = await aView()
     await boardsApi.updateFilter(id, {
       name: 'Urgent',
@@ -332,7 +332,7 @@ describe('ViewScreen', () => {
     expect(
       await screen.findByRole('listitem', { name: 'DES-1 Logo' })
     ).toBeVisible()
-    expect(screen.queryByText('Board')).toBeNull()
+    expect(screen.getByText('Board')).toBeInTheDocument()
   })
 
   it('shows its tasks in the layout chosen for it, with no switch', async () => {
@@ -547,7 +547,7 @@ describe('ViewScreen', () => {
     expect(changes?.dueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 
-  it('shows every field of its tasks but the one it groups by', async () => {
+  it('shows every field of its tasks, the one it groups by too', async () => {
     const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
     design.tasks = [
       aTask(null, {
@@ -571,8 +571,8 @@ describe('ViewScreen', () => {
 
     const client = await screen.findByRole('region', { name: 'client' })
     expect(client).toHaveTextContent('design')
-    // The column's title names its label, which its cards leave off.
-    expect(within(client).getAllByText('client')).toHaveLength(1)
+    // The column's title names its label, which its cards show as well.
+    expect(within(client).getAllByText('client')).toHaveLength(2)
     expect(client).toHaveTextContent('P1')
     const design1 = screen.getByRole('region', { name: 'design' })
     expect(design1).toHaveTextContent('client')

@@ -1,13 +1,11 @@
 import { Link, Typography } from '@linagora/twake-mui'
 import type { ComponentProps, ReactElement } from 'react'
 
-import { shownLabels } from '@/application/hiddenFacts'
 import { BoardChip, LabelChip } from '@/ds/Columns'
 import { ListRow } from '@/ds/ListView'
 import { SortableListRow } from '@/ds/Sortable'
 import type { Section, Task } from '@/domain/board'
 import { CompleteCheckbox } from '@/ui/boards/CompleteCheckbox'
-import { useHiddenFacts } from '@/ui/boards/HiddenFacts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
@@ -56,7 +54,6 @@ export function TaskListRow({
   const panel = useTaskPanel(task.key)
   const completion = useCompleteToggle(task, boardId, sections, editable)
   const newTask = useNewTaskHighlight(task.key)
-  const hidden = useHiddenFacts()
 
   return (
     <Row
@@ -94,18 +91,14 @@ export function TaskListRow({
         </Link>
       }
       people={
-        task.assignees.length > 0 &&
-        !hidden.assignees && <Assignees people={task.assignees} />
+        task.assignees.length > 0 && <Assignees people={task.assignees} />
       }
-      due={!hidden.due && <DueChip task={task} />}
+      due={<DueChip task={task} />}
       priority={
-        task.priority !== null &&
-        !hidden.priority && <PriorityChip priority={task.priority} />
+        task.priority !== null && <PriorityChip priority={task.priority} />
       }
-      board={
-        boardName && !hidden.board ? <BoardChip name={boardName} /> : undefined
-      }
-      labels={shownLabels(task.labels, hidden).map(label => ({
+      board={boardName ? <BoardChip name={boardName} /> : undefined}
+      labels={task.labels.map(label => ({
         key: label.id,
         name: label.name,
         chip: <LabelChip name={label.name} color={label.color} />
