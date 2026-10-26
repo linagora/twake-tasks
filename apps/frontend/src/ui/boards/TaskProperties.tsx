@@ -29,6 +29,7 @@ import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoardChange, useMoveTask } from '@/ui/boards/queries'
 import { Reminders } from '@/ui/boards/Reminders'
+import { PriorityChip } from '@/ui/boards/TaskFacts'
 import { EMBED_PREFIX } from '@/ui/embed/twakeSpace'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -346,6 +347,9 @@ function PriorityRow({
   )
   const name = (level: Task['priority']) =>
     level === null ? t('task.noPriority') : t('board.priority', { level })
+  // Shown as on the task's card and row, once it has one.
+  const shown = (level: Task['priority']) =>
+    level === null ? name(level) : <PriorityChip priority={level} />
 
   return (
     <Property
@@ -359,7 +363,8 @@ function PriorityRow({
           value={task.priority === null ? '' : String(task.priority)}
           options={[null, ...PRIORITIES].map(level => ({
             value: level === null ? '' : String(level),
-            label: name(level)
+            label: name(level),
+            shown: shown(level)
           }))}
           onChange={value => {
             edit.mutate(
@@ -368,7 +373,7 @@ function PriorityRow({
           }}
         />
       ) : (
-        <Typography variant="body2">{name(task.priority)}</Typography>
+        <Typography variant="body2">{shown(task.priority)}</Typography>
       )}
     </Property>
   )
