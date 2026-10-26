@@ -107,7 +107,7 @@ export function AppShell(): ReactElement {
       topBar={<Header searchRef={search} onNewTask={startNewTask} />}
       sidebar={
         <>
-          {/* Create, as Twake Drive's button says; its name says what. */}
+          {/* Twake Drive's wording; screen readers still hear what it creates. */}
           <SidebarButton
             startIcon={<Icon icon={Plus} size={12} />}
             aria-label={t('newTask.open')}
