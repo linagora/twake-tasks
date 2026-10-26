@@ -1,0 +1,634 @@
+[
+  {
+    "type": "cycle",
+    "from": "src/events/envelope.ts",
+    "to": "src/infra/rabbitmq.ts",
+    "unresolvedTo": "../infra/rabbitmq.ts",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/infra/rabbitmq.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "src/events/envelope.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/events/router.ts",
+    "to": "src/events/envelope.ts",
+    "unresolvedTo": "./envelope.ts",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/events/envelope.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "src/infra/rabbitmq.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "src/events/router.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/events/router.ts",
+    "to": "src/infra/rabbitmq.ts",
+    "unresolvedTo": "../infra/rabbitmq.ts",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/infra/rabbitmq.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "src/events/router.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/boards/access.ts",
+    "to": "src/modules/boards/tasks.ts",
+    "unresolvedTo": "./tasks.ts",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/boards/tasks.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "src/modules/boards/access.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/boards/archive.ts",
+    "to": "src/modules/boards/store.ts",
+    "unresolvedTo": "./store.ts",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/boards/store.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "src/modules/boards/archive.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/boards/live.ts",
+    "to": "src/modules/boards/access.ts",
+    "unresolvedTo": "./access.ts",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/boards/access.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "src/modules/boards/tasks.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "src/modules/boards/live.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/boards/notificationDigest.ts",
+    "to": "src/modules/boards/notificationEmails.ts",
+    "unresolvedTo": "./notificationEmails.ts",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/boards/notificationEmails.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "src/modules/boards/notificationDigest.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/events",
+    "to": "src/infra",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/events",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/events",
+    "to": "src/modules/spaces",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/spaces",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/events",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/infra",
+    "to": "src/events",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/events",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/infra",
+    "to": "src/modules/boards",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/auth",
+    "to": "src/infra",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/auth",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/boards",
+    "to": "src/events",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/events",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/boards",
+    "to": "src/infra",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/boards",
+    "to": "src/modules/auth",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/auth",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/boards",
+    "to": "src/modules/settings",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/settings",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/boards",
+    "to": "src/modules/spaces",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/spaces",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/boards",
+    "to": "src/scheduler",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/scheduler",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/settings",
+    "to": "src/infra",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/settings",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/settings",
+    "to": "src/modules/auth",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/auth",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/events",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/spaces",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/settings",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/spaces",
+    "to": "src/events",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/events",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/spaces",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/spaces",
+    "to": "src/infra",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/events",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/spaces",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/spaces",
+    "to": "src/modules/boards",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/spaces",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/spaces",
+    "to": "src/scheduler",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/scheduler",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/events",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/spaces",
+        "dependencyTypes": []
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/scheduler",
+    "to": "src/infra",
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular-folders"
+    },
+    "cycle": [
+      {
+        "name": "src/infra",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/modules/boards",
+        "dependencyTypes": []
+      },
+      {
+        "name": "src/scheduler",
+        "dependencyTypes": []
+      }
+    ]
+  }
+]
