@@ -48,11 +48,11 @@ export function tenantPolicy(
   })
 }
 
-function connect(url: string, max?: number) {
-  const client = postgres(url, {
-    onnotice: () => undefined,
-    ...(max !== undefined && { max })
-  })
+function connect(
+  url: string,
+  options: Pick<postgres.Options<never>, 'max' | 'max_lifetime'> = {}
+) {
+  const client = postgres(url, { onnotice: () => undefined, ...options })
   return { sql: client, db: drizzle({ client }) }
 }
 
@@ -112,7 +112,10 @@ export function createDb(
   log: HookLog = console,
   options: { poolMax?: number; statementTimeoutMs?: number } = {}
 ) {
-  const { sql, db } = connect(url, options.poolMax)
+  const { sql, db } = connect(
+    url,
+    options.poolMax === undefined ? {} : { max: options.poolMax }
+  )
   runHooksOnCommit(db, log)
   if (options.statementTimeoutMs !== undefined) {
     requestTimeouts.set(db, options.statementTimeoutMs)
@@ -228,4 +231,21 @@ export async function migrateDb(db: Db): Promise<void> {
   await migrate(db, {
     migrationsFolder: fileURLToPath(new URL('../../drizzle', import.meta.url))
   })
+}
+
+// Any constant shared by every replica and the migrate command: Drizzle reads
+// the applied migrations outside any lock, so two migrators would both apply them.
+const MIGRATION_LOCK = 0x6d696772
+
+// A single connection, since an advisory lock belongs to its session. It never
+// expires, or a long wait for the lock would close it and drop the lock.
+export async function migrateLocked(url: string): Promise<void> {
+  const { sql: client, db } = connect(url, { max: 1, max_lifetime: null })
+  try {
+    await client`select pg_advisory_lock(${MIGRATION_LOCK})`
+    await migrateDb(db)
+    await client`select pg_advisory_unlock(${MIGRATION_LOCK})`
+  } finally {
+    await client.end()
+  }
 }

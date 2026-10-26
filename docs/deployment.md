@@ -18,6 +18,12 @@ The backend can run several replicas. RabbitMQ events, the jobs and the outbox r
 
 See [configuration](configuration.md) for the settings and [dependencies](dependencies.md) for the services they point to.
 
+## Migrations
+
+The backend image also holds the migrate command, `node dist/migrate.js`. Run it once per release, as an init container or a pre-upgrade job, and set `MIGRATE_ON_START=false` on the replicas.
+
+By default each replica migrates at start instead. Either way, a migration holds a Postgres advisory lock, so replicas and the command starting together migrate one at a time.
+
 ## Releases
 
 The backend and the frontend are released apart, by pushing a tag on `main`:

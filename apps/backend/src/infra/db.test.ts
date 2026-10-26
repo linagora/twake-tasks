@@ -1,3 +1,5 @@
+import { readdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { eq, sql as statement, type SQL } from 'drizzle-orm'
 import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import type { Role } from '../modules/boards/access.ts'
@@ -21,6 +23,7 @@ import {
   inTenant,
   isTransient,
   migrateDb,
+  migrateLocked,
   type Tx
 } from './db.ts'
 
@@ -475,20 +478,25 @@ describe('isTransient', () => {
   })
 })
 
+async function anEmptyDatabase(image: string) {
+  const container = await new PostgreSqlContainer(image).start()
+  const admin = postgres(container.getConnectionUri(), {
+    onnotice: () => undefined
+  })
+  await admin.unsafe(`create role app login password 'app'`)
+  await admin.unsafe(`create database tasks owner app`)
+  await admin.end()
+  const url = new URL(container.getConnectionUri())
+  url.username = 'app'
+  url.password = 'app'
+  url.pathname = '/tasks'
+  return { container, url: url.toString() }
+}
+
 describe('migrateDb', () => {
   it('migrates a Postgres 16 database, whose rows still get v7 ids', async () => {
-    const container = await new PostgreSqlContainer('postgres:16').start()
-    const admin = postgres(container.getConnectionUri(), {
-      onnotice: () => undefined
-    })
-    await admin.unsafe(`create role app login password 'app'`)
-    await admin.unsafe(`create database tasks owner app`)
-    await admin.end()
-    const url = new URL(container.getConnectionUri())
-    url.username = 'app'
-    url.password = 'app'
-    url.pathname = '/tasks'
-    const old = createDb(url.toString())
+    const { container, url } = await anEmptyDatabase('postgres:16')
+    const old = createDb(url)
     try {
       await migrateDb(old.db)
       const owner = aUser()
@@ -503,6 +511,27 @@ describe('migrateDb', () => {
       expect(second?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/)
     } finally {
       await old.sql.end()
+      await container.stop()
+    }
+  }, 120_000)
+})
+
+describe('migrateLocked', () => {
+  it('lets replicas starting together migrate one after the other', async () => {
+    const { container, url } = await anEmptyDatabase('postgres:18')
+    const fresh = postgres(url, { max: 1 })
+    try {
+      await Promise.all([migrateLocked(url), migrateLocked(url)])
+
+      const shipped = readdirSync(
+        fileURLToPath(new URL('../../drizzle', import.meta.url)),
+        { withFileTypes: true }
+      ).filter(entry => entry.isDirectory())
+      const [applied] = await fresh<{ count: number }[]>`
+        select count(*)::int as count from drizzle.__drizzle_migrations`
+      expect(applied?.count).toBe(shipped.length)
+    } finally {
+      await fresh.end()
       await container.stop()
     }
   }, 120_000)
