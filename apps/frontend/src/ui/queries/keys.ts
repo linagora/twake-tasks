@@ -34,6 +34,8 @@ export const keys = {
   searches,
   search: (text: string) => [...searches(), text] as const,
   filters: () => ['filters'] as const,
+  defaultFilters: () => ['defaultFilters'] as const,
+  sidebarSections: () => ['sidebarSections'] as const,
   labels: () => ['labels'] as const,
   statuses: () => ['statuses'] as const,
   people: () => ['people'] as const,

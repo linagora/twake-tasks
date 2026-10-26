@@ -34,8 +34,11 @@ function designBoard() {
 
 const column = (name: string) => screen.getByRole('region', { name })
 
+// The sidebar has a live region of its own, which stays silent.
 const dragAnnouncement = () =>
-  document.querySelector('[id^="DndLiveRegion"]')?.textContent
+  Array.from(document.querySelectorAll('[id^="DndLiveRegion"]'))
+    .map(region => region.textContent)
+    .find(Boolean) ?? ''
 
 const announcedOnPickUp = async (handle: Element | null) => {
   if (!handle) return undefined

@@ -216,6 +216,25 @@ export interface UserSettings {
   name: string | null
 }
 
+/** A board or a view, as a section of the sidebar holds it. */
+export interface SidebarItem {
+  kind: 'board' | 'view'
+  id: string
+}
+
+/** A section a person added to their sidebar, with what it holds in order. */
+export interface SidebarSection {
+  id: string
+  name: string
+  items: SidebarItem[]
+}
+
+export interface DefaultFilterNames {
+  today: string
+  upcoming: string
+  mine: string
+}
+
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface LabelChoice {
   name: string
@@ -273,6 +292,22 @@ export interface BoardsApi {
   setMemberRole: (boardId: string, userId: string, role: Role) => Promise<void>
   removeMember: (boardId: string, userId: string) => Promise<void>
   listFilters: () => Promise<SavedFilter[]>
+  /**
+   * Makes the person's first views, Today, Upcoming and My tasks, named in
+   * their language, unless made before.
+   */
+  makeDefaultFilters: (names: DefaultFilterNames) => Promise<void>
+  listSidebarSections: () => Promise<SidebarSection[]>
+  createSidebarSection: (name: string) => Promise<{ id: string }>
+  renameSidebarSection: (sectionId: string, name: string) => Promise<void>
+  deleteSidebarSection: (sectionId: string) => Promise<void>
+  /**
+   * Sets every section's place and items at once; the layout holds all the
+   * sections, in their order.
+   */
+  saveSidebarLayout: (
+    sections: Pick<SidebarSection, 'id' | 'items'>[]
+  ) => Promise<void>
   createFilter: (filter: NewSavedFilter) => Promise<{ id: string }>
   deleteFilter: (filterId: string) => Promise<void>
   setFilterFavorite: (filterId: string, favorite: boolean) => Promise<void>

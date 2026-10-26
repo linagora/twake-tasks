@@ -39,7 +39,6 @@ import { displayName } from '@/domain/person'
 import { viewColumns } from '@/domain/viewColumns'
 import { viewGroups, type Group } from '@/domain/viewGroups'
 import { MissingStatusDialog } from '@/ui/agenda/MissingStatusDialog'
-import { NewViewTask } from '@/ui/agenda/NewViewTask'
 import { ViewAddTask } from '@/ui/agenda/ViewAddTask'
 import { ViewTaskPanel } from '@/ui/agenda/ViewTaskPanel'
 import { PageCrumbs, TasksOrigin, type Origin } from '@/ui/boards/Crumbs'
@@ -62,6 +61,7 @@ import {
 import { TaskCard } from '@/ui/boards/TaskCard'
 import { TaskListRow } from '@/ui/boards/TaskListRow'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useSidebarCreate, useViewCriteria } from '@/ui/shell/SidebarCreate'
 import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 
 /**
@@ -134,11 +134,12 @@ export function TasksView({
   const { t } = useI18n()
   const { pathname } = useLocation()
   const agenda = useAgenda(source)
-  const { openNewTask } = useNewTaskParam()
   const boards = useBoards()
   const moveTask = useMoveViewTask()
-  const [adding, setAdding] = useState(false)
-  const [addingOn, setAddingOn] = useState<string | null>(null)
+  const sidebarCreate = useSidebarCreate()
+  // A task created here, from the sidebar too, takes the view's criteria.
+  const { openNewTask } = useNewTaskParam()
+  useViewCriteria(criteria)
   const [addingIn, setAddingIn] = useState<string | null>(null)
   const addStatus = useAddStatusAndMove()
   // A task dropped in a column its board has not, which a dialog asks about.
@@ -217,29 +218,22 @@ export function TasksView({
             actions={
               <>
                 {actions}
-                <Button
-                  startIcon={<Icon icon={Plus} />}
-                  disabled={!canAdd}
-                  onClick={() => {
-                    setAdding(true)
-                  }}
-                >
-                  {t('board.newTask')}
-                </Button>
+                {/* Create task in the sidebar makes one, but bare in Twake Space. */}
+                {!sidebarCreate && (
+                  <Button
+                    startIcon={<Icon icon={Plus} />}
+                    disabled={!canAdd}
+                    onClick={() => {
+                      openNewTask()
+                    }}
+                  >
+                    {t('newTask.open')}
+                  </Button>
+                )}
               </>
             }
           />
           {details && <div className="u-mb-1">{details}</div>}
-          {adding && canAdd && (
-            <NewViewTask
-              criteria={criteria}
-              dueOn={addingOn ?? undefined}
-              onClose={() => {
-                setAdding(false)
-                setAddingOn(null)
-              }}
-            />
-          )}
           <ViewTaskPanel
             tasks={tasks}
             editable={boardId => writable.has(boardId)}
@@ -295,7 +289,7 @@ export function TasksView({
                     <Button
                       startIcon={<Icon icon={Plus} />}
                       onClick={() => {
-                        setAdding(true)
+                        openNewTask()
                       }}
                     >
                       {t('board.newTask')}
@@ -463,9 +457,8 @@ export function TasksView({
               tasks={tasks}
               onAdd={
                 canAdd
-                  ? dueDate => {
-                      setAddingOn(dueDate)
-                      setAdding(true)
+                  ? (day: string | null) => {
+                      openNewTask(day ?? undefined)
                     }
                   : undefined
               }

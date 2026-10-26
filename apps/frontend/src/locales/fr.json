@@ -543,6 +543,8 @@
   },
   "filters": {
     "title": "Vues",
+    "fold": "Replier les vues",
+    "unfold": "Déplier les vues",
     "empty": "Aucune vue enregistrée",
     "emptyHint": "Enregistrez les critères que vous utilisez souvent, comme vos tâches P1.",
     "loadFailed": "Impossible de charger les vues.",
@@ -566,8 +568,6 @@
     "deleteFailed": "Impossible de supprimer la vue.",
     "nameRequired": "Le nom est obligatoire.",
     "menuOf": "Actions de %{name}",
-    "addFavorite": "Ajouter aux favoris",
-    "removeFavorite": "Retirer des favoris",
     "saving": "Enregistrement…",
     "changesSaved": "Modifications enregistrées",
     "missingStatusTitle": "« %{board} » n’a pas de section « %{section} »",
@@ -641,18 +641,38 @@
     "noResult": "Aucune icône trouvée"
   },
   "viewTask": {
-    "title": "Titre",
     "board": "Tableau",
     "status": "Section",
     "create": "Créer la tâche",
-    "failed": "Impossible de créer la tâche.",
     "created": "%{task} est créée, sans %{facts}. Elle peut ne pas apparaître dans cette vue.",
     "unset": {
       "priority": "sa priorité",
       "dueDate": "son échéance",
       "label": "son étiquette",
       "me": "vous comme responsable, faute d’être membre de son tableau"
-    },
-    "close": "Fermer"
+    }
+  },
+  "sidebar": {
+    "name": "Nom",
+    "create": "Créer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "rename": "Renommer",
+    "renameTitle": "Renommer la section",
+    "moveUp": "Monter",
+    "moveDown": "Descendre",
+    "delete": "Supprimer la section",
+    "deleteTitle": "Supprimer %{name} ?",
+    "deleteText": "Les tableaux et vues qu’elle contient retournent dans Favoris.",
+    "deleteConfirm": "Supprimer",
+    "sectionMenu": "Actions de %{name}",
+    "empty": "Glissez des tableaux et des vues ici",
+    "addToSection": "Afficher dans la barre latérale",
+    "nowhere": "Pas dans la barre latérale",
+    "newSectionOption": "Nouvelle section",
+    "failed": "Les sections n’ont pas pu être enregistrées.",
+    "fold": "Replier %{name}",
+    "unfold": "Déplier %{name}"
   }
 }

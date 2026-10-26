@@ -2,14 +2,11 @@ import {
   Archive,
   Bell,
   Bottom,
-  Calendar,
-  CalendarToday,
   Eye,
   Icon,
   Logout,
   Mosaic,
   Plus,
-  Profile,
   Right,
   Star
 } from '@linagora/twake-icons'
@@ -34,6 +31,7 @@ import {
   useState,
   type ElementType,
   type ReactElement,
+  type ReactNode,
   type RefObject
 } from 'react'
 import {
@@ -52,6 +50,7 @@ import {
   CountBadge,
   OneLineNavText,
   SidebarButton,
+  SidebarHint,
   SidebarSection,
   SidebarShelves,
   TopBar,
@@ -61,22 +60,37 @@ import {
   WideScreenNavItem
 } from '@/ds/AppFrame'
 import { HomeIcon } from '@/ds/HomeIcon'
+import type { FilterCriteria, SidebarItem } from '@/application/boards'
 import { viewIcon } from '@/ds/viewIcons'
 import { displayName } from '@/domain/person'
+import { NewViewDialog } from '@/ui/agenda/FiltersScreen'
 import { SearchField } from '@/ui/agenda/SearchScreen'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import {
   useBoards,
   useFilters,
+  useSidebarSections,
   useUnreadNotifications
 } from '@/ui/boards/queries'
 import { AppFeedback } from '@/ui/shell/AppFeedback'
 import { PlatformBar } from '@/ui/shell/PlatformBar'
 import { NewTaskFromUrl } from '@/ui/shell/NewTaskDialog'
 import { NewTaskHighlightProvider } from '@/ui/shell/NewTaskHighlight'
+import {
+  SidebarCreateContext,
+  ViewCriteriaContext
+} from '@/ui/shell/SidebarCreate'
 import { SidebarLink } from '@/ui/shell/SidebarLink'
+import {
+  CustomSections,
+  FAVORITES,
+  SidebarDrag,
+  useFavoritesDrop,
+  useSidebarDrag
+} from '@/ui/shell/SidebarSections'
 import { ShortcutsHelp, useShortcuts } from '@/ui/shell/Shortcuts'
+import { useFolded } from '@/ui/shell/useFolded'
 import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
@@ -88,6 +102,8 @@ export function AppShell(): ReactElement {
     openNewTask()
   }
   const [help, setHelp] = useState(false)
+  // Those of the view shown, which a new task takes.
+  const [criteria, setCriteria] = useState<FilterCriteria | null>(null)
   const search = useRef<HTMLInputElement>(null)
   const { t } = useI18n()
   const lit = useLitEntry()
@@ -116,16 +132,33 @@ export function AppShell(): ReactElement {
           >
             {t('newTask.create')}
           </SidebarButton>
-          <AppNav boardsLit={lit.boards} boardLit={lit.board} />
-          <Favorites lit={lit.favorite} onOpen={lit.openFavorite} />
+          <SidebarDrag>
+            <AppNav
+              boardsLit={lit.boards}
+              boardLit={lit.board}
+              viewsLit={lit.views}
+              viewLit={lit.view}
+            />
+            <Favorites
+              lit={lit.favorite?.origin === FAVORITES ? lit.favorite.id : null}
+              onOpen={id => {
+                lit.openFavorite(FAVORITES, id)
+              }}
+            />
+            <CustomSections lit={lit.favorite} onOpen={lit.openFavorite} />
+          </SidebarDrag>
           <ShelfLinks archivesLit={lit.archives} />
         </>
       }
     >
       <NewTaskHighlightProvider>
-        <Outlet />
+        <SidebarCreateContext value>
+          <ViewCriteriaContext value={setCriteria}>
+            <Outlet />
+          </ViewCriteriaContext>
+        </SidebarCreateContext>
         <AppFeedback />
-        <NewTaskFromUrl inBoardId={inBoardId} />
+        <NewTaskFromUrl inBoardId={inBoardId} criteria={criteria} />
       </NewTaskHighlightProvider>
       {help && (
         <ShortcutsHelp
@@ -290,45 +323,69 @@ function AccountMenu(): ReactElement {
 
 /**
  * The entry lit in the sidebar: a board keeps Boards lit, as the page it is
- * opened from, or its own entry under Boards, but for a favorite clicked in
- * the sidebar, which stays lit while its board is open.
+ * opened from, or its own entry under Boards, and a view Views or its entry
+ * under Views, but for one clicked in Favorites or a section the person
+ * added, which stays lit while its board or view is open.
  */
 function useLitEntry(): {
   boards: boolean
   archives: boolean
   board: string | null
-  favorite: string | null
-  openFavorite: (boardId: string) => void
+  views: boolean
+  view: string | null
+  favorite: { origin: string; id: string } | null
+  openFavorite: (origin: string, id: string) => void
 } {
   const { pathname } = useLocation()
   const boardId = useMatch('/boards/:boardId/*')?.params.boardId ?? null
-  const [favorite, setFavorite] = useState<string | null>(null)
-  const inBoard = (boardId: string) =>
-    pathname === `/boards/${boardId}` ||
-    pathname.startsWith(`/boards/${boardId}/`)
-  // Left the board: the next time it opens, it is from wherever it is.
-  if (favorite !== null && !inBoard(favorite)) setFavorite(null)
-  const onFavorite = favorite !== null && inBoard(favorite)
+  const filterId = useMatch('/filters/:filterId/*')?.params.filterId ?? null
+  const [favorite, setFavorite] = useState<{
+    origin: string
+    id: string
+  } | null>(null)
+  const inPage = (root: string, id: string) =>
+    pathname === `/${root}/${id}` || pathname.startsWith(`/${root}/${id}/`)
+  const inBoard = (boardId: string) => inPage('boards', boardId)
+  const onFavorite =
+    favorite !== null &&
+    (inBoard(favorite.id) || inPage('filters', favorite.id))
+  // Left the board or view: the next time it opens, it is from wherever it is.
+  // Only once the page changes, as the click on a favorite comes before it.
+  const [seen, setSeen] = useState(pathname)
+  if (seen !== pathname) {
+    setSeen(pathname)
+    if (favorite !== null && !onFavorite) setFavorite(null)
+  }
   // An archived board is reached from Archives, which it lights instead.
   const boards = useBoards().data ?? []
   const onArchived = boards.some(board => board.archived && inBoard(board.id))
   const onBoard = pathname.startsWith('/boards/') && !onFavorite
+  const onViews =
+    (pathname === '/filters' || pathname.startsWith('/filters/')) && !onFavorite
 
   return {
     boards: pathname === '/' || (onBoard && !onArchived),
     archives: pathname === '/archives' || (onBoard && onArchived),
     board: onBoard && !onArchived ? boardId : null,
+    views: onViews,
+    view: onViews ? filterId : null,
     favorite: onFavorite ? favorite : null,
-    openFavorite: setFavorite
+    openFavorite: (origin, id) => {
+      setFavorite({ origin, id })
+    }
   }
 }
 
 function AppNav({
   boardsLit,
-  boardLit
+  boardLit,
+  viewsLit,
+  viewLit
 }: {
   boardsLit: boolean
   boardLit: string | null
+  viewsLit: boolean
+  viewLit: string | null
 }): ReactElement {
   const { t } = useI18n()
   const unread = useUnreadNotifications().data ?? 0
@@ -336,9 +393,7 @@ function AppNav({
   return (
     <Nav aria-label={t('app.mainMenu')}>
       <BoardsNav boardsLit={boardsLit} boardLit={boardLit} />
-      <AppNavLink to="/today" icon={CalendarToday} label={t('agenda.today')} />
-      <AppNavLink to="/upcoming" icon={Calendar} label={t('agenda.upcoming')} />
-      <AppNavLink to="/mine" icon={Profile} label={t('agenda.mine')} />
+      <ViewsNav viewsLit={viewsLit} viewLit={viewLit} />
       <AppNavLink
         to="/notifications"
         icon={Bell}
@@ -346,12 +401,6 @@ function AppNav({
         count={unread}
         countLabel={t('notifications.unread', { count: unread })}
       />
-      <WideScreenNavItem>
-        <SidebarLink to="/filters">
-          <NavIcon icon={Eye} />
-          <NavText>{t('filters.title')}</NavText>
-        </SidebarLink>
-      </WideScreenNavItem>
     </Nav>
   )
 }
@@ -384,64 +433,6 @@ function AppNavLink({
         <NavText>{label}</NavText>
       </SidebarLink>
     </BarNavItem>
-  )
-}
-
-function ShelfLinks({ archivesLit }: { archivesLit: boolean }): ReactElement {
-  const { t } = useI18n()
-  return (
-    <SidebarShelves label={t('boards.shelves')}>
-      <NavItem>
-        <SidebarLink to="/archives" active={archivesLit}>
-          <NavIcon icon={Archive} />
-          <NavText>{t('boards.archives')}</NavText>
-        </SidebarLink>
-      </NavItem>
-    </SidebarShelves>
-  )
-}
-
-// Remembered on this device only, like a filter's layout.
-function useFolded(key: string, foldedFirst: boolean) {
-  const [folded, setFolded] = useState(() => {
-    try {
-      const saved = localStorage.getItem(key)
-      return saved === null ? foldedFirst : saved !== 'false'
-    } catch {
-      return foldedFirst
-    }
-  })
-  const toggle = () => {
-    setFolded(!folded)
-    try {
-      localStorage.setItem(key, String(!folded))
-    } catch {
-      // Private browsing: the choice lasts until the page closes.
-    }
-  }
-  return [folded, toggle] as const
-}
-
-function FoldButton({
-  folded,
-  label,
-  onClick
-}: {
-  folded: boolean
-  label: string
-  onClick: () => void
-}): ReactElement {
-  return (
-    <Tooltip disableInteractive title={label}>
-      <IconButton
-        size="xsmall"
-        aria-label={label}
-        aria-expanded={!folded}
-        onClick={onClick}
-      >
-        <Icon icon={folded ? Right : Bottom} size={12} />
-      </IconButton>
-    </Tooltip>
   )
 }
 
@@ -497,7 +488,14 @@ function BoardsNav({
       </BarNavItem>
       {!folded &&
         boards.map(board => (
-          <WideScreenNavItem key={board.id} variant="secondary">
+          <DraggableEntry
+            key={board.id}
+            origin="boards"
+            item={{ kind: 'board', id: board.id }}
+            label={board.name}
+            icon={Mosaic}
+            listed
+          >
             <SidebarLink
               to={`/boards/${board.id}`}
               active={board.id === boardLit}
@@ -505,7 +503,7 @@ function BoardsNav({
               <NavIcon icon={Mosaic} />
               <OneLineNavText title={board.name}>{board.name}</OneLineNavText>
             </SidebarLink>
-          </WideScreenNavItem>
+          </DraggableEntry>
         ))}
       {creating && (
         <NewBoardDialog
@@ -522,25 +520,181 @@ function BoardsNav({
   )
 }
 
-// The phone bottom bar has no room for Filters or its favorites.
+// Views, then each view under it, as Boards its boards; phones keep the
+// bottom bar entry only.
+function ViewsNav({
+  viewsLit,
+  viewLit
+}: {
+  viewsLit: boolean
+  viewLit: string | null
+}): ReactElement {
+  const { t } = useI18n()
+  const theme = useTheme()
+  const phone = useMediaQuery(theme.breakpoints.down('lg'))
+  const [creating, setCreating] = useState(false)
+  const [folded, toggleFolded] = useFolded('sidebar-views-folded', true)
+  const foldLabel = t(folded ? 'filters.unfold' : 'filters.fold')
+  const views = [...(useFilters().data ?? [])].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  )
+
+  return (
+    <>
+      <BarNavItem
+        secondaryAction={
+          <WideScreenAction>
+            <Tooltip disableInteractive title={foldLabel}>
+              <IconButton
+                size="xsmall"
+                aria-label={foldLabel}
+                aria-expanded={!folded}
+                onClick={toggleFolded}
+              >
+                <Icon icon={folded ? Right : Bottom} size={12} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip disableInteractive title={t('filters.createTitle')}>
+              <IconButton
+                size="xsmall"
+                aria-label={t('filters.createTitle')}
+                onClick={() => {
+                  setCreating(true)
+                }}
+              >
+                <Icon icon={Plus} size={14} />
+              </IconButton>
+            </Tooltip>
+          </WideScreenAction>
+        }
+      >
+        <SidebarLink
+          to="/filters"
+          active={viewsLit && (phone || folded || viewLit === null)}
+        >
+          <NavIcon icon={Eye} />
+          <NavText>{t('filters.title')}</NavText>
+        </SidebarLink>
+      </BarNavItem>
+      {!folded &&
+        views.map(view => (
+          <DraggableEntry
+            key={view.id}
+            origin="views"
+            item={{ kind: 'view', id: view.id }}
+            label={view.name}
+            icon={viewIcon(view.icon)}
+            listed
+          >
+            <SidebarLink
+              to={`/filters/${view.id}`}
+              active={view.id === viewLit}
+            >
+              <NavIcon icon={viewIcon(view.icon)} />
+              <NavText>{view.name}</NavText>
+            </SidebarLink>
+          </DraggableEntry>
+        ))}
+      {creating && (
+        <NewViewDialog
+          onClose={() => {
+            setCreating(false)
+          }}
+          onCreated={() => {
+            setCreating(false)
+          }}
+        />
+      )}
+    </>
+  )
+}
+
+function FoldButton({
+  folded,
+  label,
+  onClick
+}: {
+  folded: boolean
+  label: string
+  onClick: () => void
+}): ReactElement {
+  return (
+    <Tooltip disableInteractive title={label}>
+      <IconButton
+        size="xsmall"
+        aria-label={label}
+        aria-expanded={!folded}
+        onClick={onClick}
+      >
+        <Icon icon={folded ? Right : Bottom} size={12} />
+      </IconButton>
+    </Tooltip>
+  )
+}
+
+function ShelfLinks({ archivesLit }: { archivesLit: boolean }): ReactElement {
+  const { t } = useI18n()
+  return (
+    <SidebarShelves label={t('boards.shelves')}>
+      <NavItem>
+        <SidebarLink to="/archives" active={archivesLit}>
+          <NavIcon icon={Archive} />
+          <NavText>{t('boards.archives')}</NavText>
+        </SidebarLink>
+      </NavItem>
+    </SidebarShelves>
+  )
+}
+
 function Favorites({
   lit,
   onOpen
 }: {
   lit: string | null
-  onOpen: (boardId: string) => void
+  onOpen: (id: string) => void
 }): ReactElement | null {
   const { t } = useI18n()
+  const sections = useSidebarSections().data ?? []
+  const drop = useFavoritesDrop()
+  const [folded, toggleFolded] = useFolded('sidebar-favorites-folded', false)
+  // The favorites in another section show there only.
+  const placed = (item: SidebarItem) =>
+    sections.some(section =>
+      section.items.some(each => each.kind === item.kind && each.id === item.id)
+    )
   const favorites = (useBoards().data ?? []).filter(
-    board => board.favorite && !board.archived
+    board =>
+      board.favorite &&
+      !board.archived &&
+      !placed({ kind: 'board', id: board.id })
   )
-  const views = (useFilters().data ?? []).filter(filter => filter.favorite)
-  if (favorites.length === 0 && views.length === 0) return null
+  const views = (useFilters().data ?? []).filter(
+    filter => filter.favorite && !placed({ kind: 'view', id: filter.id })
+  )
+  const empty = favorites.length === 0 && views.length === 0
+  // Kept, though empty, as the place to drop what leaves a section.
+  if (empty && sections.length === 0) return null
 
   return (
-    <SidebarSection label={t('boards.favorites')}>
+    <SidebarSection
+      label={t('boards.favorites')}
+      fold={{
+        folded,
+        label: t(folded ? 'sidebar.unfold' : 'sidebar.fold', {
+          name: t('boards.favorites')
+        }),
+        onToggle: toggleFolded
+      }}
+      {...drop}
+    >
       {favorites.map(board => (
-        <NavItem key={board.id}>
+        <DraggableEntry
+          key={board.id}
+          origin={FAVORITES}
+          item={{ kind: 'board', id: board.id }}
+          label={board.name}
+          icon={Mosaic}
+        >
           <SidebarLink
             to={`/boards/${board.id}`}
             active={lit === board.id}
@@ -551,16 +705,56 @@ function Favorites({
             <NavIcon icon={Star} />
             <NavText>{board.name}</NavText>
           </SidebarLink>
-        </NavItem>
+        </DraggableEntry>
       ))}
       {views.map(filter => (
-        <NavItem key={filter.id}>
-          <SidebarLink to={`/filters/${filter.id}`}>
+        <DraggableEntry
+          key={filter.id}
+          origin={FAVORITES}
+          item={{ kind: 'view', id: filter.id }}
+          label={filter.name}
+          icon={viewIcon(filter.icon)}
+        >
+          <SidebarLink
+            to={`/filters/${filter.id}`}
+            active={lit === filter.id}
+            onClick={() => {
+              onOpen(filter.id)
+            }}
+          >
             <NavIcon icon={viewIcon(filter.icon)} />
             <NavText>{filter.name}</NavText>
           </SidebarLink>
-        </NavItem>
+        </DraggableEntry>
       ))}
+      {empty && <SidebarHint>{t('sidebar.empty')}</SidebarHint>}
     </SidebarSection>
+  )
+}
+
+// An entry of Boards, Views or Favorites, which a drag moves into a section.
+function DraggableEntry({
+  origin,
+  item,
+  label,
+  icon,
+  listed = false,
+  children
+}: {
+  origin: string
+  item: SidebarItem
+  label: string
+  icon: ElementType
+  /** Listed under Boards or Views, on wide screens only. */
+  listed?: boolean
+  children: ReactNode
+}): ReactElement {
+  const drag = useSidebarDrag(origin, item, label, icon)
+  return listed ? (
+    <WideScreenNavItem variant="secondary" {...drag}>
+      {children}
+    </WideScreenNavItem>
+  ) : (
+    <NavItem {...drag}>{children}</NavItem>
   )
 }

@@ -40,7 +40,7 @@ export function ViewScreen(): ReactElement {
       allColumns={view.allColumns}
       origin={{ icon: Eye, label: t('filters.title'), to: '/filters' }}
       current={view.name}
-      actions={<ViewMenu view={view} starrable />}
+      actions={<ViewMenu view={view} />}
       details={<CriteriaChips criteria={view.criteria} />}
     />
   )

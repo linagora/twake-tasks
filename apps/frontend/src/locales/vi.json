@@ -543,6 +543,8 @@
   },
   "filters": {
     "title": "Chế độ xem",
+    "fold": "Thu gọn các chế độ xem",
+    "unfold": "Mở rộng các chế độ xem",
     "empty": "Chưa có chế độ xem nào",
     "emptyHint": "Lưu các tiêu chí bạn hay dùng, như các công việc P1 của bạn.",
     "loadFailed": "Không thể tải chế độ xem.",
@@ -566,8 +568,6 @@
     "deleteFailed": "Không thể xóa chế độ xem.",
     "nameRequired": "Tên là bắt buộc.",
     "menuOf": "Thao tác với %{name}",
-    "addFavorite": "Thêm vào mục yêu thích",
-    "removeFavorite": "Xóa khỏi mục yêu thích",
     "saving": "Đang lưu…",
     "changesSaved": "Đã lưu thay đổi",
     "missingStatusTitle": "“%{board}” không có mục “%{section}”",
@@ -641,18 +641,38 @@
     "noResult": "Không tìm thấy biểu tượng"
   },
   "viewTask": {
-    "title": "Tiêu đề",
     "board": "Bảng",
     "status": "Mục",
     "create": "Tạo công việc",
-    "failed": "Không thể tạo công việc.",
     "created": "Đã tạo %{task}, nhưng thiếu %{facts}. Công việc có thể không hiển thị trong chế độ xem này.",
     "unset": {
       "priority": "độ ưu tiên",
       "dueDate": "hạn",
       "label": "nhãn",
       "me": "bạn là người được giao, vì bạn không phải thành viên của bảng"
-    },
-    "close": "Đóng"
+    }
+  },
+  "sidebar": {
+    "name": "Tên",
+    "create": "Tạo",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "close": "Đóng",
+    "rename": "Đổi tên",
+    "renameTitle": "Đổi tên mục",
+    "moveUp": "Lên trên",
+    "moveDown": "Xuống dưới",
+    "delete": "Xóa mục",
+    "deleteTitle": "Xóa %{name}?",
+    "deleteText": "Các bảng và chế độ xem trong mục này sẽ trở về Yêu thích.",
+    "deleteConfirm": "Xóa",
+    "sectionMenu": "Thao tác với %{name}",
+    "empty": "Kéo bảng và chế độ xem vào đây",
+    "addToSection": "Hiển thị ở thanh bên",
+    "nowhere": "Không hiện ở thanh bên",
+    "newSectionOption": "Mục mới",
+    "failed": "Không thể lưu các mục.",
+    "fold": "Thu gọn %{name}",
+    "unfold": "Mở rộng %{name}"
   }
 }

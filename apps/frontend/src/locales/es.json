@@ -543,6 +543,8 @@
   },
   "filters": {
     "title": "Vistas",
+    "fold": "Contraer las vistas",
+    "unfold": "Desplegar las vistas",
     "empty": "No hay vistas guardadas",
     "emptyHint": "Guarda los criterios que buscas a menudo, como tus tareas P1.",
     "loadFailed": "No se pudieron cargar las vistas.",
@@ -566,8 +568,6 @@
     "deleteFailed": "No se pudo eliminar la vista.",
     "nameRequired": "El nombre es obligatorio.",
     "menuOf": "Acciones de %{name}",
-    "addFavorite": "Añadir a favoritos",
-    "removeFavorite": "Quitar de favoritos",
     "saving": "Guardando…",
     "changesSaved": "Cambios guardados",
     "missingStatusTitle": "«%{board}» no tiene la sección «%{section}»",
@@ -641,18 +641,38 @@
     "noResult": "No se encontró ningún icono"
   },
   "viewTask": {
-    "title": "Título",
     "board": "Tablero",
     "status": "Sección",
     "create": "Crear la tarea",
-    "failed": "No se pudo crear la tarea.",
     "created": "%{task} se ha creado, sin %{facts}. Puede que no aparezca en esta vista.",
     "unset": {
       "priority": "su prioridad",
       "dueDate": "su fecha de vencimiento",
       "label": "su etiqueta",
       "me": "ti como persona asignada, al no ser miembro de su tablero"
-    },
-    "close": "Cerrar"
+    }
+  },
+  "sidebar": {
+    "name": "Nombre",
+    "create": "Crear",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "rename": "Renombrar",
+    "renameTitle": "Renombrar la sección",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "delete": "Eliminar la sección",
+    "deleteTitle": "¿Eliminar %{name}?",
+    "deleteText": "Los tableros y vistas que contiene vuelven a Favoritos.",
+    "deleteConfirm": "Eliminar",
+    "sectionMenu": "Acciones de %{name}",
+    "empty": "Arrastra tableros y vistas aquí",
+    "addToSection": "Mostrar en la barra lateral",
+    "nowhere": "Fuera de la barra lateral",
+    "newSectionOption": "Nueva sección",
+    "failed": "No se pudieron guardar las secciones.",
+    "fold": "Contraer %{name}",
+    "unfold": "Expandir %{name}"
   }
 }

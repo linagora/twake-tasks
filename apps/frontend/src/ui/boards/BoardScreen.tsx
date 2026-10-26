@@ -84,6 +84,7 @@ import { LinkedTaskPanel } from '@/ui/boards/TaskPanel'
 import { lineage } from '@/ui/boards/useTaskPanel'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useSidebarCreate } from '@/ui/shell/SidebarCreate'
 import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -277,6 +278,7 @@ function BoardColumns({
     </Card>
   )
   const editable = isEditable(board)
+  const sidebarCreate = useSidebarCreate()
   const manageable = isManageable(board)
   const shareable = isShareable(board)
   const [sharing, setSharing] = useState(false)
@@ -454,6 +456,17 @@ function BoardColumns({
             : undefined
         }
       />
+      {/* Bare in Twake Space, the board has no sidebar to create from. */}
+      {!sidebarCreate && editable && (
+        <Button
+          startIcon={<Icon icon={Plus} />}
+          onClick={() => {
+            openNewTask()
+          }}
+        >
+          {t('newTask.open')}
+        </Button>
+      )}
     </>
   )
 

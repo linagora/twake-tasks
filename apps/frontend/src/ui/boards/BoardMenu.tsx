@@ -35,6 +35,7 @@ import {
 import { useSetBoardArchived, useSetLayout } from '@/ui/boards/queries'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { SidebarPlaceMenuItem } from '@/ui/shell/SidebarSections'
 
 export function BoardMenu({
   board,
@@ -113,6 +114,12 @@ export function BoardMenu({
         {item(Trash, t('archive.trash'), () => {
           onOpenShelf('trash')
         })}
+        {!board.archived && (
+          <SidebarPlaceMenuItem
+            item={{ kind: 'board', id: board.id }}
+            onPicked={close}
+          />
+        )}
         {archivable && <Divider />}
         {isRenamable(board) &&
           onRename &&

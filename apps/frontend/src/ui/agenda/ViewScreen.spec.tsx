@@ -159,6 +159,121 @@ describe('ViewScreen', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   })
 
+  it('leaves Create task to the sidebar, with no button of its own', async () => {
+    const boardsApi = fakeBoardsApi([aBoard({ name: 'Design' })])
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: {},
+      layout: 'list'
+    })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Urgent' })
+    ).toBeVisible()
+    // The one of the sidebar only.
+    expect(screen.getAllByRole('button', { name: 'Create task' })).toEqual([
+      within(screen.getByRole('complementary')).getByRole('button', {
+        name: 'Create task'
+      })
+    ])
+    expect(screen.queryByRole('button', { name: 'Add task' })).toBe(null)
+  })
+
+  it('fills Create task of the sidebar in with its criteria, so the view shows the task', async () => {
+    const inbox = aBoard({ name: 'Inbox', keyPrefix: 'INB', inbox: true })
+    const boardsApi = fakeBoardsApi([inbox])
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: { priorities: [1] },
+      layout: 'list'
+    })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    await screen.findByRole('heading', { level: 1 })
+    fireEvent.click(
+      within(screen.getByRole('complementary')).getByRole('button', {
+        name: 'Create task'
+      })
+    )
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.getByRole('heading', { name: 'Create a task' })).toBeVisible()
+    expect(
+      await dialog.findByRole('combobox', { name: 'Priority' })
+    ).toHaveTextContent('P1')
+    fireEvent.change(dialog.getByLabelText('Title'), {
+      target: { value: 'Call the printer' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
+
+    expect(await screen.findByText('Call the printer')).toBeVisible()
+    expect(boardsApi.createTask).toHaveBeenCalledWith(
+      inbox.id,
+      expect.objectContaining({ title: 'Call the printer' })
+    )
+    expect(boardsApi.editTask).toHaveBeenCalledWith(
+      inbox.id,
+      expect.any(String),
+      { priority: 1 }
+    )
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBe(null)
+    })
+  })
+
+  it('gives a new task me, and makes the label and status of the view its board lacks', async () => {
+    const design = aBoard({
+      name: 'Design',
+      members: [
+        // The fake API knows the signed-in person as `me`.
+        { userId: 'me', email: 'alice@example.com', name: 'Alice' }
+      ]
+    })
+    const boardsApi = fakeBoardsApi([design])
+    const { id } = await boardsApi.createFilter({
+      name: 'Review',
+      criteria: {
+        assignees: ['me'],
+        labels: ['Print'],
+        statuses: ['In review'],
+        boards: [design.id]
+      },
+      layout: 'list'
+    })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    await screen.findByRole('heading', { level: 1 })
+    fireEvent.click(
+      within(screen.getByRole('complementary')).getByRole('button', {
+        name: 'Create task'
+      })
+    )
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(
+      await dialog.findByRole('combobox', { name: 'Section' })
+    ).toHaveTextContent('In review')
+    expect(dialog.getByText('Alice')).toBeVisible()
+    expect(dialog.getByText('Print')).toBeVisible()
+    fireEvent.change(dialog.getByLabelText('Title'), {
+      target: { value: 'Call the printer' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
+
+    expect(await screen.findByText('Call the printer')).toBeVisible()
+    expect(boardsApi.createSection).toHaveBeenCalledWith(
+      design.id,
+      expect.objectContaining({ name: 'In review' })
+    )
+    expect(boardsApi.createLabel).toHaveBeenCalledWith(design.id, {
+      name: 'Print'
+    })
+    expect(boardsApi.setAssignees).toHaveBeenCalledWith(
+      design.id,
+      expect.any(String),
+      ['me']
+    )
+  })
+
   it('offers to create a task when nothing matches', async () => {
     const boardsApi = fakeBoardsApi([
       aBoard({ name: 'Inbox', keyPrefix: 'INB', inbox: true })
@@ -285,24 +400,57 @@ describe('ViewScreen', () => {
     expect(screen.getAllByRole('region')).toHaveLength(3)
   })
 
-  it('stars and unstars itself from its menu', async () => {
+  it('stars and unstars itself from where its menu shows it', async () => {
     const { boardsApi, id } = await aView()
     renderRoute(`/filters/${id}`, { boardsApi })
-    const pick = async (action: string) => {
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Actions of Urgent' })
+    )
+    expect(screen.queryByRole('menuitem', { name: /favorites/ })).toBe(null)
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+    const place = async (where: string) => {
       fireEvent.click(
         await screen.findByRole('button', { name: 'Actions of Urgent' })
       )
-      fireEvent.click(await screen.findByRole('menuitem', { name: action }))
+      fireEvent.click(
+        await screen.findByRole('menuitem', { name: 'Show in the sidebar' })
+      )
+      const places = within(
+        await screen.findByRole('menu', { name: 'Show in the sidebar' })
+      )
+      fireEvent.click(places.getByRole('menuitemradio', { name: where }))
+      await waitFor(() => {
+        expect(screen.queryByRole('menu')).toBe(null)
+      })
     }
 
-    await pick('Add to favorites')
-    await waitFor(() => {
-      expect(boardsApi.setFilterFavorite).toHaveBeenCalledWith(id, true)
+    await place('Favorites')
+    expect(boardsApi.setFilterFavorite).toHaveBeenCalledWith(id, true)
+    await place('Not in the sidebar')
+    expect(boardsApi.setFilterFavorite).toHaveBeenCalledWith(id, false)
+  })
+
+  it('shows itself in a section named in its menu', async () => {
+    const { boardsApi, id } = await aView()
+    renderRoute(`/filters/${id}`, { boardsApi })
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Actions of Urgent' })
+    )
+    fireEvent.mouseEnter(
+      await screen.findByRole('menuitem', { name: 'Show in the sidebar' })
+    )
+    const places = within(
+      await screen.findByRole('menu', { name: 'Show in the sidebar' })
+    )
+    fireEvent.click(places.getByRole('menuitem', { name: 'New section' }))
+    fireEvent.change(places.getByRole('textbox', { name: /^Name/ }), {
+      target: { value: 'Reading' }
     })
-    await pick('Remove from favorites')
-    await waitFor(() => {
-      expect(boardsApi.setFilterFavorite).toHaveBeenCalledWith(id, false)
-    })
+    fireEvent.click(places.getByRole('button', { name: 'Create' }))
+
+    const reading = within(await screen.findByRole('list', { name: 'Reading' }))
+    expect(reading.getByRole('link', { name: 'Urgent' })).toBeVisible()
+    expect(screen.queryByRole('menu')).toBeNull()
   })
 
   it('opens its edit page', async () => {
@@ -318,71 +466,6 @@ describe('ViewScreen', () => {
       await screen.findByRole('heading', { level: 1, name: 'Edit view' })
     ).toBeVisible()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('Urgent')
-  })
-
-  it('creates a task the view keeps showing, in the inbox by default', async () => {
-    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
-    const inbox = aBoard({ name: 'Inbox', keyPrefix: 'INB', inbox: true })
-    const boardsApi = fakeBoardsApi([design, inbox])
-    const { id } = await boardsApi.createFilter({
-      name: 'Urgent',
-      criteria: { priorities: [1] },
-      layout: 'list'
-    })
-    renderRoute(`/filters/${id}`, { boardsApi })
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Add task' }))
-    const dialog = within(await screen.findByRole('dialog'))
-    expect(dialog.getByRole('combobox', { name: 'Board' })).toHaveValue(
-      inbox.id
-    )
-    expect(dialog.queryByRole('combobox', { name: 'Priority' })).toBeNull()
-    fireEvent.change(dialog.getByLabelText('Title'), {
-      target: { value: 'Call the printer' }
-    })
-    fireEvent.click(dialog.getByRole('button', { name: 'Create task' }))
-
-    expect(await screen.findByText('Call the printer')).toBeVisible()
-    expect(boardsApi.createTask).toHaveBeenCalledWith(
-      inbox.id,
-      expect.objectContaining({ title: 'Call the printer' })
-    )
-    expect(boardsApi.editTask).toHaveBeenCalledWith(
-      inbox.id,
-      expect.any(String),
-      { priority: 1 }
-    )
-  })
-
-  it('says what a task was created without, and does not make it twice', async () => {
-    const inbox = aBoard({ name: 'Inbox', keyPrefix: 'INB', inbox: true })
-    const boardsApi = fakeBoardsApi([inbox])
-    boardsApi.editTask.mockRejectedValueOnce(new Error('refused'))
-    const { id } = await boardsApi.createFilter({
-      name: 'Mine',
-      criteria: { priorities: [1], assignees: ['me'] },
-      layout: 'list'
-    })
-    renderRoute(`/filters/${id}`, { boardsApi })
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Add task' }))
-    const dialog = within(await screen.findByRole('dialog'))
-    fireEvent.change(dialog.getByLabelText('Title'), {
-      target: { value: 'Call the printer' }
-    })
-    fireEvent.click(dialog.getByRole('button', { name: 'Create task' }))
-
-    expect(
-      await dialog.findByText(
-        /^INB-\d+ is created, without its priority and you as its assignee, not being a member of its board\. It may not show in this view\.$/
-      )
-    ).toBeVisible()
-    expect(dialog.queryByRole('button', { name: 'Create task' })).toBeNull()
-    fireEvent.click(dialog.getByRole('button', { name: 'Close' }))
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).toBeNull()
-    })
-    expect(boardsApi.createTask).toHaveBeenCalledTimes(1)
   })
 
   it('offers the board as a filter of the view', async () => {
@@ -454,7 +537,7 @@ describe('ViewScreen', () => {
     fireEvent.change(dialog.getByLabelText('Title'), {
       target: { value: 'Call the printer' }
     })
-    fireEvent.click(dialog.getByRole('button', { name: 'Create task' }))
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
 
     await waitFor(() => {
       expect(boardsApi.editTask).toHaveBeenCalled()

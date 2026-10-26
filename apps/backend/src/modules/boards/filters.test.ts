@@ -106,6 +106,74 @@ describe('saved filters', () => {
     expect(await keysOf(owner, await save({ due: 'none' }))).toEqual(['DES-3'])
   })
 
+  it('makes my first views once, as favorites named in my language', async () => {
+    const owner = aUser()
+    const other = aUser({ organizationId: owner.organizationId })
+    const board = await aBoardOf(owner, 'DES')
+    const late = await board.add('Late', { dueDate: shift(today, -1, 'days') })
+    const soon = await board.add('Soon', { dueDate: shift(today, 3, 'days') })
+    const someday = await board.add('Someday')
+    await board.add('Not mine', { dueDate: today })
+    for (const task of [late, soon, someday]) await board.assign(task.id, owner)
+    const names = {
+      today: 'Aujourd’hui',
+      upcoming: 'À venir',
+      mine: 'Mes tâches'
+    }
+
+    const made = await api.as(owner).post('/filters/defaults', names)
+    const { filters } = (await api.as(owner).get('/filters')).json<{
+      filters: { id: string; name: string; favorite: boolean; icon: string }[]
+    }>()
+
+    expect(made.statusCode).toBe(204)
+    expect(
+      filters.map(({ name, favorite, icon }) => ({ name, favorite, icon }))
+    ).toEqual([
+      { name: 'Aujourd’hui', favorite: true, icon: 'CalendarToday' },
+      { name: 'À venir', favorite: true, icon: 'Calendar' },
+      { name: 'Mes tâches', favorite: true, icon: 'Profile' }
+    ])
+    const [todays, upcoming, mine] = filters.map(filter => filter.id)
+    expect(await keysOf(owner, todays ?? '')).toEqual(['DES-1'])
+    expect(await keysOf(owner, upcoming ?? '')).toEqual(['DES-1', 'DES-2'])
+    expect(await keysOf(owner, mine ?? '')).toEqual(['DES-1', 'DES-2', 'DES-3'])
+    expect(
+      (await api.as(other).get('/filters')).json<{ filters: unknown[] }>()
+        .filters
+    ).toEqual([])
+
+    await api.as(owner).delete(`/filters/${mine ?? ''}`)
+    await api.as(owner).post('/filters/defaults', names)
+    expect(
+      (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
+        .filters
+    ).toHaveLength(2)
+  })
+
+  it('makes the first views of someone new, once whatever the requests', async () => {
+    const newcomer = aUser()
+    const names = { today: 'Today', upcoming: 'Upcoming', mine: 'My tasks' }
+
+    const made = await Promise.all([
+      api.as(newcomer).post('/filters/defaults', names),
+      api.as(newcomer).post('/filters/defaults', names)
+    ])
+
+    expect(made.map(reply => reply.statusCode)).toEqual([204, 204])
+    expect(
+      (await api.as(newcomer).get('/filters')).json<{ filters: unknown[] }>()
+        .filters
+    ).toHaveLength(3)
+    expect(
+      (
+        await api
+          .as(newcomer)
+          .post('/filters/defaults', { today: 'Today', upcoming: '' })
+      ).statusCode
+    ).toBe(400)
+  })
+
   it('keeps filters to the person who saved them, until deleted', async () => {
     const owner = aUser()
     const other = aUser({ organizationId: owner.organizationId })

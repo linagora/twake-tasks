@@ -16,6 +16,13 @@ export const GROUPINGS = [
 const oneOrMany = <T extends z.ZodType>(value: T) =>
   z.union([value, z.array(value).min(1).max(100)]).optional()
 
+// The first views are named in the language the person reads the app in.
+export const defaultFilterNames = z.object({
+  today: z.string().trim().min(1).max(100),
+  upcoming: z.string().trim().min(1).max(100),
+  mine: z.string().trim().min(1).max(100)
+})
+
 export const newFilter = z.object({
   name: z.string().trim().min(1).max(100),
   // Each criterion takes many values; the single ones of earlier views stay

@@ -8,6 +8,7 @@ import {
   type Notification,
   type ProjectUnread,
   type SavedFilter,
+  type SidebarSection,
   type Project,
   type BoardsApi,
   type Comment,
@@ -143,6 +144,29 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
     },
     listFilters: async () =>
       (await call<{ filters: SavedFilter[] }>('GET', '/filters')).filters,
+    makeDefaultFilters: names =>
+      call(
+        'POST',
+        '/filters/defaults',
+        names satisfies Body<'defaultFilterNames'>
+      ),
+    listSidebarSections: async () =>
+      (await call<{ sections: SidebarSection[] }>('GET', '/sidebar/sections'))
+        .sections,
+    createSidebarSection: name =>
+      call('POST', '/sidebar/sections', {
+        name
+      } satisfies Body<'sidebarSectionName'>),
+    renameSidebarSection: (sectionId, name) =>
+      call('PATCH', route`/sidebar/sections/${sectionId}`, {
+        name
+      } satisfies Body<'sidebarSectionName'>),
+    deleteSidebarSection: sectionId =>
+      call('DELETE', route`/sidebar/sections/${sectionId}`),
+    saveSidebarLayout: sections =>
+      call('PUT', '/sidebar/sections', {
+        sections
+      } satisfies Body<'sidebarLayout'>),
     createFilter: filter =>
       call('POST', '/filters', filter satisfies Body<'newFilter'>),
     // Sent as the page unloads when the undo notice is still open.

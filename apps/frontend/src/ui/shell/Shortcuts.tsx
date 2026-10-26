@@ -19,9 +19,6 @@ import { useI18n } from '@/ui/i18n/useI18n'
 
 const GO = {
   b: { path: '/', label: 'boards.title' },
-  t: { path: '/today', label: 'agenda.today' },
-  u: { path: '/upcoming', label: 'agenda.upcoming' },
-  m: { path: '/mine', label: 'agenda.mine' },
   f: { path: '/filters', label: 'filters.title' }
 } as const
 

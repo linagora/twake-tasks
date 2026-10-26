@@ -10,6 +10,8 @@ import {
   type Notification,
   type Reminder,
   type SavedFilter,
+  type SidebarItem,
+  type SidebarSection,
   type Sharing,
   type Project,
   type Shelf
@@ -200,6 +202,14 @@ export function fakeBoardsApi(boards: Board[] = []) {
   })
 
   const filters: SavedFilter[] = []
+  const sidebarSections: SidebarSection[] = []
+  const leaveSections = (kind: SidebarItem['kind'], id: string) => {
+    for (const section of sidebarSections) {
+      section.items = section.items.filter(
+        item => item.kind !== kind || item.id !== id
+      )
+    }
+  }
   // Done and canceled tasks too, as a view shows them.
   const allTasks = () =>
     [...store.values()].flatMap(board =>
@@ -337,6 +347,65 @@ export function fakeBoardsApi(boards: Board[] = []) {
         )
       )
     ),
+    listSidebarSections: vi.fn<BoardsApi['listSidebarSections']>(() =>
+      Promise.resolve(structuredClone(sidebarSections))
+    ),
+    createSidebarSection: vi.fn<BoardsApi['createSidebarSection']>(name =>
+      Promise.resolve().then(() => {
+        const id = nextId()
+        sidebarSections.push({ id, name: name.trim(), items: [] })
+        return { id }
+      })
+    ),
+    renameSidebarSection: vi.fn<BoardsApi['renameSidebarSection']>(
+      (sectionId, name) =>
+        Promise.resolve().then(() => {
+          const section = sidebarSections.find(each => each.id === sectionId)
+          if (!section) throw new ApiError(404, 'not_found')
+          section.name = name.trim()
+        })
+    ),
+    deleteSidebarSection: vi.fn<BoardsApi['deleteSidebarSection']>(sectionId =>
+      Promise.resolve().then(() => {
+        const index = sidebarSections.findIndex(each => each.id === sectionId)
+        if (index < 0) throw new ApiError(404, 'not_found')
+        sidebarSections.splice(index, 1)
+      })
+    ),
+    saveSidebarLayout: vi.fn<BoardsApi['saveSidebarLayout']>(layout =>
+      Promise.resolve().then(() => {
+        if (
+          layout.length !== sidebarSections.length ||
+          layout.some(
+            section => !sidebarSections.some(each => each.id === section.id)
+          )
+        ) {
+          throw new ApiError(409, 'stale_version')
+        }
+        const named = new Map(
+          sidebarSections.map(section => [section.id, section.name])
+        )
+        sidebarSections.splice(
+          0,
+          sidebarSections.length,
+          ...layout.map(section => ({
+            id: section.id,
+            name: named.get(section.id) ?? '',
+            items: structuredClone(section.items)
+          }))
+        )
+        // What a section holds is starred.
+        for (const item of layout.flatMap(section => section.items)) {
+          if (item.kind === 'board') favorites.add(item.id)
+          const filter = filters.find(each => each.id === item.id)
+          if (item.kind === 'view' && filter) filter.favorite = true
+        }
+      })
+    ),
+    // Made by the backend once: here, a person starts with none.
+    makeDefaultFilters: vi.fn<BoardsApi['makeDefaultFilters']>(() =>
+      Promise.resolve()
+    ),
     createFilter: vi.fn<BoardsApi['createFilter']>(filter =>
       Promise.resolve().then(() => {
         const id = nextId()
@@ -359,6 +428,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
           const filter = filters.find(filter => filter.id === filterId)
           if (!filter) throw new ApiError(404, 'not_found')
           filter.favorite = favorite
+          if (!favorite) leaveSections('view', filterId)
         })
     ),
     updateFilter: vi.fn<BoardsApi['updateFilter']>((filterId, edit) =>
@@ -521,7 +591,10 @@ export function fakeBoardsApi(boards: Board[] = []) {
       Promise.resolve().then(() => {
         find(boardId)
         if (favorite) favorites.add(boardId)
-        else favorites.delete(boardId)
+        else {
+          favorites.delete(boardId)
+          leaveSections('board', boardId)
+        }
       })
     ),
     setLayout: vi.fn<BoardsApi['setLayout']>((boardId, layout) =>

@@ -543,6 +543,8 @@
   },
   "filters": {
     "title": "Views",
+    "fold": "Fold views",
+    "unfold": "Unfold views",
     "empty": "No saved views",
     "emptyHint": "Save the criteria you look for often, like your P1 tasks.",
     "loadFailed": "Couldn’t load views.",
@@ -566,8 +568,6 @@
     "deleteFailed": "Couldn’t delete the view.",
     "nameRequired": "A name is required.",
     "menuOf": "Actions of %{name}",
-    "addFavorite": "Add to favorites",
-    "removeFavorite": "Remove from favorites",
     "saving": "Saving…",
     "changesSaved": "Changes saved",
     "missingStatusTitle": "“%{board}” has no “%{section}” section",
@@ -641,18 +641,38 @@
     "noResult": "No icon found"
   },
   "viewTask": {
-    "title": "Title",
     "board": "Board",
     "status": "Section",
     "create": "Create task",
-    "failed": "Couldn’t create the task.",
     "created": "%{task} is created, without %{facts}. It may not show in this view.",
     "unset": {
       "priority": "its priority",
       "dueDate": "its due date",
       "label": "its label",
       "me": "you as its assignee, not being a member of its board"
-    },
-    "close": "Close"
+    }
+  },
+  "sidebar": {
+    "name": "Name",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "rename": "Rename",
+    "renameTitle": "Rename the section",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "delete": "Delete the section",
+    "deleteTitle": "Delete %{name}?",
+    "deleteText": "The boards and views it holds go back to Favorites.",
+    "deleteConfirm": "Delete",
+    "sectionMenu": "Actions of %{name}",
+    "empty": "Drag boards and views here",
+    "addToSection": "Show in the sidebar",
+    "nowhere": "Not in the sidebar",
+    "newSectionOption": "New section",
+    "failed": "The sections could not be saved.",
+    "fold": "Fold %{name}",
+    "unfold": "Unfold %{name}"
   }
 }

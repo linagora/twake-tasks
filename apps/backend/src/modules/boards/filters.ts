@@ -33,7 +33,8 @@ import {
   tasks
 } from './schema.ts'
 import type { Layout } from './layouts.ts'
-import { liveTasksOf } from './store.ts'
+import { leaveSections } from './sidebar.ts'
+import { ensureInbox, liveTasksOf } from './store.ts'
 import { Refused, writeOrRefuse } from './tasks.ts'
 
 type Due = 'overdue' | 'today' | 'week' | 'none'
@@ -188,6 +189,43 @@ export interface View {
   allColumns: boolean
 }
 
+/** The names of the first views, in the person's language. */
+export interface DefaultViewNames {
+  today: string
+  upcoming: string
+  mine: string
+}
+
+// The views a person starts with, the former Today, Upcoming and My tasks.
+const DEFAULT_VIEWS: (Omit<View, 'name'> & {
+  key: keyof DefaultViewNames
+})[] = [
+  {
+    key: 'today',
+    criteria: { assignees: ['me'], dues: ['overdue', 'today'] },
+    icon: 'CalendarToday',
+    layout: 'list',
+    groupBy: 'due',
+    allColumns: false
+  },
+  {
+    key: 'upcoming',
+    criteria: { assignees: ['me'], dues: ['overdue', 'today', 'week'] },
+    icon: 'Calendar',
+    layout: 'list',
+    groupBy: 'due',
+    allColumns: false
+  },
+  {
+    key: 'mine',
+    criteria: { assignees: ['me'] },
+    icon: 'Profile',
+    layout: 'list',
+    groupBy: 'due',
+    allColumns: false
+  }
+]
+
 export function createFilterStore(db: Db) {
   return {
     listFilters(identity: Identity) {
@@ -213,6 +251,37 @@ export function createFilterStore(db: Db) {
           ...row,
           criteria: criteriaOf(row.criteria as Criteria & LegacyCriteria)
         }))
+      })
+    },
+
+    /**
+     * Makes the person's first views, as favorites, unless made before: the
+     * personal project records it, so that only one request makes them.
+     */
+    makeDefaultFilters(identity: Identity, names: DefaultViewNames) {
+      return writeOrRefuse(db, identity, async tx => {
+        await ensureInbox(tx, identity)
+        const claimed = await tx
+          .update(projects)
+          .set({ defaultViews: true })
+          .where(
+            and(
+              eq(projects.personal, true),
+              eq(projects.createdBy, identity.userId),
+              eq(projects.defaultViews, false)
+            )
+          )
+          .returning({ id: projects.id })
+        if (claimed.length === 0) return
+        await tx.insert(savedFilters).values(
+          DEFAULT_VIEWS.map(({ key, ...view }) => ({
+            organizationId: identity.organizationId,
+            userId: identity.userId,
+            name: names[key],
+            favorite: true,
+            ...view
+          }))
+        )
       })
     },
 
@@ -337,6 +406,13 @@ export function createFilterStore(db: Db) {
           .where(eq(savedFilters.id, filterId))
           .returning({ id: savedFilters.id })
         if (updated.length === 0) throw new Refused('not_found')
+        // An unstarred view leaves the sidebar sections it was placed in.
+        if (changes.favorite === false) {
+          await leaveSections(tx, identity.userId, {
+            kind: 'view',
+            id: filterId
+          })
+        }
       })
     },
 

@@ -397,7 +397,7 @@ describe('FiltersScreen', () => {
       })
     })
     expect(boardsApi.updateFilter).toHaveBeenCalledTimes(1)
-    const saved = await screen.findByRole('status')
+    const saved = await within(screen.getByRole('main')).findByRole('status')
     expect(saved).toHaveTextContent('Changes saved')
     // Said in the header.
     expect(

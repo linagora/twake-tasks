@@ -36,10 +36,10 @@ describe('keyboard shortcuts', () => {
     await home()
 
     press('g')
-    press('m')
+    press('f')
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'My tasks' })
+      await screen.findByRole('heading', { level: 1, name: 'Views' })
     ).toBeVisible()
   })
 

@@ -752,7 +752,7 @@ describe('TaskPanel', () => {
       renderRoute(`/boards/${board.id}`, { boardsApi })
 
       const panel = await openLogo()
-      expect(screen.getByRole('link', { name: 'My tasks' })).toBeVisible()
+      expect(screen.getByRole('link', { name: 'Notifications' })).toBeVisible()
       const aside = within(panel.getByRole('complementary'))
       expect(aside.getByText('Assignees')).toBeVisible()
       expect(aside.queryByText('Description')).toBeNull()

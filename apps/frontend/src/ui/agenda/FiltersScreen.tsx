@@ -240,7 +240,14 @@ export function NewViewScreen(): ReactElement {
 }
 
 // As the new task dialog: a name, then the rest under Add details.
-function NewViewDialog({ onClose }: { onClose: () => void }): ReactElement {
+export function NewViewDialog({
+  onClose,
+  onCreated
+}: {
+  onClose: () => void
+  /** Called once created, as the view opens. */
+  onCreated?: () => void
+}): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
   const create = useCreateFilter()
@@ -270,6 +277,7 @@ function NewViewDialog({ onClose }: { onClose: () => void }): ReactElement {
     create.mutate(draft.view, {
       onSuccess: ({ id }) => {
         void navigate(`/filters/${id}`, { replace: true })
+        onCreated?.()
       }
     })
   }

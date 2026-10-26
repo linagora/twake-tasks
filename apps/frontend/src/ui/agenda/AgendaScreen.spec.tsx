@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -262,16 +262,7 @@ describe('AgendaScreen', () => {
 
   it('shows the next seven days on Upcoming', async () => {
     const { boardsApi } = boards()
-    renderRoute('/today', { boardsApi })
-
-    fireEvent.click(
-      within(await screen.findByRole('list', { name: 'Main menu' })).getByRole(
-        'link',
-        {
-          name: 'Upcoming'
-        }
-      )
-    )
+    renderRoute('/upcoming', { boardsApi })
 
     expect(await screen.findByText('Flyer')).toBeVisible()
     expect(boardsApi.agenda).toHaveBeenLastCalledWith(localZone(), 7)
@@ -294,19 +285,11 @@ describe('AgendaScreen', () => {
     expect(await screen.findByText('Brief')).toBeVisible()
     expect(screen.getByText('Mockups')).toBeVisible()
     expect(screen.queryByText('Logo')).not.toBeInTheDocument()
-    expect(
-      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
-        'link',
-        {
-          name: 'My tasks'
-        }
-      )
-    ).toHaveAttribute('href', '/mine')
   })
 
   it('says which tasks Today, Upcoming and My tasks hold', async () => {
     const { boardsApi } = boards()
-    renderRoute('/today', { boardsApi })
+    const { router } = renderRoute('/today', { boardsApi })
 
     expect(await screen.findByText('Logo')).toBeVisible()
     expect(
@@ -314,12 +297,7 @@ describe('AgendaScreen', () => {
         'Tasks assigned to you, and unassigned tasks of your boards outside spaces.'
       )
     ).toBeVisible()
-    fireEvent.click(
-      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
-        'link',
-        { name: 'My tasks' }
-      )
-    )
+    await act(() => router.navigate('/mine'))
     expect(
       await screen.findByText('Open tasks assigned to you on any board.')
     ).toBeVisible()

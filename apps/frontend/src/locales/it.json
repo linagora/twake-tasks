@@ -543,6 +543,8 @@
   },
   "filters": {
     "title": "Viste",
+    "fold": "Comprimi le viste",
+    "unfold": "Espandi le viste",
     "empty": "Nessuna vista salvata",
     "emptyHint": "Salva i criteri che cerchi spesso, come le tue attività P1.",
     "loadFailed": "Impossibile caricare le viste.",
@@ -566,8 +568,6 @@
     "deleteFailed": "Impossibile eliminare la vista.",
     "nameRequired": "Il nome è obbligatorio.",
     "menuOf": "Azioni di %{name}",
-    "addFavorite": "Aggiungi ai preferiti",
-    "removeFavorite": "Rimuovi dai preferiti",
     "saving": "Salvataggio…",
     "changesSaved": "Modifiche salvate",
     "missingStatusTitle": "“%{board}” non ha la sezione “%{section}”",
@@ -641,18 +641,38 @@
     "noResult": "Nessuna icona trovata"
   },
   "viewTask": {
-    "title": "Titolo",
     "board": "Bacheca",
     "status": "Sezione",
     "create": "Crea l’attività",
-    "failed": "Impossibile creare l’attività.",
     "created": "%{task} è stata creata, senza %{facts}. Potrebbe non apparire in questa vista.",
     "unset": {
       "priority": "la sua priorità",
       "dueDate": "la sua data di scadenza",
       "label": "la sua etichetta",
       "me": "te come assegnatario, non essendo membro della sua bacheca"
-    },
-    "close": "Chiudi"
+    }
+  },
+  "sidebar": {
+    "name": "Nome",
+    "create": "Crea",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "close": "Chiudi",
+    "rename": "Rinomina",
+    "renameTitle": "Rinomina la sezione",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "delete": "Elimina la sezione",
+    "deleteTitle": "Eliminare %{name}?",
+    "deleteText": "Le bacheche e le viste che contiene tornano nei Preferiti.",
+    "deleteConfirm": "Elimina",
+    "sectionMenu": "Azioni di %{name}",
+    "empty": "Trascina qui bacheche e viste",
+    "addToSection": "Mostra nella barra laterale",
+    "nowhere": "Non nella barra laterale",
+    "newSectionOption": "Nuova sezione",
+    "failed": "Impossibile salvare le sezioni.",
+    "fold": "Comprimi %{name}",
+    "unfold": "Espandi %{name}"
   }
 }

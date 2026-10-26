@@ -29,6 +29,7 @@ import {
   type ProjectUnread,
   type Reminder,
   type SavedFilter,
+  type SidebarSection,
   type Sharing,
   type Shelf,
   type TaskMove,
@@ -55,6 +56,7 @@ import {
   type ViewTaskFact
 } from '@/application/viewTask'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
+import { useI18n } from '@/ui/i18n/useI18n'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
 import { keys, type AgendaView } from '@/ui/queries/keys'
 
@@ -147,9 +149,113 @@ export function useSearch(text: string): UseQueryResult<AgendaTask[]> {
 
 export function useFilters(): UseQueryResult<SavedFilter[]> {
   const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  const { t } = useI18n()
   return useQuery({
     queryKey: keys.filters(),
-    queryFn: () => api.listFilters()
+    queryFn: async () => {
+      // The first views are made before the first list, once per page load.
+      await queryClient.query({
+        queryKey: keys.defaultFilters(),
+        queryFn: async () => {
+          await api.makeDefaultFilters({
+            today: t('agenda.today'),
+            upcoming: t('agenda.upcoming'),
+            mine: t('agenda.mine')
+          })
+          return true
+        },
+        staleTime: 'static'
+      })
+      return api.listFilters()
+    }
+  })
+}
+
+export function useSidebarSections(): UseQueryResult<SidebarSection[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: keys.sidebarSections(),
+    queryFn: () => api.listSidebarSections()
+  })
+}
+
+export function useCreateSidebarSection(): UseMutationResult<
+  { id: string },
+  Error,
+  string
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (name: string) => api.createSidebarSection(name),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: keys.sidebarSections() })
+  })
+}
+
+export function useRenameSidebarSection(): UseMutationResult<
+  void,
+  Error,
+  { sectionId: string; name: string }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sectionId, name }) =>
+      api.renameSidebarSection(sectionId, name),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: keys.sidebarSections() })
+  })
+}
+
+export function useDeleteSidebarSection(): UseMutationResult<
+  void,
+  Error,
+  string
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (sectionId: string) => api.deleteSidebarSection(sectionId),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: keys.sidebarSections() })
+  })
+}
+
+/**
+ * Saves the sections in their order with their items, shown at once, as a
+ * drop must not flash back to where it came from.
+ */
+export function useSaveSidebarLayout(): UseMutationResult<
+  void,
+  Error,
+  SidebarSection[],
+  { before: SidebarSection[] | undefined }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (sections: SidebarSection[]) =>
+      api.saveSidebarLayout(sections.map(({ id, items }) => ({ id, items }))),
+    onMutate: async sections => {
+      await queryClient.cancelQueries({ queryKey: keys.sidebarSections() })
+      const before = queryClient.getQueryData<SidebarSection[]>(
+        keys.sidebarSections()
+      )
+      queryClient.setQueryData(keys.sidebarSections(), sections)
+      return { before }
+    },
+    onError: (_error, _sections, context) => {
+      queryClient.setQueryData(keys.sidebarSections(), context?.before)
+    },
+    // What a section holds is starred.
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.sidebarSections() }),
+        queryClient.invalidateQueries({ queryKey: keys.boards(), exact: true }),
+        queryClient.invalidateQueries({ queryKey: keys.filters() })
+      ])
   })
 }
 
@@ -207,7 +313,12 @@ export function useSetFilterFavorite(): UseMutationResult<
   return useMutation({
     mutationFn: ({ filterId, favorite }) =>
       api.setFilterFavorite(filterId, favorite),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.filters() })
+    // Unstarred, it leaves its section.
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.filters() }),
+        queryClient.invalidateQueries({ queryKey: keys.sidebarSections() })
+      ])
   })
 }
 
@@ -1008,8 +1119,12 @@ export function useSetFavorite(): UseMutationResult<
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ boardId, favorite }) => api.setFavorite(boardId, favorite),
+    // Unstarred, it leaves its section.
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: keys.boards(), exact: true })
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.boards(), exact: true }),
+        queryClient.invalidateQueries({ queryKey: keys.sidebarSections() })
+      ])
   })
 }
 
