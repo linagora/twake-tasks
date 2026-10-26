@@ -2,10 +2,14 @@ import { asc, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import type { Db, Tx } from '../infra/db.ts'
 import type { OutgoingEvent } from './envelope.ts'
-import { outbox } from './schema.ts'
+import { outbox, processedEvents } from './schema.ts'
 
 const BATCH = 100
 const KEEP_SENT = '1 day'
+// Far longer than any redelivery of a consumed event. Pruned under the relay's
+// lock, so by one replica at a time.
+const KEEP_PROCESSED = '30 days'
+const PRUNE_PROCESSED_EVERY_MS = 60 * 60 * 1000
 // Any constant shared by every replica: only the holder relays, so events leave in order.
 const RELAY_LOCK = 0x7461736b
 
@@ -18,14 +22,18 @@ export function createRelay(deps: {
   logger: Logger
   publish: (event: OutgoingEvent) => Promise<void>
 }) {
+  let processedPrunedAt = -Infinity
+  const locked = async (tx: Tx) => {
+    const [lock] = await tx.execute<{ locked: boolean }>(
+      sql`select pg_try_advisory_xact_lock(${RELAY_LOCK}) as locked`
+    )
+    return lock?.locked === true
+  }
   // A failure stops the batch so later events wait for it; what was already
   // published is marked sent, and the rest is retried on the next run.
-  const relayOnce = () =>
+  const relay = () =>
     deps.db.transaction(async tx => {
-      const [lock] = await tx.execute<{ locked: boolean }>(
-        sql`select pg_try_advisory_xact_lock(${RELAY_LOCK}) as locked`
-      )
-      if (!lock?.locked) return 0
+      if (!(await locked(tx))) return 0
       const pending = await tx
         .select()
         .from(outbox)
@@ -53,6 +61,30 @@ export function createRelay(deps: {
         .where(lt(outbox.sentAt, sql`now() - ${KEEP_SENT}::interval`))
       return sent.length
     })
+  // Its own transaction, so a failed prune never undoes marking events sent.
+  const pruneProcessed = () =>
+    deps.db.transaction(async tx => {
+      if (!(await locked(tx))) return false
+      await tx
+        .delete(processedEvents)
+        .where(
+          lt(
+            processedEvents.processedAt,
+            sql`now() - ${KEEP_PROCESSED}::interval`
+          )
+        )
+      return true
+    })
+  const relayOnce = async () => {
+    const sent = await relay()
+    if (
+      Date.now() - processedPrunedAt >= PRUNE_PROCESSED_EVERY_MS &&
+      (await pruneProcessed())
+    ) {
+      processedPrunedAt = Date.now()
+    }
+    return sent
+  }
 
   return {
     relayOnce,
