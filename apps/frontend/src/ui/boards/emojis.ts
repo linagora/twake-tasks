@@ -53,15 +53,17 @@ const FREQUENT = [
   '1F4CC'
 ]
 
-// The reactions Twake Chat offers first, written as emojibase writes them so
-// that they match the same emoji picked from the grid.
+// The reactions Twake Chat offers first, then 🎉, which throws confetti,
+// written as emojibase writes them so that they match the same emoji picked
+// from the grid.
 const QUICK_REACTIONS = [
   { hexcode: '1F49C', unicode: '💜' },
   { hexcode: '1F44D', unicode: '👍\u{FE0F}' },
   { hexcode: '1F44E', unicode: '👎\u{FE0F}' },
   { hexcode: '1F602', unicode: '😂' },
   { hexcode: '1F62E', unicode: '😮' },
-  { hexcode: '1F972', unicode: '🥲' }
+  { hexcode: '1F972', unicode: '🥲' },
+  { hexcode: '1F389', unicode: '🎉' }
 ]
 
 /** Named in the app's language once the names are in, by the emoji itself until then. */
