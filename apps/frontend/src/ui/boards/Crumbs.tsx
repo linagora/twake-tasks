@@ -30,6 +30,32 @@ export const OriginContext = createContext<Origin | null>(null)
  */
 export const BoardStepsContext = createContext<Crumb[] | null>(null)
 
+/**
+ * The page a task is opened from when it comes after the origin, as a view
+ * after Views, a step of its breadcrumb.
+ */
+export const PageStepContext = createContext<Crumb | null>(null)
+
+/**
+ * Where the tasks opened in a page start their breadcrumb: the page's origin,
+ * then the page itself when it comes after it.
+ */
+export function TasksOrigin({
+  origin,
+  page,
+  children
+}: {
+  origin: Origin
+  page: Crumb | null
+  children: ReactNode
+}): ReactElement {
+  return (
+    <OriginContext value={origin}>
+      <PageStepContext value={page}>{children}</PageStepContext>
+    </OriginContext>
+  )
+}
+
 export function useBoardsOrigin(): Origin {
   const { t } = useI18n()
   return { icon: HomeIcon, label: t('boards.title'), to: '/' }

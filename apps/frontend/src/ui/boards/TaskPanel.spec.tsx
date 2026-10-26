@@ -355,6 +355,21 @@ describe('TaskPanel', () => {
     })
   })
 
+  it('takes a task in a section back to no section from its row', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.mouseDown(panel.getByRole('combobox', { name: 'Section' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'No section' }))
+
+    await waitFor(() => {
+      expect(boardsApi.moveTask).toHaveBeenCalledWith(board.id, logo.id, {
+        sectionId: null
+      })
+    })
+  })
+
   it('lists the assignees and labels', async () => {
     const { board, logo, boardsApi } = logoBoard()
     Object.assign(logo, {

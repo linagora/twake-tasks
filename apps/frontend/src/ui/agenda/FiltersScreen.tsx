@@ -1,388 +1,623 @@
 import {
-  Check,
-  Filter,
+  Bottom,
+  CalendarToday,
+  Dashboard,
+  Eye,
+  Flag,
+  Grid,
+  GroupList,
   Icon,
-  Pen,
+  Label,
+  Left,
+  People,
   Plus,
+  Right,
+  Stack as StackIcon,
   Star,
-  StarOutline,
-  Trash
+  StarOutline
 } from '@linagora/twake-icons'
 import {
-  Alert,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  Divider,
   IconButton,
-  Link,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemSecondaryAction,
+  ListItemText,
+  Stack,
+  Switch,
   TextField,
   Typography
 } from '@linagora/twake-mui'
 import {
+  Fragment,
+  useCallback,
   useEffect,
-  useEffectEvent,
+  useId,
   useRef,
   useState,
+  type ComponentProps,
+  type ComponentType,
   type ReactElement
 } from 'react'
-import { Link as RouterLink } from 'react-router'
-
-import type { FilterCriteria, SavedFilter } from '@/application/boards'
-import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
-import { FormPanel } from '@/ds/FormPanel'
-import { MultiSelect } from '@/ds/MultiSelect'
-import { TaskGroup, TaskRow } from '@/ds/TaskList'
-import { Toast } from '@/ds/Toast'
 import {
-  AssigneeField,
-  anyOf,
-  useAssigneeName
-} from '@/ui/agenda/AssigneeField'
+  Link as RouterLink,
+  Navigate,
+  useHref,
+  useLinkClickHandler,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams
+} from 'react-router'
+
+import type {
+  FilterCriteria,
+  NewSavedFilter,
+  SavedFilter
+} from '@/application/boards'
+import { ClosableTitle } from '@/ds/ClosableTitle'
+import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
+import { FieldRow, PlainForm } from '@/ds/FormPanel'
+import { IconPicker } from '@/ds/IconPicker'
+import { ListSection } from '@/ds/ListSection'
+import { PageHeader } from '@/ds/PageHeader'
+import { DEFAULT_VIEW_ICON, viewIcon, type IconComponent } from '@/ds/viewIcons'
+import { GROUPINGS, LAYOUTS, type Grouping, type Layout } from '@/domain/board'
+import { CriteriaFields } from '@/ui/agenda/CriteriaFields'
+import { SettingPicker } from '@/ui/agenda/SettingPicker'
+import { useCriteriaSummary } from '@/ui/agenda/useCriteriaSummary'
+import { ViewMenu } from '@/ui/agenda/ViewMenu'
+import { LAYOUT_ICONS } from '@/ui/boards/Layouts'
 import {
   useCreateFilter,
-  useDeleteFilter,
-  useDeleteFilterNow,
   useFilters,
-  useUnpinDeletedFilter,
-  useLabelNames,
   useSetFilterFavorite,
   useUpdateFilter
 } from '@/ui/boards/queries'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
+import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { NotFoundScreen } from '@/ui/shell/Problems'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
-const PRIORITIES = ['1', '2', '3', '4'] as const
-const DUES = ['overdue', 'today', 'week', 'none'] as const
-
 export function FiltersScreen(): ReactElement {
-  const { t, lang } = useI18n()
+  const { t } = useI18n()
   const filters = useFilters()
-  const assigneeName = useAssigneeName()
-  const [form, setForm] = useState<SavedFilter | 'new' | null>(null)
-  const [deleted, setDeleted] = useState<SavedFilter | null>(null)
-  const unpinDeleted = useUnpinDeletedFilter()
-  const shown = filters.data?.filter(filter => filter.id !== deleted?.id)
+  const [, setParams] = useSearchParams()
   useDocumentTitle(t('filters.title'))
-  const summary = ({ assignee, priority, label, due }: FilterCriteria) => {
-    const parts = [
-      assignee && {
-        name: t('filters.assignee'),
-        value: anyOf(lang, assignee.map(assigneeName))
-      },
-      priority && {
-        name: t('filters.priority'),
-        value: anyOf(
-          lang,
-          priority.map(level => t('board.priority', { level }))
-        )
-      },
-      label && { name: t('filters.label'), value: anyOf(lang, label) },
-      due && {
-        name: t('filters.due'),
-        value: anyOf(
-          lang,
-          due.map(value => t(`filters.dues.${value}`))
-        )
-      }
-    ].flatMap(part => (part ? [t('filters.criterion', part)] : []))
-    return parts.length > 0 ? parts.join(' · ') : t('filters.everything')
-  }
+  const summary = useCriteriaSummary()
 
   return (
     <main className="u-ph-2 u-pt-half u-pb-2">
       <PageCrumbs
-        origin={{ icon: Filter, label: t('filters.title'), to: '/filters' }}
+        origin={{ icon: Eye, label: t('filters.title'), to: '/filters' }}
         heading
         actions={
-          !form && (
-            <Button
-              startIcon={<Icon icon={Plus} />}
-              onClick={() => {
-                setForm('new')
-              }}
-            >
-              {t('filters.new')}
-            </Button>
-          )
+          <Button
+            startIcon={<Icon icon={Plus} />}
+            onClick={() => {
+              setParams(
+                current => {
+                  const next = new URLSearchParams(current)
+                  next.set('new', 'view')
+                  return next
+                },
+                { replace: true }
+              )
+            }}
+          >
+            {t('filters.new')}
+          </Button>
         }
       />
-      {form && (
-        <FilterForm
-          key={form === 'new' ? form : form.id}
-          filter={form === 'new' ? undefined : form}
-          onClose={() => {
-            setForm(null)
-          }}
-        />
-      )}
       {filters.isError && (
         <Typography role="alert">{t('filters.loadFailed')}</Typography>
       )}
       {filters.isPending && <ListSkeleton label={t('app.loading')} rows={2} />}
-      {shown?.length === 0 && (
+      {filters.data?.length === 0 && (
         <EmptyState
-          icon={Filter}
+          icon={Eye}
           illustrated
           title={t('filters.empty')}
           text={t('filters.emptyHint')}
         />
       )}
-      {shown && shown.length > 0 && (
-        <TaskGroup label={t('filters.saved')} count={shown.length}>
-          {shown.map(filter => (
-            <TaskRow
-              key={filter.id}
-              label={filter.name}
-              leading={<Icon icon={Filter} size={16} />}
-              title={
-                <Link component={RouterLink} to={`/filters/${filter.id}`}>
-                  {filter.name}
-                </Link>
-              }
-              context={summary(filter.criteria)}
-              trailing={
-                <>
-                  <FavoriteButton filter={filter} />
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      setForm(filter)
-                    }}
-                    aria-label={t('filters.edit', { name: filter.name })}
-                  >
-                    <Icon icon={Pen} size={16} />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      if (form !== 'new' && form?.id === filter.id) {
-                        setForm(null)
-                      }
-                      setDeleted(filter)
-                      unpinDeleted(filter, true)
-                    }}
-                    aria-label={t('filters.delete', { name: filter.name })}
-                  >
-                    <Icon icon={Trash} size={16} />
-                  </IconButton>
-                </>
-              }
-            />
+      {filters.data && filters.data.length > 0 && (
+        <List aria-label={t('filters.saved')}>
+          {filters.data.map((filter, index) => (
+            <Fragment key={filter.id}>
+              {index > 0 && <Divider component="li" variant="inset" />}
+              <ViewRow filter={filter} summary={summary(filter.criteria)} />
+            </Fragment>
           ))}
-        </TaskGroup>
+        </List>
       )}
-      {deleted && (
-        <DeletedNotice
-          key={deleted.id}
-          filter={deleted}
-          onClose={() => {
-            setDeleted(null)
-          }}
-        />
-      )}
+      <NewViewFromUrl />
     </main>
+  )
+}
+
+// A row of a Twake list that is a link, which its types leave out.
+const ListItemLink: ComponentType<
+  ComponentProps<typeof ListItemButton> & { href: string }
+> = ListItemButton
+
+// A view in the list of views, a link to it with its star and menu at its end.
+function ViewRow({
+  filter,
+  summary
+}: {
+  filter: SavedFilter
+  summary: string
+}): ReactElement {
+  const to = `/filters/${filter.id}`
+  const href = useHref(to)
+  const open = useLinkClickHandler<HTMLDivElement>(to)
+  return (
+    <ListItemLink href={href} onClick={open} aria-label={filter.name}>
+      <ListItemIcon>
+        <Icon icon={viewIcon(filter.icon)} />
+      </ListItemIcon>
+      <ListItemText primary={filter.name} secondary={summary} />
+      <ListItemSecondaryAction>
+        <FavoriteButton filter={filter} />
+        <ViewMenu view={filter} />
+      </ListItemSecondaryAction>
+    </ListItemLink>
   )
 }
 
 function FavoriteButton({ filter }: { filter: SavedFilter }): ReactElement {
   const { t } = useI18n()
   const setFavorite = useSetFilterFavorite()
+  const button = useRef<HTMLButtonElement>(null)
+  const pressed = useRef(false)
+
+  // The list moves a toggled view, and moving a node drops its focus.
+  useEffect(() => {
+    if (!pressed.current) return
+    pressed.current = false
+    button.current?.focus()
+  }, [filter.favorite])
+
   return (
     <IconButton
-      size="small"
+      ref={button}
       color={filter.favorite ? 'warning' : 'default'}
-      aria-label={t(filter.favorite ? 'filters.unstar' : 'filters.star', {
+      aria-label={t(filter.favorite ? 'boards.unstar' : 'boards.star', {
         name: filter.name
       })}
       onClick={() => {
         if (setFavorite.isPending) return
-        setFavorite.mutate({ filterId: filter.id, favorite: !filter.favorite })
+        pressed.current = document.activeElement === button.current
+        setFavorite.mutate(
+          { filterId: filter.id, favorite: !filter.favorite },
+          {
+            onError: () => {
+              pressed.current = false
+            }
+          }
+        )
       }}
     >
-      <Icon icon={filter.favorite ? Star : StarOutline} size={16} />
+      <Icon icon={filter.favorite ? Star : StarOutline} />
     </IconButton>
   )
 }
 
-// The filter is deleted when the notice goes, by timeout or by leaving the
-// page, unless Undo was clicked.
-function DeletedNotice({
-  filter,
-  onClose
-}: {
-  filter: SavedFilter
-  onClose: () => void
-}): ReactElement {
-  const { t } = useI18n()
-  const { mutate: remove } = useDeleteFilter()
-  const removeNow = useDeleteFilterNow()
-  const unpinDeleted = useUnpinDeletedFilter()
-  const settled = useRef(false)
-  const leaving = useRef<number>(undefined)
-  // An unloading page runs no effect cleanup and no timer. Closing the notice
-  // keeps a page restored from the back-forward cache from offering an Undo
-  // that can no longer work.
-  const unload = useEffectEvent(() => {
-    if (settled.current) return
-    settled.current = true
-    removeNow(filter.id)
-    onClose()
-  })
-  useEffect(() => {
-    window.addEventListener('pagehide', unload)
-    // StrictMode unmounts once right after mounting: only a real unmount
-    // lets the timer run.
-    window.clearTimeout(leaving.current)
-    return () => {
-      window.removeEventListener('pagehide', unload)
-      leaving.current = window.setTimeout(() => {
-        if (!settled.current) remove(filter.id)
-      })
-    }
-  }, [filter.id, remove])
-
+/**
+ * The dialog that creates a view, while the URL holds `?new=view`, so a link
+ * opens it, as `?new=task` does the new task's. Created, the view opens.
+ */
+function NewViewFromUrl(): ReactElement | null {
+  const [params, setParams] = useSearchParams()
+  if (params.get('new') !== 'view') return null
   return (
-    <Toast
-      open
-      autoHideDuration={6000}
-      onClose={(_, reason) => {
-        if (reason !== 'clickaway') onClose()
+    <NewViewDialog
+      onClose={() => {
+        setParams(
+          current => {
+            const next = new URLSearchParams(current)
+            next.delete('new')
+            return next
+          },
+          { replace: true }
+        )
       }}
-    >
-      <Alert
-        severity="info"
-        role="status"
-        action={
-          <Button
-            variant="text"
-            size="small"
-            onClick={() => {
-              settled.current = true
-              unpinDeleted(filter, false)
-              onClose()
-            }}
-          >
-            {t('archive.undo')}
-          </Button>
-        }
-      >
-        {t('filters.deleted', { name: filter.name })}
-      </Alert>
-    </Toast>
+    />
   )
 }
 
-export function FilterForm({
-  filter,
-  onClose
-}: {
-  filter?: SavedFilter | undefined
-  onClose: () => void
-}): ReactElement {
-  const { t } = useI18n()
-  const create = useCreateFilter()
-  const update = useUpdateFilter(filter?.id ?? '')
-  const labelNames = useLabelNames()
-  const initial = filter?.criteria ?? {}
-  const [name, setName] = useState(filter?.name ?? '')
-  const [assignee, setAssignee] = useState(initial.assignee ?? [])
-  const [priority, setPriority] = useState((initial.priority ?? []).map(String))
-  const [label, setLabel] = useState(initial.label ?? [])
-  const [due, setDue] = useState(initial.due ?? [])
-  const save = filter ? update : create
-  // A label no board has any more stays choosable, so saving keeps it.
-  const labels = [...new Set([...(labelNames.data ?? []), ...label])]
+/** The old page of a new view, now its dialog over the list of views. */
+export function NewViewScreen(): ReactElement {
+  return <Navigate to="/filters?new=view" replace />
+}
 
-  const criteria: FilterCriteria = {
-    ...(assignee.length > 0 && { assignee }),
-    ...(priority.length > 0 && { priority: priority.map(Number) }),
-    ...(label.length > 0 && { label }),
-    ...(due.length > 0 && { due })
+// As the new task dialog: a name, then the rest under Add details.
+function NewViewDialog({ onClose }: { onClose: () => void }): ReactElement {
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  const create = useCreateFilter()
+  const titleId = useId()
+  const draft = useViewDraft()
+  const [details, setDetails] = useState(false)
+  const [nameMissing, setNameMissing] = useState(false)
+  const nameInput = useRef<HTMLInputElement | null>(null)
+  // Stable, as focusOnMount is, so that it focuses on mount only.
+  const nameRef = useCallback((node: HTMLInputElement | null) => {
+    nameInput.current = node
+    focusOnMount(node)
+  }, [])
+  // Closed while creating, it would miss the view once created.
+  const close = () => {
+    if (!create.isPending) onClose()
+  }
+
+  const handleSubmit = () => {
+    if (create.isPending) return
+    // A view needs a name, which its field asks for.
+    if (!draft.view.name) {
+      setNameMissing(true)
+      nameInput.current?.focus()
+      return
+    }
+    create.mutate(draft.view, {
+      onSuccess: ({ id }) => {
+        void navigate(`/filters/${id}`, { replace: true })
+      }
+    })
   }
 
   return (
-    <FormPanel
-      title={t(filter ? 'filters.editTitle' : 'filters.new')}
-      onSubmit={event => {
-        event.preventDefault()
-        const changes = { name: name.trim(), criteria }
-        if (filter) update.mutate(changes, { onSuccess: onClose })
-        else create.mutate(changes, { onSuccess: onClose })
-      }}
-      actions={
-        <>
-          {save.isError && (
-            <Typography role="alert" variant="caption" color="error">
-              {t('filters.saveFailed')}
-            </Typography>
-          )}
-          <Button variant="text" onClick={onClose}>
-            {t('board.cancel')}
-          </Button>
-          <Button
-            type="submit"
-            startIcon={<Icon icon={filter ? Check : Plus} />}
-            disabled={save.isPending || !name.trim()}
-          >
+    <Dialog open onClose={close} aria-labelledby={titleId} size="medium">
+      <form
+        noValidate
+        onSubmit={event => {
+          event.preventDefault()
+          handleSubmit()
+        }}
+      >
+        <ClosableTitle
+          id={titleId}
+          title={t('filters.createTitle')}
+          closeLabel={t('filters.close')}
+          onClose={close}
+        />
+        <DialogContent>
+          <Stack spacing={2}>
+            <ViewNameRow
+              draft={draft}
+              error={nameMissing}
+              inputRef={nameRef}
+              onNamed={() => {
+                setNameMissing(false)
+              }}
+            />
+            <div>
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<Icon icon={details ? Bottom : Right} size={14} />}
+                aria-expanded={details}
+                onClick={() => {
+                  setDetails(!details)
+                }}
+              >
+                {t(details ? 'filters.hideDetails' : 'filters.addDetails')}
+              </Button>
+            </div>
+            {details && <ViewSettings draft={draft} />}
+            {create.isError && (
+              <Typography role="alert" variant="body2" color="error">
+                {t('filters.saveFailed')}
+              </Typography>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button type="submit" disabled={create.isPending}>
             {t('filters.save')}
           </Button>
-        </>
-      }
-    >
-      <TextField
-        label={t('filters.name')}
-        value={name}
-        onChange={event => {
-          setName(event.target.value)
-        }}
-        slotProps={{ htmlInput: { maxLength: 100 } }}
-      />
-      <AssigneeField value={assignee} onChange={setAssignee} />
-      <AnyOf
-        label={t('filters.priority')}
-        value={priority}
-        onChange={setPriority}
-        options={PRIORITIES.map(value => ({
-          value,
-          name: t('board.priority', { level: value })
-        }))}
-      />
-      <AnyOf
-        label={t('filters.label')}
-        value={label}
-        onChange={setLabel}
-        options={labels.map(value => ({ value, name: value }))}
-      />
-      <AnyOf
-        label={t('filters.due')}
-        value={due}
-        onChange={setDue}
-        options={DUES.map(value => ({
-          value,
-          name: t(`filters.dues.${value}`)
-        }))}
-      />
-    </FormPanel>
+        </DialogActions>
+      </form>
+    </Dialog>
   )
 }
 
-// Picking nothing matches any value.
-function AnyOf<T extends string>(props: {
-  label: string
-  options: { value: T; name: string }[]
-  value: T[]
-  onChange: (value: T[]) => void
-}): ReactElement {
-  const { t, lang } = useI18n()
-  const { options, value } = props
-  const picked = options.flatMap(option =>
-    value.includes(option.value) ? [option.name] : []
-  )
+export function EditViewScreen(): ReactElement {
+  const { t } = useI18n()
+  const { filterId = '' } = useParams()
+  const filters = useFilters()
+  const view = filters.data?.find(filter => filter.id === filterId)
+  const update = useUpdateFilter(filterId)
+  useDocumentTitle(t('filters.edit'))
+
+  if (filters.isPending) {
+    return <ListSkeleton label={t('app.loading')} rows={2} />
+  }
+  if (!view) {
+    return (
+      <NotFoundScreen
+        title={t('filters.notFound')}
+        back={{ to: '/filters', label: t('filters.back') }}
+      />
+    )
+  }
   return (
-    <MultiSelect
-      {...props}
-      shown={
-        picked.length > 0 ? anyOf(lang, picked) : t('filters.assignees.any')
-      }
+    <EditViewForm
+      key={view.id}
+      initial={view}
+      autosave={update.isPending ? 'saving' : update.isSuccess && 'saved'}
+      failed={update.isError}
+      onSave={edit => {
+        update.mutate(edit)
+      }}
     />
+  )
+}
+
+// What a view's columns can be, named and drawn as the criteria are.
+const GROUPINGS_SHOWN = {
+  status: { name: 'viewTask.status', icon: GroupList },
+  board: { name: 'viewTask.board', icon: Dashboard },
+  assignee: { name: 'filters.assignee', icon: People },
+  priority: { name: 'filters.priority', icon: Flag },
+  label: { name: 'filters.label', icon: Label },
+  due: { name: 'filters.due', icon: CalendarToday }
+} as const satisfies Record<Grouping, { name: string; icon: IconComponent }>
+
+// A view's edits are saved a moment after the last one, or on leaving.
+const AUTOSAVE_DELAY = 600
+
+/** A view being made or edited: its fields, and the view they make. */
+interface ViewDraft {
+  icon: string
+  setIcon: (icon: string) => void
+  name: string
+  setName: (name: string) => void
+  layout: Layout
+  setLayout: (layout: Layout) => void
+  groupBy: Grouping
+  setGroupBy: (groupBy: Grouping) => void
+  allColumns: boolean
+  setAllColumns: (allColumns: boolean) => void
+  criteria: FilterCriteria
+  setCriteria: (criteria: FilterCriteria) => void
+  view: NewSavedFilter
+}
+
+function useViewDraft(initial?: SavedFilter): ViewDraft {
+  const [icon, setIcon] = useState(initial?.icon ?? DEFAULT_VIEW_ICON)
+  const [name, setName] = useState(initial?.name ?? '')
+  const [layout, setLayout] = useState<Layout>(initial?.layout ?? 'list')
+  const [groupBy, setGroupBy] = useState<Grouping>(initial?.groupBy ?? 'status')
+  const [allColumns, setAllColumns] = useState(initial?.allColumns ?? false)
+  const [criteria, setCriteria] = useState<FilterCriteria>(
+    initial?.criteria ?? {}
+  )
+  return {
+    icon,
+    setIcon,
+    name,
+    setName,
+    layout,
+    setLayout,
+    groupBy,
+    setGroupBy,
+    allColumns,
+    setAllColumns,
+    criteria,
+    setCriteria,
+    view: { name: name.trim(), criteria, icon, layout, groupBy, allColumns }
+  }
+}
+
+// A view's icon beside its name, which it needs.
+function ViewNameRow({
+  draft,
+  error,
+  inputRef,
+  onNamed
+}: {
+  draft: ViewDraft
+  error: boolean
+  inputRef: (node: HTMLInputElement | null) => void
+  /** Once the name is not empty, as its error may wait for. */
+  onNamed?: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  return (
+    <FieldRow>
+      <IconPicker
+        value={draft.icon}
+        onChange={draft.setIcon}
+        labels={{
+          button: t('icon.change'),
+          title: t('icon.title'),
+          search: t('icon.search'),
+          noResult: t('icon.noResult')
+        }}
+      />
+      <TextField
+        label={t('filters.name')}
+        value={draft.name}
+        fullWidth
+        required
+        error={error}
+        helperText={error && t('filters.nameRequired')}
+        inputRef={inputRef}
+        onChange={event => {
+          draft.setName(event.target.value)
+          if (event.target.value.trim()) onNamed?.()
+        }}
+        slotProps={{ htmlInput: { maxLength: 100 } }}
+      />
+    </FieldRow>
+  )
+}
+
+// How a view shows its tasks, then which tasks it keeps to.
+function ViewSettings({ draft }: { draft: ViewDraft }): ReactElement {
+  const { t } = useI18n()
+  const allColumnsId = useId()
+  const { layout, groupBy } = draft
+  return (
+    <>
+      <ListSection title={t('filters.display')}>
+        <SettingPicker
+          icon={Grid}
+          label={t('filters.layout')}
+          value={layout}
+          choices={LAYOUTS.map(each => ({
+            value: each,
+            name: t(`layout.${each}`),
+            icon: LAYOUT_ICONS[each]
+          }))}
+          iconInButton
+          onChange={draft.setLayout}
+        />
+        {/* A calendar puts tasks on their days, so it has no groups. */}
+        {layout !== 'calendar' && (
+          <SettingPicker
+            icon={StackIcon}
+            label={t('filters.groupBy')}
+            value={groupBy}
+            choices={GROUPINGS.map(each => ({
+              value: each,
+              name: t(GROUPINGS_SHOWN[each].name),
+              icon: GROUPINGS_SHOWN[each].icon
+            }))}
+            onChange={draft.setGroupBy}
+          />
+        )}
+        {/* Only sections have columns no task is in. */}
+        {layout !== 'calendar' && groupBy === 'status' && (
+          <ListItem disableGutters ellipsis={false}>
+            <ListItemIcon>
+              <Icon icon={Eye} />
+            </ListItemIcon>
+            <ListItemText primary={t('filters.allColumns')} id={allColumnsId} />
+            <Switch
+              checked={draft.allColumns}
+              slotProps={{
+                input: { 'aria-labelledby': allColumnsId }
+              }}
+              onChange={event => {
+                draft.setAllColumns(event.target.checked)
+              }}
+            />
+          </ListItem>
+        )}
+      </ListSection>
+      <CriteriaFields criteria={draft.criteria} onChange={draft.setCriteria} />
+    </>
+  )
+}
+
+// The page that edits a view: each change is saved as it is made.
+function EditViewForm({
+  initial,
+  autosave,
+  failed,
+  onSave
+}: {
+  initial: SavedFilter
+  /** How the last edit went. */
+  autosave: 'saving' | 'saved' | false
+  failed: boolean
+  onSave: (view: NewSavedFilter) => void
+}): ReactElement {
+  const { t } = useI18n()
+  const { state } = useLocation() as { state: { from?: string } | null }
+  const draft = useViewDraft(initial)
+  const { view } = draft
+  // Edits wait for a name, so its field asks for it as soon as it is empty.
+  const nameError = !view.name
+  const unsaved = useRef<NewSavedFilter | null>(null)
+  const save = useRef(onSave)
+  useEffect(() => {
+    save.current = onSave
+  })
+  const edited = JSON.stringify(view)
+  const first = useRef(edited)
+  useEffect(() => {
+    if (edited === first.current) return
+    const next = JSON.parse(edited) as NewSavedFilter
+    // A view keeps its name: one being typed waits until it has one.
+    if (!next.name) return
+    unsaved.current = next
+    const timer = setTimeout(() => {
+      unsaved.current = null
+      save.current(next)
+    }, AUTOSAVE_DELAY)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [edited])
+  // Leaving the page saves the edit still waiting.
+  useEffect(
+    () => () => {
+      if (unsaved.current) save.current(unsaved.current)
+    },
+    []
+  )
+
+  // The page it was opened from, the view unless known.
+  const backTo = state?.from ?? `/filters/${initial.id}`
+
+  return (
+    // No breadcrumb: the view's settings, rather than a page of its own.
+    <main className="u-p-2">
+      {/* Its edits say in the header how they saved. */}
+      <PageHeader
+        back={
+          // Its edit still waiting is saved on leaving.
+          <Button
+            component={RouterLink}
+            to={backTo}
+            variant="text"
+            startIcon={<Icon icon={Left} />}
+          >
+            {t('filters.goBack')}
+          </Button>
+        }
+        title={
+          <Typography variant="h3" component="h1">
+            {t('filters.edit')}
+          </Typography>
+        }
+        actions={
+          failed ? (
+            <Typography role="alert" variant="caption" color="error">
+              {t('filters.saveFailed')}
+            </Typography>
+          ) : (
+            autosave && (
+              <Typography role="status" variant="caption" color="textSecondary">
+                {t(
+                  autosave === 'saving'
+                    ? 'filters.saving'
+                    : 'filters.changesSaved'
+                )}
+              </Typography>
+            )
+          )
+        }
+      />
+      <PlainForm
+        onSubmit={event => {
+          event.preventDefault()
+        }}
+      >
+        <ViewNameRow draft={draft} error={nameError} inputRef={focusOnMount} />
+        <ViewSettings draft={draft} />
+      </PlainForm>
+    </main>
   )
 }

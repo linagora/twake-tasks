@@ -377,6 +377,7 @@ function BoardColumns({
     },
     onMove: (taskId: string, to: TaskMove) => {
       move.mutate({ taskId, move: to })
+      return true
     }
   }
 

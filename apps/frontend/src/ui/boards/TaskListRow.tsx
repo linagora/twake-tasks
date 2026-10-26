@@ -1,11 +1,13 @@
-import { Link } from '@linagora/twake-mui'
+import { Link, Typography } from '@linagora/twake-mui'
 import type { ComponentProps, ReactElement } from 'react'
 
-import { LabelChip } from '@/ds/Columns'
+import { shownLabels } from '@/application/hiddenFacts'
+import { BoardChip, LabelChip } from '@/ds/Columns'
 import { ListRow } from '@/ds/ListView'
 import { SortableListRow } from '@/ds/Sortable'
 import type { Section, Task } from '@/domain/board'
 import { CompleteCheckbox } from '@/ui/boards/CompleteCheckbox'
+import { useHiddenFacts } from '@/ui/boards/HiddenFacts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
@@ -35,7 +37,9 @@ export function TaskListRow({
   boardId,
   sections,
   editable,
-  sortable = false
+  sortable = false,
+  boardName,
+  parentTitle = null
 }: {
   task: Task
   boardId: string
@@ -43,11 +47,16 @@ export function TaskListRow({
   editable: boolean
   /** Dragged to another place of the list, as a card on a board. */
   sortable?: boolean
+  /** Shown where the tasks of many boards meet. */
+  boardName?: string
+  /** A sub-task's parent, named where it shows without it. */
+  parentTitle?: string | null
 }): ReactElement {
   const { t } = useI18n()
   const panel = useTaskPanel(task.key)
   const completion = useCompleteToggle(task, boardId, sections, editable)
   const newTask = useNewTaskHighlight(task.key)
+  const hidden = useHiddenFacts()
 
   return (
     <Row
@@ -72,16 +81,31 @@ export function TaskListRow({
           }}
         >
           {task.title}
+          {parentTitle !== null && (
+            <Typography
+              variant="caption"
+              color="textSecondary"
+              component="span"
+              className="u-ml-half"
+            >
+              {t('agenda.subtaskOf', { title: parentTitle })}
+            </Typography>
+          )}
         </Link>
       }
       people={
-        task.assignees.length > 0 && <Assignees people={task.assignees} />
+        task.assignees.length > 0 &&
+        !hidden.assignees && <Assignees people={task.assignees} />
       }
-      due={<DueChip task={task} />}
+      due={!hidden.due && <DueChip task={task} />}
       priority={
-        task.priority !== null && <PriorityChip priority={task.priority} />
+        task.priority !== null &&
+        !hidden.priority && <PriorityChip priority={task.priority} />
       }
-      labels={task.labels.map(label => ({
+      board={
+        boardName && !hidden.board ? <BoardChip name={boardName} /> : undefined
+      }
+      labels={shownLabels(task.labels, hidden).map(label => ({
         key: label.id,
         name: label.name,
         chip: <LabelChip name={label.name} color={label.color} />

@@ -4,7 +4,7 @@ import {
   Bottom,
   Calendar,
   CalendarToday,
-  Filter,
+  Eye,
   Icon,
   Logout,
   Mosaic,
@@ -61,6 +61,7 @@ import {
   WideScreenNavItem
 } from '@/ds/AppFrame'
 import { HomeIcon } from '@/ds/HomeIcon'
+import { viewIcon } from '@/ds/viewIcons'
 import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
@@ -182,7 +183,7 @@ function Header({
                   to="/filters"
                   aria-label={t('filters.title')}
                 >
-                  <Icon icon={Filter} />
+                  <Icon icon={Eye} />
                 </IconButton>
               )}
               {newTaskButton}
@@ -266,7 +267,7 @@ function AccountMenu(): ReactElement {
         {phone && (
           <MenuItem component={RouterLink} to="/filters" onClick={close}>
             <ListItemIcon>
-              <Icon icon={Filter} />
+              <Icon icon={Eye} />
             </ListItemIcon>
             <ListItemText>{t('filters.title')}</ListItemText>
           </MenuItem>
@@ -345,7 +346,12 @@ function AppNav({
         count={unread}
         countLabel={t('notifications.unread', { count: unread })}
       />
-      <FiltersNav />
+      <WideScreenNavItem>
+        <SidebarLink to="/filters">
+          <NavIcon icon={Eye} />
+          <NavText>{t('filters.title')}</NavText>
+        </SidebarLink>
+      </WideScreenNavItem>
     </Nav>
   )
 }
@@ -517,51 +523,6 @@ function BoardsNav({
 }
 
 // The phone bottom bar has no room for Filters or its favorites.
-function FiltersNav(): ReactElement {
-  const { t } = useI18n()
-  const { pathname } = useLocation()
-  const openId = useMatch('/filters/:filterId')?.params.filterId
-  const [folded, toggleFolded] = useFolded('sidebar-filters-folded', false)
-  const favorites = (useFilters().data ?? []).filter(filter => filter.favorite)
-  const listed = folded ? [] : favorites
-  const onFilters = pathname === '/filters' || pathname.startsWith('/filters/')
-
-  return (
-    <>
-      <WideScreenNavItem
-        secondaryAction={
-          favorites.length > 0 && (
-            <FoldButton
-              folded={folded}
-              label={t(folded ? 'filters.unfold' : 'filters.fold')}
-              onClick={toggleFolded}
-            />
-          )
-        }
-      >
-        <SidebarLink
-          to="/filters"
-          active={onFilters && !listed.some(filter => filter.id === openId)}
-        >
-          <NavIcon icon={Filter} />
-          <NavText>{t('filters.title')}</NavText>
-        </SidebarLink>
-      </WideScreenNavItem>
-      {listed.map(filter => (
-        <WideScreenNavItem key={filter.id} variant="secondary">
-          <SidebarLink
-            to={`/filters/${filter.id}`}
-            active={filter.id === openId}
-          >
-            <NavIcon icon={Filter} />
-            <OneLineNavText title={filter.name}>{filter.name}</OneLineNavText>
-          </SidebarLink>
-        </WideScreenNavItem>
-      ))}
-    </>
-  )
-}
-
 function Favorites({
   lit,
   onOpen
@@ -573,7 +534,8 @@ function Favorites({
   const favorites = (useBoards().data ?? []).filter(
     board => board.favorite && !board.archived
   )
-  if (favorites.length === 0) return null
+  const views = (useFilters().data ?? []).filter(filter => filter.favorite)
+  if (favorites.length === 0 && views.length === 0) return null
 
   return (
     <SidebarSection label={t('boards.favorites')}>
@@ -588,6 +550,14 @@ function Favorites({
           >
             <NavIcon icon={Star} />
             <NavText>{board.name}</NavText>
+          </SidebarLink>
+        </NavItem>
+      ))}
+      {views.map(filter => (
+        <NavItem key={filter.id}>
+          <SidebarLink to={`/filters/${filter.id}`}>
+            <NavIcon icon={viewIcon(filter.icon)} />
+            <NavText>{filter.name}</NavText>
           </SidebarLink>
         </NavItem>
       ))}

@@ -35,6 +35,7 @@ export const keys = {
   search: (text: string) => [...searches(), text] as const,
   filters: () => ['filters'] as const,
   labels: () => ['labels'] as const,
+  statuses: () => ['statuses'] as const,
   people: () => ['people'] as const,
   projects: () => ['projects'] as const,
   notifications: () => ['notifications'] as const,

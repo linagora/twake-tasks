@@ -1,6 +1,7 @@
 import type {
   Board,
   BoardSummary,
+  Grouping,
   Label,
   Layout,
   Person,
@@ -153,13 +154,22 @@ export interface Agenda {
   tasks: AgendaTask[]
 }
 
-// Each criterion matches any of its values; a task must match every criterion.
+export type Due = 'overdue' | 'today' | 'week' | 'none'
+
+/**
+ * What a view keeps to. A task matches a criterion with any of its values,
+ * and the view with every criterion set.
+ */
 export interface FilterCriteria {
-  /** `me`, `nobody`, or a user id. */
-  assignee?: string[]
-  priority?: number[]
-  label?: string[]
-  due?: ('overdue' | 'today' | 'week' | 'none')[]
+  /** People's ids, `me` or `nobody`. */
+  assignees?: string[]
+  priorities?: number[]
+  labels?: string[]
+  dues?: Due[]
+  /** Boards' ids. */
+  boards?: string[]
+  /** Section names, the columns of any board of that name in any case. */
+  statuses?: string[]
 }
 
 export interface SavedFilter {
@@ -167,9 +177,19 @@ export interface SavedFilter {
   name: string
   criteria: FilterCriteria
   favorite: boolean
+  icon: string | null
+  layout: Layout
+  groupBy: Grouping
+  /** Columns of statuses no task is in show too. */
+  allColumns: boolean
 }
 
-export type FilterFields = Pick<SavedFilter, 'name' | 'criteria'>
+export type NewSavedFilter = Pick<SavedFilter, 'name' | 'criteria'> & {
+  icon?: string | null
+  layout?: Layout
+  groupBy?: Grouping
+  allColumns?: boolean
+}
 
 export interface Sharing {
   members: (Person & { role: Role })[]
@@ -197,6 +217,11 @@ export interface UserSettings {
 }
 
 /** Rejects with an ApiError when the backend refuses the request. */
+export interface LabelChoice {
+  name: string
+  color: string | null
+}
+
 export interface BoardsApi {
   settings: () => Promise<UserSettings>
   /** Calls back with the board's version now, then with each new one. */
@@ -248,14 +273,19 @@ export interface BoardsApi {
   setMemberRole: (boardId: string, userId: string, role: Role) => Promise<void>
   removeMember: (boardId: string, userId: string) => Promise<void>
   listFilters: () => Promise<SavedFilter[]>
-  createFilter: (filter: FilterFields) => Promise<{ id: string }>
-  updateFilter: (filterId: string, filter: FilterFields) => Promise<void>
+  createFilter: (filter: NewSavedFilter) => Promise<{ id: string }>
   deleteFilter: (filterId: string) => Promise<void>
   setFilterFavorite: (filterId: string, favorite: boolean) => Promise<void>
-  /** The label names on the person's boards, one per spelling regardless of case. */
-  labelNames: () => Promise<string[]>
-  /** The other members of the person's boards, once each. */
+  updateFilter: (filterId: string, filter: NewSavedFilter) => Promise<void>
+  /**
+   * The labels on the person's boards, one per name regardless of case, in a
+   * colour one of them was given if any.
+   */
+  labelChoices: () => Promise<LabelChoice[]>
+  /** The people who share a board with the person, to keep a view to. */
   people: () => Promise<Person[]>
+  /** The section names of the person's boards, one per name regardless of case. */
+  statusNames: () => Promise<string[]>
   /** Open tasks matching a saved filter, across the person's boards. */
   filteredTasks: (filterId: string, zone: string) => Promise<AgendaTask[]>
   /** Overdue tasks, then those due within `days` days of today in `zone`. */

@@ -13,6 +13,7 @@ import {
   type Comment,
   type Reminder,
   type HistoryEntry,
+  type LabelChoice,
   type SearchResult
 } from '@/application/boards'
 import type { BoardSummary, Person } from '@/domain/board'
@@ -144,21 +145,23 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (await call<{ filters: SavedFilter[] }>('GET', '/filters')).filters,
     createFilter: filter =>
       call('POST', '/filters', filter satisfies Body<'newFilter'>),
-    updateFilter: (filterId, filter) =>
-      call(
-        'PATCH',
-        route`/filters/${filterId}`,
-        filter satisfies Body<'filterChanges'>
-      ),
     // Sent as the page unloads when the undo notice is still open.
     deleteFilter: filterId =>
       call('DELETE', route`/filters/${filterId}`, undefined, true),
     setFilterFavorite: (filterId, favorite) =>
       call(favorite ? 'PUT' : 'DELETE', route`/filters/${filterId}/favorite`),
-    labelNames: async () =>
-      (await call<{ labels: string[] }>('GET', '/labels')).labels,
+    updateFilter: (filterId, filter) =>
+      call(
+        'PUT',
+        route`/filters/${filterId}`,
+        filter satisfies Body<'newFilter'>
+      ),
+    labelChoices: async () =>
+      (await call<{ labels: LabelChoice[] }>('GET', '/labels')).labels,
     people: async () =>
       (await call<{ people: Person[] }>('GET', '/people')).people,
+    statusNames: async () =>
+      (await call<{ statuses: string[] }>('GET', '/statuses')).statuses,
     filteredTasks: async (filterId, zone) =>
       (
         await call<{ tasks: AgendaTask[] }>(

@@ -40,13 +40,14 @@ import {
 } from '@twake-tasks/api-contract'
 import type * as wire from '@twake-tasks/api-contract'
 import type { FastifyReply } from 'fastify'
+import type { z } from 'zod'
 import { allowOrigins } from '../../infra/cors.ts'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createCommentStore } from './comments.ts'
-import { createFilterStore } from './filters.ts'
+import { createFilterStore, criteriaOf, type View } from './filters.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
@@ -89,6 +90,7 @@ export type ContractMatchesBackend = [
     >
   >,
   Assert<Same<Values<typeof wire.LAYOUTS>, Values<typeof db.LAYOUTS>>>,
+  Assert<Same<Values<typeof wire.GROUPINGS>, Values<typeof db.GROUPINGS>>>,
   Assert<
     Same<
       Exclude<
@@ -99,6 +101,22 @@ export type ContractMatchesBackend = [
     >
   >
 ]
+
+const viewOf = ({
+  name,
+  criteria,
+  icon,
+  layout,
+  groupBy,
+  allColumns
+}: z.output<typeof newFilter>): View => ({
+  name,
+  criteria: criteriaOf(criteria),
+  icon: icon ?? null,
+  layout: layout ?? 'list',
+  groupBy: groupBy ?? 'status',
+  allColumns: allColumns ?? false
+})
 
 const REFUSAL_STATUS: Record<Refusal, number> = {
   not_found: 404,
@@ -436,9 +454,21 @@ export function registerBoards(
     async (request, reply) => {
       const identity = request.identity
       if (!identity) return reply.code(401).send()
-      const result = await filterStore.labelNames(identity)
+      const result = await filterStore.labelChoices(identity)
       if (!result.ok) return refuse(reply, result.error)
       return { labels: result.value }
+    }
+  )
+
+  app.get(
+    '/statuses',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await filterStore.statusNames(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return { statuses: result.value }
     }
   )
 
@@ -464,11 +494,7 @@ export function registerBoards(
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
-      const result = await filterStore.createFilter(
-        identity,
-        body.data.name,
-        body.data.criteria
-      )
+      const result = await filterStore.createFilter(identity, viewOf(body.data))
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(201).send(result.value)
     }
@@ -486,10 +512,11 @@ export function registerBoards(
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
+      const { criteria, ...changes } = body.data
       const result = await filterStore.updateFilter(
         identity,
         params.data.filterId,
-        body.data
+        criteria ? { ...changes, criteria: criteriaOf(criteria) } : changes
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()
@@ -536,6 +563,28 @@ export function registerBoards(
       }
     })
   }
+
+  app.put(
+    '/filters/:filterId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = filterParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = newFilter.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await filterStore.updateFilter(
+        identity,
+        params.data.filterId,
+        viewOf(body.data)
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
 
   app.get(
     '/filters/:filterId/tasks',
