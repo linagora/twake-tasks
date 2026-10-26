@@ -4,7 +4,7 @@ import type { Db } from '../infra/db.ts'
 import type { Delivery } from '../infra/rabbitmq.ts'
 import { spaces } from '../modules/spaces/schema.ts'
 import type { Outcome, Park } from './router.ts'
-import { parkedEvents } from './schema.ts'
+import { parkedEvents, processedEvents } from './schema.ts'
 
 // RabbitMQ's default consumer_timeout: the event that brings the space can be
 // held unacknowledged that long by a replica retrying it.
@@ -13,6 +13,8 @@ const WAIT = '30 minutes'
 const CLAIM = '1 minute'
 const RETRY_EVERY_MS = 5000
 const BATCH = 100
+// Far longer than any redelivery, which comes within WAIT.
+const KEEP_PROCESSED = '30 days'
 
 export type DeadLetter = (delivery: Delivery, reason: string) => Promise<void>
 
@@ -130,6 +132,14 @@ export function parkedRetries(deps: {
 
   const retryOnce = async () => {
     for (const row of await claim()) await retry(row)
+    await db
+      .delete(processedEvents)
+      .where(
+        lt(
+          processedEvents.processedAt,
+          sql`now() - ${KEEP_PROCESSED}::interval`
+        )
+      )
   }
 
   return {

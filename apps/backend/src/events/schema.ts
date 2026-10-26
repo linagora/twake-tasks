@@ -29,7 +29,10 @@ export const processedEvents = pgTable(
     id: text().notNull(),
     processedAt: timestamptz('processed_at').notNull().defaultNow()
   },
-  table => [primaryKey({ columns: [table.consumer, table.source, table.id] })]
+  table => [
+    primaryKey({ columns: [table.consumer, table.source, table.id] }),
+    index().on(table.processedAt)
+  ]
 )
 
 // When an organization, a space or a person was deleted, kept forever so a late
