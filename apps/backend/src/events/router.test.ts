@@ -1,6 +1,7 @@
 import { pino } from 'pino'
 import { describe, expect, it, vi } from 'vitest'
 import type { Tx } from '../infra/db.ts'
+import { createMetrics, type Metrics } from '../infra/metrics.ts'
 import type { Delivery } from '../infra/rabbitmq.ts'
 import type { Deduplicator, EventKey } from './dedupe.ts'
 import type { PlatformEvent } from './envelope.ts'
@@ -31,7 +32,7 @@ function memoryDeduplicator(): Deduplicator & { keys: EventKey[] } {
   }
 }
 
-function setup() {
+function setup(metrics?: Metrics) {
   const handler = vi.fn<Handler<PlatformEvent>>().mockResolvedValue()
   const dedupe = memoryDeduplicator()
   const park = vi.fn<Park>().mockResolvedValue()
@@ -39,7 +40,8 @@ function setup() {
     routes: new Map([['twake.space.created', handler]]),
     dedupe,
     park,
-    logger: pino({ level: 'silent' })
+    logger: pino({ level: 'silent' }),
+    metrics
   })
   return { handle, handler, dedupe, park }
 }
@@ -128,5 +130,26 @@ describe('createMessageHandler', () => {
 
     await expect(handle(delivery())).rejects.toThrow('db down')
     expect(await handle(delivery())).toBe('processed')
+  })
+
+  it('counts events by routing key and outcome, any unrouted key as other', async () => {
+    const metrics = createMetrics()
+    const { handle, handler } = setup(metrics)
+    handler.mockRejectedValueOnce(new Error('db down'))
+
+    await expect(handle(delivery())).rejects.toThrow('db down')
+    await handle(delivery())
+    await handle(delivery({ routingKey: 'twake.space.archived' }))
+
+    const text = await metrics.registry.metrics()
+    expect(text).toContain(
+      'events_consumed_total{routing_key="twake.space.created",outcome="failed"} 1'
+    )
+    expect(text).toContain(
+      'events_consumed_total{routing_key="twake.space.created",outcome="processed"} 1'
+    )
+    expect(text).toContain(
+      'events_consumed_total{routing_key="other",outcome="unrouted"} 1'
+    )
   })
 })

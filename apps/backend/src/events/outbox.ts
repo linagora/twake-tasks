@@ -1,6 +1,7 @@
-import { asc, inArray, isNull, lt, sql } from 'drizzle-orm'
+import { asc, count, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import type { Db, Tx } from '../infra/db.ts'
+import type { Metrics } from '../infra/metrics.ts'
 import {
   isKnownType,
   type PublishedEvent,
@@ -25,7 +26,9 @@ export function createRelay(deps: {
   db: Db
   logger: Logger
   publish: (event: PublishedEvent) => Promise<void>
+  metrics?: Metrics | undefined
 }) {
+  const metrics = deps.metrics
   let processedPrunedAt = -Infinity
   const locked = async (tx: Tx) => {
     const [lock] = await tx.execute<{ locked: boolean }>(
@@ -70,6 +73,7 @@ export function createRelay(deps: {
           await deps.publish(event.data)
         } catch (error) {
           deps.logger.warn({ err: error, outbox: row.id }, 'relay failed')
+          metrics?.outboxPublishFailures.inc()
           break
         }
         sent.push(row.id)
@@ -79,6 +83,18 @@ export function createRelay(deps: {
           .update(outbox)
           .set({ sentAt: sql`now()` })
           .where(inArray(outbox.id, sent))
+        metrics?.outboxPublished.inc(sent.length)
+      }
+      if (metrics) {
+        const [backlog] = await tx
+          .select({
+            pending: count(),
+            waited: sql<number>`coalesce(extract(epoch from now() - min(${outbox.createdAt})), 0)::float8`
+          })
+          .from(outbox)
+          .where(isNull(outbox.sentAt))
+        metrics.outboxPending.set(backlog?.pending ?? 0)
+        metrics.outboxOldestPending.set(backlog?.waited ?? 0)
       }
       await tx
         .delete(outbox)

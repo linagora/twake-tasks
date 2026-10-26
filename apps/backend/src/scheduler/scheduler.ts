@@ -1,6 +1,7 @@
-import { and, asc, eq, lte, sql } from 'drizzle-orm'
+import { and, asc, count, eq, lte, min, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
 import type { Db, Tx } from '../infra/db.ts'
+import type { Metrics } from '../infra/metrics.ts'
 import { jobs } from './schema.ts'
 
 /** Work a job does once its transaction committed, such as sending a mail. */
@@ -61,8 +62,11 @@ export function createScheduler(deps: {
   concurrency?: (kind: string) => number
   leaseSeconds?: number
   now?: () => Date
+  metrics?: Metrics | undefined
 }) {
   const kinds = Object.keys(deps.handlers)
+  const record = (kind: string, outcome: 'done' | 'retried' | 'dropped') =>
+    deps.metrics?.jobsRun.inc({ kind, outcome })
   const now = deps.now ?? (() => new Date())
   const leaseMs = (deps.leaseSeconds ?? 600) * 1000
   const due = (kind: string) => and(eq(jobs.kind, kind), lte(jobs.runAt, now()))
@@ -83,9 +87,11 @@ export function createScheduler(deps: {
     )
     if (attempts >= MAX_ATTEMPTS) {
       deps.logger.error({ job: job.id, kind: job.kind }, 'job dropped')
+      record(job.kind, 'dropped')
       await db.delete(jobs).where(same)
       return
     }
+    record(job.kind, 'retried')
     await db
       .update(jobs)
       .set({
@@ -119,6 +125,7 @@ export function createScheduler(deps: {
         if (outcome !== 'keep') {
           await tx.delete(jobs).where(eq(jobs.id, job.id))
         }
+        record(kind, 'done')
       } catch (error) {
         await retryLater(tx, job, error)
       }
@@ -132,6 +139,7 @@ export function createScheduler(deps: {
         await deps.db
           .delete(jobs)
           .where(and(eq(jobs.id, job.id), eq(jobs.runAt, lease)))
+        record(kind, 'done')
       } catch (error) {
         await retryLater(deps.db, job, error, lease)
       }
@@ -160,14 +168,15 @@ export function createScheduler(deps: {
     return counts.reduce((sum, count) => sum + count, 0)
   }
 
-  async function warnOnLag(kind: string) {
-    const [oldest] = await deps.db
-      .select({ runAt: jobs.runAt })
+  async function measureLag(kind: string) {
+    const [backlog] = await deps.db
+      .select({ due: count(), oldest: min(jobs.runAt) })
       .from(jobs)
       .where(due(kind))
-      .orderBy(asc(jobs.runAt))
-      .limit(1)
-    const lag = oldest ? now().getTime() - oldest.runAt.getTime() : 0
+    const oldest = backlog?.oldest
+    const lag = oldest ? now().getTime() - oldest.getTime() : 0
+    deps.metrics?.jobsDue.set({ kind }, backlog?.due ?? 0)
+    deps.metrics?.jobsOldestDue.set({ kind }, lag / 1000)
     if (lag > LAG_WARNING_MS) {
       deps.logger.warn({ kind, lagMs: lag }, 'jobs are late')
     }
@@ -183,7 +192,7 @@ export function createScheduler(deps: {
           running.set(
             kind,
             drain(kind, 100)
-              .then(() => warnOnLag(kind))
+              .then(() => measureLag(kind))
               .catch((error: unknown) => {
                 deps.logger.error({ err: error, kind }, 'scheduler tick failed')
               })

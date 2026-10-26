@@ -112,7 +112,8 @@ const handle = createMessageHandler({
   ]),
   dedupe: postgresDeduplicator(db, 'twake-tasks'),
   park: parkIn(db),
-  logger
+  logger,
+  metrics
 })
 const consumer = await startConsumer(
   config.RABBITMQ_URL,
@@ -133,7 +134,8 @@ const stopParkedRetries = parkedRetries({
   db,
   logger,
   handle,
-  deadLetter: (delivery, reason) => consumer.deadLetter(delivery, reason)
+  deadLetter: (delivery, reason) => consumer.deadLetter(delivery, reason),
+  metrics
 }).start()
 // A sync request fans out to every app and every space, so it is sent only
 // while no space is known, once the queue is bound to receive the answers.
@@ -156,6 +158,7 @@ const stopScheduler = createScheduler({
   db,
   logger,
   leaseSeconds: config.JOBS_LEASE_SECONDS,
+  metrics,
   // A mail job spends most of its time on SMTP, after its transaction ended.
   concurrency: kind =>
     [
@@ -198,7 +201,8 @@ if (spaces) await planReconcile(db)
 const stopRelay = createRelay({
   db,
   logger,
-  publish: event => publisher.publish(event)
+  publish: event => publisher.publish(event),
+  metrics
 }).start(500)
 accepting = true
 logger.info('twake-tasks backend started')

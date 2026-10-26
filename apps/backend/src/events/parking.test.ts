@@ -3,6 +3,7 @@ import { eq, sql as raw } from 'drizzle-orm'
 import { pino } from 'pino'
 import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import { asOrganization, createDb } from '../infra/db.ts'
+import { createMetrics } from '../infra/metrics.ts'
 import type { Delivery } from '../infra/rabbitmq.ts'
 import { projectMembers } from '../modules/boards/schema.ts'
 import { spaceRoutes } from '../modules/spaces/events.ts'
@@ -203,5 +204,20 @@ describe('parked events', () => {
     await due(added)
     await retries(deadLetter).retryOnce()
     expect(await parked(added)).toEqual([])
+  })
+
+  it('are counted on each pass', async () => {
+    await handle(memberAdded(aSpace(), randomUUID()))
+    const metrics = createMetrics()
+
+    await parkedRetries({
+      db,
+      logger,
+      handle,
+      deadLetter: vi.fn<DeadLetter>(),
+      metrics
+    }).retryOnce()
+
+    expect(await metrics.registry.metrics()).toMatch(/^events_parked [1-9]/m)
   })
 })

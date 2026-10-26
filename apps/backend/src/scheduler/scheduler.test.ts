@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { pino } from 'pino'
-import { afterAll, describe, expect, inject, it } from 'vitest'
+import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import { createDb } from '../infra/db.ts'
+import { createMetrics } from '../infra/metrics.ts'
 import { createScheduler, schedule, type Handler } from './scheduler.ts'
 import { jobs } from './schema.ts'
 
@@ -273,5 +274,41 @@ describe('scheduler', () => {
         .from(jobs)
         .where(eq(jobs.kind, kind))
     ).toEqual([{ payload: 2, runAt: later }])
+  })
+
+  it('counts its jobs by kind and outcome, and measures what is due', async () => {
+    const kind = aKind()
+    const metrics = createMetrics()
+    const scheduler = createScheduler({
+      db,
+      logger,
+      metrics,
+      handlers: {
+        [kind]: payload =>
+          payload === 'fails'
+            ? Promise.reject(new Error('mail server down'))
+            : Promise.resolve(undefined)
+      }
+    })
+    await schedule(db, { kind, payload: 'works', runAt: past() })
+    await schedule(db, { kind, payload: 'fails', runAt: past() })
+    await schedule(db, { kind, key: kind, payload: 'fails', runAt: past() })
+    await db.update(jobs).set({ attempts: 9 }).where(eq(jobs.key, kind))
+
+    const stop = scheduler.start(10)
+    await vi.waitFor(async () => {
+      expect(await metrics.registry.metrics()).toContain(
+        `jobs_due{kind="${kind}"} 0`
+      )
+    })
+    await stop()
+
+    const text = await metrics.registry.metrics()
+    for (const outcome of ['done', 'retried', 'dropped']) {
+      expect(text).toContain(
+        `jobs_run_total{kind="${kind}",outcome="${outcome}"} 1`
+      )
+    }
+    expect(text).toContain(`jobs_oldest_due_seconds{kind="${kind}"} 0`)
   })
 })

@@ -3,6 +3,7 @@ import { inArray, sql as raw } from 'drizzle-orm'
 import { pino } from 'pino'
 import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import { createDb } from '../infra/db.ts'
+import { createMetrics } from '../infra/metrics.ts'
 import type { OutgoingEvent } from './envelope.ts'
 import { createRelay, enqueue } from './outbox.ts'
 import type { PublishedEvent } from './published.ts'
@@ -129,6 +130,28 @@ describe('outbox', () => {
     await drain(createRelay({ db, logger, publish }))
 
     expect(sent).toEqual(expect.arrayContaining([newType.id, newValue.id]))
+  })
+
+  it('counts what it publishes, what fails and what waits', async () => {
+    await db.transaction(async tx => {
+      await enqueue(tx, anEvent())
+      await enqueue(tx, anEvent())
+    })
+    const metrics = createMetrics()
+    const failing = vi.fn(() => Promise.reject(new Error('broker down')))
+
+    await createRelay({ db, logger, publish: failing, metrics }).relayOnce()
+    const waiting = await metrics.registry.metrics()
+    await drain(
+      createRelay({ db, logger, publish: recorder().publish, metrics })
+    )
+
+    expect(waiting).toContain('outbox_publish_failures_total 1')
+    expect(waiting).toMatch(/^outbox_pending [1-9]/m)
+    expect(waiting).toMatch(/^outbox_oldest_pending_seconds [\d.]+$/m)
+    expect(await metrics.registry.metrics()).toMatch(
+      /^outbox_published_total ([2-9]|\d{2,})$/m
+    )
   })
 })
 
