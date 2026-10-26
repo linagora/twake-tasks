@@ -12,6 +12,7 @@ const movesTask = (variables: unknown, taskId: string): boolean =>
 export interface CompleteToggle {
   done: boolean
   disabled: boolean
+  noDoneSection: boolean
   toggle: () => void
 }
 
@@ -47,6 +48,7 @@ export function useCompleteToggle(
       !editable ||
       task.canceledAt !== null ||
       (section ? !target || moving : complete.isPending),
+    noDoneSection: section !== undefined && doneSection === undefined,
     toggle: () => {
       if (!section) complete.mutate(!done)
       else if (target) {
