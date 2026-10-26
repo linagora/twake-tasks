@@ -54,6 +54,7 @@ const configSchema = z
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     DATABASE_POOL_MAX: z.coerce.number().int().min(1).default(20),
     DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(0).default(5000),
+    MIGRATE_ON_START: z.stringbool().default(true),
     APP_URL: z.url({ protocol: /^https?$/ }),
     OIDC_ISSUER: z.url({ protocol: /^https$/ }),
     OIDC_AUDIENCE: z.string().min(1).default('twaketasks'),

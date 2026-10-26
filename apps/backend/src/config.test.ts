@@ -109,6 +109,24 @@ describe('the search settings', () => {
   })
 })
 
+describe('the migration setting', () => {
+  it('migrates at start by default', () => {
+    expect(loadConfig(required).MIGRATE_ON_START).toBe(true)
+  })
+
+  it('can leave migrations to the migrate command', () => {
+    expect(
+      loadConfig({ ...required, MIGRATE_ON_START: 'false' }).MIGRATE_ON_START
+    ).toBe(false)
+  })
+
+  it('refuses a value that is not a boolean', () => {
+    expect(() =>
+      loadConfig({ ...required, MIGRATE_ON_START: 'later' })
+    ).toThrow(/MIGRATE_ON_START/)
+  })
+})
+
 describe('the server settings', () => {
   it('trust two proxies and keep counters in memory by default', () => {
     const config = loadConfig(required)

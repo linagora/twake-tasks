@@ -7,7 +7,7 @@ import { createRelay } from './events/outbox.ts'
 import { parkedRetries, parkIn } from './events/parking.ts'
 import { createMessageHandler } from './events/router.ts'
 import { createChanges } from './infra/changes.ts'
-import { assertRowLevelSecurity, createDb, migrateDb } from './infra/db.ts'
+import { assertRowLevelSecurity, createDb, migrateLocked } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { createMailer } from './infra/mail.ts'
 import { connectRedis } from './infra/rateLimit.ts'
@@ -54,7 +54,7 @@ const { sql, db } = createDb(config.DATABASE_URL, logger, {
   statementTimeoutMs: config.DATABASE_STATEMENT_TIMEOUT_MS
 })
 await assertRowLevelSecurity(sql)
-await migrateDb(db)
+if (config.MIGRATE_ON_START) await migrateLocked(config.DATABASE_URL)
 // Readiness must not wait behind the requests that fill the pool.
 const probe = postgres(config.DATABASE_URL, { max: 1 })
 

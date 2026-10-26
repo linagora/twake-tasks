@@ -3,7 +3,7 @@
 ## PostgreSQL
 
 - Version 16 or later. Development and the tests use 18, and one test migrates a 16 database. On a server older than 18, the backend creates the `uuidv7()` function that 18 has built in before it migrates.
-- The backend runs its migrations at start.
+- The backend runs its migrations at start, unless the migrate command runs them (see [deployment](deployment.md#migrations)).
 - Its role must have neither `SUPERUSER` nor `BYPASSRLS`, since either skips the row level security that keeps organizations apart. The backend refuses to start with one.
 
 ## RabbitMQ

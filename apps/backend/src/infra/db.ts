@@ -229,3 +229,19 @@ export async function migrateDb(db: Db): Promise<void> {
     migrationsFolder: fileURLToPath(new URL('../../drizzle', import.meta.url))
   })
 }
+
+// Any constant shared by every replica and the migrate command: Drizzle reads
+// the applied migrations outside any lock, so two migrators would both apply them.
+const MIGRATION_LOCK = 0x6d696772
+
+// A single connection, since an advisory lock belongs to its session.
+export async function migrateLocked(url: string): Promise<void> {
+  const { sql: client, db } = connect(url, 1)
+  try {
+    await client`select pg_advisory_lock(${MIGRATION_LOCK})`
+    await migrateDb(db)
+    await client`select pg_advisory_unlock(${MIGRATION_LOCK})`
+  } finally {
+    await client.end()
+  }
+}
