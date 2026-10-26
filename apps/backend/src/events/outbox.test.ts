@@ -135,12 +135,31 @@ describe('outbox', () => {
   it('measures what waits when scraped, on a replica that never relayed', async () => {
     await db.transaction(tx => enqueue(tx, anEvent()))
     const metrics = createMetrics()
-    measureOutbox(db, metrics.registry)
+    measureOutbox(db, metrics.registry, logger)
 
     const scraped = await metrics.registry.metrics()
 
     expect(scraped).toMatch(/^outbox_pending [1-9]/m)
     expect(scraped).toMatch(/^outbox_oldest_pending_seconds [\d.]+$/m)
+  })
+
+  it('reports no backlog it could not read in time, rather than the last one', async () => {
+    const metrics = createMetrics()
+    const warn = vi.spyOn(logger, 'warn')
+    measureOutbox(db, metrics.registry, logger)
+    const before = await metrics.registry.metrics()
+
+    const scraped = await db.transaction(async tx => {
+      await tx.execute(raw`lock table ${outbox} in access exclusive mode`)
+      return metrics.registry.metrics()
+    })
+    const warned = warn.mock.calls.length
+    warn.mockRestore()
+
+    expect(before).toMatch(/^outbox_pending \d/m)
+    expect(scraped).not.toMatch(/^outbox_pending /m)
+    expect(scraped).not.toMatch(/^outbox_oldest_pending_seconds /m)
+    expect(warned).toBe(1)
   })
 
   it('counts what it publishes and what fails', async () => {

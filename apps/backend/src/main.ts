@@ -204,7 +204,7 @@ const stopRelay = createRelay({
   publish: event => publisher.publish(event),
   metrics
 }).start(500)
-if (metrics) measureOutbox(db, metrics.registry)
+if (metrics) measureOutbox(db, metrics.registry, logger)
 accepting = true
 logger.info('twake-tasks backend started')
 

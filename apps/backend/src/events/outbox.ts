@@ -1,3 +1,4 @@
+import { setTimeout as delay } from 'node:timers/promises'
 import { Gauge, type Registry } from '@prometheus-io/client'
 import { asc, count, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Logger } from 'pino'
@@ -34,28 +35,52 @@ const backlog = async (db: Db) => {
   return row
 }
 
+type Backlog = NonNullable<Awaited<ReturnType<typeof backlog>>>
+
+// Well under Prometheus' scrape timeout: a slow database costs these two
+// series, not the whole scrape.
+const BACKLOG_TIMEOUT_MS = 1000
+
+const backlogInTime = (db: Db) =>
+  Promise.race([
+    backlog(db),
+    delay(BACKLOG_TIMEOUT_MS, undefined, { ref: false }).then(() => {
+      throw new Error('outbox backlog read timed out')
+    })
+  ])
+
 // Read when scraped, so every replica reports the same outbox whichever one
-// relays. A failed read keeps the last value rather than failing the scrape.
-export function measureOutbox(db: Db, registry: Registry) {
-  const registers = [registry]
-  new Gauge({
-    name: 'outbox_pending',
-    help: 'Events waiting in the outbox',
-    registers,
-    async collect() {
-      const row = await backlog(db).catch(() => undefined)
-      if (row) this.set(row.pending)
-    }
-  })
-  new Gauge({
-    name: 'outbox_oldest_pending_seconds',
-    help: 'How long the oldest event has waited in the outbox',
-    registers,
-    async collect() {
-      const row = await backlog(db).catch(() => undefined)
-      if (row) this.set(row.waited)
-    }
-  })
+// relays. A failed read reports no series rather than a stale one, so an
+// alert on the series being absent fires.
+export function measureOutbox(db: Db, registry: Registry, logger: Logger) {
+  // Both gauges are collected at once, so they share one read.
+  let reading: Promise<Backlog | undefined> | undefined
+  const read = () =>
+    (reading ??= backlogInTime(db)
+      .catch((error: unknown) => {
+        logger.warn({ err: error }, 'outbox backlog unreadable')
+        return undefined
+      })
+      .finally(() => {
+        reading = undefined
+      }))
+  const gauge = (name: string, help: string, value: (row: Backlog) => number) =>
+    new Gauge({
+      name,
+      help,
+      registers: [registry],
+      async collect() {
+        const row = await read()
+        if (row) this.set(value(row))
+        else this.remove()
+      }
+    })
+  gauge('outbox_pending', 'Events waiting in the outbox', row => row.pending)
+  gauge(
+    'outbox_oldest_pending_seconds',
+    'How long the oldest event has waited in the outbox',
+    row => row.waited
+  )
 }
 
 export function createRelay(deps: {
