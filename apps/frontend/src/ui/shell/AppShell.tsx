@@ -87,7 +87,8 @@ import {
   FAVORITES,
   SidebarDrag,
   useFavoritesDrop,
-  useSidebarDrag
+  useSidebarDrag,
+  useSidebarPlaceOf
 } from '@/ui/shell/SidebarSections'
 import { ShortcutsHelp, useShortcuts } from '@/ui/shell/Shortcuts'
 import { useFolded } from '@/ui/shell/useFolded'
@@ -322,10 +323,11 @@ function AccountMenu(): ReactElement {
 }
 
 /**
- * The entry lit in the sidebar: a board keeps Boards lit, as the page it is
- * opened from, or its own entry under Boards, and a view Views or its entry
- * under Views, but for one clicked in Favorites or a section the person
- * added, which stays lit while its board or view is open.
+ * The entry lit in the sidebar: a board or view in Favorites or a section the
+ * person added lights its entry there, however it was opened, or the entry
+ * clicked while its board or view is open. Any other board keeps Boards lit,
+ * as the page it is opened from, or its own entry under Boards, and a view
+ * Views or its entry under Views.
  */
 function useLitEntry(): {
   boards: boolean
@@ -346,7 +348,7 @@ function useLitEntry(): {
   const inPage = (root: string, id: string) =>
     pathname === `/${root}/${id}` || pathname.startsWith(`/${root}/${id}/`)
   const inBoard = (boardId: string) => inPage('boards', boardId)
-  const onFavorite =
+  const clicked =
     favorite !== null &&
     (inBoard(favorite.id) || inPage('filters', favorite.id))
   // Left the board or view: the next time it opens, it is from wherever it is.
@@ -354,11 +356,25 @@ function useLitEntry(): {
   const [seen, setSeen] = useState(pathname)
   if (seen !== pathname) {
     setSeen(pathname)
-    if (favorite !== null && !onFavorite) setFavorite(null)
+    if (favorite !== null && !clicked) setFavorite(null)
   }
   // An archived board is reached from Archives, which it lights instead.
   const boards = useBoards().data ?? []
   const onArchived = boards.some(board => board.archived && inBoard(board.id))
+  const openId = boardId ?? filterId
+  const placed = useSidebarPlaceOf(
+    boardId
+      ? { kind: 'board', id: boardId }
+      : filterId
+        ? { kind: 'view', id: filterId }
+        : null
+  )
+  const shownIn = clicked
+    ? favorite
+    : placed !== null && openId !== null && !onArchived
+      ? { origin: placed, id: openId }
+      : null
+  const onFavorite = shownIn !== null
   const onBoard = pathname.startsWith('/boards/') && !onFavorite
   const onViews =
     (pathname === '/filters' || pathname.startsWith('/filters/')) && !onFavorite
@@ -369,7 +385,7 @@ function useLitEntry(): {
     board: onBoard && !onArchived ? boardId : null,
     views: onViews,
     view: onViews ? filterId : null,
-    favorite: onFavorite ? favorite : null,
+    favorite: shownIn,
     openFavorite: (origin, id) => {
       setFavorite({ origin, id })
     }

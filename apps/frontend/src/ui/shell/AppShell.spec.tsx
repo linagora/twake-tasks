@@ -227,7 +227,7 @@ describe('AppShell', () => {
     expect(await again.findByRole('link', { name: 'Launch' })).toBeVisible()
   })
 
-  it('lights a board under Boards, or Boards while folded, but for one opened from its favourite', async () => {
+  it('lights the favourite of the board open, however it was opened', async () => {
     const boardsApi = fakeBoardsApi([
       { ...aBoard(), id: 'board-2', name: 'Launch' }
     ])
@@ -240,23 +240,43 @@ describe('AppShell', () => {
     )
     const favourite = await favourites.findByRole('link', { name: 'Launch' })
     const boards = nav.getByRole('link', { name: 'Boards' })
-    expect(boards).toHaveAttribute('aria-current', 'page')
-    fireEvent.click(nav.getByRole('button', { name: 'Unfold boards' }))
-    const listed = await nav.findByRole('link', { name: 'Launch' })
-    expect(listed).toHaveAttribute('aria-current', 'page')
-    expect(boards).not.toHaveAttribute('aria-current')
-    expect(favourite).not.toHaveAttribute('aria-current')
-
-    fireEvent.click(favourite)
+    // Opened from its URL, not from the favourite, which is lit all the same.
     await waitFor(() => {
       expect(favourite).toHaveAttribute('aria-current', 'page')
     })
+    expect(boards).not.toHaveAttribute('aria-current')
+    fireEvent.click(nav.getByRole('button', { name: 'Unfold boards' }))
+    const listed = await nav.findByRole('link', { name: 'Launch' })
     expect(listed).not.toHaveAttribute('aria-current')
 
     fireEvent.click(nav.getByRole('link', { name: 'Notifications' }))
     await waitFor(() => {
       expect(favourite).not.toHaveAttribute('aria-current')
     })
+  })
+
+  it('lights the favourite of the view open, and Views no more', async () => {
+    const boardsApi = fakeBoardsApi([aBoard()])
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: {}
+    })
+    await boardsApi.setFilterFavorite(id, true)
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    const favourites = within(
+      await screen.findByRole('list', { name: 'Favorites' })
+    )
+    const favourite = await favourites.findByRole('link', { name: 'Urgent' })
+    await waitFor(() => {
+      expect(favourite).toHaveAttribute('aria-current', 'page')
+    })
+    expect(
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'Views' }
+      )
+    ).not.toHaveAttribute('aria-current')
   })
 
   it('lists the active boards under Boards, by name, and marks the current one', async () => {

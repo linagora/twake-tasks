@@ -707,6 +707,22 @@ function SectionNameDialog({
  * Where a board or view shows in the sidebar, and how to show it elsewhere:
  * in Favorites, a section the person added, or nowhere, which unstars it.
  */
+/**
+ * Where a board or view shows in the sidebar: Favorites, or the id of one of
+ * the person's sections; null, neither starred nor in a section, it does not.
+ */
+export function useSidebarPlaceOf(item: SidebarItem | null): string | null {
+  const sections = useSidebarSections().data ?? []
+  const boards = useBoards().data ?? []
+  const views = useFilters().data ?? []
+  if (!item) return null
+  const starred =
+    item.kind === 'board'
+      ? boards.some(board => board.id === item.id && board.favorite)
+      : views.some(view => view.id === item.id && view.favorite)
+  return sectionOf(sections, item) ?? (starred ? FAVORITES : null)
+}
+
 function usePlaceInSidebar(item: SidebarItem): {
   current: string
   place: (where: string) => void
@@ -716,14 +732,7 @@ function usePlaceInSidebar(item: SidebarItem): {
   const moveToFavorites = useMoveToFavorites()
   const starBoard = useSetFavorite()
   const starView = useSetFilterFavorite()
-  const boards = useBoards().data ?? []
-  const views = useFilters().data ?? []
-  const starred =
-    item.kind === 'board'
-      ? boards.some(board => board.id === item.id && board.favorite)
-      : views.some(view => view.id === item.id && view.favorite)
-  // Neither starred nor in a section, it is not in the sidebar.
-  const current = sectionOf(sections, item) ?? (starred ? FAVORITES : NOWHERE)
+  const current = useSidebarPlaceOf(item) ?? NOWHERE
   return {
     current,
     place: where => {
