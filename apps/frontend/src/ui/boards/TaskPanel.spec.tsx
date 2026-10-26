@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '@/application/boards'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
-import { onAPhone } from '@/testing/phone'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { typeRichText } from '@/testing/richText'
 
@@ -25,66 +24,15 @@ async function openLogo() {
 }
 
 describe('TaskPanel', () => {
-  it('completes the task from its header, then reopens it', async () => {
-    const { board, logo, boardsApi } = logoBoard()
-    renderRoute(`/boards/${board.id}`, { boardsApi })
-
-    const panel = await openLogo()
-    const complete = panel.getByRole('button', { name: 'Mark complete' })
-    expect(complete).toHaveTextContent('Mark complete')
-    fireEvent.click(complete)
-
-    await waitFor(() => {
-      expect(boardsApi.moveTask).toHaveBeenCalledWith(board.id, logo.id, {
-        sectionId: board.sections[2]?.id
-      })
-    })
-    const completed = await panel.findByRole('button', { name: 'Completed' })
-    expect(completed).toHaveAttribute('aria-pressed', 'true')
-    fireEvent.click(completed)
-
-    await waitFor(() => {
-      expect(boardsApi.moveTask).toHaveBeenLastCalledWith(board.id, logo.id, {
-        sectionId: board.sections[0]?.id
-      })
-    })
-    expect(
-      await panel.findByRole('button', { name: 'Mark complete' })
-    ).toBeEnabled()
-  })
-
-  it('completes from an icon on a phone, named by its action', async () => {
-    onAPhone()
+  it('leaves completing the task to its card', async () => {
     const { board, boardsApi } = logoBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const panel = await openLogo()
-    const complete = panel.getByRole('button', { name: 'Mark complete' })
-    expect(complete).toHaveTextContent('')
-    fireEvent.click(complete)
 
     expect(
-      await panel.findByRole('button', { name: 'Mark incomplete' })
-    ).toHaveTextContent('')
-  })
-
-  it('says why a board without a Done section cannot complete the task', async () => {
-    const { board, boardsApi } = logoBoard()
-    board.sections = board.sections.filter(
-      section => section.category !== 'completed'
-    )
-    renderRoute(`/boards/${board.id}`, { boardsApi })
-
-    const panel = await openLogo()
-    const button = panel.getByRole('button', { name: 'Mark complete' })
-    expect(button).toHaveAttribute('aria-disabled', 'true')
-    fireEvent.click(button)
-    fireEvent.mouseOver(button)
-
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      'This board has no Done section.'
-    )
-    expect(boardsApi.moveTask).not.toHaveBeenCalled()
+      panel.queryByRole('button', { name: 'Mark complete' })
+    ).not.toBeInTheDocument()
   })
 
   it('shows the description as formatted text', async () => {
