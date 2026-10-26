@@ -98,6 +98,14 @@ const NO_SX = {
   message: 'No sx outside @/ds/.'
 }
 
+const KEYS_FILE = 'src/ui/queries/keys.ts'
+
+const NO_LITERAL_QUERY_KEY = {
+  selector:
+    'Property[key.name="queryKey"] > ArrayExpression, Property[key.name="queryKey"] > TSAsExpression > ArrayExpression, CallExpression[callee.property.name=/QueryData$/] > ArrayExpression.arguments:first-child, CallExpression[callee.property.name=/QueryData$/] > TSAsExpression.arguments:first-child > ArrayExpression',
+  message: `Query keys come from ${KEYS_FILE}.`
+}
+
 export default defineConfig(
   { ignores: ['dist/', 'coverage/', 'public/'] },
   js.configs.recommended,
@@ -133,8 +141,17 @@ export default defineConfig(
       ...reactHooks.configs['recommended-latest'].rules,
       eqeqeq: ['error', 'always'],
       'no-console': ['error', { allow: ['info', 'warn', 'error'] }],
-      'no-restricted-syntax': ['error', ...FORBIDDEN_SYNTAX, NO_SX]
+      'no-restricted-syntax': [
+        'error',
+        ...FORBIDDEN_SYNTAX,
+        NO_SX,
+        NO_LITERAL_QUERY_KEY
+      ]
     }
+  },
+  {
+    files: [KEYS_FILE, 'src/**/*.spec.{ts,tsx}'],
+    rules: { 'no-restricted-syntax': ['error', ...FORBIDDEN_SYNTAX, NO_SX] }
   },
   ...LAYERS.map(layer => ({
     files: [`src/${layer}/**/*.{ts,tsx}`],

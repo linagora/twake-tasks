@@ -11,7 +11,7 @@ import {
 import { useEffect, useId, useRef, useState, type ReactElement } from 'react'
 
 import type { TransferPreview } from '@/application/boards'
-import type { BoardSummary, Task } from '@/domain/board'
+import { isEditable, type BoardSummary, type Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import {
   useBoard,
@@ -155,7 +155,7 @@ function ConfirmTransfer({
 }
 
 const isTarget = (board: BoardSummary, boardId: string) =>
-  board.id !== boardId && board.role !== 'viewer' && !board.archived
+  board.id !== boardId && isEditable(board)
 
 export function useTransferable(task: Task, boardId: string): boolean {
   const boards = useBoards()

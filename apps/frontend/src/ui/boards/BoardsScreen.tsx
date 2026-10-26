@@ -22,7 +22,11 @@ import { Link as RouterLink, useNavigate } from 'react-router'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { BoardCard, BoardChip, CardGrid, CreateCard } from '@/ds/TileGrid'
 import { Toast } from '@/ds/Toast'
-import type { BoardSummary, ProjectSummary } from '@/domain/board'
+import {
+  isArchivable,
+  type BoardSummary,
+  type ProjectSummary
+} from '@/domain/board'
 import { listBoards } from '@/domain/boardList'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PeopleAvatars } from '@/ui/boards/MembersDialog'
@@ -261,7 +265,7 @@ export function BoardsScreen({
               board={board}
               fresh={isNewlyShared(board)}
               onUnarchive={
-                archives && board.role === 'admin'
+                archives && isArchivable(board)
                   ? () => {
                       setUnarchived(null)
                       unarchive.mutate(

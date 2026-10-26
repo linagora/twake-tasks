@@ -23,7 +23,7 @@ import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
 import { ShelfHeader, ShelfList, ShelfRow, ShelfWhen } from '@/ds/ShelfList'
 import { Toast } from '@/ds/Toast'
-import type { Board, Task } from '@/domain/board'
+import { isEditable, type Board, type Task } from '@/domain/board'
 import { momentFormat } from '@/ui/boards/dueLabel'
 import { useBoardChange, useBoardOf, useHiddenTasks } from '@/ui/boards/queries'
 import { Assignees, PriorityChip } from '@/ui/boards/TaskFacts'
@@ -259,7 +259,7 @@ function ShelfTasks({
     task: Task
     failed: boolean
   } | null>(null)
-  const editable = board.role !== 'viewer' && !board.archived
+  const editable = isEditable(board)
   const tasks = hidden.data ?? []
 
   return (

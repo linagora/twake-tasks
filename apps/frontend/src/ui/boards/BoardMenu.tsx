@@ -26,7 +26,12 @@ import { useId, useState, type ElementType, type ReactElement } from 'react'
 import type { Shelf } from '@/application/boards'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { Toast } from '@/ds/Toast'
-import type { Board } from '@/domain/board'
+import {
+  isArchivable,
+  isManageable,
+  isRenamable,
+  type Board
+} from '@/domain/board'
 import { useSetBoardArchived, useSetLayout } from '@/ui/boards/queries'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -51,7 +56,7 @@ export function BoardMenu({
   const [archivedNotice, setArchivedNotice] = useState(false)
   const setLayout = useSetLayout(board.id)
   const archive = useSetBoardArchived()
-  const admin = board.role === 'admin'
+  const archivable = isArchivable(board)
   const close = (): void => {
     setAnchor(null)
   }
@@ -97,8 +102,7 @@ export function BoardMenu({
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        {admin &&
-          !board.archived &&
+        {isManageable(board) &&
           board.layout !== board.defaultLayout &&
           item(Check, t('layout.useAsDefault'), () => {
             setLayout.mutate({ layout: board.layout, everyone: true })
@@ -109,17 +113,14 @@ export function BoardMenu({
         {item(Trash, t('archive.trash'), () => {
           onOpenShelf('trash')
         })}
-        {admin && !board.inbox && <Divider />}
-        {admin &&
-          !board.archived &&
-          !board.inbox &&
+        {archivable && <Divider />}
+        {isRenamable(board) &&
           onRename &&
           item(Pen, t('board.rename'), () => {
             setNext('rename')
           })}
         {onMove && item(FolderMoveto, t('moveBoard.action'), onMove)}
-        {admin &&
-          !board.inbox &&
+        {archivable &&
           item(
             board.archived ? Restore : Archive,
             t(

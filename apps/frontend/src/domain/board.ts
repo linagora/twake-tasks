@@ -122,14 +122,50 @@ export const deadlineBeforeDue = (
 
 export const MAX_TASK_DEPTH = 4
 
+/** Whether this user may add, change and move the board's tasks. */
+export const isEditable = (
+  board: Pick<BoardSummary, 'role' | 'archived'>
+): boolean => board.role !== 'viewer' && !board.archived
+
+/** Whether this user may change the board's sections and default layout. */
+export const isManageable = (
+  board: Pick<BoardSummary, 'role' | 'archived'>
+): boolean => board.role === 'admin' && !board.archived
+
+export const isRenamable = (
+  board: Pick<BoardSummary, 'role' | 'archived' | 'inbox'>
+): boolean => isManageable(board) && !board.inbox
+
+/** Whether this user may archive the board, or unarchive it. */
+export const isArchivable = (
+  board: Pick<BoardSummary, 'role' | 'inbox'>
+): boolean => board.role === 'admin' && !board.inbox
+
+export type NotShareable = 'personal' | 'managed' | 'archived' | 'notAdmin'
+
+export const whyNotShareable = (
+  board: Pick<BoardSummary, 'role' | 'archived' | 'project'>
+): NotShareable | null =>
+  board.project.personal
+    ? 'personal'
+    : board.project.managed
+      ? 'managed'
+      : board.archived
+        ? 'archived'
+        : board.role !== 'admin'
+          ? 'notAdmin'
+          : null
+
 /** Whether this user may see and change who the board is shared with. */
 export const isShareable = (
   board: Pick<BoardSummary, 'role' | 'archived' | 'project'>
-): boolean =>
-  board.role === 'admin' &&
-  !board.archived &&
-  !board.project.personal &&
-  !board.project.managed
+): boolean => whyNotShareable(board) === null
+
+/** Whether this user may move a board into the project. */
+export const takesBoards = (project: {
+  role: Role
+  personal: boolean
+}): boolean => project.role !== 'viewer' && !project.personal
 
 export const LAYOUTS = ['board', 'list', 'calendar'] as const
 

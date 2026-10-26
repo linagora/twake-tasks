@@ -10,7 +10,7 @@ import {
 import { useId, useState, type ReactElement } from 'react'
 
 import { ApiError, type Project } from '@/application/boards'
-import type { Board } from '@/domain/board'
+import { takesBoards, type Board } from '@/domain/board'
 import { useBoardChange, useProjects } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -18,10 +18,7 @@ export function useMoveTargets(board: Board): Project[] {
   const projects = useProjects()
   return (
     projects.data?.filter(
-      project =>
-        project.role !== 'viewer' &&
-        !project.personal &&
-        project.id !== board.project.id
+      project => takesBoards(project) && project.id !== board.project.id
     ) ?? []
   )
 }

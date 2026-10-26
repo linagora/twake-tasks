@@ -35,8 +35,14 @@ import {
 import { CutTooltip } from '@/ds/CutTooltip'
 import { TitleButton } from '@/ds/TitleButton'
 import {
+  isArchivable,
+  isEditable,
+  isManageable,
+  isRenamable,
   isShareable,
+  whyNotShareable,
   type Board,
+  type NotShareable,
   type Section,
   type Task
 } from '@/domain/board'
@@ -234,6 +240,13 @@ function LinkedTask({
   )
 }
 
+const NOT_SHAREABLE = {
+  personal: 'sharing.personalBoard',
+  managed: 'sharing.managedBoard',
+  archived: 'sharing.archivedBoard',
+  notAdmin: 'sharing.adminOnly'
+} as const satisfies Record<NotShareable, string>
+
 function BoardColumns({
   board,
   settled,
@@ -263,23 +276,18 @@ function BoardColumns({
       <CardTitle>{task.title}</CardTitle>
     </Card>
   )
-  const editable = board.role !== 'viewer' && !board.archived
-  const manageable = board.role === 'admin' && !board.archived
+  const editable = isEditable(board)
+  const manageable = isManageable(board)
   const shareable = isShareable(board)
   const [sharing, setSharing] = useState(false)
   const [listing, setListing] = useState(false)
-  const whyNot = board.project.personal
-    ? t('sharing.personalBoard')
-    : board.project.managed
-      ? t('sharing.managedBoard', { space: board.project.name })
-      : board.archived
-        ? t('sharing.archivedBoard')
-        : board.role !== 'admin'
-          ? t('sharing.adminOnly')
-          : null
+  const notShareable = whyNotShareable(board)
+  const whyNot =
+    notShareable &&
+    t(NOT_SHAREABLE[notShareable], { space: board.project.name })
   const [moving, setMoving] = useState(false)
   const [renaming, setRenaming] = useState(false)
-  const renamable = manageable && !board.inbox
+  const renamable = isRenamable(board)
   const targets = useMoveTargets(board)
   const movable = shareable && targets.length > 0
   const navigate = useNavigate()
@@ -711,7 +719,7 @@ function ArchivedBanner({ board }: { board: Board }): ReactElement {
       severity={unarchive.isError ? 'error' : 'info'}
       className="u-mb-1"
       action={
-        board.role === 'admin' && (
+        isArchivable(board) && (
           <Button
             variant="text"
             size="small"
@@ -743,7 +751,7 @@ function BoardTitle({
   bare?: boolean
 }): ReactElement {
   const { t } = useI18n()
-  const renamable = board.role === 'admin' && !board.archived && !board.inbox
+  const renamable = isRenamable(board)
   // The title takes the focus back from an editor that just closed
   const [returned, setReturned] = useState(false)
 

@@ -32,10 +32,15 @@ import {
   type TaskMove,
   type TransferPreview
 } from '@/application/boards'
-import type { Board, BoardSummary, Layout, Person } from '@/domain/board'
+import {
+  isEditable,
+  type Board,
+  type BoardSummary,
+  type Layout,
+  type Person
+} from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
 import {
-  canAddTo,
   createTask,
   defaultBoard,
   type NewTaskDraft,
@@ -43,13 +48,11 @@ import {
 } from '@/application/newTask'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
+import { keys, type AgendaView } from '@/ui/queries/keys'
+
+export type { AgendaView }
 
 const POLL_MS = 60_000
-
-const boardsKey = ['boards'] as const
-const boardKey = (boardId: string) => ['boards', boardId] as const
-
-export type AgendaView = 'today' | 'upcoming' | 'mine' | { filterId: string }
 
 const AGENDA_DAYS = { today: 1, upcoming: 7 } as const
 
@@ -57,21 +60,21 @@ const AGENDA_DAYS = { today: 1, upcoming: 7 } as const
 export function useRefreshLists(): () => void {
   const queryClient = useQueryClient()
   return () => {
-    void queryClient.invalidateQueries({ queryKey: ['agenda'] })
-    void queryClient.invalidateQueries({ queryKey: ['search'] })
+    void queryClient.invalidateQueries({ queryKey: keys.agendas() })
+    void queryClient.invalidateQueries({ queryKey: keys.searches() })
   }
 }
 
 /** The board as last fetched, without fetching it. */
 export function useCachedBoard(boardId: string): Board | undefined {
-  return useQuery<Board>({ queryKey: boardKey(boardId), queryFn: skipToken })
+  return useQuery<Board>({ queryKey: keys.board(boardId), queryFn: skipToken })
     .data
 }
 
 export function useAgenda(view: AgendaView): UseQueryResult<Agenda> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: ['agenda', view],
+    queryKey: keys.agenda(view),
     queryFn: async () => {
       if (typeof view === 'object') {
         return {
@@ -102,7 +105,7 @@ export function useCompleteAgendaTask(): UseMutationResult<
         return
       }
       const board = await queryClient.query({
-        queryKey: boardKey(task.boardId),
+        queryKey: keys.board(task.boardId),
         queryFn: () => api.getBoard(task.boardId)
       })
       const done = board.sections.find(
@@ -113,9 +116,9 @@ export function useCompleteAgendaTask(): UseMutationResult<
     },
     onSettled: (_data, _error, task) =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['agenda'] }),
-        queryClient.invalidateQueries({ queryKey: ['search'] }),
-        queryClient.invalidateQueries({ queryKey: boardKey(task.boardId) })
+        queryClient.invalidateQueries({ queryKey: keys.agendas() }),
+        queryClient.invalidateQueries({ queryKey: keys.searches() }),
+        queryClient.invalidateQueries({ queryKey: keys.board(task.boardId) })
       ])
   })
 }
@@ -128,27 +131,31 @@ export function searchMinLength(): number {
 export function useSearch(text: string): UseQueryResult<AgendaTask[]> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: ['search', text],
+    queryKey: keys.search(text),
     queryFn: () => api.search(text),
     enabled: text.trim().length >= searchMinLength()
   })
 }
 
-const filtersKey = ['filters'] as const
-
 export function useFilters(): UseQueryResult<SavedFilter[]> {
   const api = useBoardsApi()
-  return useQuery({ queryKey: filtersKey, queryFn: () => api.listFilters() })
+  return useQuery({
+    queryKey: keys.filters(),
+    queryFn: () => api.listFilters()
+  })
 }
 
 export function useLabelNames(): UseQueryResult<string[]> {
   const api = useBoardsApi()
-  return useQuery({ queryKey: ['labels'], queryFn: () => api.labelNames() })
+  return useQuery({
+    queryKey: keys.labels(),
+    queryFn: () => api.labelNames()
+  })
 }
 
 export function usePeople(): UseQueryResult<Person[]> {
   const api = useBoardsApi()
-  return useQuery({ queryKey: ['people'], queryFn: () => api.people() })
+  return useQuery({ queryKey: keys.people(), queryFn: () => api.people() })
 }
 
 export function useCreateFilter(): UseMutationResult<
@@ -160,7 +167,7 @@ export function useCreateFilter(): UseMutationResult<
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (filter: FilterFields) => api.createFilter(filter),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.filters() })
   })
 }
 
@@ -174,7 +181,7 @@ export function useSetFilterFavorite(): UseMutationResult<
   return useMutation({
     mutationFn: ({ filterId, favorite }) =>
       api.setFilterFavorite(filterId, favorite),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.filters() })
   })
 }
 
@@ -187,8 +194,8 @@ export function useUpdateFilter(
     mutationFn: (filter: FilterFields) => api.updateFilter(filterId, filter),
     onSettled: () =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: filtersKey }),
-        queryClient.invalidateQueries({ queryKey: ['agenda', { filterId }] })
+        queryClient.invalidateQueries({ queryKey: keys.filters() }),
+        queryClient.invalidateQueries({ queryKey: keys.agenda({ filterId }) })
       ])
   })
 }
@@ -200,7 +207,7 @@ export function useUnpinDeletedFilter(): (
 ) => void {
   const queryClient = useQueryClient()
   return (filter, deleted) => {
-    queryClient.setQueryData<SavedFilter[]>(filtersKey, filters =>
+    queryClient.setQueryData<SavedFilter[]>(keys.filters(), filters =>
       filters?.map(each =>
         each.id === filter.id
           ? { ...each, favorite: !deleted && filter.favorite }
@@ -220,8 +227,10 @@ export function useDeleteFilterNow(): (filterId: string) => void {
     void api
       .deleteFilter(filterId)
       .catch(() => undefined)
-      .finally(() => queryClient.invalidateQueries({ queryKey: filtersKey }))
-    queryClient.setQueryData<SavedFilter[]>(filtersKey, filters =>
+      .finally(() =>
+        queryClient.invalidateQueries({ queryKey: keys.filters() })
+      )
+    queryClient.setQueryData<SavedFilter[]>(keys.filters(), filters =>
       filters?.filter(filter => filter.id !== filterId)
     )
   }
@@ -233,12 +242,12 @@ export function useDeleteFilter(): UseMutationResult<void, Error, string> {
   return useMutation({
     mutationFn: (filterId: string) => api.deleteFilter(filterId),
     onMutate: async filterId => {
-      await queryClient.cancelQueries({ queryKey: filtersKey })
-      queryClient.setQueryData<SavedFilter[]>(filtersKey, filters =>
+      await queryClient.cancelQueries({ queryKey: keys.filters() })
+      queryClient.setQueryData<SavedFilter[]>(keys.filters(), filters =>
         filters?.filter(filter => filter.id !== filterId)
       )
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: filtersKey })
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.filters() })
   })
 }
 
@@ -248,7 +257,7 @@ export function useSharing(
 ): UseQueryResult<Sharing> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: [...boardKey(boardId), 'sharing'],
+    queryKey: keys.sharing(boardId),
     queryFn: () => api.getSharing(boardId),
     enabled
   })
@@ -272,7 +281,7 @@ export function usePeopleSuggestions(
   }, [query])
   const term = query.trim().length >= 2 && settled.length >= 2 ? settled : ''
   return useQuery({
-    queryKey: [...boardKey(boardId), 'sharing', 'people', term],
+    queryKey: keys.peopleSuggestions(boardId, term),
     queryFn: term ? () => api.suggestPeople(boardId, term) : skipToken,
     ...(term && { placeholderData: keepPreviousData })
   })
@@ -285,7 +294,7 @@ export function useHiddenTasks(
 ): UseQueryResult<HiddenTask[]> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: [...boardKey(boardId), shelf],
+    queryKey: keys.shelf(boardId, shelf),
     queryFn: enabled ? () => api.hiddenTasks(boardId, shelf) : skipToken
   })
 }
@@ -296,7 +305,7 @@ export function useProjects({
 }: { poll?: boolean } = {}): UseQueryResult<Project[]> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: ['projects'],
+    queryKey: keys.projects(),
     queryFn: () => api.listProjects(),
     refetchInterval: poll ? POLL_MS : false
   })
@@ -308,7 +317,7 @@ export function useBoards({
 }: { poll?: boolean } = {}): UseQueryResult<BoardSummary[]> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: boardsKey,
+    queryKey: keys.boards(),
     queryFn: () => api.listBoards(),
     refetchInterval: poll ? POLL_MS : false
   })
@@ -319,7 +328,7 @@ export function useListedBoard(boardId: string): BoardSummary | null {
   const queryClient = useQueryClient()
   return (
     queryClient
-      .getQueryData<BoardSummary[]>(boardsKey)
+      .getQueryData<BoardSummary[]>(keys.boards())
       ?.find(board => board.id === boardId) ?? null
   )
 }
@@ -332,7 +341,7 @@ export function useBoard(boardId: string): UseQueryResult<Board> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   useEffect(() => {
-    const queryKey = boardKey(boardId)
+    const queryKey = keys.board(boardId)
     let stopped = false
     // Checks again once the read ends: another watcher may have started the
     // next read in the meantime, or cancelled this one for its own.
@@ -363,7 +372,7 @@ export function useBoard(boardId: string): UseQueryResult<Board> {
     }
   }, [api, boardId, queryClient])
   return useQuery({
-    queryKey: boardKey(boardId),
+    queryKey: keys.board(boardId),
     queryFn: () => api.getBoard(boardId)
   })
 }
@@ -396,7 +405,7 @@ export function useCreateTask(
   return useMutation({
     mutationFn: (task: NewTask) => api.createTask(boardId, task),
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+      queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
   })
 }
 
@@ -435,7 +444,10 @@ export function useTransferTask(
   // Exact: the moved task's comments, reminders and the rest now 404 under the
   // old board, and its panel is still open while it closes.
   const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: boardKey(boardId), exact: true })
+    queryClient.invalidateQueries({
+      queryKey: keys.board(boardId),
+      exact: true
+    })
   // A move that ends after the form is gone has nobody left to refresh.
   const mounted = useRef(true)
   useEffect(() => {
@@ -463,10 +475,10 @@ export function useMoveTask(
   return useMutation({
     mutationFn: ({ taskId, move }) => api.moveTask(boardId, taskId, move),
     onMutate: async ({ taskId, move }) => {
-      await queryClient.cancelQueries({ queryKey: boardKey(boardId) })
-      const shown = queryClient.getQueryData<Board>(boardKey(boardId))
+      await queryClient.cancelQueries({ queryKey: keys.board(boardId) })
+      const shown = queryClient.getQueryData<Board>(keys.board(boardId))
       if (shown) {
-        queryClient.setQueryData<Board>(boardKey(boardId), {
+        queryClient.setQueryData<Board>(keys.board(boardId), {
           ...shown,
           tasks: applyMove(shown.tasks, taskId, move)
         })
@@ -475,11 +487,11 @@ export function useMoveTask(
     },
     onError: (_error, _input, context) => {
       if (context?.shown) {
-        queryClient.setQueryData(boardKey(boardId), context.shown)
+        queryClient.setQueryData(keys.board(boardId), context.shown)
       }
     },
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+      queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
   })
 }
 
@@ -492,12 +504,9 @@ export function useBoardChange<T>(
   return useMutation({
     mutationFn: (input: T) => change(api, input),
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+      queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
   })
 }
-
-const descriptionKey = (boardId: string, taskId: string) =>
-  ['boards', boardId, 'tasks', taskId, 'description'] as const
 
 export function useDescription(
   boardId: string,
@@ -505,7 +514,7 @@ export function useDescription(
 ): UseQueryResult<Description> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: descriptionKey(boardId, taskId),
+    queryKey: keys.description(boardId, taskId),
     queryFn: () => api.getDescription(boardId, taskId)
   })
 }
@@ -521,7 +530,7 @@ export function useSetDescription(
       api.setDescription(boardId, taskId, edit),
     onSettled: () =>
       queryClient.invalidateQueries({
-        queryKey: descriptionKey(boardId, taskId)
+        queryKey: keys.description(boardId, taskId)
       })
   })
 }
@@ -532,13 +541,10 @@ export function useHistory(
 ): UseQueryResult<HistoryEntry[]> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: ['boards', boardId, 'tasks', taskId, 'history'],
+    queryKey: keys.history(boardId, taskId),
     queryFn: () => api.listHistory(boardId, taskId)
   })
 }
-
-const commentsKey = (boardId: string, taskId: string) =>
-  ['boards', boardId, 'tasks', taskId, 'comments'] as const
 
 export function useComments(
   boardId: string,
@@ -546,7 +552,7 @@ export function useComments(
 ): UseQueryResult<Comment[]> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: commentsKey(boardId, taskId),
+    queryKey: keys.comments(boardId, taskId),
     queryFn: () => api.listComments(boardId, taskId)
   })
 }
@@ -562,10 +568,10 @@ export function useAddComment(
     onSettled: () =>
       Promise.all([
         queryClient.invalidateQueries({
-          queryKey: commentsKey(boardId, taskId)
+          queryKey: keys.comments(boardId, taskId)
         }),
         queryClient.invalidateQueries({
-          queryKey: boardKey(boardId),
+          queryKey: keys.board(boardId),
           exact: true
         })
       ])
@@ -625,7 +631,7 @@ export function useReact(
 > {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
-  const key = commentsKey(boardId, taskId)
+  const key = keys.comments(boardId, taskId)
   return useMutation({
     mutationFn: ({ commentId, emoji, on }: ReactionChange) =>
       on
@@ -646,16 +652,13 @@ export function useReact(
   })
 }
 
-const remindersKey = (boardId: string, taskId: string) =>
-  ['boards', boardId, 'tasks', taskId, 'reminders'] as const
-
 export function useReminders(
   boardId: string,
   taskId: string
 ): UseQueryResult<Reminder[]> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: remindersKey(boardId, taskId),
+    queryKey: keys.reminders(boardId, taskId),
     queryFn: () => api.listReminders(boardId, taskId)
   })
 }
@@ -670,7 +673,9 @@ export function useAddReminder(
     mutationFn: (reminder: NewReminder) =>
       api.addReminder(boardId, taskId, reminder),
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: remindersKey(boardId, taskId) })
+      queryClient.invalidateQueries({
+        queryKey: keys.reminders(boardId, taskId)
+      })
   })
 }
 
@@ -684,12 +689,11 @@ export function useDeleteReminder(
     mutationFn: (reminderId: string) =>
       api.deleteReminder(boardId, taskId, reminderId),
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: remindersKey(boardId, taskId) })
+      queryClient.invalidateQueries({
+        queryKey: keys.reminders(boardId, taskId)
+      })
   })
 }
-
-const followingKey = (boardId: string, taskId: string) =>
-  ['boards', boardId, 'tasks', taskId, 'following'] as const
 
 export function useFollowing(
   boardId: string,
@@ -697,7 +701,7 @@ export function useFollowing(
 ): UseQueryResult<boolean> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: followingKey(boardId, taskId),
+    queryKey: keys.following(boardId, taskId),
     queryFn: () => api.following(boardId, taskId)
   })
 }
@@ -713,7 +717,7 @@ export function useSetFollowing(
       api.setFollowing(boardId, taskId, following),
     onSettled: () =>
       queryClient.invalidateQueries({
-        queryKey: followingKey(boardId, taskId)
+        queryKey: keys.following(boardId, taskId)
       })
   })
 }
@@ -723,25 +727,23 @@ export function useNotifications(): UseQueryResult<Notification[]> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useQuery({
-    queryKey: ['notifications'],
+    queryKey: keys.notifications(),
     queryFn: async () => {
       const notifications = await api.listNotifications()
       if (notifications.some(notification => notification.readAt === null)) {
         await api.markNotificationsRead()
-        queryClient.setQueryData(unreadKey, 0)
-        queryClient.setQueryData(unreadByProjectKey, [])
+        queryClient.setQueryData(keys.unreadNotifications(), 0)
+        queryClient.setQueryData(keys.unreadByProject(), [])
       }
       return notifications
     }
   })
 }
 
-const unreadKey = ['unreadNotifications'] as const
-
 export function useUnreadNotifications(): UseQueryResult<number> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: unreadKey,
+    queryKey: keys.unreadNotifications(),
     queryFn: async () =>
       (await api.listNotifications()).filter(
         notification => notification.readAt === null
@@ -750,12 +752,10 @@ export function useUnreadNotifications(): UseQueryResult<number> {
   })
 }
 
-const unreadByProjectKey = ['unreadByProject'] as const
-
 export function useUnreadByProject(): UseQueryResult<ProjectUnread[]> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: unreadByProjectKey,
+    queryKey: keys.unreadByProject(),
     queryFn: () => api.unreadByProject(),
     refetchInterval: POLL_MS
   })
@@ -775,9 +775,9 @@ export function useNewTask(): UseMutationResult<
     // even if adding its details fails. The boards list holds the counts.
     onSettled: () =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['agenda'] }),
-        queryClient.invalidateQueries({ queryKey: ['search'] }),
-        queryClient.invalidateQueries({ queryKey: boardsKey })
+        queryClient.invalidateQueries({ queryKey: keys.agendas() }),
+        queryClient.invalidateQueries({ queryKey: keys.searches() }),
+        queryClient.invalidateQueries({ queryKey: keys.boards() })
       ])
   })
 }
@@ -798,7 +798,7 @@ export function useNewTaskBoard(
   const api = useBoardsApi()
   const targets = useBoards().data?.filter(
     each =>
-      canAddTo(each) &&
+      isEditable(each) &&
       (inProjectId === undefined || each.project.id === inProjectId)
   )
   const chosen =
@@ -806,7 +806,7 @@ export function useNewTaskBoard(
     (targets.find(each => each.id === picked) ??
       defaultBoard(targets, inBoardId))
   const named = useQuery({
-    queryKey: boardKey(chosen?.id ?? ''),
+    queryKey: keys.board(chosen?.id ?? ''),
     queryFn: chosen ? () => api.getBoard(chosen.id) : skipToken
   })
   return { targets, chosen, board: named.data }
@@ -824,7 +824,7 @@ export function useSetLayout(
         : api.setLayout(boardId, layout),
     onMutate: ({ layout, everyone }) => {
       queryClient.setQueryData<Board>(
-        boardKey(boardId),
+        keys.board(boardId),
         board =>
           board && {
             ...board,
@@ -834,7 +834,7 @@ export function useSetLayout(
       )
     },
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: boardKey(boardId) })
+      queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
   })
 }
 
@@ -845,8 +845,8 @@ export function useRenameBoard(
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (name: string) => api.renameBoard(boardId, name),
-    // The list of boards and the board itself: every key starts with boardsKey
-    onSettled: () => queryClient.invalidateQueries({ queryKey: boardsKey })
+    // The list of boards and the board itself
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.boards() })
   })
 }
 
@@ -860,7 +860,7 @@ export function useSetBoardArchived(): UseMutationResult<
   return useMutation({
     mutationFn: ({ boardId, archived }) =>
       api.setBoardArchived(boardId, archived),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: boardsKey })
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.boards() })
   })
 }
 
@@ -874,7 +874,7 @@ export function useSetFavorite(): UseMutationResult<
   return useMutation({
     mutationFn: ({ boardId, favorite }) => api.setFavorite(boardId, favorite),
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: boardsKey, exact: true })
+      queryClient.invalidateQueries({ queryKey: keys.boards(), exact: true })
   })
 }
 
@@ -884,8 +884,11 @@ export function useCreateBoard(): UseMutationResult<Board, Error, NewBoard> {
   return useMutation({
     mutationFn: (board: NewBoard) => api.createBoard(board),
     onSuccess: board => {
-      queryClient.setQueryData(boardKey(board.id), board)
-      return queryClient.invalidateQueries({ queryKey: boardsKey, exact: true })
+      queryClient.setQueryData(keys.board(board.id), board)
+      return queryClient.invalidateQueries({
+        queryKey: keys.boards(),
+        exact: true
+      })
     }
   })
 }
