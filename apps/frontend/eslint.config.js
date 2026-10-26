@@ -50,9 +50,20 @@ const FRAMEWORKS = [
   '@linagora/*'
 ]
 
+// The wire format stays in adapters/http/, which maps it to our own types.
+const WIRE = ['zod', '@twake-tasks/api-contract']
+
 const BOUNDARIES = {
-  domain: [...layers(...LAYERS.filter(l => l !== 'domain')), ...FRAMEWORKS],
-  application: [...layers('adapters', 'ui', 'ds', 'app'), ...FRAMEWORKS],
+  domain: [
+    ...layers(...LAYERS.filter(l => l !== 'domain')),
+    ...FRAMEWORKS,
+    ...WIRE
+  ],
+  application: [
+    ...layers('adapters', 'ui', 'ds', 'app'),
+    ...FRAMEWORKS,
+    ...WIRE
+  ],
   adapters: layers('ui', 'ds', 'app'),
   ui: layers('adapters', 'app'),
   ds: [
