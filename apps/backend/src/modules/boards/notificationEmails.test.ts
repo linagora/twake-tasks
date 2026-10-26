@@ -52,6 +52,14 @@ function aMailbox(budget = { max: 0, windowSeconds: 600 }) {
   return { sent, deliver }
 }
 
+// A second back, not now(): the scheduler compares run_at with a JavaScript
+// Date, which has milliseconds where Postgres has microseconds, so a job moved
+// to now() is not yet due within the same millisecond.
+async function makeDue(kind: string, userId: string) {
+  await sql`update jobs set run_at = now() - interval '1 second'
+    where kind = ${kind} and payload->>'userId' = ${userId}`
+}
+
 describe('notification emails', () => {
   async function aTask(title = 'Logo') {
     const alice = aUser({ name: 'Alice Martin' })
@@ -296,8 +304,7 @@ describe('notification emails', () => {
     await sql`update notification_email_budgets
       set window_start = window_start - interval '1 hour'
       where user_id = ${bob.userId}`
-    await sql`update jobs set run_at = now()
-      where kind = ${NOTIFICATION_DIGEST_JOB} and payload->>'userId' = ${bob.userId}`
+    await makeDue(NOTIFICATION_DIGEST_JOB, bob.userId)
     await mailbox.deliver()
     await mailbox.deliver()
 
@@ -332,8 +339,7 @@ describe('notification emails', () => {
     })
     await failing.runDue()
 
-    await sql`update jobs set run_at = now()
-      where kind = ${NOTIFICATION_EMAIL_JOB} and payload->>'userId' = ${bob.userId}`
+    await makeDue(NOTIFICATION_EMAIL_JOB, bob.userId)
     await mailbox.deliver()
 
     expect(
@@ -356,8 +362,7 @@ describe('notification emails', () => {
     await sql`update notification_email_budgets
       set window_start = window_start - interval '1 hour'
       where user_id = ${bob.userId}`
-    await sql`update jobs set run_at = now()
-      where kind = ${NOTIFICATION_DIGEST_JOB} and payload->>'userId' = ${bob.userId}`
+    await makeDue(NOTIFICATION_DIGEST_JOB, bob.userId)
     await mailbox.deliver()
     await mailbox.deliver()
 
