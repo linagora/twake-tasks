@@ -142,6 +142,7 @@ export function BoardScreen({
               board={shown}
               settled={!board.isFetching}
               origin={back ? origin : undefined}
+              shareButton={!flush}
             />
           )}
         </main>
@@ -236,12 +237,15 @@ function LinkedTask({
 function BoardColumns({
   board,
   settled,
-  origin
+  origin,
+  shareButton
 }: {
   board: Board
   settled: boolean
   /** Where its breadcrumb starts, which then titles the page. */
   origin?: Origin | undefined
+  /** Left out in an embed, whose host shares the project with its members. */
+  shareButton: boolean
 }): ReactElement {
   const { t } = useI18n()
   const move = useMoveTask(board.id)
@@ -401,7 +405,7 @@ function BoardColumns({
           }}
         />
       )}
-      {shareable ? (
+      {!shareButton ? null : shareable ? (
         <Button
           variant="secondary"
           startIcon={<Icon icon={Share} />}
