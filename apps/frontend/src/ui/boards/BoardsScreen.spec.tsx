@@ -234,16 +234,11 @@ describe('BoardsScreen', () => {
 
     expect(designCard.getByText('DES')).toBeVisible()
     expect(designCard.getByText('2 open tasks')).toBeVisible()
-    expect(
-      designCard.getByRole('img', { name: 'Project board' })
-    ).toHaveTextContent('D')
-    expect(
-      inboxCard.getByRole('img', { name: 'Personal board' })
-    ).toHaveTextContent('I')
     expect(opsCard.getByText('No open tasks')).toBeVisible()
-    expect(opsCard.getByRole('img', { name: 'Space board' })).toHaveTextContent(
-      'O'
-    )
+    // The kind shows as a chip, the name on the cover in place of a badge.
+    expect(opsCard.getByText('Space')).toBeVisible()
+    expect(inboxCard.getByText('Default')).toBeVisible()
+    expect(designCard.queryByRole('img', { name: 'Project board' })).toBeNull()
   })
 
   it('puts a starred board first, after the create card, until it is unstarred', async () => {

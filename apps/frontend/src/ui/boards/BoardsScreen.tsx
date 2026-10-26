@@ -22,8 +22,13 @@ import { Link as RouterLink, useNavigate } from 'react-router'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { BoardCard, BoardChip, CardGrid, CreateCard } from '@/ds/TileGrid'
 import { Toast } from '@/ds/Toast'
-import type { BoardSummary, ProjectSummary } from '@/domain/board'
+import {
+  isLightBackground,
+  type BoardSummary,
+  type ProjectSummary
+} from '@/domain/board'
 import { listBoards } from '@/domain/boardList'
+import { backgroundSrc, useBoardBackground } from '@/ui/boards/Backgrounds'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PeopleAvatars } from '@/ui/boards/MembersDialog'
 import {
@@ -97,17 +102,13 @@ function BoardItem({
   onUnarchive?: (() => void) | undefined
 }): ReactElement {
   const { t } = useI18n()
+  const background = useBoardBackground(board)
   return (
     <BoardCard
+      // A board without background shows Breeze here, and stays white inside.
+      cover={background ?? backgroundSrc('breeze')}
+      lightCover={background ? isLightBackground(board.background) : true}
       label={board.name}
-      badge={(Array.from(board.name)[0] ?? '').toUpperCase()}
-      badgeLabel={t(
-        board.project.personal
-          ? 'boards.personal'
-          : board.project.managed
-            ? 'boards.space'
-            : 'boards.projectBoard'
-      )}
       title={
         <Link component={RouterLink} to={`/boards/${board.id}`}>
           {board.name}

@@ -54,6 +54,8 @@ export function aBoard(overrides: Partial<Board> = {}): Board {
     role: 'admin',
     layout: 'board',
     defaultLayout: 'board',
+    background: null,
+    backgroundImage: null,
     members: [],
     invited: [],
     labels: [],
@@ -135,6 +137,8 @@ function summaryOf(
     totalTasks: counted.length,
     members: board.members.slice(0, 3),
     memberCount: board.members.length,
+    background: board.background,
+    backgroundImage: board.backgroundImage,
     ...share
   }
 }
@@ -488,6 +492,26 @@ export function fakeBoardsApi(boards: Board[] = []) {
         board.defaultLayout = layout
         board.version += 1
       })
+    ),
+    setBackground: vi.fn<BoardsApi['setBackground']>((boardId, background) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        Object.assign(board, { background, backgroundImage: null })
+        board.version += 1
+      })
+    ),
+    setBackgroundImage: vi.fn<BoardsApi['setBackgroundImage']>(boardId =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        Object.assign(board, {
+          background: 'custom',
+          backgroundImage: nextId()
+        })
+        board.version += 1
+      })
+    ),
+    backgroundImage: vi.fn<BoardsApi['backgroundImage']>(() =>
+      Promise.resolve(new Blob(['picture'], { type: 'image/jpeg' }))
     ),
     getBoard: vi.fn((boardId: string) =>
       Promise.resolve().then(() => structuredClone(find(boardId)))

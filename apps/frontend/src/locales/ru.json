@@ -67,9 +67,6 @@
     "projectNotFound": "Этот проект не существует, или у вас нет к нему доступа.",
     "star": "Добавить %{name} в избранное",
     "unstar": "Убрать %{name} из избранного",
-    "personal": "Личная доска",
-    "space": "Доска пространства",
-    "projectBoard": "Доска проекта",
     "personalProject": "Личное",
     "defaultChip": "По умолчанию",
     "defaultHint": "Новые задачи по умолчанию создаются здесь. Этой доской нельзя поделиться.",
@@ -506,6 +503,26 @@
     "complete": "Завершить %{title}",
     "today": "Сегодня",
     "nothingDue": "На этот день задач нет."
+  },
+  "background": {
+    "change": "Изменить фон",
+    "title": "Фон доски",
+    "choices": "Фоны",
+    "none": "Без фона",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple"
+    },
+    "mine": "Моё изображение",
+    "import": "С моего компьютера",
+    "failed": "Не удалось изменить фон.",
+    "close": "Закрыть"
   },
   "search": {
     "label": "Поиск",

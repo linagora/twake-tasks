@@ -1,16 +1,18 @@
 import {
-  Avatar,
   Box,
   Card,
   CardActionArea,
   Chip,
-  nameToColor,
   Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
+import { backdropOf } from '@/ds/Pictures'
+
 const CARD_RADIUS = '20px'
+
+const SHADOW = 'rgb(0 0 0 / 0.55)'
 
 export function CardGrid({
   label,
@@ -41,8 +43,6 @@ export function CardGrid({
 // that stretch so it keeps its own click.
 export function BoardCard({
   label,
-  badge,
-  badgeLabel,
   title,
   flag,
   chip,
@@ -50,11 +50,11 @@ export function BoardCard({
   meta,
   members,
   action,
-  footerAction
+  footerAction,
+  cover,
+  lightCover = false
 }: {
   label: string
-  badge: string
-  badgeLabel: string
   title: ReactNode
   /** A short word next to the title, such as "New". */
   flag?: string | undefined
@@ -67,6 +67,10 @@ export function BoardCard({
   action?: ReactNode
   /** On the last row, before the people. */
   footerAction?: ReactNode
+  /** The picture along the top, with the name on it. */
+  cover: string
+  /** A pale `cover`, on which the name is dark. */
+  lightCover?: boolean
 }): ReactElement {
   return (
     <Card
@@ -91,17 +95,33 @@ export function BoardCard({
         '& a:focus-visible': { outline: 'none' }
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar
-          variant="rounded"
-          size={40}
-          color={nameToColor(label) ?? 'sunrise'}
-          role="img"
-          aria-label={badgeLabel}
-          sx={{ borderRadius: 2, fontWeight: 600 }}
-        >
-          {badge}
-        </Avatar>
+      <Box
+        data-testid="board-cover"
+        sx={{
+          ...backdropOf(cover),
+          // The picture keeps its colours: a grey shadow around the white name
+          // and menu keeps them readable on a dark one, a pale one takes them
+          // dark.
+          ...(lightCover
+            ? { color: 'grey.900' }
+            : {
+                color: 'common.white',
+                textShadow: `0 0 2px ${SHADOW}, 0 1px 6px ${SHADOW}`,
+                '& svg': { filter: `drop-shadow(0 0 2px ${SHADOW})` }
+              }),
+          minHeight: 88,
+          mt: -1.5,
+          mx: -1.5,
+          p: 1.5,
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 1.5,
+          borderTopLeftRadius: CARD_RADIUS,
+          borderTopRightRadius: CARD_RADIUS,
+          '&& a': { color: 'inherit' },
+          '&& .MuiIconButton-root': { color: 'inherit' }
+        }}
+      >
         <Tooltip title={label} placement="top-start">
           <Typography
             variant="h6"

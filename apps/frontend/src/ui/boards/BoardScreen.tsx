@@ -72,6 +72,7 @@ import {
 import { markBoardSeen } from '@/ui/boards/seenBoards'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { ShareDialog } from '@/ui/boards/ShareDialog'
+import { useBoardBackground } from '@/ui/boards/Backgrounds'
 import { TaskCard } from '@/ui/boards/TaskCard'
 import { TaskListRow } from '@/ui/boards/TaskListRow'
 import { LinkedTaskPanel } from '@/ui/boards/TaskPanel'
@@ -116,7 +117,13 @@ export function BoardScreen({
   return (
     <OriginContext value={origin}>
       <BoardStepsContext value={[{ to: '.', label: name, relative: true }]}>
-        <main className={flush ? undefined : 'u-ph-2 u-pt-half u-pb-2'}>
+        <main
+          className={
+            flush
+              ? undefined
+              : 'u-ph-2 u-pt-half u-pb-2 u-flex u-flex-column u-mih-100'
+          }
+        >
           {/* Once loaded, the board titles itself with its breadcrumb. */}
           {back && !(shown && !waiting) && (
             // The size of the board's own title, so that nothing moves once it loads.
@@ -265,6 +272,7 @@ function BoardColumns({
   )
   const editable = board.role !== 'viewer' && !board.archived
   const manageable = board.role === 'admin' && !board.archived
+  const backdrop = useBoardBackground(board)
   const shareable = isShareable(board)
   const [sharing, setSharing] = useState(false)
   const [listing, setListing] = useState(false)
@@ -514,7 +522,7 @@ function BoardColumns({
         </Typography>
       )}
       {board.layout === 'board' && !editable && (
-        <Columns>
+        <Columns backdrop={backdrop}>
           {columns.map(column => (
             <Column
               key={columnKey(column)}
@@ -597,7 +605,7 @@ function BoardColumns({
               manageable ? order : board.sections.map(section => section.id)
             ).flatMap(id => columns.filter(column => column.id === id))
             return (
-              <Columns>
+              <Columns backdrop={backdrop}>
                 {loose.map(column => (
                   <DropColumn
                     key={columnKey(column)}

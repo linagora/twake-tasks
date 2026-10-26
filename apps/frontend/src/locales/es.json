@@ -67,9 +67,6 @@
     "projectNotFound": "Este proyecto no existe o no puedes abrirlo.",
     "star": "Añadir %{name} a favoritos",
     "unstar": "Quitar %{name} de favoritos",
-    "personal": "Tablero personal",
-    "space": "Tablero de espacio",
-    "projectBoard": "Tablero de proyecto",
     "personalProject": "Personal",
     "defaultChip": "Predeterminado",
     "defaultHint": "Las tareas nuevas se crean aquí por defecto. Este tablero no se puede compartir.",
@@ -506,6 +503,26 @@
     "complete": "Completar %{title}",
     "today": "Hoy",
     "nothingDue": "Nada vence este día."
+  },
+  "background": {
+    "change": "Cambiar el fondo",
+    "title": "Fondo del tablero",
+    "choices": "Fondos",
+    "none": "Sin fondo",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple"
+    },
+    "mine": "Mi imagen",
+    "import": "Desde mi ordenador",
+    "failed": "No se pudo cambiar el fondo.",
+    "close": "Cerrar"
   },
   "search": {
     "label": "Buscar",

@@ -41,6 +41,8 @@ export interface BoardSummary {
    */
   members: Person[]
   memberCount: number
+  background: BoardBackground
+  backgroundImage: string | null
 }
 
 export interface Section {
@@ -131,6 +133,31 @@ export const isShareable = (
   !board.project.personal &&
   !board.project.managed
 
+/** The pictures shipped with the app, under `/backgrounds/`. */
+export const BACKGROUNDS = [
+  'orbitalblue',
+  'earlymorning',
+  'dawn',
+  'stellarburst',
+  'blossom',
+  'lagoon',
+  'ripple'
+] as const
+
+export type Background = (typeof BACKGROUNDS)[number]
+
+/** The pale pictures, on which a name reads in a dark colour. */
+const LIGHT_BACKGROUNDS: BoardBackground[] = ['blossom', 'lagoon']
+
+export const isLightBackground = (background: BoardBackground): boolean =>
+  LIGHT_BACKGROUNDS.includes(background)
+
+/**
+ * A shipped picture, one an admin sent (`custom`, whose id is
+ * `backgroundImage`), or null for the default.
+ */
+export type BoardBackground = Background | 'custom' | null
+
 export const LAYOUTS = ['board', 'list', 'calendar'] as const
 
 export type Layout = (typeof LAYOUTS)[number]
@@ -146,6 +173,8 @@ export interface Board {
   role: Role
   layout: Layout
   defaultLayout: Layout
+  background: BoardBackground
+  backgroundImage: string | null
   members: Person[]
   /** The emails invited to it, members once they sign in. Admins only. */
   invited: string[]

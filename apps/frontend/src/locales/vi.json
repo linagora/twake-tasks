@@ -67,9 +67,6 @@
     "projectNotFound": "Dự án này không tồn tại, hoặc bạn không thể mở nó.",
     "star": "Thêm %{name} vào mục yêu thích",
     "unstar": "Bỏ %{name} khỏi mục yêu thích",
-    "personal": "Bảng cá nhân",
-    "space": "Bảng không gian",
-    "projectBoard": "Bảng dự án",
     "personalProject": "Cá nhân",
     "defaultChip": "Mặc định",
     "defaultHint": "Công việc mới được tạo ở đây theo mặc định. Không thể chia sẻ bảng này.",
@@ -506,6 +503,26 @@
     "complete": "Hoàn thành %{title}",
     "today": "Hôm nay",
     "nothingDue": "Không có việc nào đến hạn hôm đó."
+  },
+  "background": {
+    "change": "Đổi hình nền",
+    "title": "Hình nền của bảng",
+    "choices": "Hình nền",
+    "none": "Không có hình nền",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple"
+    },
+    "mine": "Ảnh của tôi",
+    "import": "Từ máy tính của tôi",
+    "failed": "Không thể đổi hình nền.",
+    "close": "Đóng"
   },
   "search": {
     "label": "Tìm kiếm",

@@ -67,9 +67,6 @@
     "projectNotFound": "This project doesn't exist, or you can't open it.",
     "star": "Add %{name} to favorites",
     "unstar": "Remove %{name} from favorites",
-    "personal": "Personal board",
-    "space": "Space board",
-    "projectBoard": "Project board",
     "personalProject": "Personal",
     "defaultChip": "Default",
     "defaultHint": "New tasks are created here by default. This board can’t be shared.",
@@ -506,6 +503,26 @@
     "complete": "Complete %{title}",
     "today": "Today",
     "nothingDue": "Nothing due this day."
+  },
+  "background": {
+    "change": "Change background",
+    "title": "Board background",
+    "choices": "Backgrounds",
+    "none": "No background",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple"
+    },
+    "mine": "My picture",
+    "import": "From my computer",
+    "failed": "The background could not be changed.",
+    "close": "Close"
   },
   "search": {
     "label": "Search",
