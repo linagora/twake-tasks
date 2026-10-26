@@ -1,7 +1,3 @@
-// A shower of confetti over the whole window, thrown for 🎉.
-// It draws on a canvas of its own, above everything and letting clicks
-// through, and removes it once the last piece has fallen out of sight.
-
 const COLORS = [
   '#297EF2',
   '#F52D2D',
@@ -13,20 +9,7 @@ const COLORS = [
 const PIECES = 150
 const DURATION = 3000
 
-interface Piece {
-  x: number
-  y: number
-  size: number
-  color: string
-  speed: number
-  // Sideways sway and spin, each with its own phase.
-  wobble: number
-  wobbleSpeed: number
-  tilt: number
-  tiltSpeed: number
-}
-
-function aPiece(width: number, height: number): Piece {
+function aPiece(width: number, height: number) {
   return {
     x: Math.random() * width,
     y: -Math.random() * height * 0.5,
@@ -40,7 +23,6 @@ function aPiece(width: number, height: number): Piece {
   }
 }
 
-/** Throws confetti, unless the person asked for less motion. */
 export function throwConfetti(): void {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
   const canvas = document.createElement('canvas')

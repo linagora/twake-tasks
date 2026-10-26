@@ -12,13 +12,11 @@ import { useI18n } from '@/ui/i18n/useI18n'
 
 type OnReact = (emoji: string, on: boolean) => void
 
-const TADA = '🎉'
-
 // Giving 🎉, from any of its buttons, throws confetti.
 const celebrating =
   (onReact: OnReact): OnReact =>
   (emoji, on) => {
-    if (on && emoji.replace(/\u{FE0F}/gu, '') === TADA) throwConfetti()
+    if (on && emoji.startsWith('🎉')) throwConfetti()
     onReact(emoji, on)
   }
 
