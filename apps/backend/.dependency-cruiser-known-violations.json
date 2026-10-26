@@ -335,29 +335,6 @@
   {
     "type": "cycle",
     "from": "src/modules/boards",
-    "to": "src/events",
-    "rule": {
-      "severity": "warn",
-      "name": "no-circular-folders"
-    },
-    "cycle": [
-      {
-        "name": "src/events",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/infra",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/modules/boards",
-        "dependencyTypes": []
-      }
-    ]
-  },
-  {
-    "type": "cycle",
-    "from": "src/modules/boards",
     "to": "src/infra",
     "rule": {
       "severity": "warn",
@@ -473,41 +450,6 @@
     "cycle": [
       {
         "name": "src/infra",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/modules/boards",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/modules/settings",
-        "dependencyTypes": []
-      }
-    ]
-  },
-  {
-    "type": "cycle",
-    "from": "src/modules/settings",
-    "to": "src/modules/auth",
-    "rule": {
-      "severity": "warn",
-      "name": "no-circular-folders"
-    },
-    "cycle": [
-      {
-        "name": "src/modules/auth",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/infra",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/events",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/modules/spaces",
         "dependencyTypes": []
       },
       {
