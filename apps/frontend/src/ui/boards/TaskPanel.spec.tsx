@@ -318,13 +318,30 @@ describe('TaskPanel', () => {
 
     const panel = await openLogo()
     fireEvent.mouseDown(panel.getByRole('combobox', { name: 'Priority' }))
-    fireEvent.click(await screen.findByRole('option', { name: 'P2' }))
+    const option = await screen.findByRole('option', { name: 'Priority 2' })
+    expect(option).toHaveTextContent('P2')
+    fireEvent.click(option)
 
     await waitFor(() => {
       expect(boardsApi.editTask).toHaveBeenCalledWith(board.id, logo.id, {
         priority: 2
       })
     })
+  })
+
+  it('shows the priority as on its card, with its flag and colour', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    logo.priority = 1
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+
+    expect(
+      within(panel.getByRole('combobox', { name: 'Priority' })).getByRole(
+        'img',
+        { name: 'Priority 1' }
+      )
+    ).toHaveTextContent('P1')
   })
 
   it('moves the task to another section from its row', async () => {

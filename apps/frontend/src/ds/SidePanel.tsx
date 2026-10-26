@@ -428,7 +428,7 @@ export function PropertySelect({
 }: {
   labelId: string
   value: string
-  options: { value: string; label: string }[]
+  options: { value: string; label: ReactNode }[]
   onChange: (value: string) => void
   disabled?: boolean
 }): ReactElement {

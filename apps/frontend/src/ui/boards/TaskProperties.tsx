@@ -29,6 +29,7 @@ import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoardChange, useMoveTask } from '@/ui/boards/queries'
 import { Reminders } from '@/ui/boards/Reminders'
+import { PriorityChip } from '@/ui/boards/TaskFacts'
 import { EMBED_PREFIX } from '@/ui/embed/twakeSpace'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -345,7 +346,7 @@ function PriorityRow({
     api.editTask(boardId, task.id, { priority })
   )
   const name = (level: Task['priority']) =>
-    level === null ? t('task.noPriority') : t('board.priority', { level })
+    level === null ? t('task.noPriority') : <PriorityChip priority={level} />
 
   return (
     <Property
