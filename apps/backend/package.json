@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint .",
+    "lint": "eslint . && depcruise src --config .dependency-cruiser.js --ignore-known",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
@@ -39,6 +39,7 @@
     "@testcontainers/postgresql": "^12.2.0",
     "@testcontainers/rabbitmq": "^12.2.0",
     "@types/nodemailer": "^8.0.2",
+    "dependency-cruiser": "18.7.0",
     "drizzle-kit": "1.0.0-rc.4",
     "testcontainers": "^12.2.1"
   }
