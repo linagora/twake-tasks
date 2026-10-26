@@ -26,8 +26,11 @@ export interface Job {
 
 type JobRow = typeof jobs.$inferSelect
 
+type Outcome = 'done' | 'retried' | 'dropped'
+
 type Ran = { job: JobRow } & (
-  { after: AfterCommit; lease: Date } | { after?: undefined; lease?: undefined }
+  | { after: AfterCommit; lease: Date; outcome?: undefined }
+  | { after?: undefined; lease?: undefined; outcome: Outcome }
 )
 
 export async function schedule(db: Db | Tx, job: Job): Promise<void> {
@@ -65,7 +68,7 @@ export function createScheduler(deps: {
   metrics?: Metrics | undefined
 }) {
   const kinds = Object.keys(deps.handlers)
-  const record = (kind: string, outcome: 'done' | 'retried' | 'dropped') =>
+  const record = (kind: string, outcome: Outcome) =>
     deps.metrics?.jobsRun.inc({ kind, outcome })
   const now = deps.now ?? (() => new Date())
   const leaseMs = (deps.leaseSeconds ?? 600) * 1000
@@ -77,7 +80,7 @@ export function createScheduler(deps: {
     job: JobRow,
     error: unknown,
     lease?: Date
-  ) {
+  ): Promise<Outcome> {
     const attempts = job.attempts + 1
     const message = error instanceof Error ? error.message : String(error)
     deps.logger.warn({ err: error, job: job.id, attempts }, 'job failed')
@@ -87,11 +90,9 @@ export function createScheduler(deps: {
     )
     if (attempts >= MAX_ATTEMPTS) {
       deps.logger.error({ job: job.id, kind: job.kind }, 'job dropped')
-      record(job.kind, 'dropped')
       await db.delete(jobs).where(same)
-      return
+      return 'dropped'
     }
-    record(job.kind, 'retried')
     await db
       .update(jobs)
       .set({
@@ -100,6 +101,7 @@ export function createScheduler(deps: {
         runAt: sql`now() + ${`${String(30 * attempts ** 2)} seconds`}::interval`
       })
       .where(same)
+    return 'retried'
   }
 
   async function runOne(kind: string): Promise<boolean> {
@@ -125,13 +127,14 @@ export function createScheduler(deps: {
         if (outcome !== 'keep') {
           await tx.delete(jobs).where(eq(jobs.id, job.id))
         }
-        record(kind, 'done')
+        return { job, outcome: 'done' }
       } catch (error) {
-        await retryLater(tx, job, error)
+        return { job, outcome: await retryLater(tx, job, error) }
       }
-      return { job }
     })
     if (!ran) return false
+    // Counted once the transaction committed, so a rolled back run is not.
+    if (ran.outcome) record(kind, ran.outcome)
     const { job, after, lease } = ran
     if (after) {
       try {
@@ -141,7 +144,7 @@ export function createScheduler(deps: {
           .where(and(eq(jobs.id, job.id), eq(jobs.runAt, lease)))
         record(kind, 'done')
       } catch (error) {
-        await retryLater(deps.db, job, error, lease)
+        record(kind, await retryLater(deps.db, job, error, lease))
       }
     }
     return true
