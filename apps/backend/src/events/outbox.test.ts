@@ -5,7 +5,8 @@ import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import { createDb } from '../infra/db.ts'
 import type { OutgoingEvent } from './envelope.ts'
 import { createRelay, enqueue } from './outbox.ts'
-import { processedEvents } from './schema.ts'
+import type { PublishedEvent } from './published.ts'
+import { outbox, processedEvents } from './schema.ts'
 
 const { sql, db } = createDb(inject('databaseUrl'))
 const logger = pino({ level: 'silent' })
@@ -14,12 +15,15 @@ afterAll(async () => {
   await sql.end()
 })
 
-const anEvent = (): OutgoingEvent => ({
+const anEvent = (): PublishedEvent => ({
   specversion: '1.0',
   id: randomUUID(),
   source: 'twake://tasks',
-  type: 'com.twake.tasks.task.created.v1',
-  data: {}
+  type: 'com.twake.tasks.space.provisioned.v1',
+  data: {
+    space_id: randomUUID(),
+    resource: { kind: 'project', id: randomUUID() }
+  }
 })
 
 // Tests share one outbox, so each looks only at the events it enqueued.
@@ -82,6 +86,31 @@ describe('outbox', () => {
     await drain(createRelay({ db, logger, publish }))
 
     expect(sent).toContain(event.id)
+  })
+
+  it('drops an event that breaks its contract, and goes on with the next', async () => {
+    const invalid = { ...anEvent(), data: { space_id: 'secret' } }
+    const next = anEvent()
+    await db.transaction(async tx => {
+      await tx.insert(outbox).values({ event: invalid })
+      await enqueue(tx, next)
+    })
+    const watched = logger.child({})
+    const error = vi.spyOn(watched, 'error')
+    const { sent, publish } = recorder()
+
+    await drain(createRelay({ db, logger: watched, publish }))
+
+    expect(sent).not.toContain(invalid.id)
+    expect(sent).toContain(next.id)
+    expect(error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'com.twake.tasks.space.provisioned.v1',
+        issues: [{ code: 'invalid_type', path: 'data.resource' }]
+      }),
+      'relay dropped an invalid event'
+    )
+    expect(JSON.stringify(error.mock.calls)).not.toContain('secret')
   })
 })
 

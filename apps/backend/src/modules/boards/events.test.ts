@@ -1,6 +1,7 @@
 import { asc, sql as raw } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { OutgoingEvent } from '../../events/envelope.ts'
+import { publishedEvent } from '../../events/published.ts'
 import { outbox } from '../../events/schema.ts'
 import { createDb } from '../../infra/db.ts'
 import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
@@ -47,7 +48,11 @@ async function eventsOf(taskId: string) {
     .from(outbox)
     .where(raw`${outbox.event} -> 'data' -> 'object' ->> 'id' = ${taskId}`)
     .orderBy(asc(outbox.id))
-    .then(rows => rows.map(row => ({ event: row.event as OutgoingEvent })))
+    .then(rows =>
+      rows.map((row): { event: OutgoingEvent } => ({
+        event: publishedEvent.parse(row.event)
+      }))
+    )
 }
 
 const actions = (events: { event: OutgoingEvent }[]) =>
@@ -142,6 +147,61 @@ describe('task events', () => {
     expect(events.at(-1)?.event.data).toMatchObject({
       changes: { dueDate: { to: '2099-02-28' } }
     })
+  })
+
+  it('publishes the change of every other field, and a move to another board', async () => {
+    const alice = aUser()
+    const board = await aBoardOf(alice)
+    const ops = (
+      await api.as(alice).post('/boards', { name: 'Ops', keyPrefix: 'OPS' })
+    ).json<{ id: string }>()
+    const task = await aTaskOn(alice, board.id, null)
+    const label = (
+      await api.as(alice).post(`/boards/${board.id}/labels`, { name: 'Bug' })
+    ).json<{ id: string }>()
+
+    await api.as(alice).patch(task.path, {
+      dueDate: '2099-01-31',
+      dueTime: '09:30',
+      deadline: '2099-02-01',
+      duration: { amount: 2, unit: 'days' },
+      recurrence: { every: 1, unit: 'weeks', fromCompletion: true }
+    })
+    await api.as(alice).patch(task.path, { duration: null, recurrence: null })
+    await api
+      .as(alice)
+      .put(`${task.path}/description`, { markdown: 'Brief', version: 0 })
+    await api.as(alice).put(`${task.path}/labels`, { labelIds: [label.id] })
+    await api.as(alice).put(`${task.path}/labels`, { labelIds: [] })
+    await api.as(alice).post(`${task.path}/complete`, { state: 'canceled' })
+    await api
+      .as(alice)
+      .post(`${task.path}/transfer`, { boardId: ops.id, sectionId: null })
+
+    const changes = (await eventsOf(task.id)).map(({ event }) => event.data)
+    expect(changes).toEqual(
+      expect.arrayContaining(
+        [
+          { dueDate: { from: null, to: '2099-01-31 09:30' } },
+          { deadline: { from: null, to: '2099-02-01' } },
+          { duration: { from: null, to: { amount: 2, unit: 'days' } } },
+          {
+            recurrence: {
+              from: { every: 1, unit: 'weeks', fromCompletion: true },
+              to: null
+            }
+          },
+          { description: { from: null, to: null } },
+          { labels: { from: null, to: label.id } },
+          { labels: { from: label.id, to: null } },
+          { completion: { from: null, to: 'canceled' } },
+          {
+            board: { from: board.id, to: ops.id },
+            section: { from: null, to: null }
+          }
+        ].map((change): unknown => expect.objectContaining({ changes: change }))
+      )
+    )
   })
 
   it('names the assignee of an assignment as its recipient, by uuid and email', async () => {
