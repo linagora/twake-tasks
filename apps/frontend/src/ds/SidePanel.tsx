@@ -644,39 +644,25 @@ export function FeedItem({
 
 export function PanelSection({
   title,
-  hideTitle = false,
   action,
   children
 }: {
   title: string
-  /** Kept for screen readers only, when the content speaks for itself. */
-  hideTitle?: boolean
   action?: ReactNode
   children: ReactNode
 }): ReactElement {
   return (
-    <Box component="section" aria-label={title} sx={{ display: 'flow-root' }}>
+    <Box component="section" aria-label={title}>
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'flex-end',
           gap: 1,
-          // Without its title, the action floats beside the content rather
-          // than taking a line over it, raised over the content: ProseMirror
-          // positions its text, which would paint over the float and take
-          // its clicks.
-          ...(hideTitle
-            ? { float: 'right', ml: 1, position: 'relative', zIndex: 1 }
-            : { mb: 1 })
+          mb: 1
         }}
       >
-        <Typography
-          variant="subtitle1"
-          component="h3"
-          className={hideTitle ? 'u-visuallyhidden' : undefined}
-          sx={{ flex: 1 }}
-        >
+        <Typography variant="subtitle1" component="h3" sx={{ flex: 1 }}>
           {title}
         </Typography>
         {action}

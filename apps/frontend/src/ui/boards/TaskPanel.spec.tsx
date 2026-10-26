@@ -90,8 +90,8 @@ describe('TaskPanel', () => {
     const panel = await openLogo()
 
     expect(await panel.findByText('new', { selector: 'strong' })).toBeVisible()
-    // A filled description needs no title on screen, only for screen readers.
-    expect(panel.getByRole('heading', { name: 'Description' })).toHaveClass(
+    // Titled as an empty one is, so that it reads the same either way.
+    expect(panel.getByRole('heading', { name: 'Description' })).not.toHaveClass(
       'u-visuallyhidden'
     )
   })
