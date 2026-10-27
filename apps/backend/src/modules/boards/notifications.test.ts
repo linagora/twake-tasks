@@ -171,6 +171,7 @@ describe('following and notifications', () => {
       const { alice, bob, carol, path, inbox } = await aTeam()
       await api.as(carol).put(`${path}/follow`, {})
       await api.as(alice).put(`${path}/assignees`, { userIds: [bob.userId] })
+      await api.as(alice).patch(path, { title: 'New logo' })
       await api.as(carol).post('/notifications/read', {})
 
       await api.as(alice).put(`${path}/assignees`, { userIds: [] })
@@ -182,6 +183,7 @@ describe('following and notifications', () => {
       }
       expect(await inbox(bob)).toMatchObject([
         { reason: 'unassigned', change: unassigned },
+        { reason: 'following', change: { field: 'title' } },
         { reason: 'assigned' }
       ])
       expect((await inbox(carol))[0]).toMatchObject({

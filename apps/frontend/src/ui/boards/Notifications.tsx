@@ -46,7 +46,12 @@ function sentenceOf(
   if (reason === 'following' && change) {
     return describe(change, undefined, t, lang)
   }
-  if (reason !== 'following' && reason !== 'reminder' && actor) {
+  if (
+    (reason === 'assigned' ||
+      reason === 'unassigned' ||
+      reason === 'mentioned') &&
+    actor
+  ) {
     return t(`notifications.sentence.${reason}`, { actor: displayName(actor) })
   }
   return t(`notifications.reason.${reason}`)
