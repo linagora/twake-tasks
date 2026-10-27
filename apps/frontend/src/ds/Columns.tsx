@@ -456,16 +456,7 @@ export function AvatarStack({
           fontSize: 0.45 * (size - 2 * AVATAR_BORDER),
           letterSpacing: 0
         },
-        '& > * + *': { ml: -0.5 },
-        // Someone invited, not a member until they sign in: an outline, opaque
-        // so the avatar under the overlap does not show through.
-        '& > .PersonAvatar-pending': {
-          bgcolor: 'background.paper',
-          backgroundImage: 'none',
-          color: 'text.primary',
-          borderStyle: 'dashed',
-          borderColor: 'text.secondary'
-        }
+        '& > * + *': { ml: -0.5 }
       }}
     >
       {children}

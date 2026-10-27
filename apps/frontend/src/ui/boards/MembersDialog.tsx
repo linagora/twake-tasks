@@ -34,7 +34,7 @@ export function PeopleAvatars({
   named = true,
   total = members.length
 }: {
-  members: (Person & { pending?: boolean })[]
+  members: Person[]
   size: number
   named?: boolean
   total?: number
@@ -56,7 +56,6 @@ export function PeopleAvatars({
           name={person.name}
           avatar={person.avatar}
           size={size}
-          pending={person.pending === true}
         />
       ))}
       {rest > 0 &&
@@ -89,7 +88,8 @@ export function MemberStack({
 }): ReactElement | null {
   const { t } = useI18n()
   const { user } = useSession()
-  // The others only, as Twake Drive shows who a file is shared with.
+  // The others only, the people invited as the members, as Twake Drive
+  // shows who a file is shared with.
   const me = user.email?.toLowerCase()
   const people = [
     ...members.filter(member => member.email.toLowerCase() !== me),
@@ -97,8 +97,7 @@ export function MemberStack({
       userId: email,
       email,
       name: null,
-      avatar: null,
-      pending: true
+      avatar: null
     }))
   ]
   const label = [
