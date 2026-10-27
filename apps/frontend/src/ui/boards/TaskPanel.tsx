@@ -499,7 +499,6 @@ function Description({
           <RichTextEditor
             label={t('task.description')}
             initial={description.data.markdown}
-            // Opened from its pencil, it is ready to type in.
             focusOnOpen
             placeholder={t('editor.descriptionPlaceholder')}
             labels={labels}

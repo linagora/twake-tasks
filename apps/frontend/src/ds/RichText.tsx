@@ -240,7 +240,7 @@ export function RichTextEditor({
   /** Adds a button that inserts an emoji. */
   emoji?: EmojiPickerOptions
   footer?: ReactNode
-  /** Takes the focus once open, as asked from a button, the caret after the text it starts from. */
+  /** Takes the focus once created, the caret at the end of the text. */
   focusOnOpen?: boolean
 }): ReactElement {
   // The editor keeps the callbacks it was created with, so it reads the latest ones here.
