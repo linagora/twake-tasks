@@ -10,7 +10,12 @@ import {
   useAlert
 } from '@linagora/twake-mui'
 import { Fragment, useEffect, useRef, useState, type ReactElement } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router'
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams
+} from 'react-router'
 
 import type { SectionMove, Shelf, TaskMove } from '@/application/boards'
 import {
@@ -749,8 +754,17 @@ function BoardTitle({
 }): ReactElement {
   const { t } = useI18n()
   const renamable = isRenamable(board)
-  // The title takes the focus back from an editor that just closed
-  const [returned, setReturned] = useState(false)
+  // The title takes the focus back from an editor that just closed, and on a
+  // board just created, whose dialog took the focus with it
+  const location = useLocation()
+  const navigate = useNavigate()
+  const created =
+    (location.state as { created?: boolean } | null)?.created === true
+  const [returned, setReturned] = useState(created)
+  // Once: back, forward or a reload to this entry must not take the focus again
+  useEffect(() => {
+    if (created) void navigate(location, { replace: true, state: null })
+  }, [created, location, navigate])
 
   if (renaming && renamable) {
     return (

@@ -512,7 +512,7 @@ function BoardsNav({
           }}
           onCreated={board => {
             setCreating(false)
-            void navigate(`/boards/${board.id}`)
+            void navigate(`/boards/${board.id}`, { state: { created: true } })
           }}
         />
       )}

@@ -161,6 +161,7 @@ export function Comments({
             minHeight={48}
             onChange={setBody}
             onSubmit={send}
+            focusOnOpen={draft > 0}
             mentions={names}
             linkPicker={drive.linkPicker}
             emoji={emojiInput.emoji}
