@@ -344,12 +344,14 @@ export function NewTaskDialog({
                       />
                     )}
                   </Property>
-                  {section && (
-                    <Property
-                      id={sectionLabelId}
-                      icon={<Icon icon={Folder} />}
-                      label={t('newTask.section')}
-                    >
+                  {/* Always there, so that picking another board moves
+                      nothing; a choice only when there is one to make. */}
+                  <Property
+                    id={sectionLabelId}
+                    icon={<Icon icon={Folder} />}
+                    label={t('newTask.section')}
+                  >
+                    {section && sections.length > 1 ? (
                       <PropertySelect
                         labelId={sectionLabelId}
                         value={section.id}
@@ -360,8 +362,17 @@ export function NewTaskDialog({
                         onChange={setPickedSection}
                         disabled={started !== undefined}
                       />
-                    </Property>
-                  )}
+                    ) : (
+                      board && (
+                        <Typography
+                          variant="body2"
+                          {...(!section && { color: 'textSecondary' })}
+                        >
+                          {section?.name ?? t('board.noSection')}
+                        </Typography>
+                      )
+                    )}
+                  </Property>
                   <Property
                     icon={<Icon icon={People} />}
                     label={t('task.assignees')}
