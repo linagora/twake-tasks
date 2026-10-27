@@ -40,6 +40,11 @@ export function SearchField({
       role="search"
       size={size}
       className={className}
+      // As Twake Drive's search: flat, without a clear button, outlined
+      // while empty only.
+      elevation={0}
+      disabledClear
+      disabledFocus={text !== ''}
       placeholder={t('search.label')}
       value={text}
       onChange={event => {
