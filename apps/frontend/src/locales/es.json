@@ -312,6 +312,8 @@
     "editTitle": "Editar sección",
     "options": "Opciones de %{section}",
     "edit": "Editar",
+    "markDone": "Contar sus tareas como terminadas",
+    "markOpen": "Contar sus tareas como abiertas",
     "moveLeft": "Mover a la izquierda",
     "moveRight": "Mover a la derecha",
     "delete": "Eliminar",

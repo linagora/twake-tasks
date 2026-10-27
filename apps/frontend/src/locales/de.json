@@ -312,6 +312,8 @@
     "editTitle": "Abschnitt bearbeiten",
     "options": "Optionen für %{section}",
     "edit": "Bearbeiten",
+    "markDone": "Aufgaben als erledigt zählen",
+    "markOpen": "Aufgaben als offen zählen",
     "moveLeft": "Nach links verschieben",
     "moveRight": "Nach rechts verschieben",
     "delete": "Löschen",

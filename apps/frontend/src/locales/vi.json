@@ -312,6 +312,8 @@
     "editTitle": "Sửa mục",
     "options": "Tùy chọn cho %{section}",
     "edit": "Sửa",
+    "markDone": "Tính các công việc là đã xong",
+    "markOpen": "Tính các công việc là đang mở",
     "moveLeft": "Chuyển sang trái",
     "moveRight": "Chuyển sang phải",
     "delete": "Xóa",
