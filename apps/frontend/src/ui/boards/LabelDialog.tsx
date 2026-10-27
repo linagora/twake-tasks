@@ -31,7 +31,6 @@ export function LabelDialog({
   boardId,
   label,
   usedColors,
-  initialName = '',
   onSaved,
   onClose
 }: {
@@ -40,13 +39,12 @@ export function LabelDialog({
   label?: Label | undefined
   /** The colors of the board's labels, which a new label avoids */
   usedColors: readonly (string | null)[]
-  initialName?: string
   onSaved: (label: Label) => void
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
   const titleId = useId()
-  const [name, setName] = useState(label?.name ?? initialName)
+  const [name, setName] = useState(label?.name ?? '')
   const [color, setColor] = useState<string | null>(() =>
     label ? label.color : leastUsedColor(usedColors)
   )

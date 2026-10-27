@@ -12,7 +12,8 @@ import {
   useRef,
   type KeyboardEvent,
   type ReactElement,
-  type ReactNode
+  type ReactNode,
+  type RefObject
 } from 'react'
 
 import { SearchBar } from '@/ds/SearchBar'
@@ -25,6 +26,7 @@ export function PickerPopover({
   search,
   onSearch,
   onPickFirst,
+  searchRef: givenSearchRef,
   footer,
   children
 }: {
@@ -35,10 +37,13 @@ export function PickerPopover({
   search: string
   onSearch: (search: string) => void
   onPickFirst?: () => void
+  /** To focus the search field again, once something new is made from it. */
+  searchRef?: RefObject<HTMLInputElement | null>
   footer?: ReactNode
   children: ReactNode
 }): ReactElement {
-  const searchRef = useRef<HTMLInputElement>(null)
+  const ownSearchRef = useRef<HTMLInputElement>(null)
+  const searchRef = givenSearchRef ?? ownSearchRef
   const listRef = useRef<HTMLUListElement>(null)
 
   const onSearchKeyDown = (event: KeyboardEvent) => {
