@@ -12,6 +12,27 @@ async function openNewSection() {
 }
 
 describe('section name', () => {
+  it('has the caret in a new section', async () => {
+    const dialog = await openNewSection()
+
+    expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveFocus()
+  })
+
+  it('has the name selected when editing a section', async () => {
+    const board = aBoard({ name: 'Design' })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for To do' })
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }))
+    const name = within(
+      screen.getByRole('dialog', { name: 'Edit section' })
+    ).getByRole<HTMLInputElement>('textbox', { name: 'Name' })
+
+    expect(name).toHaveFocus()
+    expect([name.selectionStart, name.selectionEnd]).toEqual([0, 5])
+  })
+
   it('refuses a name already on the board, in any case, and clears on typing', async () => {
     const dialog = await openNewSection()
     const name = dialog.getByRole('textbox', { name: 'Name' })
