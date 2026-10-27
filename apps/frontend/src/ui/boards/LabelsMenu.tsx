@@ -85,7 +85,7 @@ export function LabelsMenu({
         search={search}
         onSearch={value => {
           setSearch(value)
-          create.reset()
+          if (create.isError) create.reset()
         }}
         footer={
           create.isError ? (

@@ -141,6 +141,31 @@ describe('Labels', () => {
     })
   })
 
+  it('puts a label on the task once created, even if typing goes on meanwhile', async () => {
+    const { board, logo, boardsApi } = labeledBoard()
+    const createLabel = boardsApi.createLabel.getMockImplementation()
+    if (!createLabel) throw new Error('No createLabel')
+    const gate = Promise.withResolvers<undefined>()
+    boardsApi.createLabel.mockImplementationOnce(async (...args) => {
+      await gate.promise
+      return createLabel(...args)
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const picker = await openLabels()
+    search(picker, 'Later')
+    fireEvent.click(picker.getByRole('menuitem', { name: 'Create “Later”' }))
+    search(picker, 'Later s')
+    gate.resolve(undefined)
+
+    await waitFor(() => {
+      expect(boardsApi.setLabels).toHaveBeenCalledWith(board.id, logo.id, [
+        urgent.id,
+        expect.any(String)
+      ])
+    })
+  })
+
   it('opens the dialog when nothing is typed', async () => {
     const { board, boardsApi } = labeledBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })
