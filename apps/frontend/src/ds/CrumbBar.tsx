@@ -78,6 +78,7 @@ export function CrumbRow({
  * the page first. The origin's icon and the separators stay whole.
  */
 export const CrumbTrail = styled(Breadcrumbs)({
+  minWidth: 0,
   '& .MuiBreadcrumbs-ol': { flexWrap: 'nowrap' },
   '& .MuiBreadcrumbs-li': { minWidth: '3em', flexShrink: 1e6 },
   '& .MuiBreadcrumbs-li:last-of-type': { minWidth: 0, flexShrink: 1 },
