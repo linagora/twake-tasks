@@ -153,21 +153,17 @@ export function TopBarSearch({
   children: ReactNode
 }): ReactElement {
   return (
+    // All the room the bar leaves, as Twake Drive's search.
     <Box
       sx={{
         flex: '1 1 auto',
         minWidth: 0,
-        maxWidth: 640,
         '& input::-webkit-search-cancel-button': { display: 'none' }
       }}
     >
       {children}
     </Box>
   )
-}
-
-export function TopBarSpacer(): ReactElement {
-  return <Box sx={{ flex: '1 1 0', display: { xs: 'none', md: 'block' } }} />
 }
 
 export function CountBadge({

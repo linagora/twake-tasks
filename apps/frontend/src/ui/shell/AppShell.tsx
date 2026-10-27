@@ -56,7 +56,6 @@ import {
   SidebarShelves,
   TopBar,
   TopBarSearch,
-  TopBarSpacer,
   WideScreenAction,
   WideScreenNavItem
 } from '@/ds/AppFrame'
@@ -173,7 +172,7 @@ function Header({
       <PlatformBar
         sdk={sdk}
         slots={{
-          search: <div className="u-mh-1">{search}</div>,
+          search: <div className="u-mh-2">{search}</div>,
           right: (
             <>
               {phone && (
@@ -204,7 +203,6 @@ function Header({
         <BrandMark name={t('app.name')} />
       </Link>
       {search}
-      <TopBarSpacer />
       {newTaskButton}
       <AccountMenu />
     </TopBar>
