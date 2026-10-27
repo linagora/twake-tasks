@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -50,5 +50,40 @@ describe('section name', () => {
     expect(
       dialog.queryByText('A section named to do already exists.')
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('done section', () => {
+  it('counts the tasks of a section as done, then as open again', async () => {
+    const board = aBoard({ name: 'Design' })
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    const [todo, , doneSection] = board.sections
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for To do' })
+    )
+    fireEvent.click(
+      screen.getByRole('menuitem', { name: 'Count its tasks as done' })
+    )
+    await waitFor(() => {
+      expect(boardsApi.editSection).toHaveBeenCalledWith(board.id, todo?.id, {
+        category: 'completed'
+      })
+    })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for Done' })
+    )
+    fireEvent.click(
+      screen.getByRole('menuitem', { name: 'Count its tasks as open' })
+    )
+    await waitFor(() => {
+      expect(boardsApi.editSection).toHaveBeenCalledWith(
+        board.id,
+        doneSection?.id,
+        { category: 'unstarted' }
+      )
+    })
   })
 })

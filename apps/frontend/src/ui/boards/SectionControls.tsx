@@ -10,6 +10,7 @@ import {
   Typography
 } from '@linagora/twake-mui'
 import {
+  Check,
   Dots,
   Icon,
   Next,
@@ -78,6 +79,13 @@ export function SectionMenu({
     (api, to: { afterId: string } | { beforeId: string }) =>
       api.moveSection(board.id, section.id, to)
   )
+  // Its tasks count as done, out of the open ones and the overdue ones.
+  const done = section.category === 'completed'
+  const markDone = useBoardChange(board.id, (api, next: boolean) =>
+    api.editSection(board.id, section.id, {
+      category: next ? 'completed' : 'unstarted'
+    })
+  )
   const index = board.sections.indexOf(section)
   const previous = board.sections[index - 1]
   const next = board.sections[index + 1]
@@ -115,6 +123,14 @@ export function SectionMenu({
         >
           {t('section.edit')}
         </IconMenuItem>
+        <IconMenuItem
+          icon={Check}
+          onClick={choose(() => {
+            markDone.mutate(!done)
+          })}
+        >
+          {t(done ? 'section.markOpen' : 'section.markDone')}
+        </IconMenuItem>
         {previous && (
           <IconMenuItem
             icon={Previous}
@@ -147,6 +163,11 @@ export function SectionMenu({
       {move.isError && (
         <Typography role="alert" variant="caption">
           {t('section.moveFailed')}
+        </Typography>
+      )}
+      {markDone.isError && (
+        <Typography role="alert" variant="caption">
+          {t('section.saveFailed')}
         </Typography>
       )}
       {dialog === 'edit' && (

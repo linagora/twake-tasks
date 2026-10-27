@@ -312,6 +312,8 @@
     "editTitle": "Modifica sezione",
     "options": "Opzioni per %{section}",
     "edit": "Modifica",
+    "markDone": "Conta le sue attività come completate",
+    "markOpen": "Conta le sue attività come aperte",
     "moveLeft": "Sposta a sinistra",
     "moveRight": "Sposta a destra",
     "delete": "Elimina",

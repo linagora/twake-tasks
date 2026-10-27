@@ -312,6 +312,8 @@
     "editTitle": "Edit section",
     "options": "Options for %{section}",
     "edit": "Edit",
+    "markDone": "Count its tasks as done",
+    "markOpen": "Count its tasks as open",
     "moveLeft": "Move left",
     "moveRight": "Move right",
     "delete": "Delete",
