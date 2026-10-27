@@ -1,6 +1,7 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose'
 import * as client from 'openid-client'
 import { z } from 'zod'
+import { fullName } from './fullName.ts'
 
 const organizationRole = z.enum(['owner', 'admin', 'moderator', 'member'])
 export type OrganizationRole = z.infer<typeof organizationRole>
@@ -50,11 +51,11 @@ const userinfoSchema = z.object({
 // The name claim can be the uid (it is LemonLDAP's cn), so the given and
 // family names come first.
 function nameOf(claims: z.infer<typeof userinfoSchema>): string | null {
-  const full = [claims.given_name, claims.family_name]
-    .map(part => part?.trim())
-    .filter(Boolean)
-    .join(' ')
-  return full || claims.name?.trim() || null
+  return (
+    fullName(claims.given_name, claims.family_name) ||
+    claims.name?.trim() ||
+    null
+  )
 }
 
 // openid-client URL-encodes Basic credentials, turning "-" into "%2D", and

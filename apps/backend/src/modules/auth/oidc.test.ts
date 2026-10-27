@@ -224,6 +224,11 @@ describe('identify', () => {
       { name: 'qvalmori', given_name: 'Quentin', family_name: 'VALMORI' },
       'Quentin VALMORI'
     ],
+    [
+      'a given name that already ends with the family name',
+      { name: 'User One', given_name: 'User One', family_name: 'One' },
+      'User One'
+    ],
     ['only a name', { name: 'Alice Martin' }, 'Alice Martin'],
     ['blank names', { name: ' ', given_name: '' }, null],
     ['no name', {}, null]
