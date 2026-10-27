@@ -27,7 +27,7 @@ describe('SettingsScreen', () => {
       screen.getByRole('button', { name: 'Move Favorites up' })
     ).toBeDisabled()
 
-    fireEvent.click(screen.getByRole('button', { name: 'New section' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
     const created = within(
       await screen.findByRole('dialog', { name: 'New section' })
     )

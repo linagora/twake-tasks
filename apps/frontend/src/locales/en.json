@@ -686,6 +686,7 @@
     "moveUp": "Move %{name} up",
     "moveDown": "Move %{name} down",
     "favoritesHint": "The favorites in no other section",
-    "items": "%{smart_count} board or view |||| %{smart_count} boards and views"
+    "items": "%{smart_count} board or view |||| %{smart_count} boards and views",
+    "add": "Add"
   }
 }

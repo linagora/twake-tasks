@@ -686,6 +686,7 @@
     "moveUp": "Subir %{name}",
     "moveDown": "Bajar %{name}",
     "favoritesHint": "Los favoritos que no están en otra sección",
-    "items": "%{smart_count} tablero o vista |||| %{smart_count} tableros y vistas"
+    "items": "%{smart_count} tablero o vista |||| %{smart_count} tableros y vistas",
+    "add": "Añadir"
   }
 }

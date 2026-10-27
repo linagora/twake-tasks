@@ -82,17 +82,16 @@ function SidebarSectionsSettings(): ReactElement {
     <ListSection
       title={t('settings.sections')}
       action={
-        <Tooltip disableInteractive title={t('settings.newSection')}>
-          <IconButton
-            size="small"
-            aria-label={t('settings.newSection')}
-            onClick={() => {
-              setCreating(true)
-            }}
-          >
-            <Icon icon={Plus} />
-          </IconButton>
-        </Tooltip>
+        <Button
+          variant="ghost"
+          size="small"
+          startIcon={<Icon icon={Plus} />}
+          onClick={() => {
+            setCreating(true)
+          }}
+        >
+          {t('settings.add')}
+        </Button>
       }
     >
       {sections.isError && (

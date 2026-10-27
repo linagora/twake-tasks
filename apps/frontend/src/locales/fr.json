@@ -686,6 +686,7 @@
     "moveUp": "Monter %{name}",
     "moveDown": "Descendre %{name}",
     "favoritesHint": "Les favoris qui ne sont dans aucune autre section",
-    "items": "%{smart_count} tableau ou vue |||| %{smart_count} tableaux et vues"
+    "items": "%{smart_count} tableau ou vue |||| %{smart_count} tableaux et vues",
+    "add": "Ajouter"
   }
 }

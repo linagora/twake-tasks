@@ -686,6 +686,7 @@
     "moveUp": "Chuyển %{name} lên",
     "moveDown": "Chuyển %{name} xuống",
     "favoritesHint": "Các mục yêu thích không thuộc mục nào khác",
-    "items": "%{smart_count} bảng hoặc chế độ xem"
+    "items": "%{smart_count} bảng hoặc chế độ xem",
+    "add": "Thêm"
   }
 }
