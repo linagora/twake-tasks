@@ -238,7 +238,7 @@ export function SortableRow({
           </ListItemButton>
         </ListItem>
         <Collapse in={open} unmountOnExit>
-          <List disablePadding sx={{ pl: 7 }}>
+          <List disablePadding sx={{ pl: 11 }}>
             {children}
           </List>
         </Collapse>
