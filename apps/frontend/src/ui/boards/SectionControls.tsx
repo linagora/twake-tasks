@@ -25,6 +25,7 @@ import { NewColumnButton } from '@/ds/Columns'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import type { Board, Section } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
+import { selectOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function NewSectionButton({ board }: { board: Board }): ReactElement {
@@ -217,6 +218,7 @@ function SectionDialog({
             required
             fullWidth
             margin="dense"
+            inputRef={selectOnMount}
             error={taken}
             helperText={taken && t('section.nameTaken', { name: name.trim() })}
             slotProps={{ htmlInput: { maxLength: 100 } }}
