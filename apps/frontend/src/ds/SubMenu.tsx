@@ -27,10 +27,16 @@ const LEAVE_DELAY = 200
 export function SubMenuItem({
   icon,
   label,
+  width,
   children
 }: {
   icon: ElementType
   label: string
+  /**
+   * In px, from the start, for a form it may show to widen it no more, as
+   * the name of something new.
+   */
+  width?: number
   /** The entries of the menu it opens. */
   children: ReactNode
 }): ReactElement {
@@ -100,7 +106,7 @@ export function SubMenuItem({
           root: { sx: { pointerEvents: 'none' } },
           paper: {
             ref: paper,
-            sx: { pointerEvents: 'auto' },
+            sx: { pointerEvents: 'auto', width },
             onMouseEnter: stay,
             onMouseLeave: leave
           },

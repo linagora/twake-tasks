@@ -784,6 +784,10 @@ function usePlaceInSidebar(item: SidebarItem): {
   }
 }
 
+// Wide enough for the name of a new section and its buttons, as soon as it
+// opens, for naming one not to widen it.
+const NEW_SECTION_WIDTH = 280
+
 /**
  * Show in the sidebar, in the menu of a board or view, as Label as in Twake
  * Mail: the places it can show in, the current one checked, then a new
@@ -820,7 +824,11 @@ export function SidebarPlaceMenuItem({
   )
 
   return (
-    <SubMenuItem icon={FolderAdd} label={t('sidebar.addToSection')}>
+    <SubMenuItem
+      icon={FolderAdd}
+      label={t('sidebar.addToSection')}
+      width={NEW_SECTION_WIDTH}
+    >
       {!sections.some(section => section.favorites) &&
         option(FAVORITES, t('boards.favorites'))}
       {sections.map(section =>
