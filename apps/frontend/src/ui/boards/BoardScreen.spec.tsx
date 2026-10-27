@@ -285,6 +285,24 @@ describe('BoardScreen', () => {
     expect(await announcedOnPickUp(logo)).toBe('Picked up DES-1 Logo.')
   })
 
+  it('leaves Enter and Space to the title and the menu of a card', async () => {
+    const board = designBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const logo = await screen.findByRole('article', { name: 'DES-1 Logo' })
+    const title = within(logo).getByRole('button', { name: 'Logo' })
+    const options = within(logo).getByRole('button', {
+      name: 'Options for DES-1'
+    })
+
+    expect(fireEvent.keyDown(title, { key: 'Enter', code: 'Enter' })).toBe(true)
+    expect(fireEvent.keyDown(options, { key: 'Enter', code: 'Enter' })).toBe(
+      true
+    )
+    expect(fireEvent.keyDown(options, { key: ' ', code: 'Space' })).toBe(true)
+    expect(dragAnnouncement()).not.toContain('Picked up')
+  })
+
   it('announces a section picked up from the keyboard', async () => {
     const board = designBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })

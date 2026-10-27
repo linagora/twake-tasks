@@ -18,6 +18,7 @@ export function SortableCard({
 }: CardProps & { id: string; description: string }): ReactElement {
   const {
     setNodeRef,
+    setActivatorNodeRef,
     attributes,
     listeners,
     transform,
@@ -32,7 +33,12 @@ export function SortableCard({
       {...props}
       {...attributes}
       {...listeners}
-      ref={setNodeRef}
+      // With the card as its own activator, Space and Enter pick it up only when
+      // the card itself has focus, so they still reach its title and menu.
+      ref={node => {
+        setNodeRef(node)
+        setActivatorNodeRef(node)
+      }}
       drag={isDragging ? 'placeholder' : 'none'}
       // eslint-disable-next-line no-restricted-syntax -- changes every frame of a drag; sx would mint a class per frame
       style={{ transform: CSS.Translate.toString(transform), transition }}
