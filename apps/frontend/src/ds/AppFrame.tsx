@@ -416,6 +416,20 @@ export function SidebarShelves({
   )
 }
 
+// The last entries, held at the bottom of the sidebar while it has room.
+// Phones get the bottom bar only, as for SidebarSection.
+export function SidebarFooter({
+  children
+}: {
+  children: ReactNode
+}): ReactElement {
+  return (
+    <Box sx={{ display: { xs: 'none', lg: 'block' }, mt: 'auto', py: 2 }}>
+      <List sx={{ py: 0 }}>{children}</List>
+    </Box>
+  )
+}
+
 // An entry of a section, in line with its title as under Pinned in Twake
 // Space.
 export const SidebarSectionEntry = styled(NavItem)(({ theme }) => ({

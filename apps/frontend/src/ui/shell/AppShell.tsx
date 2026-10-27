@@ -50,6 +50,7 @@ import {
   CountBadge,
   OneLineNavText,
   SidebarButton,
+  SidebarFooter,
   SidebarHint,
   SidebarSection,
   SidebarSectionEntry,
@@ -158,6 +159,14 @@ export function AppShell(): ReactElement {
             />
           </SidebarDrag>
           <ShelfLinks archivesLit={lit.archives} />
+          <SidebarFooter>
+            <NavItem>
+              <SidebarLink to="/settings" active={lit.settings}>
+                <NavIcon icon={Gear} />
+                <NavText>{t('settings.title')}</NavText>
+              </SidebarLink>
+            </NavItem>
+          </SidebarFooter>
         </>
       }
     >
@@ -210,8 +219,8 @@ function Header({
     </IconButton>
   )
 
-  // The settings, as the gear of Twake Mail.
-  const settingsButton = (
+  // Wide screens have Settings at the bottom of the sidebar.
+  const settingsButton = phone && (
     <Tooltip disableInteractive title={t('settings.open')}>
       <IconButton
         component={RouterLink}
@@ -356,6 +365,7 @@ function AccountMenu(): ReactElement {
 function useLitEntry(): {
   boards: boolean
   archives: boolean
+  settings: boolean
   board: string | null
   views: boolean
   view: string | null
@@ -406,6 +416,7 @@ function useLitEntry(): {
   return {
     boards: pathname === '/' || (onBoard && !onArchived),
     archives: pathname === '/archives' || (onBoard && onArchived),
+    settings: pathname === '/settings',
     board: onBoard && !onArchived ? boardId : null,
     views: onViews,
     view: onViews ? filterId : null,

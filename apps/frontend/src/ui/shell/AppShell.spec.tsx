@@ -513,7 +513,7 @@ describe('AppShell', () => {
     expect(work.queryByRole('button', { name: 'Actions of Work' })).toBeNull()
   })
 
-  it('opens the settings from the gear of the top bar', async () => {
+  it('opens the settings from the bottom of the sidebar', async () => {
     renderRoute('/today', { boardsApi: fakeBoardsApi() })
 
     fireEvent.click(await screen.findByRole('link', { name: 'Settings' }))
