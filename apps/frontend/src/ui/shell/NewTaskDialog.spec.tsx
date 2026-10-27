@@ -426,19 +426,22 @@ describe('NewTaskDialog', () => {
     expect(router.state.location.pathname).toBe(`/boards/${board.id}`)
   })
 
-  it('leaves out a due date from the URL that is no day', async () => {
-    const board = aBoard({ name: 'Product Design' })
-    renderRoute(`/boards/${board.id}?new=task&due=2026-02-31`, {
-      boardsApi: fakeBoardsApi([board])
-    })
-    const dialog = within(
-      await screen.findByRole('dialog', { name: 'Create a task' })
-    )
+  it.each(['2026-02-31', '2026-13-01', '2026-00-10'])(
+    'leaves out a due date from the URL that is no day (%s)',
+    async due => {
+      const board = aBoard({ name: 'Product Design' })
+      renderRoute(`/boards/${board.id}?new=task&due=${due}`, {
+        boardsApi: fakeBoardsApi([board])
+      })
+      const dialog = within(
+        await screen.findByRole('dialog', { name: 'Create a task' })
+      )
 
-    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+      fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
 
-    expect(
-      dialog.getByRole('button', { name: 'Due date: No date' })
-    ).toBeVisible()
-  })
+      expect(
+        dialog.getByRole('button', { name: 'Due date: No date' })
+      ).toBeVisible()
+    }
+  )
 })
