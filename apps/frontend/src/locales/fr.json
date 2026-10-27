@@ -436,26 +436,15 @@
     "share": "Partager",
     "title": "Partager %{name}",
     "email": "E-mail",
-    "role": "Rôle",
     "roles": {
       "viewer": "Lecteur",
       "editor": "Éditeur",
       "admin": "Administrateur"
     },
-    "roleHints": {
-      "viewer": "Voit les tâches et les commente",
-      "editor": "Ajoute, modifie et déplace les tâches",
-      "admin": "Gère aussi les sections, le partage et le tableau"
-    },
-    "invite": "Inviter",
-    "invited": "%{email} est invité(e). Vous pourrez lui assigner des tâches dès sa première ouverture de Twake Project.",
-    "pending": "En attente",
     "roleOf": "Rôle : %{role}",
     "roleOfPerson": "Rôle de %{person} : %{role}",
     "lastAdmin": "Un projet doit avoir au moins un admin. Nommez d'abord quelqu'un d'autre admin.",
     "people": "Personnes ayant accès",
-    "cancelInvite": "Annuler l'invitation",
-    "remove": "Retirer",
     "close": "Fermer",
     "failed": "La modification n'a pas pu être enregistrée.",
     "loadFailed": "Les membres n'ont pas pu être chargés.",
@@ -466,7 +455,15 @@
     "helpSingle": "Les personnes que vous invitez peuvent ouvrir ce tableau.",
     "helpProject": "Les personnes que vous invitez peuvent ouvrir tous les tableaux du projet « %{project} » : %{boards}.",
     "helpMore": "et %{smart_count} autre |||| et %{smart_count} autres",
-    "sameOrganization": "Une invitation ne fonctionne que pour un compte de votre propre organisation."
+    "sameOrganization": "Une invitation ne fonctionne que pour un compte de votre propre organisation.",
+    "you": "Vous",
+    "removePerson": "Retirer %{person}",
+    "cancelInviteOf": "Annuler l’invitation de %{person}",
+    "emptyTitle": "Personne n’a encore été ajouté",
+    "emptySubtitle": "Les personnes invitées apparaîtront ici.",
+    "inviteUsers": "Inviter des utilisateurs",
+    "addContacts": "Ajouter des contacts",
+    "invitationSent": "Invitation envoyée"
   },
   "moveBoard": {
     "action": "Déplacer vers un projet",

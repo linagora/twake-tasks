@@ -32,11 +32,10 @@ export async function addTask(page: Page, title: string) {
 export async function invite(page: Page, board: string, email: string) {
   await page.getByRole('button', { name: 'Share' }).click()
   const share = page.getByRole('dialog', { name: `Share ${board}` })
-  const form = share.getByRole('form', { name: 'Invite' })
-  await form.getByLabel('Email').fill(email)
-  await form.getByRole('button', { name: /^Role: / }).click()
-  await page.getByRole('menuitem', { name: 'Editor' }).click()
-  await form.getByRole('button', { name: 'Invite' }).click()
+  await share.getByLabel('Email').fill(email)
+  await share.getByRole('button', { name: /^Role: / }).click()
+  await page.getByRole('menuitemradio', { name: 'Editor' }).click()
+  await share.getByRole('button', { name: 'Share' }).click()
   await expect(share).toContainText(email)
   await share.getByRole('button', { name: 'Close' }).click()
 }

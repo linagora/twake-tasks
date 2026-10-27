@@ -436,26 +436,15 @@
     "share": "Compartir",
     "title": "Compartir %{name}",
     "email": "Correo electrónico",
-    "role": "Rol",
     "roles": {
       "viewer": "Lector",
       "editor": "Editor",
       "admin": "Administrador"
     },
-    "roleHints": {
-      "viewer": "Ve las tareas y las comenta",
-      "editor": "Añade, edita y mueve tareas",
-      "admin": "También gestiona secciones, uso compartido y el tablero"
-    },
-    "invite": "Invitar",
-    "invited": "%{email} invitado. Podrás asignarle tareas en cuanto abra Twake Project.",
-    "pending": "Pendiente",
     "roleOf": "Rol: %{role}",
     "roleOfPerson": "Rol de %{person}: %{role}",
     "lastAdmin": "Un proyecto necesita al menos un admin. Haz admin a otra persona primero.",
     "people": "Personas con acceso",
-    "cancelInvite": "Cancelar invitación",
-    "remove": "Quitar",
     "close": "Cerrar",
     "failed": "No se pudo guardar el cambio.",
     "loadFailed": "No se pudieron cargar los miembros.",
@@ -466,7 +455,15 @@
     "helpSingle": "Las personas que invites pueden abrir este tablero.",
     "helpProject": "Las personas que invites pueden abrir todos los tableros del proyecto «%{project}»: %{boards}.",
     "helpMore": "y %{smart_count} más",
-    "sameOrganization": "Una invitación solo funciona para una cuenta de tu propia organización."
+    "sameOrganization": "Una invitación solo funciona para una cuenta de tu propia organización.",
+    "you": "Tú",
+    "removePerson": "Quitar a %{person}",
+    "cancelInviteOf": "Cancelar la invitación de %{person}",
+    "emptyTitle": "Aún no se ha añadido a nadie",
+    "emptySubtitle": "Las personas invitadas aparecerán aquí.",
+    "inviteUsers": "Invitar a usuarios",
+    "addContacts": "Añadir contactos",
+    "invitationSent": "Invitación enviada"
   },
   "moveBoard": {
     "action": "Mover a un proyecto",

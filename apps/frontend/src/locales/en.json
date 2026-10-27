@@ -436,26 +436,15 @@
     "share": "Share",
     "title": "Share %{name}",
     "email": "Email",
-    "role": "Role",
     "roles": {
       "viewer": "Viewer",
       "editor": "Editor",
       "admin": "Admin"
     },
-    "roleHints": {
-      "viewer": "Sees tasks and comments on them",
-      "editor": "Adds, edits and moves tasks",
-      "admin": "Also manages sections, sharing and the board"
-    },
-    "invite": "Invite",
-    "invited": "Invited %{email}. You can assign them tasks once they open Twake Project.",
-    "pending": "Pending",
     "roleOf": "Role: %{role}",
     "roleOfPerson": "Role of %{person}: %{role}",
     "lastAdmin": "A project needs at least one admin. Make someone else admin first.",
     "people": "People with access",
-    "cancelInvite": "Cancel invite",
-    "remove": "Remove",
     "close": "Close",
     "failed": "The change could not be saved.",
     "loadFailed": "The members could not be loaded.",
@@ -466,7 +455,15 @@
     "helpSingle": "People you invite can open this board.",
     "helpProject": "People you invite can open every board of the project “%{project}”: %{boards}.",
     "helpMore": "and %{smart_count} more",
-    "sameOrganization": "An invite only works for an account in your own organization."
+    "sameOrganization": "An invite only works for an account in your own organization.",
+    "you": "You",
+    "removePerson": "Remove %{person}",
+    "cancelInviteOf": "Cancel the invite of %{person}",
+    "emptyTitle": "No one has been added yet",
+    "emptySubtitle": "People invited to join will be listed here.",
+    "inviteUsers": "Invite users",
+    "addContacts": "Add contacts",
+    "invitationSent": "Invitation sent"
   },
   "moveBoard": {
     "action": "Move to project",
