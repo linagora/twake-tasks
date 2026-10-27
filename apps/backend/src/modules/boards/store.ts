@@ -89,6 +89,32 @@ function excerptOf(description: string, text: string): string | null {
   return `${from > 0 ? '…' : ''}${words.slice(from, to).join(' ')}${to < words.length ? '…' : ''}`
 }
 
+/**
+ * Why a task answers a search, for the person to see: the field that
+ * matched and its text, the part of the description around the match.
+ */
+export interface SearchMatch {
+  field: 'key' | 'previousKey' | 'title' | 'description'
+  text: string
+}
+
+function matchOf(
+  task: { key?: string | undefined; title?: string | null | undefined },
+  previousKeys: string[],
+  excerpt: string | null,
+  lower: string
+): SearchMatch | null {
+  if (task.key?.toLowerCase().startsWith(lower)) {
+    return { field: 'key', text: task.key }
+  }
+  const previous = previousKeys.find(key => key.toLowerCase().startsWith(lower))
+  if (previous) return { field: 'previousKey', text: previous }
+  if (task.title?.toLowerCase().includes(lower)) {
+    return { field: 'title', text: task.title }
+  }
+  return excerpt ? { field: 'description', text: excerpt } : null
+}
+
 export function createBoardStore(db: Db) {
   return {
     renameBoard(identity: Identity, boardId: string, name: string) {
@@ -187,25 +213,34 @@ export function createBoardStore(db: Db) {
           SEARCH_LIMIT,
           sql`${keyMatches(pattern)} desc`
         )
-        const quoted = found.flatMap(task =>
-          task.id && !task.title?.toLowerCase().includes(text.toLowerCase())
-            ? [task.id]
-            : []
-        )
-        const descriptions = new Map(
-          quoted.length === 0
+        const lower = text.toLowerCase()
+        const ids = found.flatMap(task => (task.id ? [task.id] : []))
+        const fields = new Map(
+          ids.length === 0
             ? []
             : (
                 await tx
-                  .select({ id: tasks.id, text: tasks.descriptionText })
+                  .select({
+                    id: tasks.id,
+                    description: tasks.descriptionText,
+                    previousKeys: tasks.previousKeys
+                  })
                   .from(tasks)
-                  .where(inArray(tasks.id, quoted))
-              ).map(row => [row.id, row.text])
+                  .where(inArray(tasks.id, ids))
+              ).map(row => [row.id, row])
         )
-        return found.map(task => ({
-          ...task,
-          excerpt: excerptOf(descriptions.get(task.id ?? '') ?? '', text)
-        }))
+        return found.map(task => {
+          const { description = '', previousKeys = [] } =
+            fields.get(task.id ?? '') ?? {}
+          const excerpt = task.title?.toLowerCase().includes(lower)
+            ? null
+            : excerptOf(description, text)
+          return {
+            ...task,
+            excerpt,
+            match: matchOf(task, previousKeys, excerpt, lower)
+          }
+        })
       })
     },
 
