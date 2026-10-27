@@ -513,12 +513,14 @@
     "unfollow": "Nicht mehr folgen",
     "reason": {
       "assigned": "Ihnen zugewiesen",
+      "unassigned": "Zuweisung aufgehoben",
       "mentioned": "Sie wurden erwähnt",
       "following": "Geändert, während Sie ihr folgen",
       "reminder": "Erinnerung"
     },
     "sentence": {
       "assigned": "%{actor} hat Sie zugewiesen",
+      "unassigned": "%{actor} hat Ihre Zuweisung aufgehoben",
       "mentioned": "%{actor} hat Sie erwähnt"
     },
     "justNow": "Gerade eben",

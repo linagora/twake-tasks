@@ -167,6 +167,31 @@ describe('following and notifications', () => {
       ])
     })
 
+    it('tells the person unassigned that it was them, and the other followers who it was', async () => {
+      const { alice, bob, carol, path, inbox } = await aTeam()
+      await api.as(carol).put(`${path}/follow`, {})
+      await api.as(alice).put(`${path}/assignees`, { userIds: [bob.userId] })
+      await api.as(alice).patch(path, { title: 'New logo' })
+      await api.as(carol).post('/notifications/read', {})
+
+      await api.as(alice).put(`${path}/assignees`, { userIds: [] })
+
+      const unassigned = {
+        field: 'assignees',
+        from: bob.userId,
+        to: null
+      }
+      expect(await inbox(bob)).toMatchObject([
+        { reason: 'unassigned', change: unassigned },
+        { reason: 'following', change: { field: 'title' } },
+        { reason: 'assigned' }
+      ])
+      expect((await inbox(carol))[0]).toMatchObject({
+        reason: 'following',
+        change: unassigned
+      })
+    })
+
     it('carries the change made to a followed task, as its history logs it', async () => {
       const { alice, bob, path, inbox } = await aTeam()
 

@@ -513,12 +513,14 @@
     "unfollow": "Bỏ theo dõi",
     "reason": {
       "assigned": "Bạn được giao",
+      "unassigned": "Bạn bị bỏ giao",
       "mentioned": "Bạn được nhắc đến",
       "following": "Đã thay đổi khi bạn theo dõi",
       "reminder": "Lời nhắc"
     },
     "sentence": {
       "assigned": "%{actor} đã giao cho bạn",
+      "unassigned": "%{actor} đã bỏ giao bạn",
       "mentioned": "%{actor} đã nhắc đến bạn"
     },
     "justNow": "Vừa xong",

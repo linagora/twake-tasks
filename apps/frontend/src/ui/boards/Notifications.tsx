@@ -30,6 +30,7 @@ import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 const REASON_ICONS = {
   assigned: People,
+  unassigned: People,
   mentioned: Comment,
   following: Bell,
   reminder: Clock
@@ -45,7 +46,12 @@ function sentenceOf(
   if (reason === 'following' && change) {
     return describe(change, undefined, t, lang)
   }
-  if ((reason === 'assigned' || reason === 'mentioned') && actor) {
+  if (
+    (reason === 'assigned' ||
+      reason === 'unassigned' ||
+      reason === 'mentioned') &&
+    actor
+  ) {
     return t(`notifications.sentence.${reason}`, { actor: displayName(actor) })
   }
   return t(`notifications.reason.${reason}`)

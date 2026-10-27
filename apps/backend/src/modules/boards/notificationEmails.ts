@@ -345,7 +345,9 @@ export function emailNotification(deps: {
             ? messages.reminder(due)
             : comment
               ? messages.commented(actor)
-              : await describe(tx, row, entry, messages, lang, actor)
+              : row.reason === 'unassigned'
+                ? messages.unassignedYou(actor)
+                : await describe(tx, row, entry, messages, lang, actor)
     const subject =
       why === 'assigned'
         ? messages.subjects.assigned(actor, task)

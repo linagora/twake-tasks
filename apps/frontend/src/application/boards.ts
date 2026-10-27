@@ -82,7 +82,7 @@ export interface Comment {
  */
 export interface Notification {
   id: string
-  reason: 'assigned' | 'mentioned' | 'following' | 'reminder'
+  reason: 'assigned' | 'unassigned' | 'mentioned' | 'following' | 'reminder'
   boardId: string
   boardName: string
   taskId: string
