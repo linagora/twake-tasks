@@ -2,9 +2,18 @@ import { useSearchParams } from 'react-router'
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
 
-// The shape alone lets impossible days through, as 2026-02-31.
-const isDay = (text: string): boolean =>
-  DAY.test(text) && new Date(`${text}T00:00:00Z`).toISOString().startsWith(text)
+// The shape alone lets impossible days through, as 2026-02-31. Date.UTC rolls
+// them over in every engine; parsing the text instead gives an Invalid Date
+// (in Safari, or for a month above 12), whose toISOString throws.
+const isDay = (text: string): boolean => {
+  if (!DAY.test(text)) return false
+  const date = Date.UTC(
+    Number(text.slice(0, 4)),
+    Number(text.slice(5, 7)) - 1,
+    Number(text.slice(8))
+  )
+  return new Date(date).toISOString().startsWith(text)
+}
 
 /**
  * The new task dialog is open while the URL holds `?new=task`, so a link opens
