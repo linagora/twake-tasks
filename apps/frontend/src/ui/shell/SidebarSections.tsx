@@ -44,6 +44,7 @@ import {
   MenuItem,
   NavIcon,
   TextField,
+  Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import {
@@ -77,7 +78,13 @@ import {
   SidebarSection as SectionList,
   SidebarSectionEntry
 } from '@/ds/AppFrame'
-import { SubMenuForm, SubMenuIcon, SubMenuItem } from '@/ds/SubMenu'
+import {
+  SubMenuActionGap,
+  SubMenuActions,
+  SubMenuForm,
+  SubMenuIcon,
+  SubMenuItem
+} from '@/ds/SubMenu'
 import { viewIcon } from '@/ds/viewIcons'
 import {
   useBoards,
@@ -805,23 +812,102 @@ export function SidebarPlaceMenuItem({
   const sections = useSidebarSections().data ?? []
   const nameOf = useNameOf()
   const { current, place } = usePlaceInSidebar(item)
+  const rename = useRenameSidebarSection()
+  const remove = useDeleteSidebarSection()
   const [naming, setNaming] = useState(false)
-  const option = (where: string, label: string) => (
-    <MenuItem
-      key={where}
-      role="menuitemradio"
-      aria-checked={where === current}
-      onClick={() => {
-        onPicked()
-        place(where)
-      }}
-    >
-      <SubMenuIcon hidden={where !== current}>
-        <Icon icon={Check} />
-      </SubMenuIcon>
-      <ListItemText>{label}</ListItemText>
-    </MenuItem>
-  )
+  // The section renamed or deleted right in the menu, which stays open.
+  const [editing, setEditing] = useState<{
+    sectionId: string
+    action: 'rename' | 'delete'
+  } | null>(null)
+  const option = (
+    where: string,
+    label: string,
+    section: SidebarSection | null = null
+  ) =>
+    editing && section?.id === editing.sectionId ? (
+      editing.action === 'rename' ? (
+        <SectionNameField
+          key={where}
+          initial={label}
+          submitLabel={t('sidebar.save')}
+          pending={rename.isPending}
+          failed={rename.isError}
+          onSubmit={name => {
+            rename.mutate(
+              { sectionId: section.id, name },
+              {
+                onSuccess: () => {
+                  setEditing(null)
+                }
+              }
+            )
+          }}
+          onCancel={() => {
+            setEditing(null)
+          }}
+        />
+      ) : (
+        <MenuConfirm
+          key={where}
+          title={t('sidebar.deleteTitle', { name: label })}
+          text={t('sidebar.deleteText')}
+          confirmLabel={t('sidebar.deleteConfirm')}
+          pending={remove.isPending}
+          failed={remove.isError}
+          onConfirm={() => {
+            remove.mutate(section.id, {
+              onSuccess: () => {
+                setEditing(null)
+              }
+            })
+          }}
+          onCancel={() => {
+            setEditing(null)
+          }}
+        />
+      )
+    ) : (
+      <MenuItem
+        key={where}
+        role="menuitemradio"
+        aria-checked={where === current}
+        onClick={() => {
+          onPicked()
+          place(where)
+        }}
+      >
+        <SubMenuIcon hidden={where !== current}>
+          <Icon icon={Check} />
+        </SubMenuIcon>
+        <ListItemText>{label}</ListItemText>
+        {section && (
+          // The pointer's way; the keyboard's is the section's own menu.
+          <SubMenuActions>
+            <SectionAction
+              icon={Pen}
+              label={t('sidebar.renameSection', { name: label })}
+              onClick={() => {
+                setEditing({ sectionId: section.id, action: 'rename' })
+              }}
+            />
+            {section.favorites ? (
+              <SubMenuActionGap size="xsmall" disabled aria-hidden>
+                <Icon icon={Trash} size={14} />
+              </SubMenuActionGap>
+            ) : (
+              <SectionAction
+                icon={Trash}
+                label={t('sidebar.deleteSection', { name: label })}
+                onClick={() => {
+                  setEditing({ sectionId: section.id, action: 'delete' })
+                }}
+              />
+            )}
+          </SubMenuActions>
+        )}
+      </MenuItem>
+    )
 
   return (
     <SubMenuItem
@@ -832,7 +918,11 @@ export function SidebarPlaceMenuItem({
       {!sections.some(section => section.favorites) &&
         option(FAVORITES, t('boards.favorites'))}
       {sections.map(section =>
-        option(section.favorites ? FAVORITES : section.id, nameOf(section))
+        option(
+          section.favorites ? FAVORITES : section.id,
+          nameOf(section),
+          section
+        )
       )}
       {option(NOWHERE, t('sidebar.nowhere'))}
       <Divider />
@@ -862,6 +952,145 @@ export function SidebarPlaceMenuItem({
   )
 }
 
+// An action on the entry of a section, which leaves the menu open.
+function SectionAction({
+  icon,
+  label,
+  onClick
+}: {
+  icon: ElementType
+  label: string
+  onClick: () => void
+}): ReactElement {
+  return (
+    <Tooltip disableInteractive title={label}>
+      <IconButton
+        size="xsmall"
+        aria-label={label}
+        tabIndex={-1}
+        onClick={event => {
+          event.stopPropagation()
+          onClick()
+        }}
+      >
+        <Icon icon={icon} size={14} />
+      </IconButton>
+    </Tooltip>
+  )
+}
+
+// Clicks and keys in a form of the menu are its own, not the menu's.
+const ownEvents = (onCancel: () => void) => ({
+  onClick: (event: { stopPropagation: () => void }) => {
+    event.stopPropagation()
+  },
+  onKeyDown: (event: { stopPropagation: () => void; key: string }) => {
+    event.stopPropagation()
+    if (event.key === 'Escape') onCancel()
+  }
+})
+
+/** Asks in the menu before deleting a section. */
+function MenuConfirm({
+  title,
+  text,
+  confirmLabel,
+  pending,
+  failed,
+  onConfirm,
+  onCancel
+}: {
+  title: string
+  text: string
+  confirmLabel: string
+  pending: boolean
+  failed: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  return (
+    <SubMenuForm role="none" {...ownEvents(onCancel)}>
+      <Typography variant="subtitle2">{title}</Typography>
+      <Typography variant="body2" color="text.secondary">
+        {text}
+      </Typography>
+      {failed && (
+        <Typography role="alert" variant="caption" color="error">
+          {t('sidebar.failed')}
+        </Typography>
+      )}
+      <Button
+        size="small"
+        color="error"
+        disabled={pending}
+        ref={focusOnMount}
+        onClick={onConfirm}
+      >
+        {confirmLabel}
+      </Button>
+      <Button variant="text" size="small" onClick={onCancel}>
+        {t('board.cancel')}
+      </Button>
+    </SubMenuForm>
+  )
+}
+
+/** A name typed in the menu, for a new section or a renamed one. */
+function SectionNameField({
+  initial = '',
+  submitLabel,
+  pending,
+  failed,
+  onSubmit,
+  onCancel
+}: {
+  initial?: string
+  submitLabel: string
+  pending: boolean
+  failed: boolean
+  onSubmit: (name: string) => void
+  onCancel: () => void
+}): ReactElement {
+  const { t } = useI18n()
+  const [name, setName] = useState(initial)
+
+  return (
+    <SubMenuForm role="none" {...ownEvents(onCancel)}>
+      <form
+        onSubmit={event => {
+          event.preventDefault()
+          const trimmed = name.trim()
+          if (trimmed) onSubmit(trimmed)
+        }}
+      >
+        <TextField
+          label={t('sidebar.name')}
+          value={name}
+          onChange={event => {
+            setName(event.target.value)
+          }}
+          size="small"
+          fullWidth
+          inputRef={focusOnMount}
+          slotProps={{ htmlInput: { maxLength: 100 } }}
+        />
+        {failed && (
+          <Typography role="alert" variant="caption" color="error">
+            {t('sidebar.failed')}
+          </Typography>
+        )}
+        <Button type="submit" size="small" disabled={pending || !name.trim()}>
+          {submitLabel}
+        </Button>
+        <Button variant="text" size="small" onClick={onCancel}>
+          {t('board.cancel')}
+        </Button>
+      </form>
+    </SubMenuForm>
+  )
+}
+
 /**
  * Names a new section of the sidebar in the menu, as a task is added in a
  * column: the section then holds the board or view.
@@ -879,66 +1108,27 @@ function NewSectionField({
   const sections = useSidebarSections().data ?? []
   const create = useCreateSidebarSection()
   const save = useSaveSidebarLayout()
-  const [name, setName] = useState('')
-  const pending = create.isPending || save.isPending
 
   return (
-    <SubMenuForm
-      role="none"
-      // Clicks and keys are its own, not the menu's.
-      onClick={event => {
-        event.stopPropagation()
+    <SectionNameField
+      submitLabel={t('sidebar.create')}
+      pending={create.isPending || save.isPending}
+      failed={create.isError || save.isError}
+      onCancel={onCancel}
+      onSubmit={name => {
+        create.mutate(name, {
+          onSuccess: ({ id }) => {
+            save.mutate(
+              withItem(
+                [...sections, { id, name, favorites: false, items: [] }],
+                id,
+                item
+              ),
+              { onSuccess: onDone }
+            )
+          }
+        })
       }}
-      onKeyDown={event => {
-        event.stopPropagation()
-        if (event.key === 'Escape') onCancel()
-      }}
-    >
-      <form
-        onSubmit={event => {
-          event.preventDefault()
-          const trimmed = name.trim()
-          if (!trimmed) return
-          create.mutate(trimmed, {
-            onSuccess: ({ id }) => {
-              save.mutate(
-                withItem(
-                  [
-                    ...sections,
-                    { id, name: trimmed, favorites: false, items: [] }
-                  ],
-                  id,
-                  item
-                ),
-                { onSuccess: onDone }
-              )
-            }
-          })
-        }}
-      >
-        <TextField
-          label={t('sidebar.name')}
-          value={name}
-          onChange={event => {
-            setName(event.target.value)
-          }}
-          size="small"
-          fullWidth
-          inputRef={focusOnMount}
-          slotProps={{ htmlInput: { maxLength: 100 } }}
-        />
-        {(create.isError || save.isError) && (
-          <Typography role="alert" variant="caption" color="error">
-            {t('sidebar.failed')}
-          </Typography>
-        )}
-        <Button type="submit" size="small" disabled={pending || !name.trim()}>
-          {t('sidebar.create')}
-        </Button>
-        <Button variant="text" size="small" onClick={onCancel}>
-          {t('board.cancel')}
-        </Button>
-      </form>
-    </SubMenuForm>
+    />
   )
 }

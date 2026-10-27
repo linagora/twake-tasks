@@ -674,6 +674,8 @@
     "newSectionOption": "Nouvelle section",
     "failed": "Les sections n’ont pas pu être enregistrées.",
     "fold": "Replier %{name}",
-    "unfold": "Déplier %{name}"
+    "unfold": "Déplier %{name}",
+    "renameSection": "Renommer %{name}",
+    "deleteSection": "Supprimer %{name}"
   }
 }

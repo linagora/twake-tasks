@@ -674,6 +674,8 @@
     "newSectionOption": "Новый раздел",
     "failed": "Не удалось сохранить разделы.",
     "fold": "Свернуть «%{name}»",
-    "unfold": "Развернуть «%{name}»"
+    "unfold": "Развернуть «%{name}»",
+    "renameSection": "Переименовать %{name}",
+    "deleteSection": "Удалить %{name}"
   }
 }

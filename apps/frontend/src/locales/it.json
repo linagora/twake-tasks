@@ -674,6 +674,8 @@
     "newSectionOption": "Nuova sezione",
     "failed": "Impossibile salvare le sezioni.",
     "fold": "Comprimi %{name}",
-    "unfold": "Espandi %{name}"
+    "unfold": "Espandi %{name}",
+    "renameSection": "Rinomina %{name}",
+    "deleteSection": "Elimina %{name}"
   }
 }

@@ -674,6 +674,8 @@
     "newSectionOption": "Nueva sección",
     "failed": "No se pudieron guardar las secciones.",
     "fold": "Contraer %{name}",
-    "unfold": "Expandir %{name}"
+    "unfold": "Expandir %{name}",
+    "renameSection": "Cambiar el nombre de %{name}",
+    "deleteSection": "Eliminar %{name}"
   }
 }

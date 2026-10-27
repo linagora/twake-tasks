@@ -1,5 +1,6 @@
 import { Icon, Right } from '@linagora/twake-icons'
 import {
+  IconButton,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -141,3 +142,18 @@ export const SubMenuForm = styled('li')(({ theme }) => ({
   '& .MuiButton-root': { marginTop: theme.spacing(1) },
   '& .MuiButton-root + .MuiButton-root': { marginLeft: theme.spacing(1) }
 }))
+
+/** Actions at the end of an entry, shown while the pointer is over it. */
+export const SubMenuActions = styled('span')(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(0.5),
+  marginLeft: 'auto',
+  paddingLeft: theme.spacing(1),
+  visibility: 'hidden',
+  '.MuiMenuItem-root:hover > &, .MuiMenuItem-root.Mui-focusVisible > &': {
+    visibility: 'visible'
+  }
+}))
+
+/** The place of an action an entry lacks, for those of the others to align. */
+export const SubMenuActionGap = styled(IconButton)({ visibility: 'hidden' })

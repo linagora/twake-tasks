@@ -674,6 +674,8 @@
     "newSectionOption": "Mục mới",
     "failed": "Không thể lưu các mục.",
     "fold": "Thu gọn %{name}",
-    "unfold": "Mở rộng %{name}"
+    "unfold": "Mở rộng %{name}",
+    "renameSection": "Đổi tên %{name}",
+    "deleteSection": "Xóa %{name}"
   }
 }

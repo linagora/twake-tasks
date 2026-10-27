@@ -674,6 +674,8 @@
     "newSectionOption": "Neuer Abschnitt",
     "failed": "Die Abschnitte konnten nicht gespeichert werden.",
     "fold": "%{name} einklappen",
-    "unfold": "%{name} ausklappen"
+    "unfold": "%{name} ausklappen",
+    "renameSection": "%{name} umbenennen",
+    "deleteSection": "%{name} löschen"
   }
 }

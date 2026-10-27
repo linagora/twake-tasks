@@ -674,6 +674,8 @@
     "newSectionOption": "New section",
     "failed": "The sections could not be saved.",
     "fold": "Fold %{name}",
-    "unfold": "Unfold %{name}"
+    "unfold": "Unfold %{name}",
+    "renameSection": "Rename %{name}",
+    "deleteSection": "Delete %{name}"
   }
 }

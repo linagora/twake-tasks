@@ -567,6 +567,49 @@ describe('AppShell', () => {
     })
   })
 
+  it('renames and deletes a section from Show in the sidebar, Favorites kept', async () => {
+    const board = { ...aBoard(), id: 'board-1', name: 'Design' }
+    const boardsApi = fakeBoardsApi([board])
+    await boardsApi.createSidebarSection('Work')
+    renderRoute('/boards/board-1', { boardsApi })
+    const openWhere = async () => {
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Board options' })
+      )
+      fireEvent.click(
+        await screen.findByRole('menuitem', { name: 'Show in the sidebar' })
+      )
+      return within(
+        await screen.findByRole('menu', { name: 'Show in the sidebar' })
+      )
+    }
+
+    const where = await openWhere()
+    expect(where.getByLabelText('Rename Favorites')).toBeInTheDocument()
+    expect(where.queryByLabelText('Delete Favorites')).toBeNull()
+    fireEvent.click(where.getByLabelText('Rename Work'))
+    fireEvent.change(where.getByLabelText(/^Name/), {
+      target: { value: 'Job' }
+    })
+    fireEvent.click(where.getByRole('button', { name: 'Save' }))
+    expect(
+      await where.findByRole('menuitemradio', { name: /^Job/ })
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByRole('list', { name: 'Job', hidden: true })
+    ).toBeInTheDocument()
+
+    fireEvent.click(where.getByLabelText('Delete Job'))
+    expect(where.getByText('Delete Job?')).toBeInTheDocument()
+    fireEvent.click(where.getByRole('button', { name: 'Delete' }))
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('list', { name: 'Job', hidden: true })
+      ).toBeNull()
+    })
+    expect(where.queryByRole('menuitemradio', { name: /^Job/ })).toBeNull()
+  })
+
   it('counts unread notifications until they are opened', async () => {
     const boardsApi = fakeBoardsApi()
     boardsApi.notifications.push(aNotification({ reason: 'assigned' }))
