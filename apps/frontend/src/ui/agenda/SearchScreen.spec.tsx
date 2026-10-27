@@ -73,7 +73,8 @@ describe('SearchScreen', () => {
         boardId: design.id,
         boardName: design.name,
         parentTitle: null,
-        excerpt: '…for the spring fair in Lyon'
+        excerpt: '…for the spring fair in Lyon',
+        match: { field: 'description', text: '…for the spring fair in Lyon' }
       }
     ])
     renderRoute('/search?q=fair', { boardsApi })
@@ -301,5 +302,38 @@ describe('live search results', () => {
     fireEvent.keyDown(field, { key: 'Escape' })
     expect(field).toHaveValue('')
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  it('says why a task answers when its title does not', async () => {
+    const { design, boardsApi } = boards()
+    boardsApi.search.mockResolvedValue([
+      {
+        ...aTask(null, { key: 'DES-2', title: 'Poster' }),
+        category: null,
+        boardId: design.id,
+        boardName: design.name,
+        parentTitle: null,
+        excerpt: '…for the spring fair in Lyon',
+        match: { field: 'description', text: '…for the spring fair in Lyon' }
+      }
+    ])
+    renderRoute('/', { boardsApi })
+
+    await type('fair')
+    const option = await screen.findByRole('option', { name: /Poster/ })
+
+    expect(option).toHaveTextContent(
+      'PosterDES-2 · DesignDescription: …for the spring fair in Lyon'
+    )
+  })
+
+  it('says a board answers by its key prefix, not by its name', async () => {
+    const marketing = aBoard({ name: 'Marketing', keyPrefix: 'MKT' })
+    renderRoute('/', { boardsApi: fakeBoardsApi([marketing]) })
+
+    await type('mkt')
+    expect(
+      await screen.findByRole('option', { name: /^Marketing/ })
+    ).toHaveTextContent('Key: MKT')
   })
 })

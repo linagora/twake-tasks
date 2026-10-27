@@ -543,7 +543,12 @@
     "tooShort": "Для поиска введите не менее %{count} символов.",
     "allBoards": "Показать все доски (%{smart_count})",
     "found": "Найдена %{smart_count} задача по запросу «%{text}» |||| Найдено %{smart_count} задачи по запросу «%{text}» |||| Найдено %{smart_count} задач по запросу «%{text}»",
-    "boardsFound": "Найдена %{smart_count} доска |||| Найдено %{smart_count} доски |||| Найдено %{smart_count} досок"
+    "boardsFound": "Найдена %{smart_count} доска |||| Найдено %{smart_count} доски |||| Найдено %{smart_count} досок",
+    "match": {
+      "key": "Ключ:",
+      "previousKey": "Ранее",
+      "description": "Описание:"
+    }
   },
   "picker": {
     "count": "%{smart_count} вариант |||| %{smart_count} варианта |||| %{smart_count} вариантов"

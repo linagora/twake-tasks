@@ -1,4 +1,5 @@
 import {
+  Box,
   ListItem,
   ListItemIcon,
   ListItemSkeleton,
@@ -22,6 +23,8 @@ export interface ResultItem {
   icon: ReactNode
   primary: ReactNode
   secondary: ReactNode
+  /** Why it answers, when its name does not show it: a line of its own. */
+  detail?: ReactNode
 }
 
 /**
@@ -141,7 +144,27 @@ function ResultMenuItem({
     >
       {/* Icons drawn in currentColor take the colour of text. */}
       <ListItemIcon sx={{ color: 'text.primary' }}>{item.icon}</ListItemIcon>
-      <ListItemText primary={item.primary} secondary={item.secondary} />
+      <ListItemText
+        primary={item.primary}
+        secondary={
+          <>
+            {item.secondary}
+            {item.detail && (
+              <Box
+                component="span"
+                sx={{
+                  display: 'block',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {item.detail}
+              </Box>
+            )}
+          </>
+        }
+      />
     </MenuItem>
   )
 }

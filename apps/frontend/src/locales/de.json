@@ -543,7 +543,12 @@
     "tooShort": "Geben Sie mindestens %{count} Zeichen ein, um zu suchen.",
     "allBoards": "Alle %{smart_count} Boards anzeigen",
     "found": "%{smart_count} Aufgabe für „%{text}“ gefunden |||| %{smart_count} Aufgaben für „%{text}“ gefunden",
-    "boardsFound": "%{smart_count} Board gefunden |||| %{smart_count} Boards gefunden"
+    "boardsFound": "%{smart_count} Board gefunden |||| %{smart_count} Boards gefunden",
+    "match": {
+      "key": "Schlüssel:",
+      "previousKey": "Früher",
+      "description": "Beschreibung:"
+    }
   },
   "picker": {
     "count": "%{smart_count} Option |||| %{smart_count} Optionen"

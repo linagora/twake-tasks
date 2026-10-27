@@ -77,7 +77,13 @@ function useLiveResults(query: string): {
       // The icon of each board in the navigation.
       icon: <Icon icon={Mosaic} size={24} color="currentColor" />,
       primary: <Highlight text={board.name} query={query} tone="primary" />,
-      secondary: projectName(board.project)
+      secondary: projectName(board.project),
+      detail: !fold(board.name).includes(folded) && (
+        <>
+          {t('search.match.key')}{' '}
+          <Highlight text={board.keyPrefix} query={query} tone="primary" />
+        </>
+      )
     })),
     ...(tasks.data ?? []).map(task => ({
       id: task.id,
@@ -85,7 +91,23 @@ function useLiveResults(query: string): {
       // The app's icon, outlined, in the colour of text.
       icon: <Icon icon={TaskIcon} size={24} color="currentColor" />,
       primary: <Highlight text={task.title} query={query} tone="primary" />,
-      secondary: `${task.key} · ${task.boardName}`
+      secondary: (
+        <>
+          {task.match?.field === 'key' ? (
+            <Highlight text={task.key} query={query} tone="primary" />
+          ) : (
+            task.key
+          )}
+          {` · ${task.boardName}`}
+        </>
+      ),
+      detail: (task.match?.field === 'previousKey' ||
+        task.match?.field === 'description') && (
+        <>
+          {t(`search.match.${task.match.field}`)}{' '}
+          <Highlight text={task.match.text} query={query} tone="primary" />
+        </>
+      )
     }))
   ]
   return {

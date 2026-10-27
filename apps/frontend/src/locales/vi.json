@@ -543,7 +543,12 @@
     "tooShort": "Nhập ít nhất %{count} ký tự để tìm kiếm.",
     "allBoards": "Hiện tất cả %{smart_count} bảng",
     "found": "Tìm thấy %{smart_count} nhiệm vụ cho “%{text}”",
-    "boardsFound": "Tìm thấy %{smart_count} bảng"
+    "boardsFound": "Tìm thấy %{smart_count} bảng",
+    "match": {
+      "key": "Mã:",
+      "previousKey": "Trước đây",
+      "description": "Mô tả:"
+    }
   },
   "picker": {
     "count": "%{smart_count} lựa chọn"
