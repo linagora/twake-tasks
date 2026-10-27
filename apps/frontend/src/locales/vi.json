@@ -687,6 +687,7 @@
     "items": "%{smart_count} bảng hoặc chế độ xem",
     "add": "Thêm",
     "empty": "Chưa có bảng hoặc chế độ xem nào",
-    "dragInstructions": "Để di chuyển một mục, nhấn phím cách hoặc Enter. Dùng các phím mũi tên để di chuyển, phím cách hoặc Enter để thả và Escape để hủy."
+    "dragInstructions": "Để di chuyển một mục, bảng hoặc chế độ xem, nhấn phím cách hoặc Enter. Dùng các phím mũi tên để di chuyển, phím cách hoặc Enter để thả và Escape để hủy.",
+    "dragEntry": "bảng hoặc chế độ xem có thể kéo"
   }
 }

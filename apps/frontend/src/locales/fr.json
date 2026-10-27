@@ -687,6 +687,7 @@
     "items": "%{smart_count} tableau ou vue |||| %{smart_count} tableaux et vues",
     "add": "Ajouter",
     "empty": "Aucun tableau ni vue pour l’instant",
-    "dragInstructions": "Pour déplacer une section, appuyez sur espace ou entrée. Utilisez les flèches pour la déplacer, espace ou entrée pour la déposer, et échap pour annuler."
+    "dragInstructions": "Pour déplacer une section, un tableau ou une vue, appuyez sur espace ou entrée. Utilisez les flèches pour le déplacer, espace ou entrée pour le déposer, et échap pour annuler.",
+    "dragEntry": "tableau ou vue déplaçable"
   }
 }

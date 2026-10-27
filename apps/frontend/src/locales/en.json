@@ -687,6 +687,7 @@
     "items": "%{smart_count} board or view |||| %{smart_count} boards and views",
     "add": "Add",
     "empty": "No boards or views yet",
-    "dragInstructions": "To move a section, press space or enter. Use the arrow keys to move it, space or enter to drop it, and escape to cancel."
+    "dragInstructions": "To move a section, a board or a view, press space or enter. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.",
+    "dragEntry": "draggable board or view"
   }
 }

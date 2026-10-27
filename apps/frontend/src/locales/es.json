@@ -687,6 +687,7 @@
     "items": "%{smart_count} tablero o vista |||| %{smart_count} tableros y vistas",
     "add": "Añadir",
     "empty": "Aún no hay tableros ni vistas",
-    "dragInstructions": "Para mover una sección, pulsa espacio o intro. Usa las flechas para moverla, espacio o intro para soltarla y escape para cancelar."
+    "dragInstructions": "Para mover una sección, un tablero o una vista, pulsa espacio o intro. Usa las flechas para moverlo, espacio o intro para soltarlo y escape para cancelar.",
+    "dragEntry": "tablero o vista que se puede mover"
   }
 }

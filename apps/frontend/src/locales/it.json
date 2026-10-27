@@ -687,6 +687,7 @@
     "items": "%{smart_count} bacheca o vista |||| %{smart_count} bacheche e viste",
     "add": "Aggiungi",
     "empty": "Ancora nessuna bacheca o vista",
-    "dragInstructions": "Per spostare una sezione, premi spazio o invio. Usa le frecce per spostarla, spazio o invio per rilasciarla ed esc per annullare."
+    "dragInstructions": "Per spostare una sezione, una bacheca o una vista, premi spazio o invio. Usa le frecce per spostarla, spazio o invio per rilasciarla ed esc per annullare.",
+    "dragEntry": "bacheca o vista trascinabile"
   }
 }

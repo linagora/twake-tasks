@@ -1,4 +1,16 @@
-import type { Announcements, UniqueIdentifier } from '@dnd-kit/core'
+import {
+  closestCenter,
+  pointerWithin,
+  type Active,
+  type Announcements,
+  type CollisionDetection,
+  type Over
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable'
 import {
   Folder,
   Gear,
@@ -35,10 +47,17 @@ import {
 } from 'react'
 import { useHref, useLinkClickHandler } from 'react-router'
 
-import type { SidebarSection } from '@/application/boards'
+import type { SidebarItem, SidebarSection } from '@/application/boards'
+import { droppedItem } from '@/application/sidebarSections'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { ListSection } from '@/ds/ListSection'
-import { SortableRow, SortableRows } from '@/ds/SortableRows'
+import {
+  SortableEntry,
+  SortableRow,
+  SortableRows,
+  useRowDrag,
+  type RowData
+} from '@/ds/SortableRows'
 import { SubMenuActionGap } from '@/ds/SubMenu'
 import { atPointer } from '@/ui/boards/BoardDrag'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
@@ -52,6 +71,7 @@ import {
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import {
+  useMoveToFavorites,
   useNameOf,
   useShownItems,
   type Shown
@@ -83,37 +103,66 @@ function SidebarSectionsSettings(): ReactElement {
   const { t } = useI18n()
   const sections = useSidebarSections()
   const nameOf = useNameOf()
+  const shownIn = useShownItems()
   const save = useSaveSidebarLayout()
+  const moveToFavorites = useMoveToFavorites()
   const [creating, setCreating] = useState(false)
   const all = sections.data ?? []
   const ids = all.map(section => section.id)
-  const nameAt = (id: UniqueIdentifier) => {
-    const section = all.find(each => each.id === id)
+  const sectionName = (sectionId: string) => {
+    const section = all.find(each => each.id === sectionId)
     return section ? nameOf(section) : ''
   }
-  const position = (id: UniqueIdentifier | undefined) => ({
-    position: ids.indexOf(String(id)) + 1,
+  const rowName = (row: RowData) =>
+    isEntry(row) ? row.label : isSection(row) ? sectionName(row.sectionId) : ''
+  const position = (row: RowData | undefined) => ({
+    position: row && isSection(row) ? ids.indexOf(row.sectionId) + 1 : 0,
     count: ids.length
   })
+  const dataOf = (side: Active | Over | null): RowData | undefined =>
+    side?.data.current
   const announcements: Announcements = {
-    onDragStart: ({ active }) =>
-      t('drag.columnPicked', { section: nameAt(active.id) }),
-    onDragOver: ({ active, over }) =>
-      over
-        ? t('drag.columnOver', {
-            section: nameAt(active.id),
-            ...position(over.id)
+    onDragStart: ({ active }) => {
+      const row = dataOf(active)
+      return row && isEntry(row)
+        ? t('drag.picked', { task: row.label })
+        : t('drag.columnPicked', { section: rowName(row ?? {}) })
+    },
+    onDragOver: ({ active, over }) => {
+      const row = dataOf(active)
+      const target = dataOf(over)
+      if (!row || !target) return undefined
+      return isEntry(row)
+        ? t('drag.over', {
+            task: row.label,
+            place: sectionName(String(target.sectionId))
           })
-        : undefined,
-    onDragEnd: ({ active, over }) =>
-      over
+        : t('drag.columnOver', { section: rowName(row), ...position(target) })
+    },
+    onDragEnd: ({ active, over }) => {
+      const row = dataOf(active) ?? {}
+      const target = dataOf(over)
+      if (isEntry(row)) {
+        return target
+          ? t('drag.dropped', {
+              task: row.label,
+              place: sectionName(String(target.sectionId))
+            })
+          : t('drag.canceled', { task: row.label })
+      }
+      return target
         ? t('drag.columnDropped', {
-            section: nameAt(active.id),
-            ...position(over.id)
+            section: rowName(row),
+            ...position(target)
           })
-        : t('drag.columnCanceled', { section: nameAt(active.id) }),
-    onDragCancel: ({ active }) =>
-      t('drag.columnCanceled', { section: nameAt(active.id) })
+        : t('drag.columnCanceled', { section: rowName(row) })
+    },
+    onDragCancel: ({ active }) => {
+      const row = dataOf(active) ?? {}
+      return isEntry(row)
+        ? t('drag.canceled', { task: row.label })
+        : t('drag.columnCanceled', { section: rowName(row) })
+    }
   }
 
   return (
@@ -138,23 +187,51 @@ function SidebarSectionsSettings(): ReactElement {
         </Typography>
       )}
       <SortableRows
-        ids={ids}
-        nameOf={nameAt}
+        collisionDetection={collisions}
+        nameOf={rowName}
         announcements={announcements}
         previewModifiers={[atPointer]}
         instructions={t('settings.dragInstructions')}
-        onSort={order => {
-          save.mutate(
-            order.flatMap(id => all.filter(section => section.id === id))
-          )
+        onDrop={(row, target) => {
+          if (isSection(row)) {
+            if (!isSection(target)) return
+            const order = arrayMove(
+              ids,
+              ids.indexOf(row.sectionId),
+              ids.indexOf(target.sectionId)
+            )
+            save.mutate(
+              order.flatMap(id => all.filter(section => section.id === id))
+            )
+            return
+          }
+          if (!isEntry(row)) return
+          const into = all.find(section => section.id === target.sectionId)
+          if (!into) return
+          // Favorites holds the favorites in no other, in no order of theirs.
+          if (into.favorites) {
+            if (into.id !== row.sectionId) moveToFavorites(row.item)
+            return
+          }
+          const next = droppedItem(all, row.item, {
+            sectionId: into.id,
+            index: isEntry(target) ? target.index : into.items.length
+          })
+          if (JSON.stringify(next) !== JSON.stringify(all)) save.mutate(next)
         }}
       >
-        {all.map((section, index) => (
-          <Fragment key={section.id}>
-            {index > 0 && <Divider component="li" variant="inset" />}
-            <SectionRow section={section} name={nameOf(section)} />
-          </Fragment>
-        ))}
+        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+          {all.map((section, index) => (
+            <Fragment key={section.id}>
+              {index > 0 && <Divider component="li" variant="inset" />}
+              <SectionRow
+                section={section}
+                name={nameOf(section)}
+                shown={shownIn(section)}
+              />
+            </Fragment>
+          ))}
+        </SortableContext>
       </SortableRows>
       {save.isError && (
         <Typography component="li" role="alert" variant="body2" color="error">
@@ -172,25 +249,87 @@ function SidebarSectionsSettings(): ReactElement {
   )
 }
 
+/** A section, as a drag carries it. */
+interface SectionDrag extends RowData {
+  type: 'section'
+  sectionId: string
+}
+
+/** A board or view of a section, as a drag carries it. */
+interface EntryDrag extends RowData {
+  type: 'entry'
+  sectionId: string
+  item: SidebarItem
+  /** Its place among the items of its section. */
+  index: number
+  label: string
+}
+
+const isSection = (row: RowData): row is SectionDrag => row.type === 'section'
+const isEntry = (row: RowData): row is EntryDrag => row.type === 'entry'
+
+const typeOf = (container: { data: { current?: RowData | undefined } }) =>
+  container.data.current?.type
+
+// A section sorts among the sections. A board or view lands on the one it
+// is over, else in the section it is over, even folded; the keyboard, with
+// no pointer, takes the closest board or view.
+const collisions: CollisionDetection = args => {
+  if (args.active.data.current?.type === 'section') {
+    return closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter(
+        container => typeOf(container) === 'section'
+      )
+    })
+  }
+  const hits = pointerWithin(args)
+  const onEntries = hits.filter(hit => {
+    const container = args.droppableContainers.find(each => each.id === hit.id)
+    return container && typeOf(container) === 'entry'
+  })
+  if (onEntries.length > 0) return onEntries
+  if (hits.length > 0) return hits
+  return closestCenter({
+    ...args,
+    droppableContainers: args.droppableContainers.filter(
+      container => typeOf(container) === 'entry'
+    )
+  })
+}
+
+const entryId = (sectionId: string, item: SidebarItem) =>
+  `${sectionId}|${item.kind}:${item.id}`
+
 function SectionRow({
   section,
-  name
+  name,
+  shown
 }: {
   section: SidebarSection
   name: string
+  shown: Shown[]
 }): ReactElement {
   const { t } = useI18n()
-  const shown = useShownItems()(section)
+  const drag = useRowDrag()
   const [open, setOpen] = useState(false)
   const [dialog, setDialog] = useState<'rename' | 'delete' | null>(null)
   const close = () => {
     setDialog(null)
   }
+  // A board or view from another section would land in it.
+  const landing =
+    drag !== null &&
+    isEntry(drag.active) &&
+    drag.over?.sectionId === section.id &&
+    drag.active.sectionId !== section.id
 
   return (
     <SortableRow
       id={section.id}
+      data={{ type: 'section', sectionId: section.id } satisfies SectionDrag}
       description={t('drag.column')}
+      highlighted={landing}
       open={open}
       onToggle={() => {
         setOpen(was => !was)
@@ -251,9 +390,29 @@ function SectionRow({
           <ListItemText secondary={t('settings.empty')} />
         </ListItem>
       )}
-      {shown.map(entry => (
-        <EntryLink key={`${entry.item.kind}:${entry.item.id}`} entry={entry} />
-      ))}
+      <SortableContext
+        items={shown.map(entry => entryId(section.id, entry.item))}
+        strategy={verticalListSortingStrategy}
+      >
+        {shown.map(entry => (
+          <SortableEntry
+            key={entryId(section.id, entry.item)}
+            id={entryId(section.id, entry.item)}
+            data={
+              {
+                type: 'entry',
+                sectionId: section.id,
+                item: entry.item,
+                index: entry.index,
+                label: entry.label
+              } satisfies EntryDrag
+            }
+            description={t('settings.dragEntry')}
+          >
+            <EntryLink entry={entry} />
+          </SortableEntry>
+        ))}
+      </SortableContext>
     </SortableRow>
   )
 }
@@ -268,14 +427,12 @@ function EntryLink({ entry }: { entry: Shown }): ReactElement {
   const href = useHref(entry.to)
   const open = useLinkClickHandler<HTMLDivElement>(entry.to)
   return (
-    <ListItem disablePadding>
-      <ListItemLink href={href} onClick={open}>
-        <ListItemIcon>
-          <Icon icon={entry.icon} />
-        </ListItemIcon>
-        <ListItemText primary={entry.label} />
-      </ListItemLink>
-    </ListItem>
+    <ListItemLink href={href} onClick={open}>
+      <ListItemIcon>
+        <Icon icon={entry.icon} />
+      </ListItemIcon>
+      <ListItemText primary={entry.label} />
+    </ListItemLink>
   )
 }
 

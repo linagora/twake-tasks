@@ -149,7 +149,7 @@ const DragTarget = createContext<{
  * Puts a board or view back in Favorites, out of the section it was in, and
  * stars it if it was not.
  */
-function useMoveToFavorites(): (item: SidebarItem) => void {
+export function useMoveToFavorites(): (item: SidebarItem) => void {
   const sections = useSidebarSections().data ?? []
   const boards = useBoards().data ?? []
   const views = useFilters().data ?? []
