@@ -3,6 +3,7 @@ import {
   Bell,
   Bottom,
   Eye,
+  Gear,
   Icon,
   Logout,
   Mosaic,
@@ -144,10 +145,9 @@ export function AppShell(): ReactElement {
             <SidebarSections
               lit={lit.favorite}
               onOpen={lit.openFavorite}
-              favorites={(name, menu) => (
+              favorites={name => (
                 <Favorites
                   name={name}
-                  menu={menu}
                   lit={
                     lit.favorite?.origin === FAVORITES ? lit.favorite.id : null
                   }
@@ -211,6 +211,19 @@ function Header({
     </IconButton>
   )
 
+  // The settings, as the gear of Twake Mail.
+  const settingsButton = (
+    <Tooltip disableInteractive title={t('settings.open')}>
+      <IconButton
+        component={RouterLink}
+        to="/settings"
+        aria-label={t('settings.open')}
+      >
+        <Icon icon={Gear} size={20} />
+      </IconButton>
+    </Tooltip>
+  )
+
   // The platform bar holds the account; the phone bottom bar has no room for
   // the filters, which the account menu offered.
   if (sdk) {
@@ -231,6 +244,7 @@ function Header({
                 </IconButton>
               )}
               {newTaskButton}
+              {settingsButton}
             </>
           )
         }}
@@ -251,6 +265,7 @@ function Header({
       {search}
       <TopBarSpacer />
       {newTaskButton}
+      {settingsButton}
       <AccountMenu />
     </TopBar>
   )
@@ -674,13 +689,10 @@ function ShelfLinks({ archivesLit }: { archivesLit: boolean }): ReactElement {
 
 function Favorites({
   name,
-  menu,
   lit,
   onOpen
 }: {
   name: string
-  /** Renames and moves it, as the other sections. */
-  menu: ReactNode
   lit: string | null
   onOpen: (id: string) => void
 }): ReactElement | null {
@@ -714,7 +726,6 @@ function Favorites({
         label: t(folded ? 'sidebar.unfold' : 'sidebar.fold', { name }),
         onToggle: toggleFolded
       }}
-      action={menu}
       {...drop}
     >
       {favorites.map(board => (

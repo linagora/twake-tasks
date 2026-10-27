@@ -677,5 +677,15 @@
     "unfold": "Mở rộng %{name}",
     "renameSection": "Đổi tên %{name}",
     "deleteSection": "Xóa %{name}"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "open": "Cài đặt",
+    "sections": "Các mục của thanh bên",
+    "newSection": "Mục mới",
+    "moveUp": "Chuyển %{name} lên",
+    "moveDown": "Chuyển %{name} xuống",
+    "favoritesHint": "Các mục yêu thích không thuộc mục nào khác",
+    "items": "%{smart_count} bảng hoặc chế độ xem"
   }
 }

@@ -677,5 +677,15 @@
     "unfold": "Espandi %{name}",
     "renameSection": "Rinomina %{name}",
     "deleteSection": "Elimina %{name}"
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "open": "Impostazioni",
+    "sections": "Sezioni della barra laterale",
+    "newSection": "Nuova sezione",
+    "moveUp": "Sposta su %{name}",
+    "moveDown": "Sposta giù %{name}",
+    "favoritesHint": "I preferiti che non sono in nessun'altra sezione",
+    "items": "%{smart_count} bacheca o vista |||| %{smart_count} bacheche e viste"
   }
 }

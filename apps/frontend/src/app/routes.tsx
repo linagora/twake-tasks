@@ -19,6 +19,7 @@ import {
   EmbedNewTask,
   EmbedProjectScreen
 } from '@/ui/embed/Embed'
+import { SettingsScreen } from '@/ui/settings/SettingsScreen'
 import { AppShell } from '@/ui/shell/AppShell'
 import { CrashScreen, NotFoundScreen } from '@/ui/shell/Problems'
 
@@ -49,6 +50,7 @@ export const routes: RouteObject[] = [
           { path: '/filters/:filterId/edit', element: <EditViewScreen /> },
           { path: '/search', element: <SearchScreen /> },
           { path: '/notifications', element: <NotificationsScreen /> },
+          { path: '/settings', element: <SettingsScreen /> },
           { path: '*', element: <NotFoundScreen /> }
         ]
       }

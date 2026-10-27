@@ -20,27 +20,19 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import {
   Check,
-  Dots,
-  Down,
   FolderAdd,
   Icon,
   Mosaic,
   Pen,
   Plus,
-  Trash,
-  Up
+  Trash
 } from '@linagora/twake-icons'
 import {
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   IconButton,
   ListItemIcon,
   ListItemText,
-  Menu,
   MenuItem,
   NavIcon,
   TextField,
@@ -51,7 +43,6 @@ import {
   createContext,
   Fragment,
   useContext,
-  useId,
   useRef,
   useState,
   type DragEvent,
@@ -64,12 +55,10 @@ import type { SidebarItem, SidebarSection } from '@/application/boards'
 import {
   droppedItem,
   holds,
-  movedSection,
   sectionOf,
   withItem,
   withoutItem
 } from '@/application/sidebarSections'
-import { ClosableTitle } from '@/ds/ClosableTitle'
 import {
   OneLineNavText,
   SidebarDragPreview,
@@ -303,7 +292,7 @@ interface Shown {
 }
 
 /** The name a section shows: Favorites, the app's until renamed. */
-function useNameOf(): (section: SidebarSection) => string {
+export function useNameOf(): (section: SidebarSection) => string {
   const { t } = useI18n()
   return section => section.name ?? t('boards.favorites')
 }
@@ -345,7 +334,7 @@ function useShownItems(): (section: SidebarSection) => Shown[] {
 
 /**
  * The sections of the sidebar in the person's order, Favorites among them,
- * which `favorites` draws, given its name and menu.
+ * which `favorites` draws, given its name. The settings manage them.
  */
 export function SidebarSections({
   lit,
@@ -355,7 +344,7 @@ export function SidebarSections({
   /** The section and item lit, when opened from a section. */
   lit: { origin: string; id: string } | null
   onOpen: (origin: string, id: string) => void
-  favorites: (name: string, menu: ReactNode) => ReactNode
+  favorites: (name: string) => ReactNode
 }): ReactElement {
   const { t } = useI18n()
   const sections = useSidebarSections().data ?? []
@@ -366,32 +355,22 @@ export function SidebarSections({
     <>
       {/* Until the sidebar's own comes, Favorites leads under its usual name. */}
       {!sections.some(section => section.favorites) &&
-        favorites(t('boards.favorites'), null)}
-      {sections.map((section, index) => {
-        const menu = (
-          <SectionMenu
-            section={section}
-            first={index === 0}
-            last={index === sections.length - 1}
-          />
-        )
-        return section.favorites ? (
-          <Fragment key={section.id}>
-            {favorites(nameOf(section), menu)}
-          </Fragment>
+        favorites(t('boards.favorites'))}
+      {sections.map(section =>
+        section.favorites ? (
+          <Fragment key={section.id}>{favorites(nameOf(section))}</Fragment>
         ) : (
           <CustomSection
             key={section.id}
             section={section}
             shown={shown(section)}
-            menu={menu}
             lit={lit?.origin === section.id ? lit.id : null}
             onOpen={id => {
               onOpen(section.id, id)
             }}
           />
         )
-      })}
+      )}
     </>
   )
 }
@@ -399,13 +378,11 @@ export function SidebarSections({
 function CustomSection({
   section,
   shown,
-  menu,
   lit,
   onOpen
 }: {
   section: SidebarSection
   shown: Shown[]
-  menu: ReactNode
   lit: string | null
   onOpen: (id: string) => void
 }): ReactElement {
@@ -450,7 +427,6 @@ function CustomSection({
         label: t(folded ? 'sidebar.unfold' : 'sidebar.fold', { name }),
         onToggle: toggleFolded
       }}
-      action={menu}
     >
       <SortableContext items={sortIds} strategy={verticalListSortingStrategy}>
         {shown.map((entry, position) => (
@@ -526,225 +502,6 @@ function SectionEntry({
   )
 }
 
-function SectionMenu({
-  section,
-  first,
-  last
-}: {
-  section: SidebarSection
-  first: boolean
-  last: boolean
-}): ReactElement {
-  const { t } = useI18n()
-  const name = useNameOf()(section)
-  const sections = useSidebarSections().data ?? []
-  const save = useSaveSidebarLayout()
-  const rename = useRenameSidebarSection()
-  const remove = useDeleteSidebarSection()
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
-  const [dialog, setDialog] = useState<'rename' | 'delete' | null>(null)
-  const titleId = useId()
-  const close = () => {
-    setAnchor(null)
-  }
-  const item = (
-    icon: ElementType,
-    label: string,
-    action: () => void,
-    disabled = false
-  ) => (
-    <MenuItem
-      disabled={disabled}
-      onClick={() => {
-        close()
-        action()
-      }}
-    >
-      <ListItemIcon>
-        <Icon icon={icon} />
-      </ListItemIcon>
-      <ListItemText>{label}</ListItemText>
-    </MenuItem>
-  )
-
-  return (
-    <>
-      <IconButton
-        size="xsmall"
-        aria-label={t('sidebar.sectionMenu', { name })}
-        aria-haspopup="menu"
-        aria-expanded={anchor !== null}
-        onClick={event => {
-          setAnchor(event.currentTarget)
-        }}
-      >
-        <Icon icon={Dots} size={14} />
-      </IconButton>
-      <Menu anchorEl={anchor} open={anchor !== null} onClose={close}>
-        {item(Pen, t('sidebar.rename'), () => {
-          setDialog('rename')
-        })}
-        {item(
-          Up,
-          t('sidebar.moveUp'),
-          () => {
-            save.mutate(movedSection(sections, section.id, -1))
-          },
-          first
-        )}
-        {item(
-          Down,
-          t('sidebar.moveDown'),
-          () => {
-            save.mutate(movedSection(sections, section.id, 1))
-          },
-          last
-        )}
-        {/* Favorites stays, as the place of the favorites in no other. */}
-        {!section.favorites &&
-          item(Trash, t('sidebar.delete'), () => {
-            setDialog('delete')
-          })}
-      </Menu>
-      {dialog === 'rename' && (
-        <SectionNameDialog
-          title={t('sidebar.renameTitle')}
-          initial={name}
-          submitLabel={t('sidebar.save')}
-          pending={rename.isPending}
-          failed={rename.isError}
-          onClose={() => {
-            setDialog(null)
-          }}
-          onSubmit={name => {
-            rename.mutate(
-              { sectionId: section.id, name },
-              {
-                onSuccess: () => {
-                  setDialog(null)
-                }
-              }
-            )
-          }}
-        />
-      )}
-      {dialog === 'delete' && (
-        <Dialog
-          open
-          onClose={() => {
-            setDialog(null)
-          }}
-          aria-labelledby={titleId}
-        >
-          <DialogTitle id={titleId}>
-            {t('sidebar.deleteTitle', { name })}
-          </DialogTitle>
-          <DialogContent>
-            <Typography>{t('sidebar.deleteText')}</Typography>
-          </DialogContent>
-          <DialogActions>
-            {remove.isError && (
-              <Typography role="alert" variant="caption" color="error">
-                {t('sidebar.failed')}
-              </Typography>
-            )}
-            <Button
-              variant="text"
-              onClick={() => {
-                setDialog(null)
-              }}
-            >
-              {t('sidebar.cancel')}
-            </Button>
-            <Button
-              color="error"
-              startIcon={<Icon icon={Trash} />}
-              disabled={remove.isPending}
-              onClick={() => {
-                remove.mutate(section.id, {
-                  onSuccess: () => {
-                    setDialog(null)
-                  }
-                })
-              }}
-            >
-              {t('sidebar.deleteConfirm')}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
-    </>
-  )
-}
-
-function SectionNameDialog({
-  title,
-  initial = '',
-  submitLabel,
-  pending,
-  failed,
-  onClose,
-  onSubmit
-}: {
-  title: string
-  initial?: string
-  submitLabel: string
-  pending: boolean
-  failed: boolean
-  onClose: () => void
-  onSubmit: (name: string) => void
-}): ReactElement {
-  const { t } = useI18n()
-  const titleId = useId()
-  const [name, setName] = useState(initial)
-
-  return (
-    <Dialog open onClose={onClose} aria-labelledby={titleId} size="small">
-      <form
-        onSubmit={event => {
-          event.preventDefault()
-          if (name.trim()) onSubmit(name.trim())
-        }}
-      >
-        <ClosableTitle
-          id={titleId}
-          title={title}
-          closeLabel={t('sidebar.close')}
-          onClose={onClose}
-        />
-        <DialogContent>
-          <TextField
-            label={t('sidebar.name')}
-            value={name}
-            onChange={event => {
-              setName(event.target.value)
-            }}
-            required
-            fullWidth
-            inputRef={focusOnMount}
-            margin="dense"
-            slotProps={{ htmlInput: { maxLength: 100 } }}
-          />
-          {failed && (
-            <Typography role="alert" variant="body2" color="error">
-              {t('sidebar.failed')}
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button type="submit" disabled={pending || !name.trim()}>
-            {submitLabel}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
-  )
-}
-
-/**
- * Where a board or view shows in the sidebar, and how to show it elsewhere:
- * in Favorites, a section the person added, or nowhere, which unstars it.
- */
 /**
  * Where a board or view shows in the sidebar: Favorites, or the id of one of
  * the person's sections; null, neither starred nor in a section, it does not.

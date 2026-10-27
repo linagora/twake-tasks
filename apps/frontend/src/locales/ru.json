@@ -677,5 +677,15 @@
     "unfold": "Развернуть «%{name}»",
     "renameSection": "Переименовать %{name}",
     "deleteSection": "Удалить %{name}"
+  },
+  "settings": {
+    "title": "Настройки",
+    "open": "Настройки",
+    "sections": "Разделы боковой панели",
+    "newSection": "Новый раздел",
+    "moveUp": "Переместить %{name} вверх",
+    "moveDown": "Переместить %{name} вниз",
+    "favoritesHint": "Избранное, не попавшее в другие разделы",
+    "items": "%{smart_count} доска или представление |||| %{smart_count} доски и представления |||| %{smart_count} досок и представлений"
   }
 }

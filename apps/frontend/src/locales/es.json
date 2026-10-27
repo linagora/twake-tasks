@@ -677,5 +677,15 @@
     "unfold": "Expandir %{name}",
     "renameSection": "Cambiar el nombre de %{name}",
     "deleteSection": "Eliminar %{name}"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "open": "Ajustes",
+    "sections": "Secciones de la barra lateral",
+    "newSection": "Nueva sección",
+    "moveUp": "Subir %{name}",
+    "moveDown": "Bajar %{name}",
+    "favoritesHint": "Los favoritos que no están en otra sección",
+    "items": "%{smart_count} tablero o vista |||| %{smart_count} tableros y vistas"
   }
 }

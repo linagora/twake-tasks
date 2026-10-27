@@ -677,5 +677,15 @@
     "unfold": "Déplier %{name}",
     "renameSection": "Renommer %{name}",
     "deleteSection": "Supprimer %{name}"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "open": "Paramètres",
+    "sections": "Sections de la barre latérale",
+    "newSection": "Nouvelle section",
+    "moveUp": "Monter %{name}",
+    "moveDown": "Descendre %{name}",
+    "favoritesHint": "Les favoris qui ne sont dans aucune autre section",
+    "items": "%{smart_count} tableau ou vue |||| %{smart_count} tableaux et vues"
   }
 }

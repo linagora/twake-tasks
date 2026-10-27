@@ -677,5 +677,15 @@
     "unfold": "%{name} ausklappen",
     "renameSection": "%{name} umbenennen",
     "deleteSection": "%{name} löschen"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "open": "Einstellungen",
+    "sections": "Abschnitte der Seitenleiste",
+    "newSection": "Neuer Abschnitt",
+    "moveUp": "%{name} nach oben",
+    "moveDown": "%{name} nach unten",
+    "favoritesHint": "Die Favoriten, die in keinem anderen Abschnitt sind",
+    "items": "%{smart_count} Board oder Ansicht |||| %{smart_count} Boards und Ansichten"
   }
 }
