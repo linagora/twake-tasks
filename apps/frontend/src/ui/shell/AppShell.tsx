@@ -52,6 +52,7 @@ import {
   SidebarButton,
   SidebarHint,
   SidebarSection,
+  SidebarSectionEntry,
   SidebarShelves,
   TopBar,
   TopBarSearch,
@@ -719,7 +720,7 @@ function Favorites({
             }}
           >
             <NavIcon icon={Star} />
-            <NavText>{board.name}</NavText>
+            <OneLineNavText title={board.name}>{board.name}</OneLineNavText>
           </SidebarLink>
         </DraggableEntry>
       ))}
@@ -739,7 +740,7 @@ function Favorites({
             }}
           >
             <NavIcon icon={viewIcon(filter.icon)} />
-            <NavText>{filter.name}</NavText>
+            <OneLineNavText title={filter.name}>{filter.name}</OneLineNavText>
           </SidebarLink>
         </DraggableEntry>
       ))}
@@ -748,7 +749,8 @@ function Favorites({
   )
 }
 
-// An entry of Boards, Views or Favorites, which a drag moves into a section.
+// An entry of Boards, Views or Favorites, which a drag moves into a section;
+// in Favorites drawn as in the other sections.
 function DraggableEntry({
   origin,
   item,
@@ -771,6 +773,6 @@ function DraggableEntry({
       {children}
     </WideScreenNavItem>
   ) : (
-    <NavItem {...drag}>{children}</NavItem>
+    <SidebarSectionEntry {...drag}>{children}</SidebarSectionEntry>
   )
 }

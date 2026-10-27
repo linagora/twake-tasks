@@ -12,6 +12,7 @@ import {
   ListSubheader,
   NavIcon,
   NavItem,
+  type NavItemProps,
   NavLink,
   NavText,
   Sidebar,
@@ -426,8 +427,10 @@ export function SidebarShelves({
   )
 }
 
-// An entry of a section the person added.
-export const SidebarSectionEntry = styled(NavItem)(({ theme }) => ({
+// An entry of a section the person added, drawn as the boards under Boards.
+export const SidebarSectionEntry = styled((props: NavItemProps) => (
+  <NavItem variant="secondary" {...props} />
+))(({ theme }) => ({
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
 
@@ -457,7 +460,11 @@ export function SidebarDropSlot({
   label: string
 }): ReactElement {
   return (
-    <NavItem aria-hidden sx={{ opacity: 0.4, pointerEvents: 'none' }}>
+    <NavItem
+      variant="secondary"
+      aria-hidden
+      sx={{ opacity: 0.4, pointerEvents: 'none' }}
+    >
       <NavLink role="presentation" tabIndex={-1}>
         <NavIcon icon={icon} />
         <NavText>{label}</NavText>

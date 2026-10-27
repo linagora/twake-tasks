@@ -43,7 +43,6 @@ import {
   Menu,
   MenuItem,
   NavIcon,
-  NavText,
   TextField,
   Typography
 } from '@linagora/twake-mui'
@@ -71,6 +70,7 @@ import {
 } from '@/application/sidebarSections'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import {
+  OneLineNavText,
   SidebarDragPreview,
   SidebarDropSlot,
   SidebarHint,
@@ -485,7 +485,7 @@ function SectionEntry({
     >
       <SidebarLink to={entry.to} active={lit} onClick={onOpen}>
         <NavIcon icon={entry.icon} />
-        <NavText>{entry.label}</NavText>
+        <OneLineNavText title={entry.label}>{entry.label}</OneLineNavText>
       </SidebarLink>
     </SidebarSectionEntry>
   )
