@@ -325,7 +325,7 @@ export function BoardsScreen({
             setCreating(false)
           }}
           onCreated={board => {
-            void navigate(`/boards/${board.id}`)
+            void navigate(`/boards/${board.id}`, { state: { created: true } })
           }}
         />
       )}

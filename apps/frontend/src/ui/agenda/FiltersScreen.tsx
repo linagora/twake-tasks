@@ -47,6 +47,7 @@ import {
   useUpdateFilter
 } from '@/ui/boards/queries'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
+import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -58,6 +59,21 @@ export function FiltersScreen(): ReactElement {
   const filters = useFilters()
   const assigneeName = useAssigneeName()
   const [form, setForm] = useState<SavedFilter | 'new' | null>(null)
+  // What takes the focus once the form closes: 'new', 'link:<id>' or 'edit:<id>'
+  const [landing, setLanding] = useState<string | null>(null)
+  // Once: a later remount of the target, or a link listed late, must not take it
+  const focusOn = (target: string) =>
+    landing === target
+      ? (element: HTMLElement | null) => {
+          if (!element) return
+          element.focus()
+          setLanding(null)
+        }
+      : undefined
+  const open = (next: SavedFilter | 'new') => {
+    setLanding(null)
+    setForm(next)
+  }
   const [deleted, setDeleted] = useState<SavedFilter | null>(null)
   const unpinDeleted = useUnpinDeletedFilter()
   const shown = filters.data?.filter(filter => filter.id !== deleted?.id)
@@ -95,9 +111,10 @@ export function FiltersScreen(): ReactElement {
         actions={
           !form && (
             <Button
+              ref={focusOn('new')}
               startIcon={<Icon icon={Plus} />}
               onClick={() => {
-                setForm('new')
+                open('new')
               }}
             >
               {t('filters.new')}
@@ -109,7 +126,14 @@ export function FiltersScreen(): ReactElement {
         <FilterForm
           key={form === 'new' ? form : form.id}
           filter={form === 'new' ? undefined : form}
-          onClose={() => {
+          onClose={saved => {
+            setLanding(
+              saved
+                ? `link:${saved}`
+                : form === 'new'
+                  ? 'new'
+                  : `edit:${form.id}`
+            )
             setForm(null)
           }}
         />
@@ -134,7 +158,11 @@ export function FiltersScreen(): ReactElement {
               label={filter.name}
               leading={<Icon icon={Filter} size={16} />}
               title={
-                <Link component={RouterLink} to={`/filters/${filter.id}`}>
+                <Link
+                  ref={focusOn(`link:${filter.id}`)}
+                  component={RouterLink}
+                  to={`/filters/${filter.id}`}
+                >
                   {filter.name}
                 </Link>
               }
@@ -143,9 +171,10 @@ export function FiltersScreen(): ReactElement {
                 <>
                   <FavoriteButton filter={filter} />
                   <IconButton
+                    ref={focusOn(`edit:${filter.id}`)}
                     size="small"
                     onClick={() => {
-                      setForm(filter)
+                      open(filter)
                     }}
                     aria-label={t('filters.edit', { name: filter.name })}
                   >
@@ -276,7 +305,8 @@ export function FilterForm({
   onClose
 }: {
   filter?: SavedFilter | undefined
-  onClose: () => void
+  /** Gets the id of the filter when it was saved. */
+  onClose: (saved?: string) => void
 }): ReactElement {
   const { t } = useI18n()
   const create = useCreateFilter()
@@ -305,8 +335,19 @@ export function FilterForm({
       onSubmit={event => {
         event.preventDefault()
         const changes = { name: name.trim(), criteria }
-        if (filter) update.mutate(changes, { onSuccess: onClose })
-        else create.mutate(changes, { onSuccess: onClose })
+        if (filter) {
+          update.mutate(changes, {
+            onSuccess: () => {
+              onClose(filter.id)
+            }
+          })
+        } else {
+          create.mutate(changes, {
+            onSuccess: ({ id }) => {
+              onClose(id)
+            }
+          })
+        }
       }}
       actions={
         <>
@@ -315,7 +356,12 @@ export function FilterForm({
               {t('filters.saveFailed')}
             </Typography>
           )}
-          <Button variant="text" onClick={onClose}>
+          <Button
+            variant="text"
+            onClick={() => {
+              onClose()
+            }}
+          >
             {t('board.cancel')}
           </Button>
           <Button
@@ -330,6 +376,7 @@ export function FilterForm({
     >
       <TextField
         label={t('filters.name')}
+        inputRef={focusOnMount}
         value={name}
         onChange={event => {
           setName(event.target.value)

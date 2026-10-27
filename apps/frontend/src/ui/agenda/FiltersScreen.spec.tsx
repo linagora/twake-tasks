@@ -96,6 +96,36 @@ describe('FiltersScreen', () => {
     )
   })
 
+  it('moves the focus to Name on New filter, then to the saved filter', async () => {
+    renderRoute('/filters', { boardsApi: boards() })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
+    const name = await screen.findByLabelText('Name')
+    expect(name).toHaveFocus()
+    fireEvent.change(name, { target: { value: 'Client fires' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Client fires' })).toHaveFocus()
+    })
+  })
+
+  it('gives the focus back to the button that opened the form on Cancel', async () => {
+    const boardsApi = boards()
+    await boardsApi.createFilter({ name: 'Design work', criteria: {} })
+    renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.getByRole('button', { name: 'New filter' })).toHaveFocus()
+
+    const edit = await screen.findByRole('button', { name: 'Edit Design work' })
+    fireEvent.click(edit)
+    expect(screen.getByLabelText('Name')).toHaveFocus()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(edit).toHaveFocus()
+  })
+
   it('shows the tasks as a board, one column per status kind', async () => {
     const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
     const [todo, doing] = design.sections

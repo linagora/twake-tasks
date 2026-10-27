@@ -350,6 +350,12 @@ describe('BoardsScreen', () => {
     fireEvent.click(await screen.findByRole('link', { name: 'Design' }))
 
     expect(router.state.location.pathname).toBe(`/boards/${design.id}`)
+    const title = await waitFor(() =>
+      within(screen.getByRole('heading', { level: 1 })).getByRole('button', {
+        name: 'Design'
+      })
+    )
+    expect(title).not.toHaveFocus()
   })
 
   it('creates a board and opens it', async () => {
@@ -369,9 +375,13 @@ describe('BoardsScreen', () => {
     )
     fireEvent.click(within(dialog).getByRole('button', { name: 'Create' }))
 
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Design' })
-    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole('heading', { level: 1 })).getByRole('button', {
+          name: 'Design'
+        })
+      ).toHaveFocus()
+    })
     expect(boardsApi.createBoard).toHaveBeenCalledWith({
       name: 'Design',
       keyPrefix: 'DES',

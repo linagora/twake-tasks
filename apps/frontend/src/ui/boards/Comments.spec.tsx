@@ -60,6 +60,17 @@ describe('Comments', () => {
     expect(comment.getByText('Which palette?')).toBeInTheDocument()
   })
 
+  it('leaves the comment editor unfocused when the task opens', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const editor = await (
+      await openLogo()
+    ).findByRole('textbox', { name: 'Comment' })
+
+    expect(editor).not.toHaveFocus()
+  })
+
   it('keeps the old comments but hides the composer on an archived board', async () => {
     const { board, boardsApi } = logoBoard()
     board.archived = true
@@ -309,6 +320,29 @@ describe('Comments', () => {
           logo.id,
           'Looks good'
         )
+      })
+    })
+
+    it('keeps the focus in an empty editor after a send, by key or by button', async () => {
+      const { panel, editor } = await typeInComment('Looks good')
+
+      fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true })
+
+      const next = await waitFor(() => {
+        const fresh = panel.getByRole('textbox', { name: 'Comment' })
+        expect(fresh).not.toBe(editor)
+        return fresh
+      })
+      await waitFor(() => {
+        expect(next).toHaveFocus()
+      })
+      expect(next).toHaveTextContent('')
+      await typeRichText(next, 'And the logo')
+      fireEvent.click(panel.getByRole('button', { name: 'Send' }))
+      await waitFor(() => {
+        const last = panel.getByRole('textbox', { name: 'Comment' })
+        expect(last).not.toBe(next)
+        expect(last).toHaveFocus()
       })
     })
 

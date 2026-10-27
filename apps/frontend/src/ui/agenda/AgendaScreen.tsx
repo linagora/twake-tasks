@@ -34,6 +34,7 @@ import {
   useAgendaTaskPanel
 } from '@/ui/agenda/AgendaTaskPanel'
 import { FilterForm } from '@/ui/agenda/FiltersScreen'
+import { focusOnMount } from '@/ui/focusOnMount'
 import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
 import { formatDay, inDays } from '@/ui/boards/dueLabel'
 import { LayoutToggle } from '@/ui/boards/Layouts'
@@ -168,6 +169,8 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
   const agenda = useAgenda({ filterId })
   const [layout, setLayout] = useFilterLayout(filterId)
   const [editing, setEditing] = useState(false)
+  // The Edit button takes the focus back from the form that replaced it
+  const [closed, setClosed] = useState(false)
   const filter = filters.data?.find(each => each.id === filterId)
   if (agenda.error instanceof ApiError && agenda.error.status === 404) {
     return (
@@ -186,6 +189,7 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
         <>
           {filter && !editing && (
             <Button
+              ref={closed ? focusOnMount : undefined}
               variant="secondary"
               startIcon={<Icon icon={Pen} />}
               onClick={() => {
@@ -209,6 +213,7 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
             <FilterForm
               filter={filter}
               onClose={() => {
+                setClosed(true)
                 setEditing(false)
               }}
             />
