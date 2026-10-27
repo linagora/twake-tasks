@@ -79,11 +79,10 @@ export function SectionMenu({
     (api, to: { afterId: string } | { beforeId: string }) =>
       api.moveSection(board.id, section.id, to)
   )
-  // Its tasks count as done, out of the open ones and the overdue ones.
   const done = section.category === 'completed'
-  const markDone = useBoardChange(board.id, (api, next: boolean) =>
+  const markDone = useBoardChange(board.id, (api, completed: boolean) =>
     api.editSection(board.id, section.id, {
-      category: next ? 'completed' : 'unstarted'
+      category: completed ? 'completed' : 'unstarted'
     })
   )
   const index = board.sections.indexOf(section)
