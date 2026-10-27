@@ -222,10 +222,15 @@ export interface SidebarItem {
   id: string
 }
 
-/** A section a person added to their sidebar, with what it holds in order. */
+/**
+ * A section of a person's sidebar, with what it holds in order: Favorites,
+ * which every sidebar has, named as the app names it until renamed and
+ * holding the favorites in no other section, or one the person added.
+ */
 export interface SidebarSection {
   id: string
-  name: string
+  name: string | null
+  favorites: boolean
   items: SidebarItem[]
 }
 

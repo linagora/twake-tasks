@@ -523,6 +523,50 @@ describe('AppShell', () => {
     })
   })
 
+  it('renames and moves Favorites as the other sections, but keeps it', async () => {
+    const board = { ...aBoard(), id: 'board-1', name: 'Design' }
+    const boardsApi = fakeBoardsApi([board])
+    await boardsApi.setFavorite('board-1', true)
+    await boardsApi.createSidebarSection('Work')
+    renderRoute('/boards/board-1', { boardsApi })
+
+    const favorites = within(
+      await screen.findByRole('list', { name: 'Favorites' })
+    )
+    fireEvent.click(
+      favorites.getByRole('button', { name: 'Actions of Favorites' })
+    )
+    expect(
+      await screen.findByRole('menuitem', { name: 'Move up' })
+    ).toHaveAttribute('aria-disabled', 'true')
+    expect(
+      screen.queryByRole('menuitem', { name: 'Delete the section' })
+    ).toBeNull()
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Rename' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Rename the section' })
+    )
+    fireEvent.change(dialog.getByLabelText(/^Name/), {
+      target: { value: 'Starred' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+
+    const starred = within(await screen.findByRole('list', { name: 'Starred' }))
+    expect(
+      await starred.findByRole('link', { name: 'Design' })
+    ).toBeInTheDocument()
+    fireEvent.click(starred.getByRole('button', { name: 'Actions of Starred' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Move down' }))
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole('list')
+          .map(list => list.getAttribute('aria-label'))
+          .filter(name => name === 'Work' || name === 'Starred')
+      ).toEqual(['Work', 'Starred'])
+    })
+  })
+
   it('counts unread notifications until they are opened', async () => {
     const boardsApi = fakeBoardsApi()
     boardsApi.notifications.push(aNotification({ reason: 'assigned' }))

@@ -13,8 +13,13 @@ const board = (id: string) => ({ kind: 'board' as const, id })
 const view = (id: string) => ({ kind: 'view' as const, id })
 
 const sections = (): SidebarSection[] => [
-  { id: 'work', name: 'Work', items: [board('a'), board('b'), view('c')] },
-  { id: 'home', name: 'Home', items: [view('d')] }
+  {
+    id: 'work',
+    name: 'Work',
+    favorites: false,
+    items: [board('a'), board('b'), view('c')]
+  },
+  { id: 'home', name: 'Home', favorites: false, items: [view('d')] }
 ]
 
 const itemsOf = (all: SidebarSection[]) =>

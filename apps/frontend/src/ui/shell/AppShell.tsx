@@ -84,7 +84,7 @@ import {
 } from '@/ui/shell/SidebarCreate'
 import { SidebarLink } from '@/ui/shell/SidebarLink'
 import {
-  CustomSections,
+  SidebarSections,
   FAVORITES,
   SidebarDrag,
   useFavoritesDrop,
@@ -141,13 +141,22 @@ export function AppShell(): ReactElement {
               viewsLit={lit.views}
               viewLit={lit.view}
             />
-            <Favorites
-              lit={lit.favorite?.origin === FAVORITES ? lit.favorite.id : null}
-              onOpen={id => {
-                lit.openFavorite(FAVORITES, id)
-              }}
+            <SidebarSections
+              lit={lit.favorite}
+              onOpen={lit.openFavorite}
+              favorites={(name, menu) => (
+                <Favorites
+                  name={name}
+                  menu={menu}
+                  lit={
+                    lit.favorite?.origin === FAVORITES ? lit.favorite.id : null
+                  }
+                  onOpen={id => {
+                    lit.openFavorite(FAVORITES, id)
+                  }}
+                />
+              )}
             />
-            <CustomSections lit={lit.favorite} onOpen={lit.openFavorite} />
           </SidebarDrag>
           <ShelfLinks archivesLit={lit.archives} />
         </>
@@ -664,9 +673,14 @@ function ShelfLinks({ archivesLit }: { archivesLit: boolean }): ReactElement {
 }
 
 function Favorites({
+  name,
+  menu,
   lit,
   onOpen
 }: {
+  name: string
+  /** Renames and moves it, as the other sections. */
+  menu: ReactNode
   lit: string | null
   onOpen: (id: string) => void
 }): ReactElement | null {
@@ -690,18 +704,17 @@ function Favorites({
   )
   const empty = favorites.length === 0 && views.length === 0
   // Kept, though empty, as the place to drop what leaves a section.
-  if (empty && sections.length === 0) return null
+  if (empty && !sections.some(section => !section.favorites)) return null
 
   return (
     <SidebarSection
-      label={t('boards.favorites')}
+      label={name}
       fold={{
         folded,
-        label: t(folded ? 'sidebar.unfold' : 'sidebar.fold', {
-          name: t('boards.favorites')
-        }),
+        label: t(folded ? 'sidebar.unfold' : 'sidebar.fold', { name }),
         onToggle: toggleFolded
       }}
+      action={menu}
       {...drop}
     >
       {favorites.map(board => (

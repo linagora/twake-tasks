@@ -102,7 +102,10 @@ interface EntryDrag {
   icon: ElementType
 }
 
-/** Favorites, the first section, holding the favorites in no other. */
+/**
+ * Favorites, where a drag or the menu puts what it holds, the favorites in no
+ * other section, whatever its id.
+ */
 export const FAVORITES = 'favorites'
 
 // Out of the sidebar: neither starred nor in a section.
@@ -292,6 +295,12 @@ interface Shown {
   to: string
 }
 
+/** The name a section shows: Favorites, the app's until renamed. */
+function useNameOf(): (section: SidebarSection) => string {
+  const { t } = useI18n()
+  return section => section.name ?? t('boards.favorites')
+}
+
 /** The boards and views a section holds that the person still has. */
 function useShownItems(): (section: SidebarSection) => Shown[] {
   const boards = useBoards().data ?? []
@@ -327,33 +336,55 @@ function useShownItems(): (section: SidebarSection) => Shown[] {
     })
 }
 
-/** The sections the person added, under Favorites, then a button to add one. */
-export function CustomSections({
+/**
+ * The sections of the sidebar in the person's order, Favorites among them,
+ * which `favorites` draws, given its name and menu.
+ */
+export function SidebarSections({
   lit,
-  onOpen
+  onOpen,
+  favorites
 }: {
   /** The section and item lit, when opened from a section. */
   lit: { origin: string; id: string } | null
   onOpen: (origin: string, id: string) => void
+  favorites: (name: string, menu: ReactNode) => ReactNode
 }): ReactElement {
+  const { t } = useI18n()
   const sections = useSidebarSections().data ?? []
   const shown = useShownItems()
+  const nameOf = useNameOf()
 
   return (
     <>
-      {sections.map((section, index) => (
-        <CustomSection
-          key={section.id}
-          section={section}
-          shown={shown(section)}
-          first={index === 0}
-          last={index === sections.length - 1}
-          lit={lit?.origin === section.id ? lit.id : null}
-          onOpen={id => {
-            onOpen(section.id, id)
-          }}
-        />
-      ))}
+      {/* Until the sidebar's own comes, Favorites leads under its usual name. */}
+      {!sections.some(section => section.favorites) &&
+        favorites(t('boards.favorites'), null)}
+      {sections.map((section, index) => {
+        const menu = (
+          <SectionMenu
+            section={section}
+            first={index === 0}
+            last={index === sections.length - 1}
+          />
+        )
+        return section.favorites ? (
+          <Fragment key={section.id}>
+            {favorites(nameOf(section), menu)}
+          </Fragment>
+        ) : (
+          <CustomSection
+            key={section.id}
+            section={section}
+            shown={shown(section)}
+            menu={menu}
+            lit={lit?.origin === section.id ? lit.id : null}
+            onOpen={id => {
+              onOpen(section.id, id)
+            }}
+          />
+        )
+      })}
     </>
   )
 }
@@ -361,19 +392,18 @@ export function CustomSections({
 function CustomSection({
   section,
   shown,
-  first,
-  last,
+  menu,
   lit,
   onOpen
 }: {
   section: SidebarSection
   shown: Shown[]
-  first: boolean
-  last: boolean
+  menu: ReactNode
   lit: string | null
   onOpen: (id: string) => void
 }): ReactElement {
   const { t } = useI18n()
+  const name = useNameOf()(section)
   const target = useContext(DragTarget)
   const { setNodeRef } = useDroppable({
     id: `section:${section.id}`,
@@ -405,17 +435,15 @@ function CustomSection({
 
   return (
     <SectionList
-      label={section.name}
+      label={name}
       listRef={setNodeRef}
       highlighted={landing !== null}
       fold={{
         folded,
-        label: t(folded ? 'sidebar.unfold' : 'sidebar.fold', {
-          name: section.name
-        }),
+        label: t(folded ? 'sidebar.unfold' : 'sidebar.fold', { name }),
         onToggle: toggleFolded
       }}
-      action={<SectionMenu section={section} first={first} last={last} />}
+      action={menu}
     >
       <SortableContext items={sortIds} strategy={verticalListSortingStrategy}>
         {shown.map((entry, position) => (
@@ -501,6 +529,7 @@ function SectionMenu({
   last: boolean
 }): ReactElement {
   const { t } = useI18n()
+  const name = useNameOf()(section)
   const sections = useSidebarSections().data ?? []
   const save = useSaveSidebarLayout()
   const rename = useRenameSidebarSection()
@@ -535,7 +564,7 @@ function SectionMenu({
     <>
       <IconButton
         size="xsmall"
-        aria-label={t('sidebar.sectionMenu', { name: section.name })}
+        aria-label={t('sidebar.sectionMenu', { name })}
         aria-haspopup="menu"
         aria-expanded={anchor !== null}
         onClick={event => {
@@ -564,14 +593,16 @@ function SectionMenu({
           },
           last
         )}
-        {item(Trash, t('sidebar.delete'), () => {
-          setDialog('delete')
-        })}
+        {/* Favorites stays, as the place of the favorites in no other. */}
+        {!section.favorites &&
+          item(Trash, t('sidebar.delete'), () => {
+            setDialog('delete')
+          })}
       </Menu>
       {dialog === 'rename' && (
         <SectionNameDialog
           title={t('sidebar.renameTitle')}
-          initial={section.name}
+          initial={name}
           submitLabel={t('sidebar.save')}
           pending={rename.isPending}
           failed={rename.isError}
@@ -599,7 +630,7 @@ function SectionMenu({
           aria-labelledby={titleId}
         >
           <DialogTitle id={titleId}>
-            {t('sidebar.deleteTitle', { name: section.name })}
+            {t('sidebar.deleteTitle', { name })}
           </DialogTitle>
           <DialogContent>
             <Typography>{t('sidebar.deleteText')}</Typography>
@@ -768,6 +799,7 @@ export function SidebarPlaceMenuItem({
 }): ReactElement {
   const { t } = useI18n()
   const sections = useSidebarSections().data ?? []
+  const nameOf = useNameOf()
   const { current, place } = usePlaceInSidebar(item)
   const [naming, setNaming] = useState(false)
   const option = (where: string, label: string) => (
@@ -789,8 +821,11 @@ export function SidebarPlaceMenuItem({
 
   return (
     <SubMenuItem icon={FolderAdd} label={t('sidebar.addToSection')}>
-      {option(FAVORITES, t('boards.favorites'))}
-      {sections.map(section => option(section.id, section.name))}
+      {!sections.some(section => section.favorites) &&
+        option(FAVORITES, t('boards.favorites'))}
+      {sections.map(section =>
+        option(section.favorites ? FAVORITES : section.id, nameOf(section))
+      )}
       {option(NOWHERE, t('sidebar.nowhere'))}
       <Divider />
       {naming ? (
@@ -860,7 +895,10 @@ function NewSectionField({
             onSuccess: ({ id }) => {
               save.mutate(
                 withItem(
-                  [...sections, { id, name: trimmed, items: [] }],
+                  [
+                    ...sections,
+                    { id, name: trimmed, favorites: false, items: [] }
+                  ],
                   id,
                   item
                 ),

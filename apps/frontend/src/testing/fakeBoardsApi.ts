@@ -203,6 +203,17 @@ export function fakeBoardsApi(boards: Board[] = []) {
 
   const filters: SavedFilter[] = []
   const sidebarSections: SidebarSection[] = []
+  // Every sidebar has its Favorites, first until moved.
+  const ensureFavorites = () => {
+    if (!sidebarSections.some(section => section.favorites)) {
+      sidebarSections.unshift({
+        id: nextId(),
+        name: null,
+        favorites: true,
+        items: []
+      })
+    }
+  }
   const leaveSections = (kind: SidebarItem['kind'], id: string) => {
     for (const section of sidebarSections) {
       section.items = section.items.filter(
@@ -348,12 +359,21 @@ export function fakeBoardsApi(boards: Board[] = []) {
       )
     ),
     listSidebarSections: vi.fn<BoardsApi['listSidebarSections']>(() =>
-      Promise.resolve(structuredClone(sidebarSections))
+      Promise.resolve().then(() => {
+        ensureFavorites()
+        return structuredClone(sidebarSections)
+      })
     ),
     createSidebarSection: vi.fn<BoardsApi['createSidebarSection']>(name =>
       Promise.resolve().then(() => {
+        ensureFavorites()
         const id = nextId()
-        sidebarSections.push({ id, name: name.trim(), items: [] })
+        sidebarSections.push({
+          id,
+          name: name.trim(),
+          favorites: false,
+          items: []
+        })
         return { id }
       })
     ),
@@ -369,6 +389,9 @@ export function fakeBoardsApi(boards: Board[] = []) {
       Promise.resolve().then(() => {
         const index = sidebarSections.findIndex(each => each.id === sectionId)
         if (index < 0) throw new ApiError(404, 'not_found')
+        if (sidebarSections[index]?.favorites) {
+          throw new ApiError(403, 'forbidden')
+        }
         sidebarSections.splice(index, 1)
       })
     ),
@@ -382,15 +405,24 @@ export function fakeBoardsApi(boards: Board[] = []) {
         ) {
           throw new ApiError(409, 'stale_version')
         }
-        const named = new Map(
-          sidebarSections.map(section => [section.id, section.name])
+        const byId = new Map(
+          sidebarSections.map(section => [section.id, section])
         )
+        if (
+          layout.some(
+            section =>
+              byId.get(section.id)?.favorites && section.items.length > 0
+          )
+        ) {
+          throw new ApiError(400, 'invalid_section')
+        }
         sidebarSections.splice(
           0,
           sidebarSections.length,
           ...layout.map(section => ({
             id: section.id,
-            name: named.get(section.id) ?? '',
+            name: byId.get(section.id)?.name ?? null,
+            favorites: byId.get(section.id)?.favorites ?? false,
             items: structuredClone(section.items)
           }))
         )
