@@ -63,6 +63,7 @@ UPDATE "task_history" h SET "actor_name" = (
   LEFT JOIN "user_settings" us ON us."email" = lower(pm."email")
   WHERE pm."user_id" = h."actor_id"
     AND pm."org_id" IS NOT DISTINCT FROM h."org_id"
+  ORDER BY pm."joined_at" DESC
   LIMIT 1
 )
 WHERE h."actor_id" IS NOT NULL;--> statement-breakpoint
@@ -72,6 +73,7 @@ UPDATE "comments" c SET "author_name" = (
   LEFT JOIN "user_settings" us ON us."email" = lower(pm."email")
   WHERE pm."user_id" = c."author_id"
     AND pm."org_id" IS NOT DISTINCT FROM c."org_id"
+  ORDER BY pm."joined_at" DESC
   LIMIT 1
 );--> statement-breakpoint
 ALTER TABLE "task_history" FORCE ROW LEVEL SECURITY;--> statement-breakpoint
