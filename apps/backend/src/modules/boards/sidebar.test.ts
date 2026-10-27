@@ -28,8 +28,23 @@ const aSectionOf = async (owner: TestUser, name: string) =>
 
 const sectionsOf = async (user: TestUser) =>
   (await api.as(user).get('/sidebar/sections')).json<{
-    sections: { id: string; name: string; items: object[] }[]
+    sections: {
+      id: string
+      name: string | null
+      favorites: boolean
+      items: object[]
+    }[]
   }>().sections
+
+const favoritesOf = async (user: TestUser) =>
+  (await sectionsOf(user)).find(section => section.favorites)?.id ?? ''
+
+const custom = (id: string, name: string, items: object[] = []) => ({
+  id,
+  name,
+  favorites: false,
+  items
+})
 
 describe('sidebar sections', () => {
   it('keeps my sections, in their order, with the boards and views I put in them, each in one only', async () => {
@@ -40,8 +55,11 @@ describe('sidebar sections', () => {
     const work = await aSectionOf(owner, 'Work')
     const home = await aSectionOf(owner, 'Home')
 
+    const favorites = await favoritesOf(owner)
+
     const saved = await api.as(owner).put('/sidebar/sections', {
       sections: [
+        { id: favorites, items: [] },
         {
           id: home,
           items: [
@@ -55,17 +73,62 @@ describe('sidebar sections', () => {
 
     expect(saved.statusCode).toBe(204)
     expect(await sectionsOf(owner)).toEqual([
-      {
-        id: home,
-        name: 'Home',
-        items: [
-          { kind: 'view', id: urgent },
-          { kind: 'board', id: design }
-        ]
-      },
-      { id: work, name: 'Work', items: [] }
+      { id: favorites, name: null, favorites: true, items: [] },
+      custom(home, 'Home', [
+        { kind: 'view', id: urgent },
+        { kind: 'board', id: design }
+      ]),
+      custom(work, 'Work')
     ])
-    expect(await sectionsOf(other)).toEqual([])
+    expect(await sectionsOf(other)).toEqual([
+      expect.objectContaining({ name: null, favorites: true, items: [] })
+    ])
+  })
+
+  it('gives every sidebar a Favorites first, which I can rename and move but not delete or fill', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    const work = await aSectionOf(owner, 'Work')
+    const favorites = await favoritesOf(owner)
+
+    expect((await sectionsOf(owner)).map(section => section.id)).toEqual([
+      favorites,
+      work
+    ])
+    expect(
+      (
+        await api
+          .as(owner)
+          .patch(`/sidebar/sections/${favorites}`, { name: 'Starred' })
+      ).statusCode
+    ).toBe(204)
+    expect(
+      (
+        await api.as(owner).put('/sidebar/sections', {
+          sections: [
+            { id: work, items: [] },
+            { id: favorites, items: [] }
+          ]
+        })
+      ).statusCode
+    ).toBe(204)
+    expect(await sectionsOf(owner)).toEqual([
+      custom(work, 'Work'),
+      { id: favorites, name: 'Starred', favorites: true, items: [] }
+    ])
+    expect(
+      (await api.as(owner).delete(`/sidebar/sections/${favorites}`)).statusCode
+    ).toBe(403)
+    expect(
+      (
+        await api.as(owner).put('/sidebar/sections', {
+          sections: [
+            { id: work, items: [] },
+            { id: favorites, items: [{ kind: 'board', id: design }] }
+          ]
+        })
+      ).statusCode
+    ).toBe(400)
   })
 
   it('renames and deletes a section, mine only', async () => {
@@ -85,6 +148,7 @@ describe('sidebar sections', () => {
       ).statusCode
     ).toBe(204)
     expect((await sectionsOf(owner)).map(section => section.name)).toEqual([
+      null,
       'Job'
     ])
     expect(
@@ -93,7 +157,9 @@ describe('sidebar sections', () => {
     expect(
       (await api.as(owner).delete(`/sidebar/sections/${work}`)).statusCode
     ).toBe(204)
-    expect(await sectionsOf(owner)).toEqual([])
+    expect(await sectionsOf(owner)).toEqual([
+      expect.objectContaining({ favorites: true })
+    ])
     expect(
       (await api.as(owner).post('/sidebar/sections', { name: '  ' })).statusCode
     ).toBe(400)
@@ -107,15 +173,21 @@ describe('sidebar sections', () => {
     const work = await aSectionOf(owner, 'Work')
     await aSectionOf(owner, 'Home')
 
+    const favorites = await favoritesOf(owner)
+
     const layout = (items: object[]) => ({
-      sections: [{ id: work, items }]
+      sections: [
+        { id: favorites, items: [] },
+        { id: work, items }
+      ]
     })
     expect(
       (await api.as(owner).put('/sidebar/sections', layout([]))).statusCode
     ).toBe(409)
-    const home = (await sectionsOf(owner))[1]?.id ?? ''
+    const home = (await sectionsOf(owner))[2]?.id ?? ''
     const both = (items: object[]) => ({
       sections: [
+        { id: favorites, items: [] },
         { id: work, items },
         { id: home, items: [] }
       ]
@@ -141,6 +213,7 @@ describe('sidebar sections', () => {
     const design = await aBoardOf(owner, 'DES')
     const urgent = await aViewOf(owner, 'Urgent')
     const work = await aSectionOf(owner, 'Work')
+    const favoritesSection = await favoritesOf(owner)
     const favorites = async () => ({
       boards: (await api.as(owner).get('/boards'))
         .json<{ boards: { id: string; favorite: boolean }[] }>()
@@ -154,6 +227,7 @@ describe('sidebar sections', () => {
 
     await api.as(owner).put('/sidebar/sections', {
       sections: [
+        { id: favoritesSection, items: [] },
         {
           id: work,
           items: [
@@ -167,9 +241,7 @@ describe('sidebar sections', () => {
     expect(await favorites()).toEqual({ boards: [design], views: [urgent] })
     await api.as(owner).delete(`/boards/${design}/favorite`)
     await api.as(owner).delete(`/filters/${urgent}/favorite`)
-    expect(await sectionsOf(owner)).toEqual([
-      { id: work, name: 'Work', items: [] }
-    ])
+    expect((await sectionsOf(owner))[1]).toEqual(custom(work, 'Work'))
   })
 
   it('lets a deleted view leave the sections it was in', async () => {
@@ -177,13 +249,14 @@ describe('sidebar sections', () => {
     const urgent = await aViewOf(owner, 'Urgent')
     const work = await aSectionOf(owner, 'Work')
     await api.as(owner).put('/sidebar/sections', {
-      sections: [{ id: work, items: [{ kind: 'view', id: urgent }] }]
+      sections: [
+        { id: await favoritesOf(owner), items: [] },
+        { id: work, items: [{ kind: 'view', id: urgent }] }
+      ]
     })
 
     await api.as(owner).delete(`/filters/${urgent}`)
 
-    expect(await sectionsOf(owner)).toEqual([
-      { id: work, name: 'Work', items: [] }
-    ])
+    expect((await sectionsOf(owner))[1]).toEqual(custom(work, 'Work'))
   })
 })

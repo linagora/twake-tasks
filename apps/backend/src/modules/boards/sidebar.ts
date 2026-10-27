@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, max } from 'drizzle-orm'
+import { and, asc, eq, inArray, max, min } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { accessibleBoards } from './access.ts'
@@ -42,12 +42,37 @@ export async function leaveSections(tx: Tx, userId: string, item: SidebarItem) {
     )
 }
 
+/**
+ * Gives the sidebar its Favorites, above the other sections, unless it has
+ * it: every sidebar has one, which the person can rename and move.
+ */
+async function ensureFavorites(tx: Tx, identity: Identity) {
+  const [first] = await tx
+    .select({ position: min(sidebarSections.position) })
+    .from(sidebarSections)
+  await tx
+    .insert(sidebarSections)
+    .values({
+      organizationId: identity.organizationId,
+      userId: identity.userId,
+      name: null,
+      favorites: true,
+      position: (first?.position ?? 1) - 1
+    })
+    .onConflictDoNothing()
+}
+
 export function createSidebarStore(db: Db) {
   return {
     listSections(identity: Identity) {
       return writeOrRefuse(db, identity, async tx => {
+        await ensureFavorites(tx, identity)
         const sections = await tx
-          .select({ id: sidebarSections.id, name: sidebarSections.name })
+          .select({
+            id: sidebarSections.id,
+            name: sidebarSections.name,
+            favorites: sidebarSections.favorites
+          })
           .from(sidebarSections)
           .orderBy(asc(sidebarSections.position), asc(sidebarSections.id))
         const items = await tx
@@ -73,6 +98,7 @@ export function createSidebarStore(db: Db) {
 
     createSection(identity: Identity, name: string) {
       return writeOrRefuse(db, identity, async tx => {
+        await ensureFavorites(tx, identity)
         const [last] = await tx
           .select({ position: max(sidebarSections.position) })
           .from(sidebarSections)
@@ -101,13 +127,18 @@ export function createSidebarStore(db: Db) {
       })
     },
 
+    // Favorites stays, as the place for the favorites in no other section.
     deleteSection(identity: Identity, sectionId: string) {
       return writeOrRefuse(db, identity, async tx => {
-        const deleted = await tx
+        const [section] = await tx
+          .select({ favorites: sidebarSections.favorites })
+          .from(sidebarSections)
+          .where(eq(sidebarSections.id, sectionId))
+        if (!section) throw new Refused('not_found')
+        if (section.favorites) throw new Refused('forbidden')
+        await tx
           .delete(sidebarSections)
           .where(eq(sidebarSections.id, sectionId))
-          .returning({ id: sidebarSections.id })
-        if (deleted.length === 0) throw new Refused('not_found')
       })
     },
 
@@ -115,12 +146,16 @@ export function createSidebarStore(db: Db) {
      * Sets the order of every section of the sidebar and what each holds, at
      * once, so that a drag from one section to another is one change. A
      * layout missing a section, or holding one since deleted, is stale. What
-     * a section holds becomes a favorite, out of Favorites while there.
+     * a section holds becomes a favorite, out of Favorites while there;
+     * Favorites itself holds the favorites in no other, so none is put in it.
      */
     saveLayout(identity: Identity, layout: SidebarLayout[]) {
       return writeOrRefuse(db, identity, async tx => {
         const sections = await tx
-          .select({ id: sidebarSections.id })
+          .select({
+            id: sidebarSections.id,
+            favorites: sidebarSections.favorites
+          })
           .from(sidebarSections)
           .for('update')
         const given = new Set(layout.map(section => section.id))
@@ -130,6 +165,14 @@ export function createSidebarStore(db: Db) {
           sections.some(section => !given.has(section.id))
         ) {
           throw new Refused('stale_version')
+        }
+        const favoritesId = sections.find(section => section.favorites)?.id
+        if (
+          layout.some(
+            section => section.id === favoritesId && section.items.length > 0
+          )
+        ) {
+          throw new Refused('invalid_section')
         }
         const items = layout.flatMap(section => section.items)
         const idsOf = (kind: SidebarItem['kind']) => [
@@ -192,7 +235,7 @@ export function createSidebarStore(db: Db) {
             }))
           )
         }
-        // Favorites being the first section, the others hold favorites too.
+        // What the other sections hold are favorites too.
         if (boardIds.length > 0) {
           await tx
             .insert(boardFavorites)

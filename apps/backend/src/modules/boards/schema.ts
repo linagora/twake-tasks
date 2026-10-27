@@ -582,20 +582,29 @@ export const savedFilters = pgTable.withRLS(
   ]
 )
 
-// The sections a person adds to their sidebar, under Favorites, in the
-// order they set.
+// The sections of a person's sidebar, in the order they set: Favorites, which
+// every sidebar has and which holds the favorites in no other, then those
+// they add. Favorites keeps the app's name for it until renamed.
 export const sidebarSections = pgTable.withRLS(
   'sidebar_sections',
   {
     id: id(),
     organizationId: organizationId(),
     userId: uuid('user_id').notNull(),
-    name: text().notNull(),
+    name: text(),
+    favorites: boolean().notNull().default(false),
     position: integer().notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow()
   },
   table => [
     index().on(table.userId),
+    uniqueIndex('sidebar_sections_one_favorites')
+      .on(table.userId)
+      .where(sql`${table.favorites}`),
+    check(
+      'sidebar_sections_named',
+      sql`${table.favorites} or ${table.name} is not null`
+    ),
     tenantPolicy(table.organizationId, sql`${table.userId} = ${currentUser}`),
     // Erased with the organization, as saved filters are.
     ownRows(
