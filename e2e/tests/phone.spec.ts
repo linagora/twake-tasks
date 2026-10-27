@@ -42,8 +42,9 @@ test('shows the whole role in the share dialog on a phone', async ({
 
   await page.getByRole('button', { name: 'Share' }).click()
   const share = page.getByRole('dialog', { name: `Share ${name}` })
+  // The invite's: the person signed in has their role as text.
   const roles = share.getByRole('button', { name: /^Role\b/ })
-  await expect(roles).toHaveCount(2)
+  await expect(roles).toHaveCount(1)
   for (const role of await roles.all()) {
     const clipped = await role.evaluate((button: HTMLElement) =>
       [button, ...button.querySelectorAll<HTMLElement>('*')].some(

@@ -436,26 +436,15 @@
     "share": "Condividi",
     "title": "Condividi %{name}",
     "email": "Email",
-    "role": "Ruolo",
     "roles": {
       "viewer": "Lettore",
       "editor": "Editor",
       "admin": "Amministratore"
     },
-    "roleHints": {
-      "viewer": "Vede le attività e le commenta",
-      "editor": "Aggiunge, modifica e sposta le attività",
-      "admin": "Gestisce anche sezioni, condivisione e bacheca"
-    },
-    "invite": "Invita",
-    "invited": "%{email} invitato. Potrai assegnargli attività appena apre Twake Project.",
-    "pending": "In attesa",
     "roleOf": "Ruolo: %{role}",
     "roleOfPerson": "Ruolo di %{person}: %{role}",
     "lastAdmin": "Un progetto deve avere almeno un admin. Rendi prima admin qualcun altro.",
     "people": "Persone con accesso",
-    "cancelInvite": "Annulla invito",
-    "remove": "Rimuovi",
     "close": "Chiudi",
     "failed": "Impossibile salvare la modifica.",
     "loadFailed": "Impossibile caricare i membri.",
@@ -466,7 +455,15 @@
     "helpSingle": "Le persone che inviti possono aprire questa bacheca.",
     "helpProject": "Le persone che inviti possono aprire tutte le bacheche del progetto “%{project}”: %{boards}.",
     "helpMore": "e un'altra |||| e altre %{smart_count}",
-    "sameOrganization": "Un invito funziona solo per un account della tua stessa organizzazione."
+    "sameOrganization": "Un invito funziona solo per un account della tua stessa organizzazione.",
+    "you": "Tu",
+    "removePerson": "Rimuovi %{person}",
+    "cancelInviteOf": "Annulla l’invito di %{person}",
+    "emptyTitle": "Nessuno è stato ancora aggiunto",
+    "emptySubtitle": "Le persone invitate compariranno qui.",
+    "inviteUsers": "Invita utenti",
+    "addContacts": "Aggiungi contatti",
+    "invitationSent": "Invito inviato"
   },
   "moveBoard": {
     "action": "Sposta nel progetto",

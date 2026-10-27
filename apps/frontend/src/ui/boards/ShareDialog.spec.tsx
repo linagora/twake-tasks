@@ -1,15 +1,31 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+  type BoundFunctions,
+  type queries
+} from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { ApiError, type Project, type Sharing } from '@/application/boards'
 import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
+// The person signed in, as the session knows them.
 const me = {
   userId: 'me',
-  email: 'me@example.com',
-  name: null,
+  email: 'alice@example.com',
+  name: 'Alice Martin',
   role: 'admin'
+} as const
+
+const bob = {
+  userId: 'bob',
+  email: 'bob@example.com',
+  name: 'Bob Durand',
+  role: 'viewer'
 } as const
 
 async function openSharing(
@@ -18,7 +34,11 @@ async function openSharing(
 ) {
   const board = aBoard({ name: 'Design' })
   const boardsApi = fakeBoardsApi([board])
-  boardsApi.sharings.set(board.id, { members, invites: [] })
+  // The fake changes the members in place: each test gets its own.
+  boardsApi.sharings.set(board.id, {
+    members: members.map(member => ({ ...member })),
+    invites: []
+  })
   boardsApi.projects.push({ ...board.project, role: 'admin' }, ...projects)
   renderRoute(`/boards/${board.id}`, { boardsApi })
   fireEvent.click(await screen.findByRole('button', { name: 'Share' }))
@@ -29,26 +49,25 @@ async function openSharing(
   }
 }
 
+const field = (dialog: BoundFunctions<typeof queries>) =>
+  dialog.getByRole('combobox', { name: 'Email' })
+
+function type(dialog: BoundFunctions<typeof queries>, text: string) {
+  fireEvent.change(field(dialog), { target: { value: text } })
+}
+
 describe('sharing a board', () => {
   it('invites someone by email with a role', async () => {
     const { boardsApi, board, dialog } = await openSharing()
-    const form = within(dialog.getByRole('form', { name: 'Invite' }))
 
-    fireEvent.change(form.getByRole('combobox', { name: 'Email' }), {
-      target: { value: 'bob@example.com' }
-    })
-    fireEvent.click(form.getByRole('button', { name: 'Role: Editor' }))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Viewer' }))
-    fireEvent.click(form.getByRole('button', { name: 'Invite' }))
+    type(dialog, 'bob@example.com')
+    fireEvent.click(dialog.getByRole('button', { name: 'Role: Editor' }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Viewer' }))
+    fireEvent.click(dialog.getByRole('button', { name: 'Share' }))
 
-    expect(
-      await dialog.findByText(
-        'Invited bob@example.com. You can assign them tasks once they open Twake Project.'
-      )
-    ).toBeVisible()
     expect(
       await dialog.findByRole('listitem', { name: 'bob@example.com' })
-    ).toHaveTextContent('Pending')
+    ).toHaveTextContent('Invitation sent')
     expect(boardsApi.invite).toHaveBeenCalledWith(
       board.id,
       'bob@example.com',
@@ -56,60 +75,83 @@ describe('sharing a board', () => {
     )
   })
 
-  it('invites as an editor unless told otherwise', async () => {
+  it('invites several people at once, each a chip', async () => {
     const { boardsApi, board, dialog } = await openSharing()
-    const form = within(dialog.getByRole('form', { name: 'Invite' }))
 
-    fireEvent.change(form.getByRole('combobox', { name: 'Email' }), {
-      target: { value: 'bob@example.com' }
-    })
-    fireEvent.click(form.getByRole('button', { name: 'Invite' }))
+    type(dialog, 'bob@example.com')
+    fireEvent.keyDown(field(dialog), { key: 'Enter' })
+    expect(
+      dialog.getByRole('button', { name: 'bob@example.com' })
+    ).toBeVisible()
+    type(dialog, 'eve@example.com')
+    fireEvent.click(dialog.getByRole('button', { name: 'Share' }))
 
-    await dialog.findByText(/^Invited bob@example.com\./)
+    expect(
+      await dialog.findByRole('listitem', { name: 'eve@example.com' })
+    ).toBeVisible()
     expect(boardsApi.invite).toHaveBeenCalledWith(
       board.id,
       'bob@example.com',
       'editor'
     )
-  })
-
-  it.each([
-    ['the invite', 'Role: Editor'],
-    ['a member', 'Role of me@example.com: Admin']
-  ])('says what each role allows in the menu of %s', async (_name, menu) => {
-    const { dialog } = await openSharing([
-      me,
-      { userId: 'bob', email: 'bob@example.com', name: null, role: 'admin' }
-    ])
-
-    fireEvent.click(await dialog.findByRole('button', { name: menu }))
-
-    expect(
-      screen.getByRole('menuitem', { name: 'Viewer' })
-    ).toHaveAccessibleDescription('Sees tasks and comments on them')
-    expect(
-      screen.getByRole('menuitem', { name: 'Editor' })
-    ).toHaveAccessibleDescription('Adds, edits and moves tasks')
-    expect(
-      screen.getByRole('menuitem', { name: 'Admin' })
-    ).toHaveAccessibleDescription(
-      'Also manages sections, sharing and the board'
+    expect(boardsApi.invite).toHaveBeenCalledWith(
+      board.id,
+      'eve@example.com',
+      'editor'
     )
   })
 
-  it('keeps the keyboard in the Email field after a click on Invite', async () => {
+  it('makes one chip of an address typed twice', async () => {
     const { dialog } = await openSharing()
-    const email = dialog.getByRole('combobox', { name: 'Email' })
-    const invite = dialog.getByRole('button', { name: 'Invite' })
 
-    fireEvent.change(email, { target: { value: 'bob@example.com' } })
+    type(dialog, 'bob@example.com')
+    fireEvent.keyDown(field(dialog), { key: 'Enter' })
+    type(dialog, 'Bob@example.com')
+    fireEvent.keyDown(field(dialog), { key: 'Enter' })
+
+    expect(
+      dialog.getAllByRole('button', { name: 'bob@example.com' })
+    ).toHaveLength(1)
+  })
+
+  it('sends nothing until an address is there', async () => {
+    const { dialog } = await openSharing()
+
+    expect(dialog.getByRole('button', { name: 'Share' })).toBeDisabled()
+    type(dialog, 'bob')
+    expect(dialog.getByRole('button', { name: 'Share' })).toBeDisabled()
+  })
+
+  it('offers the roles as radios, the one held checked', async () => {
+    const { dialog } = await openSharing()
+
+    fireEvent.click(dialog.getByRole('button', { name: 'Role: Editor' }))
+
+    expect(
+      screen
+        .getAllByRole('menuitemradio')
+        .map(item => [item.textContent, item.getAttribute('aria-checked')])
+    ).toEqual([
+      ['Viewer', 'false'],
+      ['Editor', 'true'],
+      ['Admin', 'false']
+    ])
+  })
+
+  it('keeps the keyboard in the Email field after a click on Share', async () => {
+    const { dialog } = await openSharing()
+    const send = dialog.getByRole('button', { name: 'Share' })
+
+    type(dialog, 'bob@example.com')
     act(() => {
-      invite.focus()
+      send.focus()
     })
-    fireEvent.click(invite)
+    fireEvent.click(send)
 
-    expect(await dialog.findByText(/^Invited bob@example.com\./)).toBeVisible()
-    expect(email).toHaveFocus()
+    expect(
+      await dialog.findByRole('listitem', { name: 'bob@example.com' })
+    ).toBeVisible()
+    expect(field(dialog)).toHaveFocus()
   })
 
   it('suggests people by name and invites the one picked', async () => {
@@ -125,37 +167,50 @@ describe('sharing a board', () => {
     const dialog = within(
       await screen.findByRole('dialog', { name: 'Share Design' })
     )
-    const email = dialog.getByRole('combobox', { name: 'Email' })
 
-    fireEvent.change(email, { target: { value: 'love' } })
+    type(dialog, 'love')
     fireEvent.click(await screen.findByRole('option', { name: /Ada Lovelace/ }))
 
-    expect(email).toHaveValue('ada@example.com')
-    expect(screen.queryByRole('option', { name: /Bob/ })).toBeNull()
-    fireEvent.click(dialog.getByRole('button', { name: 'Invite' }))
-    expect(await dialog.findByText(/^Invited ada@example.com\./)).toBeVisible()
+    expect(dialog.getByRole('button', { name: 'Ada Lovelace' })).toBeVisible()
+    expect(field(dialog)).toHaveValue('')
+    fireEvent.click(dialog.getByRole('button', { name: 'Share' }))
+    expect(
+      await dialog.findByRole('listitem', { name: 'ada@example.com' })
+    ).toBeVisible()
     expect(boardsApi.suggestPeople).toHaveBeenCalledWith(board.id, 'love')
   })
 
+  it('shows the person signed in first, with a role they cannot change here', async () => {
+    const { dialog } = await openSharing([bob, me])
+
+    const rows = await dialog.findAllByRole('listitem')
+    expect(rows[0]).toHaveAccessibleName('You')
+    const you = within(dialog.getByRole('listitem', { name: 'You' }))
+    expect(you.getByText('alice@example.com')).toBeVisible()
+    expect(you.getByText('Admin')).toBeVisible()
+    expect(you.queryByRole('button')).toBeNull()
+  })
+
+  it('says no one else has access yet', async () => {
+    const { dialog } = await openSharing()
+
+    expect(await dialog.findByText('No one has been added yet')).toBeVisible()
+    expect(
+      dialog.getByText('People invited to join will be listed here.')
+    ).toBeVisible()
+  })
+
   it('changes a member role and removes a member', async () => {
-    const { boardsApi, board, dialog } = await openSharing([
-      me,
-      {
-        userId: 'bob',
-        email: 'bob@example.com',
-        name: 'Bob Durand',
-        role: 'viewer'
-      }
-    ])
-    const bob = within(
+    const { boardsApi, board, dialog } = await openSharing([me, bob])
+    const row = within(
       await dialog.findByRole('listitem', { name: 'Bob Durand' })
     )
-    expect(bob.getByText('bob@example.com')).toBeVisible()
+    expect(row.getByText('bob@example.com')).toBeVisible()
 
     fireEvent.click(
-      bob.getByRole('button', { name: 'Role of Bob Durand: Viewer' })
+      row.getByRole('button', { name: 'Role of Bob Durand: Viewer' })
     )
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Editor' }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Editor' }))
     await waitFor(() => {
       expect(boardsApi.setMemberRole).toHaveBeenCalledWith(
         board.id,
@@ -163,16 +218,13 @@ describe('sharing a board', () => {
         'editor'
       )
     })
-    fireEvent.click(
-      await bob.findByRole('button', { name: 'Role of Bob Durand: Editor' })
-    )
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove' }))
+    fireEvent.click(row.getByRole('button', { name: 'Remove Bob Durand' }))
 
     await waitFor(() => {
-      expect(
-        dialog.queryByRole('listitem', { name: 'bob@example.com' })
-      ).toBeNull()
+      expect(dialog.queryByRole('listitem', { name: 'Bob Durand' })).toBeNull()
     })
+    expect(boardsApi.removeMember).toHaveBeenCalledWith(board.id, 'bob')
+    expect(field(dialog)).toHaveFocus()
   })
 
   it('cancels a pending invite', async () => {
@@ -189,15 +241,49 @@ describe('sharing a board', () => {
       await dialog.findByRole('listitem', { name: 'eve@example.com' })
     )
 
-    expect(eve.getByText('Pending')).toBeVisible()
+    expect(eve.getByText('Invitation sent')).toBeVisible()
     fireEvent.click(
-      eve.getByRole('button', { name: 'Role of eve@example.com: Editor' })
+      eve.getByRole('button', {
+        name: 'Cancel the invite of eve@example.com'
+      })
     )
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Cancel invite' }))
 
     await waitFor(() => {
       expect(boardsApi.cancelInvite).toHaveBeenCalledWith(board.id, 'inv')
     })
+  })
+
+  it('changes the role of an invite by inviting again', async () => {
+    const board = aBoard({ name: 'Design' })
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.sharings.set(board.id, {
+      members: [me],
+      invites: [{ id: 'inv', email: 'eve@example.com', role: 'editor' }]
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    fireEvent.click(await screen.findByRole('button', { name: 'Share' }))
+    const dialog = within(await screen.findByRole('dialog'))
+
+    fireEvent.click(
+      await dialog.findByRole('button', {
+        name: 'Role of eve@example.com: Editor'
+      })
+    )
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Viewer' }))
+
+    await waitFor(() => {
+      expect(boardsApi.invite).toHaveBeenCalledWith(
+        board.id,
+        'eve@example.com',
+        'viewer'
+      )
+    })
+    expect(
+      await dialog.findByRole('button', {
+        name: 'Role of eve@example.com: Viewer'
+      })
+    ).toBeVisible()
+    expect(boardsApi.cancelInvite).not.toHaveBeenCalled()
   })
 
   it('names the dialog after its title only', async () => {
@@ -209,44 +295,19 @@ describe('sharing a board', () => {
     expect(label?.querySelector('button')).toBeNull()
   })
 
-  it('keeps the only admin from demoting or removing themselves', async () => {
-    const { boardsApi, dialog } = await openSharing()
-
-    fireEvent.click(
-      await dialog.findByRole('button', {
-        name: 'Role of me@example.com: Admin'
-      })
-    )
-
-    expect(
-      screen.getByText(
-        'A project needs at least one admin. Make someone else admin first.'
-      )
-    ).toBeVisible()
-    for (const name of ['Viewer', 'Editor', 'Remove']) {
-      expect(screen.getByRole('menuitem', { name })).toHaveAttribute(
-        'aria-disabled',
-        'true'
-      )
-    }
-    expect(boardsApi.setMemberRole).not.toHaveBeenCalled()
-  })
-
   it('explains a refusal to leave the project without an admin', async () => {
     const { boardsApi, dialog } = await openSharing([
       me,
-      { userId: 'bob', email: 'bob@example.com', name: null, role: 'admin' }
+      { ...bob, role: 'admin' }
     ])
     boardsApi.setMemberRole.mockRejectedValueOnce(
       new ApiError(409, 'last_admin')
     )
 
     fireEvent.click(
-      await dialog.findByRole('button', {
-        name: 'Role of me@example.com: Admin'
-      })
+      await dialog.findByRole('button', { name: 'Role of Bob Durand: Admin' })
     )
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Viewer' }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Viewer' }))
 
     expect(await dialog.findByRole('alert')).toHaveTextContent(
       'A project needs at least one admin. Make someone else admin first.'
@@ -254,33 +315,27 @@ describe('sharing a board', () => {
   })
 
   it('shows only the outcome of the last action', async () => {
-    const { boardsApi, dialog } = await openSharing([
-      me,
-      { userId: 'bob', email: 'bob@example.com', name: null, role: 'viewer' }
-    ])
-    const form = within(dialog.getByRole('form', { name: 'Invite' }))
-    fireEvent.change(form.getByRole('combobox', { name: 'Email' }), {
-      target: { value: 'eve@example.com' }
-    })
-    fireEvent.click(form.getByRole('button', { name: 'Invite' }))
-    expect(await dialog.findByText(/^Invited eve@example.com\./)).toBeVisible()
+    const { boardsApi, dialog } = await openSharing([me, bob])
+    type(dialog, 'eve@example.com')
+    fireEvent.click(dialog.getByRole('button', { name: 'Share' }))
+    expect(
+      await dialog.findByRole('listitem', { name: 'eve@example.com' })
+    ).toBeVisible()
 
     boardsApi.setMemberRole.mockRejectedValueOnce(new ApiError(500, null))
     fireEvent.click(
-      dialog.getByRole('button', { name: 'Role of bob@example.com: Viewer' })
+      await dialog.findByRole('button', { name: 'Role of Bob Durand: Viewer' })
     )
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Editor' }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Editor' }))
     expect(await dialog.findByRole('alert')).toHaveTextContent(
       'The change could not be saved.'
     )
-    expect(dialog.queryByText(/^Invited eve@example.com\./)).toBeNull()
 
     fireEvent.click(
       await dialog.findByRole('button', {
-        name: 'Role of eve@example.com: Editor'
+        name: 'Cancel the invite of eve@example.com'
       })
     )
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Cancel invite' }))
     await waitFor(() => {
       expect(dialog.queryByRole('alert')).toBeNull()
     })
@@ -333,9 +388,7 @@ describe('sharing a board', () => {
   it('speaks of the board alone when it is the only one of its project', async () => {
     const { dialog } = await openSharing()
     expect(
-      await dialog.findByText(
-        'People you invite can open this board. An invite only works for an account in your own organization.'
-      )
+      await dialog.findByText(/^People you invite can open this board\. /)
     ).toBeVisible()
   })
 
@@ -372,7 +425,7 @@ describe('sharing a board', () => {
     const { dialog } = await openSharing()
     expect(
       dialog.getByText(
-        /An invite only works for an account in your own organization\./
+        /An invite only works for an account in your own organization\.$/
       )
     ).toBeVisible()
   })

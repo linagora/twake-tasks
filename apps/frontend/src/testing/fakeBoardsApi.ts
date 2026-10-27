@@ -304,7 +304,10 @@ export function fakeBoardsApi(boards: Board[] = []) {
     ),
     invite: vi.fn<BoardsApi['invite']>((boardId, email, role) =>
       Promise.resolve().then(() => {
-        sharingOf(boardId).invites.push({ id: nextId(), email, role })
+        const { invites } = sharingOf(boardId)
+        const existing = invites.find(pending => pending.email === email)
+        if (existing) existing.role = role
+        else invites.push({ id: nextId(), email, role })
       })
     ),
     cancelInvite: vi.fn<BoardsApi['cancelInvite']>((boardId, inviteId) =>

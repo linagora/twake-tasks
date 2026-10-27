@@ -436,26 +436,15 @@
     "share": "Teilen",
     "title": "%{name} teilen",
     "email": "E-Mail",
-    "role": "Rolle",
     "roles": {
       "viewer": "Betrachter",
       "editor": "Bearbeiter",
       "admin": "Admin"
     },
-    "roleHints": {
-      "viewer": "Sieht Aufgaben und kommentiert sie",
-      "editor": "Fügt Aufgaben hinzu, bearbeitet und verschiebt sie",
-      "admin": "Verwaltet auch Abschnitte, Freigabe und das Board"
-    },
-    "invite": "Einladen",
-    "invited": "%{email} eingeladen. Aufgaben können zugewiesen werden, sobald Twake Project geöffnet wurde.",
-    "pending": "Ausstehend",
     "roleOf": "Rolle: %{role}",
     "roleOfPerson": "Rolle von %{person}: %{role}",
     "lastAdmin": "Ein Projekt braucht mindestens einen Admin. Machen Sie zuerst jemand anderen zum Admin.",
     "people": "Personen mit Zugriff",
-    "cancelInvite": "Einladung zurückziehen",
-    "remove": "Entfernen",
     "close": "Schließen",
     "failed": "Die Änderung konnte nicht gespeichert werden.",
     "loadFailed": "Die Mitglieder konnten nicht geladen werden.",
@@ -466,7 +455,15 @@
     "helpSingle": "Eingeladene Personen können dieses Board öffnen.",
     "helpProject": "Eingeladene Personen können alle Boards des Projekts „%{project}“ öffnen: %{boards}.",
     "helpMore": "und %{smart_count} weitere",
-    "sameOrganization": "Eine Einladung funktioniert nur für ein Konto Ihrer eigenen Organisation."
+    "sameOrganization": "Eine Einladung funktioniert nur für ein Konto Ihrer eigenen Organisation.",
+    "you": "Sie",
+    "removePerson": "%{person} entfernen",
+    "cancelInviteOf": "Einladung von %{person} zurückziehen",
+    "emptyTitle": "Noch niemand hinzugefügt",
+    "emptySubtitle": "Eingeladene Personen werden hier aufgeführt.",
+    "inviteUsers": "Benutzer einladen",
+    "addContacts": "Kontakte hinzufügen",
+    "invitationSent": "Einladung gesendet"
   },
   "moveBoard": {
     "action": "In Projekt verschieben",

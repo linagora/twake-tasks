@@ -436,26 +436,15 @@
     "share": "Chia sẻ",
     "title": "Chia sẻ %{name}",
     "email": "Email",
-    "role": "Vai trò",
     "roles": {
       "viewer": "Người xem",
       "editor": "Người chỉnh sửa",
       "admin": "Quản trị viên"
     },
-    "roleHints": {
-      "viewer": "Xem và bình luận công việc",
-      "editor": "Thêm, sửa và di chuyển công việc",
-      "admin": "Quản lý cả mục, chia sẻ và bảng"
-    },
-    "invite": "Mời",
-    "invited": "Đã mời %{email}. Bạn có thể giao việc khi họ mở Twake Project.",
-    "pending": "Đang chờ",
     "roleOf": "Vai trò: %{role}",
     "roleOfPerson": "Vai trò của %{person}: %{role}",
     "lastAdmin": "Dự án cần ít nhất một quản trị viên. Hãy đặt người khác làm quản trị viên trước.",
     "people": "Những người có quyền truy cập",
-    "cancelInvite": "Hủy lời mời",
-    "remove": "Xóa",
     "close": "Đóng",
     "failed": "Không thể lưu thay đổi.",
     "loadFailed": "Không thể tải danh sách thành viên.",
@@ -466,7 +455,15 @@
     "helpSingle": "Những người bạn mời có thể mở bảng này.",
     "helpProject": "Những người bạn mời có thể mở mọi bảng của dự án “%{project}”: %{boards}.",
     "helpMore": "và %{smart_count} bảng khác",
-    "sameOrganization": "Lời mời chỉ có tác dụng với tài khoản thuộc tổ chức của bạn."
+    "sameOrganization": "Lời mời chỉ có tác dụng với tài khoản thuộc tổ chức của bạn.",
+    "you": "Bạn",
+    "removePerson": "Xóa %{person}",
+    "cancelInviteOf": "Hủy lời mời của %{person}",
+    "emptyTitle": "Chưa có ai được thêm",
+    "emptySubtitle": "Những người được mời sẽ hiển thị ở đây.",
+    "inviteUsers": "Mời người dùng",
+    "addContacts": "Thêm liên hệ",
+    "invitationSent": "Đã gửi lời mời"
   },
   "moveBoard": {
     "action": "Chuyển sang dự án",
