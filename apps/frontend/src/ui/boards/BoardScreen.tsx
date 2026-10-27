@@ -400,16 +400,14 @@ function BoardColumns({
           />
         </Tooltip>
       )}
-      {board.members.length + board.invited.length > 0 && (
-        <MemberStack
-          members={board.members}
-          invited={board.invited}
-          onClick={() => {
-            if (shareable && shareButton) setSharing(true)
-            else setListing(true)
-          }}
-        />
-      )}
+      <MemberStack
+        members={board.members}
+        invited={board.invited}
+        onClick={() => {
+          if (shareable && shareButton) setSharing(true)
+          else setListing(true)
+        }}
+      />
       {!shareButton ? null : shareable ? (
         <Button
           variant="secondary"

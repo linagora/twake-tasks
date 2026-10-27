@@ -16,6 +16,7 @@ import type { Board, Person } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useSession } from '@/ui/session/SessionGate'
 
 // As Twake Drive shows the people a file is shared with, in its list.
 const SHOWN = 3
@@ -85,10 +86,13 @@ export function MemberStack({
   members: Person[]
   invited: string[]
   onClick: () => void
-}): ReactElement {
+}): ReactElement | null {
   const { t } = useI18n()
+  const { user } = useSession()
+  // The others only, as Twake Drive shows who a file is shared with.
+  const me = user.email?.toLowerCase()
   const people = [
-    ...members,
+    ...members.filter(member => member.email.toLowerCase() !== me),
     ...invited.map(email => ({
       userId: email,
       email,
@@ -103,6 +107,7 @@ export function MemberStack({
       ? [t('members.invitedCount', { smart_count: invited.length })]
       : [])
   ].join(', ')
+  if (people.length === 0) return null
   return (
     <Tooltip title={label}>
       <StackButton onClick={onClick} aria-haspopup="dialog" aria-label={label}>
