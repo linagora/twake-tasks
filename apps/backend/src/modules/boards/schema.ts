@@ -596,6 +596,9 @@ function ownRows(userId: AnyPgColumn, orReach?: SQL) {
 const visibleTask = (taskId: AnyPgColumn): SQL =>
   sql`exists (select 1 from ${tasks} where ${tasks.id} = ${taskId})`
 
+// Set while someone loses access, so their rows on those tasks can be deleted.
+const revokingAccess = sql`current_setting('app.revoking_access', true) = 'on'`
+
 // Either at a fixed moment, or some minutes before the due date. A due date
 // without a time counts from nine in the morning, and a floating due time in
 // the zone of whoever set the reminder.
@@ -627,7 +630,7 @@ export const taskReminders = pgTable.withRLS(
         and ${table.beforeMinutes} >= 0`
     ),
     tenantPolicy(table.organizationId, visibleTask(table.taskId)),
-    ownRows(table.userId)
+    ownRows(table.userId, revokingAccess)
   ]
 )
 
@@ -675,7 +678,7 @@ export const notifications = pgTable.withRLS(
         using:
           command === 'update'
             ? sql`${table.userId} = ${currentUser}`
-            : sql`${table.userId} = ${currentUser} or current_setting('app.revoking_access', true) = 'on'`
+            : sql`${table.userId} = ${currentUser} or ${revokingAccess}`
       })
     )
   ]

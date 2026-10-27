@@ -224,6 +224,36 @@ describe.each([
     expect(await notificationsOf()).toEqual([])
   })
 
+  it('loses its reminders, and their jobs', async () => {
+    const gone = makeUser()
+    const peer =
+      gone.organizationId === null
+        ? aB2cUser()
+        : aUser({ organizationId: gone.organizationId })
+    await boardsOf(gone)
+    const home = await aBoard(peer, 'Home', [[gone, 'editor']])
+    await api
+      .as(gone)
+      .post(`/boards/${home.id}/tasks/${home.taskId}/reminders`, {
+        at: '2099-01-01T10:00:00Z'
+      })
+    const remindersOf = () =>
+      db
+        .select({ id: jobs.id })
+        .from(jobs)
+        .where(
+          and(
+            eq(jobs.kind, 'reminder'),
+            raw`${jobs.payload}->>'userId' = ${gone.userId}`
+          )
+        )
+    expect(await remindersOf()).toHaveLength(1)
+
+    await deliver(routingKey, body(gone))
+
+    expect(await remindersOf()).toEqual([])
+  })
+
   it('loses its saved filters', async () => {
     const gone = makeUser()
     await boardsOf(gone)

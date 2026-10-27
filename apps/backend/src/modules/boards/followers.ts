@@ -14,11 +14,12 @@ import {
   notifications,
   projectMembers,
   taskFollowers,
+  taskReminders,
   tasks
 } from './schema.ts'
 
-// Following a task and its notifications end with the access that lets
-// someone open it, so that regaining it starts afresh. Run it before the
+// Following a task, its notifications and reminders end with the access that
+// lets someone open it, so that regaining it starts afresh. Run it before the
 // change that removes access lands in history, which notifies the followers.
 
 interface PerPerson {
@@ -30,10 +31,11 @@ async function drop(tx: Tx, which: (table: PerPerson) => SQL | undefined) {
   await tx.delete(taskFollowers).where(which(taskFollowers))
   await tx.execute(sql`select set_config('app.revoking_access', 'on', true)`)
   await tx.delete(notifications).where(which(notifications))
+  await tx.delete(taskReminders).where(which(taskReminders))
   await tx.execute(sql`select set_config('app.revoking_access', '', true)`)
 }
 
-/** Stops these tasks being followed by, or notifying, anyone outside the project. */
+/** Stops these tasks being followed by, notifying or reminding anyone outside the project. */
 export async function revokeOutside(
   tx: Tx,
   taskIds: string[] | SQLWrapper,
@@ -57,7 +59,7 @@ export async function revokeOutside(
   )
 }
 
-/** Stops these people following, or being notified of, the tasks of a project they are leaving. */
+/** Stops these people following, being notified of or reminded of the tasks of a project they are leaving. */
 export async function revokeProject(
   tx: Tx,
   userIds: string[],
