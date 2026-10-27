@@ -499,6 +499,7 @@ function Description({
           <RichTextEditor
             label={t('task.description')}
             initial={description.data.markdown}
+            focusOnOpen
             placeholder={t('editor.descriptionPlaceholder')}
             labels={labels}
             minHeight={144}
