@@ -1,21 +1,27 @@
 import { Icon, Pen } from '@linagora/twake-icons'
 import { IconButton } from '@linagora/twake-mui'
-import { useState, type ReactElement, type ReactNode } from 'react'
+import { useRef, useState, type ReactElement, type ReactNode } from 'react'
 
+import { ApiError } from '@/application/boards'
+import { leastUsedColor } from '@/ds/ColorPicker'
 import { LabelChip } from '@/ds/Columns'
 import {
   PickerCreate,
   PickerEmpty,
+  PickerError,
   PickerOption,
   PickerPopover
 } from '@/ds/Picker'
 import { labelName, type Label } from '@/domain/board'
 import { LabelDialog } from '@/ui/boards/LabelDialog'
+import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 /**
  * The board's labels to check, with a way to create and edit them; saving
- * the checked ones is the caller's.
+ * the checked ones is the caller's. A name typed in the search field is
+ * created in the menu, in the color the board uses the least; with nothing
+ * typed, a dialog asks for the name and color, as it edits a label.
  */
 export function LabelsMenu({
   label,
@@ -40,12 +46,33 @@ export function LabelsMenu({
 }): ReactElement {
   const { t } = useI18n()
   const [search, setSearch] = useState('')
+  // A label to edit, or none to create one from a blank name.
   const [editing, setEditing] = useState<{ label?: Label } | null>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const create = useBoardChange(
+    boardId,
+    (api, draft: Pick<Label, 'name' | 'color'>) =>
+      api.createLabel(boardId, draft)
+  )
   const name = labelName(search)
   const query = name.toLowerCase()
   const folded = (each: Label) => labelName(each.name).toLowerCase()
   const shown = labels.filter(each => folded(each).includes(query))
   const creatable = name !== '' && !labels.some(each => folded(each) === query)
+  const taken =
+    create.error instanceof ApiError && create.error.code === 'label_taken'
+  const createNamed = () => {
+    create.mutate(
+      { name, color: leastUsedColor(labels.map(each => each.color)) },
+      {
+        onSuccess: created => {
+          setSearch('')
+          onCreated((created as Label).id)
+          searchRef.current?.focus()
+        }
+      }
+    )
+  }
 
   return (
     <>
@@ -54,9 +81,29 @@ export function LabelsMenu({
         anchor={anchor}
         onClose={onClose}
         searchLabel={t('board.searchLabels')}
+        searchRef={searchRef}
         search={search}
-        onSearch={setSearch}
-        footer={footer}
+        onSearch={value => {
+          setSearch(value)
+          create.reset()
+        }}
+        footer={
+          create.isError ? (
+            <>
+              <PickerError
+                retryLabel={t('board.retryAssign')}
+                onRetry={createNamed}
+              >
+                {taken
+                  ? t('board.labelTaken', { name })
+                  : t('board.labelFailed')}
+              </PickerError>
+              {footer}
+            </>
+          ) : (
+            footer
+          )
+        }
       >
         {shown.map(each => (
           <PickerOption
@@ -87,7 +134,9 @@ export function LabelsMenu({
         )}
         <PickerCreate
           onCreate={() => {
-            setEditing({})
+            if (creatable) {
+              if (!create.isPending) createNamed()
+            } else setEditing({})
           }}
         >
           {creatable ? t('board.createLabel', { name }) : t('board.newLabel')}
@@ -98,16 +147,12 @@ export function LabelsMenu({
           boardId={boardId}
           label={editing.label}
           usedColors={labels.map(each => each.color)}
-          initialName={creatable ? name : ''}
           onClose={() => {
             setEditing(null)
           }}
           onSaved={saved => {
             setEditing(null)
-            if (!editing.label) {
-              setSearch('')
-              onCreated(saved.id)
-            }
+            if (!editing.label) onCreated(saved.id)
           }}
         />
       )}
