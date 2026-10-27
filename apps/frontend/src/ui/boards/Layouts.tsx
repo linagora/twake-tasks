@@ -23,7 +23,7 @@ import { formatDay, localToday } from '@/ui/boards/dueLabel'
 import { useSetLayout } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-const LAYOUT_ICONS = {
+export const LAYOUT_ICONS = {
   board: Mosaic,
   list: List,
   calendar: Calendar
@@ -76,19 +76,22 @@ export function LayoutToggle<L extends Layout>({
   )
 }
 
-export function ListLayout({
+export function ListLayout<T extends Task>({
   columns,
-  row
+  row,
+  board = false
 }: {
   columns: {
     key: string
     name: string
-    tasks: Task[]
+    tasks: T[]
     footer: ReactNode
     /** Where its tasks are dropped, when the list can be reordered. */
     dropId?: string
   }[]
-  row: (task: Task) => ReactElement
+  row: (task: T) => ReactElement
+  /** The rows name their board in a column, as in a view. */
+  board?: boolean
 }): ReactElement {
   const { t } = useI18n()
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
@@ -103,8 +106,10 @@ export function ListLayout({
   return (
     <ListView>
       <ListHeader
+        board={board}
         columns={[
           t('layout.task'),
+          ...(board ? [t('viewTask.board')] : []),
           t('task.assignees'),
           t('layout.due'),
           t('task.priority'),
@@ -167,13 +172,13 @@ const shiftMonth = (month: string, amount: number) => {
 // Phones get a grid of day buttons with the picked day's tasks below it,
 // since seven columns leave no room for titles.
 /** With `onAdd`, each day and the tray of tasks without a date add one. */
-export function CalendarLayout({
+export function CalendarLayout<T extends Task>({
   tasks,
   item,
   onAdd
 }: {
-  tasks: Task[]
-  item: (task: Task) => ReactElement
+  tasks: T[]
+  item: (task: T) => ReactElement
   onAdd?: ((dueDate: string | null) => void) | undefined
 }): ReactElement {
   const { t, lang } = useI18n()

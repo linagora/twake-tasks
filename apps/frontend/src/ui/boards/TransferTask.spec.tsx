@@ -85,6 +85,77 @@ describe('moving a task to another board', () => {
     return { design, logo, ops, boardsApi: fakeBoardsApi([design, ops]) }
   }
 
+  it('moves it by its Board property, to the default section the new board has not its own', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    const logo = aTask(design.sections[0] ?? null, {
+      key: 'DES-1',
+      title: 'Logo'
+    })
+    design.tasks = [logo]
+    const ops = aBoard({ name: 'Ops', keyPrefix: 'OPS' })
+    ops.sections = [
+      { id: 'ops-later', name: 'Later', category: 'backlog' },
+      { id: 'ops-todo', name: 'Next', category: 'unstarted' }
+    ]
+    const boardsApi = fakeBoardsApi([design, ops])
+    renderRoute(`/boards/${design.id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+    fireEvent.mouseDown(await panel.findByRole('combobox', { name: 'Board' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Ops' }))
+
+    await waitFor(() => {
+      expect(boardsApi.transferTask).toHaveBeenCalledWith(design.id, logo.id, {
+        boardId: ops.id,
+        sectionId: 'ops-todo'
+      })
+    })
+    const moved = within(
+      await screen.findByRole('dialog', { name: 'OPS-1 Logo' })
+    )
+    expect(moved.getByRole('combobox', { name: 'Board' })).toHaveTextContent(
+      'Ops'
+    )
+    expect(moved.getByRole('combobox', { name: 'Section' })).toHaveTextContent(
+      'Next'
+    )
+  })
+
+  it('keeps its section by name on the new board, from its Board property', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    const [, review] = design.sections
+    const logo = aTask(review ?? null, { key: 'DES-1', title: 'Logo' })
+    design.tasks = [logo]
+    const ops = aBoard({ name: 'Ops', keyPrefix: 'OPS' })
+    ops.sections = [
+      { id: 'ops-todo', name: 'Next', category: 'unstarted' },
+      {
+        id: 'ops-same',
+        name: ` ${(review?.name ?? '').toUpperCase()} `,
+        category: 'started'
+      }
+    ]
+    const boardsApi = fakeBoardsApi([design, ops])
+    renderRoute(`/boards/${design.id}`, { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+    fireEvent.mouseDown(await panel.findByRole('combobox', { name: 'Board' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Ops' }))
+
+    await waitFor(() => {
+      expect(boardsApi.transferTask).toHaveBeenCalledWith(design.id, logo.id, {
+        boardId: ops.id,
+        sectionId: 'ops-same'
+      })
+    })
+  })
+
   it('keeps the section label above "No section"', async () => {
     const { design, ops, boardsApi } = setup()
     const form = await openForm(boardsApi, design.id, 'Logo')
@@ -113,7 +184,7 @@ describe('moving a task to another board', () => {
     expect(boardsApi.transferTask).not.toHaveBeenCalled()
   })
 
-  it('puts the task in the first section of the board by default', async () => {
+  it('puts the task in the section of the same name by default', async () => {
     const { design, logo, ops, boardsApi } = setup()
     const form = await openForm(boardsApi, design.id, 'Logo')
 

@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -17,9 +17,9 @@ describe('problem pages', () => {
     expect(
       await screen.findByRole('list', { name: 'Main menu' })
     ).toBeInTheDocument()
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Page not found'
-    )
+    expect(
+      await within(screen.getByRole('main')).findByRole('status')
+    ).toHaveTextContent('Page not found')
     expect(
       screen.getByRole('link', { name: 'Back to boards' })
     ).toHaveAttribute('href', '/')

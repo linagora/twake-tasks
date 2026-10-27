@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -262,22 +262,13 @@ describe('AgendaScreen', () => {
 
   it('shows the next seven days on Upcoming', async () => {
     const { boardsApi } = boards()
-    renderRoute('/today', { boardsApi })
-
-    fireEvent.click(
-      within(await screen.findByRole('list', { name: 'Main menu' })).getByRole(
-        'link',
-        {
-          name: 'Upcoming'
-        }
-      )
-    )
+    renderRoute('/upcoming', { boardsApi })
 
     expect(await screen.findByText('Flyer')).toBeVisible()
     expect(boardsApi.agenda).toHaveBeenLastCalledWith(localZone(), 7)
   })
 
-  it('lists the tasks assigned to me, undated ones last', async () => {
+  it('lists the tasks assigned to me', async () => {
     const { design, boardsApi } = boards()
     const me = { userId: 'me', email: 'me@example.com', name: null }
     design.tasks.push(
@@ -291,26 +282,14 @@ describe('AgendaScreen', () => {
     )
     renderRoute('/mine', { boardsApi })
 
-    expect(
-      within(await screen.findByRole('region', { name: 'No date' })).getByText(
-        'Brief'
-      )
-    ).toBeVisible()
+    expect(await screen.findByText('Brief')).toBeVisible()
     expect(screen.getByText('Mockups')).toBeVisible()
     expect(screen.queryByText('Logo')).not.toBeInTheDocument()
-    expect(
-      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
-        'link',
-        {
-          name: 'My tasks'
-        }
-      )
-    ).toHaveAttribute('href', '/mine')
   })
 
   it('says which tasks Today, Upcoming and My tasks hold', async () => {
     const { boardsApi } = boards()
-    renderRoute('/today', { boardsApi })
+    const { router } = renderRoute('/today', { boardsApi })
 
     expect(await screen.findByText('Logo')).toBeVisible()
     expect(
@@ -318,15 +297,19 @@ describe('AgendaScreen', () => {
         'Tasks assigned to you, and unassigned tasks of your boards outside spaces.'
       )
     ).toBeVisible()
-    fireEvent.click(
-      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
-        'link',
-        { name: 'My tasks' }
-      )
-    )
+    await act(() => router.navigate('/mine'))
     expect(
       await screen.findByText('Open tasks assigned to you on any board.')
     ).toBeVisible()
+  })
+
+  it('titles My tasks once, with its breadcrumb', async () => {
+    renderRoute('/mine', { boardsApi: fakeBoardsApi() })
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'My tasks' })
+    ).toBeVisible()
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   })
 
   it.each([

@@ -10,6 +10,7 @@ import {
 } from '@linagora/twake-mui'
 import {
   useRef,
+  useState,
   type KeyboardEvent,
   type ReactElement,
   type ReactNode
@@ -26,6 +27,8 @@ export function PickerPopover({
   onSearch,
   onPickFirst,
   footer,
+  still = false,
+  at,
   children
 }: {
   label: string
@@ -36,8 +39,23 @@ export function PickerPopover({
   onSearch: (search: string) => void
   onPickFirst?: () => void
   footer?: ReactNode
+  /**
+   * Stays where it opened, though the anchor moves, as a pen does when the
+   * values picked show before it.
+   */
+  still?: boolean
+  /**
+   * Where it opens instead of under its anchor, as where the menu that led
+   * to it was; it stays there.
+   */
+  at?: { top: number; left: number } | undefined
   children: ReactNode
 }): ReactElement {
+  const [opened] = useState(() => {
+    if (at) return at
+    const rect = anchor?.getBoundingClientRect()
+    return rect && { top: rect.bottom, left: rect.left }
+  })
   const searchRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
 
@@ -59,6 +77,11 @@ export function PickerPopover({
     <Popover
       open={anchor !== null}
       anchorEl={anchor}
+      {...((still || at) &&
+        opened && {
+          anchorReference: 'anchorPosition',
+          anchorPosition: opened
+        })}
       onClose={onClose}
       disableAutoFocus
       anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}

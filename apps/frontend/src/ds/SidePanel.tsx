@@ -182,7 +182,8 @@ function Panel({
   header,
   lead,
   aside,
-  children
+  children,
+  instant = false
 }: {
   label: string
   onClose: () => void
@@ -197,6 +198,8 @@ function Panel({
   lead: ReactNode
   aside: ReactNode
   children: ReactNode
+  /** Shows at once, as when the panel stays on a task that moved. */
+  instant?: boolean
 }): ReactElement {
   const host = useContext(PanelHostContext)
   const focused = useFocusWhileOpen(host)
@@ -311,6 +314,7 @@ function Panel({
       <Drawer
         open
         anchor="right"
+        transitionDuration={instant ? 0 : undefined}
         onClose={(_event, reason) => {
           if (reason === 'escapeKeyDown' && inField(document.activeElement))
             return

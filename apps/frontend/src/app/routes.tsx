@@ -1,7 +1,13 @@
 import type { RouteObject } from 'react-router'
 
-import { AgendaScreen, FilterScreen } from '@/ui/agenda/AgendaScreen'
-import { FiltersScreen } from '@/ui/agenda/FiltersScreen'
+import { AgendaScreen } from '@/ui/agenda/AgendaScreen'
+import {
+  EditViewScreen,
+  FiltersScreen,
+  NewViewScreen
+} from '@/ui/agenda/FiltersScreen'
+import { MyTasksScreen } from '@/ui/agenda/MyTasksScreen'
+import { ViewScreen } from '@/ui/agenda/ViewScreen'
 import { SearchScreen } from '@/ui/agenda/SearchScreen'
 import { ShelfScreen } from '@/ui/boards/Archive'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
@@ -13,6 +19,7 @@ import {
   EmbedNewTask,
   EmbedProjectScreen
 } from '@/ui/embed/Embed'
+import { SettingsScreen } from '@/ui/settings/SettingsScreen'
 import { AppShell } from '@/ui/shell/AppShell'
 import { CrashScreen, NotFoundScreen } from '@/ui/shell/Problems'
 
@@ -36,11 +43,14 @@ export const routes: RouteObject[] = [
           },
           { path: '/today', element: <AgendaScreen view="today" /> },
           { path: '/upcoming', element: <AgendaScreen view="upcoming" /> },
-          { path: '/mine', element: <AgendaScreen view="mine" /> },
+          { path: '/mine', element: <MyTasksScreen /> },
           { path: '/filters', element: <FiltersScreen /> },
-          { path: '/filters/:filterId', element: <FilterScreen /> },
+          { path: '/filters/new', element: <NewViewScreen /> },
+          { path: '/filters/:filterId', element: <ViewScreen /> },
+          { path: '/filters/:filterId/edit', element: <EditViewScreen /> },
           { path: '/search', element: <SearchScreen /> },
           { path: '/notifications', element: <NotificationsScreen /> },
+          { path: '/settings', element: <SettingsScreen /> },
           { path: '*', element: <NotFoundScreen /> }
         ]
       }

@@ -11,7 +11,8 @@ import {
   ne,
   notExists,
   or,
-  sql
+  sql,
+  type SQL
 } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import type { Db, Tx } from '../../infra/db.ts'
@@ -20,26 +21,71 @@ import { userSettings } from '../settings/schema.ts'
 import { memberLooks, settingsOfMember } from './access.ts'
 import { shift, todayIn } from './recurrence.ts'
 import {
+  boards,
   labels,
   projectMembers,
   projects,
   savedFilters,
+  sections,
+  type GROUPINGS,
   taskAssignees,
   taskLabels,
   tasks
 } from './schema.ts'
-import { assignedTo, openTasksOf } from './store.ts'
+import type { Layout } from './layouts.ts'
+import { leaveSections } from './sidebar.ts'
+import { ensureInbox, liveTasksOf } from './store.ts'
 import { Refused, writeOrRefuse } from './tasks.ts'
 
 type Due = 'overdue' | 'today' | 'week' | 'none'
 
-// Each criterion matches any of its values; a task must match every criterion.
+/**
+ * What a view keeps to. Each criterion holds any number of values, of which a
+ * task matches one; a task matches every criterion set. An assignee is a
+ * person's id, `me` or `nobody`.
+ */
 export interface Criteria {
-  /** `me`, `nobody`, or a user id. */
-  assignee?: string[] | undefined
-  priority?: number[] | undefined
-  label?: string[] | undefined
-  due?: Due[] | undefined
+  assignees?: string[] | undefined
+  priorities?: number[] | undefined
+  labels?: string[] | undefined
+  dues?: Due[] | undefined
+  boards?: string[] | undefined
+  /** Names of sections, which match those of any board in any case. */
+  statuses?: string[] | undefined
+}
+
+/**
+ * The names saved filters gave their criteria: one value each at first, then
+ * a list of them.
+ */
+export interface LegacyCriteria {
+  assignee?: string | string[] | undefined
+  priority?: number | number[] | undefined
+  label?: string | string[] | undefined
+  due?: Due | Due[] | undefined
+  board?: string | undefined
+}
+
+const listOf = <T>(many: T[] | undefined, one: T | T[] | undefined): T[] =>
+  many ?? (one === undefined ? [] : Array.isArray(one) ? one : [one])
+
+/** The criteria of a view, each with its values, whenever it was saved. */
+export function criteriaOf(stored: Criteria & LegacyCriteria): Criteria {
+  const set = <T>(values: T[]) => (values.length > 0 ? values : undefined)
+  // A criterion not set is left out once stored or sent, as JSON.
+  return {
+    assignees: set(listOf(stored.assignees, stored.assignee)),
+    priorities: set(listOf(stored.priorities, stored.priority)),
+    labels: set(listOf(stored.labels, stored.label)),
+    dues: set(listOf(stored.dues, stored.due)),
+    boards: set(listOf(stored.boards, stored.board)),
+    statuses: set(stored.statuses ?? [])
+  }
+}
+
+const anyOf = (conditions: (SQL | undefined)[]) => {
+  const set = conditions.filter(condition => condition !== undefined)
+  return set.length === 0 ? undefined : or(...set)
 }
 
 function dueIs(due: Due, today: string) {
@@ -59,67 +105,194 @@ function dueIs(due: Due, today: string) {
 }
 
 function matching(tx: Tx, userId: string, criteria: Criteria, today: string) {
-  const { assignee, priority, label, due } = criteria
+  const {
+    assignees = [],
+    priorities = [],
+    labels: names = [],
+    dues = [],
+    boards: boardIds = [],
+    statuses = []
+  } = criteria
+  const people = assignees
+    .filter(assignee => assignee !== 'nobody')
+    .map(assignee => (assignee === 'me' ? userId : assignee))
   return and(
-    assignee &&
-      or(
-        ...assignee.map(each =>
-          each === 'nobody'
-            ? notExists(
-                tx
-                  .select({ one: sql`1` })
-                  .from(taskAssignees)
-                  .where(eq(taskAssignees.taskId, tasks.id))
+    boardIds.length === 0 ? undefined : inArray(tasks.boardId, boardIds),
+    anyOf([
+      people.length === 0
+        ? undefined
+        : exists(
+            tx
+              .select({ one: sql`1` })
+              .from(taskAssignees)
+              .where(
+                and(
+                  eq(taskAssignees.taskId, tasks.id),
+                  inArray(taskAssignees.userId, people)
+                )
               )
-            : assignedTo(tx, each === 'me' ? userId : each)
-        )
-      ),
-    priority && inArray(tasks.priority, priority),
-    label &&
-      exists(
-        tx
-          .select({ one: sql`1` })
-          .from(taskLabels)
-          .innerJoin(labels, eq(labels.id, taskLabels.labelId))
-          .where(
-            and(
-              eq(taskLabels.taskId, tasks.id),
-              inArray(
-                sql`lower(${labels.name})`,
-                label.map(name => name.toLowerCase())
+          ),
+      assignees.includes('nobody')
+        ? notExists(
+            tx
+              .select({ one: sql`1` })
+              .from(taskAssignees)
+              .where(eq(taskAssignees.taskId, tasks.id))
+          )
+        : undefined
+    ]),
+    priorities.length === 0 ? undefined : inArray(tasks.priority, priorities),
+    names.length === 0
+      ? undefined
+      : exists(
+          tx
+            .select({ one: sql`1` })
+            .from(taskLabels)
+            .innerJoin(labels, eq(labels.id, taskLabels.labelId))
+            .where(
+              and(
+                eq(taskLabels.taskId, tasks.id),
+                inArray(
+                  sql`lower(${labels.name})`,
+                  names.map(name => name.toLowerCase())
+                )
               )
             )
-          )
-      ),
-    due && or(...due.map(each => dueIs(each, today)))
+        ),
+    anyOf(dues.map(due => dueIs(due, today))),
+    statuses.length === 0
+      ? undefined
+      : exists(
+          tx
+            .select({ one: sql`1` })
+            .from(sections)
+            .where(
+              and(
+                eq(sections.id, tasks.sectionId),
+                inArray(
+                  sql`lower(trim(${sections.name}))`,
+                  statuses.map(name => name.trim().toLowerCase())
+                )
+              )
+            )
+        )
   )
 }
+
+/** What a person sets of a view: its name, icon, layout, grouping and criteria. */
+export interface View {
+  name: string
+  criteria: Criteria
+  icon: string | null
+  layout: Layout
+  groupBy: (typeof GROUPINGS)[number]
+  allColumns: boolean
+}
+
+/** The names of the first views, in the person's language. */
+export interface DefaultViewNames {
+  today: string
+  upcoming: string
+  mine: string
+}
+
+// The views a person starts with, the former Today, Upcoming and My tasks.
+const DEFAULT_VIEWS: (Omit<View, 'name'> & {
+  key: keyof DefaultViewNames
+})[] = [
+  {
+    key: 'today',
+    criteria: { assignees: ['me'], dues: ['overdue', 'today'] },
+    icon: 'CalendarToday',
+    layout: 'list',
+    groupBy: 'due',
+    allColumns: false
+  },
+  {
+    key: 'upcoming',
+    criteria: { assignees: ['me'], dues: ['overdue', 'today', 'week'] },
+    icon: 'Calendar',
+    layout: 'list',
+    groupBy: 'due',
+    allColumns: false
+  },
+  {
+    key: 'mine',
+    criteria: { assignees: ['me'] },
+    icon: 'Profile',
+    layout: 'list',
+    groupBy: 'due',
+    allColumns: false
+  }
+]
 
 export function createFilterStore(db: Db) {
   return {
     listFilters(identity: Identity) {
-      return writeOrRefuse(db, identity, tx =>
-        tx
+      return writeOrRefuse(db, identity, async tx => {
+        const rows = await tx
           .select({
             id: savedFilters.id,
             name: savedFilters.name,
             criteria: savedFilters.criteria,
-            favorite: savedFilters.favorite
+            favorite: savedFilters.favorite,
+            icon: savedFilters.icon,
+            layout: savedFilters.layout,
+            groupBy: savedFilters.groupBy,
+            allColumns: savedFilters.allColumns
           })
           .from(savedFilters)
-          .orderBy(asc(savedFilters.name), asc(savedFilters.id))
-      )
+          .orderBy(
+            desc(savedFilters.favorite),
+            asc(savedFilters.name),
+            asc(savedFilters.id)
+          )
+        return rows.map(row => ({
+          ...row,
+          criteria: criteriaOf(row.criteria as Criteria & LegacyCriteria)
+        }))
+      })
     },
 
-    createFilter(identity: Identity, name: string, criteria: Criteria) {
+    /**
+     * Makes the person's first views, as favorites, unless made before: the
+     * personal project records it, so that only one request makes them.
+     */
+    makeDefaultFilters(identity: Identity, names: DefaultViewNames) {
+      return writeOrRefuse(db, identity, async tx => {
+        await ensureInbox(tx, identity)
+        const claimed = await tx
+          .update(projects)
+          .set({ defaultViews: true })
+          .where(
+            and(
+              eq(projects.personal, true),
+              eq(projects.createdBy, identity.userId),
+              eq(projects.defaultViews, false)
+            )
+          )
+          .returning({ id: projects.id })
+        if (claimed.length === 0) return
+        await tx.insert(savedFilters).values(
+          DEFAULT_VIEWS.map(({ key, ...view }) => ({
+            organizationId: identity.organizationId,
+            userId: identity.userId,
+            name: names[key],
+            favorite: true,
+            ...view
+          }))
+        )
+      })
+    },
+
+    createFilter(identity: Identity, view: View) {
       return writeOrRefuse(db, identity, async tx => {
         const [row] = await tx
           .insert(savedFilters)
           .values({
             organizationId: identity.organizationId,
             userId: identity.userId,
-            name,
-            criteria
+            ...view
           })
           .returning({ id: savedFilters.id })
         if (!row) throw new Error('filter insert returned nothing')
@@ -127,12 +300,14 @@ export function createFilterStore(db: Db) {
       })
     },
 
-    // A label criterion matches any case, so names differing only by case are one.
-    labelNames(identity: Identity) {
+    // A label criterion matches any case, so names differing only by case are
+    // one, in a colour one of them was given if any.
+    labelChoices(identity: Identity) {
       return writeOrRefuse(db, identity, async tx => {
         const rows = await tx
           .selectDistinctOn([sql`lower(${labels.name})`], {
-            name: labels.name
+            name: labels.name,
+            color: labels.color
           })
           .from(labels)
           .innerJoin(
@@ -148,7 +323,39 @@ export function createFilterStore(db: Db) {
           )
           .orderBy(
             sql`lower(${labels.name})`,
-            sql`${labels.name} collate "C" desc`
+            sql`${labels.name} collate "C" desc`,
+            sql`${labels.color} nulls last`
+          )
+        return rows
+      })
+    },
+
+    // The sections of my open boards, one per name regardless of case.
+    statusNames(identity: Identity) {
+      return writeOrRefuse(db, identity, async tx => {
+        const rows = await tx
+          .selectDistinctOn([sql`lower(trim(${sections.name}))`], {
+            name: sql<string>`trim(${sections.name})`
+          })
+          .from(sections)
+          .innerJoin(
+            boards,
+            and(eq(boards.id, sections.boardId), isNull(boards.archivedAt))
+          )
+          .innerJoin(
+            projects,
+            and(eq(projects.id, boards.projectId), isNull(projects.deletedAt))
+          )
+          .innerJoin(
+            projectMembers,
+            and(
+              eq(projectMembers.projectId, projects.id),
+              eq(projectMembers.userId, identity.userId)
+            )
+          )
+          .orderBy(
+            sql`lower(trim(${sections.name}))`,
+            sql`trim(${sections.name}) collate "C" desc`
           )
         return rows.map(row => row.name)
       })
@@ -188,9 +395,7 @@ export function createFilterStore(db: Db) {
     updateFilter(
       identity: Identity,
       filterId: string,
-      changes: {
-        name?: string | undefined
-        criteria?: Criteria | undefined
+      changes: { [Key in keyof View]?: View[Key] | undefined } & {
         favorite?: boolean | undefined
       }
     ) {
@@ -201,6 +406,13 @@ export function createFilterStore(db: Db) {
           .where(eq(savedFilters.id, filterId))
           .returning({ id: savedFilters.id })
         if (updated.length === 0) throw new Refused('not_found')
+        // An unstarred view leaves the sidebar sections it was placed in.
+        if (changes.favorite === false) {
+          await leaveSections(tx, identity.userId, {
+            kind: 'view',
+            id: filterId
+          })
+        }
       })
     },
 
@@ -221,13 +433,13 @@ export function createFilterStore(db: Db) {
           .from(savedFilters)
           .where(eq(savedFilters.id, filterId))
         if (!filter) throw new Refused('not_found')
-        return openTasksOf(
+        return liveTasksOf(
           tx,
           identity.userId,
           matching(
             tx,
             identity.userId,
-            filter.criteria as Criteria,
+            criteriaOf(filter.criteria as Criteria & LegacyCriteria),
             todayIn(zone)
           )
         )

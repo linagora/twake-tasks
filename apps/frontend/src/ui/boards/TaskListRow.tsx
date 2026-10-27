@@ -1,7 +1,7 @@
-import { Link } from '@linagora/twake-mui'
+import { Link, Typography } from '@linagora/twake-mui'
 import type { ComponentProps, ReactElement } from 'react'
 
-import { LabelChip } from '@/ds/Columns'
+import { BoardChip, LabelChip } from '@/ds/Columns'
 import { ListRow } from '@/ds/ListView'
 import { SortableListRow } from '@/ds/Sortable'
 import type { Section, Task } from '@/domain/board'
@@ -35,7 +35,9 @@ export function TaskListRow({
   boardId,
   sections,
   editable,
-  sortable = false
+  sortable = false,
+  boardName,
+  parentTitle = null
 }: {
   task: Task
   boardId: string
@@ -43,6 +45,10 @@ export function TaskListRow({
   editable: boolean
   /** Dragged to another place of the list, as a card on a board. */
   sortable?: boolean
+  /** Shown where the tasks of many boards meet. */
+  boardName?: string
+  /** A sub-task's parent, named where it shows without it. */
+  parentTitle?: string | null
 }): ReactElement {
   const { t } = useI18n()
   const panel = useTaskPanel(task.key)
@@ -72,6 +78,16 @@ export function TaskListRow({
           }}
         >
           {task.title}
+          {parentTitle !== null && (
+            <Typography
+              variant="caption"
+              color="textSecondary"
+              component="span"
+              className="u-ml-half"
+            >
+              {t('agenda.subtaskOf', { title: parentTitle })}
+            </Typography>
+          )}
         </Link>
       }
       people={
@@ -81,6 +97,7 @@ export function TaskListRow({
       priority={
         task.priority !== null && <PriorityChip priority={task.priority} />
       }
+      board={boardName ? <BoardChip name={boardName} /> : undefined}
       labels={task.labels.map(label => ({
         key: label.id,
         name: label.name,

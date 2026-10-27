@@ -195,7 +195,8 @@ export function BoardDrag({
 }: {
   lanes: Lane[]
   titleOf: (taskId: string) => string
-  onMove: (taskId: string, move: TaskMove) => void
+  /** False refuses the drop, and the card goes back. */
+  onMove: (taskId: string, move: TaskMove) => boolean | undefined
   preview: (taskId: string) => ReactNode
   /** The preview is smaller than the task, so it follows the pointer. */
   previewAtPointer?: boolean
@@ -351,10 +352,14 @@ export function BoardDrag({
           setDrag(null)
           return
         }
-        setDrag({ phase: 'landed', lanes: drag.lanes, shownOver: signature })
-        onMove(
+        const accepted = onMove(
           String(active.id),
           moveInto(lane.sectionId, landing.ids, landing.index)
+        )
+        setDrag(
+          accepted === false
+            ? null
+            : { phase: 'landed', lanes: drag.lanes, shownOver: signature }
         )
       }}
       onDragCancel={() => {

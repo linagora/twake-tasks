@@ -25,12 +25,15 @@ import {
 import { useCallback, useId, useRef, useState, type ReactElement } from 'react'
 import { useNavigate } from 'react-router'
 
+import type { FilterCriteria } from '@/application/boards'
 import {
   defaultSection,
   UnfinishedTask,
+  viewDraft,
   type NewTaskDraft,
   type StartedTask
 } from '@/application/newTask'
+import { viewTaskDefaults } from '@/application/viewTask'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { LabelChip } from '@/ds/Columns'
 import { DayPopover } from '@/ds/Pickers'
@@ -39,22 +42,31 @@ import { Inline, Properties, Property, PropertySelect } from '@/ds/SidePanel'
 import { Toast } from '@/ds/Toast'
 import { isShareable, type Priority } from '@/domain/board'
 import { displayName } from '@/domain/person'
-import { inDays, shortDay, untilNextMonday } from '@/ui/boards/dueLabel'
+import {
+  inDays,
+  localToday,
+  shortDay,
+  untilNextMonday
+} from '@/ui/boards/dueLabel'
 import { LabelsMenu } from '@/ui/boards/LabelsMenu'
 import { PeopleMenu } from '@/ui/boards/PeopleMenu'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useNewTask, useNewTaskBoard } from '@/ui/boards/queries'
+import { useBoards, useNewTask, useNewTaskBoard } from '@/ui/boards/queries'
 import { PriorityChip } from '@/ui/boards/TaskFacts'
 import { MAX_DESCRIPTION } from '@/ui/boards/TaskPanel'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useHighlightNewTask } from '@/ui/shell/NewTaskHighlight'
+import { useSession } from '@/ui/session/SessionGate'
 import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 
 const PRIORITIES: Priority[] = [1, 2, 3, 4]
 
 type MenuName = 'members' | 'labels' | 'due'
+
+// The status of a view that the board lacks, made as a section.
+const NEW_SECTION = 'new'
 
 const EMPTY: Omit<NewTaskDraft, 'title' | 'description'> = {
   assigneeIds: [],
@@ -79,10 +91,13 @@ export interface CreatedTask {
  */
 export function NewTaskFromUrl({
   inBoardId,
-  inProjectId
+  inProjectId,
+  criteria = null
 }: {
   inBoardId?: string | undefined
   inProjectId?: string | undefined
+  /** Those of the view shown, which the task takes. */
+  criteria?: FilterCriteria | null
 }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -96,6 +111,7 @@ export function NewTaskFromUrl({
         <NewTaskDialog
           inBoardId={inBoardId}
           inProjectId={inProjectId}
+          criteria={criteria}
           dueDate={dueDate}
           onClose={closeNewTask}
           onCreated={task => {
@@ -142,16 +158,20 @@ export function NewTaskFromUrl({
 /**
  * Opened from a board, the task goes in that board unless another is picked,
  * else in the Inbox. Opened from a project, only its boards are offered.
+ * Opened from a view, it is filled in with what the view asks, so that the
+ * view shows it.
  */
 export function NewTaskDialog({
   inBoardId,
   inProjectId,
+  criteria = null,
   dueDate,
   onClose,
   onCreated
 }: {
   inBoardId?: string | undefined
   inProjectId?: string | undefined
+  criteria?: FilterCriteria | null
   dueDate?: string | undefined
   onClose: () => void
   onCreated: (task: CreatedTask) => void
@@ -165,7 +185,9 @@ export function NewTaskDialog({
   const [title, setTitle] = useState('')
   const [untitled, setUntitled] = useState(false)
   const [description, setDescription] = useState('')
-  const [details, setDetails] = useState(false)
+  // Opened from a view, it shows what the view fills in.
+  const [detailsShown, setDetails] = useState<boolean | null>(null)
+  const details = detailsShown ?? criteria !== null
   const [facts, setFacts] = useState({ ...EMPTY, dueDate: dueDate ?? null })
   const [picked, setPicked] = useState<string | undefined>(undefined)
   const [pickedSection, setPickedSection] = useState<string | undefined>(
@@ -183,11 +205,35 @@ export function NewTaskDialog({
   }, [])
   const create = useNewTask()
   const [started, setStarted] = useState<StartedTask | undefined>(undefined)
+  const { user } = useSession()
+  const boards = useBoards().data
   const { targets, chosen, board } = useNewTaskBoard(
     picked,
-    inBoardId,
+    criteria && boards
+      ? viewTaskDefaults(criteria, boards, localToday()).boardId
+      : inBoardId,
     inProjectId
   )
+  // The board the view's criteria were filled in for, and what it lacks.
+  const [filledIn, setFilledIn] = useState<string | null>(null)
+  const [lacking, setLacking] = useState<
+    Pick<NewTaskDraft, 'newSection' | 'newLabel'>
+  >({})
+  if (criteria && board && filledIn !== board.id) {
+    const draft = viewDraft(criteria, board, user.email, localToday())
+    setFilledIn(board.id)
+    setFacts({
+      assigneeIds: draft.assigneeIds,
+      labelIds: draft.labelIds,
+      priority: draft.priority,
+      dueDate: dueDate ?? draft.dueDate
+    })
+    setPickedSection(draft.newSection ? NEW_SECTION : draft.sectionId)
+    setLacking({
+      ...(draft.newSection && { newSection: draft.newSection }),
+      ...(draft.newLabel && { newLabel: draft.newLabel })
+    })
+  }
 
   const change = (changes: Partial<typeof facts>) => {
     if (!create.isIdle && !create.isPending) create.reset()
@@ -208,8 +254,11 @@ export function NewTaskDialog({
   }
 
   const sections = board?.sections ?? []
-  const section =
-    sections.find(each => each.id === pickedSection) ?? defaultSection(sections)
+  const newSection = pickedSection === NEW_SECTION ? lacking.newSection : null
+  const section = newSection
+    ? null
+    : (sections.find(each => each.id === pickedSection) ??
+      defaultSection(sections))
 
   // Closed while creating, it would miss the task once created.
   const close = () => {
@@ -232,7 +281,9 @@ export function NewTaskDialog({
           ...facts,
           title,
           description,
-          ...(section && { sectionId: section.id })
+          ...(section && { sectionId: section.id }),
+          ...(newSection && { newSection }),
+          ...(lacking.newLabel && { newLabel: lacking.newLabel })
         },
         started
       },
@@ -344,7 +395,7 @@ export function NewTaskDialog({
                       />
                     )}
                   </Property>
-                  {section && (
+                  {(section ?? newSection) && (
                     <Property
                       id={sectionLabelId}
                       icon={<Icon icon={Folder} />}
@@ -352,11 +403,21 @@ export function NewTaskDialog({
                     >
                       <PropertySelect
                         labelId={sectionLabelId}
-                        value={section.id}
-                        options={sections.map(each => ({
-                          value: each.id,
-                          label: each.name
-                        }))}
+                        value={section?.id ?? NEW_SECTION}
+                        options={[
+                          ...(lacking.newSection
+                            ? [
+                                {
+                                  value: NEW_SECTION,
+                                  label: lacking.newSection
+                                }
+                              ]
+                            : []),
+                          ...sections.map(each => ({
+                            value: each.id,
+                            label: each.name
+                          }))
+                        ]}
                         onChange={setPickedSection}
                         disabled={started !== undefined}
                       />
@@ -405,7 +466,8 @@ export function NewTaskDialog({
                         color={each.color}
                       />
                     ))}
-                    {checkedLabels.length === 0 && (
+                    {lacking.newLabel && <LabelChip name={lacking.newLabel} />}
+                    {checkedLabels.length === 0 && !lacking.newLabel && (
                       <Typography variant="body2" color="textSecondary">
                         {t('task.noLabels')}
                       </Typography>

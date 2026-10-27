@@ -43,6 +43,7 @@ import {
   taskLabels,
   tasks
 } from './schema.ts'
+import { leaveSections } from './sidebar.ts'
 import {
   bumpBoard,
   checkRole,
@@ -341,6 +342,10 @@ export function createBoardStore(db: Db) {
                 eq(boardFavorites.userId, identity.userId)
               )
             )
+          await leaveSections(tx, identity.userId, {
+            kind: 'board',
+            id: boardId
+          })
         }
         return true
       })
@@ -456,7 +461,7 @@ export async function createProject(
 
 // The personal project holds the Inbox. The Inbox has no sections: its tasks
 // show under "No section". A unique conflict means both already exist.
-async function ensureInbox(tx: Tx, identity: Identity) {
+export async function ensureInbox(tx: Tx, identity: Identity) {
   const [personal] = await tx
     .insert(projects)
     .values({
@@ -633,6 +638,11 @@ export function openTasksOf(tx: Tx, userId: string, which: SQL | undefined) {
       which
     )
   )
+}
+
+/** The tasks of boards still in use, done and canceled ones as well. */
+export function liveTasksOf(tx: Tx, userId: string, which: SQL | undefined) {
+  return tasksOf(tx, userId, and(isNull(boards.archivedAt), which))
 }
 
 async function tasksOf(

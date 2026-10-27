@@ -2,6 +2,7 @@ import {
   keepPreviousData,
   skipToken,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
   type UseMutationResult,
@@ -16,17 +17,19 @@ import {
   type BoardsApi,
   type Comment,
   type Description,
-  type FilterFields,
   type HiddenTask,
   type HistoryEntry,
+  type LabelChoice,
   type NewBoard,
   type NewReminder,
+  type NewSavedFilter,
   type NewTask,
   type Notification,
   type Project,
   type ProjectUnread,
   type Reminder,
   type SavedFilter,
+  type SidebarSection,
   type Sharing,
   type Shelf,
   type TaskMove,
@@ -37,7 +40,8 @@ import {
   type Board,
   type BoardSummary,
   type Layout,
-  type Person
+  type Person,
+  type Section
 } from '@/domain/board'
 import { applyMove } from '@/application/moveTask'
 import {
@@ -46,7 +50,13 @@ import {
   type NewTaskDraft,
   type StartedTask
 } from '@/application/newTask'
+import {
+  createViewTask,
+  type ViewTask,
+  type ViewTaskFact
+} from '@/application/viewTask'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
+import { useI18n } from '@/ui/i18n/useI18n'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
 import { keys, type AgendaView } from '@/ui/queries/keys'
 
@@ -139,17 +149,138 @@ export function useSearch(text: string): UseQueryResult<AgendaTask[]> {
 
 export function useFilters(): UseQueryResult<SavedFilter[]> {
   const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  const { t } = useI18n()
   return useQuery({
     queryKey: keys.filters(),
-    queryFn: () => api.listFilters()
+    queryFn: async () => {
+      // The first views are made before the first list, once per page load.
+      await queryClient.query({
+        queryKey: keys.defaultFilters(),
+        queryFn: async () => {
+          await api.makeDefaultFilters({
+            today: t('agenda.today'),
+            upcoming: t('agenda.upcoming'),
+            mine: t('agenda.mine')
+          })
+          return true
+        },
+        staleTime: 'static'
+      })
+      return api.listFilters()
+    }
   })
 }
 
-export function useLabelNames(): UseQueryResult<string[]> {
+export function useSidebarSections(): UseQueryResult<SidebarSection[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: keys.sidebarSections(),
+    queryFn: () => api.listSidebarSections()
+  })
+}
+
+export function useCreateSidebarSection(): UseMutationResult<
+  { id: string },
+  Error,
+  string
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (name: string) => api.createSidebarSection(name),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: keys.sidebarSections() })
+  })
+}
+
+export function useRenameSidebarSection(): UseMutationResult<
+  void,
+  Error,
+  { sectionId: string; name: string }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sectionId, name }) =>
+      api.renameSidebarSection(sectionId, name),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: keys.sidebarSections() })
+  })
+}
+
+export function useDeleteSidebarSection(): UseMutationResult<
+  void,
+  Error,
+  string
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (sectionId: string) => api.deleteSidebarSection(sectionId),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: keys.sidebarSections() })
+  })
+}
+
+/**
+ * Saves the sections in their order with their items, shown at once, as a
+ * drop must not flash back to where it came from.
+ */
+export function useSaveSidebarLayout(): UseMutationResult<
+  void,
+  Error,
+  SidebarSection[],
+  { before: SidebarSection[] | undefined }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (sections: SidebarSection[]) =>
+      api.saveSidebarLayout(sections.map(({ id, items }) => ({ id, items }))),
+    onMutate: async sections => {
+      await queryClient.cancelQueries({ queryKey: keys.sidebarSections() })
+      const before = queryClient.getQueryData<SidebarSection[]>(
+        keys.sidebarSections()
+      )
+      queryClient.setQueryData(keys.sidebarSections(), sections)
+      return { before }
+    },
+    onError: (_error, _sections, context) => {
+      queryClient.setQueryData(keys.sidebarSections(), context?.before)
+    },
+    // What a section holds is starred.
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.sidebarSections() }),
+        queryClient.invalidateQueries({ queryKey: keys.boards(), exact: true }),
+        queryClient.invalidateQueries({ queryKey: keys.filters() })
+      ])
+  })
+}
+
+export function useLabelChoices(): UseQueryResult<LabelChoice[]> {
   const api = useBoardsApi()
   return useQuery({
     queryKey: keys.labels(),
-    queryFn: () => api.labelNames()
+    queryFn: () => api.labelChoices()
+  })
+}
+
+/** The colour a label of that name, in any case, has on the person's boards. */
+export function useLabelColor(): (name: string) => string | null {
+  const choices = useLabelChoices()
+  return name =>
+    choices.data?.find(
+      choice => choice.name.toLowerCase() === name.toLowerCase()
+    )?.color ?? null
+}
+
+export function useStatusNames(): UseQueryResult<string[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: keys.statuses(),
+    queryFn: () => api.statusNames()
   })
 }
 
@@ -161,12 +292,13 @@ export function usePeople(): UseQueryResult<Person[]> {
 export function useCreateFilter(): UseMutationResult<
   { id: string },
   Error,
-  FilterFields
+  NewSavedFilter
 > {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (filter: FilterFields) => api.createFilter(filter),
+    mutationFn: (filter: NewSavedFilter) => api.createFilter(filter),
+    // Awaited, so that the new view is listed before its page opens.
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.filters() })
   })
 }
@@ -181,18 +313,23 @@ export function useSetFilterFavorite(): UseMutationResult<
   return useMutation({
     mutationFn: ({ filterId, favorite }) =>
       api.setFilterFavorite(filterId, favorite),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.filters() })
+    // Unstarred, it leaves its section.
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.filters() }),
+        queryClient.invalidateQueries({ queryKey: keys.sidebarSections() })
+      ])
   })
 }
 
 export function useUpdateFilter(
   filterId: string
-): UseMutationResult<void, Error, FilterFields> {
+): UseMutationResult<void, Error, NewSavedFilter> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (filter: FilterFields) => api.updateFilter(filterId, filter),
-    onSettled: () =>
+    mutationFn: (filter: NewSavedFilter) => api.updateFilter(filterId, filter),
+    onSuccess: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: keys.filters() }),
         queryClient.invalidateQueries({ queryKey: keys.agenda({ filterId }) })
@@ -397,6 +534,108 @@ export function useBoardOf(
   return { board, shown: missing ? undefined : board.data, missing }
 }
 
+/** The boards given, loaded side by side; a board not loaded yet is left out. */
+export function useBoardsOf(boardIds: readonly string[]): Board[] {
+  const api = useBoardsApi()
+  return useQueries({
+    queries: boardIds.map(boardId => ({
+      queryKey: keys.board(boardId),
+      queryFn: () => api.getBoard(boardId)
+    })),
+    combine: results => results.flatMap(result => result.data ?? [])
+  })
+}
+
+/** Moves a task of a view, in its own board. */
+export function useMoveViewTask(): UseMutationResult<
+  void,
+  Error,
+  { boardId: string; taskId: string; move: TaskMove }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ boardId, taskId, move }) =>
+      api.moveTask(boardId, taskId, move),
+    onSettled: (_result, _error, { boardId }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.board(boardId) }),
+        queryClient.invalidateQueries({ queryKey: keys.agendas() })
+      ])
+  })
+}
+
+/**
+ * Adds a status to a task's board, then moves the task into it, as a view
+ * does when a task is dropped in a column its board has not.
+ */
+export function useAddStatusAndMove(): UseMutationResult<
+  void,
+  Error,
+  {
+    boardId: string
+    taskId: string
+    status: Omit<Section, 'id'>
+    neighbours: Omit<TaskMove, 'sectionId'>
+  }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ boardId, taskId, status, neighbours }) => {
+      const section = await api.createSection(boardId, status)
+      await api.moveTask(boardId, taskId, {
+        sectionId: section.id,
+        ...neighbours
+      })
+    },
+    onSettled: (_result, _error, { boardId }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.board(boardId) }),
+        queryClient.invalidateQueries({ queryKey: keys.agendas() }),
+        queryClient.invalidateQueries({ queryKey: keys.statuses() })
+      ])
+  })
+}
+
+/** Reads a board, from the cache when it holds it. */
+export function useLoadBoard(): (boardId: string) => Promise<Board> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return (boardId: string) =>
+    queryClient.query({
+      queryKey: keys.board(boardId),
+      queryFn: () => api.getBoard(boardId)
+    })
+}
+
+export function useCreateViewTask(): UseMutationResult<
+  { key: string; unset: ViewTaskFact[] },
+  Error,
+  { task: ViewTask; myEmail: string | null }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ task, myEmail }) =>
+      createViewTask(
+        api,
+        task,
+        await queryClient.query({
+          queryKey: keys.board(task.boardId),
+          queryFn: () => api.getBoard(task.boardId)
+        }),
+        myEmail
+      ),
+    onSettled: (_result, _error, { task }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.board(task.boardId) }),
+        queryClient.invalidateQueries({ queryKey: keys.boards(), exact: true }),
+        queryClient.invalidateQueries({ queryKey: keys.agendas() })
+      ])
+  })
+}
+
 export function useCreateTask(
   boardId: string
 ): UseMutationResult<unknown, Error, NewTask> {
@@ -438,16 +677,23 @@ export function useTransferTask(
     { boardId: string; sectionId: string | null }
   >
   refresh: () => Promise<void>
+  /** Loads the board the task went to, so its new card is there to show. */
+  arrive: (to: string) => Promise<void>
 } {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   // Exact: the moved task's comments, reminders and the rest now 404 under the
   // old board, and its panel is still open while it closes.
   const refresh = () =>
-    queryClient.invalidateQueries({
-      queryKey: keys.board(boardId),
-      exact: true
-    })
+    Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: keys.board(boardId),
+        exact: true
+      }),
+      queryClient.invalidateQueries({ queryKey: keys.agendas() })
+    ]).then(() => undefined)
+  const arrive = (to: string) =>
+    queryClient.refetchQueries({ queryKey: keys.board(to) })
   // A move that ends after the form is gone has nobody left to refresh.
   const mounted = useRef(true)
   useEffect(() => {
@@ -464,7 +710,7 @@ export function useTransferTask(
     },
     onError: refresh
   })
-  return { transfer, refresh }
+  return { transfer, refresh, arrive }
 }
 
 export function useMoveTask(
@@ -873,8 +1119,12 @@ export function useSetFavorite(): UseMutationResult<
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ boardId, favorite }) => api.setFavorite(boardId, favorite),
+    // Unstarred, it leaves its section.
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: keys.boards(), exact: true })
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.boards(), exact: true }),
+        queryClient.invalidateQueries({ queryKey: keys.sidebarSections() })
+      ])
   })
 }
 

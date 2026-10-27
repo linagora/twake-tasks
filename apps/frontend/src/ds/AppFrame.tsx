@@ -1,21 +1,31 @@
-import { Task, Icon } from '@linagora/twake-icons'
+import { Bottom, Icon, Right, Task } from '@linagora/twake-icons'
 import {
   Badge,
   Box,
   Button,
+  ButtonBase,
+  type ButtonProps,
   Content,
   Divider,
   Layout,
   List,
   ListSubheader,
+  NavIcon,
   NavItem,
+  NavLink,
   NavText,
   Sidebar,
   styled,
   Typography,
   type Theme
 } from '@linagora/twake-mui'
-import { useState, type ReactElement, type ReactNode } from 'react'
+import {
+  useState,
+  type ElementType,
+  type ReactElement,
+  type ReactNode,
+  type Ref
+} from 'react'
 
 import { CRUMB_BAR, CrumbHostContext } from '@/ds/CrumbBar'
 import { PanelHostContext } from '@/ds/SidePanel'
@@ -61,7 +71,11 @@ export function AppFrame({
           <FrameLayout withTopBar={false}>
             <Sidebar>{sidebar}</Sidebar>
             <FrameContent role={undefined}>
-              <Box ref={setCrumbHost} sx={CRUMB_BAR} />
+              {/* A page with no breadcrumb leaves no empty strip above it. */}
+              <Box
+                ref={setCrumbHost}
+                sx={{ ...CRUMB_BAR, '&:empty': { display: 'none' } }}
+              />
               {/* Its own stacking context: the raised checkboxes and
                   buttons of the rows stay under an open task. */}
               <Box
@@ -240,12 +254,20 @@ export const PlatformBarFrame = styled('div')({
 
 // The main action above the nav, as wide as its entries. The sidebar is a
 // bottom bar on phones, which has no room for it.
-export const SidebarButton = styled(Button)(({ theme }) => ({
+// The focus is back on it once its dialog closes: an outline marks it, as the
+// pulsing ripple would linger there.
+export const SidebarButton = styled((props: ButtonProps) => (
+  <Button disableFocusRipple {...props} />
+))(({ theme }) => ({
   // As the Create button of Twake Drive.
   margin: '16px 16px 0',
   borderRadius: 12,
   fontSize: theme.typography.pxToRem(14),
   lineHeight: 1.4,
+  '&.Mui-focusVisible': {
+    outline: `2px solid ${theme.vars.palette.primary.main}`,
+    outlineOffset: 2
+  },
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
 
@@ -303,25 +325,75 @@ export function AccountCard({
   )
 }
 
-// Phones get the bottom bar only; the section stays on wide screens.
+// Phones get the bottom bar only; the section stays on wide screens. Its
+// title is small and grey, as Pinned in Twake Space, and folds its entries
+// away when clicked, its arrow after it as Folders in Twake Mail.
 export function SidebarSection({
   label,
+  fold,
+  highlighted = false,
+  listRef,
   children
 }: {
   label: string
+  /** Folds its entries away. */
+  fold?: { folded: boolean; label: string; onToggle: () => void } | undefined
+  /** Something dragged over it would land in it. */
+  highlighted?: boolean
+  listRef?: Ref<HTMLUListElement> | undefined
   children: ReactNode
 }): ReactElement {
   return (
     <List
+      ref={listRef}
       aria-label={label}
       subheader={
-        <ListSubheader component="div" sx={{ bgcolor: 'transparent', px: 3 }}>
-          {label}
+        <ListSubheader
+          component="div"
+          sx={{
+            bgcolor: 'transparent',
+            px: 3,
+            pt: 2,
+            pb: 1,
+            lineHeight: 1,
+            typography: 'caption',
+            color: 'text.secondary'
+          }}
+        >
+          {fold ? (
+            <ButtonBase
+              aria-label={fold.label}
+              aria-expanded={!fold.folded}
+              onClick={fold.onToggle}
+              sx={{
+                maxWidth: '100%',
+                gap: 0.5,
+                borderRadius: 1,
+                font: 'inherit',
+                color: 'inherit',
+                '&:hover, &.Mui-focusVisible': { color: 'text.primary' }
+              }}
+            >
+              <span className="u-ellipsis">{label}</span>
+              <Icon icon={fold.folded ? Right : Bottom} size={10} aria-hidden />
+            </ButtonBase>
+          ) : (
+            <span className="u-ellipsis">{label}</span>
+          )}
         </ListSubheader>
       }
-      sx={{ display: { xs: 'none', lg: 'block' }, py: 0 }}
+      // Tinted as a board's column a card is dragged over.
+      sx={theme => ({
+        display: { xs: 'none', lg: 'block' },
+        py: 0,
+        borderRadius: 2,
+        bgcolor: highlighted
+          ? theme.alpha(theme.vars.palette.primary.main, 0.08)
+          : 'transparent',
+        transition: 'background-color 120ms'
+      })}
     >
-      {children}
+      {!fold?.folded && children}
     </List>
   )
 }
@@ -336,10 +408,109 @@ export function SidebarShelves({
 }): ReactElement {
   return (
     <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
-      <Divider sx={{ mx: 2, my: 1 }} />
+      <Divider sx={{ mx: 2, mt: 2, mb: 1 }} />
       <List aria-label={label} sx={{ py: 0 }}>
         {children}
       </List>
+    </Box>
+  )
+}
+
+// The last entries, held at the bottom of the sidebar while it has room.
+// Phones get the bottom bar only, as for SidebarSection.
+export function SidebarFooter({
+  children
+}: {
+  children: ReactNode
+}): ReactElement {
+  return (
+    <Box sx={{ display: { xs: 'none', lg: 'block' }, mt: 'auto', py: 2 }}>
+      <List sx={{ py: 0 }}>{children}</List>
+    </Box>
+  )
+}
+
+// An entry of a section, in line with its title as under Pinned in Twake
+// Space.
+export const SidebarSectionEntry = styled(NavItem)(({ theme }) => ({
+  [theme.breakpoints.down('lg')]: { display: 'none' }
+}))
+
+/**
+ * What an empty sidebar section says, in its place: a grey area with a dashed
+ * edge, as where to drop a board or view.
+ */
+export function SidebarHint({ children }: { children: ReactNode }) {
+  return (
+    <Typography
+      component="li"
+      variant="caption"
+      color="text.secondary"
+      sx={{
+        display: 'block',
+        mx: 2,
+        my: 0.5,
+        px: 1.5,
+        py: 1.5,
+        textAlign: 'center',
+        bgcolor: 'action.hover',
+        border: '1px dashed',
+        borderColor: 'divider',
+        borderRadius: 2
+      }}
+    >
+      {children}
+    </Typography>
+  )
+}
+
+/**
+ * Where a dragged entry would land in a section: the entry itself, faded as
+ * the slot a dragged card leaves on a board.
+ */
+export function SidebarDropSlot({
+  icon,
+  label
+}: {
+  icon: ElementType
+  label: string
+}): ReactElement {
+  return (
+    <NavItem aria-hidden sx={{ opacity: 0.4, pointerEvents: 'none' }}>
+      <NavLink role="presentation" tabIndex={-1}>
+        <NavIcon icon={icon} />
+        <NavText>{label}</NavText>
+      </NavLink>
+    </NavItem>
+  )
+}
+
+/** A sidebar entry under the pointer, while it is dragged. */
+export function SidebarDragPreview({
+  icon,
+  label
+}: {
+  icon: ElementType
+  label: string
+}): ReactElement {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        px: 2,
+        py: 1,
+        borderRadius: 2,
+        bgcolor: 'background.paper',
+        boxShadow: 4,
+        maxWidth: 240
+      }}
+    >
+      <Icon icon={icon} size={16} />
+      <Typography variant="body2" noWrap>
+        {label}
+      </Typography>
     </Box>
   )
 }

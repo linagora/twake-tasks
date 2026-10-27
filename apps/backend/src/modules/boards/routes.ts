@@ -5,6 +5,7 @@ import {
   boardParams,
   boardRename,
   completion,
+  defaultFilterNames,
   descriptionEdit,
   filterChanges,
   filterParams,
@@ -32,6 +33,9 @@ import {
   sectionDeletion,
   sectionMove,
   sectionParams,
+  sidebarLayout,
+  sidebarSectionName,
+  sidebarSectionParams,
   taskChanges,
   taskMove,
   taskParams,
@@ -40,13 +44,14 @@ import {
 } from '@twake-tasks/api-contract'
 import type * as wire from '@twake-tasks/api-contract'
 import type { FastifyReply } from 'fastify'
+import type { z } from 'zod'
 import { allowOrigins } from '../../infra/cors.ts'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { RequireIdentity } from '../auth/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createCommentStore } from './comments.ts'
-import { createFilterStore } from './filters.ts'
+import { createFilterStore, criteriaOf, type View } from './filters.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
@@ -55,6 +60,7 @@ import { createReminderStore } from './reminders.ts'
 import type * as db from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
+import { createSidebarStore } from './sidebar.ts'
 import { createTaskStore, type Refusal } from './tasks.ts'
 import { createTransferStore } from './transfer.ts'
 
@@ -89,6 +95,7 @@ export type ContractMatchesBackend = [
     >
   >,
   Assert<Same<Values<typeof wire.LAYOUTS>, Values<typeof db.LAYOUTS>>>,
+  Assert<Same<Values<typeof wire.GROUPINGS>, Values<typeof db.GROUPINGS>>>,
   Assert<
     Same<
       Exclude<
@@ -99,6 +106,22 @@ export type ContractMatchesBackend = [
     >
   >
 ]
+
+const viewOf = ({
+  name,
+  criteria,
+  icon,
+  layout,
+  groupBy,
+  allColumns
+}: z.output<typeof newFilter>): View => ({
+  name,
+  criteria: criteriaOf(criteria),
+  icon: icon ?? null,
+  layout: layout ?? 'list',
+  groupBy: groupBy ?? 'status',
+  allColumns: allColumns ?? false
+})
 
 const REFUSAL_STATUS: Record<Refusal, number> = {
   not_found: 404,
@@ -146,6 +169,7 @@ export function registerBoards(
   const commentStore = createCommentStore(deps.db, deps.mentionsPerComment)
   const reminderStore = createReminderStore(deps.db, deps.pendingReminders)
   const filterStore = createFilterStore(deps.db)
+  const sidebarStore = createSidebarStore(deps.db)
   const layoutStore = createLayoutStore(deps.db)
   const sharingStore = createSharingStore(deps.db)
   const archiveStore = createArchiveStore(deps.db)
@@ -436,9 +460,21 @@ export function registerBoards(
     async (request, reply) => {
       const identity = request.identity
       if (!identity) return reply.code(401).send()
-      const result = await filterStore.labelNames(identity)
+      const result = await filterStore.labelChoices(identity)
       if (!result.ok) return refuse(reply, result.error)
       return { labels: result.value }
+    }
+  )
+
+  app.get(
+    '/statuses',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await filterStore.statusNames(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return { statuses: result.value }
     }
   )
 
@@ -454,6 +490,106 @@ export function registerBoards(
     }
   )
 
+  app.get(
+    '/sidebar/sections',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const result = await sidebarStore.listSections(identity)
+      if (!result.ok) return refuse(reply, result.error)
+      return { sections: result.value }
+    }
+  )
+
+  app.post(
+    '/sidebar/sections',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const body = sidebarSectionName.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await sidebarStore.createSection(identity, body.data.name)
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(201).send(result.value)
+    }
+  )
+
+  // The whole layout at once: the order of the sections and their items.
+  app.put(
+    '/sidebar/sections',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const body = sidebarLayout.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await sidebarStore.saveLayout(identity, body.data.sections)
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.patch(
+    '/sidebar/sections/:sectionId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = sidebarSectionParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = sidebarSectionName.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await sidebarStore.renameSection(
+        identity,
+        params.data.sectionId,
+        body.data.name
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.delete(
+    '/sidebar/sections/:sectionId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = sidebarSectionParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const result = await sidebarStore.deleteSection(
+        identity,
+        params.data.sectionId
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
+  app.post(
+    '/filters/defaults',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const body = defaultFilterNames.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await filterStore.makeDefaultFilters(identity, body.data)
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
+
   app.post(
     '/filters',
     { preHandler: deps.requireIdentity },
@@ -464,11 +600,7 @@ export function registerBoards(
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
-      const result = await filterStore.createFilter(
-        identity,
-        body.data.name,
-        body.data.criteria
-      )
+      const result = await filterStore.createFilter(identity, viewOf(body.data))
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(201).send(result.value)
     }
@@ -486,10 +618,11 @@ export function registerBoards(
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
+      const { criteria, ...changes } = body.data
       const result = await filterStore.updateFilter(
         identity,
         params.data.filterId,
-        body.data
+        criteria ? { ...changes, criteria: criteriaOf(criteria) } : changes
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()
@@ -536,6 +669,28 @@ export function registerBoards(
       }
     })
   }
+
+  app.put(
+    '/filters/:filterId',
+    { preHandler: deps.requireIdentity },
+    async (request, reply) => {
+      const identity = request.identity
+      if (!identity) return reply.code(401).send()
+      const params = filterParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ error: 'not_found' })
+      const body = newFilter.safeParse(request.body)
+      if (!body.success) {
+        return reply.code(400).send({ error: 'invalid_request' })
+      }
+      const result = await filterStore.updateFilter(
+        identity,
+        params.data.filterId,
+        viewOf(body.data)
+      )
+      if (!result.ok) return refuse(reply, result.error)
+      return reply.code(204).send()
+    }
+  )
 
   app.get(
     '/filters/:filterId/tasks',

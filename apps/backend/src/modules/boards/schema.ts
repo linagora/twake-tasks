@@ -52,6 +52,18 @@ export const LAYOUTS = ['board', 'list', 'calendar'] as const
 
 export const boardLayout = pgEnum('board_layout', LAYOUTS)
 
+/** What the columns of a view are: its tasks' statuses unless chosen. */
+export const GROUPINGS = [
+  'status',
+  'board',
+  'assignee',
+  'priority',
+  'label',
+  'due'
+] as const
+
+export const viewGrouping = pgEnum('view_grouping', GROUPINGS)
+
 const id = () =>
   uuid()
     .primaryKey()
@@ -67,6 +79,9 @@ export const projects = pgTable.withRLS(
     personal: boolean().notNull().default(false),
     // Its members come from an integration, such as a space, and are not edited here.
     managed: boolean().notNull().default(false),
+    // On the personal project: its creator's first views were made, so one
+    // they delete stays deleted.
+    defaultViews: boolean('default_views').notNull().default(false),
     createdBy: uuid('created_by').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     // A deleted project is out of reach until it is purged.
@@ -547,6 +562,11 @@ export const savedFilters = pgTable.withRLS(
     name: text().notNull(),
     criteria: jsonb().notNull(),
     favorite: boolean().notNull().default(false),
+    icon: text(),
+    layout: boardLayout().notNull().default('list'),
+    groupBy: viewGrouping('group_by').notNull().default('status'),
+    // Columns of statuses no task is in show too.
+    allColumns: boolean('all_columns').notNull().default(false),
     createdAt: timestamptz('created_at').notNull().defaultNow()
   },
   table => [
@@ -555,6 +575,76 @@ export const savedFilters = pgTable.withRLS(
     // No board cascades to saved filters, so the erase of an organization
     // reaches every person's through this flag; the tenant policy still keeps
     // it to that organization.
+    ownRows(
+      table.userId,
+      sql`current_setting('app.erasing_organization', true) = 'on'`
+    )
+  ]
+)
+
+// The sections of a person's sidebar, in the order they set: Favorites, which
+// every sidebar has and which holds the favorites in no other, then those
+// they add. Favorites keeps the app's name for it until renamed.
+export const sidebarSections = pgTable.withRLS(
+  'sidebar_sections',
+  {
+    id: id(),
+    organizationId: organizationId(),
+    userId: uuid('user_id').notNull(),
+    name: text(),
+    favorites: boolean().notNull().default(false),
+    position: integer().notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow()
+  },
+  table => [
+    index().on(table.userId),
+    uniqueIndex('sidebar_sections_one_favorites')
+      .on(table.userId)
+      .where(sql`${table.favorites}`),
+    check(
+      'sidebar_sections_named',
+      sql`${table.favorites} or ${table.name} is not null`
+    ),
+    tenantPolicy(table.organizationId, sql`${table.userId} = ${currentUser}`),
+    // Erased with the organization, as saved filters are.
+    ownRows(
+      table.userId,
+      sql`current_setting('app.erasing_organization', true) = 'on'`
+    )
+  ]
+)
+
+// What a sidebar section holds, a board or a view each, in its order. A
+// deleted board or view leaves the sections it was in.
+export const sidebarSectionItems = pgTable.withRLS(
+  'sidebar_section_items',
+  {
+    id: id(),
+    sectionId: uuid('section_id')
+      .notNull()
+      .references(() => sidebarSections.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    userId: uuid('user_id').notNull(),
+    boardId: uuid('board_id'),
+    filterId: uuid('filter_id').references(() => savedFilters.id, {
+      onDelete: 'cascade'
+    }),
+    position: integer().notNull(),
+    tenant: tenant()
+  },
+  table => [
+    foreignKey({
+      columns: [table.tenant, table.boardId],
+      foreignColumns: [boards.tenant, boards.id]
+    }).onDelete('cascade'),
+    check(
+      'sidebar_section_items_one_target',
+      sql`(${table.boardId} is null) <> (${table.filterId} is null)`
+    ),
+    // A board or a view is in one section at most.
+    unique().on(table.userId, table.boardId),
+    unique().on(table.userId, table.filterId),
+    tenantPolicy(table.organizationId, sql`${table.userId} = ${currentUser}`),
     ownRows(
       table.userId,
       sql`current_setting('app.erasing_organization', true) = 'on'`

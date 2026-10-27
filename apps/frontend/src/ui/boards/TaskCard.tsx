@@ -24,6 +24,7 @@ import {
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
 
 import {
+  BoardChip,
   Card,
   CardCheck,
   CardTitle,
@@ -59,7 +60,9 @@ export function TaskCard({
   sections,
   destinations,
   onMove,
-  sortable = false
+  sortable = false,
+  boardName,
+  parentTitle = null
 }: {
   task: Task
   tasks: Task[]
@@ -71,6 +74,10 @@ export function TaskCard({
   destinations: { id: string | null; name: string }[]
   onMove: ((sectionId: Section['id'] | null) => void) | undefined
   sortable?: boolean
+  /** Shown where the tasks of many boards meet. */
+  boardName?: string
+  /** A sub-task's parent, named where it shows without it. */
+  parentTitle?: string | null
 }): ReactElement {
   const { t } = useI18n()
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
@@ -115,8 +122,11 @@ export function TaskCard({
           />
         </CardCheck>
         <Typography variant="caption" color="textSecondary">
-          {task.key}
+          {parentTitle === null
+            ? task.key
+            : `${task.key} · ${t('agenda.subtaskOf', { title: parentTitle })}`}
         </Typography>
+        {boardName && <BoardChip name={boardName} />}
         {task.labels.map(label => (
           <LabelChip key={label.id} name={label.name} color={label.color} />
         ))}

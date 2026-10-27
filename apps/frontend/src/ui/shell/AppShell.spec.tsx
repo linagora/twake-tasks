@@ -121,9 +121,9 @@ describe('AppShell', () => {
     await screen.findByRole('menu')
 
     fireEvent.keyDown(document.body, { key: 'g' })
-    fireEvent.keyDown(document.body, { key: 't' })
+    fireEvent.keyDown(document.body, { key: 'f' })
 
-    expect(await screen.findByRole('heading', { name: 'Today' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Views' })).toBeVisible()
     await waitFor(() => {
       expect(screen.queryByRole('menu')).toBeNull()
     })
@@ -149,21 +149,14 @@ describe('AppShell', () => {
     ).toBeInTheDocument()
   })
 
-  it('lists the views in the sidebar and marks the current one', async () => {
-    renderRoute('/upcoming')
+  it('lists the pages in the sidebar and marks the current one', async () => {
+    renderRoute('/notifications')
 
     const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
     expect(
       nav.getAllByRole('link').map(link => link.getAttribute('href'))
-    ).toEqual([
-      '/',
-      '/today',
-      '/upcoming',
-      '/mine',
-      '/notifications',
-      '/filters'
-    ])
-    expect(nav.getByRole('link', { name: 'Upcoming' })).toHaveAttribute(
+    ).toEqual(['/', '/filters', '/notifications'])
+    expect(nav.getByRole('link', { name: 'Notifications' })).toHaveAttribute(
       'aria-current',
       'page'
     )
@@ -207,7 +200,34 @@ describe('AppShell', () => {
     expect(favourites.queryByRole('link', { name: 'Design' })).toBeNull()
   })
 
-  it('lights a board under Boards, or Boards while folded, but for one opened from its favourite', async () => {
+  it('shows Favorites unfolded until folded, and remembers it', async () => {
+    const boardsApi = fakeBoardsApi([
+      { ...aBoard(), id: 'board-1', name: 'Launch' }
+    ])
+    await boardsApi.setFavorite('board-1', true)
+    const first = renderRoute('/today', { boardsApi })
+
+    const favourites = within(
+      await screen.findByRole('list', { name: 'Favorites' })
+    )
+    expect(
+      await favourites.findByRole('link', { name: 'Launch' })
+    ).toBeVisible()
+    const fold = favourites.getByRole('button', { name: 'Fold Favorites' })
+    expect(fold).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(fold)
+    expect(favourites.queryByRole('link', { name: 'Launch' })).toBe(null)
+
+    first.unmount()
+    renderRoute('/today', { boardsApi })
+    const again = within(await screen.findByRole('list', { name: 'Favorites' }))
+    fireEvent.click(
+      await again.findByRole('button', { name: 'Unfold Favorites' })
+    )
+    expect(await again.findByRole('link', { name: 'Launch' })).toBeVisible()
+  })
+
+  it('lights the favourite of the board open, however it was opened', async () => {
     const boardsApi = fakeBoardsApi([
       { ...aBoard(), id: 'board-2', name: 'Launch' }
     ])
@@ -220,23 +240,43 @@ describe('AppShell', () => {
     )
     const favourite = await favourites.findByRole('link', { name: 'Launch' })
     const boards = nav.getByRole('link', { name: 'Boards' })
-    expect(boards).toHaveAttribute('aria-current', 'page')
-    fireEvent.click(nav.getByRole('button', { name: 'Unfold boards' }))
-    const listed = await nav.findByRole('link', { name: 'Launch' })
-    expect(listed).toHaveAttribute('aria-current', 'page')
-    expect(boards).not.toHaveAttribute('aria-current')
-    expect(favourite).not.toHaveAttribute('aria-current')
-
-    fireEvent.click(favourite)
+    // Opened from its URL, not from the favourite, which is lit all the same.
     await waitFor(() => {
       expect(favourite).toHaveAttribute('aria-current', 'page')
     })
+    expect(boards).not.toHaveAttribute('aria-current')
+    fireEvent.click(nav.getByRole('button', { name: 'Unfold boards' }))
+    const listed = await nav.findByRole('link', { name: 'Launch' })
     expect(listed).not.toHaveAttribute('aria-current')
 
-    fireEvent.click(nav.getByRole('link', { name: 'Today' }))
+    fireEvent.click(nav.getByRole('link', { name: 'Notifications' }))
     await waitFor(() => {
       expect(favourite).not.toHaveAttribute('aria-current')
     })
+  })
+
+  it('lights the favourite of the view open, and Views no more', async () => {
+    const boardsApi = fakeBoardsApi([aBoard()])
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: {}
+    })
+    await boardsApi.setFilterFavorite(id, true)
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    const favourites = within(
+      await screen.findByRole('list', { name: 'Favorites' })
+    )
+    const favourite = await favourites.findByRole('link', { name: 'Urgent' })
+    await waitFor(() => {
+      expect(favourite).toHaveAttribute('aria-current', 'page')
+    })
+    expect(
+      within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'Views' }
+      )
+    ).not.toHaveAttribute('aria-current')
   })
 
   it('lists the active boards under Boards, by name, and marks the current one', async () => {
@@ -256,11 +296,8 @@ describe('AppShell', () => {
       '/',
       '/boards/board-2',
       '/boards/board-1',
-      '/today',
-      '/upcoming',
-      '/mine',
-      '/notifications',
-      '/filters'
+      '/filters',
+      '/notifications'
     ])
     expect(nav.getByRole('link', { name: 'Launch' })).toHaveAttribute(
       'aria-current',
@@ -290,37 +327,6 @@ describe('AppShell', () => {
     expect(again.queryByRole('link', { name: 'Design' })).toBe(null)
   })
 
-  it('lists the favourite filters under Filters, lit while open, until folded', async () => {
-    const boardsApi = fakeBoardsApi()
-    const { id } = await boardsApi.createFilter({
-      name: 'Urgent',
-      criteria: { priority: [1] }
-    })
-    await boardsApi.createFilter({ name: 'Everything', criteria: {} })
-    await boardsApi.setFilterFavorite(id, true)
-    const first = renderRoute(`/filters/${id}`, { boardsApi })
-
-    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
-    const pinned = await nav.findByRole('link', { name: 'Urgent' })
-    expect(pinned).toHaveAttribute('href', `/filters/${id}`)
-    expect(pinned).toHaveAttribute('aria-current', 'page')
-    const filters = nav.getByRole('link', { name: 'Filters' })
-    expect(filters).not.toHaveAttribute('aria-current')
-    expect(nav.queryByRole('link', { name: 'Everything' })).toBeNull()
-
-    fireEvent.click(nav.getByRole('button', { name: 'Fold filters' }))
-    expect(nav.queryByRole('link', { name: 'Urgent' })).toBeNull()
-    expect(filters).toHaveAttribute('aria-current', 'page')
-
-    first.unmount()
-    renderRoute('/today', { boardsApi })
-    const again = within(await screen.findByRole('list', { name: 'Main menu' }))
-    fireEvent.click(
-      await again.findByRole('button', { name: 'Unfold filters' })
-    )
-    expect(await again.findByRole('link', { name: 'Urgent' })).toBeVisible()
-  })
-
   it('makes a board from the + beside Boards, then opens it', async () => {
     const boardsApi = fakeBoardsApi()
     renderRoute('/today', { boardsApi })
@@ -348,6 +354,216 @@ describe('AppShell', () => {
         'page'
       )
     })
+  })
+
+  it('lists the views under Views once unfolded, by name, and marks the current one', async () => {
+    const boardsApi = fakeBoardsApi()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: {}
+    })
+    const other = await boardsApi.createFilter({ name: 'Design', criteria: {} })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+    const views = nav.getByRole('link', { name: 'Views' })
+    expect(views).toHaveAttribute('aria-current', 'page')
+    expect(nav.queryByRole('link', { name: 'Urgent' })).toBe(null)
+    const unfold = nav.getByRole('button', { name: 'Unfold views' })
+    expect(unfold).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(unfold)
+
+    expect(await nav.findByRole('link', { name: 'Urgent' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    )
+    expect(
+      nav
+        .getAllByRole('link')
+        .map(link => link.getAttribute('href'))
+        .slice(-4, -1)
+    ).toEqual(['/filters', `/filters/${other.id}`, `/filters/${id}`])
+    expect(views).not.toHaveAttribute('aria-current')
+    fireEvent.click(nav.getByRole('button', { name: 'Fold views' }))
+    expect(nav.queryByRole('link', { name: 'Urgent' })).toBe(null)
+  })
+
+  it('makes the first views, named in my language, before listing them', async () => {
+    const boardsApi = fakeBoardsApi()
+    renderRoute('/notifications', { boardsApi })
+
+    await screen.findByRole('list', { name: 'Main menu' })
+    await waitFor(() => {
+      expect(boardsApi.listFilters).toHaveBeenCalled()
+    })
+    expect(boardsApi.makeDefaultFilters).toHaveBeenCalledTimes(1)
+    expect(boardsApi.makeDefaultFilters).toHaveBeenCalledWith({
+      today: 'Today',
+      upcoming: 'Upcoming',
+      mine: 'My tasks'
+    })
+    expect(
+      boardsApi.makeDefaultFilters.mock.invocationCallOrder[0]
+    ).toBeLessThan(boardsApi.listFilters.mock.invocationCallOrder[0] ?? 0)
+  })
+
+  it('lights a favourite view opened from the favourites, not Views', async () => {
+    const boardsApi = fakeBoardsApi()
+    const { id } = await boardsApi.createFilter({
+      name: 'Urgent',
+      criteria: {}
+    })
+    await boardsApi.setFilterFavorite(id, true)
+    renderRoute('/notifications', { boardsApi })
+
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+    const favourites = within(
+      await screen.findByRole('list', { name: 'Favorites' })
+    )
+    const favourite = await favourites.findByRole('link', { name: 'Urgent' })
+    fireEvent.click(favourite)
+
+    await waitFor(() => {
+      expect(favourite).toHaveAttribute('aria-current', 'page')
+    })
+    expect(nav.getByRole('link', { name: 'Views' })).not.toHaveAttribute(
+      'aria-current'
+    )
+  })
+
+  it('makes a view from the + beside Views, then opens it', async () => {
+    const boardsApi = fakeBoardsApi()
+    renderRoute('/today', { boardsApi })
+
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+    fireEvent.click(nav.getByRole('button', { name: 'Create a view' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a view' })
+    )
+    fireEvent.change(dialog.getByLabelText(/^Name/), {
+      target: { value: 'Urgent' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
+
+    expect(await screen.findByRole('heading', { name: 'Urgent' })).toBeVisible()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(boardsApi.createFilter).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Urgent' })
+    )
+  })
+
+  it('moves a board from Favorites to a section of my own and back, one at a time', async () => {
+    const board = { ...aBoard(), id: 'board-1', name: 'Design' }
+    const boardsApi = fakeBoardsApi([board])
+    await boardsApi.createSidebarSection('Work')
+    renderRoute('/boards/board-1', { boardsApi })
+
+    const work = within(await screen.findByRole('list', { name: 'Work' }))
+    expect(screen.queryByRole('button', { name: 'New sidebar section' })).toBe(
+      null
+    )
+    expect(work.getByText('Drag boards and views here')).toBeInTheDocument()
+    fireEvent.click(work.getByRole('button', { name: 'Fold Work' }))
+    expect(work.queryByText('Drag boards and views here')).toBe(null)
+    fireEvent.click(work.getByRole('button', { name: 'Unfold Work' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Board options' }))
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: 'Show in the sidebar' })
+    )
+    const where = within(
+      await screen.findByRole('menu', { name: 'Show in the sidebar' })
+    )
+    expect(
+      where.getByRole('menuitemradio', { name: 'Favorites' })
+    ).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(where.getByRole('menuitemradio', { name: 'Work' }))
+    await waitFor(() => {
+      expect(work.getByRole('link', { name: 'Design' })).toHaveAttribute(
+        'href',
+        '/boards/board-1'
+      )
+    })
+    // Starred, but in Work only.
+    const favorites = within(screen.getByRole('list', { name: 'Favorites' }))
+    expect(favorites.queryByRole('link', { name: 'Design' })).toBeNull()
+
+    // Its entry has no menu: the board's own moves it back.
+    expect(work.queryByRole('button', { name: /Design/ })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Board options' }))
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: 'Show in the sidebar' })
+    )
+    const back = within(
+      await screen.findByRole('menu', { name: 'Show in the sidebar' })
+    )
+    expect(back.getByRole('menuitemradio', { name: 'Work' })).toHaveAttribute(
+      'aria-checked',
+      'true'
+    )
+    fireEvent.click(back.getByRole('menuitemradio', { name: 'Favorites' }))
+    await waitFor(() => {
+      expect(
+        favorites.getByRole('link', { name: 'Design' })
+      ).toBeInTheDocument()
+    })
+    expect(work.queryByRole('link', { name: 'Design' })).toBeNull()
+
+    // The settings manage the sections, not the sidebar.
+    expect(work.queryByRole('button', { name: 'Actions of Work' })).toBeNull()
+  })
+
+  it('opens the settings from the bottom of the sidebar', async () => {
+    renderRoute('/today', { boardsApi: fakeBoardsApi() })
+
+    fireEvent.click(await screen.findByRole('link', { name: 'Settings' }))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Settings' })
+    ).toBeInTheDocument()
+  })
+
+  it('renames and deletes a section from Show in the sidebar, Favorites kept', async () => {
+    const board = { ...aBoard(), id: 'board-1', name: 'Design' }
+    const boardsApi = fakeBoardsApi([board])
+    await boardsApi.createSidebarSection('Work')
+    renderRoute('/boards/board-1', { boardsApi })
+    const openWhere = async () => {
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Board options' })
+      )
+      fireEvent.click(
+        await screen.findByRole('menuitem', { name: 'Show in the sidebar' })
+      )
+      return within(
+        await screen.findByRole('menu', { name: 'Show in the sidebar' })
+      )
+    }
+
+    const where = await openWhere()
+    expect(where.getByLabelText('Rename Favorites')).toBeInTheDocument()
+    expect(where.queryByLabelText('Delete Favorites')).toBeNull()
+    fireEvent.click(where.getByLabelText('Rename Work'))
+    fireEvent.change(where.getByLabelText(/^Name/), {
+      target: { value: 'Job' }
+    })
+    fireEvent.click(where.getByRole('button', { name: 'Save' }))
+    expect(
+      await where.findByRole('menuitemradio', { name: /^Job/ })
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByRole('list', { name: 'Job', hidden: true })
+    ).toBeInTheDocument()
+
+    fireEvent.click(where.getByLabelText('Delete Job'))
+    expect(where.getByText('Delete Job?')).toBeInTheDocument()
+    fireEvent.click(where.getByRole('button', { name: 'Delete' }))
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('list', { name: 'Job', hidden: true })
+      ).toBeNull()
+    })
+    expect(where.queryByRole('menuitemradio', { name: /^Job/ })).toBeNull()
   })
 
   it('counts unread notifications until they are opened', async () => {

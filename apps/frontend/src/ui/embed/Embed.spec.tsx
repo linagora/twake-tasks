@@ -88,6 +88,19 @@ describe('the embedded view', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('creates a task from the board, as Twake Space shows no sidebar', async () => {
+    const board = aBoard({ name: 'Roadmap', project: roadmap })
+    renderRoute(`/embed/projects/${roadmap.id}/boards/${board.id}`, {
+      boardsApi: projectBoardsApi([board, aBoard({ project: roadmap })])
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Create task' }))
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Create a task' })
+    ).toBeVisible()
+  })
+
   it('keeps the way back on an archived board of a project with one active board', async () => {
     const old = aBoard({
       name: 'Old roadmap',

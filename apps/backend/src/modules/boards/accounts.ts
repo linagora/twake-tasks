@@ -26,6 +26,7 @@ import {
   projectMembers,
   projects,
   savedFilters,
+  sidebarSections,
   taskAssignees,
   taskFollowers
 } from './schema.ts'
@@ -191,6 +192,7 @@ async function forget(
     await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
     await tx.delete(commentReactions).where(eq(commentReactions.userId, userId))
     await tx.delete(notifications).where(eq(notifications.userId, userId))
+    await tx.delete(sidebarSections).where(eq(sidebarSections.userId, userId))
     await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
     await tx
       .delete(projects)
@@ -261,6 +263,7 @@ const onOrganizationDeleted: Handler<PlatformEvent> = async (event, tx) => {
   await tx.execute(
     sql`select set_config('app.erasing_organization', 'on', true)`
   )
+  await tx.delete(sidebarSections)
   await tx.delete(projects)
   await tx.delete(savedFilters)
   await tx.execute(sql`select set_config('app.erasing_organization', '', true)`)

@@ -6,11 +6,12 @@ import { FittingChips, type FittingChip } from '@/ds/FittingChips'
 
 // A list wide enough lines every row up in columns, the title keeping at
 // least 10rem; a narrower one puts the facts on a second line under the
-// title. The list's own width decides, since the sidebar narrows it.
+// title. The list's own width decides, since the sidebar narrows it. The
+// tasks of many boards name their board in a column of its own.
 const COLUMNS = '@container list (min-width: 56rem)'
-const columnGrid = {
-  gridTemplateColumns: '32px 5rem minmax(0, 1fr) 6rem 7.5rem 7rem 11rem'
-}
+const columnGrid = (board: boolean) => ({
+  gridTemplateColumns: `32px 5rem minmax(0, 1fr)${board ? ' 9rem' : ''} 6rem 7.5rem 7rem 11rem`
+})
 const rowGrid = {
   display: 'grid',
   alignItems: 'center',
@@ -24,9 +25,12 @@ export function ListView({ children }: { children: ReactNode }): ReactElement {
 }
 
 export function ListHeader({
-  columns
+  columns,
+  board = false
 }: {
-  columns: [string, string, string, string, string]
+  /** The task, then its facts: the board's first when it shows. */
+  columns: string[]
+  board?: boolean
 }): ReactElement {
   return (
     <Box
@@ -34,7 +38,7 @@ export function ListHeader({
       sx={{
         ...rowGrid,
         display: 'none',
-        [COLUMNS]: { ...columnGrid, display: 'grid' },
+        [COLUMNS]: { ...columnGrid(board), display: 'grid' },
         py: 1,
         mb: 1,
         borderBottom: 1,
@@ -133,6 +137,7 @@ export function ListRow({
   priority,
   labels,
   moreLabels,
+  board,
   ref,
   drag = 'none',
   highlighted = false,
@@ -153,6 +158,8 @@ export function ListRow({
   drag?: 'none' | 'placeholder'
   /** The task just created, standing out as a selected one. */
   highlighted?: boolean
+  /** In a column of its own, where the tasks of many boards meet. */
+  board?: ReactNode
 }): ReactElement {
   return (
     <Box
@@ -163,7 +170,7 @@ export function ListRow({
       data-new-task={highlighted ? '' : undefined}
       sx={theme => ({
         ...rowGrid,
-        [COLUMNS]: columnGrid,
+        [COLUMNS]: columnGrid(board !== undefined),
         position: 'relative',
         listStyle: 'none',
         minHeight: 44,
@@ -230,6 +237,7 @@ export function ListRow({
           [COLUMNS]: { display: 'contents' }
         }}
       >
+        {board !== undefined && <Cell>{board}</Cell>}
         <Cell>{people}</Cell>
         <Cell>{due}</Cell>
         <Cell>{priority}</Cell>
@@ -267,7 +275,8 @@ export function ListDragPreview({
   taskKey,
   title
 }: {
-  taskKey: string
+  /** None for a row that is not a task. */
+  taskKey?: string
   title: string
 }): ReactElement {
   return (
@@ -281,14 +290,16 @@ export function ListDragPreview({
         cursor: 'grabbing'
       }}
     >
-      <Typography
-        variant="caption"
-        color="textSecondary"
-        noWrap
-        sx={{ flexShrink: 0 }}
-      >
-        {taskKey}
-      </Typography>
+      {taskKey && (
+        <Typography
+          variant="caption"
+          color="textSecondary"
+          noWrap
+          sx={{ flexShrink: 0 }}
+        >
+          {taskKey}
+        </Typography>
+      )}
       <Typography variant="body2" noWrap>
         {title}
       </Typography>

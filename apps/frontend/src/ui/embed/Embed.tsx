@@ -1,7 +1,7 @@
 import { embedRoute, type TwakeSpaceConnection } from '@linagora/twake-embed'
 import { Compass } from '@linagora/twake-icons'
 import { Link, Typography } from '@linagora/twake-mui'
-import { useEffect, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 import {
   Navigate,
   Outlet,
@@ -11,6 +11,7 @@ import {
   useParams
 } from 'react-router'
 
+import type { FilterCriteria } from '@/application/boards'
 import { isEditable } from '@/domain/board'
 import { EmbedFrame } from '@/ds/AppFrame'
 import { EmptyState } from '@/ds/EmptyState'
@@ -20,6 +21,7 @@ import { useBoards, useProjects } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { NewTaskFromUrl } from '@/ui/shell/NewTaskDialog'
 import { NewTaskHighlightProvider } from '@/ui/shell/NewTaskHighlight'
+import { ViewCriteriaContext } from '@/ui/shell/SidebarCreate'
 
 import { useReportBadges } from '@/ui/embed/badges'
 import { useReportMetadata } from '@/ui/embed/metadata'
@@ -38,6 +40,8 @@ export function EmbedLayout(): ReactElement {
   const inBoardId = useMatch('/embed/projects/:projectId/boards/:boardId/*')
     ?.params.boardId
   const inProjectId = useMatch('/embed/projects/:projectId/*')?.params.projectId
+  // Those of the view shown, which a new task takes.
+  const [criteria, setCriteria] = useState<FilterCriteria | null>(null)
 
   useEffect(() => {
     const show = (resourceId: string, path: string): Promise<void> =>
@@ -51,8 +55,14 @@ export function EmbedLayout(): ReactElement {
     <EmbedFrame>
       {space && <SpaceReporter space={space} />}
       <NewTaskHighlightProvider>
-        <Outlet />
-        <NewTaskFromUrl inBoardId={inBoardId} inProjectId={inProjectId} />
+        <ViewCriteriaContext value={setCriteria}>
+          <Outlet />
+        </ViewCriteriaContext>
+        <NewTaskFromUrl
+          inBoardId={inBoardId}
+          inProjectId={inProjectId}
+          criteria={criteria}
+        />
       </NewTaskHighlightProvider>
     </EmbedFrame>
   )

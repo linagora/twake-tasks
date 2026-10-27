@@ -60,7 +60,11 @@ import {
   useUnsaved,
   useUnsavedFields
 } from '@/ui/boards/unsaved'
-import { useExpandedPanel, useTaskPanel } from '@/ui/boards/useTaskPanel'
+import {
+  useArrived,
+  useExpandedPanel,
+  useTaskPanel
+} from '@/ui/boards/useTaskPanel'
 import { useDrivePicker } from '@/ui/drive/useDrivePicker'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -97,6 +101,7 @@ export function TaskPanel({
   const theme = useTheme()
   // The panel covers the card on a phone, hiding the card's checkbox.
   const phone = useMediaQuery(theme.breakpoints.down('md'))
+  const arrived = useArrived(task.key)
   const close = () => {
     if (unsaved.any()) setAsking(true)
     else onClose()
@@ -107,6 +112,7 @@ export function TaskPanel({
       <SidePanel
         label={`${task.key} ${task.title}`}
         onClose={close}
+        instant={arrived}
         unsaved={unsaved.any}
         expanded={expanded}
         onExpand={expand}

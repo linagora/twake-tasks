@@ -7,14 +7,15 @@ import {
   BoardStepsContext,
   Crumbs,
   OriginContext,
+  PageStepContext,
   useBoardsOrigin
 } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 /**
- * Where a task was opened from: the page (Today, My tasks, Boards…), its
- * board (and shelf) and the tasks it is a sub-task of when opened in its
- * board, then its key.
+ * Where a task was opened from: the page (Today, My tasks, Boards…) and the
+ * view it was opened in, if any, its board (and shelf) and the tasks it is a
+ * sub-task of when opened in its board, then its key.
  */
 export function TaskBreadcrumb({
   task,
@@ -28,6 +29,7 @@ export function TaskBreadcrumb({
   const inPeek = useInPeek()
   const boards = useBoardsOrigin()
   const origin = useContext(OriginContext) ?? boards
+  const pageStep = useContext(PageStepContext)
   const boardSteps = useContext(BoardStepsContext)
   const ancestors: Task[] = []
   if (boardSteps) {
@@ -57,7 +59,11 @@ export function TaskBreadcrumb({
     <Crumbs
       label={t('task.breadcrumb')}
       origin={inPeek ? undefined : origin}
-      steps={inPeek || !boardSteps ? parents : [...boardSteps, ...parents]}
+      steps={
+        inPeek
+          ? parents
+          : [...(pageStep ? [pageStep] : []), ...(boardSteps ?? []), ...parents]
+      }
       current={task.key}
     />
   )

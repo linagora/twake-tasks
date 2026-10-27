@@ -10,6 +10,8 @@ import {
   type Notification,
   type Reminder,
   type SavedFilter,
+  type SidebarItem,
+  type SidebarSection,
   type Sharing,
   type Project,
   type Shelf
@@ -200,11 +202,29 @@ export function fakeBoardsApi(boards: Board[] = []) {
   })
 
   const filters: SavedFilter[] = []
-  const openTasks = () =>
+  const sidebarSections: SidebarSection[] = []
+  // Every sidebar has its Favorites, first until moved.
+  const ensureFavorites = () => {
+    if (!sidebarSections.some(section => section.favorites)) {
+      sidebarSections.unshift({
+        id: nextId(),
+        name: null,
+        favorites: true,
+        items: []
+      })
+    }
+  }
+  const leaveSections = (kind: SidebarItem['kind'], id: string) => {
+    for (const section of sidebarSections) {
+      section.items = section.items.filter(
+        item => item.kind !== kind || item.id !== id
+      )
+    }
+  }
+  // Done and canceled tasks too, as a view shows them.
+  const allTasks = () =>
     [...store.values()].flatMap(board =>
-      board.tasks
-        .filter(task => !task.completedAt && !task.canceledAt)
-        .map(task => agendaTask(board, task))
+      board.tasks.map(task => agendaTask(board, task))
     )
 
   const sharings = new Map<string, Sharing>()
@@ -332,29 +352,130 @@ export function fakeBoardsApi(boards: Board[] = []) {
       })
     ),
     listFilters: vi.fn<BoardsApi['listFilters']>(() =>
-      Promise.resolve(structuredClone(filters))
+      Promise.resolve(
+        structuredClone(filters).sort(
+          (a, b) => Number(b.favorite) - Number(a.favorite)
+        )
+      )
+    ),
+    listSidebarSections: vi.fn<BoardsApi['listSidebarSections']>(() =>
+      Promise.resolve().then(() => {
+        ensureFavorites()
+        return structuredClone(sidebarSections)
+      })
+    ),
+    createSidebarSection: vi.fn<BoardsApi['createSidebarSection']>(name =>
+      Promise.resolve().then(() => {
+        ensureFavorites()
+        const id = nextId()
+        sidebarSections.push({
+          id,
+          name: name.trim(),
+          favorites: false,
+          items: []
+        })
+        return { id }
+      })
+    ),
+    renameSidebarSection: vi.fn<BoardsApi['renameSidebarSection']>(
+      (sectionId, name) =>
+        Promise.resolve().then(() => {
+          const section = sidebarSections.find(each => each.id === sectionId)
+          if (!section) throw new ApiError(404, 'not_found')
+          section.name = name.trim()
+        })
+    ),
+    deleteSidebarSection: vi.fn<BoardsApi['deleteSidebarSection']>(sectionId =>
+      Promise.resolve().then(() => {
+        const index = sidebarSections.findIndex(each => each.id === sectionId)
+        if (index < 0) throw new ApiError(404, 'not_found')
+        if (sidebarSections[index]?.favorites) {
+          throw new ApiError(403, 'forbidden')
+        }
+        sidebarSections.splice(index, 1)
+      })
+    ),
+    saveSidebarLayout: vi.fn<BoardsApi['saveSidebarLayout']>(layout =>
+      Promise.resolve().then(() => {
+        if (
+          layout.length !== sidebarSections.length ||
+          layout.some(
+            section => !sidebarSections.some(each => each.id === section.id)
+          )
+        ) {
+          throw new ApiError(409, 'stale_version')
+        }
+        const byId = new Map(
+          sidebarSections.map(section => [section.id, section])
+        )
+        if (
+          layout.some(
+            section =>
+              byId.get(section.id)?.favorites && section.items.length > 0
+          )
+        ) {
+          throw new ApiError(400, 'invalid_section')
+        }
+        sidebarSections.splice(
+          0,
+          sidebarSections.length,
+          ...layout.map(section => ({
+            id: section.id,
+            name: byId.get(section.id)?.name ?? null,
+            favorites: byId.get(section.id)?.favorites ?? false,
+            items: structuredClone(section.items)
+          }))
+        )
+        // What a section holds is starred.
+        for (const item of layout.flatMap(section => section.items)) {
+          if (item.kind === 'board') favorites.add(item.id)
+          const filter = filters.find(each => each.id === item.id)
+          if (item.kind === 'view' && filter) filter.favorite = true
+        }
+      })
+    ),
+    // Made by the backend once: here, a person starts with none.
+    makeDefaultFilters: vi.fn<BoardsApi['makeDefaultFilters']>(() =>
+      Promise.resolve()
     ),
     createFilter: vi.fn<BoardsApi['createFilter']>(filter =>
       Promise.resolve().then(() => {
         const id = nextId()
-        filters.push({ id, ...structuredClone(filter), favorite: false })
+        filters.push({
+          id,
+          name: filter.name,
+          criteria: structuredClone(filter.criteria),
+          favorite: false,
+          icon: filter.icon ?? null,
+          layout: filter.layout ?? 'list',
+          groupBy: filter.groupBy ?? 'status',
+          allColumns: filter.allColumns ?? false
+        })
         return { id }
-      })
-    ),
-    updateFilter: vi.fn<BoardsApi['updateFilter']>((filterId, filter) =>
-      Promise.resolve().then(() => {
-        const saved = filters.find(each => each.id === filterId)
-        if (!saved) throw new ApiError(404, 'not_found')
-        Object.assign(saved, structuredClone(filter))
       })
     ),
     setFilterFavorite: vi.fn<BoardsApi['setFilterFavorite']>(
       (filterId, favorite) =>
         Promise.resolve().then(() => {
-          const filter = filters.find(each => each.id === filterId)
+          const filter = filters.find(filter => filter.id === filterId)
           if (!filter) throw new ApiError(404, 'not_found')
           filter.favorite = favorite
+          if (!favorite) leaveSections('view', filterId)
         })
+    ),
+    updateFilter: vi.fn<BoardsApi['updateFilter']>((filterId, edit) =>
+      Promise.resolve().then(() => {
+        const filter = filters.find(filter => filter.id === filterId)
+        if (!filter) throw new ApiError(404, 'not_found')
+        Object.assign(filter, {
+          name: edit.name,
+          criteria: structuredClone(edit.criteria),
+          icon: edit.icon ?? null,
+          layout: edit.layout ?? 'list',
+          groupBy: edit.groupBy ?? 'status',
+          allColumns: edit.allColumns ?? false
+        })
+      })
     ),
     deleteFilter: vi.fn<BoardsApi['deleteFilter']>(filterId =>
       Promise.resolve().then(() => {
@@ -363,40 +484,68 @@ export function fakeBoardsApi(boards: Board[] = []) {
         filters.splice(index, 1)
       })
     ),
-    labelNames: vi.fn<BoardsApi['labelNames']>(() =>
+    labelChoices: vi.fn<BoardsApi['labelChoices']>(() =>
       Promise.resolve(
         [
-          ...new Set(
-            [...store.values()].flatMap(board =>
-              board.labels.map(label => label.name.toLowerCase())
-            )
-          )
-        ].sort()
+          ...new Map(
+            [...store.values()]
+              .flatMap(board => board.labels)
+              .map(label => [
+                label.name.toLowerCase(),
+                { name: label.name.toLowerCase(), color: label.color ?? null }
+              ])
+          ).values()
+        ].sort((a, b) => a.name.localeCompare(b.name))
       )
     ),
     people: vi.fn<BoardsApi['people']>(() =>
       Promise.resolve([
         ...new Map(
-          [...store.values()].flatMap(board =>
-            board.members.map(member => [member.userId, member])
-          )
+          [...store.values()]
+            .flatMap(board => board.members)
+            .map(member => [member.userId, member])
         ).values()
       ])
     ),
+    statusNames: vi.fn<BoardsApi['statusNames']>(() =>
+      Promise.resolve([
+        ...new Map(
+          [...store.values()]
+            .filter(board => !board.archived)
+            .flatMap(board => board.sections)
+            .map(section => [section.name.trim().toLowerCase(), section.name])
+        ).values()
+      ])
+    ),
+    // Without a signed-in person, `me` matches nobody.
     filteredTasks: vi.fn<BoardsApi['filteredTasks']>(filterId =>
       Promise.resolve().then(() => {
         const filter = filters.find(candidate => candidate.id === filterId)
         if (!filter) throw new ApiError(404, 'not_found')
-        const { priority, label } = filter.criteria
-        const labels = label?.map(name => name.toLowerCase())
-        return openTasks().filter(
+        const { priorities, labels, boards, assignees, statuses } =
+          filter.criteria
+        const names = labels?.map(name => name.toLowerCase())
+        const sections = statuses?.map(name => name.trim().toLowerCase())
+        return allTasks().filter(
           task =>
-            (priority === undefined ||
-              (task.priority !== null && priority.includes(task.priority))) &&
-            (labels === undefined ||
+            (boards === undefined || boards.includes(task.boardId)) &&
+            (priorities === undefined ||
+              (task.priority !== null && priorities.includes(task.priority))) &&
+            (names === undefined ||
               task.labels.some(each =>
-                labels.includes(each.name.toLowerCase())
-              ))
+                names.includes(each.name.toLowerCase())
+              )) &&
+            (assignees === undefined ||
+              (assignees.includes('nobody') && task.assignees.length === 0) ||
+              task.assignees.some(each => assignees.includes(each.userId))) &&
+            (sections === undefined ||
+              store
+                .get(task.boardId)
+                ?.sections.some(
+                  section =>
+                    section.id === task.sectionId &&
+                    sections.includes(section.name.trim().toLowerCase())
+                ))
         )
       })
     ),
@@ -474,7 +623,10 @@ export function fakeBoardsApi(boards: Board[] = []) {
       Promise.resolve().then(() => {
         find(boardId)
         if (favorite) favorites.add(boardId)
-        else favorites.delete(boardId)
+        else {
+          favorites.delete(boardId)
+          leaveSections('board', boardId)
+        }
       })
     ),
     setLayout: vi.fn<BoardsApi['setLayout']>((boardId, layout) =>
