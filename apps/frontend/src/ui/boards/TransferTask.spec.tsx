@@ -131,6 +131,26 @@ describe('moving a task to another board', () => {
     })
   })
 
+  it('puts the task in the first open section, not a Done one placed first', async () => {
+    const { design, logo, ops, boardsApi } = setup()
+    ops.sections.reverse()
+    const toDo = ops.sections.find(section => section.name === 'To do')
+    const form = await openForm(boardsApi, design.id, 'Logo')
+
+    await chooseBoard(form, ops.id)
+    expect(
+      form.getByRole<HTMLSelectElement>('combobox', { name: 'Section' }).value
+    ).toBe(toDo?.id)
+    fireEvent.click(form.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => {
+      expect(boardsApi.transferTask).toHaveBeenCalledWith(design.id, logo.id, {
+        boardId: ops.id,
+        sectionId: toDo?.id
+      })
+    })
+  })
+
   it('does not reload the moved task under its old board', async () => {
     const { design, logo, ops, boardsApi } = setup()
     const form = await openForm(boardsApi, design.id, 'Logo')

@@ -11,6 +11,7 @@ import {
 import { useEffect, useId, useRef, useState, type ReactElement } from 'react'
 
 import type { TransferPreview } from '@/application/boards'
+import { defaultSection } from '@/application/newTask'
 import { isEditable, type BoardSummary, type Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import {
@@ -32,7 +33,7 @@ function SectionSelect({
 }): ReactElement | null {
   const { t } = useI18n()
   const sections = useBoard(boardId).data?.sections
-  const first = sections?.[0]?.id ?? null
+  const first = (sections && defaultSection(sections)?.id) ?? null
   useEffect(() => {
     if (sections && value === undefined) onChange(first)
   }, [sections, value, first, onChange])
