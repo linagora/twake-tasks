@@ -181,11 +181,12 @@ export async function firstMembersOfProjects(
 
 type Looks = Pick<Member, 'name' | 'avatar'>
 
-// Someone who left the board keeps their email on what they wrote, not a name.
+// Someone not on the board keeps the name they had when they wrote, else
+// their email.
 export async function looksOn(
   tx: Tx,
   boardId: string
-): Promise<(userId: string | null) => Looks> {
+): Promise<(userId: string | null, nameThen?: string | null) => Looks> {
   const rows = await tx
     .select({ userId: projectMembers.userId, ...memberLooks })
     .from(projectMembers)
@@ -195,7 +196,8 @@ export async function looksOn(
   const looks = new Map<string | null, Looks>(
     rows.map(({ userId, name, avatar }) => [userId, { name, avatar }])
   )
-  return userId => looks.get(userId) ?? { name: null, avatar: null }
+  return (userId, nameThen = null) =>
+    looks.get(userId) ?? { name: nameThen, avatar: null }
 }
 
 export async function roleOn(

@@ -438,6 +438,8 @@ export const comments = pgTable.withRLS(
     organizationId: organizationId(),
     authorId: uuid('author_id').notNull(),
     authorEmail: text('author_email').notNull(),
+    // As named then, for once the task moves to a board the author is not on.
+    authorName: text('author_name'),
     body: text().notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     tenant: tenant()
@@ -495,6 +497,8 @@ export const taskHistory = pgTable.withRLS(
     organizationId: organizationId(),
     actorId: uuid('actor_id'),
     actorEmail: text('actor_email').notNull(),
+    // As named then, for once the task moves to a board the actor is not on.
+    actorName: text('actor_name'),
     field: text().notNull(),
     from: jsonb(),
     to: jsonb(),

@@ -99,7 +99,7 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
           author: {
             userId: row.authorId,
             email: row.authorEmail,
-            ...looksOf(row.authorId)
+            ...looksOf(row.authorId, row.authorName)
           },
           body: row.body,
           createdAt: row.createdAt,
@@ -130,6 +130,7 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
         ) {
           throw new Refused('too_many_mentions')
         }
+        const looksOf = await looksOn(tx, boardId)
         const [comment] = await tx
           .insert(comments)
           .values({
@@ -137,6 +138,7 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
             organizationId: task.organizationId,
             authorId: identity.userId,
             authorEmail: identity.email,
+            authorName: looksOf(identity.userId).name,
             body
           })
           .returning({ id: comments.id, createdAt: comments.createdAt })
