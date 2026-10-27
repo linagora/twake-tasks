@@ -686,7 +686,6 @@
     "favoritesHint": "Les favoris qui ne sont dans aucune autre section",
     "items": "%{smart_count} tableau ou vue |||| %{smart_count} tableaux et vues",
     "add": "Ajouter",
-    "move": "Déplacer %{name}",
     "empty": "Aucun tableau ni vue pour l’instant",
     "dragInstructions": "Pour déplacer une section, appuyez sur espace ou entrée. Utilisez les flèches pour la déplacer, espace ou entrée pour la déposer, et échap pour annuler."
   }

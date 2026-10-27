@@ -686,7 +686,6 @@
     "favoritesHint": "Die Favoriten, die in keinem anderen Abschnitt sind",
     "items": "%{smart_count} Board oder Ansicht |||| %{smart_count} Boards und Ansichten",
     "add": "Hinzufügen",
-    "move": "%{name} verschieben",
     "empty": "Noch keine Boards oder Ansichten",
     "dragInstructions": "Um einen Abschnitt zu verschieben, drücken Sie die Leertaste oder Eingabe. Verschieben Sie ihn mit den Pfeiltasten, legen Sie ihn mit Leertaste oder Eingabe ab und brechen Sie mit Escape ab."
   }

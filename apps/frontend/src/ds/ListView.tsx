@@ -275,7 +275,8 @@ export function ListDragPreview({
   taskKey,
   title
 }: {
-  taskKey: string
+  /** None for a row that is not a task. */
+  taskKey?: string
   title: string
 }): ReactElement {
   return (
@@ -289,14 +290,16 @@ export function ListDragPreview({
         cursor: 'grabbing'
       }}
     >
-      <Typography
-        variant="caption"
-        color="textSecondary"
-        noWrap
-        sx={{ flexShrink: 0 }}
-      >
-        {taskKey}
-      </Typography>
+      {taskKey && (
+        <Typography
+          variant="caption"
+          color="textSecondary"
+          noWrap
+          sx={{ flexShrink: 0 }}
+        >
+          {taskKey}
+        </Typography>
+      )}
       <Typography variant="body2" noWrap>
         {title}
       </Typography>

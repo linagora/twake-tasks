@@ -6,8 +6,8 @@ import { renderRoute } from '@/testing/renderWithProviders'
 
 const sectionNames = () =>
   within(screen.getByRole('list', { name: 'Sidebar sections' }))
-    .getAllByRole('button', { name: /^Move / })
-    .map(handle => handle.getAttribute('aria-label')?.replace(/^Move /, ''))
+    .getAllByRole('button', { expanded: false })
+    .map(row => row.querySelector('.MuiListItemText-primary')?.textContent)
 
 describe('SettingsScreen', () => {
   it('unfolds a section on the boards and views it holds', async () => {
@@ -56,9 +56,6 @@ describe('SettingsScreen', () => {
     expect(screen.queryByRole('button', { name: 'Delete Favorites' })).toBe(
       null
     )
-    expect(
-      screen.getByRole('button', { name: 'Move Favorites' })
-    ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Add' }))
     const created = within(

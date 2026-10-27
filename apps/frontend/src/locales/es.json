@@ -686,7 +686,6 @@
     "favoritesHint": "Los favoritos que no están en otra sección",
     "items": "%{smart_count} tablero o vista |||| %{smart_count} tableros y vistas",
     "add": "Añadir",
-    "move": "Mover %{name}",
     "empty": "Aún no hay tableros ni vistas",
     "dragInstructions": "Para mover una sección, pulsa espacio o intro. Usa las flechas para moverla, espacio o intro para soltarla y escape para cancelar."
   }

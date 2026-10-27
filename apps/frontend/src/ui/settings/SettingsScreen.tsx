@@ -40,6 +40,7 @@ import { ClosableTitle } from '@/ds/ClosableTitle'
 import { ListSection } from '@/ds/ListSection'
 import { SortableRow, SortableRows } from '@/ds/SortableRows'
 import { SubMenuActionGap } from '@/ds/SubMenu'
+import { atPointer } from '@/ui/boards/BoardDrag'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
 import {
   useCreateSidebarSection,
@@ -138,7 +139,9 @@ function SidebarSectionsSettings(): ReactElement {
       )}
       <SortableRows
         ids={ids}
+        nameOf={nameAt}
         announcements={announcements}
+        previewModifiers={[atPointer]}
         instructions={t('settings.dragInstructions')}
         onSort={order => {
           save.mutate(
@@ -187,7 +190,6 @@ function SectionRow({
   return (
     <SortableRow
       id={section.id}
-      handleLabel={t('settings.move', { name })}
       description={t('drag.column')}
       open={open}
       onToggle={() => {
