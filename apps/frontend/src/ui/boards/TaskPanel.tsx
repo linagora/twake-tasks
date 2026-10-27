@@ -21,7 +21,13 @@ import {
   Tooltip,
   Typography
 } from '@linagora/twake-mui'
-import { useId, useState, type ReactElement, type ReactNode } from 'react'
+import {
+  useId,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode
+} from 'react'
 
 import { ApiError } from '@/application/boards'
 import { IconMenuItem } from '@/ds/IconMenuItem'
@@ -498,10 +504,22 @@ function AddSubtask({
   const create = useCreateTask(boardId)
   const [title, setTitle] = useState<string | null>(null)
   useUnsaved(Boolean(title?.trim()))
+  const refocus = useRef(false)
+  const close = () => {
+    refocus.current = true
+    setTitle(null)
+    create.reset()
+  }
 
   if (title === null) {
     return (
       <Button
+        ref={(node: HTMLButtonElement | null) => {
+          if (node && refocus.current) {
+            refocus.current = false
+            node.focus()
+          }
+        }}
         variant="text"
         size="small"
         startIcon={<Icon icon={CheckList} size={14} />}
@@ -521,7 +539,7 @@ function AddSubtask({
           { parentId: task.id, title: title.trim() },
           {
             onSuccess: () => {
-              setTitle('')
+              setTitle(open => (open === null ? null : ''))
             }
           }
         )
@@ -532,6 +550,9 @@ function AddSubtask({
         value={title}
         onChange={event => {
           setTitle(event.target.value)
+        }}
+        onKeyDown={event => {
+          if (event.key === 'Escape' && !event.nativeEvent.isComposing) close()
         }}
         size="small"
         fullWidth
@@ -552,13 +573,7 @@ function AddSubtask({
         >
           {t('board.add')}
         </Button>
-        <Button
-          variant="text"
-          size="small"
-          onClick={() => {
-            setTitle(null)
-          }}
-        >
+        <Button variant="text" size="small" onClick={close}>
           {t('board.cancel')}
         </Button>
       </Inline>

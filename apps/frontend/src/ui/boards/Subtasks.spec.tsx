@@ -86,6 +86,43 @@ describe('Sub-tasks', () => {
     ).toBeInTheDocument()
   })
 
+  it('closes the sub-task form on Escape, not the panel', async () => {
+    const { board, boardsApi } = logoWithSketch()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click((await logoCard()).getByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+    fireEvent.click(panel.getByRole('button', { name: 'Add a sub-task' }))
+    const title = panel.getByRole('textbox', { name: 'Sub-task title' })
+    fireEvent.change(title, { target: { value: 'half' } })
+    fireEvent.keyDown(title, { key: 'Escape' })
+
+    expect(
+      panel.queryByRole('textbox', { name: 'Sub-task title' })
+    ).not.toBeInTheDocument()
+    expect(panel.getByRole('button', { name: 'Add a sub-task' })).toHaveFocus()
+    expect(
+      screen.getByRole('dialog', { name: 'DES-1 Logo' })
+    ).toBeInTheDocument()
+    expect(boardsApi.createTask).not.toHaveBeenCalled()
+  })
+
+  it('gives the focus back to Add a sub-task on Cancel', async () => {
+    const { board, boardsApi } = logoWithSketch()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    fireEvent.click((await logoCard()).getByRole('button', { name: 'Logo' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+    fireEvent.click(panel.getByRole('button', { name: 'Add a sub-task' }))
+    fireEvent.click(panel.getByRole('button', { name: 'Cancel' }))
+
+    expect(panel.getByRole('button', { name: 'Add a sub-task' })).toHaveFocus()
+  })
+
   it('stops adding sub-tasks at the fourth level', async () => {
     const { board, sketch, boardsApi } = logoWithSketch()
     const colors = aTask(null, {
