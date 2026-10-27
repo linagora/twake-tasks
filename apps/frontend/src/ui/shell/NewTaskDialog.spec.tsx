@@ -259,6 +259,8 @@ describe('NewTaskDialog', () => {
     // The Inbox is loaded once its assignees can be edited.
     await dialog.findByRole('button', { name: 'Add assignees' })
     expect(section()).toBe(null)
+    // The row stays, so that nothing moves.
+    expect(dialog.getByText('No section')).toBeVisible()
     fireEvent.mouseDown(dialog.getByRole('combobox', { name: 'Board' }))
     fireEvent.click(
       await screen.findByRole('option', { name: 'Product Design' })
@@ -279,6 +281,22 @@ describe('NewTaskDialog', () => {
         }
       ])
     })
+  })
+
+  it('names the only section of a board, with nothing to pick', async () => {
+    const board = aBoard({ name: 'Notes', keyPrefix: 'NOT' })
+    board.sections = board.sections.slice(0, 1)
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    fireEvent.click(await screen.findByRole('button', { name: 'Create task' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a task' })
+    )
+
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+
+    expect(await dialog.findByText(board.sections[0]?.name ?? '')).toBeVisible()
+    expect(dialog.queryByRole('combobox', { name: 'Section' })).toBe(null)
   })
 
   it('offers only the boards a task can be added to', async () => {
