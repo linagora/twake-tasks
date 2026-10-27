@@ -191,14 +191,15 @@ describe('the embedded view', () => {
       name: 'Team',
       project: team,
       members: [
-        { userId: 'alice', email: 'alice@example.com', name: 'Alice Martin' }
+        { userId: 'alice', email: 'alice@example.com', name: 'Alice Martin' },
+        { userId: 'bob', email: 'bob@example.com', name: 'Bob Durand' }
       ]
     })
     const boardsApi = fakeBoardsApi([board])
     boardsApi.projects.push({ ...team, role: 'admin' })
     renderRoute(`/embed/projects/${team.id}/boards/${board.id}`, { boardsApi })
 
-    fireEvent.click(await screen.findByRole('button', { name: '1 member' }))
+    fireEvent.click(await screen.findByRole('button', { name: '2 members' }))
 
     expect(
       await screen.findByRole('dialog', { name: 'People with access' })

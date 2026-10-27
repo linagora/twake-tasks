@@ -380,7 +380,6 @@ function BoardColumns({
 
   const headerActions = (
     <>
-      <LayoutSwitch board={board} />
       {board.role !== 'admin' && (
         <Tooltip
           title={
@@ -401,16 +400,14 @@ function BoardColumns({
           />
         </Tooltip>
       )}
-      {board.members.length + board.invited.length > 0 && (
-        <MemberStack
-          members={board.members}
-          invited={board.invited}
-          onClick={() => {
-            if (shareable && shareButton) setSharing(true)
-            else setListing(true)
-          }}
-        />
-      )}
+      <MemberStack
+        members={board.members}
+        invited={board.invited}
+        onClick={() => {
+          if (shareable && shareButton) setSharing(true)
+          else setListing(true)
+        }}
+      />
       {!shareButton ? null : shareable ? (
         <Button
           variant="secondary"
@@ -433,6 +430,8 @@ function BoardColumns({
           </UnavailableButton>
         </Tooltip>
       )}
+      {/* After Share, as the list and grid switch of Twake Drive. */}
+      <LayoutSwitch board={board} />
       <BoardMenu
         board={board}
         onOpenShelf={openShelf}

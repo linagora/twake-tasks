@@ -28,6 +28,30 @@ export const HeaderToggleGroup = styled(ToggleButtonGroup)(({ theme }) => ({
   }
 }))
 
+// Icons alone, as the list and grid switch of Twake Drive: the one shown on
+// a grey ground, the others paler. twake-mui does the reverse, greying the
+// others and colouring the icon shown, hence the doubled class.
+export const ViewToggleGroup = styled(ToggleButtonGroup)(({ theme }) => ({
+  gap: theme.spacing(1.5),
+  '&& .MuiToggleButton-root': {
+    height: 30,
+    minWidth: 36,
+    margin: 0,
+    padding: theme.spacing(0, 1.25),
+    border: 0,
+    borderRadius: 6,
+    color: theme.vars.palette.text.secondary,
+    backgroundColor: 'transparent',
+    '& svg': { color: 'inherit' },
+    '&:hover': { backgroundColor: theme.vars.palette.action.hover }
+  },
+  '&& .MuiToggleButton-root.Mui-selected': {
+    color: theme.vars.palette.text.primary,
+    backgroundColor: theme.vars.palette.action.selected,
+    '&:hover': { backgroundColor: theme.vars.palette.action.focus }
+  }
+}))
+
 // Phones show the icon alone; the button keeps its label for screen readers.
 export function ToggleLabel({
   children

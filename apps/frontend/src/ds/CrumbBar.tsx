@@ -17,7 +17,8 @@ export const CRUMB_BAR = {
   alignItems: 'center',
   gap: 0.5,
   flex: '0 0 auto',
-  minHeight: 56,
+  // Twake Drive's title row, on wide screens.
+  minHeight: { xs: 56, md: 72 },
   px: { xs: 2, sm: 3 }
 } as const
 

@@ -1,5 +1,10 @@
-import { Calendar, Icon, List, Mosaic } from '@linagora/twake-icons'
-import { ToggleButton, useMediaQuery, useTheme } from '@linagora/twake-mui'
+import { CalendarToday, Icon, ListMin, MosaicMin } from '@linagora/twake-icons'
+import {
+  ToggleButton,
+  Tooltip,
+  useMediaQuery,
+  useTheme
+} from '@linagora/twake-mui'
 import dayjs from 'dayjs'
 import { useState, type ReactElement, type ReactNode } from 'react'
 
@@ -17,16 +22,16 @@ import {
 } from '@/ds/Calendar'
 import { ListHeader, ListSection, ListView } from '@/ds/ListView'
 import { DropListSection, SortableList } from '@/ds/Sortable'
-import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
+import { ViewToggleGroup } from '@/ds/PageHeader'
 import { LAYOUTS, type Board, type Layout, type Task } from '@/domain/board'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
 import { useSetLayout } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const LAYOUT_ICONS = {
-  board: Mosaic,
-  list: List,
-  calendar: Calendar
+  board: MosaicMin,
+  list: ListMin,
+  calendar: CalendarToday
 } as const
 
 export function LayoutSwitch({ board }: { board: Board }): ReactElement {
@@ -53,7 +58,7 @@ export function LayoutToggle<L extends Layout>({
 }): ReactElement {
   const { t } = useI18n()
   return (
-    <HeaderToggleGroup
+    <ViewToggleGroup
       exclusive
       size="small"
       value={value}
@@ -63,16 +68,13 @@ export function LayoutToggle<L extends Layout>({
       }}
     >
       {layouts.map(layout => (
-        <ToggleButton
-          key={layout}
-          value={layout}
-          aria-label={t(`layout.${layout}`)}
-        >
-          <Icon icon={LAYOUT_ICONS[layout]} />
-          <ToggleLabel>{t(`layout.${layout}`)}</ToggleLabel>
-        </ToggleButton>
+        <Tooltip key={layout} disableInteractive title={t(`layout.${layout}`)}>
+          <ToggleButton value={layout} aria-label={t(`layout.${layout}`)}>
+            <Icon icon={LAYOUT_ICONS[layout]} size={16} />
+          </ToggleButton>
+        </Tooltip>
       ))}
-    </HeaderToggleGroup>
+    </ViewToggleGroup>
   )
 }
 

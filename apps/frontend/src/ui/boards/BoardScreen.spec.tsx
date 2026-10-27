@@ -719,17 +719,14 @@ describe('BoardScreen', () => {
       ).toBeVisible()
     })
 
-    it('shows the people invited, greyed until they sign in', async () => {
+    it('shows the people invited as the members, as Twake Drive', async () => {
       const board = { ...designBoard(), invited: ['carol@example.com'] }
       renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
       const stack = await screen.findByRole('button', {
         name: '2 members, 1 invited'
       })
-      expect(stack.querySelectorAll('.PersonAvatar-pending')).toHaveLength(1)
-      expect(stack.querySelector('.PersonAvatar-pending')).toHaveTextContent(
-        'C'
-      )
+      expect(stack).toHaveTextContent(/CA$/)
     })
 
     it.each([
@@ -795,6 +792,25 @@ describe('BoardScreen', () => {
       await screen.findByRole('button', { name: '2 members' })
       expect(screen.queryByRole('button', { name: 'Admin' })).toBeNull()
       expect(screen.queryByRole('button', { name: 'Editor' })).toBeNull()
+    })
+
+    // The person signed in, as the session knows them.
+    const me = { userId: 'me', email: 'alice@example.com', name: 'Alice' }
+
+    it('leaves the person out of it, as Twake Drive does', async () => {
+      const board = aBoard({ members: [me, bob] })
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+      const stack = await screen.findByRole('button', { name: '2 members' })
+      expect(stack).not.toHaveTextContent('A')
+    })
+
+    it('shows none on a board of the person alone', async () => {
+      const board = aBoard({ name: 'Mine', members: [me] })
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+      await screen.findByRole('heading', { level: 1, name: 'Mine' })
+      expect(screen.queryByRole('button', { name: '1 member' })).toBeNull()
     })
 
     it('summarises a larger board with a +N bubble', async () => {
