@@ -1,7 +1,7 @@
 {
   "id": "a95991f0-f168-4271-b583-e6b7d220d715",
   "prevIds": [
-    "e5a776a4-1fe4-4e64-8b3a-e0591c1675bf"
+    "97cbe28f-52df-447d-8843-4c8ce0f10f4b"
   ],
   "version": "8",
   "dialect": "postgres",
@@ -968,6 +968,19 @@
       "generated": null,
       "identity": null,
       "name": "author_email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "author_name",
       "entityType": "columns",
       "schema": "public",
       "table": "comments"
@@ -2103,6 +2116,19 @@
       "generated": null,
       "identity": null,
       "name": "actor_email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_history"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "actor_name",
       "entityType": "columns",
       "schema": "public",
       "table": "task_history"
