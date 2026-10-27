@@ -8,8 +8,7 @@ import {
   Logout,
   Mosaic,
   Plus,
-  Right,
-  Star
+  Right
 } from '@linagora/twake-icons'
 import {
   Divider,
@@ -743,7 +742,7 @@ function Favorites({
               onOpen(board.id)
             }}
           >
-            <NavIcon icon={Star} />
+            <NavIcon icon={Mosaic} />
             <OneLineNavText title={board.name}>{board.name}</OneLineNavText>
           </SidebarLink>
         </DraggableEntry>
