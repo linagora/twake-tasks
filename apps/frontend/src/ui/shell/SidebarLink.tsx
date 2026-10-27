@@ -1,5 +1,5 @@
 import { NavLink } from '@linagora/twake-mui'
-import type { ReactElement, ReactNode } from 'react'
+import type { MouseEvent, ReactElement, ReactNode } from 'react'
 import { Link as RouterLink, NavLink as RouterNavLink } from 'react-router'
 
 import { SidebarEntry } from '@/ds/AppFrame'
@@ -17,7 +17,7 @@ export function SidebarLink({
   /** Lit or not whatever the URL says, when the shell knows better. */
   active?: boolean | undefined
   label?: string | undefined
-  onClick?: (() => void) | undefined
+  onClick?: ((event: MouseEvent<HTMLAnchorElement>) => void) | undefined
   children: ReactNode
 }): ReactElement {
   const entry = (lit: boolean) => (

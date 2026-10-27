@@ -239,6 +239,54 @@ describe('AppShell', () => {
     })
   })
 
+  it.each(['/', '/today'])(
+    'lights a favourite opened from %s, not Boards',
+    async path => {
+      const boardsApi = fakeBoardsApi([
+        { ...aBoard(), id: 'board-2', name: 'Launch' }
+      ])
+      await boardsApi.setFavorite('board-2', true)
+      renderRoute(path, { boardsApi })
+
+      const favourite = await within(
+        await screen.findByRole('list', { name: 'Favorites' })
+      ).findByRole('link', { name: 'Launch' })
+      fireEvent.click(favourite)
+
+      await waitFor(() => {
+        expect(favourite).toHaveAttribute('aria-current', 'page')
+      })
+      expect(
+        within(screen.getByRole('list', { name: 'Main menu' })).getByRole(
+          'link',
+          { name: 'Boards' }
+        )
+      ).not.toHaveAttribute('aria-current')
+    }
+  )
+
+  it('does not light a favourite opened in a new tab once its board opens from Boards', async () => {
+    const boardsApi = fakeBoardsApi([
+      { ...aBoard(), id: 'board-2', name: 'Launch' }
+    ])
+    await boardsApi.setFavorite('board-2', true)
+    renderRoute('/', { boardsApi })
+
+    const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+    const favourite = await within(
+      await screen.findByRole('list', { name: 'Favorites' })
+    ).findByRole('link', { name: 'Launch' })
+    fireEvent.click(favourite, { ctrlKey: true })
+    fireEvent.click(nav.getByRole('button', { name: 'Unfold boards' }))
+    const listed = await nav.findByRole('link', { name: 'Launch' })
+    fireEvent.click(listed)
+
+    await waitFor(() => {
+      expect(listed).toHaveAttribute('aria-current', 'page')
+    })
+    expect(favourite).not.toHaveAttribute('aria-current')
+  })
+
   it('lists the active boards under Boards, by name, and marks the current one', async () => {
     const boardsApi = fakeBoardsApi([
       { ...aBoard(), id: 'board-1', name: 'Launch' },

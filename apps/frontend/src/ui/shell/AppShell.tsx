@@ -302,11 +302,16 @@ function useLitEntry(): {
   const { pathname } = useLocation()
   const boardId = useMatch('/boards/:boardId/*')?.params.boardId ?? null
   const [favorite, setFavorite] = useState<string | null>(null)
+  const [seen, setSeen] = useState(pathname)
   const inBoard = (boardId: string) =>
     pathname === `/boards/${boardId}` ||
     pathname.startsWith(`/boards/${boardId}/`)
-  // Left the board: the next time it opens, it is from wherever it is.
-  if (favorite !== null && !inBoard(favorite)) setFavorite(null)
+  // Left the board: the next time it opens, it is from wherever it is. The
+  // click renders before its navigation lands, so only a new page counts.
+  if (seen !== pathname) {
+    setSeen(pathname)
+    if (favorite !== null && !inBoard(favorite)) setFavorite(null)
+  }
   const onFavorite = favorite !== null && inBoard(favorite)
   // An archived board is reached from Archives, which it lights instead.
   const boards = useBoards().data ?? []
@@ -582,8 +587,15 @@ function Favorites({
           <SidebarLink
             to={`/boards/${board.id}`}
             active={lit === board.id}
-            onClick={() => {
-              onOpen(board.id)
+            onClick={event => {
+              // A modified click opens a new tab and leaves this page as is.
+              if (
+                !event.ctrlKey &&
+                !event.metaKey &&
+                !event.shiftKey &&
+                !event.altKey
+              )
+                onOpen(board.id)
             }}
           >
             <NavIcon icon={Star} />
