@@ -56,6 +56,22 @@ describe('search', () => {
     expect(await search(owner, '100%')).toEqual([])
   })
 
+  it('names the project of each task found', async () => {
+    const owner = aUser()
+    const board = (
+      await api.as(owner).post('/boards', { name: 'PRK', keyPrefix: 'PRK' })
+    ).json<{ id: string; project: { id: string } }>()
+    await api
+      .as(owner)
+      .post(`/boards/${board.id}/tasks`, { sectionId: null, title: 'Kickoff' })
+
+    const found = (await api.as(owner).get('/search?q=kickoff')).json<{
+      tasks: { projectId: string }[]
+    }>().tasks
+
+    expect(found.map(task => task.projectId)).toEqual([board.project.id])
+  })
+
   it('lists the task whose key is the query first', async () => {
     const owner = aUser()
     const board = await aBoardOf(owner, 'SRK')

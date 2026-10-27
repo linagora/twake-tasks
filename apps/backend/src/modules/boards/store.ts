@@ -687,6 +687,7 @@ async function tasksOf(
     category,
     parentTitle,
     boardId: board.id,
-    boardName: board.name
+    boardName: board.name,
+    projectId: board.projectId
   }))
 }
