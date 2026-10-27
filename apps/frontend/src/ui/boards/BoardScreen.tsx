@@ -380,7 +380,6 @@ function BoardColumns({
 
   const headerActions = (
     <>
-      <LayoutSwitch board={board} />
       {board.role !== 'admin' && (
         <Tooltip
           title={
@@ -433,6 +432,8 @@ function BoardColumns({
           </UnavailableButton>
         </Tooltip>
       )}
+      {/* After Share, as the list and grid switch of Twake Drive. */}
+      <LayoutSwitch board={board} />
       <BoardMenu
         board={board}
         onOpenShelf={openShelf}
