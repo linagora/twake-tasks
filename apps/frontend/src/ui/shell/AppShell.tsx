@@ -104,6 +104,7 @@ export function AppShell(): ReactElement {
   return (
     <AppFrame
       topBar={<Header searchRef={search} onNewTask={startNewTask} />}
+      skipLabel={t('app.skipToContent')}
       sidebar={
         <>
           {/* Twake Drive's wording; screen readers still hear what it creates. */}

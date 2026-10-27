@@ -70,6 +70,24 @@ describe('AppShell', () => {
     }
   )
 
+  it.each(['/', '/boards/board-1'])(
+    'starts %s with a link that skips to the content without changing the address',
+    async path => {
+      const board = { ...aBoard(), id: 'board-1' }
+      const { router } = renderRoute(path, {
+        boardsApi: fakeBoardsApi([board])
+      })
+
+      const skip = await screen.findByRole('link', { name: 'Skip to content' })
+      expect(document.body.querySelector('a[href], button, input')).toBe(skip)
+      fireEvent.click(skip)
+
+      expect(document.activeElement).toBe(document.getElementById('content'))
+      expect(router.state.location.pathname).toBe(path)
+      expect(router.state.location.hash).toBe('')
+    }
+  )
+
   it('shows the name and picture the person chose in Twake Workplace', async () => {
     const boardsApi = fakeBoardsApi()
     boardsApi.settings.mockResolvedValue({

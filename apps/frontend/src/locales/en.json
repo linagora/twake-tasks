@@ -23,7 +23,8 @@
   "app": {
     "name": "Twake Project",
     "loading": "Loading",
-    "mainMenu": "Main menu"
+    "mainMenu": "Main menu",
+    "skipToContent": "Skip to content"
   },
   "session": {
     "signingIn": "Signing you in…",
