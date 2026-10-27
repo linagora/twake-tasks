@@ -146,7 +146,7 @@ async function withMemberNames(
 
 async function describe(
   tx: Tx,
-  row: { projectId: string },
+  row: { projectId: string; reader: string },
   entry: {
     field: string
     from: unknown
@@ -190,6 +190,9 @@ async function describe(
           ? messages.canceled(actor)
           : messages.reopened(actor)
     case 'assignees': {
+      if (entry.to === null && id === row.reader) {
+        return messages.unassignedYou(actor)
+      }
       const person = await nameOf(tx, row.projectId, id)
       const name = plain(person?.name ?? messages.someone)
       return entry.to !== null
@@ -345,7 +348,14 @@ export function emailNotification(deps: {
             ? messages.reminder(due)
             : comment
               ? messages.commented(actor)
-              : await describe(tx, row, entry, messages, lang, actor)
+              : await describe(
+                  tx,
+                  { projectId: row.projectId, reader: job.userId },
+                  entry,
+                  messages,
+                  lang,
+                  actor
+                )
     const subject =
       why === 'assigned'
         ? messages.subjects.assigned(actor, task)

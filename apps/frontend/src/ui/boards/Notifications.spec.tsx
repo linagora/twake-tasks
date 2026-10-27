@@ -150,6 +150,13 @@ describe('notifications', () => {
     expect(boardsApi.markNotificationsRead).toHaveBeenCalled()
   })
 
+  it('tells the reader they were unassigned', async () => {
+    const { boardsApi } = anInbox({ reason: 'unassigned', actor: alice })
+    renderRoute('/notifications', { boardsApi })
+
+    expect(await rowOf()).toHaveTextContent('Alice Martin unassigned you')
+  })
+
   it.each([
     { lang: 'en', sentence: 'Alice Martin set the priority to P1' },
     { lang: 'fr', sentence: 'Alice Martin a mis la priorité à P1' }

@@ -99,6 +99,21 @@ describe('notification emails', () => {
     expect(sent[0]?.html).toContain('Alice Martin assigned you a task')
   })
 
+  it('tells the person unassigned that it was them', async () => {
+    const { alice, bob, board, task } = await aTask()
+    const path = `/boards/${board.id}/tasks/${task.id}/assignees`
+    await api.as(alice).put(path, { userIds: [bob.userId] })
+    const mailbox = aMailbox()
+
+    await api.as(alice).put(path, { userIds: [] })
+    await mailbox.deliver()
+
+    const lines = mailbox.sent
+      .filter(mail => mail.to === bob.email && mail.text.includes(board.id))
+      .map(mail => mail.text.split('\n')[0])
+    expect(lines).toContain('Alice Martin unassigned you')
+  })
+
   it('quotes the comment that mentions someone', async () => {
     const { alice, bob, board, task } = await aTask()
     const mailbox = aMailbox()

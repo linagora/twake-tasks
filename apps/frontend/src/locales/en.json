@@ -513,12 +513,14 @@
     "unfollow": "Unfollow",
     "reason": {
       "assigned": "You were assigned",
+      "unassigned": "You were unassigned",
       "mentioned": "You were mentioned",
       "following": "Changed while you follow it",
       "reminder": "Reminder"
     },
     "sentence": {
       "assigned": "%{actor} assigned you",
+      "unassigned": "%{actor} unassigned you",
       "mentioned": "%{actor} mentioned you"
     },
     "justNow": "Just now",

@@ -513,12 +513,14 @@
     "unfollow": "Не следить",
     "reason": {
       "assigned": "Вас назначили",
+      "unassigned": "Вас сняли с задачи",
       "mentioned": "Вас упомянули",
       "following": "Изменена, пока вы за ней следите",
       "reminder": "Напоминание"
     },
     "sentence": {
       "assigned": "%{actor} назначил(а) вас",
+      "unassigned": "%{actor} снял(а) вас",
       "mentioned": "%{actor} упомянул(а) вас"
     },
     "justNow": "Только что",

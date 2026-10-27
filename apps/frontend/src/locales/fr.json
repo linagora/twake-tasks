@@ -513,12 +513,14 @@
     "unfollow": "Ne plus suivre",
     "reason": {
       "assigned": "Vous avez été assigné",
+      "unassigned": "Vous avez été retiré",
       "mentioned": "Vous avez été mentionné",
       "following": "Modifiée pendant que vous la suivez",
       "reminder": "Rappel"
     },
     "sentence": {
       "assigned": "%{actor} vous a assigné(e)",
+      "unassigned": "%{actor} vous a retiré(e)",
       "mentioned": "%{actor} vous a mentionné(e)"
     },
     "justNow": "À l’instant",

@@ -323,8 +323,15 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
                     avatar: actorAvatar
                   }
                 : null
+            // The person unassigned gets it as a follower, but it is about them.
+            const unassigned =
+              row.reason === 'following' &&
+              field === 'assignees' &&
+              to === null &&
+              from === identity.userId
             return {
               ...row,
+              reason: unassigned ? 'unassigned' : row.reason,
               actor,
               change:
                 actor && field !== null && at !== null

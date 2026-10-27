@@ -513,12 +513,14 @@
     "unfollow": "Non seguire più",
     "reason": {
       "assigned": "Ti è stata assegnata",
+      "unassigned": "Non ti è più assegnata",
       "mentioned": "Sei stato menzionato",
       "following": "Modificata mentre la segui",
       "reminder": "Promemoria"
     },
     "sentence": {
       "assigned": "%{actor} ti ha assegnato",
+      "unassigned": "%{actor} ha rimosso la tua assegnazione",
       "mentioned": "%{actor} ti ha menzionato"
     },
     "justNow": "Proprio ora",
