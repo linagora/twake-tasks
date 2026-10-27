@@ -101,6 +101,19 @@ describe('sharing a board', () => {
     )
   })
 
+  it('makes one chip of an address typed twice', async () => {
+    const { dialog } = await openSharing()
+
+    type(dialog, 'bob@example.com')
+    fireEvent.keyDown(field(dialog), { key: 'Enter' })
+    type(dialog, 'Bob@example.com')
+    fireEvent.keyDown(field(dialog), { key: 'Enter' })
+
+    expect(
+      dialog.getAllByRole('button', { name: 'bob@example.com' })
+    ).toHaveLength(1)
+  })
+
   it('sends nothing until an address is there', async () => {
     const { dialog } = await openSharing()
 
@@ -265,7 +278,12 @@ describe('sharing a board', () => {
         'viewer'
       )
     })
-    expect(boardsApi.cancelInvite).toHaveBeenCalledWith(board.id, 'inv')
+    expect(
+      await dialog.findByRole('button', {
+        name: 'Role of eve@example.com: Viewer'
+      })
+    ).toBeVisible()
+    expect(boardsApi.cancelInvite).not.toHaveBeenCalled()
   })
 
   it('names the dialog after its title only', async () => {

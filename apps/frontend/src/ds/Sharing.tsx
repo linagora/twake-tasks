@@ -95,17 +95,16 @@ export function InviteField({
         sx={{ flex: 1, minWidth: 0 }}
         value={chosen}
         onChange={(_event, next) => {
+          const people = next.flatMap(each => {
+            const person = typeof each === 'string' ? toPerson(each) : each
+            return person ? [person] : []
+          })
           onChoose(
-            next.flatMap(each => {
-              const person = typeof each === 'string' ? toPerson(each) : each
-              return person &&
-                !chosen.some(
-                  other =>
-                    other.key !== person.key && other.value === person.value
-                )
-                ? [person]
-                : []
-            })
+            people.filter(
+              (person, index) =>
+                people.findIndex(other => other.value === person.value) ===
+                index
+            )
           )
         }}
         inputValue={input}

@@ -74,16 +74,11 @@ export function ShareDialog({
   const cancel = useBoardChange(board.id, (api, inviteId: string) =>
     api.cancelInvite(board.id, inviteId)
   )
-  // An invite keeps its role: another is a new invite in its place.
+  // Inviting an address again changes the role of its invite.
   const reinvite = useBoardChange(
     board.id,
-    async (
-      api,
-      { inviteId, email, role }: { inviteId: string; email: string; role: Role }
-    ) => {
-      await api.cancelInvite(board.id, inviteId)
-      await api.invite(board.id, email, role)
-    }
+    (api, { email, role }: { email: string; role: Role }) =>
+      api.invite(board.id, email, role)
   )
   // Clears the last action's message. A pending action keeps running: a
   // reset would drop its onSuccess and re-enable Send mid-request.
@@ -324,7 +319,6 @@ export function ShareDialog({
                     onChange={next => {
                       start()
                       reinvite.mutate({
-                        inviteId: pending.id,
                         email: pending.email,
                         role: next
                       })
