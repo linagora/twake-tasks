@@ -434,14 +434,28 @@ export const SidebarSectionEntry = styled((props: NavItemProps) => (
   [theme.breakpoints.down('lg')]: { display: 'none' }
 }))
 
-/** What an empty sidebar section says, in its place. */
+/**
+ * What an empty sidebar section says, in its place: a grey area with a dashed
+ * edge, as where to drop a board or view.
+ */
 export function SidebarHint({ children }: { children: ReactNode }) {
   return (
     <Typography
       component="li"
       variant="caption"
       color="text.secondary"
-      sx={{ display: 'block', px: 3, py: 1 }}
+      sx={{
+        display: 'block',
+        mx: 2,
+        my: 0.5,
+        px: 1.5,
+        py: 1.5,
+        textAlign: 'center',
+        bgcolor: 'action.hover',
+        border: '1px dashed',
+        borderColor: 'divider',
+        borderRadius: 2
+      }}
     >
       {children}
     </Typography>
