@@ -65,14 +65,11 @@ describe('TaskCard', () => {
       name: 'Sub-tasks, 1 of 2 done'
     })
     expect(progress).toHaveAttribute('aria-expanded', 'false')
-    expect(card.queryByRole('button', { name: 'Sketch' })).toBeNull()
+    expect(card.queryByRole('checkbox', { name: 'Sketch' })).toBeNull()
 
     fireEvent.click(progress)
 
-    // A done sub-task is struck through, with no checkbox to tick.
-    expect(card.getByText('Colors').tagName).toBe('DEL')
-    expect(card.getByText('Sketch').tagName).not.toBe('DEL')
-    expect(card.queryByRole('checkbox')).toBeNull()
+    expect(card.getByRole('checkbox', { name: 'Colors' })).toBeChecked()
   })
 
   it('shows the first assignees and how many more there are', async () => {

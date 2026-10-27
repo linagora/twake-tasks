@@ -70,7 +70,6 @@ describe('SearchScreen', () => {
       {
         ...aTask(null, { key: 'DES-2', title: 'Poster' }),
         category: null,
-        completable: true,
         boardId: design.id,
         boardName: design.name,
         parentTitle: null,

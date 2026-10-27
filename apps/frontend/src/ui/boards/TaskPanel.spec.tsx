@@ -431,7 +431,7 @@ describe('TaskPanel', () => {
     ])
   })
 
-  it('lists the sub-tasks, with no checkbox', async () => {
+  it('lists the sub-tasks and completes one', async () => {
     const { board, logo, boardsApi } = logoBoard()
     const sketch = aTask(null, {
       key: 'DES-2',
@@ -443,8 +443,15 @@ describe('TaskPanel', () => {
 
     const panel = await openLogo()
     const subtasks = within(panel.getByRole('list', { name: 'Sub-tasks' }))
-    expect(subtasks.getByRole('button', { name: 'Sketch' })).toBeVisible()
-    expect(subtasks.queryByRole('checkbox')).toBeNull()
+    fireEvent.click(subtasks.getByRole('checkbox', { name: 'Sketch' }))
+
+    await waitFor(() => {
+      expect(boardsApi.completeTask).toHaveBeenCalledWith(
+        board.id,
+        sketch.id,
+        'completed'
+      )
+    })
   })
 
   it('closes from its close button', async () => {
