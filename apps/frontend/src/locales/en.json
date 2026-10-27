@@ -537,6 +537,7 @@
     "label": "Search",
     "results": "Results for “%{text}”",
     "empty": "No tasks match",
+    "noResults": "No results",
     "emptyHint": "Try another word, or check the spelling.",
     "failed": "Couldn’t search.",
     "tooShort": "Type at least %{count} characters to search.",

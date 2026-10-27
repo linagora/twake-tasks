@@ -19,6 +19,11 @@ function MagnifierSearchBar(
 export const SearchBar = styled(MagnifierSearchBar)(({ theme }) => ({
   '&&': {
     backgroundColor: theme.vars.palette.background.default,
+    // The list of results hangs from it, as from Twake Drive's.
+    '&.SearchBar-open': {
+      borderBottomLeftRadius: 0,
+      borderBottomRightRadius: 0
+    },
     '&.SearchBar-focused': {
       backgroundColor: theme.vars.palette.background.paper,
       borderColor: theme.vars.palette.primary.main

@@ -37,7 +37,7 @@ describe('AppShell', () => {
 
       const bar = within(await screen.findByRole('banner'))
       expect(bar.getByText('Twake Project')).toBeInTheDocument()
-      expect(bar.getByRole('searchbox', { name: 'Search' })).toBeInTheDocument()
+      expect(bar.getByRole('combobox', { name: 'Search' })).toBeInTheDocument()
       expect(bar.queryByRole('button', { name: 'Create task' })).toBe(null)
       expect(
         within(screen.getByRole('complementary')).getByRole('button', {
@@ -177,7 +177,7 @@ describe('AppShell', () => {
     renderRoute('/', { boardsApi: fakeBoardsApi() })
 
     expect(
-      within(await screen.findByRole('banner')).getByRole('searchbox', {
+      within(await screen.findByRole('banner')).getByRole('combobox', {
         name: 'Search'
       })
     ).toBeInTheDocument()

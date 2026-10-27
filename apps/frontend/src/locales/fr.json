@@ -537,6 +537,7 @@
     "label": "Rechercher",
     "results": "Résultats pour « %{text} »",
     "empty": "Aucune tâche ne correspond",
+    "noResults": "Aucun résultat",
     "emptyHint": "Essayez un autre mot ou vérifiez l'orthographe.",
     "failed": "La recherche a échoué.",
     "tooShort": "Saisissez au moins %{count} caractères pour rechercher.",

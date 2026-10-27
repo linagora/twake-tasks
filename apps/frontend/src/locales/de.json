@@ -537,6 +537,7 @@
     "label": "Suchen",
     "results": "Ergebnisse für „%{text}“",
     "empty": "Keine passenden Aufgaben",
+    "noResults": "Keine Ergebnisse",
     "emptyHint": "Versuchen Sie ein anderes Wort, oder prüfen Sie die Schreibweise.",
     "failed": "Die Suche ist fehlgeschlagen.",
     "tooShort": "Geben Sie mindestens %{count} Zeichen ein, um zu suchen.",

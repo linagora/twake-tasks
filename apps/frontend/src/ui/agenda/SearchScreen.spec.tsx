@@ -235,3 +235,71 @@ describe('SearchScreen', () => {
     ).not.toBeInTheDocument()
   })
 })
+
+describe('live search results', () => {
+  async function type(text: string) {
+    const field = await screen.findByRole('combobox', { name: 'Search' })
+    fireEvent.focus(field)
+    fireEvent.change(field, { target: { value: text } })
+    return field
+  }
+
+  it('lists the boards, then the tasks, that match as one types', async () => {
+    const { boardsApi } = boards()
+    renderRoute('/', { boardsApi })
+
+    const field = await type('des')
+    const list = within(await screen.findByRole('listbox'))
+
+    await waitFor(() => {
+      expect(
+        list.getAllByRole('option').map(option => option.textContent)
+      ).toEqual([
+        // The board's name, then its project.
+        'DesignDesign',
+        'New logoDES-1 · Design',
+        'PosterDES-2 · Design'
+      ])
+    })
+    expect(field).toHaveAttribute('aria-expanded', 'true')
+    expect(list.getAllByRole('option')[0]).toHaveAttribute(
+      'aria-selected',
+      'true'
+    )
+  })
+
+  it('opens the task picked with the arrows and Enter, and empties the field', async () => {
+    const { boardsApi, design } = boards()
+    const { router } = renderRoute('/', { boardsApi })
+
+    const field = await type('logo')
+    const option = await screen.findByRole('option', { name: /New logo/ })
+    expect(option).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(field, { key: 'ArrowDown' })
+    fireEvent.keyDown(field, { key: 'ArrowUp' })
+    fireEvent.keyDown(field, { key: 'Enter' })
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/boards/${design.id}`)
+    })
+    expect(router.state.location.search).toBe('?task=DES-1')
+    expect(field).toHaveValue('')
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  it('says when there is nothing, or too little typed', async () => {
+    renderRoute('/', { boardsApi: boards().boardsApi })
+
+    const field = await type('d')
+    expect(
+      await screen.findByText('Type at least 2 characters to search.')
+    ).toBeInTheDocument()
+
+    fireEvent.change(field, { target: { value: 'zebra' } })
+    expect(await screen.findByText('No results')).toBeInTheDocument()
+
+    fireEvent.keyDown(field, { key: 'Escape' })
+    expect(field).toHaveValue('')
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+})
