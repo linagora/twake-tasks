@@ -683,10 +683,11 @@
     "open": "Impostazioni",
     "sections": "Sezioni della barra laterale",
     "newSection": "Nuova sezione",
-    "moveUp": "Sposta su %{name}",
-    "moveDown": "Sposta giù %{name}",
     "favoritesHint": "I preferiti che non sono in nessun'altra sezione",
     "items": "%{smart_count} bacheca o vista |||| %{smart_count} bacheche e viste",
-    "add": "Aggiungi"
+    "add": "Aggiungi",
+    "move": "Sposta %{name}",
+    "empty": "Ancora nessuna bacheca o vista",
+    "dragInstructions": "Per spostare una sezione, premi spazio o invio. Usa le frecce per spostarla, spazio o invio per rilasciarla ed esc per annullare."
   }
 }

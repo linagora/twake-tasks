@@ -1,13 +1,12 @@
+import type { Announcements, UniqueIdentifier } from '@dnd-kit/core'
 import {
-  Down,
   Folder,
   Gear,
   Icon,
   Pen,
   Plus,
   Star,
-  Trash,
-  Up
+  Trash
 } from '@linagora/twake-icons'
 import {
   Button,
@@ -18,6 +17,7 @@ import {
   Divider,
   IconButton,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   TextField,
@@ -28,14 +28,17 @@ import {
   Fragment,
   useId,
   useState,
+  type ComponentProps,
+  type ComponentType,
   type ElementType,
   type ReactElement
 } from 'react'
+import { useHref, useLinkClickHandler } from 'react-router'
 
 import type { SidebarSection } from '@/application/boards'
-import { movedSection } from '@/application/sidebarSections'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { ListSection } from '@/ds/ListSection'
+import { SortableRow, SortableRows } from '@/ds/SortableRows'
 import { SubMenuActionGap } from '@/ds/SubMenu'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
 import {
@@ -47,7 +50,11 @@ import {
 } from '@/ui/boards/queries'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
-import { useNameOf } from '@/ui/shell/SidebarSections'
+import {
+  useNameOf,
+  useShownItems,
+  type Shown
+} from '@/ui/shell/SidebarSections'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 /** The settings of the app, reached from the gear of the top bar. */
@@ -67,8 +74,9 @@ export function SettingsScreen(): ReactElement {
 }
 
 /**
- * The sections of the sidebar, in its order: added, renamed, moved and
- * deleted here, Favorites being there to stay.
+ * The sections of the sidebar, in its order: added, renamed, dragged into
+ * another order and deleted here, Favorites being there to stay. Each one
+ * unfolds the boards and views it holds.
  */
 function SidebarSectionsSettings(): ReactElement {
   const { t } = useI18n()
@@ -77,6 +85,35 @@ function SidebarSectionsSettings(): ReactElement {
   const save = useSaveSidebarLayout()
   const [creating, setCreating] = useState(false)
   const all = sections.data ?? []
+  const ids = all.map(section => section.id)
+  const nameAt = (id: UniqueIdentifier) => {
+    const section = all.find(each => each.id === id)
+    return section ? nameOf(section) : ''
+  }
+  const position = (id: UniqueIdentifier | undefined) => ({
+    position: ids.indexOf(String(id)) + 1,
+    count: ids.length
+  })
+  const announcements: Announcements = {
+    onDragStart: ({ active }) =>
+      t('drag.columnPicked', { section: nameAt(active.id) }),
+    onDragOver: ({ active, over }) =>
+      over
+        ? t('drag.columnOver', {
+            section: nameAt(active.id),
+            ...position(over.id)
+          })
+        : undefined,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? t('drag.columnDropped', {
+            section: nameAt(active.id),
+            ...position(over.id)
+          })
+        : t('drag.columnCanceled', { section: nameAt(active.id) }),
+    onDragCancel: ({ active }) =>
+      t('drag.columnCanceled', { section: nameAt(active.id) })
+  }
 
   return (
     <ListSection
@@ -99,20 +136,23 @@ function SidebarSectionsSettings(): ReactElement {
           {t('sidebar.failed')}
         </Typography>
       )}
-      {all.map((section, index) => (
-        <Fragment key={section.id}>
-          {index > 0 && <Divider component="li" variant="inset" />}
-          <SectionRow
-            section={section}
-            name={nameOf(section)}
-            first={index === 0}
-            last={index === all.length - 1}
-            onMove={offset => {
-              save.mutate(movedSection(all, section.id, offset))
-            }}
-          />
-        </Fragment>
-      ))}
+      <SortableRows
+        ids={ids}
+        announcements={announcements}
+        instructions={t('settings.dragInstructions')}
+        onSort={order => {
+          save.mutate(
+            order.flatMap(id => all.filter(section => section.id === id))
+          )
+        }}
+      >
+        {all.map((section, index) => (
+          <Fragment key={section.id}>
+            {index > 0 && <Divider component="li" variant="inset" />}
+            <SectionRow section={section} name={nameOf(section)} />
+          </Fragment>
+        ))}
+      </SortableRows>
       {save.isError && (
         <Typography component="li" role="alert" variant="body2" color="error">
           {t('sidebar.failed')}
@@ -131,43 +171,41 @@ function SidebarSectionsSettings(): ReactElement {
 
 function SectionRow({
   section,
-  name,
-  first,
-  last,
-  onMove
+  name
 }: {
   section: SidebarSection
   name: string
-  first: boolean
-  last: boolean
-  onMove: (offset: -1 | 1) => void
 }): ReactElement {
   const { t } = useI18n()
+  const shown = useShownItems()(section)
+  const [open, setOpen] = useState(false)
   const [dialog, setDialog] = useState<'rename' | 'delete' | null>(null)
   const close = () => {
     setDialog(null)
   }
 
   return (
-    <ListItem
-      secondaryAction={
+    <SortableRow
+      id={section.id}
+      handleLabel={t('settings.move', { name })}
+      description={t('drag.column')}
+      open={open}
+      onToggle={() => {
+        setOpen(was => !was)
+      }}
+      icon={<Icon icon={section.favorites ? Star : Folder} />}
+      text={
+        <ListItemText
+          primary={name}
+          secondary={
+            section.favorites
+              ? t('settings.favoritesHint')
+              : t('settings.items', { smart_count: shown.length })
+          }
+        />
+      }
+      actions={
         <>
-          <RowAction
-            icon={Up}
-            label={t('settings.moveUp', { name })}
-            disabled={first}
-            onClick={() => {
-              onMove(-1)
-            }}
-          />
-          <RowAction
-            icon={Down}
-            label={t('settings.moveDown', { name })}
-            disabled={last}
-            onClick={() => {
-              onMove(1)
-            }}
-          />
           <RowAction
             icon={Pen}
             label={t('sidebar.renameSection', { name })}
@@ -189,26 +227,52 @@ function SectionRow({
               }}
             />
           )}
+          {dialog === 'rename' && (
+            <RenameSectionDialog
+              section={section}
+              name={name}
+              onClose={close}
+            />
+          )}
+          {dialog === 'delete' && (
+            <DeleteSectionDialog
+              section={section}
+              name={name}
+              onClose={close}
+            />
+          )}
         </>
       }
     >
-      <ListItemIcon>
-        <Icon icon={section.favorites ? Star : Folder} />
-      </ListItemIcon>
-      <ListItemText
-        primary={name}
-        secondary={
-          section.favorites
-            ? t('settings.favoritesHint')
-            : t('settings.items', { smart_count: section.items.length })
-        }
-      />
-      {dialog === 'rename' && (
-        <RenameSectionDialog section={section} name={name} onClose={close} />
+      {shown.length === 0 && (
+        <ListItem>
+          <ListItemText secondary={t('settings.empty')} />
+        </ListItem>
       )}
-      {dialog === 'delete' && (
-        <DeleteSectionDialog section={section} name={name} onClose={close} />
-      )}
+      {shown.map(entry => (
+        <EntryLink key={`${entry.item.kind}:${entry.item.id}`} entry={entry} />
+      ))}
+    </SortableRow>
+  )
+}
+
+// A row of a Twake list that is a link, which its types leave out.
+const ListItemLink: ComponentType<
+  ComponentProps<typeof ListItemButton> & { href: string }
+> = ListItemButton
+
+/** A board or view a section holds, a link to it. */
+function EntryLink({ entry }: { entry: Shown }): ReactElement {
+  const href = useHref(entry.to)
+  const open = useLinkClickHandler<HTMLDivElement>(entry.to)
+  return (
+    <ListItem disablePadding>
+      <ListItemLink href={href} onClick={open}>
+        <ListItemIcon>
+          <Icon icon={entry.icon} />
+        </ListItemIcon>
+        <ListItemText primary={entry.label} />
+      </ListItemLink>
     </ListItem>
   )
 }

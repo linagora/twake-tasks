@@ -1,16 +1,49 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 const sectionNames = () =>
   within(screen.getByRole('list', { name: 'Sidebar sections' }))
-    .getAllByRole('listitem')
-    .map(row => row.querySelector('.MuiListItemText-primary')?.textContent)
-    .filter(name => name !== undefined)
+    .getAllByRole('button', { name: /^Move / })
+    .map(handle => handle.getAttribute('aria-label')?.replace(/^Move /, ''))
 
 describe('SettingsScreen', () => {
+  it('unfolds a section on the boards and views it holds', async () => {
+    const board = { ...aBoard(), id: 'board-1', name: 'Design' }
+    const boardsApi = fakeBoardsApi([board])
+    const work = await boardsApi.createSidebarSection('Work')
+    const layout = await boardsApi.listSidebarSections()
+    await boardsApi.saveSidebarLayout(
+      layout.map(section => ({
+        id: section.id,
+        items:
+          section.id === work.id
+            ? [{ kind: 'board' as const, id: 'board-1' }]
+            : []
+      }))
+    )
+    renderRoute('/settings', { boardsApi })
+
+    const list = within(
+      await screen.findByRole('list', { name: 'Sidebar sections' })
+    )
+    const toggle = await list.findByRole('button', { name: /^Work/ })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(list.queryByRole('link', { name: 'Design' })).toBeNull()
+
+    fireEvent.click(toggle)
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(await list.findByRole('link', { name: 'Design' })).toHaveAttribute(
+      'href',
+      '/boards/board-1'
+    )
+    fireEvent.click(list.getByRole('button', { name: /^Favorites/ }))
+    expect(await list.findByText('No boards or views yet')).toBeInTheDocument()
+  })
+
   it('adds, renames, moves and deletes the sections of the sidebar, Favorites kept', async () => {
     const boardsApi = fakeBoardsApi()
     await boardsApi.createSidebarSection('Work')
@@ -24,8 +57,8 @@ describe('SettingsScreen', () => {
       null
     )
     expect(
-      screen.getByRole('button', { name: 'Move Favorites up' })
-    ).toBeDisabled()
+      screen.getByRole('button', { name: 'Move Favorites' })
+    ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Add' }))
     const created = within(
@@ -49,11 +82,6 @@ describe('SettingsScreen', () => {
     fireEvent.click(renamed.getByRole('button', { name: 'Save' }))
     await waitFor(() => {
       expect(sectionNames()).toEqual(['Starred', 'Work', 'Home'])
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Move Starred down' }))
-    await waitFor(() => {
-      expect(sectionNames()).toEqual(['Work', 'Starred', 'Home'])
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete Work' }))

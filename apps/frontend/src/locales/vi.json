@@ -683,10 +683,11 @@
     "open": "Cài đặt",
     "sections": "Các mục của thanh bên",
     "newSection": "Mục mới",
-    "moveUp": "Chuyển %{name} lên",
-    "moveDown": "Chuyển %{name} xuống",
     "favoritesHint": "Các mục yêu thích không thuộc mục nào khác",
     "items": "%{smart_count} bảng hoặc chế độ xem",
-    "add": "Thêm"
+    "add": "Thêm",
+    "move": "Di chuyển %{name}",
+    "empty": "Chưa có bảng hoặc chế độ xem nào",
+    "dragInstructions": "Để di chuyển một mục, nhấn phím cách hoặc Enter. Dùng các phím mũi tên để di chuyển, phím cách hoặc Enter để thả và Escape để hủy."
   }
 }

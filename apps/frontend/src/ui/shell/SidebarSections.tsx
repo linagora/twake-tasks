@@ -283,7 +283,7 @@ export function useFavoritesDrop() {
   return { listRef: setNodeRef, highlighted: isOver }
 }
 
-interface Shown {
+export interface Shown {
   item: SidebarItem
   index: number
   label: string
@@ -298,38 +298,50 @@ export function useNameOf(): (section: SidebarSection) => string {
 }
 
 /** The boards and views a section holds that the person still has. */
-function useShownItems(): (section: SidebarSection) => Shown[] {
+export function useShownItems(): (section: SidebarSection) => Shown[] {
+  const sections = useSidebarSections().data ?? []
   const boards = useBoards().data ?? []
   const views = useFilters().data ?? []
-  return section =>
-    section.items.flatMap((item, index): Shown[] => {
-      if (item.kind === 'board') {
-        const board = boards.find(each => each.id === item.id)
-        return board && !board.archived
-          ? [
-              {
-                item,
-                index,
-                label: board.name,
-                icon: Mosaic,
-                to: `/boards/${board.id}`
-              }
-            ]
-          : []
-      }
-      const view = views.find(each => each.id === item.id)
-      return view
+  const shown = (item: SidebarItem, index: number): Shown[] => {
+    if (item.kind === 'board') {
+      const board = boards.find(each => each.id === item.id)
+      return board && !board.archived
         ? [
             {
               item,
               index,
-              label: view.name,
-              icon: viewIcon(view.icon),
-              to: `/filters/${view.id}`
+              label: board.name,
+              icon: Mosaic,
+              to: `/boards/${board.id}`
             }
           ]
         : []
-    })
+    }
+    const view = views.find(each => each.id === item.id)
+    return view
+      ? [
+          {
+            item,
+            index,
+            label: view.name,
+            icon: viewIcon(view.icon),
+            to: `/filters/${view.id}`
+          }
+        ]
+      : []
+  }
+  // Favorites holds the favorites in no other section.
+  const favorites = (): SidebarItem[] =>
+    [
+      ...boards
+        .filter(board => board.favorite)
+        .map(board => ({ kind: 'board' as const, id: board.id })),
+      ...views
+        .filter(view => view.favorite)
+        .map(view => ({ kind: 'view' as const, id: view.id }))
+    ].filter(item => sectionOf(sections, item) === null)
+  return section =>
+    (section.favorites ? favorites() : section.items).flatMap(shown)
 }
 
 /**
