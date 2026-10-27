@@ -106,6 +106,7 @@ export function ReactionBar({
       {byCount.slice(0, SHOWN).map(reaction => (
         <Tooltip
           key={reaction.emoji}
+          describeChild
           title={<PeopleList people={reaction.who} />}
           slotProps={WHITE_TOOLTIP}
         >
