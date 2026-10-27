@@ -29,7 +29,14 @@ async function databaseFiles(): Promise<SqlFile[]> {
     select p.proname as name, pg_get_functiondef(p.oid) as definition
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public'`
+    where n.nspname = 'public'
+      -- An extension's functions, such as unaccent's, are not ours.
+      and not exists (
+        select 1 from pg_depend d
+        where d.classid = 'pg_proc'::regclass
+          and d.objid = p.oid
+          and d.deptype = 'e'
+      )`
   const triggers = await sql<{ name: string; definition: string }[]>`
     select t.tgname as name, pg_get_triggerdef(t.oid) as definition
     from pg_trigger t

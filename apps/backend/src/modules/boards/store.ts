@@ -4,7 +4,6 @@ import {
   desc,
   eq,
   exists,
-  ilike,
   inArray,
   isNotNull,
   isNull,
@@ -13,6 +12,7 @@ import {
   notExists,
   or,
   sql,
+  type AnyColumn,
   type SQL
 } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
@@ -77,15 +77,26 @@ const SEARCH_LIMIT = 50
 const WORDS_BEFORE = 5
 const WORDS_AFTER = 8
 
+/** Lower case, without accents, as unaccent compares in the database. */
+const fold = (text: string): string =>
+  text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+
+const accentless = (column: SQL | AnyColumn, pattern: string) =>
+  sql`unaccent(${column}) ilike unaccent(${pattern})`
+
 function excerptOf(description: string, text: string): string | null {
   const words = description.split(/\s+/).filter(Boolean)
-  const joined = words.join(' ')
-  const at = joined.toLowerCase().indexOf(text.toLowerCase())
+  // Each word folded on its own keeps the words in place, whatever their length.
+  const joined = words.map(fold).join(' ')
+  const at = joined.indexOf(fold(text))
   if (at === -1) return null
   const wordAt = (offset: number) =>
     joined.slice(0, offset).split(' ').length - 1
   const from = Math.max(0, wordAt(at) - WORDS_BEFORE)
-  const to = Math.min(words.length, wordAt(at + text.length) + 1 + WORDS_AFTER)
+  const to = Math.min(
+    words.length,
+    wordAt(at + fold(text).length) + 1 + WORDS_AFTER
+  )
   return `${from > 0 ? '…' : ''}${words.slice(from, to).join(' ')}${to < words.length ? '…' : ''}`
 }
 
@@ -98,14 +109,16 @@ function matchOf(
   task: { key?: string | undefined; title?: string | null | undefined },
   previousKeys: string[],
   excerpt: string | null,
-  lower: string
+  folded: string
 ): SearchMatch | null {
-  if (task.key?.toLowerCase().startsWith(lower)) {
+  if (task.key?.toLowerCase().startsWith(folded)) {
     return { field: 'key', text: task.key }
   }
-  const previous = previousKeys.find(key => key.toLowerCase().startsWith(lower))
+  const previous = previousKeys.find(key =>
+    key.toLowerCase().startsWith(folded)
+  )
   if (previous) return { field: 'previousKey', text: previous }
-  if (task.title?.toLowerCase().includes(lower)) {
+  if (task.title && fold(task.title).includes(folded)) {
     return { field: 'title', text: task.title }
   }
   return excerpt ? { field: 'description', text: excerpt } : null
@@ -181,7 +194,10 @@ export function createBoardStore(db: Db) {
       )
     },
 
-    /** Tasks whose key starts with, or whose title or description contains, `text`, an exact key match first. */
+    /**
+     * Tasks whose key starts with, or whose title or description contains,
+     * `text`, whatever the case and accents, an exact key match first.
+     */
     search(identity: Identity, text: string) {
       const pattern = text.replace(/[\\%_]/g, '\\$&')
       const keyMatches = (keyPattern: string) =>
@@ -202,14 +218,14 @@ export function createBoardStore(db: Db) {
             inArray(tasks.boardId, boardIds),
             or(
               keyMatches(`${pattern}%`),
-              ilike(tasks.title, `%${pattern}%`),
-              ilike(tasks.descriptionText, `%${pattern}%`)
+              accentless(tasks.title, `%${pattern}%`),
+              accentless(tasks.descriptionText, `%${pattern}%`)
             )
           ),
           SEARCH_LIMIT,
           sql`${keyMatches(pattern)} desc`
         )
-        const lower = text.toLowerCase()
+        const folded = fold(text)
         const ids = found.flatMap(task => (task.id ? [task.id] : []))
         const fields = new Map(
           ids.length === 0
@@ -228,13 +244,14 @@ export function createBoardStore(db: Db) {
         return found.map(task => {
           const { description = '', previousKeys = [] } =
             fields.get(task.id ?? '') ?? {}
-          const excerpt = task.title?.toLowerCase().includes(lower)
-            ? null
-            : excerptOf(description, text)
+          const excerpt =
+            task.title && fold(task.title).includes(folded)
+              ? null
+              : excerptOf(description, text)
           return {
             ...task,
             excerpt,
-            match: matchOf(task, previousKeys, excerpt, lower)
+            match: matchOf(task, previousKeys, excerpt, folded)
           }
         })
       })
