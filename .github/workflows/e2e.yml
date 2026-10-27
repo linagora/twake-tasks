@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'apps/**'
+      - 'packages/api-contract/**'
       - 'e2e/**'
       - 'docker-compose.yml'
       - 'postgres-init.sql'

@@ -4,13 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - "apps/frontend/**"
-      - "package.json"
-      - "package-lock.json"
-      - "tsconfig.base.json"
-      - ".dockerignore"
-      - ".github/workflows/frontend-*.yml"
-      - ".github/workflows/reusable-*.yml"
+      - 'apps/frontend/**'
+      - 'packages/api-contract/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.base.json'
+      - '.dockerignore'
+      - '.github/workflows/frontend-*.yml'
+      - '.github/workflows/reusable-*.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

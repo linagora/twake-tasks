@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'apps/frontend/**'
+      - 'packages/api-contract/**'
       - 'package.json'
       - 'package-lock.json'
       - 'tsconfig.base.json'

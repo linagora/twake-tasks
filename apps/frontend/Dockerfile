@@ -2,6 +2,7 @@ FROM --platform=$BUILDPLATFORM node:24-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY apps/frontend/package.json apps/frontend/
+COPY packages/api-contract/package.json packages/api-contract/
 RUN npm ci --workspace @twake-tasks/frontend --include-workspace-root --no-audit --no-fund
 COPY apps/frontend apps/frontend
 RUN npm run build --workspace @twake-tasks/frontend

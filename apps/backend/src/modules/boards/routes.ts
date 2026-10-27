@@ -1,5 +1,45 @@
+import {
+  agendaQuery,
+  assignment,
+  boardMove,
+  boardParams,
+  boardRename,
+  completion,
+  descriptionEdit,
+  filterChanges,
+  filterParams,
+  inviteParams,
+  labelChanges,
+  labeling,
+  labelParams,
+  layoutChoice,
+  memberParams,
+  newBoard,
+  newComment,
+  newFilter,
+  newInvite,
+  newLabel,
+  newReminder,
+  newSection,
+  newTask,
+  peopleQuery,
+  reactionEmoji,
+  reactionParams,
+  reminderParams,
+  roleChange,
+  searchQuery,
+  sectionChanges,
+  sectionDeletion,
+  sectionMove,
+  sectionParams,
+  taskChanges,
+  taskMove,
+  taskParams,
+  transferTarget,
+  zoneQuery
+} from '@twake-tasks/api-contract'
+import type * as wire from '@twake-tasks/api-contract'
 import type { FastifyReply } from 'fastify'
-import { z } from 'zod'
 import { allowOrigins } from '../../infra/cors.ts'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
@@ -12,252 +52,53 @@ import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
 import { createSharingStore } from './sharing.ts'
 import { createReminderStore } from './reminders.ts'
-import {
-  durationUnit,
-  LAYOUTS,
-  memberRole,
-  recurrenceUnit,
-  sectionCategory
-} from './schema.ts'
+import type * as db from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
 import { createTaskStore, type Refusal } from './tasks.ts'
 import { createTransferStore } from './transfer.ts'
 
-// No control or format characters (newlines, bidi overrides, invisibles),
-// except the joiner of emoji sequences.
-const boardName = z
-  .string()
-  .trim()
-  .min(1)
-  .max(100)
-  .refine(name => !/(?!\u200D)[\p{Cc}\p{Cf}]/u.test(name))
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false
+type Assert<T extends true> = T
+type Values<T extends readonly string[]> = T[number]
 
-const newBoard = z.object({
-  name: boardName,
-  keyPrefix: z.string().regex(/^[A-Z][A-Z0-9]{0,9}$/),
-  projectId: z.uuid().optional(),
-  language: z.string().max(35).optional()
-})
-
-const boardRename = z.object({ name: boardName })
-
-const boardParams = z.object({ boardId: z.uuid() })
-
-const taskTitle = z.string().trim().min(1).max(500)
-
-const newTask = z.union([
-  z.strictObject({ sectionId: z.uuid().nullable(), title: taskTitle }),
-  z.strictObject({ parentId: z.uuid(), title: taskTitle })
-])
-
-const completion = z.object({
-  state: z.enum(['completed', 'canceled']).nullable()
-})
-
-const taskParams = z.object({ boardId: z.uuid(), taskId: z.uuid() })
-
-const taskMove = z.object({
-  sectionId: z.uuid().nullable(),
-  afterId: z.uuid().optional(),
-  beforeId: z.uuid().optional()
-})
-
-function isTimeZone(zone: string): boolean {
-  try {
-    new Intl.DateTimeFormat('en', { timeZone: zone })
-    return true
-  } catch {
-    return false
-  }
-}
-
-const layoutChoice = z.object({ layout: z.enum(LAYOUTS) })
-
-const role = z.enum(memberRole.enumValues)
-
-const newInvite = z.object({
-  email: z.email().max(254).toLowerCase(),
-  role
-})
-
-const inviteParams = boardParams.extend({ inviteId: z.uuid() })
-
-// Two characters at least, so a suggestion never lists the whole directory.
-const peopleQuery = z.object({ q: z.string().trim().min(2).max(254) })
-
-const memberParams = boardParams.extend({ userId: z.uuid() })
-
-const searchQuery = z.object({ q: z.string().trim().max(200) })
-
-const agendaQuery = z.object({
-  zone: z.string().max(64).refine(isTimeZone),
-  days: z.coerce.number().int().min(1).max(60)
-})
-
-const newFilter = z.object({
-  name: z.string().trim().min(1).max(100),
-  criteria: z.strictObject({
-    assignee: z
-      .array(z.union([z.enum(['me', 'nobody']), z.uuid()]))
-      .min(1)
-      .max(50)
-      .optional(),
-    priority: z.array(z.int().min(1).max(4)).min(1).max(4).optional(),
-    label: z.array(z.string().trim().min(1).max(50)).min(1).max(50).optional(),
-    due: z
-      .array(z.enum(['overdue', 'today', 'week', 'none']))
-      .min(1)
-      .max(4)
-      .optional()
-  })
-})
-
-const filterChanges = newFilter
-  .partial()
-  .refine(changes => Object.keys(changes).length > 0)
-
-const filterParams = z.object({ filterId: z.uuid() })
-
-const zoneQuery = z.object({ zone: z.string().max(64).refine(isTimeZone) })
-
-const taskChanges = z
-  .object({
-    title: taskTitle,
-    priority: z.int().min(1).max(4).nullable(),
-    dueDate: z.iso.date().nullable(),
-    dueTime: z.iso.time({ precision: -1 }).nullable(),
-    dueZone: z.string().max(64).refine(isTimeZone).nullable(),
-    deadline: z.iso.date().nullable(),
-    duration: z
-      .object({
-        amount: z.int().min(1).max(100_000),
-        unit: z.enum(durationUnit.enumValues)
-      })
-      .nullable(),
-    recurrence: z
-      .object({
-        every: z.int().min(1).max(1000),
-        unit: z.enum(recurrenceUnit.enumValues),
-        fromCompletion: z.boolean()
-      })
-      .nullable()
-  })
-  .partial()
-  .refine(changes => Object.keys(changes).length > 0)
-
-const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
-
-// Two names that render alike are the same name: invisible format characters
-// go, accents are composed, and compatibility forms such as full width letters
-// and ligatures are folded. Kept, because they change what renders: the
-// joiner of an emoji sequence, a joiner between letters of a script that
-// shapes with it (Persian, Devanagari), the tags of a subdivision flag.
-const emojiJoiner = String.raw`(?<=[\p{Extended_Pictographic}\p{Emoji_Modifier}\u{FE0F}])\u{200D}(?=\p{Extended_Pictographic})`
-const scriptJoiner = String.raw`(?<=[\p{L}\p{M}])(?<![\p{sc=Latin}\p{sc=Inherited}])[\u{200C}\u{200D}](?=[\p{L}\p{M}])`
-const flagTag = String.raw`(?<=[\u{1F3F4}\u{E0020}-\u{E007E}])[\u{E0020}-\u{E007F}]`
-const invisible = new RegExp(
-  String.raw`(${emojiJoiner}|${scriptJoiner}|${flagTag})|\p{Cf}`,
-  'gu'
-)
-
-const uniqueName = (max: number) =>
-  z
-    .string()
-    .overwrite(name =>
-      name
-        .replace(invisible, (_, kept: string | undefined) => kept ?? '')
-        .normalize('NFKC')
-    )
-    .trim()
-    .min(1)
-    .max(max)
-
-const labelName = uniqueName(50)
-
-const labelColor = z
-  .string()
-  .regex(/^#[0-9a-f]{6}$/i)
-  .transform(color => color.toUpperCase())
-  .nullable()
-
-const newLabel = z.object({ name: labelName, color: labelColor.optional() })
-
-const labelParams = z.object({ boardId: z.uuid(), labelId: z.uuid() })
-
-const labelChanges = z
-  .object({ name: labelName, color: labelColor })
-  .partial()
-  .refine(changes => Object.keys(changes).length > 0)
-
-const transferTarget = z.object({
-  boardId: z.uuid(),
-  sectionId: z.uuid().nullable()
-})
-
-const labeling = z.object({ labelIds: z.array(z.uuid()).max(50) })
-
-const newComment = z.object({ body: z.string().trim().min(1).max(10_000) })
-
-const reactionParams = taskParams.extend({
-  commentId: z.uuid(),
-  emoji: z.string()
-})
-
-const graphemes = new Intl.Segmenter('en', { granularity: 'grapheme' })
-
-// One emoji, possibly a sequence of them joined into one, or a keycap such
-// as the digit one in a box: nothing else.
-const reactionEmoji = z
-  .string()
-  .max(32)
-  .regex(
-    /^(?:[#*0-9]\uFE0F?\u20E3|(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}])(?:[\p{Extended_Pictographic}\p{Regional_Indicator}\p{Emoji_Modifier}\u{E0020}-\u{E007F}]|\u200D|\uFE0F)+)$/u
-  )
-  .refine(text => [...graphemes.segment(text)].length === 1)
-
-const newReminder = z.union([
-  z.strictObject({
-    at: z.iso.datetime({ offset: true }).pipe(z.coerce.date())
-  }),
-  z.strictObject({
-    beforeMinutes: z
-      .int()
-      .min(0)
-      .max(60 * 24 * 365),
-    zone: z.string().max(64).refine(isTimeZone)
-  })
-])
-
-const reminderParams = taskParams.extend({ reminderId: z.uuid() })
-
-const descriptionEdit = z.object({
-  markdown: z.string().max(50_000),
-  version: z.int().min(0)
-})
-
-const sectionName = uniqueName(100)
-const category = z.enum(sectionCategory.enumValues)
-
-const newSection = z.object({
-  name: sectionName,
-  category,
-  afterId: z.uuid().optional()
-})
-
-const sectionParams = z.object({ boardId: z.uuid(), sectionId: z.uuid() })
-
-const sectionChanges = z
-  .object({ name: sectionName, category })
-  .partial()
-  .refine(changes => Object.keys(changes).length > 0)
-
-const sectionMove = z.object({
-  afterId: z.uuid().optional(),
-  beforeId: z.uuid().optional()
-})
-
-const sectionDeletion = z.object({ tasksTo: z.uuid().nullable().optional() })
+// The contract declares its own enums, so tsc fails here when they drift.
+export type ContractMatchesBackend = [
+  Assert<
+    Same<
+      Values<typeof wire.MEMBER_ROLES>,
+      (typeof db.memberRole.enumValues)[number]
+    >
+  >,
+  Assert<
+    Same<
+      Values<typeof wire.SECTION_CATEGORIES>,
+      (typeof db.sectionCategory.enumValues)[number]
+    >
+  >,
+  Assert<
+    Same<
+      Values<typeof wire.DURATION_UNITS>,
+      (typeof db.durationUnit.enumValues)[number]
+    >
+  >,
+  Assert<
+    Same<
+      Values<typeof wire.RECURRENCE_UNITS>,
+      (typeof db.recurrenceUnit.enumValues)[number]
+    >
+  >,
+  Assert<Same<Values<typeof wire.LAYOUTS>, Values<typeof db.LAYOUTS>>>,
+  Assert<
+    Same<
+      Exclude<
+        (typeof wire.REFUSALS)['options'][number],
+        'invalid_request' | 'unavailable' | 'server_error'
+      >,
+      Refusal
+    >
+  >
+]
 
 const REFUSAL_STATUS: Record<Refusal, number> = {
   not_found: 404,
@@ -405,7 +246,7 @@ export function registerBoards(
       if (!identity) return reply.code(401).send()
       const params = boardParams.safeParse(request.params)
       if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = z.object({ projectId: z.uuid() }).safeParse(request.body)
+      const body = boardMove.safeParse(request.body)
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
@@ -544,7 +385,7 @@ export function registerBoards(
       if (!identity) return reply.code(401).send()
       const params = memberParams.safeParse(request.params)
       if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = z.object({ role }).safeParse(request.body)
+      const body = roleChange.safeParse(request.body)
       if (!body.success) {
         return reply.code(400).send({ error: 'invalid_request' })
       }
