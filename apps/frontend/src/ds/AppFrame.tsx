@@ -3,10 +3,10 @@ import {
   Badge,
   Box,
   Button,
+  ButtonBase,
   type ButtonProps,
   Content,
   Divider,
-  IconButton,
   Layout,
   List,
   ListSubheader,
@@ -17,7 +17,6 @@ import {
   NavText,
   Sidebar,
   styled,
-  Tooltip,
   Typography,
   type Theme
 } from '@linagora/twake-mui'
@@ -327,32 +326,18 @@ export function AccountCard({
   )
 }
 
-// The fold arrow, then the menu, in a slot as wide as the + of Boards and
-// Views even when empty, so that every arrow of the sidebar lines up. The
-// menu shows on hover or focus, or while open.
-const SectionActions = styled('span')({
-  display: 'flex',
-  alignItems: 'center',
-  flexShrink: 0,
-  '& .sidebar-section-slot': { display: 'flex', minWidth: 24 },
-  '& .sidebar-section-slot > *': { opacity: 0 },
-  '.MuiListSubheader-root:hover & .sidebar-section-slot > *, & .sidebar-section-slot > :focus-visible, & .sidebar-section-slot > [aria-expanded="true"]':
-    { opacity: 1 }
-})
-
-// Phones get the bottom bar only; the section stays on wide screens.
+// Phones get the bottom bar only; the section stays on wide screens. Its
+// title is small and grey, as Pinned in Twake Space, and folds its entries
+// away when clicked, its arrow after it as Folders in Twake Mail.
 export function SidebarSection({
   label,
-  action,
   fold,
   highlighted = false,
   listRef,
   children
 }: {
   label: string
-  /** Beside the label, as the menu of a section the person added. */
-  action?: ReactNode
-  /** The arrow that folds its entries away, as Boards and Views have. */
+  /** Folds its entries away. */
   fold?: { folded: boolean; label: string; onToggle: () => void } | undefined
   /** Something dragged over it would land in it. */
   highlighted?: boolean
@@ -369,28 +354,33 @@ export function SidebarSection({
           sx={{
             bgcolor: 'transparent',
             px: 3,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 1
+            pt: 2,
+            pb: 1,
+            lineHeight: 1,
+            typography: 'caption',
+            color: 'text.secondary'
           }}
         >
-          <span className="u-ellipsis">{label}</span>
-          <SectionActions>
-            {fold && (
-              <Tooltip disableInteractive title={fold.label}>
-                <IconButton
-                  size="xsmall"
-                  aria-label={fold.label}
-                  aria-expanded={!fold.folded}
-                  onClick={fold.onToggle}
-                >
-                  <Icon icon={fold.folded ? Right : Bottom} size={12} />
-                </IconButton>
-              </Tooltip>
-            )}
-            <span className="sidebar-section-slot">{action}</span>
-          </SectionActions>
+          {fold ? (
+            <ButtonBase
+              aria-label={fold.label}
+              aria-expanded={!fold.folded}
+              onClick={fold.onToggle}
+              sx={{
+                maxWidth: '100%',
+                gap: 0.5,
+                borderRadius: 1,
+                font: 'inherit',
+                color: 'inherit',
+                '&:hover, &.Mui-focusVisible': { color: 'text.primary' }
+              }}
+            >
+              <span className="u-ellipsis">{label}</span>
+              <Icon icon={fold.folded ? Right : Bottom} size={10} aria-hidden />
+            </ButtonBase>
+          ) : (
+            <span className="u-ellipsis">{label}</span>
+          )}
         </ListSubheader>
       }
       // Tinted as a board's column a card is dragged over.
