@@ -37,16 +37,29 @@ const FrameLayout = styled(Layout)(({ theme }) => ({
 // The content scrolls inside, under the layer an open task takes.
 const FrameContent = styled(Content)(({ theme }) => ({
   overflow: 'hidden',
+  // Focused only by the skip link, to start the Tab order there.
+  '&:focus': { outline: 'none' },
   [theme.breakpoints.up('lg')]: { height: 'auto' }
 }))
+
+// Off screen until the keyboard reaches it.
+const SKIP_LINK = {
+  position: 'absolute',
+  left: -10000,
+  py: 1,
+  px: 2,
+  '&:focus': { position: 'fixed', top: 8, left: 8, zIndex: 2100 }
+} as const
 
 export function AppFrame({
   topBar,
   sidebar,
+  skipLabel,
   children
 }: {
   topBar: ReactNode
   sidebar: ReactNode
+  skipLabel: string
   children: ReactNode
 }): ReactElement {
   const [panelHost, setPanelHost] = useState<HTMLElement | null>(null)
@@ -57,10 +70,22 @@ export function AppFrame({
         <Box
           sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}
         >
+          {/* Following #content would push a history entry through the router. */}
+          <Button
+            href="#content"
+            variant="contained"
+            sx={SKIP_LINK}
+            onClick={event => {
+              event.preventDefault()
+              document.getElementById('content')?.focus()
+            }}
+          >
+            {skipLabel}
+          </Button>
           {topBar}
           <FrameLayout withTopBar={false}>
             <Sidebar>{sidebar}</Sidebar>
-            <FrameContent role={undefined}>
+            <FrameContent role={undefined} id="content" tabIndex={-1}>
               <Box ref={setCrumbHost} sx={CRUMB_BAR} />
               {/* Its own stacking context: the raised checkboxes and
                   buttons of the rows stay under an open task. */}

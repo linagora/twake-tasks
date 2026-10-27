@@ -23,7 +23,8 @@
   "app": {
     "name": "Twake Project",
     "loading": "Đang tải",
-    "mainMenu": "Menu chính"
+    "mainMenu": "Menu chính",
+    "skipToContent": "Chuyển đến nội dung"
   },
   "session": {
     "signingIn": "Đang đăng nhập…",

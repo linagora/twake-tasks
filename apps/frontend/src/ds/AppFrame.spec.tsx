@@ -13,7 +13,11 @@ describe('AppFrame', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
     renderWithProviders(
-      <AppFrame topBar={<header>Top</header>} sidebar={<nav>Side</nav>}>
+      <AppFrame
+        topBar={<header>Top</header>}
+        sidebar={<nav>Side</nav>}
+        skipLabel="Skip to content"
+      >
         <p>Body</p>
       </AppFrame>
     )
