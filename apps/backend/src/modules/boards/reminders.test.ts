@@ -1,7 +1,9 @@
+import { and, eq, sql as raw } from 'drizzle-orm'
 import { pino } from 'pino'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
 import { createScheduler } from '../../scheduler/scheduler.ts'
+import { jobs } from '../../scheduler/schema.ts'
 import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 import { REMINDER_JOB, deliverReminder } from './reminderJobs.ts'
 
@@ -106,6 +108,36 @@ describe('reminders', () => {
     expect(await reminders(colleague)).toMatchObject([
       { at: '2099-01-01T10:00:00.000Z', firesAt: '2099-01-01T10:00:00.000Z' }
     ])
+  })
+
+  it('drops the reminders of someone removed from the board, and their jobs', async () => {
+    const owner = aUser()
+    const colleague = aUser({ organizationId: owner.organizationId })
+    const { boardId, edit, remind, reminders } = await aTaskOf(owner)
+    await edit({ dueDate: '2099-03-10' })
+    await joinBoard(db, owner, boardId, colleague, 'viewer')
+    await remind(colleague, { at: '2099-01-01T10:00:00Z' })
+    await remind(colleague, { beforeMinutes: 30, zone: 'UTC' })
+    await remind(owner, { at: '2099-01-01T10:00:00Z' })
+    const jobsOf = (user: TestUser) =>
+      db
+        .select({ key: jobs.key })
+        .from(jobs)
+        .where(
+          and(
+            eq(jobs.kind, REMINDER_JOB),
+            eq(raw`${jobs.payload}->>'userId'`, user.userId)
+          )
+        )
+    expect(await jobsOf(colleague)).toHaveLength(2)
+
+    await api.as(owner).delete(`/boards/${boardId}/members/${colleague.userId}`)
+    await joinBoard(db, owner, boardId, colleague, 'viewer')
+
+    expect(await reminders(colleague)).toEqual([])
+    expect(await jobsOf(colleague)).toEqual([])
+    expect(await reminders(owner)).toHaveLength(1)
+    expect(await jobsOf(owner)).toHaveLength(1)
   })
 
   it('refuses a reminder in the past, or relative to no due date', async () => {

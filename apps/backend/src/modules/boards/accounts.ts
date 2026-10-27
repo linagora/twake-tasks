@@ -27,7 +27,8 @@ import {
   projects,
   savedFilters,
   taskAssignees,
-  taskFollowers
+  taskFollowers,
+  taskReminders
 } from './schema.ts'
 
 // An unreadable time must not drop a deletion, which then counts from now.
@@ -191,6 +192,7 @@ async function forget(
     await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
     await tx.delete(commentReactions).where(eq(commentReactions.userId, userId))
     await tx.delete(notifications).where(eq(notifications.userId, userId))
+    await tx.delete(taskReminders).where(eq(taskReminders.userId, userId))
     await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
     await tx
       .delete(projects)
