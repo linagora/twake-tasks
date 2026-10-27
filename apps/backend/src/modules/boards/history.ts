@@ -26,7 +26,7 @@ export function historyOf(
       actor: {
         userId: row.actorId,
         email: row.actorEmail,
-        ...looksOf(row.actorId)
+        ...looksOf(row.actorId, row.actorName)
       },
       field: row.field,
       from: row.from,

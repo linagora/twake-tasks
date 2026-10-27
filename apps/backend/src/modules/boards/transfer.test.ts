@@ -182,6 +182,44 @@ describe('moving a task to another board', () => {
     ])
   })
 
+  it('names who edited and commented on it, once they are not on the board', async () => {
+    const owner = aUser()
+    const bob = aUser({
+      organizationId: owner.organizationId,
+      name: 'Bob Durand'
+    })
+    const design = await aBoard(owner, 'DES')
+    const ops = await aBoard(owner, 'OPS')
+    const logo = await aTask(owner, design.id, 'Logo')
+    await joinBoard(db, owner, design.id, bob, 'editor')
+    await api.as(bob).get('/boards')
+    await api
+      .as(bob)
+      .patch(`/boards/${design.id}/tasks/${logo}`, { title: 'New logo' })
+    await api
+      .as(bob)
+      .post(`/boards/${design.id}/tasks/${logo}/comments`, { body: 'Done' })
+
+    await api.as(owner).post(`/boards/${design.id}/tasks/${logo}/transfer`, {
+      boardId: ops.id,
+      sectionId: null
+    })
+
+    const task = `/boards/${ops.id}/tasks/${logo}`
+    const { entries } = (await api.as(owner).get(`${task}/history`)).json<{
+      entries: { field: string; actor: { name: string | null } }[]
+    }>()
+    const { comments } = (await api.as(owner).get(`${task}/comments`)).json<{
+      comments: { author: { name: string | null } }[]
+    }>()
+    expect(
+      entries
+        .filter(entry => entry.field === 'title')
+        .map(entry => entry.actor.name)
+    ).toEqual(['Bob Durand'])
+    expect(comments.map(comment => comment.author.name)).toEqual(['Bob Durand'])
+  })
+
   describe('followers', () => {
     async function aFollowedTree() {
       const owner = aUser()
