@@ -18,6 +18,32 @@ describe('emojis', () => {
     expect(unicodes(findEmojis(emojis, 'pouce vers le h', 8))).toEqual(['👍️'])
   })
 
+  it('finds an emoji by words from the middle of its name', async () => {
+    const emojis = await fetchEmojis('en')
+
+    expect(unicodes(findEmojis(emojis, 'tears of joy', 8))).toEqual([
+      '😂',
+      '😹'
+    ])
+    expect(unicodes(findEmojis(emojis, 'open mouth', 8))).toContain('😮')
+    expect(unicodes(findEmojis(emojis, 'heart eyes', 8))).toContain('😍')
+    expect(unicodes(findEmojis(emojis, "o'clock", 1))).toHaveLength(1)
+  })
+
+  it('finds an emoji by a phrase across a no-break space', async () => {
+    const emojis = await fetchEmojis('fr')
+
+    expect(findEmojis(emojis, 'homme : cheveux roux', 1)[0]?.hexcode).toBe(
+      '1F468-200D-1F9B0'
+    )
+  })
+
+  it('finds nothing for punctuation alone', async () => {
+    const emojis = await fetchEmojis('en')
+
+    expect(findEmojis(emojis, '::', 8)).toEqual([])
+  })
+
   it('finds an emoji by a keyword, ignoring case and accents', async () => {
     const emojis = await fetchEmojis('fr')
 

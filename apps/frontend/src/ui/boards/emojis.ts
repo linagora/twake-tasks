@@ -76,8 +76,14 @@ export function findQuickReactions(emojis: Emoji[]): EmojiChoice[] {
   }))
 }
 
+// Names join words with hyphens, apostrophes, colons and no-break spaces
+// ("heart-eyes", "o’clock", "homme : cheveux roux") that people type as spaces.
 const fold = (text: string): string =>
-  text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+  text
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[\s\p{Pd}’':]+/gu, ' ')
+    .toLowerCase()
 
 // Newer emoji are missing from the fonts of many systems and show as a box.
 const NEWEST_VERSION = 15.1
@@ -110,13 +116,14 @@ export async function fetchEmojis(lang: string): Promise<Emoji[]> {
 function computeRank(emoji: Emoji, query: string): number | null {
   const label = fold(emoji.label)
   if (label.startsWith(query)) return 0
-  if (label.split(/\s+/).some(word => word.startsWith(query))) return 1
+  if (` ${label}`.includes(` ${query}`)) return 1
   if (emoji.tags.some(tag => fold(tag).startsWith(query))) return 2
   return null
 }
 
 /**
- * The emoji whose name or keywords start with the query, best matches first.
+ * The emoji whose name or keywords start with the query, or whose name holds
+ * it from the start of one of its words, best matches first.
  * An empty query gives the ones people use most.
  */
 export function findEmojis(
@@ -124,14 +131,15 @@ export function findEmojis(
   query: string,
   max: number
 ): Emoji[] {
-  const wanted = fold(query.trim())
-  if (wanted === '') {
+  if (query.trim() === '') {
     const byHexcode = new Map(emojis.map(emoji => [emoji.hexcode, emoji]))
     return FREQUENT.flatMap(hexcode => byHexcode.get(hexcode) ?? []).slice(
       0,
       max
     )
   }
+  const wanted = fold(query).trim()
+  if (wanted === '') return []
   return emojis
     .flatMap(emoji => {
       const rank = computeRank(emoji, wanted)
