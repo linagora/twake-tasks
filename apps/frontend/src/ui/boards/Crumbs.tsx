@@ -88,11 +88,7 @@ export function Crumbs({
   heading?: boolean
 }): ReactElement {
   return (
-    <CrumbTrail
-      aria-label={label}
-      className="u-miw-0"
-      separator={<Icon icon={Right} size={16} />}
-    >
+    <CrumbTrail aria-label={label} separator={<Icon icon={Right} size={16} />}>
       {origin === undefined ? null : current === undefined ? (
         <Page heading={heading}>{origin.label}</Page>
       ) : (
