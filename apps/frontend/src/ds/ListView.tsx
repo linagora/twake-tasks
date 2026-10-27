@@ -9,13 +9,13 @@ import { FittingChips, type FittingChip } from '@/ds/FittingChips'
 // title. The list's own width decides, since the sidebar narrows it.
 const COLUMNS = '@container list (min-width: 56rem)'
 const columnGrid = {
-  gridTemplateColumns: '32px 5rem minmax(0, 1fr) 6rem 7.5rem 7rem 11rem'
+  gridTemplateColumns: '5rem minmax(0, 1fr) 6rem 7.5rem 7rem 11rem'
 }
 const rowGrid = {
   display: 'grid',
   alignItems: 'center',
   columnGap: 2,
-  gridTemplateColumns: '32px auto minmax(0, 1fr)',
+  gridTemplateColumns: 'auto minmax(0, 1fr)',
   px: 1.5
 } as const
 
@@ -41,7 +41,6 @@ export function ListHeader({
         borderColor: 'divider'
       }}
     >
-      <span />
       {columns.map((column, index) => (
         <Typography
           key={column}
@@ -124,7 +123,6 @@ export function ListSection({
 
 export function ListRow({
   label,
-  check,
   taskKey,
   title,
   done,
@@ -139,7 +137,6 @@ export function ListRow({
   ...rest
 }: Omit<HTMLAttributes<HTMLElement>, 'title'> & {
   label: string
-  check: ReactNode
   taskKey: string
   title: ReactNode
   done: boolean
@@ -195,16 +192,9 @@ export function ListRow({
           position: 'absolute',
           inset: 0
         },
-        '& .ListRow-title button:focus-visible': { outline: 'none' },
-        '& .ListRow-check': { position: 'relative', zIndex: 1 }
+        '& .ListRow-title button:focus-visible': { outline: 'none' }
       })}
     >
-      <Box
-        className="ListRow-check"
-        sx={{ gridRow: 'span 2', [COLUMNS]: { gridRow: 'auto' } }}
-      >
-        {check}
-      </Box>
       <Typography variant="caption" color="textSecondary" noWrap>
         {taskKey}
       </Typography>
@@ -221,7 +211,7 @@ export function ListRow({
       <Box
         sx={{
           display: 'flex',
-          gridColumn: '2 / -1',
+          gridColumn: '1 / -1',
           minHeight: 24,
           alignItems: 'center',
           gap: 1,

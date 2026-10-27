@@ -342,15 +342,14 @@ describe('BoardScreen', () => {
     ).toHaveTextContent('To move a task, press space or enter.')
   })
 
-  it('leaves Space and Enter to the checkbox and the title of a row', async () => {
+  it('leaves Enter to the title of a row', async () => {
     const board = { ...designBoard(), layout: 'list' as const }
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
     const logo = await screen.findByRole('listitem', { name: 'DES-1 Logo' })
-    const check = within(logo).getByRole('checkbox', { name: 'Complete Logo' })
     const title = within(logo).getByRole('button', { name: 'Logo' })
 
-    expect(fireEvent.keyDown(check, { key: ' ', code: 'Space' })).toBe(true)
+    expect(within(logo).queryByRole('checkbox')).toBeNull()
     expect(fireEvent.keyDown(title, { key: 'Enter', code: 'Enter' })).toBe(true)
   })
 
@@ -582,15 +581,14 @@ describe('BoardScreen', () => {
     fireEvent.change(dialog.getByRole('textbox', { name: 'Name' }), {
       target: { value: 'Review' }
     })
-    fireEvent.change(dialog.getByRole('combobox', { name: 'Section type' }), {
-      target: { value: 'started' }
-    })
+    // A section is named only, with no type to pick.
+    expect(dialog.queryByRole('combobox')).toBeNull()
     fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByRole('region', { name: 'Review' })).toBeVisible()
     expect(boardsApi.createSection).toHaveBeenCalledWith(board.id, {
       name: 'Review',
-      category: 'started'
+      category: 'unstarted'
     })
   })
 

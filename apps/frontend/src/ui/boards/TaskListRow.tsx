@@ -4,10 +4,8 @@ import type { ComponentProps, ReactElement } from 'react'
 import { LabelChip } from '@/ds/Columns'
 import { ListRow } from '@/ds/ListView'
 import { SortableListRow } from '@/ds/Sortable'
-import type { Section, Task } from '@/domain/board'
-import { CompleteCheckbox } from '@/ui/boards/CompleteCheckbox'
+import { isDone, type Section, type Task } from '@/domain/board'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
-import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useNewTaskHighlight } from '@/ui/shell/NewTaskHighlight'
@@ -32,21 +30,16 @@ function Row({
 
 export function TaskListRow({
   task,
-  boardId,
   sections,
-  editable,
   sortable = false
 }: {
   task: Task
-  boardId: string
   sections: Section[]
-  editable: boolean
   /** Dragged to another place of the list, as a card on a board. */
   sortable?: boolean
 }): ReactElement {
   const { t } = useI18n()
   const panel = useTaskPanel(task.key)
-  const completion = useCompleteToggle(task, boardId, sections, editable)
   const newTask = useNewTaskHighlight(task.key)
 
   return (
@@ -56,9 +49,8 @@ export function TaskListRow({
       description={t('drag.card')}
       label={`${task.key} ${task.title}`}
       highlighted={newTask.isNew}
-      check={<CompleteCheckbox title={task.title} completion={completion} />}
       taskKey={task.key}
-      done={completion.done}
+      done={isDone(task, sections)}
       title={
         <Link
           component="button"

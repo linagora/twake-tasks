@@ -177,9 +177,6 @@
     "copyLink": "Copy link",
     "expand": "Open as full page",
     "peek": "Open in side peek",
-    "markComplete": "Mark complete",
-    "markIncomplete": "Mark incomplete",
-    "noDoneSection": "This board has no Done section.",
     "linkCopied": "Link copied",
     "copyFailed": "The link could not be copied.",
     "board": "Board",
@@ -319,7 +316,6 @@
     "moveRight": "Move right",
     "delete": "Delete",
     "name": "Name",
-    "status": "Section type",
     "save": "Save",
     "cancel": "Cancel",
     "deleteTitle": "Delete %{section}?",
@@ -334,14 +330,6 @@
       "started": "In progress",
       "completed": "Done",
       "canceled": "Canceled"
-    },
-    "help": {
-      "backlog": "Tasks are not marked done or canceled. Tasks moved here from a Done or Canceled section are reopened.",
-      "unstarted": "Tasks are not marked done or canceled. Tasks moved here from a Done or Canceled section are reopened.",
-      "started": "Tasks are not marked done or canceled. Tasks moved here from a Done or Canceled section are reopened.",
-      "completed": "Tasks moved here within this board are marked done. A recurring task with a due date stays open and moves to its next due date.",
-      "canceled": "Tasks moved here are marked canceled.",
-      "editing": "The tasks already in this section will be marked done, marked canceled or reopened to match the new type, with no recurrence."
     }
   },
   "reminders": {
@@ -503,7 +491,6 @@
     "addUndated": "Add a task without a date",
     "task": "Task",
     "due": "Due",
-    "complete": "Complete %{title}",
     "today": "Today",
     "nothingDue": "Nothing due this day."
   },
@@ -594,8 +581,7 @@
     "upcomingEmpty": "Nothing due in the coming days",
     "filterEmpty": "No open task matches this filter",
     "loadFailed": "Your tasks could not be loaded.",
-    "mineEmpty": "Nothing assigned to you",
-    "completeFailed": "Couldn’t complete the task."
+    "mineEmpty": "Nothing assigned to you"
   },
   "members": {
     "count": "%{smart_count} member |||| %{smart_count} members",

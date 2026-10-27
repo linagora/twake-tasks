@@ -1,6 +1,5 @@
 import {
   Archive,
-  Check,
   CheckList,
   Cross,
   Dots,
@@ -20,23 +19,15 @@ import {
   Tabs,
   TextField,
   Tooltip,
-  Typography,
-  useMediaQuery,
-  useTheme
+  Typography
 } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement, type ReactNode } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { RichText, RichTextEditor } from '@/ds/RichText'
-import {
-  Grow,
-  HeaderToggle,
-  Inline,
-  PanelSection,
-  SidePanel
-} from '@/ds/SidePanel'
-import { MAX_TASK_DEPTH, type Section, type Task } from '@/domain/board'
+import { Grow, Inline, PanelSection, SidePanel } from '@/ds/SidePanel'
+import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
 import { useRemoveTask } from '@/ui/boards/Archive'
 import { Comments } from '@/ui/boards/Comments'
 import { CopyLinkButton } from '@/ui/boards/CopyLink'
@@ -52,7 +43,6 @@ import { Subtasks } from '@/ui/boards/Subtasks'
 import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'
 import { TransferDialog, useTransferable } from '@/ui/boards/TransferTask'
-import { useCompleteToggle } from '@/ui/boards/useCompleteToggle'
 import { useEmojiInput } from '@/ui/boards/useEmojiInput'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import {
@@ -94,9 +84,6 @@ export function TaskPanel({
   const unsaved = useUnsavedFields()
   const [asking, setAsking] = useState(false)
   const [expanded, expand] = useExpandedPanel()
-  const theme = useTheme()
-  // The panel covers the card on a phone, hiding the card's checkbox.
-  const phone = useMediaQuery(theme.breakpoints.down('md'))
   const close = () => {
     if (unsaved.any()) setAsking(true)
     else onClose()
@@ -116,14 +103,6 @@ export function TaskPanel({
           <>
             <TaskBreadcrumb task={task} board={board} />
             <Grow />
-            {board && phone && (
-              <CompleteButton
-                task={task}
-                boardId={boardId}
-                sections={board.sections}
-                editable={editable}
-              />
-            )}
             <FollowButton task={task} boardId={boardId} />
             <CopyLinkButton
               boardId={boardId}
@@ -246,48 +225,6 @@ export function TaskPanel({
         )}
       </SidePanel>
     </UnsavedContext>
-  )
-}
-
-function CompleteButton({
-  task,
-  boardId,
-  sections,
-  editable
-}: {
-  task: Task
-  boardId: string
-  sections: Section[]
-  editable: boolean
-}): ReactElement {
-  const { t } = useI18n()
-  const { done, disabled, noDoneSection, toggle } = useCompleteToggle(
-    task,
-    boardId,
-    sections,
-    editable
-  )
-  const unavailable = editable && task.canceledAt === null && noDoneSection
-  const label = done ? t('task.markIncomplete') : t('task.markComplete')
-  // aria-disabled keeps the button hoverable, so its tooltip can say why.
-  return (
-    <Tooltip
-      title={unavailable ? t('task.noDoneSection') : disabled ? '' : label}
-      describeChild
-    >
-      <HeaderToggle
-        size="small"
-        on={done}
-        unavailable={unavailable}
-        aria-label={label}
-        aria-disabled={unavailable ? 'true' : undefined}
-        disabled={!unavailable && disabled}
-        disableRipple={unavailable}
-        onClick={unavailable ? undefined : toggle}
-      >
-        <Icon icon={Check} />
-      </HeaderToggle>
-    </Tooltip>
   )
 }
 

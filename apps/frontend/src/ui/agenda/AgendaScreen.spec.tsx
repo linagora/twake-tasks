@@ -186,67 +186,6 @@ describe('AgendaScreen', () => {
     expect(row.getByText('client')).toBeVisible()
   })
 
-  it('completes a task from its row', async () => {
-    const { design, boardsApi } = boards()
-    renderRoute('/today', { boardsApi })
-
-    fireEvent.click(
-      await screen.findByRole('checkbox', { name: 'Complete Logo' })
-    )
-
-    await waitFor(() => {
-      expect(boardsApi.completeTask).toHaveBeenCalledWith(
-        design.id,
-        design.tasks[0]?.id,
-        'completed'
-      )
-    })
-    await waitFor(() => {
-      expect(screen.queryByText('Logo')).not.toBeInTheDocument()
-    })
-  })
-
-  it('completes a task in a section by moving it to the done one', async () => {
-    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
-    const [todo, , done] = design.sections
-    design.tasks = [
-      aTask(todo ?? null, { key: 'DES-1', title: 'Logo', dueDate: day(0) })
-    ]
-    const boardsApi = fakeBoardsApi([design])
-    renderRoute('/today', { boardsApi })
-
-    fireEvent.click(
-      await screen.findByRole('checkbox', { name: 'Complete Logo' })
-    )
-
-    await waitFor(() => {
-      expect(boardsApi.moveTask).toHaveBeenCalledWith(
-        design.id,
-        design.tasks[0]?.id,
-        { sectionId: done?.id }
-      )
-    })
-  })
-
-  it('disables the checkbox of a task whose board has no done section', async () => {
-    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
-    design.sections = design.sections.filter(
-      section => section.category !== 'completed'
-    )
-    design.tasks = [
-      aTask(design.sections[0] ?? null, {
-        key: 'DES-1',
-        title: 'Logo',
-        dueDate: day(0)
-      })
-    ]
-    renderRoute('/today', { boardsApi: fakeBoardsApi([design]) })
-
-    expect(
-      await screen.findByRole('checkbox', { name: 'Complete Logo' })
-    ).toBeDisabled()
-  })
-
   it('leaves the day out of rows already grouped by day', async () => {
     const { boardsApi } = boards()
     renderRoute('/upcoming', { boardsApi })

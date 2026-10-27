@@ -30,7 +30,7 @@ async function agenda(user: TestUser, days: number) {
     .get(`/agenda?zone=${encodeURIComponent(zone)}&days=${String(days)}`)
   return response.json<{
     today: string
-    tasks: { key: string; boardName: string; completable: boolean }[]
+    tasks: { key: string; boardName: string }[]
   }>()
 }
 
@@ -82,44 +82,6 @@ describe('agenda', () => {
       'HOM-1',
       'DES-2',
       'DES-1'
-    ])
-  })
-
-  it('tells which tasks can be completed from the agenda', async () => {
-    const owner = aUser()
-    const board = (
-      await api.as(owner).post('/boards', { name: 'ANQ', keyPrefix: 'ANQ' })
-    ).json<{
-      id: string
-      sections: { id: string; category: string }[]
-    }>()
-    const todo = board.sections.find(each => each.category === 'unstarted')
-    const done = board.sections.find(each => each.category === 'completed')
-    const add = async (title: string, sectionId: string | null) => {
-      const task = (
-        await api
-          .as(owner)
-          .post(`/boards/${board.id}/tasks`, { sectionId, title })
-      ).json<{ id: string }>()
-      await api
-        .as(owner)
-        .patch(`/boards/${board.id}/tasks/${task.id}`, { dueDate: today })
-    }
-    await add('Sectioned', todo?.id ?? null)
-    await add('Loose', null)
-
-    const before = await agenda(owner, 1)
-    await api
-      .as(owner)
-      .delete(`/boards/${board.id}/sections/${done?.id ?? ''}`, {
-        tasksTo: null
-      })
-    const after = await agenda(owner, 1)
-
-    expect(before.tasks.map(task => task.completable)).toEqual([true, true])
-    expect(after.tasks.map(task => [task.key, task.completable])).toEqual([
-      ['ANQ-1', false],
-      ['ANQ-2', true]
     ])
   })
 

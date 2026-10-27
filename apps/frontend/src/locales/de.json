@@ -177,9 +177,6 @@
     "copyLink": "Link kopieren",
     "expand": "Als ganze Seite öffnen",
     "peek": "In der Seitenansicht öffnen",
-    "markComplete": "Als erledigt markieren",
-    "markIncomplete": "Als nicht erledigt markieren",
-    "noDoneSection": "Dieses Board hat keinen Abschnitt „Erledigt“.",
     "linkCopied": "Link kopiert",
     "copyFailed": "Der Link konnte nicht kopiert werden.",
     "board": "Board",
@@ -319,7 +316,6 @@
     "moveRight": "Nach rechts verschieben",
     "delete": "Löschen",
     "name": "Name",
-    "status": "Abschnittstyp",
     "save": "Speichern",
     "cancel": "Abbrechen",
     "deleteTitle": "%{section} löschen?",
@@ -334,14 +330,6 @@
       "started": "In Bearbeitung",
       "completed": "Erledigt",
       "canceled": "Abgebrochen"
-    },
-    "help": {
-      "backlog": "Aufgaben werden nicht als erledigt oder abgebrochen markiert. Aufgaben, die aus einem Abschnitt „Erledigt“ oder „Abgebrochen“ hierher verschoben werden, werden wieder geöffnet.",
-      "unstarted": "Aufgaben werden nicht als erledigt oder abgebrochen markiert. Aufgaben, die aus einem Abschnitt „Erledigt“ oder „Abgebrochen“ hierher verschoben werden, werden wieder geöffnet.",
-      "started": "Aufgaben werden nicht als erledigt oder abgebrochen markiert. Aufgaben, die aus einem Abschnitt „Erledigt“ oder „Abgebrochen“ hierher verschoben werden, werden wieder geöffnet.",
-      "completed": "Aufgaben, die innerhalb dieses Boards hierher verschoben werden, werden als erledigt markiert. Eine wiederkehrende Aufgabe mit Fälligkeitsdatum bleibt offen und springt zum nächsten Fälligkeitsdatum.",
-      "canceled": "Hierher verschobene Aufgaben werden als abgebrochen markiert.",
-      "editing": "Die Aufgaben in diesem Abschnitt werden passend zum neuen Typ als erledigt oder abgebrochen markiert oder wieder geöffnet, ohne Wiederholung."
     }
   },
   "reminders": {
@@ -503,7 +491,6 @@
     "addUndated": "Aufgabe ohne Datum hinzufügen",
     "task": "Aufgabe",
     "due": "Fällig",
-    "complete": "%{title} erledigen",
     "today": "Heute",
     "nothingDue": "An diesem Tag ist nichts fällig."
   },
@@ -594,8 +581,7 @@
     "upcomingEmpty": "In den nächsten Tagen nichts fällig",
     "filterEmpty": "Keine offene Aufgabe entspricht diesem Filter",
     "loadFailed": "Ihre Aufgaben konnten nicht geladen werden.",
-    "mineEmpty": "Ihnen ist nichts zugewiesen",
-    "completeFailed": "Die Aufgabe konnte nicht erledigt werden."
+    "mineEmpty": "Ihnen ist nichts zugewiesen"
   },
   "members": {
     "count": "%{smart_count} Mitglied |||| %{smart_count} Mitglieder",

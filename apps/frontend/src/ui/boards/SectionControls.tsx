@@ -23,17 +23,9 @@ import { useId, useState, type ReactElement } from 'react'
 import { ApiError } from '@/application/boards'
 import { NewColumnButton } from '@/ds/Columns'
 import { IconMenuItem } from '@/ds/IconMenuItem'
-import type { Board, Section, SectionCategory } from '@/domain/board'
+import type { Board, Section } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
-
-const CATEGORIES: SectionCategory[] = [
-  'backlog',
-  'unstarted',
-  'started',
-  'completed',
-  'canceled'
-]
 
 export function NewSectionButton({ board }: { board: Board }): ReactElement {
   const { t } = useI18n()
@@ -160,7 +152,6 @@ export function SectionMenu({
         <SectionDialog
           title={t('section.editTitle')}
           initial={section}
-          editing
           change={edit}
           onClose={() => {
             setDialog(null)
@@ -183,12 +174,10 @@ export function SectionMenu({
 function SectionDialog({
   title,
   initial,
-  editing = false,
   change,
   onClose
 }: {
   title: string
-  editing?: boolean
   initial: Omit<Section, 'id'>
   change: ReturnType<typeof useBoardChange<Omit<Section, 'id'>>>
   onClose: () => void
@@ -196,7 +185,6 @@ function SectionDialog({
   const { t } = useI18n()
   const titleId = useId()
   const [name, setName] = useState(initial.name)
-  const [category, setCategory] = useState(initial.category)
   const close = () => {
     change.reset()
     onClose()
@@ -210,7 +198,11 @@ function SectionDialog({
       <form
         onSubmit={event => {
           event.preventDefault()
-          change.mutate({ name: name.trim(), category }, { onSuccess: onClose })
+          change.mutate(
+            // A new section is a plain one; an edited one keeps its kind.
+            { name: name.trim(), category: initial.category },
+            { onSuccess: onClose }
+          )
         }}
       >
         <DialogTitle id={titleId}>{title}</DialogTitle>
@@ -229,32 +221,6 @@ function SectionDialog({
             helperText={taken && t('section.nameTaken', { name: name.trim() })}
             slotProps={{ htmlInput: { maxLength: 100 } }}
           />
-          <TextField
-            select
-            label={t('section.status')}
-            helperText={
-              category === initial.category || !editing
-                ? t(`section.help.${category}`)
-                : `${t(`section.help.${category}`)} ${t('section.help.editing')}`
-            }
-            value={category}
-            onChange={event => {
-              setCategory(event.target.value as SectionCategory)
-              change.reset()
-            }}
-            fullWidth
-            margin="dense"
-            slotProps={{
-              select: { native: true },
-              formHelperText: { 'aria-live': 'polite' }
-            }}
-          >
-            {CATEGORIES.map(value => (
-              <option key={value} value={value}>
-                {t(`section.category.${value}`)}
-              </option>
-            ))}
-          </TextField>
           {change.isError && !taken && (
             <p role="alert">{t('section.saveFailed')}</p>
           )}

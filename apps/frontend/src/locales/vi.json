@@ -177,9 +177,6 @@
     "copyLink": "Sao chép liên kết",
     "expand": "Mở toàn trang",
     "peek": "Mở ở khung bên",
-    "markComplete": "Đánh dấu hoàn thành",
-    "markIncomplete": "Đánh dấu chưa hoàn thành",
-    "noDoneSection": "Bảng này không có mục Hoàn thành.",
     "linkCopied": "Đã sao chép liên kết",
     "copyFailed": "Không thể sao chép liên kết.",
     "board": "Bảng",
@@ -319,7 +316,6 @@
     "moveRight": "Chuyển sang phải",
     "delete": "Xóa",
     "name": "Tên",
-    "status": "Loại phần",
     "save": "Lưu",
     "cancel": "Hủy",
     "deleteTitle": "Xóa %{section}?",
@@ -334,14 +330,6 @@
       "started": "Đang làm",
       "completed": "Hoàn thành",
       "canceled": "Đã hủy"
-    },
-    "help": {
-      "backlog": "Công việc không bị đánh dấu là hoàn thành hay đã hủy. Công việc chuyển vào đây từ phần Hoàn thành hoặc Đã hủy sẽ được mở lại.",
-      "unstarted": "Công việc không bị đánh dấu là hoàn thành hay đã hủy. Công việc chuyển vào đây từ phần Hoàn thành hoặc Đã hủy sẽ được mở lại.",
-      "started": "Công việc không bị đánh dấu là hoàn thành hay đã hủy. Công việc chuyển vào đây từ phần Hoàn thành hoặc Đã hủy sẽ được mở lại.",
-      "completed": "Công việc chuyển vào đây trong bảng này được đánh dấu là hoàn thành. Công việc lặp lại có hạn sẽ vẫn mở và chuyển sang hạn tiếp theo.",
-      "canceled": "Công việc chuyển vào đây được đánh dấu là đã hủy.",
-      "editing": "Các công việc đã có trong phần này sẽ được đánh dấu hoàn thành, đã hủy hoặc mở lại theo loại mới, không lặp lại."
     }
   },
   "reminders": {
@@ -503,7 +491,6 @@
     "addUndated": "Thêm công việc không có ngày",
     "task": "Công việc",
     "due": "Hạn",
-    "complete": "Hoàn thành %{title}",
     "today": "Hôm nay",
     "nothingDue": "Không có việc nào đến hạn hôm đó."
   },
@@ -594,8 +581,7 @@
     "upcomingEmpty": "Không có việc đến hạn trong những ngày tới",
     "filterEmpty": "Không có công việc đang mở nào khớp với bộ lọc này",
     "loadFailed": "Không thể tải công việc.",
-    "mineEmpty": "Chưa có việc nào giao cho bạn",
-    "completeFailed": "Không thể hoàn thành công việc."
+    "mineEmpty": "Chưa có việc nào giao cho bạn"
   },
   "members": {
     "count": "%{smart_count} thành viên",

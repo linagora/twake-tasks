@@ -177,9 +177,6 @@
     "copyLink": "Copiar enlace",
     "expand": "Abrir a página completa",
     "peek": "Abrir en un panel lateral",
-    "markComplete": "Marcar como completada",
-    "markIncomplete": "Marcar como no completada",
-    "noDoneSection": "Este tablero no tiene una sección Hecho.",
     "linkCopied": "Enlace copiado",
     "copyFailed": "No se pudo copiar el enlace.",
     "board": "Tablero",
@@ -319,7 +316,6 @@
     "moveRight": "Mover a la derecha",
     "delete": "Eliminar",
     "name": "Nombre",
-    "status": "Tipo de sección",
     "save": "Guardar",
     "cancel": "Cancelar",
     "deleteTitle": "¿Eliminar %{section}?",
@@ -334,14 +330,6 @@
       "started": "En curso",
       "completed": "Hecho",
       "canceled": "Cancelado"
-    },
-    "help": {
-      "backlog": "Las tareas no se marcan como hechas ni canceladas. Las tareas movidas aquí desde una sección Hecho o Cancelado se reabren.",
-      "unstarted": "Las tareas no se marcan como hechas ni canceladas. Las tareas movidas aquí desde una sección Hecho o Cancelado se reabren.",
-      "started": "Las tareas no se marcan como hechas ni canceladas. Las tareas movidas aquí desde una sección Hecho o Cancelado se reabren.",
-      "completed": "Las tareas movidas aquí dentro de este tablero se marcan como hechas. Una tarea recurrente con fecha de vencimiento sigue abierta y pasa a su siguiente vencimiento.",
-      "canceled": "Las tareas movidas aquí se marcan como canceladas.",
-      "editing": "Las tareas que ya están en esta sección se marcarán como hechas, canceladas o reabiertas según el nuevo tipo, sin recurrencia."
     }
   },
   "reminders": {
@@ -503,7 +491,6 @@
     "addUndated": "Añadir una tarea sin fecha",
     "task": "Tarea",
     "due": "Vencimiento",
-    "complete": "Completar %{title}",
     "today": "Hoy",
     "nothingDue": "Nada vence este día."
   },
@@ -594,8 +581,7 @@
     "upcomingEmpty": "Nada pendiente en los próximos días",
     "filterEmpty": "Ninguna tarea abierta coincide con este filtro",
     "loadFailed": "No se pudieron cargar tus tareas.",
-    "mineEmpty": "No tienes nada asignado",
-    "completeFailed": "No se pudo completar la tarea."
+    "mineEmpty": "No tienes nada asignado"
   },
   "members": {
     "count": "%{smart_count} miembro |||| %{smart_count} miembros",

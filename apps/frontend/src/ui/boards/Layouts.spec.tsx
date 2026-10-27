@@ -58,25 +58,6 @@ describe('board layouts', () => {
     expect(row.getByText('Urgent')).toBeVisible()
   })
 
-  it('completes a task outside sections in place', async () => {
-    const board = designBoard({ layout: 'list', defaultLayout: 'list' })
-    Object.assign(board.tasks[0] ?? {}, { sectionId: null })
-    const boardsApi = fakeBoardsApi([board])
-    renderRoute(`/boards/${board.id}`, { boardsApi })
-
-    fireEvent.click(
-      await screen.findByRole('checkbox', { name: 'Complete Logo' })
-    )
-
-    await waitFor(() => {
-      expect(boardsApi.completeTask).toHaveBeenCalledWith(
-        board.id,
-        board.tasks[0]?.id,
-        'completed'
-      )
-    })
-  })
-
   it('collapses a section and shows its count', async () => {
     const board = designBoard({ layout: 'list', defaultLayout: 'list' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
@@ -90,32 +71,16 @@ describe('board layouts', () => {
     expect(screen.getByRole('list', { name: 'To do' })).toBeVisible()
   })
 
-  it('opens a task from its row and completes one from its checkbox', async () => {
+  it('opens a task from its row, which has no checkbox', async () => {
     const board = designBoard({ layout: 'list', defaultLayout: 'list' })
-    const boardsApi = fakeBoardsApi([board])
-    renderRoute(`/boards/${board.id}`, { boardsApi })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
     const row = within(
       await screen.findByRole('listitem', { name: 'DES-2 Palette' })
     )
-    fireEvent.click(row.getByRole('checkbox', { name: 'Complete Palette' }))
-    await waitFor(() => {
-      expect(boardsApi.moveTask).toHaveBeenCalledWith(
-        board.id,
-        board.tasks[1]?.id,
-        { sectionId: board.sections[2]?.id }
-      )
-    })
-    const done = within(
-      within(screen.getByRole('list', { name: 'Done' })).getByRole('listitem', {
-        name: 'DES-2 Palette'
-      })
-    )
-    expect(
-      done.getByRole('checkbox', { name: 'Complete Palette' })
-    ).toBeChecked()
+    expect(row.queryByRole('checkbox')).toBeNull()
 
-    fireEvent.click(done.getByRole('button', { name: 'Palette' }))
+    fireEvent.click(row.getByRole('button', { name: 'Palette' }))
     expect(
       await screen.findByRole('dialog', { name: 'DES-2 Palette' })
     ).toBeVisible()

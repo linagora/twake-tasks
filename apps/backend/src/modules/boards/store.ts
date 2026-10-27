@@ -649,10 +649,6 @@ async function tasksOf(
       task: tasks,
       board: boards,
       category: sections.category,
-      completable: sql<boolean>`${tasks.sectionId} is null or exists (
-        select 1 from ${sections} as completed
-        where completed.board_id = ${boards.id} and completed.category = 'completed'
-      )`,
       parentTitle: parent.title
     })
     .from(tasks)
@@ -686,10 +682,9 @@ async function tasksOf(
       )
     )
   }
-  return rows.map(({ task, board, category, completable, parentTitle }) => ({
+  return rows.map(({ task, board, category, parentTitle }) => ({
     ...described.get(board.id)?.find(each => each.id === task.id),
     category,
-    completable,
     parentTitle,
     boardId: board.id,
     boardName: board.name

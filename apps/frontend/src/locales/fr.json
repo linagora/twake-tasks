@@ -177,9 +177,6 @@
     "copyLink": "Copier le lien",
     "expand": "Ouvrir en pleine page",
     "peek": "Ouvrir sur le côté",
-    "markComplete": "Marquer comme terminée",
-    "markIncomplete": "Marquer comme non terminée",
-    "noDoneSection": "Ce tableau n'a pas de section Terminé.",
     "linkCopied": "Lien copié",
     "copyFailed": "Le lien n'a pas pu être copié.",
     "board": "Tableau",
@@ -319,7 +316,6 @@
     "moveRight": "Déplacer à droite",
     "delete": "Supprimer",
     "name": "Nom",
-    "status": "Type de section",
     "save": "Enregistrer",
     "cancel": "Annuler",
     "deleteTitle": "Supprimer %{section} ?",
@@ -334,14 +330,6 @@
       "started": "En cours",
       "completed": "Terminé",
       "canceled": "Annulé"
-    },
-    "help": {
-      "backlog": "Les tâches ne sont pas marquées comme terminées ou annulées. Les tâches déplacées ici depuis une section Terminé ou Annulé sont rouvertes.",
-      "unstarted": "Les tâches ne sont pas marquées comme terminées ou annulées. Les tâches déplacées ici depuis une section Terminé ou Annulé sont rouvertes.",
-      "started": "Les tâches ne sont pas marquées comme terminées ou annulées. Les tâches déplacées ici depuis une section Terminé ou Annulé sont rouvertes.",
-      "completed": "Les tâches déplacées ici dans ce tableau sont marquées comme terminées. Une tâche récurrente avec une échéance reste ouverte et passe à son échéance suivante.",
-      "canceled": "Les tâches déplacées ici sont marquées comme annulées.",
-      "editing": "Les tâches déjà dans cette section seront marquées comme terminées, annulées ou rouvertes selon le nouveau type, sans récurrence."
     }
   },
   "reminders": {
@@ -503,7 +491,6 @@
     "addUndated": "Ajouter une tâche sans date",
     "task": "Tâche",
     "due": "Échéance",
-    "complete": "Terminer %{title}",
     "today": "Aujourd’hui",
     "nothingDue": "Rien à rendre ce jour-là."
   },
@@ -594,8 +581,7 @@
     "upcomingEmpty": "Rien à faire dans les prochains jours",
     "filterEmpty": "Aucune tâche ouverte ne correspond à ce filtre",
     "loadFailed": "Vos tâches n'ont pas pu être chargées.",
-    "mineEmpty": "Rien ne vous est assigné",
-    "completeFailed": "Impossible de terminer la tâche."
+    "mineEmpty": "Rien ne vous est assigné"
   },
   "members": {
     "count": "%{smart_count} membre |||| %{smart_count} membres",

@@ -89,40 +89,6 @@ export function useAgenda(view: AgendaView): UseQueryResult<Agenda> {
   })
 }
 
-// A task in a section is done by being in its board's completed section,
-// which the agenda does not carry, so the board is read first.
-export function useCompleteAgendaTask(): UseMutationResult<
-  void,
-  Error,
-  AgendaTask
-> {
-  const api = useBoardsApi()
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async task => {
-      if (task.sectionId === null) {
-        await api.completeTask(task.boardId, task.id, 'completed')
-        return
-      }
-      const board = await queryClient.query({
-        queryKey: keys.board(task.boardId),
-        queryFn: () => api.getBoard(task.boardId)
-      })
-      const done = board.sections.find(
-        section => section.category === 'completed'
-      )
-      if (!done) throw new Error('The board has no completed section')
-      await api.moveTask(task.boardId, task.id, { sectionId: done.id })
-    },
-    onSettled: (_data, _error, task) =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: keys.agendas() }),
-        queryClient.invalidateQueries({ queryKey: keys.searches() }),
-        queryClient.invalidateQueries({ queryKey: keys.board(task.boardId) })
-      ])
-  })
-}
-
 export function searchMinLength(): number {
   const length = Number(window.SEARCH_MIN_LENGTH)
   return Number.isInteger(length) && length >= 1 ? length : 2

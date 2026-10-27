@@ -312,23 +312,6 @@ export function CardTitle({
   )
 }
 
-// Above the title's stretched link, and no taller than the line it starts.
-export function CardCheck({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <Box
-      sx={{
-        position: 'relative',
-        zIndex: 1,
-        display: 'flex',
-        m: -0.5,
-        '& > .MuiCheckbox-root': { p: 0.5 }
-      }}
-    >
-      {children}
-    </Box>
-  )
-}
-
 export function Meta({ children }: { children: ReactNode }): ReactElement {
   return (
     <Box
