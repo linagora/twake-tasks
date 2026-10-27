@@ -10,7 +10,13 @@ export const SearchBar = styled(TwakeSearchBar)(({ theme }) => ({
       borderColor: theme.vars.palette.primary.main
     }
   },
-  '& .SearchBar-icon': { color: theme.vars.palette.text.secondary },
+  // A small, faded magnifier, as Twake Drive's search.
+  '& .SearchBar-icon': {
+    color: theme.vars.palette.text.primary,
+    opacity: 0.42,
+    margin: theme.spacing(0, 0.5, 0, 1),
+    '& svg': { width: 16, height: 16 }
+  },
   '& .SearchBar-focusHighlight': {
     backgroundColor: theme.vars.palette.action.hover
   }

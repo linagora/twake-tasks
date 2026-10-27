@@ -56,7 +56,6 @@ import {
   SidebarShelves,
   TopBar,
   TopBarSearch,
-  TopBarSpacer,
   WideScreenAction,
   WideScreenNavItem
 } from '@/ds/AppFrame'
@@ -149,10 +148,10 @@ function Header({
   const theme = useTheme()
   const phone = useMediaQuery(theme.breakpoints.down('lg'))
 
-  // The platform bar is 48px tall: a medium search bar would fill it.
+  // Small, as Twake Drive's search in its bar.
   const search = (
     <TopBarSearch>
-      <SearchField inputRef={searchRef} size={sdk ? 'small' : 'medium'} />
+      <SearchField inputRef={searchRef} size="small" />
     </TopBarSearch>
   )
   // Wide screens have Create in the sidebar.
@@ -173,7 +172,7 @@ function Header({
       <PlatformBar
         sdk={sdk}
         slots={{
-          search: <div className="u-mh-1">{search}</div>,
+          search: <div className="u-mh-2">{search}</div>,
           right: (
             <>
               {phone && (
@@ -204,7 +203,6 @@ function Header({
         <BrandMark name={t('app.name')} />
       </Link>
       {search}
-      <TopBarSpacer />
       {newTaskButton}
       <AccountMenu />
     </TopBar>
