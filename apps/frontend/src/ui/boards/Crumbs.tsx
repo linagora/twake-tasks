@@ -56,7 +56,7 @@ function Page({
         color="textPrimary"
         aria-current="page"
         // Not while renaming, which would cut the field's label.
-        noWrap={heading}
+        noWrap={heading || typeof children === 'string'}
       >
         {children}
       </Title>
