@@ -35,9 +35,9 @@ function inField(element: Element | null): boolean {
   return element?.matches('input, textarea, [contenteditable]') ?? false
 }
 
-// Escape typed in a field leaves it, after the field's own handler (which may
-// close it), and goes no further: the next one closes the panel. A sub-task's
-// Escape never reaches the panel of its parent.
+// In a field, Escape only leaves it (the field's own handler may already have
+// moved the focus); the next Escape closes the panel. Stopping it here keeps a
+// sub-task's Escape from closing its parent's panel.
 function closeOnEscape(
   event: ReactKeyboardEvent<HTMLElement>,
   onClose: () => void
