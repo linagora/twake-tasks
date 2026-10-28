@@ -405,146 +405,88 @@ export function registerBoards(
     })
   ])
 
-  app.get(
-    '/boards/:boardId/tasks/:taskId/reminders',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const result = await reminderStore.listReminders(
-        identity,
-        params.data.boardId,
-        params.data.taskId
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return { reminders: result.value }
-    }
-  )
-
-  app.post(
-    '/boards/:boardId/tasks/:taskId/reminders',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = newReminder.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await reminderStore.addReminder(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        body.data
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(201).send(result.value)
-    }
-  )
-
-  app.delete(
-    '/boards/:boardId/tasks/:taskId/reminders/:reminderId',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = reminderParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const result = await reminderStore.deleteReminder(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        params.data.reminderId
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(204).send()
-    }
-  )
-
-  app.get(
-    '/boards/:boardId/tasks/:taskId/follow',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const result = await reminderStore.following(
-        identity,
-        params.data.boardId,
-        params.data.taskId
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return { following: result.value }
-    }
-  )
-
-  for (const [method, following] of [
-    ['PUT', true],
-    ['DELETE', false]
-  ] as const) {
-    app.route({
-      method,
-      url: '/boards/:boardId/tasks/:taskId/follow',
-      preHandler: deps.requireIdentity,
-      handler: async (request, reply) => {
-        const identity = request.identity
-        if (!identity) return reply.code(401).send()
-        const params = taskParams.safeParse(request.params)
-        if (!params.success) {
-          return reply.code(404).send({ error: 'not_found' })
-        }
-        const result = await reminderStore.setFollowing(
-          identity,
-          params.data.boardId,
-          params.data.taskId,
-          following
+  registerRoutes(app, routing, [
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/tasks/:taskId/reminders',
+      params: taskParams,
+      handler: ({ identity, params }) =>
+        under(
+          'reminders',
+          reminderStore.listReminders(identity, params.boardId, params.taskId)
         )
-        if (!result.ok) return refuse(reply, result.error)
-        return reply.code(204).send()
-      }
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks/:taskId/reminders',
+      params: taskParams,
+      body: newReminder,
+      status: 201,
+      handler: ({ identity, params, body }) =>
+        reminderStore.addReminder(identity, params.boardId, params.taskId, body)
+    }),
+    defineRoute({
+      method: 'DELETE',
+      url: '/boards/:boardId/tasks/:taskId/reminders/:reminderId',
+      params: reminderParams,
+      status: 204,
+      handler: ({ identity, params }) =>
+        reminderStore.deleteReminder(
+          identity,
+          params.boardId,
+          params.taskId,
+          params.reminderId
+        )
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/tasks/:taskId/follow',
+      params: taskParams,
+      handler: ({ identity, params }) =>
+        under(
+          'following',
+          reminderStore.following(identity, params.boardId, params.taskId)
+        )
+    }),
+    ...(
+      [
+        ['PUT', true],
+        ['DELETE', false]
+      ] as const
+    ).map(([method, following]): BoardRoute =>
+      defineRoute({
+        method,
+        url: '/boards/:boardId/tasks/:taskId/follow',
+        params: taskParams,
+        status: 204,
+        handler: ({ identity, params }) =>
+          reminderStore.setFollowing(
+            identity,
+            params.boardId,
+            params.taskId,
+            following
+          )
+      })
+    ),
+    defineRoute({
+      method: 'POST',
+      url: '/notifications/read',
+      status: 204,
+      handler: ({ identity }) => reminderStore.markAllRead(identity)
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/notifications/unread',
+      handler: ({ identity }) =>
+        under('projects', reminderStore.unreadByProject(identity))
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/notifications',
+      handler: ({ identity }) =>
+        under('notifications', reminderStore.notificationsOf(identity))
     })
-  }
-
-  app.post(
-    '/notifications/read',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const result = await reminderStore.markAllRead(identity)
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(204).send()
-    }
-  )
-
-  app.get(
-    '/notifications/unread',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const result = await reminderStore.unreadByProject(identity)
-      if (!result.ok) return refuse(reply, result.error)
-      return { projects: result.value }
-    }
-  )
-
-  app.get(
-    '/notifications',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const result = await reminderStore.notificationsOf(identity)
-      if (!result.ok) return refuse(reply, result.error)
-      return { notifications: result.value }
-    }
-  )
+  ])
 
   app.get(
     '/boards',
