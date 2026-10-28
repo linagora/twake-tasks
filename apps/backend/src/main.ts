@@ -8,7 +8,12 @@ import { createRelay, measureOutbox } from './events/outbox.ts'
 import { parkedRetries, parkIn } from './events/parking.ts'
 import { createMessageHandler } from './events/router.ts'
 import { createChanges } from './infra/changes.ts'
-import { assertRowLevelSecurity, createDb, migrateLocked } from './infra/db.ts'
+import {
+  assertRowLevelSecurity,
+  createDb,
+  migrateLocked,
+  pendingMigrations
+} from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
 import { startErrorReporting } from './infra/errorReporting.ts'
 import { createMailer } from './infra/mail.ts'
@@ -72,6 +77,18 @@ await assertRowLevelSecurity(sql)
 if (config.MIGRATE_ON_START) await migrateLocked(config.DATABASE_URL)
 // Readiness must not wait behind the requests that fill the pool.
 const probe = postgres(config.DATABASE_URL, { max: 1 })
+// Without MIGRATE_ON_START, a replica may start before its release migrated.
+let pending = await pendingMigrations(probe)
+if (pending.length > 0) {
+  logger.error(
+    { pending },
+    'the database lacks migrations this image ships, not ready until they run'
+  )
+}
+async function schemaCurrent(): Promise<boolean> {
+  if (pending.length > 0) pending = await pendingMigrations(probe)
+  return pending.length === 0
+}
 
 let accepting = false
 const boardChanges = createChanges()
@@ -99,7 +116,8 @@ const server = await buildApp({
   })),
   searchAllowedOrigins: config.SEARCH_ALLOWED_ORIGINS,
   searchMinLength: config.SEARCH_MIN_LENGTH,
-  isReady: async () => accepting && (await probe`select 1`).length === 1
+  isReady: async () =>
+    accepting && (await probe`select 1`).length === 1 && (await schemaCurrent())
 })
 await server.listen({ host: config.HTTP_HOST, port: config.HTTP_PORT })
 
