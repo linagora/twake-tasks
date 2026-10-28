@@ -310,6 +310,8 @@
     "deadlineTooEarly": "Крайний срок не может быть раньше даты выполнения.",
     "duration": "Длительность",
     "unit": "Единица",
+    "durationUnit": "Единица длительности",
+    "repeatUnit": "Единица повторения",
     "unitMinutes": "Минуты",
     "unitDays": "Дни",
     "minutes": "%{amount} мин",

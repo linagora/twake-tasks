@@ -310,6 +310,8 @@
     "deadlineTooEarly": "Il termine ultimo non può precedere la data di scadenza.",
     "duration": "Durata",
     "unit": "Unità",
+    "durationUnit": "Unità della durata",
+    "repeatUnit": "Unità di ripetizione",
     "unitMinutes": "Minuti",
     "unitDays": "Giorni",
     "minutes": "%{amount} min",

@@ -310,6 +310,8 @@
     "deadlineTooEarly": "The deadline cannot be before the due date.",
     "duration": "Duration",
     "unit": "Unit",
+    "durationUnit": "Duration unit",
+    "repeatUnit": "Repeat unit",
     "unitMinutes": "Minutes",
     "unitDays": "Days",
     "minutes": "%{amount} min",

@@ -113,6 +113,9 @@ describe('Labels', () => {
       ''
     )
     expect(picker.getByRole('textbox', { name: 'Search labels' })).toHaveFocus()
+    expect(
+      picker.getByRole('textbox', { name: 'Search labels' })
+    ).toHaveAttribute('title', 'Search labels')
   })
 
   it('starts a new label with the color the board uses the least', async () => {

@@ -185,6 +185,26 @@ describe('Dates', () => {
     )
   })
 
+  it('tells the duration unit and the repeat unit apart', async () => {
+    const { board, boardsApi } = logoBoard()
+    const { editor } = await openDates(board.id, boardsApi)
+
+    expect(
+      editor.getByRole('combobox', { name: 'Duration unit' })
+    ).toHaveTextContent('Minutes')
+    expect(
+      editor.getByRole('combobox', { name: 'Repeat unit' })
+    ).toHaveTextContent('Weeks')
+    expect(
+      editor.getAllByText('Unit', { selector: '.MuiInputLabel-root' })
+    ).toHaveLength(2)
+
+    fireEvent.mouseDown(editor.getByRole('combobox', { name: 'Duration unit' }))
+    expect(
+      await screen.findByRole('listbox', { name: 'Duration unit' })
+    ).toBeVisible()
+  })
+
   it('shows the due time on the card', async () => {
     const { board, boardsApi } = logoBoard()
     Object.assign(board.tasks[0] ?? {}, {

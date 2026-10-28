@@ -297,6 +297,7 @@ export function NewTaskDialog({
                 htmlInput: {
                   maxLength: 500,
                   'aria-label': t('newTask.taskTitle'),
+                  title: t('newTask.taskTitle'),
                   'aria-required': true
                 }
               }}
