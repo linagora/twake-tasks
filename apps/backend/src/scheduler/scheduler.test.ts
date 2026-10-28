@@ -95,6 +95,28 @@ describe('scheduler', () => {
     )
   })
 
+  it('logs the failure of a job with the request that scheduled it', async () => {
+    const kind = aKind()
+    const requestId = randomUUID()
+    const watched = logger.child({})
+    const warn = vi.spyOn(watched, 'warn')
+    const scheduler = createScheduler({
+      db,
+      logger: watched,
+      handlers: { [kind]: () => Promise.reject(new Error('mail server down')) }
+    })
+    await db
+      .insert(jobs)
+      .values({ kind, payload: {}, runAt: past(), requestId })
+
+    await scheduler.runDue()
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({ reqId: requestId }),
+      'job failed'
+    )
+  })
+
   it('keeps a job its handler moved to run again', async () => {
     const kind = aKind()
     const key = randomUUID()

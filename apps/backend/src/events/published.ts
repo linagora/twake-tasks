@@ -20,7 +20,8 @@ const schemaOf = (strict: boolean) => {
     time: z.string().optional(),
     twakeorg: z.string().optional(),
     twakeactor: z.string().optional(),
-    twakeactorid: z.string().optional()
+    twakeactorid: z.string().optional(),
+    twakecorrelationid: z.string().optional()
   }
 
   const task = object({

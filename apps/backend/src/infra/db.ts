@@ -11,6 +11,7 @@ import { readMigrationFiles } from 'drizzle-orm/migrator'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
+import { currentRequestId } from './requestId.ts'
 
 export const timestamptz = (name: string) =>
   timestamp(name, { withTimezone: true })
@@ -175,6 +176,7 @@ export async function asTenant(
     sql`select set_config('app.org_id', ${identity.organizationId ?? ''}, true),
                set_config('app.user_id', ${identity.userId}, true),
                set_config('app.user_email', ${identity.email}, true),
+               set_config('app.request_id', ${currentRequestId() ?? ''}, true),
                set_config('statement_timeout', ${String(statementTimeoutMs)}, true)`
   )
 }

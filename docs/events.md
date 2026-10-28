@@ -67,7 +67,7 @@ Every other event is a CloudEvent on `activity`, routed by its type. It is writt
 
 - `com.twake.tasks.space.provisioned.v1`, once a space has its project, which tells TwakeSpace the project to show for the space. It carries the space's organization as `twakeorg`. Data: `{ space_id, resource: { kind: 'project', id } }`.
 
-Task events carry the CloudEvent fields `twakeorg` (absent for a B2C task), and `twakeactorid` and `twakeactor` (the uuid and email of the person who made the change, absent when the change has none). Their data holds the task as `object`: `{ type: 'task', id, key, title, board: { id, name }, container: { kind: 'project', id } }`, plus the fields listed below.
+Task events carry the CloudEvent fields `twakeorg` (absent for a B2C task), and `twakeactorid` and `twakeactor` (the uuid and email of the person who made the change, absent when the change has none), and `twakecorrelationid` (the request id of the change, absent when no request made it). Their data holds the task as `object`: `{ type: 'task', id, key, title, board: { id, name }, container: { kind: 'project', id } }`, plus the fields listed below.
 
 - `com.twake.tasks.task.created.v1`: no other field.
 - `com.twake.tasks.task.updated.v1`, once per changed field: `changes: { <field>: { from, to } }`. A field is one of:
