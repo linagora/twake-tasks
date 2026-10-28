@@ -13,7 +13,8 @@ export function EmptyState({
   action,
   compact = false,
   illustrated = false,
-  tone = 'default'
+  tone = 'default',
+  heading = false
 }: {
   icon: IconProps['icon']
   title: string
@@ -22,6 +23,8 @@ export function EmptyState({
   compact?: boolean
   illustrated?: boolean
   tone?: 'default' | 'error'
+  /** The title is the page's own, for a page that is only this state. */
+  heading?: boolean
 }): ReactElement {
   const badge = illustrated ? 160 : compact ? 40 : 64
   return (
@@ -54,7 +57,10 @@ export function EmptyState({
       title={title}
       text={text}
       componentsProps={{
-        title: { variant: compact ? 'body2' : 'h5', component: 'p' },
+        title: {
+          variant: compact ? 'body2' : 'h5',
+          component: heading ? 'h1' : 'p'
+        },
         text: { variant: compact ? 'caption' : 'body2', component: 'p' }
       }}
       // Empty sizes itself for its own padding, so ours must not add to it.

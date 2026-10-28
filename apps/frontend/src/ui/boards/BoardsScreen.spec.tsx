@@ -264,8 +264,10 @@ describe('BoardsScreen', () => {
     const list = screen.getByRole('list', { name: 'Boards' })
 
     expect(
-      within(screen.getByRole('main')).queryByRole('heading', { level: 2 })
-    ).toBeNull()
+      within(screen.getByRole('main'))
+        .getAllByRole('heading', { level: 2 })
+        .map(heading => heading.textContent)
+    ).toEqual(['Front UI', 'Design'])
     expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent(
       /^Create a board/
     )

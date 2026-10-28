@@ -103,7 +103,7 @@ export function BoardCard({
         <Tooltip title={label} placement="top-start">
           <Typography
             variant="h6"
-            component="h3"
+            component="h2"
             sx={{
               flex: '1 1 auto',
               minWidth: 0,

@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -17,9 +17,13 @@ describe('problem pages', () => {
     expect(
       await screen.findByRole('list', { name: 'Main menu' })
     ).toBeInTheDocument()
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Page not found'
-    )
+    expect(
+      within(await screen.findByRole('status')).getByRole('heading', {
+        level: 1,
+        name: 'Page not found'
+      })
+    ).toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     expect(
       screen.getByRole('link', { name: 'Back to boards' })
     ).toHaveAttribute('href', '/')
@@ -35,9 +39,12 @@ describe('problem pages', () => {
     ])
     renderWithProviders(<RouterProvider router={router} />)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Something went wrong'
-    )
+    expect(
+      within(await screen.findByRole('alert')).getByRole('heading', {
+        level: 1,
+        name: 'Something went wrong'
+      })
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reload' })).toBeVisible()
   })
 

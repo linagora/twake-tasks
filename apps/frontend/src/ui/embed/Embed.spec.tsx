@@ -60,7 +60,10 @@ describe('the embedded view', () => {
     })
 
     expect(
-      await findEmptyState("This project doesn't exist, or you can't open it.")
+      await screen.findByRole('heading', {
+        level: 1,
+        name: "This project doesn't exist, or you can't open it."
+      })
     ).toBeVisible()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
