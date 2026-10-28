@@ -148,13 +148,13 @@ export type AgendaTask = Task & {
   parentTitle: string | null
 }
 
-/** `excerpt` quotes the description around the match when the title does not match. */
 /** Why a task answers a search: the field that matched, and its text. */
 export interface SearchMatch {
   field: 'key' | 'previousKey' | 'title' | 'description'
   text: string
 }
 
+/** `excerpt` quotes the description around the match when the title does not match. */
 export type SearchResult = AgendaTask & {
   excerpt: string | null
   match: SearchMatch | null

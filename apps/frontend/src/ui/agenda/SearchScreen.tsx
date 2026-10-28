@@ -43,6 +43,24 @@ function useDelayed(value: string, delay: number): string {
   return delayed
 }
 
+/** The boards, under the names shown, whose name or key prefix `text` finds. */
+function useFoundBoards(text: string): BoardSummary[] {
+  const boards = useBoards()
+  const boardName = useBoardName()
+  if (text.length < searchMinLength()) return []
+  const folded = fold(text)
+  return listBoards(
+    (boards.data ?? [])
+      .map(board => ({ ...board, name: boardName(board) }))
+      .filter(
+        board =>
+          !board.archived &&
+          (fold(board.name).includes(folded) ||
+            fold(board.keyPrefix).startsWith(folded))
+      )
+  )
+}
+
 /** The boards, then the tasks, that `query` finds, for the list under the field. */
 function useLiveResults(query: string): {
   items: ResultItem[]
@@ -50,8 +68,9 @@ function useLiveResults(query: string): {
   message: string | null
 } {
   const { t } = useI18n()
-  const boards = useBoards()
   const projectName = useProjectName()
+  const boardName = useBoardName()
+  const found = useFoundBoards(query)
   const tasks = useSearch(query)
   const minLength = searchMinLength()
   if (query.length < minLength) {
@@ -62,14 +81,6 @@ function useLiveResults(query: string): {
     }
   }
   const folded = fold(query)
-  const found = listBoards(
-    (boards.data ?? []).filter(
-      board =>
-        !board.archived &&
-        (fold(board.name).includes(folded) ||
-          fold(board.keyPrefix).startsWith(folded))
-    )
-  )
   const items: ResultItem[] = [
     ...found.map(board => ({
       id: `board-${board.id}`,
@@ -98,7 +109,7 @@ function useLiveResults(query: string): {
           ) : (
             task.key
           )}
-          {` · ${task.boardName}`}
+          {` · ${boardName({ id: task.boardId, name: task.boardName })}`}
         </>
       ),
       detail: (task.match?.field === 'previousKey' ||
@@ -144,7 +155,8 @@ export function SearchField({
   const results = useLiveResults(query)
   const open = focused && query !== '' && text.trim() !== ''
   const { items } = results
-  const current = open ? items[selected] : undefined
+  // Until the results catch up with the typing, Enter searches the text.
+  const current = open && query === text.trim() ? items[selected] : undefined
 
   // Once a result is chosen, the field empties, as Twake Drive's.
   const clear = () => {
@@ -299,24 +311,10 @@ export function SearchScreen(): ReactElement {
   const text = params.get('q')?.trim() ?? ''
   const results = useSearch(text)
   const boards = useBoards()
-  const boardName = useBoardName()
   const minLength = searchMinLength()
   useDocumentTitle(t('search.label'))
 
-  const query = fold(text)
-  const foundBoards =
-    text.length >= minLength
-      ? listBoards(
-          (boards.data ?? [])
-            .map(board => ({ ...board, name: boardName(board) }))
-            .filter(
-              board =>
-                !board.archived &&
-                (fold(board.name).includes(query) ||
-                  fold(board.keyPrefix).startsWith(query))
-            )
-        )
-      : []
+  const foundBoards = useFoundBoards(text)
   const found =
     results.data && !boards.isPending
       ? [
