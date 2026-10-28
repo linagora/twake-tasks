@@ -39,7 +39,7 @@ import {
   zoneQuery
 } from '@twake-tasks/api-contract'
 import type * as wire from '@twake-tasks/api-contract'
-import type { FastifyReply } from 'fastify'
+import type { FastifyReply, FastifyRequest } from 'fastify'
 import { allowOrigins } from '../../infra/cors.ts'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
@@ -975,7 +975,11 @@ export function registerBoards(
 
   registerRoutes(
     app,
-    { requireIdentity: deps.requireIdentity, refusalStatus: REFUSAL_STATUS },
+    {
+      requireIdentity: deps.requireIdentity,
+      identify: (request: FastifyRequest) => request.identity,
+      refusalStatus: REFUSAL_STATUS
+    },
     [
       defineRoute({
         method: 'POST',

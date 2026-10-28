@@ -1,35 +1,31 @@
 import { pino } from 'pino'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import type { Identity, RequireIdentity } from '../modules/auth/index.ts'
 import { createServer } from './http.ts'
 import { defineRoute, registerRoutes } from './route.ts'
 
-const alice: Identity = {
-  subject: 'alice',
-  userId: 'alice-id',
-  email: 'alice@example.com',
-  name: 'Alice',
-  sessionId: 'session',
-  expiresAt: new Date('2100-01-01'),
-  organizationId: null,
-  organizationRole: null,
-  searchOnly: false
+type RequireIdentity = Parameters<typeof registerRoutes>[1]['requireIdentity']
+
+interface Person {
+  userId: string
 }
 
-const signedIn: RequireIdentity = request => {
-  request.identity = alice
-  return Promise.resolve(undefined)
-}
+const alice: Person = { userId: 'alice-id' }
+
+const signedIn: RequireIdentity = () => Promise.resolve(undefined)
 
 const refusalStatus = { not_found: 404, taken: 409 } as const
 
-function serverWith(requireIdentity: RequireIdentity) {
+function serverWith(
+  requireIdentity: RequireIdentity,
+  identity: Person | null = alice
+) {
   const app = createServer({
     logger: pino({ level: 'silent' }),
     isReady: () => Promise.resolve(true)
   })
-  registerRoutes(app, { requireIdentity, refusalStatus }, [
+  const identify = (): Person | null => identity
+  registerRoutes(app, { requireIdentity, identify, refusalStatus }, [
     defineRoute({
       method: 'POST',
       url: '/things/:thingId',
@@ -148,9 +144,7 @@ describe('a declared route', () => {
   })
 
   it('answers 401 when no identity was set', async () => {
-    const response = await serverWith(() => Promise.resolve(undefined)).inject(
-      '/things'
-    )
+    const response = await serverWith(signedIn, null).inject('/things')
 
     expect(response.statusCode).toBe(401)
   })
