@@ -1,5 +1,4 @@
-import type { HTTPMethods } from 'fastify'
-import type { Identity, RequireIdentity } from '../modules/auth/index.ts'
+import type { FastifyReply, FastifyRequest, HTTPMethods } from 'fastify'
 import type { HttpServer } from './http.ts'
 
 interface Schema<T> {
@@ -8,7 +7,7 @@ interface Schema<T> {
 
 type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 
-interface Route<P, Q, B, T, E extends string> {
+interface Route<I, P, Q, B, T, E extends string> {
   method: HTTPMethods
   url: string
   params?: Schema<P>
@@ -16,14 +15,15 @@ interface Route<P, Q, B, T, E extends string> {
   body?: Schema<B>
   status?: number
   handler: (request: {
-    identity: Identity
+    identity: I
     params: P
     query: Q
     body: B
   }) => Promise<Result<T, E>>
 }
 
-type DeclaredRoute<E extends string> = Route<
+export type DeclaredRoute<I, E extends string> = Route<
+  I,
   unknown,
   unknown,
   unknown,
@@ -32,22 +32,27 @@ type DeclaredRoute<E extends string> = Route<
 >
 
 export function defineRoute<
+  I,
   E extends string,
   T,
   P = undefined,
   Q = undefined,
   B = undefined
->(route: Route<P, Q, B, T, E>): DeclaredRoute<E> {
-  return route as DeclaredRoute<E>
+>(route: Route<I, P, Q, B, T, E>): DeclaredRoute<I, E> {
+  return route as DeclaredRoute<I, E>
 }
 
-export function registerRoutes<E extends string>(
+export function registerRoutes<I, E extends string>(
   app: HttpServer,
   deps: {
-    requireIdentity: RequireIdentity
+    requireIdentity: (
+      request: FastifyRequest,
+      reply: FastifyReply
+    ) => Promise<FastifyReply | undefined>
+    identify: (request: FastifyRequest) => I | null
     refusalStatus: Readonly<Record<E, number>>
   },
-  routes: readonly DeclaredRoute<E>[]
+  routes: readonly DeclaredRoute<I, E>[]
 ) {
   for (const route of routes) {
     app.route({
@@ -55,7 +60,7 @@ export function registerRoutes<E extends string>(
       url: route.url,
       preHandler: deps.requireIdentity,
       handler: async (request, reply) => {
-        const identity = request.identity
+        const identity = deps.identify(request)
         if (!identity) return reply.code(401).send()
         const params = parse(route.params, request.params)
         if (!params.success) return reply.code(404).send({ error: 'not_found' })
