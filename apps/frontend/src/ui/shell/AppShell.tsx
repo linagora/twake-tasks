@@ -66,11 +66,9 @@ import { SearchField } from '@/ui/agenda/SearchScreen'
 import { useBoardName } from '@/ui/boards/BoardsScreen'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import {
-  useBoards,
-  useFilters,
-  useUnreadNotifications
-} from '@/ui/boards/queries'
+import { useBoards } from '@/ui/queries/boards'
+import { useFilters } from '@/ui/queries/filters'
+import { useUnreadNotifications } from '@/ui/queries/notifications'
 import { AppFeedback } from '@/ui/shell/AppFeedback'
 import { PlatformBar } from '@/ui/shell/PlatformBar'
 import { NewTaskFromUrl } from '@/ui/shell/NewTaskDialog'

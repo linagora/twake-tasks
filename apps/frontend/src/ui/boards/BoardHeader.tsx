@@ -20,7 +20,7 @@ import { PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
 import { LayoutSwitch } from '@/ui/boards/Layouts'
 import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
 import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
-import { useSetBoardArchived } from '@/ui/boards/queries'
+import { useSetBoardArchived } from '@/ui/queries/boards'
 import { ShareDialog } from '@/ui/boards/ShareDialog'
 import { useI18n } from '@/ui/i18n/useI18n'
 

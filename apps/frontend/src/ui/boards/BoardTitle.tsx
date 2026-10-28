@@ -7,7 +7,7 @@ import { PageTitle } from '@/ds/PageHeader'
 import { TitleButton } from '@/ds/TitleButton'
 import { isRenamable, type Board } from '@/domain/board'
 import { useBoardName } from '@/ui/boards/BoardsScreen'
-import { useRenameBoard } from '@/ui/boards/queries'
+import { useRenameBoard } from '@/ui/queries/boards'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 

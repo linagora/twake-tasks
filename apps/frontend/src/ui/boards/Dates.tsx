@@ -38,7 +38,7 @@ import {
   recurrenceLabel,
   untilNextMonday
 } from '@/ui/boards/dueLabel'
-import { useBoardChange } from '@/ui/boards/queries'
+import { useBoardChange } from '@/ui/queries/boards'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 interface Draft {

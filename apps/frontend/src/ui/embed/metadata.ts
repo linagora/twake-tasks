@@ -3,7 +3,8 @@ import { useEffect, useRef } from 'react'
 
 import type { Project, ProjectUnread } from '@/application/boards'
 import type { BoardSummary, ProjectSummary } from '@/domain/board'
-import { useBoards, useProjects, useUnreadByProject } from '@/ui/boards/queries'
+import { useBoards, useProjects } from '@/ui/queries/boards'
+import { useUnreadByProject } from '@/ui/queries/notifications'
 
 // What TwakeSpace accepts in one snapshot
 const MAX_ENTRIES = 1000

@@ -11,7 +11,7 @@ import { useId, useState, type ReactElement } from 'react'
 
 import { ApiError, type Project } from '@/application/boards'
 import { takesBoards, type Board } from '@/domain/board'
-import { useBoardChange, useProjects } from '@/ui/boards/queries'
+import { useBoardChange, useProjects } from '@/ui/queries/boards'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function useMoveTargets(board: Board): Project[] {

@@ -33,7 +33,7 @@ import {
   DropTray
 } from '@/ui/boards/CalendarDrag'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
-import { useSetLayout } from '@/ui/boards/queries'
+import { useSetLayout } from '@/ui/queries/boards'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const LAYOUT_ICONS = {

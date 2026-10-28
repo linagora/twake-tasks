@@ -13,7 +13,8 @@ import {
   momentFormat,
   recurrenceLabel
 } from '@/ui/boards/dueLabel'
-import { useBoard, useHistory } from '@/ui/boards/queries'
+import { useBoard } from '@/ui/queries/boards'
+import { useHistory } from '@/ui/queries/tasks'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 type Translate = ReturnType<typeof useI18n>['t']

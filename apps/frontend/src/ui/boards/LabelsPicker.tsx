@@ -3,7 +3,7 @@ import { useState, type ReactElement } from 'react'
 
 import type { Label, Task } from '@/domain/board'
 import { LabelsMenu } from '@/ui/boards/LabelsMenu'
-import { useBoardChange } from '@/ui/boards/queries'
+import { useBoardChange } from '@/ui/queries/boards'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function LabelsPicker({

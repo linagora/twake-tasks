@@ -3,7 +3,7 @@ import type { ReactElement } from 'react'
 
 import { Checklist } from '@/ds/Columns'
 import type { Task } from '@/domain/board'
-import { useBoardChange } from '@/ui/boards/queries'
+import { useBoardChange } from '@/ui/queries/boards'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 
 export function Subtasks({

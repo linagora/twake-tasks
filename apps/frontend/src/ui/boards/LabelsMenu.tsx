@@ -15,7 +15,7 @@ import {
 } from '@/ds/Picker'
 import { labelName, type Label } from '@/domain/board'
 import { LabelDialog } from '@/ui/boards/LabelDialog'
-import { useBoardChange } from '@/ui/boards/queries'
+import { useBoardChange } from '@/ui/queries/boards'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 /**

@@ -28,7 +28,7 @@ import {
   useBoards,
   useSetBoardArchived,
   useSetFavorite
-} from '@/ui/boards/queries'
+} from '@/ui/queries/boards'
 import {
   PageCrumbs,
   useArchivesOrigin,

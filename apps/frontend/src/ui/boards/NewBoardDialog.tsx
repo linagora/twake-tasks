@@ -10,7 +10,7 @@ import { useId, useState, type ReactElement } from 'react'
 import { ApiError } from '@/application/boards'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import type { Board } from '@/domain/board'
-import { useCreateBoard } from '@/ui/boards/queries'
+import { useCreateBoard } from '@/ui/queries/boards'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 

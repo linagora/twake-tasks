@@ -17,7 +17,7 @@ import { ColorField, leastUsedColor, swatchName } from '@/ds/ColorPicker'
 import { DialogHeader } from '@/ds/DialogHeader'
 import { Icon } from '@/ds/Icon'
 import { labelName, type Label } from '@/domain/board'
-import { useBoardChange } from '@/ui/boards/queries'
+import { useBoardChange } from '@/ui/queries/boards'
 import { selectOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
