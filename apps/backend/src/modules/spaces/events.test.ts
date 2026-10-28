@@ -165,7 +165,7 @@ describe('twake.space.created', () => {
     expect(() => strictPublishedEvent.parse(queued[0]?.event)).not.toThrow()
   })
 
-  it('gives two spaces of an organization the same key prefix when their names start alike', async () => {
+  it('gives the second of two spaces whose names start alike a free key prefix', async () => {
     const admin = aUser()
 
     for (const name of ['Roadmap 2026', 'Roadmap 2027']) {
@@ -179,7 +179,7 @@ describe('twake.space.created', () => {
 
     expect(await spaceBoards(admin)).toEqual([
       expect.objectContaining({ keyPrefix: 'ROA' }),
-      expect.objectContaining({ keyPrefix: 'ROA' })
+      expect.objectContaining({ keyPrefix: 'ROA2' })
     ])
   })
 

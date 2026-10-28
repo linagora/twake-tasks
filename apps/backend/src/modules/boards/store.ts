@@ -48,6 +48,7 @@ import {
   writeOrRefuse,
   type Result
 } from './tasks.ts'
+import { freeKeyPrefix, INBOX_KEY_PREFIX } from './keyPrefixes.ts'
 import { labelsOn } from './labels.ts'
 import { languageOf, type Language } from './mailLayout.ts'
 import { shift, todayIn } from './recurrence.ts'
@@ -70,8 +71,6 @@ const DEFAULT_SECTION_NAMES: Record<
   ru: ['К выполнению', 'В работе', 'Готово'],
   vi: ['Cần làm', 'Đang làm', 'Hoàn thành']
 }
-
-export const INBOX_KEY_PREFIX = 'INBOX'
 
 const SEARCH_LIMIT = 50
 
@@ -340,6 +339,18 @@ export function createBoardStore(db: Db) {
             )
         }
         return true
+      })
+    },
+
+    /** Whether a new board may use `wanted`, and a free prefix close to it. */
+    keyPrefixFor(identity: Identity, wanted: string) {
+      return inTenant(db, identity, async tx => {
+        const suggestion = await freeKeyPrefix(
+          tx,
+          identity.organizationId,
+          wanted
+        )
+        return { available: suggestion === wanted, suggestion }
       })
     },
 

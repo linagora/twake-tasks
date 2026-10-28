@@ -14,9 +14,9 @@ afterAll(async () => {
   await sql.end()
 })
 
-async function aTaskOf(owner: TestUser) {
+async function aTaskOf(owner: TestUser, keyPrefix = 'DES') {
   const board = (
-    await api.as(owner).post('/boards', { name: 'Design', keyPrefix: 'DES' })
+    await api.as(owner).post('/boards', { name: 'Design', keyPrefix })
   ).json<{ id: string; sections: { id: string }[] }>()
   const task = (
     await api.as(owner).post(`/boards/${board.id}/tasks`, {
@@ -250,7 +250,7 @@ describe('comment reactions', () => {
   it('refuses a comment of another task', async () => {
     const alice = aUser()
     const first = await aComment(alice)
-    const other = await aTaskOf(alice)
+    const other = await aTaskOf(alice, 'OPS')
 
     const response = await api
       .as(alice)

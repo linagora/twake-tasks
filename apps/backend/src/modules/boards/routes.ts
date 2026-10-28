@@ -9,6 +9,7 @@ import {
   filterChanges,
   filterParams,
   inviteParams,
+  keyPrefixParams,
   labelChanges,
   labeling,
   labelParams,
@@ -61,7 +62,8 @@ import { createSharingStore } from './sharing.ts'
 import { createReminderStore } from './reminders.ts'
 import type * as db from './schema.ts'
 import { createSectionStore } from './sections.ts'
-import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
+import { INBOX_KEY_PREFIX } from './keyPrefixes.ts'
+import { createBoardStore } from './store.ts'
 import { createTaskStore, type Refusal, type Result } from './tasks.ts'
 import { createTransferStore } from './transfer.ts'
 
@@ -532,6 +534,15 @@ export function registerBoards(
           ? { ok: true, value: board }
           : { ok: false, error: 'not_found' }
       }
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/key-prefixes/:keyPrefix',
+      params: keyPrefixParams,
+      handler: async ({ identity, params }) => ({
+        ok: true,
+        value: await store.keyPrefixFor(identity, params.keyPrefix)
+      })
     }),
     defineRoute({
       method: 'POST',

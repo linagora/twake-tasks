@@ -11,6 +11,7 @@ import {
   followingResponse,
   hiddenTasksResponse,
   historyResponse,
+  keyPrefixResponse,
   label,
   labelNamesResponse,
   notificationsResponse,
@@ -246,6 +247,12 @@ describe('the API contract', () => {
       contracted(searchResponse, await api.as(alice).get('/search?q=roadmap'))
         .tasks
     ).toMatchObject([{ excerpt: 'Plan the roadmap' }])
+    expect(
+      contracted(
+        keyPrefixResponse,
+        await api.as(alice).get('/key-prefixes/OPS')
+      )
+    ).toEqual({ available: false, suggestion: 'OPS2' })
 
     const target = { boardId: opsId, sectionId: null }
     expect(
