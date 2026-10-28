@@ -1,7 +1,7 @@
 {
-  "id": "966698fe-afeb-4158-bfd4-f96a828af350",
+  "id": "1af5bab2-9a2a-49bc-bc60-1dd0c6061762",
   "prevIds": [
-    "1bdbe001-e8f2-4b0c-957f-8886ad374652"
+    "1a3fcdb6-7725-4238-ac24-f767e0d72fd8"
   ],
   "version": "8",
   "dialect": "postgres",
@@ -3153,6 +3153,34 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "oidc_revoked_sessions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "org_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "key_prefix",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": "\"org_id\" is not null and not \"inbox\"",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "boards_key_prefix_per_organization",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "boards"
     },
     {
       "nameExplicit": false,
