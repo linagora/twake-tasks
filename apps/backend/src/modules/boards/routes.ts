@@ -707,92 +707,73 @@ export function registerBoards(
     })
   ])
 
-  app.get(
-    '/boards/:boardId/tasks/:taskId/history',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const result = await historyOf(
-        deps.db,
-        identity,
-        params.data.boardId,
-        params.data.taskId
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return { entries: result.value }
-    }
-  )
+  registerRoutes(app, routing, [
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/tasks/:taskId/history',
+      params: taskParams,
+      handler: ({ identity, params }) =>
+        under(
+          'entries',
+          historyOf(deps.db, identity, params.boardId, params.taskId)
+        )
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/tasks/:taskId/comments',
+      params: taskParams,
+      handler: ({ identity, params }) =>
+        under(
+          'comments',
+          commentStore.listComments(identity, params.boardId, params.taskId)
+        )
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks/:taskId/comments',
+      params: taskParams,
+      body: newComment,
+      status: 201,
+      handler: ({ identity, params, body }) =>
+        commentStore.addComment(
+          identity,
+          params.boardId,
+          params.taskId,
+          body.body
+        )
+    })
+  ])
 
-  app.get(
-    '/boards/:boardId/tasks/:taskId/comments',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const result = await commentStore.listComments(
-        identity,
-        params.data.boardId,
-        params.data.taskId
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return { comments: result.value }
-    }
-  )
-
-  app.post(
-    '/boards/:boardId/tasks/:taskId/comments',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = newComment.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await commentStore.addComment(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        body.data.body
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(201).send(result.value)
-    }
-  )
-
-  for (const method of ['put', 'delete'] as const) {
-    app[method](
-      '/boards/:boardId/tasks/:taskId/comments/:commentId/reactions/:emoji',
-      { preHandler: deps.requireIdentity },
-      async (request, reply) => {
-        const identity = request.identity
-        if (!identity) return reply.code(401).send()
-        const params = reactionParams.safeParse(request.params)
-        if (!params.success) {
-          return reply.code(404).send({ error: 'not_found' })
-        }
-        const { boardId, taskId, commentId } = params.data
-        const emoji = reactionEmoji.safeParse(params.data.emoji)
-        if (!emoji.success) {
-          return reply.code(400).send({ error: 'invalid_request' })
-        }
-        const args = [identity, boardId, taskId, commentId, emoji.data] as const
-        const result =
-          method === 'put'
-            ? await commentStore.addReaction(...args)
-            : await commentStore.removeReaction(...args)
-        if (!result.ok) return refuse(reply, result.error)
-        return reply.code(204).send()
-      }
+  // The emoji is part of the URL, yet a bad one is a bad request, not a
+  // missing resource.
+  registerRoutes(
+    app,
+    { ...routing, refusalStatus: { ...REFUSAL_STATUS, invalid_request: 400 } },
+    (['PUT', 'DELETE'] as const).map(
+      (method): DeclaredRoute<Identity, Refusal | 'invalid_request'> =>
+        defineRoute({
+          method,
+          url: '/boards/:boardId/tasks/:taskId/comments/:commentId/reactions/:emoji',
+          params: reactionParams,
+          status: 204,
+          handler: async ({ identity, params }) => {
+            const emoji = reactionEmoji.safeParse(params.emoji)
+            if (!emoji.success) return { ok: false, error: 'invalid_request' }
+            const { boardId, taskId, commentId } = params
+            const args = [
+              identity,
+              boardId,
+              taskId,
+              commentId,
+              emoji.data
+            ] as const
+            return method === 'PUT'
+              ? commentStore.addReaction(...args)
+              : commentStore.removeReaction(...args)
+          }
+        })
     )
-  }
+  )
 
   app.post(
     '/boards/:boardId/sections',
