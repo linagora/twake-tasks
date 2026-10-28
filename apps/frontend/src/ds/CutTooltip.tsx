@@ -27,6 +27,7 @@ export function CutTooltip({
     <Tooltip
       ref={node}
       describeChild
+      enterDelay={500}
       title={shown ?? title ?? ''}
       open={shown !== null}
       onOpen={() => {

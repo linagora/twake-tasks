@@ -416,6 +416,7 @@
   },
   "shortcuts": {
     "title": "Raccourcis clavier",
+    "hint": "Les raccourcis fonctionnent quand vous n'êtes pas en train de saisir dans un champ.",
     "then": "g puis %{key}",
     "close": "Fermer"
   },

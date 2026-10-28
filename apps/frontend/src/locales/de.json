@@ -416,6 +416,7 @@
   },
   "shortcuts": {
     "title": "Tastenkürzel",
+    "hint": "Tastenkürzel funktionieren, wenn Sie nicht in einem Feld tippen.",
     "then": "g, dann %{key}",
     "close": "Schließen"
   },

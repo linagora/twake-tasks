@@ -5,6 +5,7 @@ import {
   Calendar,
   CalendarToday,
   Filter,
+  HelpOutlined,
   Logout,
   Mosaic,
   Plus,
@@ -26,6 +27,7 @@ import {
   NavText,
   Popover,
   Tooltip,
+  Typography,
   useMediaQuery,
   useTheme
 } from '@linagora/twake-mui'
@@ -90,6 +92,9 @@ export function AppShell(): ReactElement {
     openNewTask(agenda && agendaPreset(agenda))
   }
   const [help, setHelp] = useState(false)
+  const showHelp = (): void => {
+    setHelp(true)
+  }
   const search = useRef<HTMLInputElement>(null)
   const { t } = useI18n()
   const lit = useLitEntry()
@@ -100,14 +105,14 @@ export function AppShell(): ReactElement {
     search: () => {
       search.current?.focus()
     },
-    help: () => {
-      setHelp(true)
-    }
+    help: showHelp
   })
 
   return (
     <AppFrame
-      topBar={<Header searchRef={search} onNewTask={startNewTask} />}
+      topBar={
+        <Header searchRef={search} onNewTask={startNewTask} onHelp={showHelp} />
+      }
       skipLabel={t('app.skipToContent')}
       sidebar={
         <>
@@ -143,10 +148,12 @@ export function AppShell(): ReactElement {
 
 function Header({
   searchRef,
-  onNewTask
+  onNewTask,
+  onHelp
 }: {
   searchRef: RefObject<HTMLInputElement | null>
   onNewTask: () => void
+  onHelp: () => void
 }): ReactElement {
   const { t } = useI18n()
   const { sdk } = useSession()
@@ -209,12 +216,12 @@ function Header({
       </Link>
       {search}
       {newTaskButton}
-      <AccountMenu />
+      <AccountMenu onHelp={onHelp} />
     </TopBar>
   )
 }
 
-function AccountMenu(): ReactElement {
+function AccountMenu({ onHelp }: { onHelp: () => void }): ReactElement {
   const { t } = useI18n()
   const { user, signOut } = useSession()
   const { data: settings } = useSettings()
@@ -275,6 +282,7 @@ function AccountMenu(): ReactElement {
               event.preventDefault()
               close()
             }
+            if (event.key === '?') close()
           }}
         >
           {phone && (
@@ -285,6 +293,21 @@ function AccountMenu(): ReactElement {
               <ListItemText>{t('filters.title')}</ListItemText>
             </MenuItem>
           )}
+          <MenuItem
+            aria-keyshortcuts="?"
+            onClick={() => {
+              close()
+              onHelp()
+            }}
+          >
+            <ListItemIcon>
+              <Icon icon={HelpOutlined} />
+            </ListItemIcon>
+            <ListItemText>{t('shortcuts.title')}</ListItemText>
+            <Typography variant="body2" color="textSecondary" aria-hidden>
+              ?
+            </Typography>
+          </MenuItem>
           <MenuItem
             onClick={() => {
               close()

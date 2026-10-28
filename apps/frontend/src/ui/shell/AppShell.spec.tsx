@@ -118,12 +118,60 @@ describe('AppShell', () => {
         name: 'Alice Martin'
       })
     )
-    const signOut = await screen.findByRole('menuitem', { name: 'Sign out' })
-    await waitFor(() => {
-      expect(signOut).toHaveFocus()
+    const first = await screen.findByRole('menuitem', {
+      name: 'Keyboard shortcuts'
     })
-    fireEvent.keyDown(signOut, { key: 'Escape' })
+    await waitFor(() => {
+      expect(first).toHaveFocus()
+    })
+    fireEvent.keyDown(first, { key: 'Escape' })
 
+    await waitFor(() => {
+      expect(screen.queryByRole('menu')).toBeNull()
+    })
+  })
+
+  it('opens the keyboard shortcuts from the account menu', async () => {
+    renderRoute('/', { boardsApi: fakeBoardsApi() })
+
+    fireEvent.click(
+      within(await screen.findByRole('banner')).getByRole('button', {
+        name: 'Alice Martin'
+      })
+    )
+    const item = await screen.findByRole('menuitem', {
+      name: 'Keyboard shortcuts'
+    })
+    expect(item).toHaveTextContent('?')
+    expect(item).toHaveAttribute('aria-keyshortcuts', '?')
+    fireEvent.click(item)
+
+    const help = await screen.findByRole('dialog', {
+      name: 'Keyboard shortcuts'
+    })
+    expect(help).toHaveTextContent(
+      'Shortcuts work when you are not typing in a field.'
+    )
+    await waitFor(() => {
+      expect(screen.queryByRole('menu')).toBeNull()
+    })
+  })
+
+  it('closes the account menu when ? opens the keyboard shortcuts', async () => {
+    renderRoute('/', { boardsApi: fakeBoardsApi() })
+
+    fireEvent.click(
+      within(await screen.findByRole('banner')).getByRole('button', {
+        name: 'Alice Martin'
+      })
+    )
+    fireEvent.keyDown(await screen.findByRole('menu'), { key: '?' })
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Keyboard shortcuts' })
+    ).toHaveAccessibleDescription(
+      'Shortcuts work when you are not typing in a field.'
+    )
     await waitFor(() => {
       expect(screen.queryByRole('menu')).toBeNull()
     })
@@ -140,7 +188,7 @@ describe('AppShell', () => {
     const menu = await screen.findByRole('menu')
 
     expect([...menu.children].map(child => child.getAttribute('role'))).toEqual(
-      ['menuitem']
+      ['menuitem', 'menuitem']
     )
     expect(screen.getByText('alice@example.com')).toBeVisible()
   })

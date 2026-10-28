@@ -416,6 +416,7 @@
   },
   "shortcuts": {
     "title": "Phím tắt",
+    "hint": "Phím tắt hoạt động khi bạn không nhập vào một trường.",
     "then": "g rồi %{key}",
     "close": "Đóng"
   },

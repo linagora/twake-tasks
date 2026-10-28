@@ -416,6 +416,7 @@
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
+    "hint": "Shortcuts work when you are not typing in a field.",
     "then": "g then %{key}",
     "close": "Close"
   },

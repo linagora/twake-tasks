@@ -416,6 +416,7 @@
   },
   "shortcuts": {
     "title": "Atajos de teclado",
+    "hint": "Los atajos funcionan cuando no estás escribiendo en un campo.",
     "then": "g y luego %{key}",
     "close": "Cerrar"
   },
