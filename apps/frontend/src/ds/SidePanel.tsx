@@ -466,6 +466,12 @@ export const TitleInput = styled(InputBase)(({ theme }) => ({
   }
 }))
 
+/** A property's text value, which wraps a long name rather than widen the row. */
+export const PropertyText = styled(Typography)({
+  minWidth: 0,
+  overflowWrap: 'anywhere'
+})
+
 export function Properties({
   children,
   ownWidth = false
