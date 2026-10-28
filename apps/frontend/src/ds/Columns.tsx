@@ -29,6 +29,9 @@ export function Columns({ children }: { children: ReactNode }): ReactElement {
         alignItems: 'flex-start',
         gap: 2,
         overflowX: 'auto',
+        // Room for a focus ring at either end, which the scroll would cut.
+        px: 0.5,
+        mx: -0.5,
         pb: 2
       }}
     >

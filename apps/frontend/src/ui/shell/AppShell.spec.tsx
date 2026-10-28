@@ -1,5 +1,5 @@
 import type { TwakeBarProps } from '@linagora/twake-bar'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -352,6 +352,36 @@ describe('AppShell', () => {
       'aria-current'
     )
   })
+
+  it.each([
+    ['hover', fireEvent.mouseOver],
+    [
+      'keyboard focus',
+      (link: HTMLElement) => {
+        fireEvent.keyDown(document.body, { key: 'Tab' })
+        act(() => {
+          link.focus()
+        })
+      }
+    ]
+  ])(
+    'shows the whole name of a board the sidebar cuts, on %s',
+    async (_, reach) => {
+      const name = 'ux-audit-6 Website relaunch, content and design review'
+      const boardsApi = fakeBoardsApi([{ ...aBoard(), id: 'board-1', name }])
+      renderRoute('/today', { boardsApi })
+
+      const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
+      fireEvent.click(nav.getByRole('button', { name: 'Unfold boards' }))
+      const link = await nav.findByRole('link', { name })
+      const text = within(link).getByText(name)
+      Object.defineProperty(text, 'scrollWidth', { value: 400 })
+      Object.defineProperty(text, 'clientWidth', { value: 200 })
+      reach(link)
+
+      expect(await screen.findByRole('tooltip')).toHaveTextContent(name)
+    }
+  )
 
   it('keeps the boards under Boards folded until unfolded, and remembers it', async () => {
     const boardsApi = fakeBoardsApi([{ ...aBoard(), name: 'Design' }])

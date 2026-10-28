@@ -518,7 +518,7 @@ function BoardsNav({
               active={board.id === boardLit}
             >
               <NavIcon icon={Mosaic} />
-              <OneLineNavText title={board.name}>{board.name}</OneLineNavText>
+              <OneLineNavText>{board.name}</OneLineNavText>
             </SidebarLink>
           </WideScreenNavItem>
         ))}
@@ -575,7 +575,7 @@ function FiltersNav(): ReactElement {
             active={filter.id === openId}
           >
             <NavIcon icon={Filter} />
-            <OneLineNavText title={filter.name}>{filter.name}</OneLineNavText>
+            <OneLineNavText>{filter.name}</OneLineNavText>
           </SidebarLink>
         </WideScreenNavItem>
       ))}

@@ -9,6 +9,7 @@ import { QueryClientProvider, type QueryClient } from '@tanstack/react-query'
 import { useMemo, type ReactElement, type ReactNode } from 'react'
 
 import { PickersProvider } from '@/ds/Pickers'
+import { accessibleTheme } from '@/ds/theme'
 import { I18nProvider } from '@/ui/i18n/I18nProvider'
 import type { SupportedLanguage } from '@/ui/i18n/languages'
 import { TooManyRequests } from '@/ui/shell/TooManyRequests'
@@ -28,10 +29,14 @@ export function AppProviders({
   overlay = null,
   children
 }: AppProvidersProps): ReactElement {
-  const themeOptions = useMemo(
-    () => (overlay === null ? {} : overlayThemeOptions(overlay)),
-    [overlay]
-  )
+  const themeOptions = useMemo(() => {
+    if (overlay === null) return accessibleTheme
+    const framed = overlayThemeOptions(overlay)
+    return {
+      ...accessibleTheme,
+      components: { ...accessibleTheme.components, ...framed.components }
+    }
+  }, [overlay])
   return (
     <TwakeMuiThemeProvider themeOptions={themeOptions}>
       <SpaceOverlayProvider overlay={overlay}>
