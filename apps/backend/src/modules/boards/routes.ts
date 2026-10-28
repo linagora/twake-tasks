@@ -600,119 +600,78 @@ export function registerBoards(
     }
   )
 
-  app.post(
-    '/boards/:boardId/tasks',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = boardParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = newTask.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await taskStore.createTask(
-        identity,
-        params.data.boardId,
-        body.data
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(201).send(result.value)
-    }
-  )
-
-  app.post(
-    '/boards/:boardId/tasks/:taskId/move',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = taskMove.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await taskStore.moveTask(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        body.data
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(204).send()
-    }
-  )
-
-  app.post(
-    '/boards/:boardId/tasks/:taskId/complete',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = completion.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await taskStore.completeTask(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        body.data.state
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(204).send()
-    }
-  )
-
-  app.patch(
-    '/boards/:boardId/tasks/:taskId',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = taskChanges.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await taskStore.editTask(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        body.data
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(204).send()
-    }
-  )
-
-  app.put(
-    '/boards/:boardId/tasks/:taskId/assignees',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = assignment.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await taskStore.setAssignees(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        body.data.userIds
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(204).send()
-    }
-  )
+  registerRoutes(app, routing, [
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks',
+      params: boardParams,
+      body: newTask,
+      status: 201,
+      handler: ({ identity, params, body }) =>
+        taskStore.createTask(identity, params.boardId, body)
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks/:taskId/move',
+      params: taskParams,
+      body: taskMove,
+      status: 204,
+      handler: ({ identity, params, body }) =>
+        taskStore.moveTask(identity, params.boardId, params.taskId, body)
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks/:taskId/complete',
+      params: taskParams,
+      body: completion,
+      status: 204,
+      handler: ({ identity, params, body }) =>
+        taskStore.completeTask(
+          identity,
+          params.boardId,
+          params.taskId,
+          body.state
+        )
+    }),
+    defineRoute({
+      method: 'PATCH',
+      url: '/boards/:boardId/tasks/:taskId',
+      params: taskParams,
+      body: taskChanges,
+      status: 204,
+      handler: ({ identity, params, body }) =>
+        taskStore.editTask(identity, params.boardId, params.taskId, body)
+    }),
+    defineRoute({
+      method: 'PUT',
+      url: '/boards/:boardId/tasks/:taskId/assignees',
+      params: taskParams,
+      body: assignment,
+      status: 204,
+      handler: ({ identity, params, body }) =>
+        taskStore.setAssignees(
+          identity,
+          params.boardId,
+          params.taskId,
+          body.userIds
+        )
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/tasks/:taskId/description',
+      params: taskParams,
+      handler: ({ identity, params }) =>
+        taskStore.getDescription(identity, params.boardId, params.taskId)
+    }),
+    defineRoute({
+      method: 'PUT',
+      url: '/boards/:boardId/tasks/:taskId/description',
+      params: taskParams,
+      body: descriptionEdit,
+      handler: ({ identity, params, body }) =>
+        taskStore.setDescription(identity, params.boardId, params.taskId, body)
+    })
+  ])
 
   registerRoutes(app, routing, [
     defineRoute({
@@ -834,47 +793,6 @@ export function registerBoards(
       }
     )
   }
-
-  app.get(
-    '/boards/:boardId/tasks/:taskId/description',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const result = await taskStore.getDescription(
-        identity,
-        params.data.boardId,
-        params.data.taskId
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return result.value
-    }
-  )
-
-  app.put(
-    '/boards/:boardId/tasks/:taskId/description',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = descriptionEdit.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await taskStore.setDescription(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        body.data
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return result.value
-    }
-  )
 
   app.post(
     '/boards/:boardId/sections',
