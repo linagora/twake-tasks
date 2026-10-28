@@ -278,7 +278,13 @@ export const SidebarEntry = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
     color: 'inherit',
-    textDecoration: 'none'
+    textDecoration: 'none',
+    borderRadius: 8,
+    // Inset: the sidebar cuts what spills out of its sides.
+    '&:focus-visible': {
+      outline: `2px solid ${theme.vars.palette.primary.main}`,
+      outlineOffset: -2
+    }
   },
   // The bottom bar greys the entries that are not current, as twake-mui 10.0
   // did; its NavLink now keeps them in the primary text colour.

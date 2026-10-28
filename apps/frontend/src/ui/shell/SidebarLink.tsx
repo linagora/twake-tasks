@@ -3,6 +3,7 @@ import type { MouseEvent, ReactElement, ReactNode } from 'react'
 import { Link as RouterLink, NavLink as RouterNavLink } from 'react-router'
 
 import { SidebarEntry } from '@/ds/AppFrame'
+import { CutTooltip } from '@/ds/CutTooltip'
 
 // The router link is the one focusable, named element; the NavLink of
 // twake-mui is a div with role button, so it only draws the entry.
@@ -29,20 +30,22 @@ export function SidebarLink({
 
   return (
     <SidebarEntry>
-      {active === undefined ? (
-        <RouterNavLink to={to} onClick={onClick} {...named}>
-          {({ isActive }) => entry(isActive)}
-        </RouterNavLink>
-      ) : (
-        <RouterLink
-          to={to}
-          onClick={onClick}
-          aria-current={active ? 'page' : undefined}
-          {...named}
-        >
-          {entry(active)}
-        </RouterLink>
-      )}
+      <CutTooltip>
+        {active === undefined ? (
+          <RouterNavLink to={to} onClick={onClick} {...named}>
+            {({ isActive }) => entry(isActive)}
+          </RouterNavLink>
+        ) : (
+          <RouterLink
+            to={to}
+            onClick={onClick}
+            aria-current={active ? 'page' : undefined}
+            {...named}
+          >
+            {entry(active)}
+          </RouterLink>
+        )}
+      </CutTooltip>
     </SidebarEntry>
   )
 }
