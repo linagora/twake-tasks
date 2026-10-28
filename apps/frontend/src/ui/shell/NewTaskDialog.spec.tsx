@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { localToday } from '@/ui/boards/dueLabel'
+import { inDays, localToday } from '@/ui/boards/dueLabel'
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { typeRichText } from '@/testing/richText'
@@ -58,7 +58,7 @@ describe('NewTaskDialog', () => {
     fireEvent.click(create())
 
     const status = await screen.findByRole('status', {
-      name: '“Milk” has been created'
+      name: '“Milk” created in Inbox'
     })
     fireEvent.click(
       within(status).getByRole('button', { name: 'See the task' })
@@ -68,7 +68,7 @@ describe('NewTaskDialog', () => {
       await screen.findByRole('dialog', { name: 'INB-1 Milk' })
     ).toBeVisible()
     expect(
-      screen.queryByRole('status', { name: '“Milk” has been created' })
+      screen.queryByRole('status', { name: '“Milk” created in Inbox' })
     ).toBe(null)
   })
 
@@ -78,13 +78,17 @@ describe('NewTaskDialog', () => {
       const { title, create } = await openNewTask()
       fireEvent.change(title(), { target: { value: 'Logo' } })
       fireEvent.click(create())
-      await screen.findByRole('status', { name: '“Logo” has been created' })
+      await screen.findByRole('status', {
+        name: '“Logo” created in Product Design'
+      })
 
       await act(() => vi.advanceTimersByTimeAsync(5000))
 
       await waitFor(() => {
         expect(
-          screen.queryByRole('status', { name: '“Logo” has been created' })
+          screen.queryByRole('status', {
+            name: '“Logo” created in Product Design'
+          })
         ).toBe(null)
       })
     } finally {
@@ -433,6 +437,91 @@ describe('NewTaskDialog', () => {
     expect(router.state.location.pathname).toBe(`/boards/${board.id}`)
   })
 
+  it('shows where the task goes, and opens the board picker from there', async () => {
+    const { dialog } = await openNewTask()
+
+    fireEvent.click(
+      await dialog.findByRole('button', { name: 'In Product Design · To do' })
+    )
+
+    expect(dialog.getByRole('combobox', { name: 'Board' })).toHaveFocus()
+    expect(
+      dialog.getByRole('button', { name: 'In Product Design · To do' })
+    ).toBeVisible()
+  })
+
+  it('creates another task, keeping the dialog and what was picked', async () => {
+    const { dialog, title, create, design } = await openNewTask()
+    fireEvent.click(dialog.getByRole('checkbox', { name: 'Create another' }))
+    fireEvent.change(title(), { target: { value: 'Logo' } })
+    fireEvent.click(create())
+
+    const status = await dialog.findByRole('status', {
+      name: '“Logo” created in Product Design'
+    })
+    expect(title()).toHaveValue('')
+    expect(title()).toHaveFocus()
+    expect(
+      screen.queryByRole('alert', { name: '“Logo” created in Product Design' })
+    ).toBe(null)
+    fireEvent.change(title(), { target: { value: 'Icons' } })
+    fireEvent.click(create())
+
+    await dialog.findByRole('status', {
+      name: '“Icons” created in Product Design'
+    })
+    expect(design.tasks.map(task => task.title)).toEqual(['Logo', 'Icons'])
+    expect(localStorage.getItem('twake-tasks.createAnother')).toBe('true')
+    fireEvent.click(
+      within(
+        dialog.getByRole('status', {
+          name: '“Icons” created in Product Design'
+        })
+      ).getByRole('button', { name: 'See the task' })
+    )
+    expect(
+      await screen.findByRole('dialog', { name: 'DES-2 Icons' })
+    ).toBeVisible()
+    expect(status).not.toBeInTheDocument()
+  })
+
+  it('remembers on the device to create another task', async () => {
+    localStorage.setItem('twake-tasks.createAnother', 'true')
+    const { dialog } = await openNewTask()
+
+    expect(
+      dialog.getByRole('checkbox', { name: 'Create another' })
+    ).toBeChecked()
+  })
+
+  it('asks before dropping what was typed', async () => {
+    const { dialog, title } = await openNewTask()
+    fireEvent.change(title(), { target: { value: 'Logo' } })
+
+    fireEvent.click(dialog.getByRole('button', { name: 'Close' }))
+    const ask = within(
+      await screen.findByRole('dialog', { name: 'Discard your changes?' })
+    )
+    fireEvent.click(ask.getByRole('button', { name: 'Keep editing' }))
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Discard your changes?' })
+      ).toBe(null)
+    })
+    expect(title()).toHaveValue('Logo')
+    fireEvent.keyDown(title(), { key: 'Escape' })
+    fireEvent.click(
+      within(
+        await screen.findByRole('dialog', { name: 'Discard your changes?' })
+      ).getByRole('button', { name: 'Discard' })
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBe(null)
+    })
+  })
+
   it.each(['2026-02-31', '2026-13-01', '2026-00-10'])(
     'leaves out a due date from the URL that is no day (%s)',
     async due => {
@@ -451,4 +540,122 @@ describe('NewTaskDialog', () => {
       ).toBeVisible()
     }
   )
+})
+
+describe('NewTaskDialog opened from an agenda', () => {
+  const ME = { userId: 'me', email: 'alice@example.com', name: 'Alice Martin' }
+
+  async function openFrom(path: string) {
+    const inbox = aBoard({
+      name: 'Inbox',
+      keyPrefix: 'INB',
+      inbox: true,
+      sections: [],
+      members: [ME]
+    })
+    const design = aBoard({
+      name: 'Product Design',
+      keyPrefix: 'DES',
+      members: [ME, { userId: 'u-ana', email: 'ana@example.com', name: 'Ana' }]
+    })
+    const boardsApi = fakeBoardsApi([inbox, design])
+    renderRoute(path, { boardsApi })
+    fireEvent.click(await screen.findByRole('button', { name: 'Create task' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Create a task' })
+    )
+    const title = () => dialog.getByRole('textbox', { name: 'Title' })
+    const create = () => dialog.getByRole('button', { name: 'Create' })
+    return { dialog, title, create, inbox, design }
+  }
+
+  it('makes the task due today from Today, where it then shows', async () => {
+    const { dialog, title, create, inbox } = await openFrom('/today')
+    expect(
+      await dialog.findByRole('button', { name: 'In Inbox · Due today' })
+    ).toBeVisible()
+    expect(dialog.queryByRole('combobox', { name: 'Board' })).toBe(null)
+    fireEvent.change(title(), { target: { value: 'Renew the domain' } })
+    fireEvent.click(create())
+
+    expect(
+      await screen.findByRole('status', {
+        name: '“Renew the domain” created in Inbox'
+      })
+    ).toBeVisible()
+    expect(inbox.tasks).toMatchObject([
+      { title: 'Renew the domain', dueDate: localToday() }
+    ])
+    expect(
+      await screen.findByRole('button', { name: 'Renew the domain' })
+    ).toBeVisible()
+  })
+
+  it('makes the task due tomorrow from Upcoming', async () => {
+    const { dialog, title, create, inbox } = await openFrom('/upcoming')
+    expect(
+      await dialog.findByRole('button', { name: 'In Inbox · Due tomorrow' })
+    ).toBeVisible()
+    fireEvent.change(title(), { target: { value: 'Call' } })
+    fireEvent.click(create())
+
+    await waitFor(() => {
+      expect(inbox.tasks).toMatchObject([{ title: 'Call', dueDate: inDays(1) }])
+    })
+  })
+
+  it('assigns the task to me from My tasks, in whichever board is picked', async () => {
+    const { dialog, title, create, design } = await openFrom('/mine')
+    expect(
+      await dialog.findByRole('button', { name: 'In Inbox · Assigned to you' })
+    ).toBeVisible()
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    fireEvent.mouseDown(dialog.getByRole('combobox', { name: 'Board' }))
+    fireEvent.click(
+      await screen.findByRole('option', { name: 'Product Design' })
+    )
+    expect(
+      await dialog.findByRole('button', {
+        name: 'In Product Design · To do · Assigned to you'
+      })
+    ).toBeVisible()
+    fireEvent.change(title(), { target: { value: 'Invoice' } })
+    fireEvent.click(create())
+
+    await waitFor(() => {
+      expect(design.tasks).toMatchObject([
+        { title: 'Invoice', assignees: [{ userId: 'me' }] }
+      ])
+    })
+  })
+
+  it('keeps the alert longer when the task does not show on the page', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      const { dialog, title, create } = await openFrom('/today')
+      fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+      fireEvent.click(
+        await dialog.findByRole('button', { name: /^Due date: / })
+      )
+      fireEvent.click(
+        within(
+          await screen.findByRole('dialog', { name: 'Due date' })
+        ).getByRole('button', { name: 'No date' })
+      )
+      fireEvent.change(title(), { target: { value: 'Later' } })
+      fireEvent.click(create())
+      const name = '“Later” created in Inbox'
+      await screen.findByRole('status', { name })
+
+      await act(() => vi.advanceTimersByTimeAsync(5000))
+      expect(screen.getByRole('status', { name })).toBeVisible()
+      await act(() => vi.advanceTimersByTimeAsync(4000))
+
+      await waitFor(() => {
+        expect(screen.queryByRole('status', { name })).toBe(null)
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

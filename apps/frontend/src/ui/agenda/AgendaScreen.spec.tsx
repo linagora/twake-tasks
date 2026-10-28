@@ -304,7 +304,7 @@ describe('AgendaScreen', () => {
     expect(
       await screen.findByRole('dialog', { name: 'Create a task' })
     ).toBeVisible()
-    expect(router.state.location.search).toBe('?new=task')
+    expect(router.state.location.search).toBe('?new=task&assign=me')
   })
 
   it('shows placeholders while the tasks load', async () => {

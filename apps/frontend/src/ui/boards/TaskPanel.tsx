@@ -9,9 +9,6 @@ import {
 } from '@linagora/twake-icons'
 import {
   Button,
-  Dialog,
-  DialogActions,
-  DialogTitle,
   IconButton,
   Menu,
   Tab,
@@ -29,6 +26,7 @@ import {
 } from 'react'
 
 import { ApiError } from '@/application/boards'
+import { DiscardDialog } from '@/ds/DiscardDialog'
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { RichText, RichTextEditor } from '@/ds/RichText'
@@ -223,6 +221,11 @@ export function TaskPanel({
         </div>
         {asking && (
           <DiscardDialog
+            labels={{
+              title: t('task.discardTitle'),
+              keep: t('task.keepEditing'),
+              discard: t('task.discard')
+            }}
             onKeep={() => {
               setAsking(false)
             }}
@@ -231,28 +234,6 @@ export function TaskPanel({
         )}
       </SidePanel>
     </UnsavedContext>
-  )
-}
-
-function DiscardDialog({
-  onKeep,
-  onDiscard
-}: {
-  onKeep: () => void
-  onDiscard: () => void
-}): ReactElement {
-  const { t } = useI18n()
-  const titleId = useId()
-  return (
-    <Dialog open onClose={onKeep} aria-labelledby={titleId} size="small">
-      <DialogTitle id={titleId}>{t('task.discardTitle')}</DialogTitle>
-      <DialogActions>
-        <Button variant="text" onClick={onKeep}>
-          {t('task.keepEditing')}
-        </Button>
-        <Button onClick={onDiscard}>{t('task.discard')}</Button>
-      </DialogActions>
-    </Dialog>
   )
 }
 

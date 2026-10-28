@@ -21,6 +21,7 @@ import {
   useState,
   type ReactElement,
   type ReactNode,
+  type Ref,
   type RefObject,
   type SVGProps
 } from 'react'
@@ -412,18 +413,21 @@ export function PropertySelect({
   value,
   options,
   onChange,
-  disabled
+  disabled,
+  inputRef
 }: {
   labelId: string
   value: string
   options: { value: string; label: ReactNode }[]
   onChange: (value: string) => void
   disabled?: boolean
+  inputRef?: Ref<{ focus: () => void }>
 }): ReactElement {
   return (
     <Select
       size="small"
       disabled={disabled}
+      inputRef={inputRef}
       value={value}
       displayEmpty
       SelectDisplayProps={{ 'aria-labelledby': labelId }}

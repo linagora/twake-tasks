@@ -12,16 +12,19 @@ import {
 import {
   Alert,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DropdownButton,
+  FormControlLabel,
   IconButton,
   Stack,
   TextField,
   Typography
 } from '@linagora/twake-mui'
 import { useCallback, useId, useRef, useState, type ReactElement } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router'
 
 import {
@@ -32,6 +35,7 @@ import {
 } from '@/application/newTask'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { LabelChip } from '@/ds/Columns'
+import { DiscardDialog } from '@/ds/DiscardDialog'
 import { Icon } from '@/ds/Icon'
 import { DayPopover } from '@/ds/Pickers'
 import { RichTextEditor } from '@/ds/RichText'
@@ -49,8 +53,9 @@ import { MAX_DESCRIPTION } from '@/ui/boards/TaskPanel'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useSession } from '@/ui/session/SessionGate'
 import { useHighlightNewTask } from '@/ui/shell/NewTaskHighlight'
-import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
+import { useNewTaskParam, type NewTaskPreset } from '@/ui/shell/useNewTaskParam'
 
 const PRIORITIES: Priority[] = [1, 2, 3, 4]
 
@@ -66,16 +71,25 @@ const EMPTY: Omit<NewTaskDraft, 'title' | 'description'> = {
 const toggled = (ids: string[], id: string): string[] =>
   ids.includes(id) ? ids.filter(each => each !== id) : [...ids, id]
 
+const CREATE_ANOTHER = 'twake-tasks.createAnother'
+
 export interface CreatedTask {
   boardId: string
   key: string
   title: string
+  board: string
+  /** Its preset date or assignee was changed, so it may not be on the page. */
+  elsewhere: boolean
 }
+
+// Relative to the layout route, so it stays in the app or in the project the
+// embed shows.
+const taskPath = (task: CreatedTask) =>
+  `boards/${task.boardId}?task=${task.key}`
 
 /**
  * The dialog, while the URL asks for it, then the alert saying the task was
- * created, with a link to it. The link is relative to the layout route, so it
- * stays in the app or in the project the embed shows.
+ * created, with a link to it.
  */
 export function NewTaskFromUrl({
   inBoardId,
@@ -86,9 +100,12 @@ export function NewTaskFromUrl({
 }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const { creating, dueDate, closeNewTask } = useNewTaskParam()
+  const { creating, preset, closeNewTask } = useNewTaskParam()
   const [created, setCreated] = useState<CreatedTask | null>(null)
   const highlight = useHighlightNewTask()
+  const said =
+    created &&
+    t('newTask.createdIn', { title: created.title, board: created.board })
 
   return (
     <>
@@ -96,12 +113,13 @@ export function NewTaskFromUrl({
         <NewTaskDialog
           inBoardId={inBoardId}
           inProjectId={inProjectId}
-          dueDate={dueDate}
+          preset={preset}
           onClose={closeNewTask}
-          onCreated={task => {
+          onCreated={(task, staysOpen) => {
+            highlight(task.key)
+            if (staysOpen) return
             closeNewTask()
             setCreated(task)
-            highlight(task.key)
           }}
         />
       )}
@@ -109,7 +127,8 @@ export function NewTaskFromUrl({
         <Toast
           key={created.key}
           open
-          autoHideDuration={4000}
+          // Longer when the task is not on the page, to leave time to see it.
+          autoHideDuration={created.elsewhere ? 8000 : 4000}
           onClose={(_, reason) => {
             if (reason !== 'clickaway') setCreated(null)
           }}
@@ -117,26 +136,45 @@ export function NewTaskFromUrl({
           <Alert
             severity="success"
             role="status"
-            aria-label={t('newTask.created', { title: created.title })}
+            aria-label={said ?? undefined}
             action={
               <Button
                 variant="text"
                 size="small"
                 onClick={() => {
                   setCreated(null)
-                  void navigate(`boards/${created.boardId}?task=${created.key}`)
+                  void navigate(taskPath(created))
                 }}
               >
                 {t('newTask.seeTask')}
               </Button>
             }
           >
-            {t('newTask.created', { title: created.title })}
+            {said}
           </Alert>
         </Toast>
       )}
     </>
   )
+}
+
+function useCreateAnother(): [boolean, (another: boolean) => void] {
+  const [another, setAnother] = useState(() => {
+    try {
+      return localStorage.getItem(CREATE_ANOTHER) === 'true'
+    } catch {
+      return false
+    }
+  })
+  const choose = (next: boolean) => {
+    setAnother(next)
+    try {
+      localStorage.setItem(CREATE_ANOTHER, String(next))
+    } catch {
+      // Storage blocked: the choice lasts until the dialog closes.
+    }
+  }
+  return [another, choose]
 }
 
 /**
@@ -146,17 +184,20 @@ export function NewTaskFromUrl({
 export function NewTaskDialog({
   inBoardId,
   inProjectId,
-  dueDate,
+  preset,
   onClose,
   onCreated
 }: {
   inBoardId?: string | undefined
   inProjectId?: string | undefined
-  dueDate?: string | undefined
+  preset: NewTaskPreset
   onClose: () => void
-  onCreated: (task: CreatedTask) => void
+  /** `staysOpen` for another task, else the dialog is to be closed. */
+  onCreated: (task: CreatedTask, staysOpen: boolean) => void
 }): ReactElement {
   const { t, lang } = useI18n()
+  const { user } = useSession()
+  const navigate = useNavigate()
   const titleId = useId()
   const boardLabelId = useId()
   const sectionLabelId = useId()
@@ -165,8 +206,19 @@ export function NewTaskDialog({
   const [title, setTitle] = useState('')
   const [untitled, setUntitled] = useState(false)
   const [description, setDescription] = useState('')
+  // Remounts the description editor, which only reads its initial text.
+  const [cleared, setCleared] = useState(0)
   const [details, setDetails] = useState(false)
-  const [facts, setFacts] = useState({ ...EMPTY, dueDate: dueDate ?? null })
+  const [facts, setFacts] = useState({
+    ...EMPTY,
+    dueDate: preset.dueDate ?? null
+  })
+  // Who "me" is among the members is known once the board is loaded.
+  const [assignMe, setAssignMe] = useState(preset.assignToMe ?? false)
+  const [another, setAnother] = useCreateAnother()
+  const [last, setLast] = useState<CreatedTask | null>(null)
+  const [asking, setAsking] = useState(false)
+  const boardSelect = useRef<{ focus: () => void }>(null)
   const [picked, setPicked] = useState<string | undefined>(undefined)
   const [pickedSection, setPickedSection] = useState<string | undefined>(
     undefined
@@ -183,7 +235,7 @@ export function NewTaskDialog({
   }, [])
   const create = useNewTask()
   const [started, setStarted] = useState<StartedTask | undefined>(undefined)
-  const { targets, chosen, board } = useNewTaskBoard(
+  const { targets, chosen, board, boardFailed } = useNewTaskBoard(
     picked,
     inBoardId,
     inProjectId
@@ -199,12 +251,26 @@ export function NewTaskDialog({
   const closeMenu = () => {
     setMenu(null)
   }
+  const members = board?.members ?? []
+  const me = members.find(
+    each => each.email.toLowerCase() === user.email?.toLowerCase()
+  )
+  // Kept while another board loads: my id is the same in every board.
+  const [myId, setMyId] = useState<string | undefined>(undefined)
+  if (me && me.userId !== myId) setMyId(me.userId)
+  if (assignMe && (board || boardFailed)) {
+    setAssignMe(false)
+    if (me) setFacts(previous => ({ ...previous, assigneeIds: [me.userId] }))
+  }
+  const assignedToMe = myId !== undefined && facts.assigneeIds.includes(myId)
+
   const pickBoard = (boardId: string) => {
     if (boardId === chosen?.id) return
     setPicked(boardId)
     setPickedSection(undefined)
-    // Members, labels and sections belong to the board they were picked in.
-    change({ assigneeIds: [], labelIds: [] })
+    // Members, labels and sections belong to the board they were picked in;
+    // whoever picks a board is one of its members.
+    change({ assigneeIds: assignedToMe ? [myId] : [], labelIds: [] })
   }
 
   const sections = board?.sections ?? []
@@ -213,7 +279,16 @@ export function NewTaskDialog({
 
   // Closed while creating, it would miss the task once created.
   const close = () => {
-    if (!create.isPending) onClose()
+    if (create.isPending) return
+    if (title.trim() || description.trim()) setAsking(true)
+    else onClose()
+  }
+
+  const showBoard = () => {
+    flushSync(() => {
+      setDetails(true)
+    })
+    boardSelect.current?.focus()
   }
 
   const handleSubmit = () => {
@@ -238,7 +313,25 @@ export function NewTaskDialog({
       },
       {
         onSuccess: task => {
-          onCreated({ ...task, title: title.trim() })
+          const created = {
+            ...task,
+            title: title.trim(),
+            board: chosen.name,
+            elsewhere:
+              (preset.dueDate !== undefined &&
+                facts.dueDate !== preset.dueDate) ||
+              (preset.assignToMe === true && !assignedToMe)
+          }
+          onCreated(created, another)
+          if (!another) return
+          // The title stays editable while creating: keep what was typed since.
+          setTitle(current => (current === title ? '' : current))
+          setDescription(current => (current === description ? '' : current))
+          setCleared(cleared + 1)
+          setStarted(undefined)
+          setLast(created)
+          create.reset()
+          titleRef.current?.focus()
         },
         // Create disables itself while the request runs, which drops the
         // focus to the page.
@@ -250,7 +343,6 @@ export function NewTaskDialog({
     )
   }
 
-  const members = board?.members ?? []
   const labels = board?.labels ?? []
   const assignees = members.filter(each =>
     facts.assigneeIds.includes(each.userId)
@@ -263,6 +355,21 @@ export function NewTaskDialog({
     { label: t('dates.nextWeek'), day: inDays(untilNextMonday()) },
     { label: t('dates.noDate'), day: '' }
   ]
+  const destination =
+    chosen &&
+    [
+      section
+        ? t('newTask.destination', {
+            board: chosen.name,
+            section: section.name
+          })
+        : t('newTask.destinationBoard', { board: chosen.name }),
+      ...(facts.dueDate === inDays(0) ? [t('newTask.dueToday')] : []),
+      ...(facts.dueDate === inDays(1) ? [t('newTask.dueTomorrow')] : []),
+      ...(assignedToMe ? [t('newTask.assignedToYou')] : [])
+    ].join(' · ')
+  const lastSaid =
+    last && t('newTask.createdIn', { title: last.title, board: last.board })
 
   return (
     <Dialog open onClose={close} aria-labelledby={titleId} size="medium">
@@ -302,7 +409,45 @@ export function NewTaskDialog({
                 }
               }}
             />
-            <div>
+            {last && (
+              <Stack
+                direction="row"
+                spacing={1}
+                className="u-flex-items-center"
+                role="status"
+                aria-label={lastSaid ?? undefined}
+              >
+                <Typography variant="body2" color="textSecondary">
+                  {lastSaid}
+                </Typography>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => {
+                    void navigate(taskPath(last))
+                  }}
+                >
+                  {t('newTask.seeTask')}
+                </Button>
+              </Stack>
+            )}
+            <Stack
+              direction="row"
+              spacing={1}
+              className="u-flex-items-center u-flex-justify-between"
+            >
+              {destination ? (
+                <Button
+                  variant="text"
+                  size="small"
+                  startIcon={<Icon icon={Mosaic} size={14} />}
+                  onClick={showBoard}
+                >
+                  {destination}
+                </Button>
+              ) : (
+                <span />
+              )}
               <Button
                 variant="text"
                 size="small"
@@ -314,10 +459,11 @@ export function NewTaskDialog({
               >
                 {t(details ? 'newTask.hideDetails' : 'newTask.addDetails')}
               </Button>
-            </div>
+            </Stack>
             {details && (
               <>
                 <RichTextEditor
+                  key={cleared}
                   label={t('newTask.description')}
                   initial={description}
                   placeholder={t('newTask.descriptionPlaceholder')}
@@ -342,6 +488,7 @@ export function NewTaskDialog({
                         }))}
                         onChange={pickBoard}
                         disabled={started !== undefined}
+                        inputRef={boardSelect}
                       />
                     )}
                   </Property>
@@ -490,11 +637,25 @@ export function NewTaskDialog({
           </Stack>
         </DialogContent>
         <DialogActions>
+          <FormControlLabel
+            label={t('newTask.createAnother')}
+            control={
+              <Checkbox
+                size="small"
+                checked={another}
+                onChange={event => {
+                  setAnother(event.target.checked)
+                }}
+              />
+            }
+          />
           <Button
             type="submit"
             disabled={
               create.isPending ||
               !chosen ||
+              // Until it is known whether I am a member of the board.
+              assignMe ||
               description.length > MAX_DESCRIPTION
             }
           >
@@ -502,6 +663,19 @@ export function NewTaskDialog({
           </Button>
         </DialogActions>
       </form>
+      {asking && (
+        <DiscardDialog
+          labels={{
+            title: t('task.discardTitle'),
+            keep: t('task.keepEditing'),
+            discard: t('task.discard')
+          }}
+          onKeep={() => {
+            setAsking(false)
+          }}
+          onDiscard={onClose}
+        />
+      )}
       {menu?.name === 'members' && board && (
         <PeopleMenu
           label={t('newTask.membersTitle')}

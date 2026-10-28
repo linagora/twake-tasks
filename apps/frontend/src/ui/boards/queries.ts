@@ -760,6 +760,7 @@ export function useNewTaskBoard(
   targets: BoardSummary[] | undefined
   chosen: BoardSummary | undefined
   board: Board | undefined
+  boardFailed: boolean
 } {
   const api = useBoardsApi()
   const targets = useBoards().data?.filter(
@@ -775,7 +776,7 @@ export function useNewTaskBoard(
     queryKey: keys.board(chosen?.id ?? ''),
     queryFn: chosen ? () => api.getBoard(chosen.id) : skipToken
   })
-  return { targets, chosen, board: named.data }
+  return { targets, chosen, board: named.data, boardFailed: named.isError }
 }
 
 export function useSetLayout(
