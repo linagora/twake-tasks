@@ -136,36 +136,6 @@
   },
   {
     "type": "cycle",
-    "from": "src/modules/boards/archive.ts",
-    "to": "src/modules/boards/store.ts",
-    "unresolvedTo": "./store.ts",
-    "dependencyTypes": [
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "no-circular"
-    },
-    "cycle": [
-      {
-        "name": "src/modules/boards/store.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      },
-      {
-        "name": "src/modules/boards/archive.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      }
-    ]
-  },
-  {
-    "type": "cycle",
     "from": "src/modules/boards/live.ts",
     "to": "src/modules/boards/access.ts",
     "unresolvedTo": "./access.ts",
@@ -305,29 +275,6 @@
       },
       {
         "name": "src/infra",
-        "dependencyTypes": []
-      }
-    ]
-  },
-  {
-    "type": "cycle",
-    "from": "src/modules/auth",
-    "to": "src/infra",
-    "rule": {
-      "severity": "warn",
-      "name": "no-circular-folders"
-    },
-    "cycle": [
-      {
-        "name": "src/infra",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/modules/boards",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/modules/auth",
         "dependencyTypes": []
       }
     ]
@@ -546,29 +493,6 @@
       },
       {
         "name": "src/modules/spaces",
-        "dependencyTypes": []
-      }
-    ]
-  },
-  {
-    "type": "cycle",
-    "from": "src/scheduler",
-    "to": "src/infra",
-    "rule": {
-      "severity": "warn",
-      "name": "no-circular-folders"
-    },
-    "cycle": [
-      {
-        "name": "src/infra",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/modules/boards",
-        "dependencyTypes": []
-      },
-      {
-        "name": "src/scheduler",
         "dependencyTypes": []
       }
     ]
