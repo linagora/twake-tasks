@@ -1,4 +1,8 @@
 import { z } from 'zod'
+import { label } from './labels.ts'
+import { person, role } from './people.ts'
+import { section } from './sections.ts'
+import { taskResponse } from './tasks.ts'
 
 export const LAYOUTS = ['board', 'list', 'calendar'] as const
 
@@ -25,3 +29,26 @@ export const boardParams = z.object({ boardId: z.uuid() })
 export const layoutChoice = z.object({ layout: z.enum(LAYOUTS) })
 
 export const boardMove = z.object({ projectId: z.uuid() })
+
+export const boardResponse = z.object({
+  id: z.string(),
+  name: z.string(),
+  keyPrefix: z.string(),
+  project: z.object({
+    id: z.string(),
+    name: z.string(),
+    personal: z.boolean(),
+    managed: z.boolean()
+  }),
+  inbox: z.boolean(),
+  archived: z.boolean(),
+  version: z.number(),
+  role,
+  layout: z.enum(LAYOUTS),
+  defaultLayout: z.enum(LAYOUTS),
+  members: z.array(person),
+  invited: z.array(z.string()),
+  labels: z.array(label),
+  sections: z.array(section),
+  tasks: z.array(taskResponse)
+})

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { isTimeZone } from './common.ts'
+import { label } from './labels.ts'
+import { person } from './people.ts'
 
 export const DURATION_UNITS = ['minutes', 'days'] as const
 
@@ -66,4 +68,32 @@ export const searchQuery = z.object({ q: z.string().trim().max(200) })
 export const agendaQuery = z.object({
   zone: z.string().max(64).refine(isTimeZone),
   days: z.coerce.number().int().min(1).max(60)
+})
+
+export const taskResponse = z.object({
+  id: z.string(),
+  key: z.string(),
+  sectionId: z.string().nullable(),
+  parentId: z.string().nullable(),
+  title: z.string(),
+  priority: z.literal([1, 2, 3, 4]).nullable(),
+  dueDate: z.iso.date().nullable(),
+  dueTime: z.iso.time({ precision: -1 }).nullable(),
+  dueZone: z.string().nullable(),
+  deadline: z.iso.date().nullable(),
+  duration: z
+    .object({ amount: z.number(), unit: z.enum(DURATION_UNITS) })
+    .nullable(),
+  recurrence: z
+    .object({
+      every: z.number(),
+      unit: z.enum(RECURRENCE_UNITS),
+      fromCompletion: z.boolean()
+    })
+    .nullable(),
+  completedAt: z.iso.datetime({ offset: true }).nullable(),
+  canceledAt: z.iso.datetime({ offset: true }).nullable(),
+  assignees: z.array(person),
+  labels: z.array(label),
+  commentCount: z.number()
 })

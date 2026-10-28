@@ -34,7 +34,11 @@ if (!relayCallback()) {
   const space = connectTwakeSpace()
   const embed = isEmbedded() ? embedSession(config) : null
   const session = embed ?? oidcSession(config)
-  const boardsApi = httpBoardsApi(apiUrl, embed?.send ?? sendSignedIn)
+  const boardsApi = httpBoardsApi(
+    apiUrl,
+    embed?.send ?? sendSignedIn,
+    reporting.reportApiMismatch
+  )
   // Framed by TwakeSpace, the dialogs and the side panel go onto its page:
   // the region they cover is sent to TwakeSpace, which shows that part only
   const overlay = embed

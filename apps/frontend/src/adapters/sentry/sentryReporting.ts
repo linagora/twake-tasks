@@ -106,6 +106,16 @@ export function startSentry(
     reportCrash: (error, componentStack) => {
       report(error, { componentStack })
     },
+    reportApiMismatch: (response, paths) => {
+      Sentry.captureMessage(
+        `A ${response} response does not match the API contract`,
+        {
+          level: 'warning',
+          tags: { 'api-contract': response },
+          extra: { paths }
+        }
+      )
+    },
     feedback: feedback ? sentryFeedback(feedback) : null
   }
 }

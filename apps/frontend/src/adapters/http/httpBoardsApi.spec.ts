@@ -16,6 +16,51 @@ function backend(status: number, body?: unknown) {
 
 const BASE = 'https://tasks.example.com'
 
+const ANA = {
+  userId: 'u1',
+  email: 'ana@example.com',
+  name: 'Ana',
+  avatar: null
+}
+
+const TASK = {
+  id: 't1',
+  key: 'DES-1',
+  sectionId: 's1',
+  parentId: null,
+  title: 'Draft the brief',
+  priority: 2,
+  dueDate: '2026-10-28',
+  dueTime: '09:30',
+  dueZone: 'Europe/Paris',
+  deadline: null,
+  duration: { amount: 30, unit: 'minutes' },
+  recurrence: { every: 1, unit: 'weeks', fromCompletion: false },
+  completedAt: '2026-10-27T08:00:00.000Z',
+  canceledAt: null,
+  assignees: [ANA],
+  labels: [{ id: 'l1', name: 'Brand', color: null }],
+  commentCount: 0
+}
+
+const BOARD = {
+  id: 'b1',
+  name: 'Design',
+  keyPrefix: 'DES',
+  project: { id: 'p1', name: 'Design', personal: false, managed: false },
+  inbox: false,
+  archived: false,
+  version: 3,
+  role: 'admin',
+  layout: 'list',
+  defaultLayout: 'board',
+  members: [ANA],
+  invited: ['bob@example.com'],
+  labels: [{ id: 'l1', name: 'Brand', color: null }],
+  sections: [{ id: 's1', name: 'To do', category: 'unstarted' }],
+  tasks: [TASK]
+}
+
 describe('httpBoardsApi', () => {
   it('lists boards from /api/boards', async () => {
     const send = backend(200, { boards: [{ id: 'b1', name: 'Design' }] })
@@ -175,6 +220,41 @@ describe('httpBoardsApi', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('reads a board that matches the contract without reporting it', async () => {
+    const report = vi.fn()
+    const send = backend(200, { ...BOARD, addedLater: true })
+
+    const board = await httpBoardsApi(BASE, send, report).getBoard('b1')
+
+    expect(board).toEqual(BOARD)
+    expect(report).not.toHaveBeenCalled()
+  })
+
+  it('reports where a board drifts from the contract, once, and still shows it', async () => {
+    const report = vi.fn()
+    const drifted = {
+      ...BOARD,
+      role: 'owner',
+      tasks: [
+        { ...TASK, title: 42 },
+        { ...TASK, id: 't2', title: 43 }
+      ]
+    }
+    const send = backend(200, drifted)
+    const api = httpBoardsApi(BASE, send, report)
+
+    expect(await api.getBoard('b1')).toEqual(drifted)
+    send.mockResolvedValueOnce(
+      Response.json({ ...drifted, tasks: drifted.tasks.slice(0, 1) })
+    )
+    await api.getBoard('b1')
+
+    expect(report).toHaveBeenCalledExactlyOnceWith('board', [
+      'role',
+      'tasks.*.title'
+    ])
   })
 
   it('previews a transfer by posting the target to the preview route', async () => {
