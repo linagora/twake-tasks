@@ -18,7 +18,7 @@ test('fits a phone screen, without scrolling sideways', async ({ page }) => {
     await page.goto(path)
     await expect(page.getByRole('main')).toBeVisible()
     expect(await overflow(page), path).toBe(0)
-    await expect(page.getByRole('searchbox')).toBeVisible()
+    await expect(page.getByRole('combobox', { name: 'Search' })).toBeVisible()
     const search = await page.getByRole('search').boundingBox()
     expect(search?.width, 'search field').toBeGreaterThan(150)
   }
