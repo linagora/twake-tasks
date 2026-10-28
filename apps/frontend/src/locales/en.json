@@ -18,7 +18,8 @@
     "columnPicked": "Picked up the section %{section}.",
     "columnOver": "%{section} is now in position %{position} of %{count}.",
     "columnDropped": "%{section} dropped in position %{position} of %{count}.",
-    "columnCanceled": "Moving the section %{section} was canceled."
+    "columnCanceled": "Moving the section %{section} was canceled.",
+    "columnInstructions": "To move a section, press space or enter. Use the left and right arrow keys to move it, space or enter to drop it, and escape to cancel."
   },
   "app": {
     "name": "Twake Project",
@@ -128,6 +129,7 @@
   },
   "board": {
     "back": "Back to boards",
+    "sectionCount": "%{section}, %{smart_count} task |||| %{section}, %{smart_count} tasks",
     "menu": "Board options",
     "viewerHint": "You can view tasks, comment and set your own reminders.",
     "editorHint": "You can add, edit and move tasks. Admins manage sections, sharing and the board.",

@@ -195,7 +195,7 @@ test('moves a section from the keyboard, past its own cards', async ({
 
   await page
     .getByRole('heading', { level: 2, name: 'To do', exact: true })
-    .locator('..')
+    .getByRole('button')
     .focus()
   await page.keyboard.press('Space')
   await announced('Picked up the section To do.')

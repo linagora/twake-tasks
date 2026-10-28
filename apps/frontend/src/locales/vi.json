@@ -18,7 +18,8 @@
     "columnPicked": "Đã chọn mục %{section}.",
     "columnOver": "%{section} hiện ở vị trí %{position} trên %{count}.",
     "columnDropped": "Đã thả %{section} vào vị trí %{position} trên %{count}.",
-    "columnCanceled": "Đã hủy di chuyển mục %{section}."
+    "columnCanceled": "Đã hủy di chuyển mục %{section}.",
+    "columnInstructions": "Để di chuyển một mục, nhấn phím cách hoặc Enter. Dùng phím mũi tên trái và phải để di chuyển, phím cách hoặc Enter để thả, và Escape để hủy."
   },
   "app": {
     "name": "Twake Project",
@@ -128,6 +129,7 @@
   },
   "board": {
     "back": "Quay lại danh sách bảng",
+    "sectionCount": "%{section}, %{smart_count} nhiệm vụ",
     "menu": "Tùy chọn bảng",
     "viewerHint": "Bạn có thể xem công việc, bình luận và đặt nhắc nhở cho mình.",
     "editorHint": "Bạn có thể thêm, sửa và di chuyển công việc. Quản trị viên quản lý mục, chia sẻ và bảng.",

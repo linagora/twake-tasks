@@ -619,25 +619,31 @@ function BoardColumns({
                 <SortableColumns
                   ids={sections.map(column => columnSortId(columnKey(column)))}
                 >
-                  {sections.map(column =>
-                    manageable ? (
+                  {sections.map(column => {
+                    const props = content(column)
+                    return manageable ? (
                       <SortableColumn
                         key={columnKey(column)}
                         id={laneKey(column)}
                         sortId={columnSortId(columnKey(column))}
                         description={t('drag.column')}
+                        instructions={t('drag.columnInstructions')}
+                        label={t('board.sectionCount', {
+                          section: column.name,
+                          smart_count: props.count
+                        })}
                         title={column.name}
-                        {...content(column)}
+                        {...props}
                       />
                     ) : (
                       <DropColumn
                         key={columnKey(column)}
                         id={laneKey(column)}
                         title={column.name}
-                        {...content(column)}
+                        {...props}
                       />
                     )
-                  )}
+                  })}
                 </SortableColumns>
                 {manageable && <NewSectionButton board={board} />}
               </Columns>
