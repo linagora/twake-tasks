@@ -12,6 +12,7 @@ AS $function$
     'twakeorg', tasks.org_id,
     'twakeactorid', nullif(current_setting('app.user_id', true), ''),
     'twakeactor', nullif(current_setting('app.user_email', true), ''),
+    'twakecorrelationid', nullif(current_setting('app.request_id', true), ''),
     'data', jsonb_build_object('object', jsonb_build_object(
       'type', 'task',
       'id', tasks.id,

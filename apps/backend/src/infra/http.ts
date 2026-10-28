@@ -5,8 +5,11 @@ import Fastify, {
   type FastifyInstance,
   type FastifyRequest
 } from 'fastify'
+import { randomUUID } from 'node:crypto'
+import { z } from 'zod'
 import { isTransient } from './db.ts'
 import type { Metrics } from './metrics.ts'
+import { runInRequest } from './requestId.ts'
 
 declare module 'fastify' {
   interface FastifyContextConfig {
@@ -27,9 +30,26 @@ export function createServer(deps: {
   const app = Fastify({
     loggerInstance: deps.logger,
     trustProxy: (_address, hop) => hop < proxyHops,
+    // Only a uuid is taken from the caller, since the id ends up in events
+    // and in a uuid column.
+    genReqId: request => {
+      const sent = request.headers['x-request-id']
+      return typeof sent === 'string' && uuid.safeParse(sent).success
+        ? sent.toLowerCase()
+        : randomUUID()
+    },
     logController: new LogController({
       disableRequestLogging: request => isProbe(request.url)
     })
+  })
+
+  app.addHook('onRequest', async (request, reply) => {
+    reply.header('x-request-id', request.id)
+  })
+
+  // Not in onRequest: the body is parsed afterwards, outside its async context.
+  app.addHook('preHandler', (request, _reply, done) => {
+    runInRequest(request.id, done)
   })
 
   // Fastify answers with the error's message, which for a failed query holds
@@ -98,6 +118,8 @@ export function createServer(deps: {
 
   return app
 }
+
+const uuid = z.uuid()
 
 const isProbe = (url: string) =>
   url.startsWith('/health/') || url === '/metrics'

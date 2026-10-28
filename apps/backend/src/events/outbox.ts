@@ -110,7 +110,10 @@ export function createRelay(deps: {
         .limit(BATCH)
       const sent: number[] = []
       for (const row of pending) {
-        const type = (row.event as { type?: unknown } | null)?.type
+        const { type, twakecorrelationid: reqId } = (row.event ?? {}) as {
+          type?: unknown
+          twakecorrelationid?: unknown
+        }
         const event = isKnownType(type)
           ? publishedEvent.safeParse(row.event)
           : { success: true as const, data: row.event as PublishedEvent }
@@ -120,6 +123,7 @@ export function createRelay(deps: {
             {
               outbox: row.id,
               type,
+              reqId,
               issues: event.error.issues.map(({ code, path }) => ({
                 code,
                 path: path.join('.')
@@ -133,7 +137,10 @@ export function createRelay(deps: {
         try {
           await deps.publish(event.data)
         } catch (error) {
-          deps.logger.warn({ err: error, outbox: row.id }, 'relay failed')
+          deps.logger.warn(
+            { err: error, outbox: row.id, reqId },
+            'relay failed'
+          )
           metrics?.outboxPublishFailures.inc()
           break
         }

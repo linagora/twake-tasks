@@ -89,6 +89,25 @@ describe('outbox', () => {
     expect(sent).toContain(event.id)
   })
 
+  it('logs a failed publish with the request that caused it', async () => {
+    const event = { ...anEvent(), twakecorrelationid: randomUUID() }
+    await db.transaction(tx => enqueue(tx, event))
+    const watched = logger.child({})
+    const warn = vi.spyOn(watched, 'warn')
+    const failing = (sent: OutgoingEvent) =>
+      sent.id === event.id
+        ? Promise.reject(new Error('broker down'))
+        : Promise.resolve()
+
+    await drain(createRelay({ db, logger: watched, publish: failing }))
+    await drain(createRelay({ db, logger, publish: recorder().publish }))
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({ reqId: event.twakecorrelationid }),
+      'relay failed'
+    )
+  })
+
   it('drops an event that breaks its contract, and goes on with the next', async () => {
     const invalid = { ...anEvent(), data: { space_id: 'secret' } }
     const next = anEvent()

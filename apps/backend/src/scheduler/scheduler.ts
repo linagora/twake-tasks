@@ -46,7 +46,12 @@ export async function schedule(db: Db | Tx, job: Job): Promise<void> {
     .values(row)
     .onConflictDoUpdate({
       target: jobs.key,
-      set: { ...row, attempts: 0, lastError: null }
+      set: {
+        ...row,
+        attempts: 0,
+        lastError: null,
+        requestId: sql`excluded.request_id`
+      }
     })
 }
 
@@ -85,13 +90,14 @@ export function createScheduler(deps: {
   ): Promise<Outcome> {
     const attempts = job.attempts + 1
     const message = error instanceof Error ? error.message : String(error)
-    deps.logger.warn({ err: error, job: job.id, attempts }, 'job failed')
+    const reqId = job.requestId ?? undefined
+    deps.logger.warn({ err: error, job: job.id, attempts, reqId }, 'job failed')
     const same = and(
       eq(jobs.id, job.id),
       lease ? eq(jobs.runAt, lease) : undefined
     )
     if (attempts >= MAX_ATTEMPTS) {
-      deps.logger.error({ job: job.id, kind: job.kind }, 'job dropped')
+      deps.logger.error({ job: job.id, kind: job.kind, reqId }, 'job dropped')
       await db.delete(jobs).where(same)
       return 'dropped'
     }

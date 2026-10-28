@@ -29,6 +29,7 @@ flowchart LR
 - Background work runs in the backend process, from a jobs table in PostgreSQL that every replica polls with `SKIP LOCKED`: reminders, notification and invitation emails, the purge of tasks 30 days after they go to the trash, and in space mode the nightly space repair. Each kind of job drains on its own, and a job sends its mail only after its transaction commits (see [configuration](configuration.md#backend)).
 - Every replica consumes the incoming events, several at a time. The events of one space apply one at a time, under a lock on its row (see [events](events.md#order)).
 - Outgoing events are written to an outbox table in the same transaction as the change, and relayed to RabbitMQ by one replica at a time (behind an advisory lock), in order.
+- Each request has an id: the caller's `X-Request-Id` when it is a uuid, otherwise a new one, sent back in the same header. It is logged as `reqId`, and follows the change into its task events (`twakecorrelationid`) and the jobs its transaction schedules (`jobs.request_id`), whose log lines carry it too.
 
 ## Organizations
 

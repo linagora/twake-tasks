@@ -10,6 +10,7 @@ export interface OutgoingEvent {
   twakeorg?: string | undefined
   twakeactor?: string | undefined
   twakeactorid?: string | undefined
+  twakecorrelationid?: string | undefined
   data: Record<string, unknown>
 }
 

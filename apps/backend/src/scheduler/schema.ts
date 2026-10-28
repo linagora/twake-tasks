@@ -20,6 +20,10 @@ export const jobs = pgTable(
     runAt: timestamptz('run_at').notNull(),
     attempts: integer().notNull().default(0),
     lastError: text('last_error'),
+    // A column default, so jobs the SQL functions insert carry the request too.
+    requestId: uuid('request_id').default(
+      sql`cast(nullif(current_setting('app.request_id', true), '') as uuid)`
+    ),
     createdAt: timestamptz('created_at').notNull().defaultNow()
   },
   table => [
