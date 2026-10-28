@@ -516,7 +516,7 @@
   },
   "layout": {
     "title": "Layout",
-    "board": "Board",
+    "board": "Kanban",
     "list": "List",
     "calendar": "Calendar",
     "useAsDefault": "Use as default layout",

@@ -138,7 +138,7 @@ describe('FiltersScreen', () => {
     const { id } = await boardsApi.createFilter({ name: 'All', criteria: {} })
     const { unmount } = renderRoute(`/filters/${id}`, { boardsApi })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Board' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Kanban' }))
 
     const started = within(screen.getByRole('region', { name: 'In progress' }))
     expect(started.getByRole('button', { name: 'Logo' })).toBeVisible()
@@ -167,7 +167,7 @@ describe('FiltersScreen', () => {
 
     expect(await screen.findByText('Logo')).toBeVisible()
     expect(screen.getByText('DES-2 · Design · Sub-task of Logo')).toBeVisible()
-    fireEvent.click(screen.getByRole('button', { name: 'Board' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kanban' }))
     expect(screen.getByText('DES-2 · Design · Sub-task of Logo')).toBeVisible()
   })
 
@@ -193,7 +193,7 @@ describe('FiltersScreen', () => {
     ).toHaveAttribute('href', '/filters')
     expect(document.title).toContain('Page not found')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Board' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Kanban' })).toBeNull()
   })
 
   it('sums up what each saved filter looks for', async () => {

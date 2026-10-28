@@ -516,7 +516,7 @@
   },
   "layout": {
     "title": "Layout",
-    "board": "Bacheca",
+    "board": "Kanban",
     "list": "Elenco",
     "calendar": "Calendario",
     "useAsDefault": "Usa come layout predefinito",

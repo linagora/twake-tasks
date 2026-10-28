@@ -516,7 +516,7 @@
   },
   "layout": {
     "title": "Affichage",
-    "board": "Tableau",
+    "board": "Kanban",
     "list": "Liste",
     "calendar": "Calendrier",
     "useAsDefault": "Utiliser comme vue par défaut",
