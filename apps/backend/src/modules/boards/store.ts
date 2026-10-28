@@ -77,25 +77,52 @@ const SEARCH_LIMIT = 50
 const WORDS_BEFORE = 5
 const WORDS_AFTER = 8
 
+// Letters unaccent rewrites that have no canonical decomposition.
+const UNACCENT_LETTERS: Record<string, string> = {
+  æ: 'ae',
+  œ: 'oe',
+  ß: 'ss',
+  ø: 'o',
+  ł: 'l',
+  đ: 'd',
+  ð: 'd',
+  þ: 'th',
+  ħ: 'h',
+  ı: 'i',
+  ŀ: 'l',
+  ﬀ: 'ff',
+  ﬁ: 'fi',
+  ﬂ: 'fl',
+  ﬃ: 'ffi',
+  ﬄ: 'ffl'
+}
+
 /** Lower case, without accents, as unaccent compares in the database. */
 const fold = (text: string): string =>
-  text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+  text
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(
+      /[æœßøłđðþħıŀﬀﬁﬂﬃﬄ]/gu,
+      letter => UNACCENT_LETTERS[letter] ?? letter
+    )
 
 const accentless = (column: SQL | AnyColumn, pattern: string) =>
   sql`unaccent(${column}) ilike unaccent(${pattern})`
 
-function excerptOf(description: string, text: string): string | null {
+function excerptOf(description: string, folded: string): string | null {
   const words = description.split(/\s+/).filter(Boolean)
   // Each word folded on its own keeps the words in place, whatever their length.
   const joined = words.map(fold).join(' ')
-  const at = joined.indexOf(fold(text))
+  const at = joined.indexOf(folded)
   if (at === -1) return null
   const wordAt = (offset: number) =>
     joined.slice(0, offset).split(' ').length - 1
   const from = Math.max(0, wordAt(at) - WORDS_BEFORE)
   const to = Math.min(
     words.length,
-    wordAt(at + fold(text).length) + 1 + WORDS_AFTER
+    wordAt(at + folded.length) + 1 + WORDS_AFTER
   )
   return `${from > 0 ? '…' : ''}${words.slice(from, to).join(' ')}${to < words.length ? '…' : ''}`
 }
@@ -109,18 +136,16 @@ function matchOf(
   task: { key?: string | undefined; title?: string | null | undefined },
   previousKeys: string[],
   excerpt: string | null,
-  folded: string
+  lower: string,
+  inTitle: boolean
 ): SearchMatch | null {
-  if (task.key?.toLowerCase().startsWith(folded)) {
+  // Keys compare with ilike in the database, without unaccent.
+  if (task.key?.toLowerCase().startsWith(lower)) {
     return { field: 'key', text: task.key }
   }
-  const previous = previousKeys.find(key =>
-    key.toLowerCase().startsWith(folded)
-  )
+  const previous = previousKeys.find(key => key.toLowerCase().startsWith(lower))
   if (previous) return { field: 'previousKey', text: previous }
-  if (task.title && fold(task.title).includes(folded)) {
-    return { field: 'title', text: task.title }
-  }
+  if (task.title && inTitle) return { field: 'title', text: task.title }
   return excerpt ? { field: 'description', text: excerpt } : null
 }
 
@@ -225,6 +250,7 @@ export function createBoardStore(db: Db) {
           SEARCH_LIMIT,
           sql`${keyMatches(pattern)} desc`
         )
+        const lower = text.toLowerCase()
         const folded = fold(text)
         const ids = found.flatMap(task => (task.id ? [task.id] : []))
         const fields = new Map(
@@ -244,14 +270,12 @@ export function createBoardStore(db: Db) {
         return found.map(task => {
           const { description = '', previousKeys = [] } =
             fields.get(task.id ?? '') ?? {}
-          const excerpt =
-            task.title && fold(task.title).includes(folded)
-              ? null
-              : excerptOf(description, text)
+          const inTitle = !!task.title && fold(task.title).includes(folded)
+          const excerpt = inTitle ? null : excerptOf(description, folded)
           return {
             ...task,
             excerpt,
-            match: matchOf(task, previousKeys, excerpt, folded)
+            match: matchOf(task, previousKeys, excerpt, lower, inTitle)
           }
         })
       })

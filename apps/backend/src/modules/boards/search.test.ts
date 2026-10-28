@@ -184,6 +184,28 @@ describe('search', () => {
     ])
   })
 
+  it('quotes letters unaccent spells out, and keeps accents out of keys', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    await design.add('Œuvre de Søren')
+    await design.add('Désherber')
+    const found = async (q: string) =>
+      (
+        await api
+          .as(owner)
+          .get(`/search?${new URLSearchParams({ q }).toString()}`)
+      )
+        .json<{ tasks: { key: string; match: unknown }[] }>()
+        .tasks.map(task => [task.key, task.match])
+
+    expect(await found('oeuvre de soren')).toEqual([
+      ['DES-1', { field: 'title', text: 'Œuvre de Søren' }]
+    ])
+    expect(await found('dés')).toEqual([
+      ['DES-2', { field: 'title', text: 'Désherber' }]
+    ])
+  })
+
   it('only finds tasks on boards I can see', async () => {
     const owner = aUser()
     const stranger = aUser({ organizationId: owner.organizationId })
