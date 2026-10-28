@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { pino } from 'pino'
 import postgres from 'postgres'
 import { buildApp } from './app.ts'
@@ -9,6 +10,7 @@ import { createMessageHandler } from './events/router.ts'
 import { createChanges } from './infra/changes.ts'
 import { assertRowLevelSecurity, createDb, migrateLocked } from './infra/db.ts'
 import { ldapRestClient } from './infra/ldapRest.ts'
+import { startErrorReporting } from './infra/errorReporting.ts'
 import { createMailer } from './infra/mail.ts'
 import { createMetrics } from './infra/metrics.ts'
 import { connectRedis } from './infra/rateLimit.ts'
@@ -46,6 +48,17 @@ import { settingsRoutes } from './modules/settings/events.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
+const stopErrorReporting = config.SENTRY_DSN
+  ? startErrorReporting({
+      dsn: config.SENTRY_DSN,
+      environment: config.SENTRY_ENVIRONMENT,
+      release: (
+        JSON.parse(
+          readFileSync(new URL('../package.json', import.meta.url), 'utf8')
+        ) as { version: string }
+      ).version
+    })
+  : undefined
 const limits = rateLimits(config)
 const logger = pino({ level: config.LOG_LEVEL })
 const spaces = config.SPACE_INTEGRATION === 'true'
@@ -231,6 +244,7 @@ async function shutdown(signal: string): Promise<void> {
     logger.error({ err: error }, 'shutdown failed')
     process.exitCode = 1
   }
+  await stopErrorReporting?.()
 }
 
 process.once('SIGTERM', signal => void shutdown(signal))

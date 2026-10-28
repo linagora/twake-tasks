@@ -21,6 +21,7 @@
     "@fastify/rate-limit": "^11.2.1",
     "@linagora/rabbitmq-client": "^0.7.1",
     "@prometheus-io/client": "^0.16.1",
+    "@sentry/node": "^11.4.0",
     "@twake-tasks/api-contract": "*",
     "amqplib": "^2.2.0",
     "drizzle-orm": "1.0.0-rc.4",
