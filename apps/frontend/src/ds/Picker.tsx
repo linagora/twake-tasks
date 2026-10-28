@@ -9,7 +9,10 @@ import {
   Typography
 } from '@linagora/twake-mui'
 import {
+  useEffect,
+  useEffectEvent,
   useRef,
+  useState,
   type KeyboardEvent,
   type ReactElement,
   type ReactNode,
@@ -17,6 +20,44 @@ import {
 } from 'react'
 
 import { SearchBar } from '@/ds/SearchBar'
+
+function SearchStatus({
+  search,
+  listRef,
+  countLabel
+}: {
+  search: string
+  listRef: RefObject<HTMLUListElement | null>
+  countLabel: (count: number) => string
+}): ReactElement {
+  const [status, setStatus] = useState('')
+  const searched = useRef(search)
+  const announce = useEffectEvent(() => {
+    const list = listRef.current
+    if (!list) return
+    const count = list.querySelectorAll(
+      '[role="menuitemcheckbox"], [role="menuitem"][aria-disabled="true"]'
+    ).length
+    setStatus(
+      count > 0
+        ? countLabel(count)
+        : (list.querySelector('.picker-empty')?.textContent ?? '')
+    )
+  })
+  useEffect(() => {
+    if (search === searched.current) return
+    searched.current = search
+    const timer = setTimeout(announce, 300)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [search])
+  return (
+    <p role="status" className="u-visuallyhidden">
+      {status}
+    </p>
+  )
+}
 
 export function PickerPopover({
   label,
@@ -27,6 +68,7 @@ export function PickerPopover({
   onSearch,
   onPickFirst,
   searchRef: givenSearchRef,
+  countLabel,
   footer,
   children
 }: {
@@ -39,6 +81,8 @@ export function PickerPopover({
   onPickFirst?: () => void
   /** To focus the search field again, once something new is made from it. */
   searchRef?: RefObject<HTMLInputElement | null>
+  /** Read out once typing in the search pauses, as "2 options". */
+  countLabel: (count: number) => string
   footer?: ReactNode
   children: ReactNode
 }): ReactElement {
@@ -112,6 +156,7 @@ export function PickerPopover({
       >
         {children}
       </MenuList>
+      <SearchStatus search={search} listRef={listRef} countLabel={countLabel} />
       {footer && <Box sx={{ px: 2, pb: 1.5 }}>{footer}</Box>}
     </Popover>
   )
@@ -247,6 +292,7 @@ export function PickerEmpty({
       component="li"
       variant="body2"
       color="textSecondary"
+      className="picker-empty"
       sx={{ px: 2, py: 1 }}
     >
       {children}

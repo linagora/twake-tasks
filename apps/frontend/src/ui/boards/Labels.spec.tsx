@@ -246,6 +246,23 @@ describe('Labels', () => {
     expect(boardsApi.setLabels).not.toHaveBeenCalled()
   })
 
+  it('says how many labels match the search', async () => {
+    const { board, boardsApi } = labeledBoard()
+    board.labels = [urgent, { id: 'urgency', name: 'Urgency', color: null }]
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    const picker = await openLabels()
+
+    search(picker, 'urg')
+    await waitFor(() => {
+      expect(picker.getByRole('status')).toHaveTextContent('2 options')
+    })
+
+    search(picker, 'zzz')
+    await waitFor(() => {
+      expect(picker.getByRole('status')).toHaveTextContent('No matches')
+    })
+  })
+
   it('puts the cursor in the search field', async () => {
     const { board, boardsApi } = labeledBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })

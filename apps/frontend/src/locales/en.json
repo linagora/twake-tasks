@@ -527,7 +527,12 @@
     "emptyHint": "Try another word, or check the spelling.",
     "failed": "Couldn’t search.",
     "tooShort": "Type at least %{count} characters to search.",
-    "allBoards": "Show all %{smart_count} boards"
+    "allBoards": "Show all %{smart_count} boards",
+    "found": "%{smart_count} task found for “%{text}” |||| %{smart_count} tasks found for “%{text}”",
+    "boardsFound": "%{smart_count} board found |||| %{smart_count} boards found"
+  },
+  "picker": {
+    "count": "%{smart_count} option |||| %{smart_count} options"
   },
   "notifications": {
     "title": "Notifications",

@@ -67,6 +67,7 @@ export function PeopleMenu({
       anchor={anchor}
       onClose={onClose}
       searchLabel={t('board.searchPeople')}
+      countLabel={count => t('picker.count', { smart_count: count })}
       search={search}
       onSearch={setSearch}
       onPickFirst={() => {

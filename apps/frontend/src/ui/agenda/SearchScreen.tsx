@@ -3,6 +3,7 @@ import { Button, Link, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type RefObject } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 
+import type { BoardSummary } from '@/domain/board'
 import { listBoards } from '@/domain/boardList'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { fold, Highlight } from '@/ds/Highlight'
@@ -66,20 +67,16 @@ export function SearchField({
 
 const SHOWN_BOARDS = 5
 
-function BoardResults({ text }: { text: string }): ReactElement | null {
+function BoardResults({
+  text,
+  found
+}: {
+  text: string
+  found: BoardSummary[]
+}): ReactElement | null {
   const { t } = useI18n()
-  const boards = useBoards()
   const projectName = useProjectName()
   const [expanded, setExpanded] = useState(false)
-  const query = fold(text)
-  const found = listBoards(
-    (boards.data ?? []).filter(
-      board =>
-        !board.archived &&
-        (fold(board.name).includes(query) ||
-          fold(board.keyPrefix).startsWith(query))
-    )
-  )
   if (found.length === 0) return null
   const shown = expanded ? found : found.slice(0, SHOWN_BOARDS)
   return (
@@ -130,8 +127,33 @@ export function SearchScreen(): ReactElement {
   const [params] = useSearchParams()
   const text = params.get('q')?.trim() ?? ''
   const results = useSearch(text)
+  const boards = useBoards()
   const minLength = searchMinLength()
   useDocumentTitle(t('search.label'))
+
+  const query = fold(text)
+  const foundBoards =
+    text.length >= minLength
+      ? listBoards(
+          (boards.data ?? []).filter(
+            board =>
+              !board.archived &&
+              (fold(board.name).includes(query) ||
+                fold(board.keyPrefix).startsWith(query))
+          )
+        )
+      : []
+  const found =
+    results.data && !boards.isPending
+      ? [
+          results.data.length > 0 &&
+            t('search.found', { smart_count: results.data.length, text }),
+          foundBoards.length > 0 &&
+            t('search.boardsFound', { smart_count: foundBoards.length })
+        ]
+          .filter(Boolean)
+          .join('. ')
+      : ''
 
   const origin = {
     icon: Magnifier,
@@ -149,7 +171,12 @@ export function SearchScreen(): ReactElement {
         {text !== '' && text.length < minLength && (
           <Typography>{t('search.tooShort', { count: minLength })}</Typography>
         )}
-        {text.length >= minLength && <BoardResults key={text} text={text} />}
+        <p role="status" className="u-visuallyhidden">
+          {found}
+        </p>
+        {text.length >= minLength && (
+          <BoardResults key={text} text={text} found={foundBoards} />
+        )}
         {text.length >= minLength && results.isPending && (
           <ListSkeleton label={t('app.loading')} />
         )}

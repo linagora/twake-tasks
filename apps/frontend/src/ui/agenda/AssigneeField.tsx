@@ -153,6 +153,7 @@ export function AssigneeField({
           setSearch('')
         }}
         searchLabel={t('board.searchPeople')}
+        countLabel={count => t('picker.count', { smart_count: count })}
         search={search}
         onSearch={setSearch}
         onPickFirst={() => {

@@ -527,7 +527,12 @@
     "emptyHint": "Versuchen Sie ein anderes Wort, oder prüfen Sie die Schreibweise.",
     "failed": "Die Suche ist fehlgeschlagen.",
     "tooShort": "Geben Sie mindestens %{count} Zeichen ein, um zu suchen.",
-    "allBoards": "Alle %{smart_count} Boards anzeigen"
+    "allBoards": "Alle %{smart_count} Boards anzeigen",
+    "found": "%{smart_count} Aufgabe für „%{text}“ gefunden |||| %{smart_count} Aufgaben für „%{text}“ gefunden",
+    "boardsFound": "%{smart_count} Board gefunden |||| %{smart_count} Boards gefunden"
+  },
+  "picker": {
+    "count": "%{smart_count} Option |||| %{smart_count} Optionen"
   },
   "notifications": {
     "title": "Benachrichtigungen",
