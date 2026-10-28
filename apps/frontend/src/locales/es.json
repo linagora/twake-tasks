@@ -18,7 +18,8 @@
     "columnPicked": "Sección %{section} seleccionada.",
     "columnOver": "%{section} está ahora en la posición %{position} de %{count}.",
     "columnDropped": "%{section} soltada en la posición %{position} de %{count}.",
-    "columnCanceled": "Se canceló el movimiento de la sección %{section}."
+    "columnCanceled": "Se canceló el movimiento de la sección %{section}.",
+    "columnInstructions": "Para mover una sección, pulsa Espacio o Intro. Usa las flechas izquierda y derecha para moverla, Espacio o Intro para soltarla y Escape para cancelar."
   },
   "app": {
     "name": "Twake Project",
@@ -128,6 +129,7 @@
   },
   "board": {
     "back": "Volver a los tableros",
+    "sectionCount": "%{section}, %{smart_count} tarea |||| %{section}, %{smart_count} tareas",
     "menu": "Opciones del tablero",
     "viewerHint": "Puedes ver las tareas, comentar y crear tus recordatorios.",
     "editorHint": "Puedes añadir, editar y mover tareas. Los administradores gestionan las secciones, el uso compartido y el tablero.",

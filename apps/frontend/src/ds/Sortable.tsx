@@ -6,7 +6,13 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { ComponentProps, ReactElement, ReactNode } from 'react'
+import {
+  useId,
+  type ComponentProps,
+  type KeyboardEventHandler,
+  type ReactElement,
+  type ReactNode
+} from 'react'
 
 import { Card, Column, type CardProps, type ColumnProps } from '@/ds/Columns'
 import { ListRow, ListSection } from '@/ds/ListView'
@@ -143,6 +149,8 @@ export function SortableColumn({
   id,
   sortId,
   description,
+  label,
+  instructions,
   ...props
 }: ColumnProps & {
   /** Where cards drop. */
@@ -150,7 +158,12 @@ export function SortableColumn({
   /** Where the column sits among the others. */
   sortId: string
   description: string
+  /** The handle's name, the title with the count. */
+  label: string
+  /** How to move the column from the keyboard, unlike dnd-kit's for cards. */
+  instructions: string
 }): ReactElement {
+  const instructionsId = useId()
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id })
   const {
     setNodeRef,
@@ -165,20 +178,33 @@ export function SortableColumn({
     data: { type: COLUMN },
     attributes: { roleDescription: description }
   })
+  const { onKeyDown, ...pointer } = listeners ?? {}
   return (
-    <Column
-      {...props}
-      ref={node => {
-        setNodeRef(node)
-        setDropRef(node)
-      }}
-      highlighted={isOver}
-      // As the activator, Space and Enter pick the column up only from its
-      // header, and still open the section menu inside it.
-      handle={{ ...attributes, ...listeners, ref: setActivatorNodeRef }}
-      drag={isDragging ? 'placeholder' : 'none'}
-      // eslint-disable-next-line no-restricted-syntax -- changes every frame of a drag; sx would mint a class per frame
-      style={{ transform: CSS.Translate.toString(transform), transition }}
-    />
+    <>
+      <Column
+        {...props}
+        ref={node => {
+          setNodeRef(node)
+          setDropRef(node)
+        }}
+        highlighted={isOver}
+        // Space and Enter pick the column up from its title only, so they
+        // still open the section menu beside it.
+        handle={{
+          ...attributes,
+          onKeyDown: onKeyDown as KeyboardEventHandler | undefined,
+          ref: setActivatorNodeRef,
+          'aria-label': label,
+          'aria-describedby': instructionsId
+        }}
+        grab={pointer}
+        drag={isDragging ? 'placeholder' : 'none'}
+        // eslint-disable-next-line no-restricted-syntax -- changes every frame of a drag; sx would mint a class per frame
+        style={{ transform: CSS.Translate.toString(transform), transition }}
+      />
+      <div hidden id={instructionsId}>
+        {instructions}
+      </div>
+    </>
   )
 }

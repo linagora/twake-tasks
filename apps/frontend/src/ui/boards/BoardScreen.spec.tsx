@@ -272,9 +272,31 @@ describe('BoardScreen', () => {
       level: 2,
       name: 'To do'
     })
-    const handle = heading.parentElement
+    const handle = within(heading).getByRole('button', {
+      name: 'To do, 1 task'
+    })
     expect(handle).toHaveAttribute('aria-roledescription', 'draggable section')
     expect(handle).toHaveAttribute('tabindex', '0')
+    expect(
+      document.getElementById(handle.getAttribute('aria-describedby') ?? '')
+    ).toHaveTextContent('To move a section, press space or enter.')
+    expect(
+      within(handle).queryByRole('button', { name: 'Options for To do' })
+    ).toBeNull()
+    expect(
+      within(column('To do')).getByRole('button', { name: 'Options for To do' })
+    ).toBeInTheDocument()
+  })
+
+  it('shows a plain section heading to an editor', async () => {
+    const board = { ...designBoard(), role: 'editor' as const }
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const heading = await screen.findByRole('heading', {
+      level: 2,
+      name: 'To do'
+    })
+    expect(within(heading).queryByRole('button')).toBeNull()
   })
 
   it('announces a card picked up from the keyboard', async () => {
@@ -311,7 +333,7 @@ describe('BoardScreen', () => {
       level: 2,
       name: 'In progress'
     })
-    expect(await announcedOnPickUp(heading.parentElement)).toBe(
+    expect(await announcedOnPickUp(within(heading).getByRole('button'))).toBe(
       'Picked up the section In progress.'
     )
   })

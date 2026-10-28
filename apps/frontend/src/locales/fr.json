@@ -18,7 +18,8 @@
     "columnPicked": "La section %{section} est saisie.",
     "columnOver": "%{section} est maintenant en position %{position} sur %{count}.",
     "columnDropped": "%{section} est déposée en position %{position} sur %{count}.",
-    "columnCanceled": "Le déplacement de la section %{section} est annulé."
+    "columnCanceled": "Le déplacement de la section %{section} est annulé.",
+    "columnInstructions": "Pour déplacer une section, appuyez sur Espace ou Entrée. Utilisez les flèches gauche et droite pour la déplacer, Espace ou Entrée pour la déposer, et Échap pour annuler."
   },
   "app": {
     "name": "Twake Project",
@@ -128,6 +129,7 @@
   },
   "board": {
     "back": "Retour aux tableaux",
+    "sectionCount": "%{section}, %{smart_count} tâche |||| %{section}, %{smart_count} tâches",
     "menu": "Options du tableau",
     "viewerHint": "Vous pouvez consulter les tâches, commenter et créer vos rappels.",
     "editorHint": "Vous pouvez ajouter, modifier et déplacer des tâches. Les administrateurs gèrent les sections, le partage et le tableau.",

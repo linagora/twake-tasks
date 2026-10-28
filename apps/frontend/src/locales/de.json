@@ -18,7 +18,8 @@
     "columnPicked": "Abschnitt %{section} aufgenommen.",
     "columnOver": "%{section} ist jetzt an Position %{position} von %{count}.",
     "columnDropped": "%{section} an Position %{position} von %{count} abgelegt.",
-    "columnCanceled": "Verschieben des Abschnitts %{section} abgebrochen."
+    "columnCanceled": "Verschieben des Abschnitts %{section} abgebrochen.",
+    "columnInstructions": "Um einen Abschnitt zu verschieben, drücken Sie die Leertaste oder Eingabe. Verschieben Sie ihn mit den Pfeiltasten links und rechts, legen Sie ihn mit Leertaste oder Eingabe ab und brechen Sie mit Escape ab."
   },
   "app": {
     "name": "Twake Project",
@@ -128,6 +129,7 @@
   },
   "board": {
     "back": "Zurück zu den Boards",
+    "sectionCount": "%{section}, %{smart_count} Aufgabe |||| %{section}, %{smart_count} Aufgaben",
     "menu": "Board-Optionen",
     "viewerHint": "Sie können Aufgaben ansehen, kommentieren und eigene Erinnerungen setzen.",
     "editorHint": "Sie können Aufgaben hinzufügen, bearbeiten und verschieben. Admins verwalten Abschnitte, Freigabe und das Board.",

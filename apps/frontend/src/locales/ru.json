@@ -18,7 +18,8 @@
     "columnPicked": "Раздел %{section} взят.",
     "columnOver": "Раздел %{section} теперь на позиции %{position} из %{count}.",
     "columnDropped": "Раздел %{section} перемещён на позицию %{position} из %{count}.",
-    "columnCanceled": "Перемещение раздела %{section} отменено."
+    "columnCanceled": "Перемещение раздела %{section} отменено.",
+    "columnInstructions": "Чтобы переместить раздел, нажмите пробел или Enter. Перемещайте его стрелками влево и вправо, отпустите пробелом или Enter, отмените клавишей Escape."
   },
   "app": {
     "name": "Twake Project",
@@ -128,6 +129,7 @@
   },
   "board": {
     "back": "Назад к доскам",
+    "sectionCount": "%{section}, %{smart_count} задача |||| %{section}, %{smart_count} задачи |||| %{section}, %{smart_count} задач",
     "menu": "Параметры доски",
     "viewerHint": "Вы можете просматривать задачи, комментировать и ставить себе напоминания.",
     "editorHint": "Вы можете добавлять, изменять и перемещать задачи. Администраторы управляют разделами, доступом и доской.",

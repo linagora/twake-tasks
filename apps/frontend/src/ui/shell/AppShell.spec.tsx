@@ -129,6 +129,22 @@ describe('AppShell', () => {
     })
   })
 
+  it('keeps only menu items in the account menu', async () => {
+    renderRoute('/', { boardsApi: fakeBoardsApi() })
+
+    fireEvent.click(
+      within(await screen.findByRole('banner')).getByRole('button', {
+        name: 'Alice Martin'
+      })
+    )
+    const menu = await screen.findByRole('menu')
+
+    expect([...menu.children].map(child => child.getAttribute('role'))).toEqual(
+      ['menuitem']
+    )
+    expect(screen.getByText('alice@example.com')).toBeVisible()
+  })
+
   it('closes the account menu when the page changes', async () => {
     renderRoute('/', { boardsApi: fakeBoardsApi() })
     fireEvent.click(

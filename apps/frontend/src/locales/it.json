@@ -18,7 +18,8 @@
     "columnPicked": "Sezione %{section} selezionata.",
     "columnOver": "%{section} è ora in posizione %{position} su %{count}.",
     "columnDropped": "%{section} rilasciata in posizione %{position} su %{count}.",
-    "columnCanceled": "Spostamento della sezione %{section} annullato."
+    "columnCanceled": "Spostamento della sezione %{section} annullato.",
+    "columnInstructions": "Per spostare una sezione, premi Spazio o Invio. Usa le frecce sinistra e destra per spostarla, Spazio o Invio per rilasciarla ed Esc per annullare."
   },
   "app": {
     "name": "Twake Project",
@@ -128,6 +129,7 @@
   },
   "board": {
     "back": "Torna alle bacheche",
+    "sectionCount": "%{section}, %{smart_count} attività |||| %{section}, %{smart_count} attività",
     "menu": "Opzioni della bacheca",
     "viewerHint": "Puoi vedere le attività, commentare e impostare i tuoi promemoria.",
     "editorHint": "Puoi aggiungere, modificare e spostare attività. Gli amministratori gestiscono sezioni, condivisione e bacheca.",

@@ -19,12 +19,13 @@ import {
   Link,
   ListItemIcon,
   ListItemText,
-  Menu,
   MenuItem,
+  MenuList,
   Nav,
   NavIcon,
   NavItem,
   NavText,
+  Popover,
   Tooltip,
   useMediaQuery,
   useTheme
@@ -249,7 +250,9 @@ function AccountMenu(): ReactElement {
       >
         {avatar('s')}
       </IconButton>
-      <Menu
+      {/* A Popover rather than a Menu, so that the identity sits outside the
+          menu, which holds menu items only. */}
+      <Popover
         anchorEl={anchor}
         open={anchor !== null}
         onClose={close}
@@ -262,26 +265,36 @@ function AccountMenu(): ReactElement {
           email={email === name ? undefined : email}
         />
         <Divider />
-        {phone && (
-          <MenuItem component={RouterLink} to="/filters" onClick={close}>
-            <ListItemIcon>
-              <Icon icon={Filter} />
-            </ListItemIcon>
-            <ListItemText>{t('filters.title')}</ListItemText>
-          </MenuItem>
-        )}
-        <MenuItem
-          onClick={() => {
-            close()
-            void signOut()
+        <MenuList
+          autoFocusItem
+          onKeyDown={event => {
+            if (event.key === 'Tab') {
+              event.preventDefault()
+              close()
+            }
           }}
         >
-          <ListItemIcon>
-            <Icon icon={Logout} />
-          </ListItemIcon>
-          <ListItemText>{t('session.signOut')}</ListItemText>
-        </MenuItem>
-      </Menu>
+          {phone && (
+            <MenuItem component={RouterLink} to="/filters" onClick={close}>
+              <ListItemIcon>
+                <Icon icon={Filter} />
+              </ListItemIcon>
+              <ListItemText>{t('filters.title')}</ListItemText>
+            </MenuItem>
+          )}
+          <MenuItem
+            onClick={() => {
+              close()
+              void signOut()
+            }}
+          >
+            <ListItemIcon>
+              <Icon icon={Logout} />
+            </ListItemIcon>
+            <ListItemText>{t('session.signOut')}</ListItemText>
+          </MenuItem>
+        </MenuList>
+      </Popover>
     </>
   )
 }

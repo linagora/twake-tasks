@@ -104,13 +104,16 @@ export function Column({
   ref,
   highlighted = false,
   handle,
+  grab,
   drag = 'none',
   style
 }: ColumnProps & {
   ref?: Ref<HTMLElement>
   highlighted?: boolean
-  /** Spread on the header, which then picks the column up to reorder it. */
+  /** Spread on the title, the keyboard's way to pick the column up to reorder it. */
   handle?: HTMLAttributes<HTMLElement> & { ref?: Ref<HTMLElement> }
+  /** Spread on the header, the pointer's way to pick the column up. */
+  grab?: HTMLAttributes<HTMLElement>
   /** `placeholder` is the slot a dragged column leaves, `lifted` the column under the pointer. */
   drag?: 'none' | 'placeholder' | 'lifted'
   style?: CSSProperties
@@ -139,30 +142,45 @@ export function Column({
       })}
     >
       <Box
-        {...handle}
-        sx={theme => ({
+        {...grab}
+        sx={{
           display: 'flex',
           alignItems: 'center',
           gap: 1,
-          ...(handle && {
-            cursor: 'grab',
-            borderRadius: 1,
-            '&:focus-visible': {
-              outline: `2px solid ${theme.vars.palette.primary.main}`,
-              outlineOffset: '4px'
-            }
-          })
-        })}
+          ...(handle && { cursor: 'grab' })
+        }}
       >
         <Typography
           id={titleId}
           variant="subtitle1"
           component="h2"
+          // Otherwise the heading takes the handle's name, count included.
+          aria-label={handle ? title : undefined}
           sx={{ overflowWrap: 'anywhere' }}
         >
-          {title}
+          {handle ? (
+            <Box
+              component="span"
+              {...handle}
+              sx={theme => ({
+                borderRadius: 1,
+                '&:focus-visible': {
+                  outline: `2px solid ${theme.vars.palette.primary.main}`,
+                  outlineOffset: '4px'
+                }
+              })}
+            >
+              {title}
+            </Box>
+          ) : (
+            title
+          )}
         </Typography>
-        <Typography variant="caption" color="textSecondary">
+        <Typography
+          variant="caption"
+          color="textSecondary"
+          aria-hidden={handle ? true : undefined}
+        >
           {count}
         </Typography>
         {actions}
