@@ -553,6 +553,7 @@
     "empty": "Keine Benachrichtigungen",
     "emptyHint": "Folgen Sie einer Aufgabe, um hier über ihre Änderungen informiert zu werden.",
     "loadFailed": "Die Benachrichtigungen konnten nicht geladen werden.",
+    "markAllRead": "Alle als gelesen markieren",
     "follow": "Folgen",
     "followingTask": "Gefolgt",
     "unfollow": "Nicht mehr folgen",

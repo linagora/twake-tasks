@@ -1,12 +1,19 @@
 import {
   Bell,
+  Check,
   Clock,
   Comment,
   Eye,
   EyeClosed,
   People
 } from '@linagora/twake-icons'
-import { IconButton, Link, Tooltip, Typography } from '@linagora/twake-mui'
+import {
+  Button,
+  IconButton,
+  Link,
+  Tooltip,
+  Typography
+} from '@linagora/twake-mui'
 import { useEffect, useReducer, type ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
@@ -20,7 +27,11 @@ import { momentFormat, relativeMoment } from '@/ui/boards/dueLabel'
 import { useBoardName, type BoardName } from '@/ui/boards/BoardsScreen'
 import { describe } from '@/ui/boards/History'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useNotifications } from '@/ui/queries/notifications'
+import {
+  useMarkNotificationRead,
+  useMarkNotificationsRead,
+  useNotifications
+} from '@/ui/queries/notifications'
 import { useFollowing, useSetFollowing } from '@/ui/queries/tasks'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
@@ -112,11 +123,14 @@ export function NotificationsScreen(): ReactElement {
       clearInterval(timer)
     }
   }, [])
+  const markRead = useMarkNotificationRead()
+  const markAllRead = useMarkNotificationsRead()
   const all = notifications.data ?? []
+  const unread = all.filter(each => each.readAt === null)
   const groups = [
     {
       label: t('notifications.new'),
-      items: all.filter(each => each.readAt === null)
+      items: unread
     },
     {
       label: t('notifications.earlier'),
@@ -133,6 +147,20 @@ export function NotificationsScreen(): ReactElement {
           to: '/notifications'
         }}
         heading
+        actions={
+          unread.length > 0 && (
+            <Button
+              variant="text"
+              startIcon={<Icon icon={Check} />}
+              disabled={markAllRead.isPending}
+              onClick={() => {
+                markAllRead.mutate(unread.map(({ id }) => id))
+              }}
+            >
+              {t('notifications.markAllRead')}
+            </Button>
+          )
+        }
       />
       {notifications.isError && (
         <Typography role="alert">{t('notifications.loadFailed')}</Typography>
@@ -182,6 +210,11 @@ export function NotificationsScreen(): ReactElement {
                         <Link
                           component={RouterLink}
                           to={`/boards/${notification.boardId}?task=${notification.key}`}
+                          onClick={() => {
+                            if (notification.readAt === null) {
+                              markRead.mutate(notification.id)
+                            }
+                          }}
                         >
                           {notification.title}
                         </Link>

@@ -24,6 +24,16 @@ export const notification = z.object({
   commentExcerpt: z.string().nullable()
 })
 
+export const notificationParams = z.object({ notificationId: z.uuid() })
+
+/**
+ * Without `ids`, every notification. With them, only those, so one received
+ * after the list was shown stays unread.
+ */
+export const notificationsRead = z
+  .strictObject({ ids: z.array(z.uuid()).max(50).optional() })
+  .optional()
+
 export const notificationsResponse = z.object({
   notifications: z.array(notification)
 })

@@ -443,7 +443,12 @@ export function httpBoardsApi(
           '/notifications/unread'
         )
       ).projects,
-    markNotificationsRead: () => call('POST', '/notifications/read', {}),
+    markNotificationsRead: ids =>
+      call('POST', '/notifications/read', {
+        ids
+      } satisfies Body<'notificationsRead'>),
+    markNotificationRead: notificationId =>
+      call('POST', route`/notifications/${notificationId}/read`, {}),
     setAssignees: (boardId, taskId, userIds) =>
       call('PUT', route`/boards/${boardId}/tasks/${taskId}/assignees`, {
         userIds

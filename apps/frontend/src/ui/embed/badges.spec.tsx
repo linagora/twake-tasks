@@ -188,7 +188,7 @@ describe('the badges reported to TwakeSpace', () => {
       ])
     })
 
-    await boardsApi.markNotificationsRead()
+    await boardsApi.markNotificationRead('n1')
     await act(() => vi.advanceTimersByTimeAsync(60_000))
     await waitFor(() => {
       expect(snapshots().at(-1)).toEqual([

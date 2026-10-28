@@ -135,7 +135,7 @@ describe('notifications', () => {
   const rowOf = async () =>
     screen.findByRole('listitem', { name: 'DES-1 Logo' })
 
-  it('says who assigned the task, links to it, and marks them read', async () => {
+  it('says who assigned the task and links to it', async () => {
     const { board, boardsApi } = anInbox({ reason: 'assigned', actor: alice })
     renderRoute('/notifications', { boardsApi })
 
@@ -147,7 +147,67 @@ describe('notifications', () => {
       'href',
       `/boards/${board.id}?task=DES-1`
     )
-    expect(boardsApi.markNotificationsRead).toHaveBeenCalled()
+  })
+
+  describe('reading them', () => {
+    const twoUnread = () =>
+      anInbox(
+        { id: 'n2', createdAt: '2026-10-05T11:00:00Z' },
+        { id: 'n1', createdAt: '2026-10-05T10:00:00Z' }
+      )
+    const fresh = async () =>
+      within(await screen.findByRole('region', { name: 'New' }))
+
+    it('keeps them unread while the page is only visited', async () => {
+      const { boardsApi } = twoUnread()
+      renderRoute('/notifications', { boardsApi })
+
+      expect((await fresh()).getAllByRole('listitem')).toHaveLength(2)
+      await act(() => Promise.resolve())
+      expect(boardsApi.markNotificationsRead).not.toHaveBeenCalled()
+      expect(boardsApi.markNotificationRead).not.toHaveBeenCalled()
+    })
+
+    it('marks read the one notification opened', async () => {
+      const { boardsApi } = twoUnread()
+      renderRoute('/notifications', { boardsApi })
+
+      const [, older] = (await fresh()).getAllByRole('link', { name: 'Logo' })
+      if (!older) throw new Error('two links expected')
+      fireEvent.click(older)
+
+      await waitFor(() => {
+        expect(boardsApi.markNotificationRead).toHaveBeenCalledWith('n1')
+      })
+      expect(boardsApi.markNotificationsRead).not.toHaveBeenCalled()
+    })
+
+    it('marks read all the ones shown, and none received since', async () => {
+      const { boardsApi } = twoUnread()
+      renderRoute('/notifications', { boardsApi })
+      await fresh()
+      const since = aNotification({ id: 'n3', taskId: 'other' })
+      boardsApi.notifications.push(since)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Mark all as read' }))
+
+      const earlier = within(
+        await screen.findByRole('region', { name: 'Earlier' })
+      )
+      expect(earlier.getAllByRole('listitem')).toHaveLength(2)
+      expect(boardsApi.markNotificationsRead).toHaveBeenCalledWith(['n2', 'n1'])
+      expect(since.readAt).toBeNull()
+    })
+
+    it('offers no mark all once everything is read', async () => {
+      const { boardsApi } = anInbox({ readAt: '2026-10-06T10:00:00Z' })
+      renderRoute('/notifications', { boardsApi })
+
+      await rowOf()
+      expect(
+        screen.queryByRole('button', { name: 'Mark all as read' })
+      ).toBeNull()
+    })
   })
 
   it('tells the reader they were unassigned', async () => {
