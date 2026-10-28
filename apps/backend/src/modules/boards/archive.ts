@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { asTenant, inTenant, type Db, type Tx } from '../../infra/db.ts'
 import {
@@ -7,10 +7,10 @@ import {
   type Handler
 } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
+import { describeTasks } from '../tasks/describe.ts'
 import { membersOf, roleOn } from './access.ts'
 import { labelsOn } from './labels.ts'
 import { boards, projects, tasks } from './schema.ts'
-import { describeTasks } from './store.ts'
 import {
   bumpBoard,
   bumpBoards,
@@ -25,8 +25,6 @@ export const PURGE_JOB = 'purge-task'
 const RETENTION_MS = 30 * 24 * 3600 * 1000
 
 const keyOf = (taskId: string) => `${PURGE_JOB}:${taskId}`
-
-export const shown = and(isNull(tasks.archivedAt), isNull(tasks.deletedAt))
 
 const payload = z.object({
   taskId: z.uuid(),

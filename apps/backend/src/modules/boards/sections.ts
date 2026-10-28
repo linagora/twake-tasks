@@ -2,7 +2,7 @@ import { and, asc, desc, eq, ne, sql } from 'drizzle-orm'
 import { generateNKeysBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { shown } from './archive.ts'
+import { shown } from '../tasks/describe.ts'
 import { sections, sectionCategory, tasks } from './schema.ts'
 import {
   bumpBoard,
