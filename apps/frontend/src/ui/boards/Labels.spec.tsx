@@ -40,15 +40,9 @@ const logoCard = async () =>
     await screen.findByRole('article', { name: 'DES-1 Logo', hidden: true })
   )
 
-// twake-mui's swatches have no names: the one at `index` of its COLORS.
-function pickColor(index: number) {
-  fireEvent.click(screen.getByRole('button', { name: 'Choose the color' }))
-  const colors = within(
-    screen.getByRole('dialog', { name: 'Choose the color' })
-  )
-  const swatch = colors.getAllByRole('button')[index]
-  if (!swatch) throw new Error(`No swatch at ${String(index)}`)
-  fireEvent.click(swatch)
+function openColors(square: string) {
+  fireEvent.click(screen.getByRole('button', { name: square }))
+  return within(screen.getByRole('dialog', { name: 'Choose the color' }))
 }
 
 describe('Labels', () => {
@@ -191,7 +185,11 @@ describe('Labels', () => {
     fireEvent.change(dialog.getByRole('textbox', { name: 'Label name' }), {
       target: { value: 'Later' }
     })
-    pickColor(20)
+    fireEvent.click(
+      openColors('Choose the color, Navy').getByRole('button', {
+        name: 'Custom color'
+      })
+    )
     const custom = within(screen.getByRole('dialog', { name: 'Custom color' }))
     fireEvent.change(custom.getByRole('textbox', { name: 'Hex' }), {
       target: { value: '123abc' }
@@ -227,7 +225,12 @@ describe('Labels', () => {
     fireEvent.change(dialog.getByRole('textbox', { name: 'Label name' }), {
       target: { value: 'Blocker' }
     })
-    pickColor(10)
+    fireEvent.click(
+      openColors('Choose the color').getByRole('radio', { name: 'Red' })
+    )
+    expect(
+      screen.getByRole('button', { name: 'Choose the color, Red' })
+    ).toBeInTheDocument()
     fireEvent.click(
       within(screen.getByRole('dialog', { name: 'Edit label' })).getByRole(
         'button',

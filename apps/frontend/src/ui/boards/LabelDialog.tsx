@@ -13,7 +13,7 @@ import {
 import { useId, useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
-import { ColorField, leastUsedColor } from '@/ds/ColorPicker'
+import { ColorField, leastUsedColor, swatchName } from '@/ds/ColorPicker'
 import { DialogHeader } from '@/ds/DialogHeader'
 import { labelName, type Label } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
@@ -56,6 +56,12 @@ export function LabelDialog({
   const taken =
     save.error instanceof ApiError && save.error.code === 'label_taken'
   const trimmed = labelName(name)
+  const colorName = (value: string) => {
+    const swatch = swatchName(value)
+    return swatch
+      ? t(`colors.${swatch}`)
+      : t('colors.custom', { hex: value.toUpperCase() })
+  }
 
   return (
     <Dialog open onClose={onClose} aria-labelledby={titleId} size="medium">
@@ -106,9 +112,18 @@ export function LabelDialog({
             />
             <ColorField
               label={t('labelDialog.pickColor')}
+              buttonLabel={
+                color
+                  ? t('colors.current', {
+                      label: t('labelDialog.pickColor'),
+                      color: colorName(color)
+                    })
+                  : t('labelDialog.pickColor')
+              }
               customLabel={t('labelDialog.customColor')}
               cancelLabel={t('board.cancel')}
               saveLabel={t('board.save')}
+              colorName={colorName}
               value={color}
               onChange={setColor}
             />
