@@ -92,6 +92,8 @@
     "create": "Erstellen",
     "close": "Schließen",
     "keyPrefixTaken": "Ein anderes Board verwendet bereits %{prefix}.",
+    "keyPrefixProposed": "%{prefix} wird bereits verwendet, daher erhält das Board %{suggestion}.",
+    "useKeyPrefix": "%{prefix} verwenden",
     "failed": "Das Board konnte nicht erstellt werden."
   },
   "labelDialog": {

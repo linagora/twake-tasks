@@ -6,12 +6,13 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   ApiError,
   type BoardsApi,
   type HiddenTask,
+  type KeyPrefixCheck,
   type NewBoard,
   type Project,
   type Shelf
@@ -223,10 +224,42 @@ export function useCreateBoard(): UseMutationResult<Board, Error, NewBoard> {
     mutationFn: (board: NewBoard) => api.createBoard(board),
     onSuccess: board => {
       queryClient.setQueryData(keys.board(board.id), board)
+      void queryClient.invalidateQueries({ queryKey: keys.keyPrefixes() })
       return queryClient.invalidateQueries({
         queryKey: keys.boards(),
         exact: true
       })
+    },
+    // Someone took the prefix since it was checked.
+    onError: error => {
+      if (error instanceof ApiError && error.code === 'key_prefix_taken') {
+        void queryClient.invalidateQueries({ queryKey: keys.keyPrefixes() })
+      }
     }
   })
+}
+
+const KEY_PREFIX_DELAY_MS = 250
+const KEY_PREFIX = /^[A-Z][A-Z0-9]{0,9}$/
+
+/** Whether `keyPrefix` is free, once typing pauses on it; undefined until then. */
+export function useKeyPrefixCheck(
+  keyPrefix: string
+): KeyPrefixCheck | undefined {
+  const api = useBoardsApi()
+  const [settled, setSettled] = useState(keyPrefix)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSettled(keyPrefix)
+    }, KEY_PREFIX_DELAY_MS)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [keyPrefix])
+  const { data } = useQuery({
+    queryKey: keys.keyPrefix(settled),
+    queryFn: () => api.checkKeyPrefix(settled),
+    enabled: KEY_PREFIX.test(settled)
+  })
+  return settled === keyPrefix ? data : undefined
 }

@@ -501,6 +501,20 @@ export function fakeBoardsApi(boards: Board[] = []) {
         listeners.delete(onVersion)
       }
     }),
+    checkKeyPrefix: vi.fn<BoardsApi['checkKeyPrefix']>(keyPrefix => {
+      const taken = new Set(
+        [...store.values()].map(board => board.keyPrefix).concat('INBOX')
+      )
+      let suggestion = keyPrefix
+      for (let number = 2; taken.has(suggestion); number++) {
+        suggestion =
+          keyPrefix.slice(0, 10 - String(number).length) + String(number)
+      }
+      return Promise.resolve({
+        available: suggestion === keyPrefix,
+        suggestion
+      })
+    }),
     createBoard: vi.fn<BoardsApi['createBoard']>(({ name, keyPrefix }) => {
       const taken = [...store.values()].some(
         board => board.keyPrefix === keyPrefix

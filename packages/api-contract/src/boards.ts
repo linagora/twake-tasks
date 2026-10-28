@@ -17,14 +17,23 @@ export const boardName = z
   .max(100)
   .refine(name => !/(?!\u200D)[\p{Cc}\p{Cf}]/u.test(name))
 
+export const keyPrefix = z.string().regex(/^[A-Z][A-Z0-9]{0,9}$/)
+
 export const newBoard = z.object({
   name: boardName,
-  keyPrefix: z.string().regex(/^[A-Z][A-Z0-9]{0,9}$/),
+  keyPrefix,
   projectId: z.uuid().optional(),
   language: z.string().max(35).optional()
 })
 
 export const boardRename = z.object({ name: boardName })
+
+export const keyPrefixParams = z.object({ keyPrefix })
+
+export const keyPrefixResponse = z.object({
+  available: z.boolean(),
+  suggestion: keyPrefix
+})
 
 export const boardParams = z.object({ boardId: z.uuid() })
 

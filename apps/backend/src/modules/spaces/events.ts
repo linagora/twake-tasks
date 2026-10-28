@@ -44,6 +44,7 @@ import {
   taskAssignees,
   tasks
 } from '../boards/schema.ts'
+import { freeKeyPrefix } from '../boards/keyPrefixes.ts'
 import { addDefaultSections } from '../boards/store.ts'
 import { spaces } from './schema.ts'
 
@@ -327,7 +328,11 @@ async function provisionSpace(
       organizationId: space.organizationId,
       projectId: project.id,
       name: space.name,
-      keyPrefix: keyPrefixOf(space.name),
+      keyPrefix: await freeKeyPrefix(
+        tx,
+        space.organizationId,
+        keyPrefixOf(space.name)
+      ),
       createdBy: space.id
     })
     .returning({ id: boards.id, organizationId: boards.organizationId })

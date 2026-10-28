@@ -503,6 +503,71 @@ describe('BoardsScreen', () => {
     expect(within(dialog).queryByText(/already uses/)).not.toBeInTheDocument()
   })
 
+  it('offers a free key prefix in place of a typed one that is taken', async () => {
+    const boardsApi = fakeBoardsApi([aBoard({ keyPrefix: 'DES' })])
+    renderRoute('/', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: /^Create a board/ })
+    )
+    const dialog = screen.getByRole('dialog', { name: 'New board' })
+    const prefix = within(dialog).getByRole('textbox', { name: 'Key prefix' })
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), {
+      target: { value: 'Desk' }
+    })
+    fireEvent.change(prefix, { target: { value: 'des' } })
+
+    expect(
+      await within(dialog).findByText('Another board already uses DES.')
+    ).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Use DES2' }))
+    expect(prefix).toHaveValue('DES2')
+    expect(within(dialog).queryByText(/already uses/)).not.toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createBoard).toHaveBeenCalledWith({
+        name: 'Desk',
+        keyPrefix: 'DES2',
+        language: 'en'
+      })
+    })
+  })
+
+  it('swaps a key prefix made from the name for a free one', async () => {
+    const boardsApi = fakeBoardsApi([
+      aBoard({ keyPrefix: 'DES' }),
+      aBoard({ keyPrefix: 'DES2' })
+    ])
+    renderRoute('/', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: /^Create a board/ })
+    )
+    const dialog = screen.getByRole('dialog', { name: 'New board' })
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), {
+      target: { value: 'Design' }
+    })
+
+    expect(
+      await within(dialog).findByText(
+        'DES is already used, so the board takes DES3.'
+      )
+    ).toBeInTheDocument()
+    expect(
+      within(dialog).getByRole('textbox', { name: 'Key prefix' })
+    ).toHaveValue('DES3')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(boardsApi.createBoard).toHaveBeenCalledWith({
+        name: 'Design',
+        keyPrefix: 'DES3',
+        language: 'en'
+      })
+    })
+  })
+
   it('keeps Create disabled until the name has a character', async () => {
     renderRoute('/')
 

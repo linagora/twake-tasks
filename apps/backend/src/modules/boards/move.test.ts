@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
 import {
-  aBoardIn,
+  aB2cUser,
   aManagedProject,
   aUser,
   startApp,
@@ -192,11 +192,11 @@ describe('moving a board to another project', () => {
     expect((await move(owner, boardId, otherOrg)).statusCode).toBe(404)
   })
 
+  // In an organization no two boards share a prefix: only B2C ones can.
   it('refuses a key prefix the target already uses, and the Inbox', async () => {
-    const owner = aUser()
+    const owner = aB2cUser()
     const { boardId } = await aBoardWithATask(owner)
-    const projectId = await aManagedProject(db, [[owner, 'admin']])
-    await aBoardIn(db, owner, projectId, { name: 'Existing', keyPrefix: 'DES' })
+    const { projectId } = await aBoardWithATask(owner)
     const inbox = (await api.as(owner).get('/boards'))
       .json<{ boards: { id: string; inbox: boolean }[] }>()
       .boards.find(board => board.inbox)

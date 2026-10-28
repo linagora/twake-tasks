@@ -212,6 +212,10 @@ export const boards = pgTable.withRLS(
   table => [
     unique().on(table.tenant, table.id),
     unique().on(table.projectId, table.keyPrefix),
+    // Every Inbox is INBOX, and B2C boards only differ in their project.
+    uniqueIndex('boards_key_prefix_per_organization')
+      .on(table.organizationId, table.keyPrefix)
+      .where(sql`${table.organizationId} is not null and not ${table.inbox}`),
     index().on(table.projectId),
     uniqueIndex('boards_one_inbox_per_project')
       .on(table.projectId)

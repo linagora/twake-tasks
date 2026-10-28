@@ -175,13 +175,14 @@ describe('user boards', () => {
     expect(malformed.statusCode).toBe(404)
   })
 
-  it('refuses a key prefix already used in the project', async () => {
+  it('refuses a key prefix another board of the organization uses, even one I cannot open', async () => {
     const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
     const { project } = (
       await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
     ).json<{ project: { id: string } }>()
 
-    const again = await api.as(alice).post('/boards', {
+    const sameProject = await api.as(alice).post('/boards', {
       name: 'Desk',
       keyPrefix: 'DES',
       projectId: project.id
@@ -189,9 +190,74 @@ describe('user boards', () => {
     const otherProject = await api
       .as(alice)
       .post('/boards', { name: 'Desk', keyPrefix: 'DES' })
+    const colleague = await api
+      .as(bob)
+      .post('/boards', { name: 'Desk', keyPrefix: 'DES' })
+    const otherOrganization = await api
+      .as(aUser())
+      .post('/boards', { name: 'Desk', keyPrefix: 'DES' })
 
-    expect(again.statusCode).toBe(409)
-    expect(otherProject.statusCode).toBe(201)
+    for (const response of [sameProject, otherProject, colleague]) {
+      expect(response.statusCode).toBe(409)
+      expect(response.json()).toEqual({ error: 'key_prefix_taken' })
+    }
+    expect(otherOrganization.statusCode).toBe(201)
+  })
+
+  it('lets B2C boards share a key prefix out of a project', async () => {
+    const carol = aB2cUser()
+    await api.as(carol).post('/boards', { name: 'Home', keyPrefix: 'HOME' })
+
+    const again = await api
+      .as(carol)
+      .post('/boards', { name: 'Home office', keyPrefix: 'HOME' })
+    const someoneElse = await api
+      .as(aB2cUser())
+      .post('/boards', { name: 'Home', keyPrefix: 'HOME' })
+
+    expect(again.statusCode).toBe(201)
+    expect(someoneElse.statusCode).toBe(201)
+  })
+
+  it('tells whether a key prefix is free in the organization, and proposes a free one', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const prefixFor = async (user: TestUser, keyPrefix: string) =>
+      (await api.as(user).get(`/key-prefixes/${keyPrefix}`)).json<{
+        available: boolean
+        suggestion: string
+      }>()
+    for (const keyPrefix of ['DES', 'DES2', 'ABCDEFGHIJ']) {
+      await api.as(alice).post('/boards', { name: 'Design', keyPrefix })
+    }
+
+    expect(await prefixFor(bob, 'OPS')).toEqual({
+      available: true,
+      suggestion: 'OPS'
+    })
+    expect(await prefixFor(bob, 'DES')).toEqual({
+      available: false,
+      suggestion: 'DES3'
+    })
+    expect(await prefixFor(bob, 'ABCDEFGHIJ')).toEqual({
+      available: false,
+      suggestion: 'ABCDEFGHI2'
+    })
+    expect(await prefixFor(bob, 'INBOX')).toEqual({
+      available: false,
+      suggestion: 'INBOX2'
+    })
+    expect(await prefixFor(aUser(), 'DES')).toEqual({
+      available: true,
+      suggestion: 'DES'
+    })
+    expect(await prefixFor(aB2cUser(), 'DES')).toEqual({
+      available: true,
+      suggestion: 'DES'
+    })
+    expect(
+      (await api.as(bob).get('/key-prefixes/not-a-prefix')).statusCode
+    ).toBe(404)
   })
 
   it('keeps the INBOX key prefix for the Inbox', async () => {

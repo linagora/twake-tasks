@@ -11,6 +11,7 @@ const task = (boardId: string, taskId: string) =>
 const sharing = (boardId: string) => [...board(boardId), 'sharing'] as const
 const agendas = () => ['agenda'] as const
 const searches = () => ['search'] as const
+const keyPrefixes = () => ['keyPrefixes'] as const
 
 export const keys = {
   boards,
@@ -33,6 +34,8 @@ export const keys = {
   agenda: (view: AgendaView) => [...agendas(), view] as const,
   searches,
   search: (text: string) => [...searches(), text] as const,
+  keyPrefixes,
+  keyPrefix: (keyPrefix: string) => [...keyPrefixes(), keyPrefix] as const,
   filters: () => ['filters'] as const,
   labels: () => ['labels'] as const,
   people: () => ['people'] as const,

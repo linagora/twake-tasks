@@ -30,6 +30,12 @@ export interface NewBoard {
   language: string
 }
 
+/** `suggestion` is the prefix asked for when it is free, else a free one close to it. */
+export interface KeyPrefixCheck {
+  available: boolean
+  suggestion: string
+}
+
 export type NewTask = { title: string } & (
   { sectionId: string | null } | { parentId: string }
 )
@@ -264,6 +270,8 @@ export interface BoardsApi {
   listBoards: () => Promise<BoardSummary[]>
   getBoard: (boardId: string) => Promise<Board>
   createBoard: (board: NewBoard) => Promise<Board>
+  /** Whether no other board of the organization uses `keyPrefix`. */
+  checkKeyPrefix: (keyPrefix: string) => Promise<KeyPrefixCheck>
   setFavorite: (boardId: string, favorite: boolean) => Promise<void>
   /** The signed-in person's own layout for the board. */
   setLayout: (boardId: string, layout: Layout) => Promise<void>
