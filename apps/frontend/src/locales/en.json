@@ -10,6 +10,7 @@
   "drag": {
     "card": "draggable task",
     "instructions": "To move a task, press space or enter. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.",
+    "dayInstructions": "To move a task to another day, press space. Use the arrow keys to move it a day or a week, space or enter to drop it, and escape to cancel.",
     "picked": "Picked up %{task}.",
     "over": "%{task} is over %{place}.",
     "dropped": "%{task} dropped in %{place}.",

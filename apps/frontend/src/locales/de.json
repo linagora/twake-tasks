@@ -10,6 +10,7 @@
   "drag": {
     "card": "verschiebbare Aufgabe",
     "instructions": "Um eine Aufgabe zu verschieben, drücken Sie die Leertaste oder Eingabe. Verschieben Sie sie mit den Pfeiltasten, legen Sie sie mit Leertaste oder Eingabe ab, und brechen Sie mit Escape ab.",
+    "dayInstructions": "Um eine Aufgabe auf einen anderen Tag zu verschieben, drücken Sie die Leertaste. Verschieben Sie sie mit den Pfeiltasten um einen Tag oder eine Woche, legen Sie sie mit Leertaste oder Eingabe ab, und brechen Sie mit Escape ab.",
     "picked": "%{task} aufgenommen.",
     "over": "%{task} befindet sich über %{place}.",
     "dropped": "%{task} in %{place} abgelegt.",

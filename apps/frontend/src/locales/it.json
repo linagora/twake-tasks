@@ -10,6 +10,7 @@
   "drag": {
     "card": "attività trascinabile",
     "instructions": "Per spostare un’attività, premi spazio o invio. Usa i tasti freccia per spostarla, spazio o invio per rilasciarla ed esc per annullare.",
+    "dayInstructions": "Per spostare un’attività a un altro giorno, premi spazio. Usa i tasti freccia per spostarla di un giorno o di una settimana, spazio o invio per rilasciarla ed esc per annullare.",
     "picked": "%{task} selezionata.",
     "over": "%{task} è sopra %{place}.",
     "dropped": "%{task} rilasciata in %{place}.",

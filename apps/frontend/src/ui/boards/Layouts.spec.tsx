@@ -1,6 +1,7 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import { addDays } from '@/application/reschedule'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
@@ -265,6 +266,178 @@ describe('board layouts', () => {
     expect(
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     ).toBeVisible()
+  })
+
+  describe('rescheduling from the keyboard', () => {
+    const calendarBoard = (role: 'admin' | 'viewer' = 'admin') =>
+      designBoard({ layout: 'calendar', defaultLayout: 'calendar', role })
+    const press = async (chip: Element, ...codes: string[]) => {
+      for (const code of codes) {
+        // A chip whose day the month no longer shows takes its focus along.
+        fireEvent.keyDown(chip.isConnected ? chip : document.body, {
+          key: code === 'Space' ? ' ' : code,
+          code
+        })
+        // dnd-kit listens for the keys that follow a pick up on a timer.
+        await act(() => new Promise(resolve => setTimeout(resolve, 20)))
+      }
+    }
+    const announced = () =>
+      document.querySelector('[id^="DndLiveRegion"]')?.textContent
+    const longDay = (day: string) =>
+      new Intl.DateTimeFormat('en', {
+        dateStyle: 'full',
+        timeZone: 'UTC'
+      }).format(new Date(`${day}T00:00:00Z`))
+    const cellOf = (day: string) =>
+      screen.getByRole('group', {
+        name: new RegExp(`^${formatDay(day, 'en')}`)
+      })
+
+    it('moves a task two days later and says where it went', async () => {
+      const board = calendarBoard()
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      const later = addDays(localToday(), 2)
+
+      const chip = within(await todayCell()).getByRole('button', {
+        name: 'Logo'
+      })
+      await press(chip, 'Space', 'ArrowRight', 'ArrowRight', 'Space')
+
+      expect(announced()).toBe(`DES-1 Logo dropped in ${longDay(later)}.`)
+      expect(boardsApi.editTask).toHaveBeenCalledWith(
+        board.id,
+        board.tasks[0]?.id,
+        { dueDate: later }
+      )
+      expect(
+        await within(cellOf(later)).findByRole('button', { name: 'Logo' })
+      ).toBeVisible()
+    })
+
+    it('keeps the gap to the deadline', async () => {
+      const board = calendarBoard()
+      Object.assign(board.tasks[0] ?? {}, {
+        dueTime: '15:00',
+        deadline: addDays(localToday(), 2)
+      })
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const chip = within(await todayCell()).getByRole('button', {
+        name: 'Logo'
+      })
+      await press(chip, 'Space', 'ArrowDown', 'Space')
+
+      expect(boardsApi.editTask).toHaveBeenCalledWith(
+        board.id,
+        board.tasks[0]?.id,
+        {
+          dueDate: addDays(localToday(), 7),
+          deadline: addDays(localToday(), 9)
+        }
+      )
+    })
+
+    it('gives a task of No date the day it is dropped on', async () => {
+      const board = calendarBoard()
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      await todayCell()
+
+      const chip = within(
+        screen.getByRole('list', { name: 'No date' })
+      ).getByRole('button', { name: 'Palette' })
+      await press(chip, 'Space', 'ArrowRight', 'Space')
+
+      expect(boardsApi.editTask).toHaveBeenCalledWith(
+        board.id,
+        board.tasks[1]?.id,
+        { dueDate: localToday() }
+      )
+      expect(
+        await within(await todayCell()).findByRole('button', {
+          name: 'Palette'
+        })
+      ).toBeVisible()
+    })
+
+    it('shows the next month when a move leaves this one', async () => {
+      const board = calendarBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+      const month = (day: string) =>
+        new Intl.DateTimeFormat('en', {
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC'
+        }).format(new Date(`${day}T00:00:00Z`))
+
+      const chip = within(await todayCell()).getByRole('button', {
+        name: 'Logo'
+      })
+      await press(chip, 'Space', ...Array<string>(5).fill('ArrowDown'))
+
+      expect(
+        screen.getByRole('heading', {
+          name: month(addDays(localToday(), 35))
+        })
+      ).toBeVisible()
+      await press(chip, 'Escape')
+      expect(announced()).toBe('Moving DES-1 Logo was canceled.')
+      expect(
+        screen.getByRole('heading', { name: month(localToday()) })
+      ).toBeVisible()
+    })
+
+    it('puts the task back and says so when the change fails', async () => {
+      const board = calendarBoard()
+      const boardsApi = fakeBoardsApi([board])
+      boardsApi.editTask.mockRejectedValue(new Error('offline'))
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const chip = within(await todayCell()).getByRole('button', {
+        name: 'Logo'
+      })
+      await press(chip, 'Space', 'ArrowRight', 'Space')
+
+      expect(
+        await screen.findByText('The change could not be saved.')
+      ).toBeVisible()
+      expect(
+        within(await todayCell()).getByRole('button', { name: 'Logo' })
+      ).toBeVisible()
+    })
+
+    it('opens the task on Enter', async () => {
+      const board = calendarBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+      const chip = within(await todayCell()).getByRole('button', {
+        name: 'Logo'
+      })
+      await press(chip, 'Enter')
+      fireEvent.click(chip)
+
+      expect(
+        await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+      ).toBeVisible()
+      expect(announced() ?? '').toBe('')
+    })
+
+    it('lets a viewer open tasks but not move them', async () => {
+      const board = calendarBoard('viewer')
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const chip = within(await todayCell()).getByRole('button', {
+        name: 'Logo'
+      })
+      expect(chip).not.toHaveAttribute('aria-roledescription')
+      await press(chip, 'Space', 'ArrowRight', 'Space')
+
+      expect(boardsApi.editTask).not.toHaveBeenCalled()
+    })
   })
 
   it('lets an admin make the current layout the board default', async () => {

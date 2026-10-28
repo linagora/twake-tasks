@@ -8,9 +8,10 @@ import {
   Tooltip,
   Typography,
   useMediaQuery,
-  useTheme
+  useTheme,
+  type Theme
 } from '@linagora/twake-mui'
-import type { ReactElement, ReactNode } from 'react'
+import type { HTMLAttributes, ReactElement, ReactNode, Ref } from 'react'
 
 import { Icon } from '@/ds/Icon'
 
@@ -234,6 +235,14 @@ const dayTone = (outside: boolean) => ({
   color: outside ? 'text.disabled' : 'text.secondary'
 })
 
+// Laid over the day's own background: the grid's lines show through a
+// see-through one. An outline leaves the layout as it is.
+const dropTarget = (theme: Theme) => ({
+  backgroundImage: `linear-gradient(${theme.vars.palette.action.hover}, ${theme.vars.palette.action.hover})`,
+  outline: `2px dashed ${theme.vars.palette.primary.main}`,
+  outlineOffset: -2
+})
+
 /**
  * With `add`, a + shows on hover or focus, and a click on the empty part of
  * the day does the same: the + is what a keyboard reaches.
@@ -244,6 +253,8 @@ export function DayCell({
   outside,
   today,
   add,
+  ref,
+  highlighted = false,
   children
 }: {
   label: string
@@ -251,10 +262,14 @@ export function DayCell({
   outside: boolean
   today: boolean
   add?: CalendarAdd | undefined
+  ref?: Ref<HTMLElement>
+  /** A task is being dragged over it. */
+  highlighted?: boolean
   children: ReactNode
 }): ReactElement {
   return (
     <Box
+      ref={ref}
       role="group"
       aria-label={label}
       aria-current={today ? 'date' : undefined}
@@ -264,7 +279,7 @@ export function DayCell({
           if (event.target === event.currentTarget) add.onAdd()
         })
       }
-      sx={{
+      sx={theme => ({
         ...dayTone(outside),
         minHeight: '7rem',
         minWidth: 0,
@@ -277,8 +292,9 @@ export function DayCell({
           cursor: 'pointer',
           '@media (hover: hover)': { '& .DayCell-add': { opacity: 0 } },
           '&:hover .DayCell-add, & .DayCell-add:focus-visible': { opacity: 1 }
-        })
-      }}
+        }),
+        ...(highlighted && dropTarget(theme))
+      })}
     >
       <Box
         sx={{
@@ -304,7 +320,9 @@ export function DayButton({
   today,
   selected,
   marks,
-  onSelect
+  onSelect,
+  ref,
+  highlighted = false
 }: {
   label: string
   number: number
@@ -313,21 +331,26 @@ export function DayButton({
   selected: boolean
   marks: number
   onSelect: () => void
+  ref?: Ref<HTMLButtonElement>
+  /** A task is being dragged over it. */
+  highlighted?: boolean
 }): ReactElement {
   return (
     <ButtonBase
+      ref={ref}
       aria-label={label}
       aria-current={today ? 'date' : undefined}
       aria-pressed={selected}
       onClick={onSelect}
-      sx={{
+      sx={theme => ({
         ...dayTone(outside),
         minHeight: '3.25rem',
         flexDirection: 'column',
         justifyContent: 'flex-start',
         pt: 0.5,
-        gap: 0.25
-      }}
+        gap: 0.25,
+        ...(highlighted && dropTarget(theme))
+      })}
     >
       <DayNumber number={number} today={today} selected={selected} />
       <Box sx={{ display: 'flex', gap: '3px', height: 5 }}>
@@ -347,24 +370,44 @@ export function DayButton({
   )
 }
 
+/** What makes a chip draggable, spread on it. */
+export type ChipDrag = HTMLAttributes<HTMLElement> & {
+  ref: (node: HTMLElement | null) => void
+  /** It stays in place, dimmed, while its preview is dragged. */
+  dragging: boolean
+}
+
 export function CalendarChip({
   done,
   highlighted = false,
   onClick,
+  drag,
   children
 }: {
   done: boolean
   /** The task just created, standing out as a selected one. */
   highlighted?: boolean
   onClick: () => void
+  drag?: ChipDrag | undefined
   children: ReactNode
 }): ReactElement {
+  const { dragging = false, ...draggable } = drag ?? {}
   return (
     <ButtonBase
       className="CalendarChip"
       data-new-task={highlighted ? '' : undefined}
       onClick={onClick}
+      {...draggable}
+      // Space picks the chip up, so its release must not also open it, as a
+      // button does. Enter still opens it.
+      onKeyUp={
+        drag &&
+        ((event: { key: string; preventDefault: () => void }) => {
+          if (event.key === ' ') event.preventDefault()
+        })
+      }
       sx={theme => ({
+        opacity: dragging ? 0.4 : 1,
         justifyContent: 'flex-start',
         gap: 0.75,
         minWidth: 0,
@@ -420,6 +463,8 @@ export function CalendarTray({
   expanded,
   onToggle,
   add,
+  ref,
+  highlighted = false,
   children
 }: {
   label: string
@@ -427,10 +472,20 @@ export function CalendarTray({
   expanded: boolean
   onToggle: () => void
   add?: CalendarAdd | undefined
+  ref?: Ref<HTMLElement>
+  /** A task is being dragged over it. */
+  highlighted?: boolean
   children: ReactNode
 }): ReactElement {
   return (
-    <Box component="section">
+    <Box
+      ref={ref}
+      component="section"
+      sx={theme => ({
+        borderRadius: 2,
+        ...(highlighted && dropTarget(theme))
+      })}
+    >
       <Typography
         variant="subtitle1"
         component="h2"

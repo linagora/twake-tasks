@@ -24,7 +24,14 @@ import { Icon } from '@/ds/Icon'
 import { ListHeader, ListSection, ListView } from '@/ds/ListView'
 import { DropListSection, SortableList } from '@/ds/Sortable'
 import { ViewToggleGroup } from '@/ds/PageHeader'
+import { addDays } from '@/application/reschedule'
 import { LAYOUTS, type Board, type Layout, type Task } from '@/domain/board'
+import {
+  CalendarDrag,
+  DropDayButton,
+  DropDayCell,
+  DropTray
+} from '@/ui/boards/CalendarDrag'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
 import { useSetLayout } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -141,12 +148,6 @@ export function ListLayout({
   )
 }
 
-const addDays = (day: string, amount: number) => {
-  const date = new Date(`${day}T00:00:00Z`)
-  date.setUTCDate(date.getUTCDate() + amount)
-  return date.toISOString().slice(0, 10)
-}
-
 // The weeks covering a month, from the locale's first day of the week.
 function monthGrid(month: string, firstDay: number): string[] {
   const first = `${month}-01`
@@ -169,15 +170,20 @@ const shiftMonth = (month: string, amount: number) => {
 
 // Phones get a grid of day buttons with the picked day's tasks below it,
 // since seven columns leave no room for titles.
-/** With `onAdd`, each day and the tray of tasks without a date add one. */
+/**
+ * With `onAdd`, each day and the tray of tasks without a date add one. With
+ * `onMove`, a task dropped on a day or on the tray gets that day, or none.
+ */
 export function CalendarLayout({
   tasks,
   item,
-  onAdd
+  onAdd,
+  onMove
 }: {
   tasks: Task[]
   item: (task: Task) => ReactElement
   onAdd?: ((dueDate: string | null) => void) | undefined
+  onMove?: ((task: Task, day: string | null) => void) | undefined
 }): ReactElement {
   const { t, lang } = useI18n()
   const theme = useTheme()
@@ -212,8 +218,11 @@ export function CalendarLayout({
   const weekdays = monthGrid('2024-01', firstDay)
     .slice(0, 7)
     .map(day => weekdayName.format(new Date(`${day}T00:00:00Z`)))
+  const Tray = onMove ? DropTray : CalendarTray
+  const Cell = onMove ? DropDayCell : DayCell
+  const Button = onMove ? DropDayButton : DayButton
 
-  return (
+  const calendar = (
     <>
       <CalendarToolbar
         title={title}
@@ -234,7 +243,7 @@ export function CalendarLayout({
       <CalendarBody
         aside={
           (undated.length > 0 || onAdd) && (
-            <CalendarTray
+            <Tray
               label={t('layout.noDate')}
               count={undated.length}
               expanded={trayOpen ?? !compact}
@@ -251,15 +260,16 @@ export function CalendarLayout({
               }
             >
               {undated.map(item)}
-            </CalendarTray>
+            </Tray>
           )
         }
       >
         <MonthGrid weekdays={weekdays}>
           {monthGrid(month, firstDay).map(day =>
             compact ? (
-              <DayButton
+              <Button
                 key={day}
+                day={day}
                 label={dayLabel(day)}
                 number={Number(day.slice(8))}
                 outside={!day.startsWith(month)}
@@ -271,8 +281,9 @@ export function CalendarLayout({
                 }}
               />
             ) : (
-              <DayCell
+              <Cell
                 key={day}
+                day={day}
                 label={dayLabel(day)}
                 number={Number(day.slice(8))}
                 outside={!day.startsWith(month)}
@@ -280,7 +291,7 @@ export function CalendarLayout({
                 add={addOn(day)}
               >
                 <ChipList>{dueOn(day).map(item)}</ChipList>
-              </DayCell>
+              </Cell>
             )
           )}
         </MonthGrid>
@@ -295,5 +306,19 @@ export function CalendarLayout({
         )}
       </CalendarBody>
     </>
+  )
+  return onMove ? (
+    <CalendarDrag
+      tasks={tasks}
+      onMove={onMove}
+      onShow={day => {
+        setMonth(day.slice(0, 7))
+        setPicked(day)
+      }}
+    >
+      {calendar}
+    </CalendarDrag>
+  ) : (
+    calendar
   )
 }

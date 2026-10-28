@@ -88,6 +88,7 @@ import { ShareDialog } from '@/ui/boards/ShareDialog'
 import { TaskCard } from '@/ui/boards/TaskCard'
 import { TaskListRow } from '@/ui/boards/TaskListRow'
 import { LinkedTaskPanel } from '@/ui/boards/TaskPanel'
+import { useReschedule } from '@/ui/boards/useReschedule'
 import { lineage } from '@/ui/boards/useTaskPanel'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -272,6 +273,7 @@ function BoardColumns({
 }): ReactElement {
   const { t } = useI18n()
   const move = useMoveTask(board.id)
+  const reschedule = useReschedule(board.id)
   const moveSection = useBoardChange(
     board.id,
     (api, { sectionId, to }: { sectionId: string; to: SectionMove }) =>
@@ -698,11 +700,20 @@ function BoardColumns({
       {board.layout === 'calendar' && (
         <CalendarLayout
           tasks={topLevel}
-          item={task => <CalendarTask key={task.id} task={task} />}
+          item={task => (
+            <CalendarTask key={task.id} task={task} draggable={editable} />
+          )}
           onAdd={
             editable
               ? dueDate => {
                   openNewTask({ dueDate: dueDate ?? undefined })
+                }
+              : undefined
+          }
+          onMove={
+            editable
+              ? (task, day) => {
+                  reschedule.mutate({ task, day })
                 }
               : undefined
           }
