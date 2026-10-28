@@ -246,6 +246,14 @@ describe('TaskPanel', () => {
     expect(
       panel.getByRole('textbox', { name: 'Description' })
     ).toHaveTextContent('Half typed')
+    expect(screen.getByRole('dialog', { name: 'DES-1 Logo' })).toHaveFocus()
+
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'DES-1 Logo' }), {
+      key: 'Escape'
+    })
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+    })
   })
 
   it('closes the panel on Escape outside a field', async () => {

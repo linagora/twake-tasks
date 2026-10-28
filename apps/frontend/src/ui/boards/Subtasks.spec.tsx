@@ -107,6 +107,40 @@ describe('Sub-tasks', () => {
       screen.getByRole('dialog', { name: 'DES-1 Logo' })
     ).toBeInTheDocument()
     expect(boardsApi.createTask).not.toHaveBeenCalled()
+
+    fireEvent.keyDown(panel.getByRole('button', { name: 'Add a sub-task' }), {
+      key: 'Escape'
+    })
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
+    })
+  })
+
+  it('leaves the field of a sub-task on Escape, then closes the sub-task alone', async () => {
+    const { board, boardsApi } = logoWithSketch()
+    renderRoute(`/boards/${board.id}?task=DES-1`, { boardsApi })
+
+    const parent = within(
+      await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    )
+    fireEvent.click(await parent.findByRole('button', { name: 'Sketch' }))
+    const sub = await screen.findByRole('dialog', { name: 'DES-2 Sketch' })
+    const title = within(sub).getByRole('textbox', { name: 'Title' })
+    title.focus()
+    fireEvent.change(title, { target: { value: 'Sketches' } })
+    fireEvent.keyDown(title, { key: 'Escape' })
+
+    expect(sub).toHaveFocus()
+    expect(title).toHaveValue('Sketch')
+    expect(screen.getByRole('dialog', { name: 'DES-2 Sketch' })).toBeVisible()
+    expect(screen.getByRole('dialog', { name: 'DES-1 Logo' })).toBeVisible()
+    expect(boardsApi.editTask).not.toHaveBeenCalled()
+
+    fireEvent.keyDown(sub, { key: 'Escape' })
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'DES-2 Sketch' })).toBeNull()
+    })
+    expect(screen.getByRole('dialog', { name: 'DES-1 Logo' })).toBeVisible()
   })
 
   it('gives the focus back to Add a sub-task on Cancel', async () => {

@@ -21,6 +21,7 @@ import {
   useState,
   type ReactElement,
   type ReactNode,
+  type KeyboardEvent as ReactKeyboardEvent,
   type Ref,
   type RefObject,
   type SVGProps
@@ -32,6 +33,23 @@ import { Icon } from '@/ds/Icon'
 
 function inField(element: Element | null): boolean {
   return element?.matches('input, textarea, [contenteditable]') ?? false
+}
+
+// Escape typed in a field leaves it, after the field's own handler (which may
+// close it), and goes no further: the next one closes the panel. A sub-task's
+// Escape never reaches the panel of its parent.
+function closeOnEscape(
+  event: ReactKeyboardEvent<HTMLElement>,
+  onClose: () => void
+): void {
+  if (event.key !== 'Escape' || event.nativeEvent.isComposing) return
+  event.stopPropagation()
+  const target = event.target instanceof Element ? event.target : null
+  if (!inField(target)) {
+    onClose()
+    return
+  }
+  if (target === document.activeElement) event.currentTarget.focus()
 }
 
 /**
@@ -313,13 +331,12 @@ function Panel({
       <Drawer
         open
         anchor="right"
-        onClose={(_event, reason) => {
-          if (reason === 'escapeKeyDown' && inField(document.activeElement))
-            return
-          onClose()
-        }}
+        onClose={onClose}
         slotProps={{
           paper: {
+            onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => {
+              closeOnEscape(event, onClose)
+            },
             role: 'dialog',
             'aria-label': label,
             'aria-modal': true,
@@ -343,9 +360,7 @@ function Panel({
       tabIndex={-1}
       data-peek={peek ? '' : undefined}
       onKeyDown={event => {
-        if (event.key !== 'Escape' || inField(document.activeElement)) return
-        event.stopPropagation()
-        onClose()
+        closeOnEscape(event, onClose)
       }}
       sx={{
         position: 'absolute',
