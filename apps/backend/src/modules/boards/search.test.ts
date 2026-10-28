@@ -118,6 +118,44 @@ describe('search', () => {
     ])
   })
 
+  it('tells which field each task answers by, and its text', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    const ops = await aBoardOf(owner, 'OPS')
+    await design.add('Poster', 'Print the poster on recycled paper')
+    const moved = await design.add('Flyer')
+    await api
+      .as(owner)
+      .post(`/boards/${design.id}/tasks/${moved.id}/transfer`, {
+        boardId: ops.id,
+        sectionId: null
+      })
+    const matches = async (q: string) =>
+      (
+        await api
+          .as(owner)
+          .get(`/search?${new URLSearchParams({ q }).toString()}`)
+      )
+        .json<{ tasks: { key: string; match: unknown }[] }>()
+        .tasks.map(task => [task.key, task.match])
+
+    expect(await matches('des-1')).toEqual([
+      ['DES-1', { field: 'key', text: 'DES-1' }]
+    ])
+    expect(await matches('des-2')).toEqual([
+      ['OPS-1', { field: 'previousKey', text: 'DES-2' }]
+    ])
+    expect(await matches('post')).toEqual([
+      ['DES-1', { field: 'title', text: 'Poster' }]
+    ])
+    expect(await matches('recycled')).toEqual([
+      [
+        'DES-1',
+        { field: 'description', text: 'Print the poster on recycled paper' }
+      ]
+    ])
+  })
+
   it('only finds tasks on boards I can see', async () => {
     const owner = aUser()
     const stranger = aUser({ organizationId: owner.organizationId })

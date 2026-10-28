@@ -123,8 +123,20 @@ export const tasksResponse = z.object({ tasks: z.array(agendaTask) })
 
 export const agendaResponse = tasksResponse.extend({ today: z.iso.date() })
 
+// What a result answers the search by: its key, a former key, its title or
+// the part of its description around the text.
+export const searchMatch = z.object({
+  field: z.enum(['key', 'previousKey', 'title', 'description']),
+  text: z.string()
+})
+
 export const searchResponse = z.object({
-  tasks: z.array(agendaTask.extend({ excerpt: z.string().nullable() }))
+  tasks: z.array(
+    agendaTask.extend({
+      excerpt: z.string().nullable(),
+      match: searchMatch.nullable()
+    })
+  )
 })
 
 export const descriptionResponse = z.object({

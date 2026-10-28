@@ -409,7 +409,13 @@ export function fakeBoardsApi(boards: Board[] = []) {
                 task.key.toLowerCase().startsWith(text.toLowerCase()) ||
                 task.title.toLowerCase().includes(text.toLowerCase())
             )
-            .map(task => ({ ...agendaTask(board, task), excerpt: null }))
+            .map(task => ({
+              ...agendaTask(board, task),
+              excerpt: null,
+              match: task.key.toLowerCase().startsWith(text.toLowerCase())
+                ? { field: 'key' as const, text: task.key }
+                : { field: 'title' as const, text: task.title }
+            }))
         )
       )
     ),

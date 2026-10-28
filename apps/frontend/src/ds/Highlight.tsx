@@ -47,10 +47,13 @@ function matches(
 
 export function Highlight({
   text,
-  query
+  query,
+  tone = 'mark'
 }: {
   text: string
   query: string
+  /** `primary` writes the matches in the primary colour, as Twake Drive's search. */
+  tone?: 'mark' | 'primary'
 }): ReactElement {
   const parts: (string | ReactElement)[] = []
   let shown = 0
@@ -60,11 +63,15 @@ export function Highlight({
       <Box
         key={start}
         component="mark"
-        sx={theme => ({
-          color: 'inherit',
-          bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.2),
-          borderRadius: 0.5
-        })}
+        sx={theme =>
+          tone === 'primary'
+            ? { color: 'primary.main', bgcolor: 'transparent' }
+            : {
+                color: 'inherit',
+                bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.2),
+                borderRadius: 0.5
+              }
+        }
       >
         {text.slice(start, end)}
       </Box>

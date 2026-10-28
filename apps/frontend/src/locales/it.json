@@ -537,12 +537,18 @@
     "label": "Cerca",
     "results": "Risultati per «%{text}»",
     "empty": "Nessuna attività corrispondente",
+    "noResults": "Nessun risultato",
     "emptyHint": "Prova un’altra parola o controlla l’ortografia.",
     "failed": "Impossibile eseguire la ricerca.",
     "tooShort": "Digita almeno %{count} caratteri per cercare.",
     "allBoards": "Mostra tutte le %{smart_count} bacheche",
     "found": "%{smart_count} attività trovata per “%{text}” |||| %{smart_count} attività trovate per “%{text}”",
-    "boardsFound": "%{smart_count} bacheca trovata |||| %{smart_count} bacheche trovate"
+    "boardsFound": "%{smart_count} bacheca trovata |||| %{smart_count} bacheche trovate",
+    "match": {
+      "key": "Chiave:",
+      "previousKey": "In precedenza",
+      "description": "Descrizione:"
+    }
   },
   "picker": {
     "count": "%{smart_count} opzione |||| %{smart_count} opzioni"

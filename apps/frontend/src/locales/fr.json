@@ -537,12 +537,18 @@
     "label": "Rechercher",
     "results": "Résultats pour « %{text} »",
     "empty": "Aucune tâche ne correspond",
+    "noResults": "Aucun résultat",
     "emptyHint": "Essayez un autre mot ou vérifiez l'orthographe.",
     "failed": "La recherche a échoué.",
     "tooShort": "Saisissez au moins %{count} caractères pour rechercher.",
     "allBoards": "Afficher les %{smart_count} tableaux",
     "found": "%{smart_count} tâche trouvée pour « %{text} » |||| %{smart_count} tâches trouvées pour « %{text} »",
-    "boardsFound": "%{smart_count} tableau trouvé |||| %{smart_count} tableaux trouvés"
+    "boardsFound": "%{smart_count} tableau trouvé |||| %{smart_count} tableaux trouvés",
+    "match": {
+      "key": "Clé :",
+      "previousKey": "Anciennement",
+      "description": "Description :"
+    }
   },
   "picker": {
     "count": "%{smart_count} option |||| %{smart_count} options"

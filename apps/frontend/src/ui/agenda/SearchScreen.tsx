@@ -1,12 +1,21 @@
-import { Magnifier } from '@linagora/twake-icons'
+import { Magnifier, Mosaic } from '@linagora/twake-icons'
 import { Button, Link, Typography } from '@linagora/twake-mui'
-import { useState, type ReactElement, type RefObject } from 'react'
+import {
+  useEffect,
+  useId,
+  useState,
+  type ReactElement,
+  type RefObject
+} from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 
 import type { BoardSummary } from '@/domain/board'
 import { listBoards } from '@/domain/boardList'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { fold, Highlight } from '@/ds/Highlight'
+import { Icon } from '@/ds/Icon'
+import { ResultMenu, type ResultItem } from '@/ds/ResultMenu'
+import { TaskIcon } from '@/ds/TaskIcon'
 import { SearchBar } from '@/ds/SearchBar'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import { BoardChip } from '@/ds/TileGrid'
@@ -17,6 +26,105 @@ import { searchMinLength, useSearch } from '@/ui/queries/search'
 import { OriginContext, PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
+
+// As Twake Drive's search: the results follow the typing once it pauses.
+const RESULTS_DELAY = 250
+
+function useDelayed(value: string, delay: number): string {
+  const [delayed, setDelayed] = useState(value)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDelayed(value)
+    }, delay)
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [value, delay])
+  return delayed
+}
+
+/** The boards, under the names shown, whose name or key prefix `text` finds. */
+function useFoundBoards(text: string): BoardSummary[] {
+  const boards = useBoards()
+  const boardName = useBoardName()
+  if (text.length < searchMinLength()) return []
+  const folded = fold(text)
+  return listBoards(
+    (boards.data ?? [])
+      .map(board => ({ ...board, name: boardName(board) }))
+      .filter(
+        board =>
+          !board.archived &&
+          (fold(board.name).includes(folded) ||
+            fold(board.keyPrefix).startsWith(folded))
+      )
+  )
+}
+
+function useLiveResults(query: string): {
+  items: ResultItem[]
+  loading: boolean
+  message: string | null
+} {
+  const { t } = useI18n()
+  const projectName = useProjectName()
+  const boardName = useBoardName()
+  const found = useFoundBoards(query)
+  const tasks = useSearch(query)
+  const minLength = searchMinLength()
+  if (query.length < minLength) {
+    return {
+      items: [],
+      loading: false,
+      message: t('search.tooShort', { count: minLength })
+    }
+  }
+  const folded = fold(query)
+  const items: ResultItem[] = [
+    ...found.map(board => ({
+      id: `board-${board.id}`,
+      to: `/boards/${board.id}`,
+      // The icon of each board in the navigation.
+      icon: <Icon icon={Mosaic} size={24} color="currentColor" />,
+      primary: <Highlight text={board.name} query={query} tone="primary" />,
+      secondary: projectName(board.project),
+      detail: !fold(board.name).includes(folded) && (
+        <>
+          {t('search.match.key')}{' '}
+          <Highlight text={board.keyPrefix} query={query} tone="primary" />
+        </>
+      )
+    })),
+    ...(tasks.data ?? []).map(task => ({
+      id: task.id,
+      to: `/boards/${task.boardId}?${new URLSearchParams({ task: task.key }).toString()}`,
+      icon: <Icon icon={TaskIcon} size={24} color="currentColor" />,
+      primary: <Highlight text={task.title} query={query} tone="primary" />,
+      secondary: (
+        <>
+          {task.match?.field === 'key' ? (
+            <Highlight text={task.key} query={query} tone="primary" />
+          ) : (
+            task.key
+          )}
+          {` · ${boardName({ id: task.boardId, name: task.boardName })}`}
+        </>
+      ),
+      detail: (task.match?.field === 'previousKey' ||
+        task.match?.field === 'description') && (
+        <>
+          {t(`search.match.${task.match.field}`)}{' '}
+          <Highlight text={task.match.text} query={query} tone="primary" />
+        </>
+      )
+    }))
+  ]
+  return {
+    items,
+    loading: tasks.isPending,
+    message: tasks.isError ? t('search.failed') : t('search.noResults')
+  }
+}
 
 export function SearchField({
   inputRef,
@@ -37,32 +145,104 @@ export function SearchField({
     setShown(searched)
     setText(searched)
   }
+  const [field, setField] = useState<HTMLDivElement | null>(null)
+  const [focused, setFocused] = useState(false)
+  const [selected, setSelected] = useState(0)
+  const listId = useId()
+  const query = useDelayed(text.trim(), RESULTS_DELAY)
+  const results = useLiveResults(query)
+  const open = focused && query !== '' && text.trim() !== ''
+  const { items } = results
+  // Until the results catch up with the typing, Enter searches the text.
+  const current = open && query === text.trim() ? items[selected] : undefined
+
+  // Once a result is chosen, the field empties, as Twake Drive's.
+  const clear = () => {
+    setText('')
+    setSelected(0)
+  }
+
   return (
-    <SearchBar
-      role="search"
-      size={size}
-      className={className}
-      // As Twake Drive's search: flat, without a clear button, outlined
-      // while empty only.
-      elevation={0}
-      disabledClear
-      disabledFocus={text !== ''}
-      placeholder={t('search.label')}
-      value={text}
-      onChange={event => {
-        setText(event.target.value)
-      }}
-      onSubmit={event => {
-        event.preventDefault()
-        if (!text.trim()) return
-        void navigate(
-          `/search?${new URLSearchParams({ q: text.trim() }).toString()}`
-        )
-      }}
-      componentsProps={{
-        inputBase: { inputRef, inputProps: { type: 'search', maxLength: 200 } }
-      }}
-    />
+    <>
+      <SearchBar
+        ref={setField}
+        role="search"
+        size={size}
+        className={[className, open && 'SearchBar-open']
+          .filter(Boolean)
+          .join(' ')}
+        // As Twake Drive's search: flat, without a clear button, outlined
+        // while empty only.
+        elevation={0}
+        disabledClear
+        disabledFocus={text !== ''}
+        placeholder={t('search.label')}
+        value={text}
+        onChange={event => {
+          setText(event.target.value)
+          setSelected(0)
+        }}
+        onFocus={() => {
+          setFocused(true)
+        }}
+        onBlur={() => {
+          setFocused(false)
+        }}
+        onSubmit={event => {
+          event.preventDefault()
+          if (!text.trim()) return
+          void navigate(
+            `/search?${new URLSearchParams({ q: text.trim() }).toString()}`
+          )
+        }}
+        componentsProps={{
+          inputBase: {
+            inputRef,
+            inputProps: {
+              type: 'search',
+              maxLength: 200,
+              role: 'combobox',
+              'aria-autocomplete': 'list',
+              'aria-expanded': open,
+              'aria-controls': open ? listId : undefined,
+              'aria-activedescendant': current
+                ? `${listId}-${String(selected)}`
+                : undefined
+            },
+            onKeyDown: event => {
+              if (event.key === 'Escape' && text !== '') {
+                event.preventDefault()
+                clear()
+              } else if (open && items.length > 0) {
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault()
+                  setSelected((selected + 1) % items.length)
+                } else if (event.key === 'ArrowUp') {
+                  event.preventDefault()
+                  setSelected((selected - 1 + items.length) % items.length)
+                } else if (event.key === 'Enter' && current) {
+                  event.preventDefault()
+                  clear()
+                  void navigate(current.to)
+                }
+              }
+            }
+          }
+        }}
+      />
+      {open && (
+        <ResultMenu
+          anchor={field}
+          id={listId}
+          items={items}
+          selected={selected}
+          loading={results.loading}
+          message={results.message}
+          link={RouterLink}
+          onChoose={clear}
+        />
+      )}
+    </>
   )
 }
 
@@ -129,24 +309,10 @@ export function SearchScreen(): ReactElement {
   const text = params.get('q')?.trim() ?? ''
   const results = useSearch(text)
   const boards = useBoards()
-  const boardName = useBoardName()
   const minLength = searchMinLength()
   useDocumentTitle(t('search.label'))
 
-  const query = fold(text)
-  const foundBoards =
-    text.length >= minLength
-      ? listBoards(
-          (boards.data ?? [])
-            .map(board => ({ ...board, name: boardName(board) }))
-            .filter(
-              board =>
-                !board.archived &&
-                (fold(board.name).includes(query) ||
-                  fold(board.keyPrefix).startsWith(query))
-            )
-        )
-      : []
+  const foundBoards = useFoundBoards(text)
   const found =
     results.data && !boards.isPending
       ? [
