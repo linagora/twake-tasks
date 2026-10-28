@@ -271,4 +271,20 @@ describe('httpBoardsApi', () => {
     expect(request?.method).toBe('POST')
     expect(request?.url).toBe(`${BASE}/api/boards/b1/tasks/t1/transfer/preview`)
   })
+
+  it('reports where a list drifts from the contract and still returns it', async () => {
+    const report = vi.fn()
+    const send = backend(200, {
+      tasks: [{ ...TASK, category: 'unstarted', parentTitle: null }]
+    })
+
+    const tasks = await httpBoardsApi(BASE, send, report).myTasks()
+
+    expect(tasks).toMatchObject([{ id: 't1', category: 'unstarted' }])
+    expect(report).toHaveBeenCalledExactlyOnceWith('my tasks', [
+      'tasks.*.boardId',
+      'tasks.*.boardName',
+      'tasks.*.projectId'
+    ])
+  })
 })

@@ -10,3 +10,5 @@ export const person = z.object({
   name: z.string().nullable(),
   avatar: z.string().nullable()
 })
+
+export const peopleResponse = z.object({ people: z.array(person) })

@@ -115,10 +115,11 @@ export type NewReminder =
 /**
  * `from` and `to` are ids for `section`, `assignees` and `labels`, and
  * `{ id, name }` for `board`. `name` is the section or label's name when the
- * entry was logged, if it existed then.
+ * entry was logged, if it existed then. A change made outside a request has
+ * no actor id.
  */
 export interface HistoryEntry {
-  actor: Person
+  actor: Omit<Person, 'userId'> & { userId: string | null }
   field: string
   from: unknown
   to: unknown

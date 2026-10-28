@@ -1,23 +1,8 @@
-import { boardResponse } from '@twake-tasks/api-contract'
-import type * as wire from '@twake-tasks/api-contract'
+import * as wire from '@twake-tasks/api-contract'
 import type { z } from 'zod'
 
-import {
-  ApiError,
-  type AgendaTask,
-  type HiddenTask,
-  type Notification,
-  type ProjectUnread,
-  type SavedFilter,
-  type Project,
-  type BoardsApi,
-  type Comment,
-  type Reminder,
-  type HistoryEntry,
-  type SearchResult
-} from '@/application/boards'
+import { ApiError, type BoardsApi } from '@/application/boards'
 import { noReporting, type Reporting } from '@/application/reporting'
-import type { BoardSummary, Person } from '@/domain/board'
 
 export type Send = (request: Request) => Promise<Response>
 
@@ -170,18 +155,28 @@ export function httpBoardsApi(
   }
 
   return {
-    settings: () => call('GET', '/settings'),
+    settings: () =>
+      parsed('settings', wire.settingsResponse, 'GET', '/settings'),
     agenda: (zone, days) => {
       const query = { zone, days } satisfies z.output<typeof wire.agendaQuery>
-      return call(
+      return parsed(
+        'agenda',
+        wire.agendaResponse,
         'GET',
         `/agenda?${new URLSearchParams({ ...query, days: String(days) }).toString()}`
       )
     },
     listFilters: async () =>
-      (await call<{ filters: SavedFilter[] }>('GET', '/filters')).filters,
+      (await parsed('filters', wire.filtersResponse, 'GET', '/filters'))
+        .filters,
     createFilter: filter =>
-      call('POST', '/filters', filter satisfies Body<'newFilter'>),
+      parsed(
+        'created filter',
+        wire.createdFilterResponse,
+        'POST',
+        '/filters',
+        filter satisfies Body<'newFilter'>
+      ),
     updateFilter: (filterId, filter) =>
       call(
         'PATCH',
@@ -194,12 +189,15 @@ export function httpBoardsApi(
     setFilterFavorite: (filterId, favorite) =>
       call(favorite ? 'PUT' : 'DELETE', route`/filters/${filterId}/favorite`),
     labelNames: async () =>
-      (await call<{ labels: string[] }>('GET', '/labels')).labels,
+      (await parsed('label names', wire.labelNamesResponse, 'GET', '/labels'))
+        .labels,
     people: async () =>
-      (await call<{ people: Person[] }>('GET', '/people')).people,
+      (await parsed('people', wire.peopleResponse, 'GET', '/people')).people,
     filteredTasks: async (filterId, zone) =>
       (
-        await call<{ tasks: AgendaTask[] }>(
+        await parsed(
+          'filtered tasks',
+          wire.tasksResponse,
           'GET',
           route`/filters/${filterId}/tasks` +
             `?${new URLSearchParams({ zone } satisfies Body<'zoneQuery'>).toString()}`
@@ -207,35 +205,41 @@ export function httpBoardsApi(
       ).tasks,
     search: async text =>
       (
-        await call<{ tasks: SearchResult[] }>(
+        await parsed(
+          'search',
+          wire.searchResponse,
           'GET',
           `/search?${new URLSearchParams({ q: text } satisfies Body<'searchQuery'>).toString()}`
         )
       ).tasks,
     myTasks: async () =>
-      (await call<{ tasks: AgendaTask[] }>('GET', '/my-tasks')).tasks,
+      (await parsed('my tasks', wire.tasksResponse, 'GET', '/my-tasks')).tasks,
     listBoards: async () =>
-      (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
+      (await parsed('boards', wire.boardsResponse, 'GET', '/boards')).boards,
     getBoard: boardId =>
-      parsed('board', boardResponse, 'GET', route`/boards/${boardId}`),
+      parsed('board', wire.boardResponse, 'GET', route`/boards/${boardId}`),
     watchBoard: (boardId, onVersion) =>
       watch(route`/boards/${boardId}/events`, onVersion),
     createBoard: board =>
       parsed(
         'board',
-        boardResponse,
+        wire.boardResponse,
         'POST',
         '/boards',
         board satisfies Body<'newBoard'>
       ),
     transferTask: (boardId, taskId, to) =>
-      call(
+      parsed(
+        'transfer',
+        wire.transferResponse,
         'POST',
         route`/boards/${boardId}/tasks/${taskId}/transfer`,
         to satisfies Body<'transferTarget'>
       ),
     previewTransfer: (boardId, taskId, to) =>
-      call(
+      parsed(
+        'transfer preview',
+        wire.transferPreviewResponse,
         'POST',
         route`/boards/${boardId}/tasks/${taskId}/transfer/preview`,
         to satisfies Body<'transferTarget'>
@@ -248,7 +252,9 @@ export function httpBoardsApi(
       call('POST', route`/boards/${boardId}/tasks/${taskId}/restore`, {}),
     hiddenTasks: async (boardId, shelf) =>
       (
-        await call<{ tasks: HiddenTask[] }>(
+        await parsed(
+          'hidden tasks',
+          wire.hiddenTasksResponse,
           'GET',
           route`/boards/${boardId}/${shelf}`
         )
@@ -264,15 +270,24 @@ export function httpBoardsApi(
         {}
       ),
     listProjects: async () =>
-      (await call<{ projects: Project[] }>('GET', '/projects')).projects,
+      (await parsed('projects', wire.projectsResponse, 'GET', '/projects'))
+        .projects,
     moveToProject: (boardId, projectId) =>
       call('POST', route`/boards/${boardId}/move`, {
         projectId
       } satisfies Body<'boardMove'>),
-    getSharing: boardId => call('GET', route`/boards/${boardId}/sharing`),
+    getSharing: boardId =>
+      parsed(
+        'sharing',
+        wire.sharingResponse,
+        'GET',
+        route`/boards/${boardId}/sharing`
+      ),
     suggestPeople: async (boardId, query) =>
       (
-        await call<{ people: Person[] }>(
+        await parsed(
+          'suggested people',
+          wire.peopleResponse,
           'GET',
           route`/boards/${boardId}/sharing/people` +
             `?${new URLSearchParams({ q: query } satisfies Body<'peopleQuery'>).toString()}`
@@ -302,7 +317,9 @@ export function httpBoardsApi(
     setFavorite: (boardId, favorite) =>
       call(favorite ? 'PUT' : 'DELETE', route`/boards/${boardId}/favorite`),
     createTask: (boardId, task) =>
-      call(
+      parsed(
+        'created task',
+        wire.createdTaskResponse,
         'POST',
         route`/boards/${boardId}/tasks`,
         task satisfies Body<'newTask'>
@@ -324,23 +341,34 @@ export function httpBoardsApi(
         changes satisfies Body<'taskChanges'>
       ),
     getDescription: (boardId, taskId) =>
-      call('GET', route`/boards/${boardId}/tasks/${taskId}/description`),
+      parsed(
+        'description',
+        wire.descriptionResponse,
+        'GET',
+        route`/boards/${boardId}/tasks/${taskId}/description`
+      ),
     setDescription: (boardId, taskId, edit) =>
-      call(
+      parsed(
+        'description version',
+        wire.descriptionVersionResponse,
         'PUT',
         route`/boards/${boardId}/tasks/${taskId}/description`,
         edit satisfies Body<'descriptionEdit'>
       ),
     listHistory: async (boardId, taskId) =>
       (
-        await call<{ entries: HistoryEntry[] }>(
+        await parsed(
+          'history',
+          wire.historyResponse,
           'GET',
           route`/boards/${boardId}/tasks/${taskId}/history`
         )
       ).entries,
     listComments: async (boardId, taskId) =>
       (
-        await call<{ comments: Comment[] }>(
+        await parsed(
+          'comments',
+          wire.commentsResponse,
           'GET',
           route`/boards/${boardId}/tasks/${taskId}/comments`
         )
@@ -364,7 +392,9 @@ export function httpBoardsApi(
     },
     listReminders: async (boardId, taskId) =>
       (
-        await call<{ reminders: Reminder[] }>(
+        await parsed(
+          'reminders',
+          wire.remindersResponse,
           'GET',
           route`/boards/${boardId}/tasks/${taskId}/reminders`
         )
@@ -383,7 +413,9 @@ export function httpBoardsApi(
       ),
     following: async (boardId, taskId) =>
       (
-        await call<{ following: boolean }>(
+        await parsed(
+          'following',
+          wire.followingResponse,
           'GET',
           route`/boards/${boardId}/tasks/${taskId}/follow`
         )
@@ -394,11 +426,19 @@ export function httpBoardsApi(
         route`/boards/${boardId}/tasks/${taskId}/follow`
       ),
     listNotifications: async () =>
-      (await call<{ notifications: Notification[] }>('GET', '/notifications'))
-        .notifications,
+      (
+        await parsed(
+          'notifications',
+          wire.notificationsResponse,
+          'GET',
+          '/notifications'
+        )
+      ).notifications,
     unreadByProject: async () =>
       (
-        await call<{ projects: ProjectUnread[] }>(
+        await parsed(
+          'unread notifications',
+          wire.unreadResponse,
           'GET',
           '/notifications/unread'
         )
@@ -409,13 +449,17 @@ export function httpBoardsApi(
         userIds
       } satisfies Body<'assignment'>),
     createLabel: (boardId, label) =>
-      call(
+      parsed(
+        'label',
+        wire.label,
         'POST',
         route`/boards/${boardId}/labels`,
         label satisfies Body<'newLabel'>
       ),
     editLabel: (boardId, labelId, changes) =>
-      call(
+      parsed(
+        'label',
+        wire.label,
         'PATCH',
         route`/boards/${boardId}/labels/${labelId}`,
         changes satisfies Body<'labelChanges'>
@@ -425,7 +469,9 @@ export function httpBoardsApi(
         labelIds
       } satisfies Body<'labeling'>),
     createSection: (boardId, section) =>
-      call(
+      parsed(
+        'section',
+        wire.section,
         'POST',
         route`/boards/${boardId}/sections`,
         section satisfies Body<'newSection'>

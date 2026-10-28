@@ -1,6 +1,8 @@
 import { z } from 'zod'
+import { instant } from './common.ts'
 import { label } from './labels.ts'
 import { person, role } from './people.ts'
+import { projectSummary } from './projects.ts'
 import { section } from './sections.ts'
 import { taskResponse } from './tasks.ts'
 
@@ -34,12 +36,7 @@ export const boardResponse = z.object({
   id: z.string(),
   name: z.string(),
   keyPrefix: z.string(),
-  project: z.object({
-    id: z.string(),
-    name: z.string(),
-    personal: z.boolean(),
-    managed: z.boolean()
-  }),
+  project: projectSummary,
   inbox: z.boolean(),
   archived: z.boolean(),
   version: z.number(),
@@ -51,4 +48,28 @@ export const boardResponse = z.object({
   labels: z.array(label),
   sections: z.array(section),
   tasks: z.array(taskResponse)
+})
+
+export const boardsResponse = z.object({
+  boards: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      keyPrefix: z.string(),
+      project: projectSummary,
+      inbox: z.boolean(),
+      role,
+      joinedAt: instant,
+      sharedBy: z
+        .object({ name: z.string().nullable(), email: z.string() })
+        .nullable(),
+      archived: z.boolean(),
+      favorite: z.boolean(),
+      openTasks: z.number(),
+      doneTasks: z.number(),
+      totalTasks: z.number(),
+      members: z.array(person),
+      memberCount: z.number()
+    })
+  )
 })

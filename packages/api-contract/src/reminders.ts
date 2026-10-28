@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { isTimeZone } from './common.ts'
+import { instant, isTimeZone } from './common.ts'
 import { taskParams } from './tasks.ts'
 
 export const newReminder = z.union([
@@ -16,3 +16,17 @@ export const newReminder = z.union([
 ])
 
 export const reminderParams = taskParams.extend({ reminderId: z.uuid() })
+
+/** `firesAt` is null while a relative reminder has no due date to follow. */
+export const remindersResponse = z.object({
+  reminders: z.array(
+    z.object({
+      id: z.string(),
+      at: instant.nullable(),
+      beforeMinutes: z.number().nullable(),
+      firesAt: instant.nullable()
+    })
+  )
+})
+
+export const followingResponse = z.object({ following: z.boolean() })

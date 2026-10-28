@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { instant } from './common.ts'
+import { person } from './people.ts'
 import { taskParams } from './tasks.ts'
 
 export const newComment = z.object({
@@ -21,3 +23,17 @@ export const reactionEmoji = z
     /^(?:[#*0-9]\uFE0F?\u20E3|(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}])(?:[\p{Extended_Pictographic}\p{Regional_Indicator}\p{Emoji_Modifier}\u{E0020}-\u{E007F}]|\u200D|\uFE0F)+)$/u
   )
   .refine(text => [...graphemes.segment(text)].length === 1)
+
+export const commentsResponse = z.object({
+  comments: z.array(
+    z.object({
+      id: z.string(),
+      author: person,
+      body: z.string(),
+      createdAt: instant,
+      reactions: z.array(
+        z.object({ emoji: z.string(), people: z.array(person) })
+      )
+    })
+  )
+})
