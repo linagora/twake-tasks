@@ -71,3 +71,5 @@ npm run db:generate -w @twake-tasks/backend
 ```
 
 The backend applies pending migrations at start.
+
+Database functions and triggers have their current definition in [`apps/backend/sql`](../apps/backend/sql/README.md), which also says how to change one.
