@@ -7,7 +7,7 @@ Each file here holds the current definition of one function (`functions/`) or tr
 To change a function or a trigger:
 
 1. Edit its file here.
-2. Generate a custom migration with `npx drizzle-kit generate --custom --name <name>` and paste the file's statement into it.
+2. Run `npm run db:sql -w @twake-tasks/backend <name>`. It generates a custom migration holding every file here that the branch changed since `origin/main`, functions first.
 3. Run the backend tests. A mismatch prints the expected content of the file; copy it in.
 
 ## Triggers
