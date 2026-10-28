@@ -119,6 +119,27 @@ const NO_LITERAL_QUERY_KEY = {
   message: `Query keys come from ${KEYS_FILE}.`
 }
 
+const NO_ROLE_COMPARISON = {
+  selector:
+    'BinaryExpression[operator=/^[!=]==?$/]:matches([left.property.name="role"], [right.property.name="role"], [left.expression.property.name="role"], [right.expression.property.name="role"], [left.name=/[rR]ole$/], [right.name=/[rR]ole$/])',
+  message: 'Role rules live in @/domain/board (isEditable, isAdmin, ...).'
+}
+
+// May only shrink: a file leaves the list when it is split under the limit.
+const OVER_MAX_LINES = [
+  'src/ds/Calendar.tsx',
+  'src/ds/Columns.tsx',
+  'src/ds/RichText.tsx',
+  'src/ds/Sharing.tsx',
+  'src/ds/SidePanel.tsx',
+  'src/ui/agenda/AgendaScreen.tsx',
+  'src/ui/agenda/FiltersScreen.tsx',
+  'src/ui/boards/Archive.tsx',
+  'src/ui/boards/TaskPanel.tsx',
+  'src/ui/shell/AppShell.tsx',
+  'src/ui/shell/NewTaskDialog.tsx'
+]
+
 export default defineConfig(
   { ignores: ['dist/', 'coverage/', 'public/'] },
   js.configs.recommended,
@@ -159,6 +180,28 @@ export default defineConfig(
         ...FORBIDDEN_SYNTAX,
         NO_SX,
         NO_LITERAL_QUERY_KEY
+      ]
+    }
+  },
+  {
+    files: ['src/ui/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...FORBIDDEN_SYNTAX,
+        NO_SX,
+        NO_LITERAL_QUERY_KEY,
+        NO_ROLE_COMPARISON
+      ]
+    }
+  },
+  {
+    files: ['src/ui/**/*.tsx', 'src/ds/**/*.tsx'],
+    ignores: ['**/*.spec.tsx', ...OVER_MAX_LINES],
+    rules: {
+      'max-lines': [
+        'error',
+        { max: 400, skipBlankLines: true, skipComments: true }
       ]
     }
   },
