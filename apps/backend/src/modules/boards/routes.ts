@@ -43,6 +43,7 @@ import type { FastifyReply } from 'fastify'
 import { allowOrigins } from '../../infra/cors.ts'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
+import { defineRoute, registerRoutes } from '../../infra/route.ts'
 import type { RequireIdentity } from '../auth/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createCommentStore } from './comments.ts'
@@ -972,72 +973,42 @@ export function registerBoards(
     }
   )
 
-  app.post(
-    '/boards/:boardId/labels',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = boardParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = newLabel.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await labelStore.createLabel(
-        identity,
-        params.data.boardId,
-        body.data
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(201).send(result.value)
-    }
-  )
-
-  app.patch(
-    '/boards/:boardId/labels/:labelId',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = labelParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = labelChanges.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await labelStore.editLabel(
-        identity,
-        params.data.boardId,
-        params.data.labelId,
-        body.data
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return result.value
-    }
-  )
-
-  app.put(
-    '/boards/:boardId/tasks/:taskId/labels',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = labeling.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await labelStore.setLabels(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        body.data.labelIds
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(204).send()
-    }
+  registerRoutes(
+    app,
+    { requireIdentity: deps.requireIdentity, refusalStatus: REFUSAL_STATUS },
+    [
+      defineRoute({
+        method: 'POST',
+        url: '/boards/:boardId/labels',
+        params: boardParams,
+        body: newLabel,
+        status: 201,
+        handler: ({ identity, params, body }) =>
+          labelStore.createLabel(identity, params.boardId, body)
+      }),
+      defineRoute({
+        method: 'PATCH',
+        url: '/boards/:boardId/labels/:labelId',
+        params: labelParams,
+        body: labelChanges,
+        handler: ({ identity, params, body }) =>
+          labelStore.editLabel(identity, params.boardId, params.labelId, body)
+      }),
+      defineRoute({
+        method: 'PUT',
+        url: '/boards/:boardId/tasks/:taskId/labels',
+        params: taskParams,
+        body: labeling,
+        status: 204,
+        handler: ({ identity, params, body }) =>
+          labelStore.setLabels(
+            identity,
+            params.boardId,
+            params.taskId,
+            body.labelIds
+          )
+      })
+    ]
   )
 
   app.get(
