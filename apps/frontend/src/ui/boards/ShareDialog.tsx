@@ -22,7 +22,7 @@ import {
   ShareSection,
   type RoleChoice
 } from '@/ds/Sharing'
-import { ROLES, type Board, type Role } from '@/domain/board'
+import { isLastAdmin, ROLES, type Board, type Role } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoardChange, useBoards } from '@/ui/queries/boards'
@@ -93,7 +93,6 @@ export function ShareDialog({
   const members = sharing.data?.members ?? []
   const self = members.find(member => member.email.toLowerCase() === me)
   const others = members.filter(member => member !== self)
-  const admins = members.filter(member => member.role === 'admin').length
   const invites = sharing.data?.invites ?? []
   const projectBoards = boards.data && [
     board.name,
@@ -151,8 +150,8 @@ export function ShareDialog({
       }
     )
   }
-  const lastAdmin = (memberRole: Role) =>
-    memberRole === 'admin' && admins === 1 ? t('sharing.lastAdmin') : undefined
+  const lastAdmin = (member: { role: Role }) =>
+    isLastAdmin(member, members) ? t('sharing.lastAdmin') : undefined
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
@@ -278,7 +277,7 @@ export function ShareDialog({
                     })}
                     value={member.role}
                     roles={roles}
-                    locked={lastAdmin(member.role)}
+                    locked={lastAdmin(member)}
                     onChange={next => {
                       start()
                       change.mutate({ userId: member.userId, role: next })
@@ -288,7 +287,7 @@ export function ShareDialog({
                     label={t('sharing.removePerson', {
                       person: displayName(member)
                     })}
-                    why={lastAdmin(member.role)}
+                    why={lastAdmin(member)}
                     onClick={() => {
                       start()
                       field.current?.focus()

@@ -123,6 +123,16 @@ export const deadlineBeforeDue = (
 
 export const MAX_TASK_DEPTH = 4
 
+export const isAdmin = (role: Role): role is 'admin' => role === 'admin'
+
+/** Whether removing this member, or lowering their role, leaves no admin. */
+export const isLastAdmin = (
+  member: { role: Role },
+  members: readonly { role: Role }[]
+): boolean =>
+  isAdmin(member.role) &&
+  members.filter(each => isAdmin(each.role)).length === 1
+
 /** Whether this user may add, change and move the board's tasks. */
 export const isEditable = (
   board: Pick<BoardSummary, 'role' | 'archived'>

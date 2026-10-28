@@ -7,6 +7,7 @@ import type { Shelf } from '@/application/boards'
 import { Icon } from '@/ds/Icon'
 import { PageHeader, UnavailableButton } from '@/ds/PageHeader'
 import {
+  isAdmin,
   isArchivable,
   isRenamable,
   isShareable,
@@ -62,7 +63,7 @@ export function BoardHeader({
 
   const headerActions = (
     <>
-      {board.role !== 'admin' && (
+      {!isAdmin(board.role) && (
         <Tooltip
           title={
             board.archived

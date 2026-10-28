@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   isArchivable,
+  isAdmin,
   isEditable,
+  isLastAdmin,
   isManageable,
   isRenamable,
   isShareable,
@@ -110,6 +112,23 @@ describe('whyNotShareable', () => {
       'archived'
     )
     expect(whyNotShareable(board('editor'))).toBe('notAdmin')
+  })
+})
+
+describe('admins', () => {
+  const admin = { role: 'admin' as const }
+  const editor = { role: 'editor' as const }
+
+  it('tells an admin from the other roles', () => {
+    expect(isAdmin('admin')).toBe(true)
+    expect(isAdmin('editor')).toBe(false)
+    expect(isAdmin('viewer')).toBe(false)
+  })
+
+  it('finds the last admin for the only admin among the members', () => {
+    expect(isLastAdmin(admin, [admin, editor])).toBe(true)
+    expect(isLastAdmin(admin, [admin, editor, { role: 'admin' }])).toBe(false)
+    expect(isLastAdmin(editor, [admin, editor])).toBe(false)
   })
 })
 
