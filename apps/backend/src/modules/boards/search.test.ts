@@ -156,6 +156,56 @@ describe('search', () => {
     ])
   })
 
+  it('finds tasks whatever the accents, and quotes them as written', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    await design.add('Préparer la fête')
+    await design.add('Affiche', 'Imprimer sur papier recyclé')
+    const found = async (q: string) =>
+      (
+        await api
+          .as(owner)
+          .get(`/search?${new URLSearchParams({ q }).toString()}`)
+      )
+        .json<{ tasks: { key: string; match: unknown }[] }>()
+        .tasks.map(task => [task.key, task.match])
+
+    expect(await found('preparer')).toEqual([
+      ['DES-1', { field: 'title', text: 'Préparer la fête' }]
+    ])
+    expect(await found('FETE')).toEqual([
+      ['DES-1', { field: 'title', text: 'Préparer la fête' }]
+    ])
+    expect(await found('recycle')).toEqual([
+      ['DES-2', { field: 'description', text: 'Imprimer sur papier recyclé' }]
+    ])
+    expect(await found('affiché')).toEqual([
+      ['DES-2', { field: 'title', text: 'Affiche' }]
+    ])
+  })
+
+  it('quotes letters unaccent spells out, and keeps accents out of keys', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    await design.add('Œuvre de Søren')
+    await design.add('Désherber')
+    const found = async (q: string) =>
+      (
+        await api
+          .as(owner)
+          .get(`/search?${new URLSearchParams({ q }).toString()}`)
+      )
+        .json<{ tasks: { key: string; match: unknown }[] }>()
+        .tasks.map(task => [task.key, task.match])
+
+    expect(await found('oeuvre de soren')).toEqual([
+      ['DES-1', { field: 'title', text: 'Œuvre de Søren' }]
+    ])
+    expect(await found('dés')).toEqual([
+      ['DES-2', { field: 'title', text: 'Désherber' }]
+    ])
+  })
+
   it('only finds tasks on boards I can see', async () => {
     const owner = aUser()
     const stranger = aUser({ organizationId: owner.organizationId })
