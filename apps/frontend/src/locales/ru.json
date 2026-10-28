@@ -406,6 +406,7 @@
     "dueTomorrow": "На завтра",
     "assignedToYou": "Назначена вам",
     "createdIn": "«%{title}» добавлена, доска %{board}",
+    "createAnother": "Создать ещё",
     "seeTask": "Открыть задачу",
     "nowhere": "Здесь нельзя добавлять задачи."
   },

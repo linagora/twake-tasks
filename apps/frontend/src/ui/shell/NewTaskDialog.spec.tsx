@@ -450,6 +450,78 @@ describe('NewTaskDialog', () => {
     ).toBeVisible()
   })
 
+  it('creates another task, keeping the dialog and what was picked', async () => {
+    const { dialog, title, create, design } = await openNewTask()
+    fireEvent.click(dialog.getByRole('checkbox', { name: 'Create another' }))
+    fireEvent.change(title(), { target: { value: 'Logo' } })
+    fireEvent.click(create())
+
+    const status = await dialog.findByRole('status', {
+      name: '“Logo” created in Product Design'
+    })
+    expect(title()).toHaveValue('')
+    expect(title()).toHaveFocus()
+    expect(
+      screen.queryByRole('alert', { name: '“Logo” created in Product Design' })
+    ).toBe(null)
+    fireEvent.change(title(), { target: { value: 'Icons' } })
+    fireEvent.click(create())
+
+    await dialog.findByRole('status', {
+      name: '“Icons” created in Product Design'
+    })
+    expect(design.tasks.map(task => task.title)).toEqual(['Logo', 'Icons'])
+    expect(localStorage.getItem('twake-tasks.createAnother')).toBe('true')
+    fireEvent.click(
+      within(
+        dialog.getByRole('status', {
+          name: '“Icons” created in Product Design'
+        })
+      ).getByRole('button', { name: 'See the task' })
+    )
+    expect(
+      await screen.findByRole('dialog', { name: 'DES-2 Icons' })
+    ).toBeVisible()
+    expect(status).not.toBeInTheDocument()
+  })
+
+  it('remembers on the device to create another task', async () => {
+    localStorage.setItem('twake-tasks.createAnother', 'true')
+    const { dialog } = await openNewTask()
+
+    expect(
+      dialog.getByRole('checkbox', { name: 'Create another' })
+    ).toBeChecked()
+  })
+
+  it('asks before dropping what was typed', async () => {
+    const { dialog, title } = await openNewTask()
+    fireEvent.change(title(), { target: { value: 'Logo' } })
+
+    fireEvent.click(dialog.getByRole('button', { name: 'Close' }))
+    const ask = within(
+      await screen.findByRole('dialog', { name: 'Discard your changes?' })
+    )
+    fireEvent.click(ask.getByRole('button', { name: 'Keep editing' }))
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Discard your changes?' })
+      ).toBe(null)
+    })
+    expect(title()).toHaveValue('Logo')
+    fireEvent.keyDown(title(), { key: 'Escape' })
+    fireEvent.click(
+      within(
+        await screen.findByRole('dialog', { name: 'Discard your changes?' })
+      ).getByRole('button', { name: 'Discard' })
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBe(null)
+    })
+  })
+
   it.each(['2026-02-31', '2026-13-01', '2026-00-10'])(
     'leaves out a due date from the URL that is no day (%s)',
     async due => {

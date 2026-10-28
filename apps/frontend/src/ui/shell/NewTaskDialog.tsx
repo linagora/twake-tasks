@@ -12,10 +12,12 @@ import {
 import {
   Alert,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DropdownButton,
+  FormControlLabel,
   IconButton,
   Stack,
   TextField,
@@ -33,6 +35,7 @@ import {
 } from '@/application/newTask'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { LabelChip } from '@/ds/Columns'
+import { DiscardDialog } from '@/ds/DiscardDialog'
 import { Icon } from '@/ds/Icon'
 import { DayPopover } from '@/ds/Pickers'
 import { RichTextEditor } from '@/ds/RichText'
@@ -67,6 +70,8 @@ const EMPTY: Omit<NewTaskDraft, 'title' | 'description'> = {
 
 const toggled = (ids: string[], id: string): string[] =>
   ids.includes(id) ? ids.filter(each => each !== id) : [...ids, id]
+
+const CREATE_ANOTHER = 'twake-tasks.createAnother'
 
 export interface CreatedTask {
   boardId: string
@@ -110,10 +115,11 @@ export function NewTaskFromUrl({
           inProjectId={inProjectId}
           preset={preset}
           onClose={closeNewTask}
-          onCreated={task => {
+          onCreated={(task, staysOpen) => {
+            highlight(task.key)
+            if (staysOpen) return
             closeNewTask()
             setCreated(task)
-            highlight(task.key)
           }}
         />
       )}
@@ -152,6 +158,25 @@ export function NewTaskFromUrl({
   )
 }
 
+function useCreateAnother(): [boolean, (another: boolean) => void] {
+  const [another, setAnother] = useState(() => {
+    try {
+      return localStorage.getItem(CREATE_ANOTHER) === 'true'
+    } catch {
+      return false
+    }
+  })
+  const choose = (next: boolean) => {
+    setAnother(next)
+    try {
+      localStorage.setItem(CREATE_ANOTHER, String(next))
+    } catch {
+      // Storage blocked: the choice lasts until the dialog closes.
+    }
+  }
+  return [another, choose]
+}
+
 /**
  * Opened from a board, the task goes in that board unless another is picked,
  * else in the Inbox. Opened from a project, only its boards are offered.
@@ -167,10 +192,12 @@ export function NewTaskDialog({
   inProjectId?: string | undefined
   preset: NewTaskPreset
   onClose: () => void
-  onCreated: (task: CreatedTask) => void
+  /** `staysOpen` for another task, else the dialog is to be closed. */
+  onCreated: (task: CreatedTask, staysOpen: boolean) => void
 }): ReactElement {
   const { t, lang } = useI18n()
   const { user } = useSession()
+  const navigate = useNavigate()
   const titleId = useId()
   const boardLabelId = useId()
   const sectionLabelId = useId()
@@ -179,6 +206,8 @@ export function NewTaskDialog({
   const [title, setTitle] = useState('')
   const [untitled, setUntitled] = useState(false)
   const [description, setDescription] = useState('')
+  // Remounts the description editor, which only reads its initial text.
+  const [cleared, setCleared] = useState(0)
   const [details, setDetails] = useState(false)
   const [facts, setFacts] = useState({
     ...EMPTY,
@@ -186,6 +215,9 @@ export function NewTaskDialog({
   })
   // Who "me" is among the members is known once the board is loaded.
   const [assignMe, setAssignMe] = useState(preset.assignToMe ?? false)
+  const [another, setAnother] = useCreateAnother()
+  const [last, setLast] = useState<CreatedTask | null>(null)
+  const [asking, setAsking] = useState(false)
   const boardSelect = useRef<{ focus: () => void }>(null)
   const [picked, setPicked] = useState<string | undefined>(undefined)
   const [pickedSection, setPickedSection] = useState<string | undefined>(
@@ -247,7 +279,9 @@ export function NewTaskDialog({
 
   // Closed while creating, it would miss the task once created.
   const close = () => {
-    if (!create.isPending) onClose()
+    if (create.isPending) return
+    if (title.trim() || description.trim()) setAsking(true)
+    else onClose()
   }
 
   const showBoard = () => {
@@ -279,7 +313,7 @@ export function NewTaskDialog({
       },
       {
         onSuccess: task => {
-          onCreated({
+          const created = {
             ...task,
             title: title.trim(),
             board: chosen.name,
@@ -287,7 +321,17 @@ export function NewTaskDialog({
               (preset.dueDate !== undefined &&
                 facts.dueDate !== preset.dueDate) ||
               (preset.assignToMe === true && !assignedToMe)
-          })
+          }
+          onCreated(created, another)
+          if (!another) return
+          // The title stays editable while creating: keep what was typed since.
+          setTitle(current => (current === title ? '' : current))
+          setDescription(current => (current === description ? '' : current))
+          setCleared(cleared + 1)
+          setStarted(undefined)
+          setLast(created)
+          create.reset()
+          titleRef.current?.focus()
         },
         // Create disables itself while the request runs, which drops the
         // focus to the page.
@@ -324,6 +368,8 @@ export function NewTaskDialog({
       ...(facts.dueDate === inDays(1) ? [t('newTask.dueTomorrow')] : []),
       ...(assignedToMe ? [t('newTask.assignedToYou')] : [])
     ].join(' · ')
+  const lastSaid =
+    last && t('newTask.createdIn', { title: last.title, board: last.board })
 
   return (
     <Dialog open onClose={close} aria-labelledby={titleId} size="medium">
@@ -363,6 +409,28 @@ export function NewTaskDialog({
                 }
               }}
             />
+            {last && (
+              <Stack
+                direction="row"
+                spacing={1}
+                className="u-flex-items-center"
+                role="status"
+                aria-label={lastSaid ?? undefined}
+              >
+                <Typography variant="body2" color="textSecondary">
+                  {lastSaid}
+                </Typography>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => {
+                    void navigate(taskPath(last))
+                  }}
+                >
+                  {t('newTask.seeTask')}
+                </Button>
+              </Stack>
+            )}
             <Stack
               direction="row"
               spacing={1}
@@ -395,6 +463,7 @@ export function NewTaskDialog({
             {details && (
               <>
                 <RichTextEditor
+                  key={cleared}
                   label={t('newTask.description')}
                   initial={description}
                   placeholder={t('newTask.descriptionPlaceholder')}
@@ -568,6 +637,18 @@ export function NewTaskDialog({
           </Stack>
         </DialogContent>
         <DialogActions>
+          <FormControlLabel
+            label={t('newTask.createAnother')}
+            control={
+              <Checkbox
+                size="small"
+                checked={another}
+                onChange={event => {
+                  setAnother(event.target.checked)
+                }}
+              />
+            }
+          />
           <Button
             type="submit"
             disabled={
@@ -582,6 +663,19 @@ export function NewTaskDialog({
           </Button>
         </DialogActions>
       </form>
+      {asking && (
+        <DiscardDialog
+          labels={{
+            title: t('task.discardTitle'),
+            keep: t('task.keepEditing'),
+            discard: t('task.discard')
+          }}
+          onKeep={() => {
+            setAsking(false)
+          }}
+          onDiscard={onClose}
+        />
+      )}
       {menu?.name === 'members' && board && (
         <PeopleMenu
           label={t('newTask.membersTitle')}

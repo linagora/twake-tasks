@@ -406,6 +406,7 @@
     "dueTomorrow": "Đến hạn ngày mai",
     "assignedToYou": "Giao cho bạn",
     "createdIn": "Đã tạo “%{title}” trong %{board}",
+    "createAnother": "Tạo thêm",
     "seeTask": "Xem công việc",
     "nowhere": "Bạn không thể thêm công việc ở đây."
   },

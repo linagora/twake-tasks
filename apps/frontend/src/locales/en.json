@@ -406,6 +406,7 @@
     "dueTomorrow": "Due tomorrow",
     "assignedToYou": "Assigned to you",
     "createdIn": "“%{title}” created in %{board}",
+    "createAnother": "Create another",
     "seeTask": "See the task",
     "nowhere": "You can't add tasks here."
   },

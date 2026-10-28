@@ -406,6 +406,7 @@
     "dueTomorrow": "Scade domani",
     "assignedToYou": "Assegnata a te",
     "createdIn": "«%{title}» creata in %{board}",
+    "createAnother": "Creane un’altra",
     "seeTask": "Vedi l'attività",
     "nowhere": "Non puoi aggiungere attività qui."
   },

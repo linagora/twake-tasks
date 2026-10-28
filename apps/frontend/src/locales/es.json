@@ -406,6 +406,7 @@
     "dueTomorrow": "Para mañana",
     "assignedToYou": "Asignada a ti",
     "createdIn": "«%{title}» creada en %{board}",
+    "createAnother": "Crear otra",
     "seeTask": "Ver la tarea",
     "nowhere": "No puedes añadir tareas aquí."
   },

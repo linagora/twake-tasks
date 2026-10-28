@@ -406,6 +406,7 @@
     "dueTomorrow": "Morgen fällig",
     "assignedToYou": "Ihnen zugewiesen",
     "createdIn": "„%{title}“ in %{board} erstellt",
+    "createAnother": "Weitere erstellen",
     "seeTask": "Aufgabe ansehen",
     "nowhere": "Sie können hier keine Aufgaben hinzufügen."
   },
