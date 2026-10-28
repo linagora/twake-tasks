@@ -9,7 +9,7 @@ import {
   Plus
 } from '@linagora/twake-icons'
 import { IconButton, Link, Tooltip, Typography } from '@linagora/twake-mui'
-import { useId, useState, type ReactElement } from 'react'
+import { useId, useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useMatch, useParams } from 'react-router'
 
 import { LabelChip, PersonChip } from '@/ds/Columns'
@@ -209,6 +209,8 @@ export function Title({
 }): ReactElement {
   const { t } = useI18n()
   const [draft, setDraft] = useState(task.title)
+  // Escape leaves the title as it was: the blur that follows saves nothing.
+  const cancelled = useRef(false)
   const rename = useBoardChange(boardId, (api, title: string) =>
     api.editTask(boardId, task.id, { title })
   )
@@ -227,6 +229,7 @@ export function Title({
         value={draft}
         inputProps={{ 'aria-label': t('task.title'), maxLength: 500 }}
         onChange={event => {
+          cancelled.current = false
           setDraft(event.target.value.replace(/\n/g, ''))
         }}
         onKeyDown={event => {
@@ -234,9 +237,16 @@ export function Title({
             event.preventDefault()
             event.currentTarget.querySelector('textarea')?.blur()
           }
-          if (event.key === 'Escape') setDraft(task.title)
+          if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
+            cancelled.current = true
+            setDraft(task.title)
+          }
         }}
         onBlur={() => {
+          if (cancelled.current) {
+            cancelled.current = false
+            return
+          }
           const title = draft.trim()
           if (!title) setDraft(task.title)
           else if (title !== task.title) rename.mutate(title)
