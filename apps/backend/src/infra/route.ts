@@ -22,7 +22,7 @@ interface Route<I, P, Q, B, T, E extends string> {
   }) => Promise<Result<T, E>>
 }
 
-type DeclaredRoute<I, E extends string> = Route<
+export type DeclaredRoute<I, E extends string> = Route<
   I,
   unknown,
   unknown,

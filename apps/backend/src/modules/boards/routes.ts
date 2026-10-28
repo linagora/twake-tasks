@@ -43,8 +43,12 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { allowOrigins } from '../../infra/cors.ts'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
-import { defineRoute, registerRoutes } from '../../infra/route.ts'
-import type { RequireIdentity } from '../auth/index.ts'
+import {
+  defineRoute,
+  registerRoutes,
+  type DeclaredRoute
+} from '../../infra/route.ts'
+import type { Identity, RequireIdentity } from '../auth/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createCommentStore } from './comments.ts'
 import { createFilterStore } from './filters.ts'
@@ -123,6 +127,8 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   key_prefix_taken: 409,
   same_board: 400
 }
+
+type BoardRoute = DeclaredRoute<Identity, Refusal>
 
 function refuse(reply: FastifyReply, error: Refusal) {
   return reply.code(REFUSAL_STATUS[error]).send({ error })
@@ -241,122 +247,87 @@ export function registerBoards(
     })
   ])
 
-  for (const [path, archived] of [
-    ['archive', true],
-    ['unarchive', false]
-  ] as const) {
-    app.post(
-      `/boards/:boardId/${path}`,
-      { preHandler: deps.requireIdentity },
-      async (request, reply) => {
-        const identity = request.identity
-        if (!identity) return reply.code(401).send()
-        const params = boardParams.safeParse(request.params)
-        if (!params.success) return reply.code(404).send({ error: 'not_found' })
-        const result = await archiveStore.setBoardArchived(
+  registerRoutes(app, routing, [
+    ...(
+      [
+        ['archive', true],
+        ['unarchive', false]
+      ] as const
+    ).map(([path, archived]): BoardRoute =>
+      defineRoute({
+        method: 'POST',
+        url: `/boards/:boardId/${path}`,
+        params: boardParams,
+        status: 204,
+        handler: ({ identity, params }) =>
+          archiveStore.setBoardArchived(identity, params.boardId, archived)
+      })
+    ),
+    ...(
+      [
+        ['archived', 'archivedAt'],
+        ['trash', 'deletedAt']
+      ] as const
+    ).map(([path, stamp]): BoardRoute =>
+      defineRoute({
+        method: 'GET',
+        url: `/boards/:boardId/${path}`,
+        params: boardParams,
+        handler: async ({ identity, params }) => {
+          const hidden = await archiveStore.hiddenTasks(
+            identity,
+            params.boardId,
+            stamp
+          )
+          return hidden
+            ? { ok: true, value: { tasks: hidden } }
+            : { ok: false, error: 'not_found' }
+        }
+      })
+    ),
+    ...(
+      [
+        ['POST', '/archive', 'archiveTask'],
+        ['POST', '/restore', 'restoreTask'],
+        ['DELETE', '', 'trashTask']
+      ] as const
+    ).map(([method, path, change]): BoardRoute =>
+      defineRoute({
+        method,
+        url: `/boards/:boardId/tasks/:taskId${path}`,
+        params: taskParams,
+        status: 204,
+        handler: ({ identity, params }) =>
+          archiveStore[change](identity, params.boardId, params.taskId)
+      })
+    ),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks/:taskId/transfer/preview',
+      params: taskParams,
+      body: transferTarget,
+      handler: ({ identity, params, body }) =>
+        transferStore.previewTransfer(
           identity,
-          params.data.boardId,
-          archived
+          params.boardId,
+          params.taskId,
+          body
         )
-        if (!result.ok) return refuse(reply, result.error)
-        return reply.code(204).send()
-      }
-    )
-  }
-
-  for (const [path, stamp] of [
-    ['archived', 'archivedAt'],
-    ['trash', 'deletedAt']
-  ] as const) {
-    app.get(
-      `/boards/:boardId/${path}`,
-      { preHandler: deps.requireIdentity },
-      async (request, reply) => {
-        const identity = request.identity
-        if (!identity) return reply.code(401).send()
-        const params = boardParams.safeParse(request.params)
-        if (!params.success) return reply.code(404).send({ error: 'not_found' })
-        const hidden = await archiveStore.hiddenTasks(
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks/:taskId/transfer',
+      params: taskParams,
+      body: transferTarget,
+      handler: ({ identity, params, body }) =>
+        transferStore.transferTask(
           identity,
-          params.data.boardId,
-          stamp
+          params.boardId,
+          params.taskId,
+          body
         )
-        if (!hidden) return reply.code(404).send({ error: 'not_found' })
-        return { tasks: hidden }
-      }
-    )
-  }
-
-  for (const [method, path, change] of [
-    ['POST', '/archive', 'archiveTask'],
-    ['POST', '/restore', 'restoreTask'],
-    ['DELETE', '', 'trashTask']
-  ] as const) {
-    app.route({
-      method,
-      url: `/boards/:boardId/tasks/:taskId${path}`,
-      preHandler: deps.requireIdentity,
-      handler: async (request, reply) => {
-        const identity = request.identity
-        if (!identity) return reply.code(401).send()
-        const params = taskParams.safeParse(request.params)
-        if (!params.success) return reply.code(404).send({ error: 'not_found' })
-        const result = await archiveStore[change](
-          identity,
-          params.data.boardId,
-          params.data.taskId
-        )
-        if (!result.ok) return refuse(reply, result.error)
-        return reply.code(204).send()
-      }
     })
-  }
-
-  app.post(
-    '/boards/:boardId/tasks/:taskId/transfer/preview',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = transferTarget.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await transferStore.previewTransfer(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        body.data
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return result.value
-    }
-  )
-
-  app.post(
-    '/boards/:boardId/tasks/:taskId/transfer',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = taskParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = transferTarget.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await transferStore.transferTask(
-        identity,
-        params.data.boardId,
-        params.data.taskId,
-        body.data
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return result.value
-    }
-  )
+  ])
 
   app.get(
     '/filters',
