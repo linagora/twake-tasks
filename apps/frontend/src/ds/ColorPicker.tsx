@@ -1,11 +1,10 @@
-import { Icon, Palette } from '@linagora/twake-icons'
+import { Check, Icon, Palette } from '@linagora/twake-icons'
 import {
   Avatar,
   Box,
   Button,
   ButtonBase,
   COLORS,
-  ColorList,
   Popover,
   TextField,
   Typography
@@ -32,6 +31,37 @@ export function leastUsedColor(used: readonly (string | null)[]): string {
   return best
 }
 
+const SWATCH_NAMES = {
+  '#273891': 'navy',
+  '#7E57E3': 'violet',
+  '#9E83E8': 'lavender',
+  '#91CEF6': 'sky',
+  '#2D83FF': 'blue',
+  '#006BD8': 'ocean',
+  '#038199': 'teal',
+  '#51B588': 'green',
+  '#457D6C': 'forest',
+  '#1EBBCC': 'turquoise',
+  '#E0465C': 'red',
+  '#ED20A4': 'fuchsia',
+  '#ED768D': 'pink',
+  '#B85B17': 'rust',
+  '#EDA91D': 'amber',
+  '#BA8144': 'brown',
+  '#ED916B': 'salmon',
+  '#EDC661': 'yellow',
+  '#131326': 'black',
+  '#646580': 'grey'
+} as const
+
+type SwatchName = (typeof SWATCH_NAMES)[keyof typeof SWATCH_NAMES]
+
+export function swatchName(color: string): SwatchName | undefined {
+  return (SWATCH_NAMES as Partial<Record<string, SwatchName>>)[
+    color.toUpperCase()
+  ]
+}
+
 /**
  * A color beside a text field, as the admin panel picks a team's: a square
  * with the color in it, which opens twake-mui's swatches, then a picker of
@@ -39,16 +69,22 @@ export function leastUsedColor(used: readonly (string | null)[]): string {
  */
 export function ColorField({
   label,
+  buttonLabel,
   customLabel,
   cancelLabel,
   saveLabel,
+  colorName,
   value,
   onChange
 }: {
+  /** The name of the swatches' popover and radio group */
   label: string
+  /** The name of the square, which says the color it holds */
+  buttonLabel: string
   customLabel: string
   cancelLabel: string
   saveLabel: string
+  colorName: (color: string) => string
   value: string | null
   onChange: (color: string) => void
 }): ReactElement {
@@ -62,7 +98,7 @@ export function ColorField({
   return (
     <>
       <ButtonBase
-        aria-label={label}
+        aria-label={buttonLabel}
         aria-haspopup="dialog"
         onClick={event => {
           setAnchor(event.currentTarget)
@@ -112,24 +148,153 @@ export function ColorField({
             }}
           />
         ) : (
-          <ColorList
-            size="small"
-            {...(value && { selectedColor: value.toUpperCase() })}
-            onClick={color => {
+          <Swatches
+            label={label}
+            customLabel={customLabel}
+            colorName={colorName}
+            value={value}
+            onSelect={onChange}
+            onPick={color => {
               onChange(color)
               close()
             }}
-            customColorProps={{
-              enabled: true,
-              onClick: () => {
-                setCustom(true)
-              }
+            onCustom={() => {
+              setCustom(true)
             }}
-            sx={{ width: 200 }}
           />
         )}
       </Popover>
     </>
+  )
+}
+
+const COLUMNS = 7
+const SWATCH = 21
+const FOCUS_RING = {
+  '&.Mui-focusVisible': {
+    outline: '2px solid',
+    outlineColor: 'primary.main',
+    outlineOffset: 2
+  }
+}
+
+const focusChecked = (group: HTMLElement | null) => {
+  group?.querySelector<HTMLElement>('[role="radio"][tabindex="0"]')?.focus()
+}
+
+/**
+ * twake-mui's ColorList, drawn the same, as a radio group: one tab stop, the
+ * arrows move the choice, Enter or a click keeps it and closes.
+ */
+function Swatches({
+  label,
+  customLabel,
+  colorName,
+  value,
+  onSelect,
+  onPick,
+  onCustom
+}: {
+  label: string
+  customLabel: string
+  colorName: (color: string) => string
+  value: string | null
+  onSelect: (color: string) => void
+  onPick: (color: string) => void
+  onCustom: () => void
+}): ReactElement {
+  const checked = value?.toUpperCase()
+  const tabStop = Math.max(COLORS.indexOf(checked ?? ''), 0)
+  const rows = Math.ceil((COLORS.length + 1) / COLUMNS)
+
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${String(COLUMNS)}, 1fr)`,
+        gridAutoRows: SWATCH,
+        gap: '5px',
+        justifyItems: 'center',
+        width: 200
+      }}
+    >
+      <Box
+        ref={focusChecked}
+        role="radiogroup"
+        aria-label={label}
+        onKeyDown={event => {
+          const radios = [
+            ...event.currentTarget.querySelectorAll<HTMLElement>(
+              '[role="radio"]'
+            )
+          ]
+          const at = radios.indexOf(event.target as HTMLElement)
+          const moves: Partial<Record<string, number>> = {
+            ArrowRight: at + 1,
+            ArrowDown: at + 1,
+            ArrowLeft: at - 1,
+            ArrowUp: at - 1,
+            Home: 0,
+            End: radios.length - 1
+          }
+          const to = moves[event.key]
+          if (at < 0 || to === undefined) return
+          event.preventDefault()
+          const next = (to + radios.length) % radios.length
+          const color = COLORS[next]
+          if (color === undefined) return
+          radios[next]?.focus()
+          onSelect(color)
+        }}
+        sx={{
+          display: 'grid',
+          gridColumn: '1 / -1',
+          gridRow: `1 / span ${String(rows)}`,
+          gridTemplateColumns: 'subgrid',
+          gridTemplateRows: 'subgrid',
+          justifyItems: 'center'
+        }}
+      >
+        {COLORS.map((color, index) => (
+          <ButtonBase
+            key={color}
+            component="div"
+            role="radio"
+            aria-checked={color === checked}
+            aria-label={colorName(color)}
+            tabIndex={index === tabStop ? 0 : -1}
+            className="u-bdrs-circle"
+            sx={FOCUS_RING}
+            onClick={() => {
+              onPick(color)
+            }}
+          >
+            <Avatar color={color} size={SWATCH}>
+              {color === checked ? <Icon icon={Check} size={10} /> : ' '}
+            </Avatar>
+          </ButtonBase>
+        ))}
+      </Box>
+      <ButtonBase
+        aria-label={customLabel}
+        onClick={onCustom}
+        sx={{
+          gridRow: Math.floor(COLORS.length / COLUMNS) + 1,
+          gridColumn: (COLORS.length % COLUMNS) + 1,
+          width: SWATCH,
+          height: SWATCH,
+          borderRadius: '50%',
+          border: '1px solid transparent',
+          backgroundImage:
+            'linear-gradient(#fff, #fff), conic-gradient(from 0deg, #FB2C36, #AD46FF, #2B7FFF, #FB2C36)',
+          backgroundOrigin: 'border-box',
+          backgroundClip: 'padding-box, border-box',
+          ...FOCUS_RING
+        }}
+      >
+        <Icon icon={Palette} size={10} color="#000" />
+      </ButtonBase>
+    </Box>
   )
 }
 
