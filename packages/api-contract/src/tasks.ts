@@ -1,7 +1,8 @@
 import { z } from 'zod'
-import { isTimeZone } from './common.ts'
+import { instant, isTimeZone } from './common.ts'
 import { label } from './labels.ts'
 import { person } from './people.ts'
+import { category } from './sections.ts'
 
 export const DURATION_UNITS = ['minutes', 'days'] as const
 
@@ -91,9 +92,61 @@ export const taskResponse = z.object({
       fromCompletion: z.boolean()
     })
     .nullable(),
-  completedAt: z.iso.datetime({ offset: true }).nullable(),
-  canceledAt: z.iso.datetime({ offset: true }).nullable(),
+  completedAt: instant.nullable(),
+  canceledAt: instant.nullable(),
   assignees: z.array(person),
   labels: z.array(label),
   commentCount: z.number()
+})
+
+export const createdTaskResponse = taskResponse.pick({
+  id: true,
+  key: true,
+  title: true,
+  sectionId: true
+})
+
+/** `at` is when the task was archived or trashed. */
+export const hiddenTasksResponse = z.object({
+  tasks: z.array(taskResponse.extend({ at: instant }))
+})
+
+const agendaTask = taskResponse.extend({
+  category: category.nullable(),
+  parentTitle: z.string().nullable(),
+  boardId: z.string(),
+  boardName: z.string(),
+  projectId: z.string()
+})
+
+export const tasksResponse = z.object({ tasks: z.array(agendaTask) })
+
+export const agendaResponse = tasksResponse.extend({ today: z.iso.date() })
+
+export const searchResponse = z.object({
+  tasks: z.array(agendaTask.extend({ excerpt: z.string().nullable() }))
+})
+
+export const descriptionResponse = z.object({
+  markdown: z.string(),
+  version: z.number()
+})
+
+export const descriptionVersionResponse = descriptionResponse.pick({
+  version: true
+})
+
+export const transferPreviewResponse = z.object({
+  droppedAssignees: z.array(
+    z.object({
+      userId: z.string(),
+      name: z.string().nullable(),
+      email: z.string().nullable()
+    })
+  ),
+  createdLabels: z.array(z.string())
+})
+
+export const transferResponse = transferPreviewResponse.extend({
+  key: z.string()
 })

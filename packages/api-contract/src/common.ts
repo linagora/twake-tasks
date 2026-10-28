@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+export const instant = z.iso.datetime({ offset: true })
+
 export function isTimeZone(zone: string): boolean {
   try {
     new Intl.DateTimeFormat('en', { timeZone: zone })
