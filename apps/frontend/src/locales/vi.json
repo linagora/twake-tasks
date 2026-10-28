@@ -516,7 +516,7 @@
   },
   "layout": {
     "title": "Bố cục",
-    "board": "Bảng",
+    "board": "Kanban",
     "list": "Danh sách",
     "calendar": "Lịch",
     "useAsDefault": "Đặt làm bố cục mặc định",

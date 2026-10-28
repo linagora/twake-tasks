@@ -516,7 +516,7 @@
   },
   "layout": {
     "title": "Diseño",
-    "board": "Tablero",
+    "board": "Kanban",
     "list": "Lista",
     "calendar": "Calendario",
     "useAsDefault": "Usar como diseño predeterminado",
