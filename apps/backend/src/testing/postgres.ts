@@ -5,6 +5,7 @@ import {
 import postgres from 'postgres'
 import type { TestProject } from 'vitest/node'
 import { createDb, migrateDb } from '../infra/db.ts'
+import { checkInvariants } from './invariants.ts'
 
 declare module 'vitest' {
   export interface ProvidedContext {
@@ -36,5 +37,12 @@ export async function setup(project: TestProject): Promise<void> {
 }
 
 export async function teardown(): Promise<void> {
-  await container?.stop()
+  if (!container) return
+  try {
+    const url = new URL(container.getConnectionUri())
+    url.pathname = '/tasks'
+    await checkInvariants(url.toString())
+  } finally {
+    await container.stop()
+  }
 }
