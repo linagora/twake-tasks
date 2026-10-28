@@ -1,0 +1,1 @@
+CREATE OR REPLACE TRIGGER tasks_complete_subtasks AFTER UPDATE OF completed_at ON public.tasks FOR EACH ROW WHEN (((old.completed_at IS NULL) AND (new.completed_at IS NOT NULL))) EXECUTE FUNCTION complete_subtasks();
