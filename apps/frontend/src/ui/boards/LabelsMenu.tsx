@@ -82,6 +82,7 @@ export function LabelsMenu({
         onClose={onClose}
         searchLabel={t('board.searchLabels')}
         searchRef={searchRef}
+        countLabel={count => t('picker.count', { smart_count: count })}
         search={search}
         onSearch={value => {
           setSearch(value)

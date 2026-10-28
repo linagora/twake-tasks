@@ -527,7 +527,12 @@
     "emptyHint": "Thử một từ khác hoặc kiểm tra chính tả.",
     "failed": "Không thể tìm kiếm.",
     "tooShort": "Nhập ít nhất %{count} ký tự để tìm kiếm.",
-    "allBoards": "Hiện tất cả %{smart_count} bảng"
+    "allBoards": "Hiện tất cả %{smart_count} bảng",
+    "found": "Tìm thấy %{smart_count} nhiệm vụ cho “%{text}”",
+    "boardsFound": "Tìm thấy %{smart_count} bảng"
+  },
+  "picker": {
+    "count": "%{smart_count} lựa chọn"
   },
   "notifications": {
     "title": "Thông báo",

@@ -141,6 +141,37 @@ describe('SearchScreen', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('says how many tasks it found', async () => {
+    renderRoute('/search?q=logo', { boardsApi: boards().boardsApi })
+
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole('status')
+          .map(status => status.textContent)
+          .filter(Boolean)
+      ).toEqual(['1 task found for “logo”'])
+    })
+  })
+
+  it('says how many boards it found too', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    design.tasks = [
+      aTask(null, { key: 'DES-1', title: 'Design review' }),
+      aTask(null, { key: 'DES-2', title: 'Design system' })
+    ]
+    renderRoute('/search?q=design', { boardsApi: fakeBoardsApi([design]) })
+
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole('status')
+          .map(status => status.textContent)
+          .filter(Boolean)
+      ).toEqual(['2 tasks found for “design”. 1 board found'])
+    })
+  })
+
   it('lists the active boards whose name matches, ignoring case and accents', async () => {
     const launch = aBoard({
       name: 'Product lâunch',

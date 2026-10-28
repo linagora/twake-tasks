@@ -527,7 +527,12 @@
     "emptyHint": "Попробуйте другое слово или проверьте написание.",
     "failed": "Не удалось выполнить поиск.",
     "tooShort": "Для поиска введите не менее %{count} символов.",
-    "allBoards": "Показать все доски (%{smart_count})"
+    "allBoards": "Показать все доски (%{smart_count})",
+    "found": "Найдена %{smart_count} задача по запросу «%{text}» |||| Найдено %{smart_count} задачи по запросу «%{text}» |||| Найдено %{smart_count} задач по запросу «%{text}»",
+    "boardsFound": "Найдена %{smart_count} доска |||| Найдено %{smart_count} доски |||| Найдено %{smart_count} досок"
+  },
+  "picker": {
+    "count": "%{smart_count} вариант |||| %{smart_count} варианта |||| %{smart_count} вариантов"
   },
   "notifications": {
     "title": "Уведомления",
