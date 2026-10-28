@@ -24,6 +24,7 @@ import {
   isTransient,
   migrateDb,
   migrateLocked,
+  pendingMigrations,
   type Tx
 } from './db.ts'
 
@@ -532,6 +533,29 @@ describe('migrateLocked', () => {
       expect(applied?.count).toBe(shipped.length)
     } finally {
       await fresh.end()
+      await container.stop()
+    }
+  }, 120_000)
+})
+
+describe('pendingMigrations', () => {
+  it('lists the shipped migrations the database has not applied', async () => {
+    const { container, url } = await anEmptyDatabase('postgres:18')
+    const client = postgres(url, { max: 1, onnotice: () => undefined })
+    try {
+      const shipped = readdirSync(
+        fileURLToPath(new URL('../../drizzle', import.meta.url))
+      ).sort()
+      const newest = shipped.at(-1)
+      expect(await pendingMigrations(client)).toEqual(shipped)
+
+      await migrateLocked(url)
+      expect(await pendingMigrations(client)).toEqual([])
+
+      await client`delete from drizzle.__drizzle_migrations where name = ${newest ?? ''}`
+      expect(await pendingMigrations(client)).toEqual([newest])
+    } finally {
+      await client.end()
       await container.stop()
     }
   }, 120_000)

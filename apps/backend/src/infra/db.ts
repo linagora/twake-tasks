@@ -7,6 +7,7 @@ import {
   timestamp,
   type AnyPgColumn
 } from 'drizzle-orm/pg-core'
+import { readMigrationFiles } from 'drizzle-orm/migrator'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
@@ -223,14 +224,38 @@ const uuidv7 = sql`
         52, 1), 53, 1), 'hex')::uuid
   $$`
 
+const migrationsFolder = fileURLToPath(
+  new URL('../../drizzle', import.meta.url)
+)
+
 export async function migrateDb(db: Db): Promise<void> {
   const [server] = await db.execute<{ version: number }>(
     sql`select current_setting('server_version_num')::int as version`
   )
   if (!server || server.version < 180000) await db.execute(uuidv7)
-  await migrate(db, {
-    migrationsFolder: fileURLToPath(new URL('../../drizzle', import.meta.url))
-  })
+  await migrate(db, { migrationsFolder })
+}
+
+let shippedMigrations: string[] | undefined
+
+// Drizzle tells an applied migration by its folder name.
+export async function pendingMigrations(
+  client: postgres.Sql
+): Promise<string[]> {
+  const [table] = await client<{ name: string | null }[]>`
+    select to_regclass('drizzle.__drizzle_migrations')::text as name`
+  const applied = new Set(
+    table?.name
+      ? (
+          await client<{ name: string | null }[]>`
+            select name from drizzle.__drizzle_migrations`
+        ).map(row => row.name)
+      : []
+  )
+  shippedMigrations ??= readMigrationFiles({ migrationsFolder }).map(
+    migration => migration.name
+  )
+  return shippedMigrations.filter(name => !applied.has(name))
 }
 
 // Any constant shared by every replica and the migrate command: Drizzle reads

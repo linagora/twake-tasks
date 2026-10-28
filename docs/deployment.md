@@ -11,7 +11,7 @@ Both images listen on port 8080 and run as a non-root user. The frontend runs on
 
 Probes:
 
-- backend: `/health/live`, and `/health/ready`, which answers once the backend has started and while it reaches the database, over a connection of its own;
+- backend: `/health/live`, and `/health/ready`, which answers once the backend has started, while it reaches the database, over a connection of its own, and once the database holds every migration of its image;
 - frontend: `/healthz`.
 
 The backend can run several replicas. RabbitMQ events, the jobs and the outbox relay are shared between them safely (see [architecture](architecture.md#backend)).
@@ -23,6 +23,8 @@ See [configuration](configuration.md) for the settings and [dependencies](depend
 The backend image also holds the migrate command, `node dist/migrate.js`. Run it once per release, as an init container or a pre-upgrade job, and set `MIGRATE_ON_START=false` on the replicas.
 
 By default each replica migrates at start instead. Either way, a migration holds a Postgres advisory lock, so replicas and the command starting together migrate one at a time.
+
+A replica that starts before the migrations of its image ran logs which ones it lacks and stays not ready until they run.
 
 ## Releases
 
