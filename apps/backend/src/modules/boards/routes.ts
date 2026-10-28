@@ -488,15 +488,96 @@ export function registerBoards(
     })
   ])
 
-  app.get(
-    '/boards',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      return { boards: await store.listBoards(identity) }
-    }
-  )
+  registerRoutes(app, routing, [
+    defineRoute({
+      method: 'GET',
+      url: '/boards',
+      handler: async ({ identity }) => ({
+        ok: true,
+        value: { boards: await store.listBoards(identity) }
+      })
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/my-tasks',
+      handler: async ({ identity }) => ({
+        ok: true,
+        value: { tasks: await store.assignedTasks(identity) }
+      })
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/agenda',
+      query: agendaQuery,
+      handler: async ({ identity, query }) => ({
+        ok: true,
+        value: await store.agenda(identity, query.zone, query.days)
+      })
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId',
+      params: boardParams,
+      handler: async ({ identity, params }) => {
+        const board = await store.getBoard(identity, params.boardId)
+        return board
+          ? { ok: true, value: board }
+          : { ok: false, error: 'not_found' }
+      }
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/boards',
+      body: newBoard,
+      status: 201,
+      handler: ({ identity, body }) =>
+        body.keyPrefix === INBOX_KEY_PREFIX
+          ? Promise.resolve({ ok: false, error: 'key_prefix_taken' })
+          : store.createBoard(identity, body)
+    }),
+    defineRoute({
+      method: 'PATCH',
+      url: '/boards/:boardId',
+      params: boardParams,
+      body: boardRename,
+      status: 204,
+      handler: ({ identity, params, body }) =>
+        store.renameBoard(identity, params.boardId, body.name)
+    }),
+    ...(
+      [
+        ['PUT', true],
+        ['DELETE', false]
+      ] as const
+    ).map(([method, favorite]): BoardRoute =>
+      defineRoute({
+        method,
+        url: '/boards/:boardId/favorite',
+        params: boardParams,
+        status: 204,
+        handler: async ({ identity, params }) =>
+          (await store.setFavorite(identity, params.boardId, favorite))
+            ? { ok: true, value: null }
+            : { ok: false, error: 'not_found' }
+      })
+    ),
+    ...(
+      [
+        ['/boards/:boardId/layout', 'setLayout'],
+        ['/boards/:boardId/default-layout', 'setDefaultLayout']
+      ] as const
+    ).map(([url, set]): BoardRoute =>
+      defineRoute({
+        method: 'PUT',
+        url,
+        params: boardParams,
+        body: layoutChoice,
+        status: 204,
+        handler: ({ identity, params, body }) =>
+          layoutStore[set](identity, params.boardId, body.layout)
+      })
+    )
+  ])
 
   app.get(
     '/search',
@@ -518,111 +599,6 @@ export function registerBoards(
       return { tasks: await store.search(identity, query.data.q) }
     }
   )
-
-  app.get(
-    '/my-tasks',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      return { tasks: await store.assignedTasks(identity) }
-    }
-  )
-
-  app.get(
-    '/agenda',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const query = agendaQuery.safeParse(request.query)
-      if (!query.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      return store.agenda(identity, query.data.zone, query.data.days)
-    }
-  )
-
-  app.get(
-    '/boards/:boardId',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = boardParams.safeParse(request.params)
-      const board =
-        params.success && (await store.getBoard(identity, params.data.boardId))
-      if (!board) return reply.code(404).send({ error: 'not_found' })
-      return board
-    }
-  )
-
-  app.post(
-    '/boards',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const body = newBoard.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      if (body.data.keyPrefix === INBOX_KEY_PREFIX) {
-        return refuse(reply, 'key_prefix_taken')
-      }
-      const result = await store.createBoard(identity, body.data)
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(201).send(result.value)
-    }
-  )
-
-  for (const [method, favorite] of [
-    ['PUT', true],
-    ['DELETE', false]
-  ] as const) {
-    app.route({
-      method,
-      url: '/boards/:boardId/favorite',
-      preHandler: deps.requireIdentity,
-      handler: async (request, reply) => {
-        const identity = request.identity
-        if (!identity) return reply.code(401).send()
-        const params = boardParams.safeParse(request.params)
-        const found =
-          params.success &&
-          (await store.setFavorite(identity, params.data.boardId, favorite))
-        if (!found) return reply.code(404).send({ error: 'not_found' })
-        return reply.code(204).send()
-      }
-    })
-  }
-
-  for (const [url, set] of [
-    ['/boards/:boardId/layout', 'setLayout'],
-    ['/boards/:boardId/default-layout', 'setDefaultLayout']
-  ] as const) {
-    app.put(
-      url,
-      { preHandler: deps.requireIdentity },
-      async (request, reply) => {
-        const identity = request.identity
-        if (!identity) return reply.code(401).send()
-        const params = boardParams.safeParse(request.params)
-        if (!params.success) return reply.code(404).send({ error: 'not_found' })
-        const body = layoutChoice.safeParse(request.body)
-        if (!body.success) {
-          return reply.code(400).send({ error: 'invalid_request' })
-        }
-        const result = await layoutStore[set](
-          identity,
-          params.data.boardId,
-          body.data.layout
-        )
-        if (!result.ok) return refuse(reply, result.error)
-        return reply.code(204).send()
-      }
-    )
-  }
 
   app.post(
     '/boards/:boardId/tasks',
@@ -686,28 +662,6 @@ export function registerBoards(
         params.data.boardId,
         params.data.taskId,
         body.data.state
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(204).send()
-    }
-  )
-
-  app.patch(
-    '/boards/:boardId',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = boardParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = boardRename.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await store.renameBoard(
-        identity,
-        params.data.boardId,
-        body.data.name
       )
       if (!result.ok) return refuse(reply, result.error)
       return reply.code(204).send()
