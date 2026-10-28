@@ -60,7 +60,7 @@ import { createReminderStore } from './reminders.ts'
 import type * as db from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { createBoardStore, INBOX_KEY_PREFIX } from './store.ts'
-import { createTaskStore, type Refusal } from './tasks.ts'
+import { createTaskStore, type Refusal, type Result } from './tasks.ts'
 import { createTransferStore } from './transfer.ts'
 
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false
@@ -130,6 +130,16 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
 
 type BoardRoute = DeclaredRoute<Identity, Refusal>
 
+async function under<K extends string, T>(
+  key: K,
+  pending: Promise<Result<T>>
+): Promise<Result<Record<K, T>>> {
+  const result = await pending
+  return result.ok
+    ? { ok: true, value: { [key]: result.value } as Record<K, T> }
+    : result
+}
+
 function refuse(reply: FastifyReply, error: Refusal) {
   return reply.code(REFUSAL_STATUS[error]).send({ error })
 }
@@ -192,16 +202,11 @@ export function registerBoards(
       url: '/boards/:boardId/sharing/people',
       params: boardParams,
       query: peopleQuery,
-      handler: async ({ identity, params, query }) => {
-        const result = await sharingStore.suggestPeople(
-          identity,
-          params.boardId,
-          query.q
+      handler: ({ identity, params, query }) =>
+        under(
+          'people',
+          sharingStore.suggestPeople(identity, params.boardId, query.q)
         )
-        return result.ok
-          ? { ok: true, value: { people: result.value } }
-          : result
-      }
     }),
     defineRoute({
       method: 'DELETE',
@@ -329,146 +334,76 @@ export function registerBoards(
     })
   ])
 
-  app.get(
-    '/filters',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const result = await filterStore.listFilters(identity)
-      if (!result.ok) return refuse(reply, result.error)
-      return { filters: result.value }
-    }
-  )
-
-  app.get(
-    '/labels',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const result = await filterStore.labelNames(identity)
-      if (!result.ok) return refuse(reply, result.error)
-      return { labels: result.value }
-    }
-  )
-
-  app.get(
-    '/people',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const result = await filterStore.people(identity)
-      if (!result.ok) return refuse(reply, result.error)
-      return { people: result.value }
-    }
-  )
-
-  app.post(
-    '/filters',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const body = newFilter.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await filterStore.createFilter(
-        identity,
-        body.data.name,
-        body.data.criteria
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(201).send(result.value)
-    }
-  )
-
-  app.patch(
-    '/filters/:filterId',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = filterParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const body = filterChanges.safeParse(request.body)
-      if (!body.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await filterStore.updateFilter(
-        identity,
-        params.data.filterId,
-        body.data
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(204).send()
-    }
-  )
-
-  app.delete(
-    '/filters/:filterId',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = filterParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const result = await filterStore.deleteFilter(
-        identity,
-        params.data.filterId
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return reply.code(204).send()
-    }
-  )
-
-  for (const [method, favorite] of [
-    ['PUT', true],
-    ['DELETE', false]
-  ] as const) {
-    app.route({
-      method,
-      url: '/filters/:filterId/favorite',
-      preHandler: deps.requireIdentity,
-      handler: async (request, reply) => {
-        const identity = request.identity
-        if (!identity) return reply.code(401).send()
-        const params = filterParams.safeParse(request.params)
-        if (!params.success) return reply.code(404).send({ error: 'not_found' })
-        const result = await filterStore.updateFilter(
-          identity,
-          params.data.filterId,
-          { favorite }
+  registerRoutes(app, routing, [
+    defineRoute({
+      method: 'GET',
+      url: '/filters',
+      handler: ({ identity }) =>
+        under('filters', filterStore.listFilters(identity))
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/labels',
+      handler: ({ identity }) =>
+        under('labels', filterStore.labelNames(identity))
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/people',
+      handler: ({ identity }) => under('people', filterStore.people(identity))
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/filters',
+      body: newFilter,
+      status: 201,
+      handler: ({ identity, body }) =>
+        filterStore.createFilter(identity, body.name, body.criteria)
+    }),
+    defineRoute({
+      method: 'PATCH',
+      url: '/filters/:filterId',
+      params: filterParams,
+      body: filterChanges,
+      status: 204,
+      handler: ({ identity, params, body }) =>
+        filterStore.updateFilter(identity, params.filterId, body)
+    }),
+    defineRoute({
+      method: 'DELETE',
+      url: '/filters/:filterId',
+      params: filterParams,
+      status: 204,
+      handler: ({ identity, params }) =>
+        filterStore.deleteFilter(identity, params.filterId)
+    }),
+    ...(
+      [
+        ['PUT', true],
+        ['DELETE', false]
+      ] as const
+    ).map(([method, favorite]): BoardRoute =>
+      defineRoute({
+        method,
+        url: '/filters/:filterId/favorite',
+        params: filterParams,
+        status: 204,
+        handler: ({ identity, params }) =>
+          filterStore.updateFilter(identity, params.filterId, { favorite })
+      })
+    ),
+    defineRoute({
+      method: 'GET',
+      url: '/filters/:filterId/tasks',
+      params: filterParams,
+      query: zoneQuery,
+      handler: ({ identity, params, query }) =>
+        under(
+          'tasks',
+          filterStore.filteredTasks(identity, params.filterId, query.zone)
         )
-        if (!result.ok) return refuse(reply, result.error)
-        return reply.code(204).send()
-      }
     })
-  }
-
-  app.get(
-    '/filters/:filterId/tasks',
-    { preHandler: deps.requireIdentity },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const params = filterParams.safeParse(request.params)
-      if (!params.success) return reply.code(404).send({ error: 'not_found' })
-      const query = zoneQuery.safeParse(request.query)
-      if (!query.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      const result = await filterStore.filteredTasks(
-        identity,
-        params.data.filterId,
-        query.data.zone
-      )
-      if (!result.ok) return refuse(reply, result.error)
-      return { tasks: result.value }
-    }
-  )
+  ])
 
   app.get(
     '/boards/:boardId/tasks/:taskId/reminders',
