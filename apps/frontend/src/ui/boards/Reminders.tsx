@@ -1,4 +1,4 @@
-import { Bell, CrossSmall, Icon, Plus } from '@linagora/twake-icons'
+import { Bell, CrossSmall, Plus } from '@linagora/twake-icons'
 import {
   Button,
   Chip,
@@ -10,6 +10,7 @@ import { useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { Row } from '@/ds/Columns'
+import { Icon } from '@/ds/Icon'
 import { EditorActions, EditorPopover, MomentField } from '@/ds/Pickers'
 import { Chips } from '@/ds/SidePanel'
 import type { Task } from '@/domain/board'

@@ -1,4 +1,4 @@
-import { Cross, Icon } from '@linagora/twake-icons'
+import { Cross } from '@linagora/twake-icons'
 import {
   Box,
   Button,
@@ -19,6 +19,7 @@ import {
 } from 'react'
 
 import { Highlight } from '@/ds/Highlight'
+import { Icon } from '@/ds/Icon'
 
 export function Columns({ children }: { children: ReactNode }): ReactElement {
   return (

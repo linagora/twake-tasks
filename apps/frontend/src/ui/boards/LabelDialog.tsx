@@ -1,4 +1,4 @@
-import { Icon, Label as LabelIcon } from '@linagora/twake-icons'
+import { Label as LabelIcon } from '@linagora/twake-icons'
 import {
   Button,
   Dialog,
@@ -15,6 +15,7 @@ import { useId, useState, type ReactElement } from 'react'
 import { ApiError } from '@/application/boards'
 import { ColorField, leastUsedColor, swatchName } from '@/ds/ColorPicker'
 import { DialogHeader } from '@/ds/DialogHeader'
+import { Icon } from '@/ds/Icon'
 import { labelName, type Label } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'
 import { selectOnMount } from '@/ui/focusOnMount'

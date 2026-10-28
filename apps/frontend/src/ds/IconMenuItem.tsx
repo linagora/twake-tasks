@@ -1,4 +1,4 @@
-import { Dots, Icon } from '@linagora/twake-icons'
+import { Dots } from '@linagora/twake-icons'
 import {
   ListItemIcon,
   ListItemText,
@@ -6,6 +6,8 @@ import {
   type MenuItemProps
 } from '@linagora/twake-mui'
 import type { ElementType, ReactElement } from 'react'
+
+import { Icon } from '@/ds/Icon'
 
 export function IconMenuItem({
   icon,

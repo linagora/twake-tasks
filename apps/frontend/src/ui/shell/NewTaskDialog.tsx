@@ -3,7 +3,6 @@ import {
   CalendarToday,
   Flag,
   Folder,
-  Icon,
   Label,
   Mosaic,
   People,
@@ -33,6 +32,7 @@ import {
 } from '@/application/newTask'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { LabelChip } from '@/ds/Columns'
+import { Icon } from '@/ds/Icon'
 import { DayPopover } from '@/ds/Pickers'
 import { RichTextEditor } from '@/ds/RichText'
 import { Inline, Properties, Property, PropertySelect } from '@/ds/SidePanel'

@@ -1,6 +1,8 @@
-import { Cross, Icon } from '@linagora/twake-icons'
+import { Cross } from '@linagora/twake-icons'
 import { DialogTitle, IconButton, Tooltip } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
+
+import { Icon } from '@/ds/Icon'
 
 // twake-mui's close pattern: the button sits beside the DialogTitle, not in
 // it, since the dialog is named after the title's content.

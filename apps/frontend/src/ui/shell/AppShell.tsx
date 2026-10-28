@@ -5,7 +5,6 @@ import {
   Calendar,
   CalendarToday,
   Filter,
-  Icon,
   Logout,
   Mosaic,
   Plus,
@@ -61,6 +60,7 @@ import {
   WideScreenNavItem
 } from '@/ds/AppFrame'
 import { HomeIcon } from '@/ds/HomeIcon'
+import { Icon } from '@/ds/Icon'
 import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'

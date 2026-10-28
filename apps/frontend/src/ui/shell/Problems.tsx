@@ -1,9 +1,10 @@
-import { Compass, Icon, Left, WarningCircle } from '@linagora/twake-icons'
+import { Compass, Left, WarningCircle } from '@linagora/twake-icons'
 import { Button } from '@linagora/twake-mui'
 import { useEffect, type ReactElement } from 'react'
 import { Link as RouterLink, useRouteError } from 'react-router'
 
 import { EmptyState } from '@/ds/EmptyState'
+import { Icon } from '@/ds/Icon'
 import { PageCrumbs, useBoardsOrigin } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useReporting } from '@/ui/reporting/ReportingProvider'

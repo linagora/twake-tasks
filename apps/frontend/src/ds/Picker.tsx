@@ -1,4 +1,4 @@
-import { Check, Icon, Plus } from '@linagora/twake-icons'
+import { Check, Plus } from '@linagora/twake-icons'
 import {
   Box,
   Button,
@@ -19,6 +19,7 @@ import {
   type RefObject
 } from 'react'
 
+import { Icon } from '@/ds/Icon'
 import { SearchBar } from '@/ds/SearchBar'
 
 function SearchStatus({

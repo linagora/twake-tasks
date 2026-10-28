@@ -1,6 +1,8 @@
-import { Cross, Icon } from '@linagora/twake-icons'
+import { Cross } from '@linagora/twake-icons'
 import { Alert, Box, Dialog, IconButton } from '@linagora/twake-mui'
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
+
+import { Icon } from '@/ds/Icon'
 
 /**
  * Holds the frame of another app's service (the Twake Drive picker), which a

@@ -3,7 +3,6 @@ import {
   CalendarToday,
   CheckCircle,
   Filter,
-  Icon,
   Pen,
   Plus,
   Profile
@@ -28,6 +27,7 @@ import {
 } from '@/ds/Columns'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Highlight } from '@/ds/Highlight'
+import { Icon } from '@/ds/Icon'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import {
   AgendaTaskPanel,

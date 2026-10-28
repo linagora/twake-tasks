@@ -12,7 +12,6 @@ import {
 import {
   Check,
   Dots,
-  Icon,
   Next,
   Pen,
   Plus,
@@ -23,6 +22,7 @@ import { useId, useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { NewColumnButton } from '@/ds/Columns'
+import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import type { Board, Section } from '@/domain/board'
 import { useBoardChange } from '@/ui/boards/queries'

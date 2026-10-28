@@ -1,7 +1,8 @@
-import { Icon, Link } from '@linagora/twake-icons'
+import { Link } from '@linagora/twake-icons'
 import { Alert, IconButton, Tooltip } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 
+import { Icon } from '@/ds/Icon'
 import { Toast } from '@/ds/Toast'
 import { useI18n } from '@/ui/i18n/useI18n'
 

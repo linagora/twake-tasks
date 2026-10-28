@@ -3,7 +3,6 @@ import {
   CalendarToday,
   Flag,
   Folder,
-  Icon,
   Label,
   Mosaic,
   People,
@@ -14,6 +13,7 @@ import { useId, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useMatch, useParams } from 'react-router'
 
 import { LabelChip, PersonChip } from '@/ds/Columns'
+import { Icon } from '@/ds/Icon'
 import {
   Properties,
   Property,

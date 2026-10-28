@@ -1,4 +1,4 @@
-import { CalendarToday, Icon, ListMin, MosaicMin } from '@linagora/twake-icons'
+import { CalendarToday, ListMin, MosaicMin } from '@linagora/twake-icons'
 import {
   ToggleButton,
   Tooltip,
@@ -20,6 +20,7 @@ import {
   DayCell,
   MonthGrid
 } from '@/ds/Calendar'
+import { Icon } from '@/ds/Icon'
 import { ListHeader, ListSection, ListView } from '@/ds/ListView'
 import { DropListSection, SortableList } from '@/ds/Sortable'
 import { ViewToggleGroup } from '@/ds/PageHeader'

@@ -1,4 +1,4 @@
-import { Compass, Icon, Restore, Stack, Trash } from '@linagora/twake-icons'
+import { Compass, Restore, Stack, Trash } from '@linagora/twake-icons'
 import {
   Alert,
   Button,
@@ -20,6 +20,7 @@ import { useNavigate, useParams } from 'react-router'
 import type { HiddenTask, Shelf } from '@/application/boards'
 import { LabelChip } from '@/ds/Columns'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
+import { Icon } from '@/ds/Icon'
 import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
 import { ShelfHeader, ShelfList, ShelfRow, ShelfWhen } from '@/ds/ShelfList'
 import { Toast } from '@/ds/Toast'

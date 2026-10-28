@@ -1,4 +1,4 @@
-import { Archive, Icon, Right, type IconProps } from '@linagora/twake-icons'
+import { Archive, Right } from '@linagora/twake-icons'
 import { IconButton, Tooltip, Typography } from '@linagora/twake-mui'
 import { createContext, type ReactElement, type ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router'
@@ -6,6 +6,7 @@ import { Link as RouterLink } from 'react-router'
 import { CrumbRow, CrumbSlot, CrumbStep, CrumbTrail } from '@/ds/CrumbBar'
 import { CutTooltip } from '@/ds/CutTooltip'
 import { HomeIcon } from '@/ds/HomeIcon'
+import { Icon, type IconProps } from '@/ds/Icon'
 import { PageTitle } from '@/ds/PageHeader'
 import { useI18n } from '@/ui/i18n/useI18n'
 

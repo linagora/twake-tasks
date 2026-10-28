@@ -1,7 +1,6 @@
 import {
   Bottom,
   CrossCircleOutline,
-  Icon,
   RadioChecked,
   RadioUnchecked,
   UserGroup
@@ -34,6 +33,7 @@ import {
   type RefObject
 } from 'react'
 
+import { Icon } from '@/ds/Icon'
 import { MenuHint } from '@/ds/MenuHint'
 import type { PersonSuggestion } from '@/ds/PeopleList'
 

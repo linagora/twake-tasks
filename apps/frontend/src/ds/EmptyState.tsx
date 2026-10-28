@@ -1,10 +1,11 @@
-import { Icon, type IconProps } from '@linagora/twake-icons'
 import {
   Box,
   Empty,
   ListSkeleton as TwakeListSkeleton
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
+
+import { Icon, type IconProps } from '@/ds/Icon'
 
 export function EmptyState({
   icon,

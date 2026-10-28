@@ -4,7 +4,6 @@ import {
   Cross,
   Dots,
   FolderMoveto,
-  Icon,
   Pen,
   Trash
 } from '@linagora/twake-icons'
@@ -30,6 +29,7 @@ import {
 } from 'react'
 
 import { ApiError } from '@/application/boards'
+import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { RichText, RichTextEditor } from '@/ds/RichText'
 import { Grow, Inline, PanelSection, SidePanel } from '@/ds/SidePanel'

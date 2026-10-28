@@ -1,4 +1,4 @@
-import { Compass, Icon, Plus, Share } from '@linagora/twake-icons'
+import { Compass, Plus, Share } from '@linagora/twake-icons'
 import {
   Alert,
   Button,
@@ -29,6 +29,7 @@ import {
 } from '@/ds/Columns'
 import { ListDragPreview } from '@/ds/ListView'
 import { EmptyState } from '@/ds/EmptyState'
+import { Icon } from '@/ds/Icon'
 import { PageHeader, PageTitle, UnavailableButton } from '@/ds/PageHeader'
 import { Inline } from '@/ds/SidePanel'
 import {
