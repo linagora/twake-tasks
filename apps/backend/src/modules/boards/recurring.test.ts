@@ -137,6 +137,20 @@ describe('recurring tasks', () => {
     })
   })
 
+  it('refuses an occurrence after year 9999', async () => {
+    const { edit, complete, read } = await aTaskOf(aUser(), false)
+
+    await edit({
+      dueDate: '9999-12-31',
+      recurrence: { every: 1, unit: 'days', fromCompletion: false }
+    })
+    const completed = await complete()
+
+    expect(completed.statusCode).toBe(400)
+    expect(completed.json()).toEqual({ error: 'invalid_dates' })
+    expect(await read()).toMatchObject({ dueDate: '9999-12-31' })
+  })
+
   it('needs a due date, and loses its rule with it', async () => {
     const { edit, read } = await aTaskOf(aUser(), false)
     const rule = { every: 1, unit: 'weeks', fromCompletion: false }

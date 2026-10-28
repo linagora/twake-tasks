@@ -305,28 +305,37 @@ function withDates(task: typeof tasks.$inferSelect, changes: TaskChanges) {
   }
 }
 
+function nextDates(
+  dueDate: string,
+  deadline: string | null,
+  rule: Recurrence,
+  zone: string | null
+) {
+  const today = todayIn(zone)
+  try {
+    const next = nextOccurrence(dueDate, rule, today)
+    return {
+      dueDate: next,
+      ...(deadline !== null && {
+        deadline: shift(deadline, daysBetween(dueDate, next), 'days')
+      })
+    }
+  } catch (error) {
+    if (error instanceof RangeError) throw new Refused('invalid_dates')
+    throw error
+  }
+}
+
 // A recurring task stays open: completing it records the completion and moves
 // the due date to the next occurrence. Returns false for any other task.
 async function recur(tx: Tx, task: typeof tasks.$inferSelect) {
   const rule = recurrenceOf(task)
   if (!rule || task.dueDate === null) return false
+  const dates = nextDates(task.dueDate, task.deadline, rule, task.dueZone)
   await tx.execute(
     sql`select log_task_change(${task.id}, ${task.organizationId}, 'completion', null, '"completed"'::jsonb)`
   )
-  const dueDate = nextOccurrence(task.dueDate, rule, todayIn(task.dueZone))
-  await tx
-    .update(tasks)
-    .set({
-      dueDate,
-      ...(task.deadline !== null && {
-        deadline: shift(
-          task.deadline,
-          daysBetween(task.dueDate, dueDate),
-          'days'
-        )
-      })
-    })
-    .where(eq(tasks.id, task.id))
+  await tx.update(tasks).set(dates).where(eq(tasks.id, task.id))
   await moveReminders(tx, task.id)
   return true
 }
