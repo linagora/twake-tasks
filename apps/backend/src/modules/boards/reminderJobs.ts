@@ -36,6 +36,7 @@ export async function scheduleReminder(tx: Tx, job: Payload, at: Date | null) {
   await tx.insert(jobs).values({
     kind: REMINDER_JOB,
     key: keyOf(job.reminderId),
+    taskId: job.taskId,
     payload: value,
     runAt: runAt(time)
   })

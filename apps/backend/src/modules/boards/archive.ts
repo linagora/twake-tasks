@@ -122,6 +122,7 @@ export function createArchiveStore(db: Db) {
         await schedule(tx, {
           kind: PURGE_JOB,
           key: keyOf(taskId),
+          taskId,
           payload: {
             taskId,
             organizationId: task.organizationId,
