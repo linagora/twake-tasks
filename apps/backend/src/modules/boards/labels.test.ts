@@ -215,6 +215,17 @@ describe('labels', () => {
     expect(again.json()).toEqual({ error: 'label_taken' })
   })
 
+  it('refuses a name that is the stored form of an existing one', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+    const first = (await board.addLabel('x\u{E0067}\u{E0062}')).json<Label>()
+
+    const again = await board.addLabel(first.name)
+
+    expect(again.statusCode).toBe(409)
+    expect(again.json()).toEqual({ error: 'label_taken' })
+  })
+
   it('stores a name without its invisible characters', async () => {
     const alice = aUser()
     const board = await aBoard(alice)

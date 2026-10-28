@@ -6,6 +6,7 @@ import {
   isManageable,
   isRenamable,
   isShareable,
+  labelName,
   takesBoards,
   whyNotShareable,
   type BoardSummary,
@@ -118,5 +119,25 @@ describe('takesBoards', () => {
     expect(takesBoards({ role: 'admin', personal: false })).toBe(true)
     expect(takesBoards({ role: 'viewer', personal: false })).toBe(false)
     expect(takesBoards({ role: 'admin', personal: true })).toBe(false)
+  })
+})
+
+describe('labelName', () => {
+  it.each([
+    'x\u{E0067}\u{E0062}',
+    '\u{1F3F4}\u{E0067}\u{E0062}\u{A0073}\u{E0063}\u{E0074}\u{E007F}',
+    '\u{1D400}\u{200C}\u{0628}',
+    'e\u{200B}\u{0301}'
+  ])('normalises %j once and for all', name => {
+    const stored = labelName(name)
+
+    expect(labelName(stored)).toBe(stored)
+  })
+
+  it('keeps the tags of a subdivision flag', () => {
+    const flag =
+      '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}'
+
+    expect(labelName(flag)).toBe(flag)
   })
 })

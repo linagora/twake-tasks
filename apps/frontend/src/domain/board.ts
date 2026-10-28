@@ -101,7 +101,7 @@ export interface Label {
 // Format characters go, except the joiners and tags that change what renders.
 const emojiJoiner = String.raw`(?<=[\p{Extended_Pictographic}\p{Emoji_Modifier}\u{FE0F}])\u{200D}(?=\p{Extended_Pictographic})`
 const scriptJoiner = String.raw`(?<=[\p{L}\p{M}])(?<![\p{sc=Latin}\p{sc=Inherited}])[\u{200C}\u{200D}](?=[\p{L}\p{M}])`
-const flagTag = String.raw`(?<=[\u{1F3F4}\u{E0020}-\u{E007E}])[\u{E0020}-\u{E007F}]`
+const flagTag = String.raw`\u{1F3F4}[\u{E0020}-\u{E007E}]*\u{E007F}?`
 const invisible = new RegExp(
   String.raw`(${emojiJoiner}|${scriptJoiner}|${flagTag})|\p{Cf}`,
   'gu'
@@ -110,6 +110,7 @@ const invisible = new RegExp(
 /** The name as the server stores it, so names that render alike compare equal. */
 export function labelName(text: string): string {
   return text
+    .normalize('NFKC')
     .replace(invisible, (_, kept: string | undefined) => kept ?? '')
     .normalize('NFKC')
     .trim()
