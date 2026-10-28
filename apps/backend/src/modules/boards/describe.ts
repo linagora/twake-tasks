@@ -1,14 +1,8 @@
 import { and, inArray, isNull, sql } from 'drizzle-orm'
 import type { Tx } from '../../infra/db.ts'
-import type { Member } from '../boards/access.ts'
-import { recurrenceOf } from '../boards/recurrence.ts'
-import {
-  boards,
-  comments,
-  taskAssignees,
-  taskLabels,
-  tasks
-} from '../boards/schema.ts'
+import type { Member } from './access.ts'
+import { recurrenceOf } from './recurrence.ts'
+import { boards, comments, taskAssignees, taskLabels, tasks } from './schema.ts'
 
 export const shown = and(isNull(tasks.archivedAt), isNull(tasks.deletedAt))
 
