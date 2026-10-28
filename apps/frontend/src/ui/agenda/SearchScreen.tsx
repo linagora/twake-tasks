@@ -61,7 +61,6 @@ function useFoundBoards(text: string): BoardSummary[] {
   )
 }
 
-/** The boards, then the tasks, that `query` finds, for the list under the field. */
 function useLiveResults(query: string): {
   items: ResultItem[]
   loading: boolean
@@ -99,7 +98,6 @@ function useLiveResults(query: string): {
     ...(tasks.data ?? []).map(task => ({
       id: task.id,
       to: `/boards/${task.boardId}?${new URLSearchParams({ task: task.key }).toString()}`,
-      // The app's icon, outlined, in the colour of text.
       icon: <Icon icon={TaskIcon} size={24} color="currentColor" />,
       primary: <Highlight text={task.title} query={query} tone="primary" />,
       secondary: (

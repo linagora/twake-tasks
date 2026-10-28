@@ -1,10 +1,6 @@
 import type { ReactElement, SVGAttributes } from 'react'
 
-/**
- * The app's icon, a check in a circle, the other way round: the check and
- * the outline drawn, the circle left empty. Material's check circle outline,
- * which twake-icons has not.
- */
+/** The app's icon, outlined: Material's check circle outline, which twake-icons has not. */
 export function TaskIcon(props: SVGAttributes<SVGSVGElement>): ReactElement {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" {...props}>

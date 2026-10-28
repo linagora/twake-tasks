@@ -89,11 +89,7 @@ function excerptOf(description: string, text: string): string | null {
   return `${from > 0 ? '…' : ''}${words.slice(from, to).join(' ')}${to < words.length ? '…' : ''}`
 }
 
-/**
- * Why a task answers a search, for the person to see: the field that
- * matched and its text, the part of the description around the match.
- */
-export interface SearchMatch {
+interface SearchMatch {
   field: 'key' | 'previousKey' | 'title' | 'description'
   text: string
 }

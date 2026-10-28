@@ -27,11 +27,7 @@ export interface ResultItem {
   detail?: ReactNode
 }
 
-/**
- * The results of a search as they are typed, in a list under the search
- * field and as wide as it, as Twake Drive's: three placeholders while the
- * first come, else `message` when there are none.
- */
+/** The results of a search as they are typed, under the field and as wide as it, as Twake Drive's. */
 export function ResultMenu({
   anchor,
   id,
