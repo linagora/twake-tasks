@@ -400,7 +400,12 @@
     "failed": "The task could not be created.",
     "unfinished": "The task was created, but some of its details were not saved. Save again to add them.",
     "save": "Save",
-    "created": "“%{title}” has been created",
+    "destination": "In %{board} · %{section}",
+    "destinationBoard": "In %{board}",
+    "dueToday": "Due today",
+    "dueTomorrow": "Due tomorrow",
+    "assignedToYou": "Assigned to you",
+    "createdIn": "“%{title}” created in %{board}",
     "seeTask": "See the task",
     "nowhere": "You can't add tasks here."
   },

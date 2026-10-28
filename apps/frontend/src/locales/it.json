@@ -400,7 +400,12 @@
     "failed": "Impossibile creare l'attività.",
     "unfinished": "L'attività è stata creata, ma alcuni dettagli non sono stati salvati. Salva di nuovo per aggiungerli.",
     "save": "Salva",
-    "created": "«%{title}» è stata creata",
+    "destination": "In %{board} · %{section}",
+    "destinationBoard": "In %{board}",
+    "dueToday": "Scade oggi",
+    "dueTomorrow": "Scade domani",
+    "assignedToYou": "Assegnata a te",
+    "createdIn": "«%{title}» creata in %{board}",
     "seeTask": "Vedi l'attività",
     "nowhere": "Non puoi aggiungere attività qui."
   },

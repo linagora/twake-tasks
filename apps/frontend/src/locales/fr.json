@@ -400,7 +400,12 @@
     "failed": "La tâche n'a pas pu être créée.",
     "unfinished": "La tâche a été créée, mais certains de ses détails n'ont pas été enregistrés. Enregistrez à nouveau pour les ajouter.",
     "save": "Enregistrer",
-    "created": "« %{title} » a été créée",
+    "destination": "Dans %{board} · %{section}",
+    "destinationBoard": "Dans %{board}",
+    "dueToday": "Pour aujourd’hui",
+    "dueTomorrow": "Pour demain",
+    "assignedToYou": "Assignée à vous",
+    "createdIn": "« %{title} » créée dans %{board}",
     "seeTask": "Voir la tâche",
     "nowhere": "Vous ne pouvez pas ajouter de tâches ici."
   },

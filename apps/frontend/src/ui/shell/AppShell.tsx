@@ -76,15 +76,19 @@ import { NewTaskFromUrl } from '@/ui/shell/NewTaskDialog'
 import { NewTaskHighlightProvider } from '@/ui/shell/NewTaskHighlight'
 import { SidebarLink } from '@/ui/shell/SidebarLink'
 import { ShortcutsHelp, useShortcuts } from '@/ui/shell/Shortcuts'
-import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
+import { agendaPreset, useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 import { useSettings } from '@/ui/settings/useSettings'
 
+const AGENDAS = ['today', 'upcoming', 'mine'] as const
+
 export function AppShell(): ReactElement {
   const { openNewTask } = useNewTaskParam()
+  const { pathname } = useLocation()
+  const agenda = AGENDAS.find(view => pathname === `/${view}`)
   const startNewTask = (): void => {
-    openNewTask()
+    openNewTask(agenda && agendaPreset(agenda))
   }
   const [help, setHelp] = useState(false)
   const search = useRef<HTMLInputElement>(null)

@@ -36,13 +36,13 @@ import {
 import { FilterForm } from '@/ui/agenda/FiltersScreen'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
-import { formatDay, inDays } from '@/ui/boards/dueLabel'
+import { formatDay } from '@/ui/boards/dueLabel'
 import { LayoutToggle } from '@/ui/boards/Layouts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useAgenda, useFilters, type AgendaView } from '@/ui/boards/queries'
 import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
 import { NotFoundScreen } from '@/ui/shell/Problems'
-import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
+import { agendaPreset, useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 const contextOf = (task: AgendaTask, t: I18nApi['t']): string =>
@@ -375,20 +375,17 @@ const EMPTY_AGENDA = {
   today: {
     icon: CheckCircle,
     scope: 'agenda.scope',
-    title: 'agenda.todayEmpty',
-    due: 0
+    title: 'agenda.todayEmpty'
   },
   upcoming: {
     icon: CheckCircle,
     scope: 'agenda.scope',
-    title: 'agenda.upcomingEmpty',
-    due: 1
+    title: 'agenda.upcomingEmpty'
   },
   mine: {
     icon: Profile,
     scope: 'agenda.mineScope',
-    title: 'agenda.mineEmpty',
-    due: null
+    title: 'agenda.mineEmpty'
   }
 } as const
 
@@ -399,7 +396,7 @@ function AgendaEmpty({
 }): ReactElement {
   const { t } = useI18n()
   const { openNewTask } = useNewTaskParam()
-  const { icon, title, due } = EMPTY_AGENDA[view]
+  const { icon, title } = EMPTY_AGENDA[view]
   return (
     <EmptyState
       icon={icon}
@@ -409,7 +406,7 @@ function AgendaEmpty({
         <Button
           startIcon={<Icon icon={Plus} />}
           onClick={() => {
-            openNewTask(due === null ? undefined : inDays(due))
+            openNewTask(agendaPreset(view))
           }}
         >
           {t('newTask.open')}

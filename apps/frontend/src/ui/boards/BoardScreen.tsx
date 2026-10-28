@@ -699,7 +699,7 @@ function BoardColumns({
           onAdd={
             editable
               ? dueDate => {
-                  openNewTask(dueDate ?? undefined)
+                  openNewTask({ dueDate: dueDate ?? undefined })
                 }
               : undefined
           }

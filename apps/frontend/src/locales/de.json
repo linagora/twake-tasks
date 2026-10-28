@@ -400,7 +400,12 @@
     "failed": "Die Aufgabe konnte nicht erstellt werden.",
     "unfinished": "Die Aufgabe wurde erstellt, aber einige Details wurden nicht gespeichert. Speichern Sie erneut, um sie hinzuzufügen.",
     "save": "Speichern",
-    "created": "„%{title}“ wurde erstellt",
+    "destination": "In %{board} · %{section}",
+    "destinationBoard": "In %{board}",
+    "dueToday": "Heute fällig",
+    "dueTomorrow": "Morgen fällig",
+    "assignedToYou": "Ihnen zugewiesen",
+    "createdIn": "„%{title}“ in %{board} erstellt",
     "seeTask": "Aufgabe ansehen",
     "nowhere": "Sie können hier keine Aufgaben hinzufügen."
   },
