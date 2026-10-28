@@ -11,7 +11,7 @@ import { SearchBar } from '@/ds/SearchBar'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import { BoardChip } from '@/ds/TileGrid'
 import { Group } from '@/ui/agenda/AgendaScreen'
-import { useProjectName } from '@/ui/boards/BoardsScreen'
+import { useBoardName, useProjectName } from '@/ui/boards/BoardsScreen'
 import { searchMinLength, useBoards, useSearch } from '@/ui/boards/queries'
 import { OriginContext, PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -128,6 +128,7 @@ export function SearchScreen(): ReactElement {
   const text = params.get('q')?.trim() ?? ''
   const results = useSearch(text)
   const boards = useBoards()
+  const boardName = useBoardName()
   const minLength = searchMinLength()
   useDocumentTitle(t('search.label'))
 
@@ -135,12 +136,14 @@ export function SearchScreen(): ReactElement {
   const foundBoards =
     text.length >= minLength
       ? listBoards(
-          (boards.data ?? []).filter(
-            board =>
-              !board.archived &&
-              (fold(board.name).includes(query) ||
-                fold(board.keyPrefix).startsWith(query))
-          )
+          (boards.data ?? [])
+            .map(board => ({ ...board, name: boardName(board) }))
+            .filter(
+              board =>
+                !board.archived &&
+                (fold(board.name).includes(query) ||
+                  fold(board.keyPrefix).startsWith(query))
+            )
         )
       : []
   const found =

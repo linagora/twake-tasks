@@ -17,6 +17,7 @@ import { LeadingBadge, TaskGroup, TaskRow } from '@/ds/TaskList'
 import type { Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { momentFormat, relativeMoment } from '@/ui/boards/dueLabel'
+import { useBoardName, type BoardName } from '@/ui/boards/BoardsScreen'
 import { describe } from '@/ui/boards/History'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import {
@@ -40,11 +41,12 @@ const REASON_ICONS = {
 function sentenceOf(
   notification: Notification,
   t: I18nApi['t'],
-  lang: string
+  lang: string,
+  boardName: BoardName
 ): string {
   const { reason, actor, change } = notification
   if (reason === 'following' && change) {
-    return describe(change, undefined, t, lang)
+    return describe(change, undefined, t, lang, boardName)
   }
   if (
     (reason === 'assigned' ||
@@ -101,6 +103,7 @@ export function FollowButton({
 
 export function NotificationsScreen(): ReactElement {
   const { t, lang } = useI18n()
+  const boardName = useBoardName()
   useDocumentTitle(t('notifications.title'))
   const notifications = useNotifications()
   const format = momentFormat(lang)
@@ -178,7 +181,7 @@ export function NotificationsScreen(): ReactElement {
                     }
                     title={
                       <>
-                        {`${sentenceOf(notification, t, lang)} · `}
+                        {`${sentenceOf(notification, t, lang, boardName)} · `}
                         <Link
                           component={RouterLink}
                           to={`/boards/${notification.boardId}?task=${notification.key}`}
@@ -188,7 +191,10 @@ export function NotificationsScreen(): ReactElement {
                       </>
                     }
                     excerpt={notification.commentExcerpt}
-                    context={`${notification.key} · ${notification.boardName}`}
+                    context={`${notification.key} · ${boardName({
+                      id: notification.boardId,
+                      name: notification.boardName
+                    })}`}
                     facts={
                       <Typography
                         variant="caption"

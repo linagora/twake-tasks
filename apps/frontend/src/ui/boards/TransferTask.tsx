@@ -14,6 +14,7 @@ import type { TransferPreview } from '@/application/boards'
 import { defaultSection } from '@/application/newTask'
 import { isEditable, type BoardSummary, type Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
+import { useBoardName } from '@/ui/boards/BoardsScreen'
 import {
   useBoard,
   useBoards,
@@ -206,6 +207,7 @@ function TransferTask({
 }): ReactElement | null {
   const { t } = useI18n()
   const boards = useBoards()
+  const boardName = useBoardName()
   const [target, setTarget] = useState('')
   // Undefined until the target board loads and its first section is chosen.
   const [sectionId, setSectionId] = useState<string | null>()
@@ -254,7 +256,8 @@ function TransferTask({
   }
   const targets = boards.data?.filter(board => isTarget(board, boardId)) ?? []
   if (targets.length === 0) return null
-  const targetName = targets.find(board => board.id === target)?.name ?? ''
+  const targetBoard = targets.find(board => board.id === target)
+  const targetName = targetBoard ? boardName(targetBoard) : ''
   // Unmounting mid-request drops the mutate callbacks, so the move would land
   // without the board refreshing.
   const busy = check.isPending || transfer.isPending
@@ -291,7 +294,7 @@ function TransferTask({
           <option value="" />
           {targets.map(board => (
             <option key={board.id} value={board.id}>
-              {board.name}
+              {boardName(board)}
             </option>
           ))}
         </TextField>

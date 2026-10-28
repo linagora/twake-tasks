@@ -1026,14 +1026,14 @@ describe('BoardScreen', () => {
       for (const changes of [
         { role: 'viewer' as const },
         { archived: true },
-        { inbox: true }
+        { inbox: true, name: 'Inbox' }
       ]) {
         const board = { ...designBoard(), ...changes }
         const { unmount } = renderRoute(`/boards/${board.id}`, {
           boardsApi: fakeBoardsApi([board])
         })
 
-        const title = await heading('Design')
+        const title = await heading(board.name)
         expect(within(title).queryByRole('button')).toBeNull()
         fireEvent.click(screen.getByRole('button', { name: 'Board options' }))
         expect(

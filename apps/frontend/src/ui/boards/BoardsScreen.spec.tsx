@@ -414,6 +414,37 @@ describe('BoardsScreen', () => {
     })
   })
 
+  it('names the Inbox in the language of the interface', async () => {
+    const inbox = aBoard({
+      name: 'Inbox',
+      keyPrefix: 'INB',
+      inbox: true,
+      project: aProject({ personal: true })
+    })
+    const { router } = renderRoute('/', {
+      boardsApi: fakeBoardsApi([inbox, aBoard({ name: 'Design' })]),
+      lang: 'fr'
+    })
+
+    expect(
+      boardNames(await screen.findByRole('list', { name: 'Tableaux' }))
+    ).toEqual(['Boîte de réception', 'Design'])
+    expect(
+      screen.getByRole('link', { name: 'Boîte de réception', current: false })
+    ).toHaveAttribute('href', `/boards/${inbox.id}`)
+
+    await router.navigate(`/boards/${inbox.id}`)
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Boîte de réception'
+      })
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(document.title).toMatch(/^Boîte de réception - /)
+    })
+  })
+
   it('suggests a key prefix from the name until one is typed', async () => {
     const boardsApi = fakeBoardsApi()
     renderRoute('/', { boardsApi })

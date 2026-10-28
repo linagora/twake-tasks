@@ -40,7 +40,13 @@ import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 type Shelf = 'active' | 'archived'
 
-function FavoriteButton({ board }: { board: BoardSummary }): ReactElement {
+function FavoriteButton({
+  board,
+  name
+}: {
+  board: BoardSummary
+  name: string
+}): ReactElement {
   const { t } = useI18n()
   const setFavorite = useSetFavorite()
   const button = useRef<HTMLButtonElement>(null)
@@ -59,7 +65,7 @@ function FavoriteButton({ board }: { board: BoardSummary }): ReactElement {
       size="small"
       color={board.favorite ? 'warning' : 'default'}
       aria-label={t(board.favorite ? 'boards.unstar' : 'boards.star', {
-        name: board.name
+        name
       })}
       onClick={() => {
         if (setFavorite.isPending) return
@@ -85,6 +91,25 @@ export function useProjectName(): (project: ProjectSummary) => string {
     project.personal ? t('boards.personalProject') : project.name
 }
 
+export type BoardName = (board: {
+  id: string
+  name: string
+  inbox?: boolean
+}) => string
+
+/**
+ * The Inbox is stored as "Inbox" and shown in the person's language. Task rows
+ * and history entries carry no inbox flag, so the Inbox is also matched by id.
+ */
+export function useBoardName(): BoardName {
+  const { t } = useI18n()
+  const inboxId = useBoards().data?.find(board => board.inbox)?.id
+  return board =>
+    board.inbox === true || board.id === inboxId
+      ? t('boards.inbox')
+      : board.name
+}
+
 function BoardItem({
   board,
   fresh,
@@ -95,10 +120,11 @@ function BoardItem({
   onUnarchive?: (() => void) | undefined
 }): ReactElement {
   const { t } = useI18n()
+  const name = useBoardName()(board)
   return (
     <BoardCard
-      label={board.name}
-      badge={(Array.from(board.name)[0] ?? '').toUpperCase()}
+      label={name}
+      badge={(Array.from(name)[0] ?? '').toUpperCase()}
       badgeLabel={t(
         board.project.personal
           ? 'boards.personal'
@@ -108,7 +134,7 @@ function BoardItem({
       )}
       title={
         <Link component={RouterLink} to={`/boards/${board.id}`}>
-          {board.name}
+          {name}
         </Link>
       }
       flag={fresh ? t('boards.newlyShared') : undefined}
@@ -142,7 +168,7 @@ function BoardItem({
           </Button>
         )
       }
-      action={<FavoriteButton board={board} />}
+      action={<FavoriteButton board={board} name={name} />}
     />
   )
 }

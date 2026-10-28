@@ -43,6 +43,7 @@ import { Inline, Properties, Property, PropertySelect } from '@/ds/SidePanel'
 import { Toast } from '@/ds/Toast'
 import { isShareable, type Priority } from '@/domain/board'
 import { displayName } from '@/domain/person'
+import { useBoardName } from '@/ui/boards/BoardsScreen'
 import { inDays, shortDay, untilNextMonday } from '@/ui/boards/dueLabel'
 import { LabelsMenu } from '@/ui/boards/LabelsMenu'
 import { PeopleMenu } from '@/ui/boards/PeopleMenu'
@@ -234,6 +235,7 @@ export function NewTaskDialog({
     focusOnMount(element)
   }, [])
   const create = useNewTask()
+  const boardName = useBoardName()
   const [started, setStarted] = useState<StartedTask | undefined>(undefined)
   const { targets, chosen, board, boardFailed } = useNewTaskBoard(
     picked,
@@ -316,7 +318,7 @@ export function NewTaskDialog({
           const created = {
             ...task,
             title: title.trim(),
-            board: chosen.name,
+            board: boardName(chosen),
             elsewhere:
               (preset.dueDate !== undefined &&
                 facts.dueDate !== preset.dueDate) ||
@@ -360,10 +362,10 @@ export function NewTaskDialog({
     [
       section
         ? t('newTask.destination', {
-            board: chosen.name,
+            board: boardName(chosen),
             section: section.name
           })
-        : t('newTask.destinationBoard', { board: chosen.name }),
+        : t('newTask.destinationBoard', { board: boardName(chosen) }),
       ...(facts.dueDate === inDays(0) ? [t('newTask.dueToday')] : []),
       ...(facts.dueDate === inDays(1) ? [t('newTask.dueTomorrow')] : []),
       ...(assignedToMe ? [t('newTask.assignedToYou')] : [])
@@ -484,7 +486,7 @@ export function NewTaskDialog({
                         value={chosen.id}
                         options={targets.map(each => ({
                           value: each.id,
-                          label: each.name
+                          label: boardName(each)
                         }))}
                         onChange={pickBoard}
                         disabled={started !== undefined}

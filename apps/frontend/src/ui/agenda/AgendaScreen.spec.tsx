@@ -51,6 +51,21 @@ describe('AgendaScreen', () => {
     expect(boardsApi.agenda).toHaveBeenCalledWith(localZone(), 1)
   })
 
+  it('names the Inbox of a task in the language of the interface', async () => {
+    const inbox = aBoard({ name: 'Inbox', keyPrefix: 'INBOX', inbox: true })
+    inbox.tasks = [
+      aTask(null, { key: 'INBOX-1', title: 'Renouveler', dueDate: day(0) })
+    ]
+    renderRoute('/today', { boardsApi: fakeBoardsApi([inbox]), lang: 'fr' })
+
+    const row = within(
+      await screen.findByRole('listitem', { name: 'INBOX-1 Renouveler' })
+    )
+    expect(
+      await row.findByText('INBOX-1 · Boîte de réception')
+    ).toBeInTheDocument()
+  })
+
   it('links the task opened from Today to its board, named with its project', async () => {
     const { design, boardsApi } = boards()
     design.project.name = 'Product launch'

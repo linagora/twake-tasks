@@ -59,6 +59,7 @@ import {
 } from '@/ui/boards/Archive'
 import { BoardDrag, columnSortId } from '@/ui/boards/BoardDrag'
 import { BoardMenu } from '@/ui/boards/BoardMenu'
+import { useBoardName } from '@/ui/boards/BoardsScreen'
 import { CalendarTask } from '@/ui/boards/CalendarTask'
 import { CalendarLayout, LayoutSwitch, ListLayout } from '@/ui/boards/Layouts'
 import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
@@ -108,7 +109,9 @@ export function BoardScreen({
   // Opened from the boards, its name is known already: the breadcrumb shows it
   // at once rather than "…" then the name.
   const listed = useListedBoard(boardId)
-  const name = shown?.name ?? (missing ? null : listed?.name) ?? '…'
+  const boardName = useBoardName()
+  const known = shown ?? (missing ? null : listed)
+  const name = known ? boardName(known) : '…'
   const boardsOrigin = {
     ...useBoardsOrigin(),
     to: '../..',
@@ -119,7 +122,7 @@ export function BoardScreen({
   // except in an embed (flush), which has no Archives page.
   const origin =
     (shown ?? listed)?.archived && !flush ? archivesOrigin : boardsOrigin
-  useDocumentTitle(shown?.name ?? null)
+  useDocumentTitle(shown ? boardName(shown) : null)
   const shownId = shown?.id
   useEffect(() => {
     if (shownId) markBoardSeen(shownId)
@@ -761,6 +764,7 @@ function BoardTitle({
   bare?: boolean
 }): ReactElement {
   const { t } = useI18n()
+  const shownName = useBoardName()(board)
   const renamable = isRenamable(board)
   // The title takes the focus back from an editor that just closed, and on a
   // board just created, whose dialog took the focus with it
@@ -794,11 +798,11 @@ function BoardTitle({
           onRename(true)
         }}
       >
-        {board.name}
+        {shownName}
       </TitleButton>
     </CutTooltip>
   ) : (
-    board.name
+    shownName
   )
   return bare ? (
     <>{name}</>

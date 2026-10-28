@@ -24,7 +24,7 @@ import {
 import { isShareable, type Board, type Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
-import { useProjectName } from '@/ui/boards/BoardsScreen'
+import { useBoardName, useProjectName } from '@/ui/boards/BoardsScreen'
 import { Dates } from '@/ui/boards/Dates'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
@@ -254,6 +254,7 @@ function BoardRow({ board }: { board: Board }): ReactElement {
   const { t } = useI18n()
   const { projectId } = useParams()
   const projectName = useProjectName()(board.project)
+  const name = useBoardName()(board)
   const to =
     projectId === undefined
       ? `/boards/${board.id}`
@@ -264,13 +265,13 @@ function BoardRow({ board }: { board: Board }): ReactElement {
     <Property icon={<Icon icon={Mosaic} />} label={t('task.board')}>
       <PropertyText variant="body2">
         {onBoard ? (
-          board.name
+          name
         ) : (
           <Link component={RouterLink} to={to} underline="hover">
-            {board.name}
+            {name}
           </Link>
         )}
-        {projectName !== board.name && (
+        {projectName !== name && (
           <Typography component="span" variant="body2" color="textSecondary">
             {` · ${projectName}`}
           </Typography>
