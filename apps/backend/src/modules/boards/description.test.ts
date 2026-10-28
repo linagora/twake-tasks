@@ -74,6 +74,24 @@ describe('task description', () => {
     expect(row?.text).toBe('Plan\ncheck me\ndone')
   })
 
+  it(
+    'saves a description of deeply nested lists',
+    { timeout: 30_000 },
+    async () => {
+      const alice = aUser()
+      const { boardId, taskId } = await aTaskOf(alice)
+
+      const saved = await api
+        .as(alice)
+        .put(`/boards/${boardId}/tasks/${taskId}/description`, {
+          markdown: '>- - 1. '.repeat(1250),
+          version: 0
+        })
+
+      expect(saved.statusCode).toBe(200)
+    }
+  )
+
   it('refuses an edit made on a stale version', async () => {
     const alice = aUser()
     const { boardId, taskId } = await aTaskOf(alice)

@@ -1,7 +1,6 @@
 import type { Nodes } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { gfmTaskListItemFromMarkdown } from 'mdast-util-gfm-task-list-item'
-import { toString } from 'mdast-util-to-string'
 import { gfmTaskListItem } from 'micromark-extension-gfm-task-list-item'
 
 const CONTAINERS = new Set(['root', 'list', 'listItem', 'blockquote'])
@@ -26,10 +25,25 @@ export function withNames(
   })
 }
 
-function textOf(node: Nodes): string {
-  return CONTAINERS.has(node.type) && 'children' in node
-    ? node.children.map(textOf).join('\n')
-    : toString(node)
+// Iterative: authors can nest blocks and emphasis thousands deep, past the
+// call stack. Same output as mdast-util-to-string, plus a line break between
+// a container's children.
+function textOf(root: Nodes): string {
+  let text = ''
+  const pending: (Nodes | string)[] = [root]
+  for (let node = pending.pop(); node !== undefined; node = pending.pop()) {
+    if (typeof node === 'string') text += node
+    else if ('value' in node) text += node.value
+    else if ('alt' in node && node.alt) text += node.alt
+    else if ('children' in node) {
+      const between = CONTAINERS.has(node.type) ? '\n' : ''
+      for (let i = node.children.length - 1; i >= 0; i--) {
+        pending.push(node.children[i] as Nodes)
+        if (i > 0 && between) pending.push(between)
+      }
+    }
+  }
+  return text
 }
 
 export function plainText(markdown: string): string {
