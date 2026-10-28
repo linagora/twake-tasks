@@ -520,6 +520,7 @@
     "task": "Tarea",
     "due": "Vencimiento",
     "today": "Hoy",
+    "todayDate": "%{date}, hoy",
     "nothingDue": "Nada vence este día."
   },
   "search": {

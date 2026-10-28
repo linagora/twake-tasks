@@ -187,6 +187,10 @@ export function CalendarLayout({
   const [trayOpen, setTrayOpen] = useState<boolean | null>(null)
   const undated = tasks.filter(task => task.dueDate === null)
   const dueOn = (day: string) => tasks.filter(task => task.dueDate === day)
+  const dayLabel = (day: string) =>
+    day === today
+      ? t('layout.todayDate', { date: formatDay(day, lang) })
+      : formatDay(day, lang)
   const addOn = (day: string) =>
     onAdd && {
       label: t('layout.addOn', { date: formatDay(day, lang) }),
@@ -255,7 +259,7 @@ export function CalendarLayout({
             compact ? (
               <DayButton
                 key={day}
-                label={formatDay(day, lang)}
+                label={dayLabel(day)}
                 number={Number(day.slice(8))}
                 outside={!day.startsWith(month)}
                 today={day === today}
@@ -268,7 +272,7 @@ export function CalendarLayout({
             ) : (
               <DayCell
                 key={day}
-                label={formatDay(day, lang)}
+                label={dayLabel(day)}
                 number={Number(day.slice(8))}
                 outside={!day.startsWith(month)}
                 today={day === today}

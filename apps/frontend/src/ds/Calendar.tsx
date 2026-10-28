@@ -260,7 +260,7 @@ export function DayCell({
 }): ReactElement {
   return (
     <Box
-      component="section"
+      role="group"
       aria-label={label}
       aria-current={today ? 'date' : undefined}
       onClick={

@@ -520,6 +520,7 @@
     "task": "Task",
     "due": "Due",
     "today": "Today",
+    "todayDate": "%{date}, today",
     "nothingDue": "Nothing due this day."
   },
   "search": {

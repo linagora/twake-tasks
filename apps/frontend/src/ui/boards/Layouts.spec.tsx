@@ -17,6 +17,11 @@ function designBoard(overrides: Parameters<typeof aBoard>[0] = {}) {
 
 const layouts = () => within(screen.getByRole('group', { name: 'Layout' }))
 
+const todayCell = () =>
+  screen.findByRole('group', {
+    name: `${formatDay(localToday(), 'en')}, today`
+  })
+
 describe('board layouts', () => {
   it('switches to a list of sections, and keeps my pick', async () => {
     const board = designBoard()
@@ -90,9 +95,7 @@ describe('board layouts', () => {
     const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
-    const today = await screen.findByRole('region', {
-      name: formatDay(localToday(), 'en')
-    })
+    const today = await todayCell()
     expect(within(today).getByText('Logo')).toBeVisible()
     expect(
       within(screen.getByRole('list', { name: 'No date' })).getByText('Palette')
@@ -138,11 +141,7 @@ describe('board layouts', () => {
     const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
-    fireEvent.click(
-      await screen.findByRole('region', {
-        name: formatDay(localToday(), 'en')
-      })
-    )
+    fireEvent.click(await todayCell())
 
     const dialog = within(
       await screen.findByRole('dialog', { name: 'Create a task' })
@@ -160,9 +159,7 @@ describe('board layouts', () => {
   it('opens a task rather than adding one when its chip in a day is clicked', async () => {
     const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
-    const today = await screen.findByRole('region', {
-      name: formatDay(localToday(), 'en')
-    })
+    const today = await todayCell()
 
     fireEvent.click(within(today).getByRole('button', { name: 'Logo' }))
 
@@ -198,7 +195,7 @@ describe('board layouts', () => {
     })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
-    await screen.findByRole('region', { name: formatDay(localToday(), 'en') })
+    await todayCell()
     expect(screen.queryByRole('button', { name: /^Add a task/ })).toBe(null)
   })
 
@@ -222,10 +219,9 @@ describe('board layouts', () => {
     const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
-    const today = await screen.findByRole('region', {
-      name: formatDay(localToday(), 'en')
-    })
+    const today = await todayCell()
     expect(today).toHaveAttribute('aria-current', 'date')
+    expect(screen.queryAllByRole('region')).toEqual([])
     expect(screen.getByText('Mon')).toBeVisible()
     const month = new Intl.DateTimeFormat('en', {
       month: 'long',
@@ -254,10 +250,7 @@ describe('board layouts', () => {
         lang
       })
 
-      await screen.findByRole('region', {
-        name: formatDay(localToday(), lang)
-      })
-      const header = screen.getByText(first).parentElement
+      const header = (await screen.findByText(first)).parentElement
       expect(header?.firstElementChild).toHaveTextContent(first)
     }
   )
@@ -266,9 +259,7 @@ describe('board layouts', () => {
     const board = designBoard({ layout: 'calendar', defaultLayout: 'calendar' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
-    const today = await screen.findByRole('region', {
-      name: formatDay(localToday(), 'en')
-    })
+    const today = await todayCell()
     fireEvent.click(within(today).getByRole('button', { name: 'Logo' }))
 
     expect(
