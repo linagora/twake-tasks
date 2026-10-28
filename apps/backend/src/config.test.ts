@@ -139,6 +139,7 @@ describe('the server settings', () => {
       SMTP_TIMEOUT_SECONDS: 60
     })
     expect(config.REDIS_URL).toBeUndefined()
+    expect(config.SENTRY_DSN).toBeUndefined()
   })
 
   it('serve metrics unless turned off', () => {
@@ -162,7 +163,8 @@ describe('the server settings', () => {
     ['JOBS_LEASE_SECONDS', '0'],
     ['JOBS_LEASE_SECONDS', '120'],
     ['SMTP_TIMEOUT_SECONDS', '0'],
-    ['METRICS_ENABLED', 'maybe']
+    ['METRICS_ENABLED', 'maybe'],
+    ['SENTRY_DSN', 'sentry.example.com']
   ])('refuse %s=%s', (name, value) => {
     expect(() => loadConfig({ ...required, [name]: value })).toThrow(
       new RegExp(name)

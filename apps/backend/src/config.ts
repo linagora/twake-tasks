@@ -119,7 +119,9 @@ const configSchema = z
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
       .default('info'),
-    METRICS_ENABLED: z.stringbool().default(true)
+    METRICS_ENABLED: z.stringbool().default(true),
+    SENTRY_DSN: z.url({ protocol: /^https?$/ }).optional(),
+    SENTRY_ENVIRONMENT: z.string().min(1).optional()
   })
   // Draining the queue also unbinds it, so naming it twice would leave Tasks
   // deaf to every event.

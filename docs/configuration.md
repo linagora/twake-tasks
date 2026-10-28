@@ -78,6 +78,7 @@ Server:
 - `LOG_LEVEL` (`info`): `fatal`, `error`, `warn`, `info`, `debug` or `trace`.
 - `METRICS_ENABLED` (`true`): whether the backend serves Prometheus metrics on `GET /metrics`, on `HTTP_PORT`. The path is outside `/api`, so the frontend's nginx never proxies it: scrape the backend directly. `false` removes the route and the metrics; the scheduler still reads its backlog to log late jobs.
   - `events_parked`, `jobs_due` and `outbox_pending` are read from the database, so every replica reports the same global value: aggregate them with `max()`, not `sum()`.
+- `SENTRY_DSN`, `SENTRY_ENVIRONMENT`: the backend's own error reporting. See [error reporting](error-reporting.md).
 
 Rate limits:
 
