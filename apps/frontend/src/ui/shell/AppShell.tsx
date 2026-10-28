@@ -63,6 +63,7 @@ import { HomeIcon } from '@/ds/HomeIcon'
 import { Icon } from '@/ds/Icon'
 import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
+import { useBoardName } from '@/ui/boards/BoardsScreen'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import {
@@ -477,8 +478,10 @@ function BoardsNav({
   const [creating, setCreating] = useState(false)
   const [folded, toggleFolded] = useFolded('sidebar-boards-folded', true)
   const listed = !phone && !folded
+  const boardName = useBoardName()
   const boards = (useBoards().data ?? [])
     .filter(board => !board.archived)
+    .map(board => ({ ...board, name: boardName(board) }))
     .sort((a, b) => a.name.localeCompare(b.name))
 
   return (
@@ -591,6 +594,7 @@ function Favorites({
   onOpen: (boardId: string) => void
 }): ReactElement | null {
   const { t } = useI18n()
+  const boardName = useBoardName()
   const favorites = (useBoards().data ?? []).filter(
     board => board.favorite && !board.archived
   )
@@ -615,7 +619,7 @@ function Favorites({
             }}
           >
             <NavIcon icon={Star} />
-            <NavText>{board.name}</NavText>
+            <NavText>{boardName(board)}</NavText>
           </SidebarLink>
         </NavItem>
       ))}

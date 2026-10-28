@@ -16,6 +16,7 @@ import { EmbedFrame } from '@/ds/AppFrame'
 import { EmptyState } from '@/ds/EmptyState'
 import { TileGrid, Tile } from '@/ds/TileGrid'
 import { BoardScreen } from '@/ui/boards/BoardScreen'
+import { useBoardName } from '@/ui/boards/BoardsScreen'
 import { useBoards, useProjects } from '@/ui/boards/queries'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { NewTaskFromUrl } from '@/ui/shell/NewTaskDialog'
@@ -90,6 +91,7 @@ export function EmbedNewTask(): ReactElement | null {
 
 export function EmbedProjectScreen(): ReactElement {
   const { t } = useI18n()
+  const boardName = useBoardName()
   const { projectId = '' } = useParams()
   const projects = useProjects()
   const { boards, shown } = useProjectBoards(projectId)
@@ -123,7 +125,7 @@ export function EmbedProjectScreen(): ReactElement {
                 underline="none"
                 color="textPrimary"
               >
-                {board.name}
+                {boardName(board)}
               </Link>
             </Tile>
           ))}

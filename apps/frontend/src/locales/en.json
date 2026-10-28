@@ -73,6 +73,7 @@
     "space": "Space board",
     "projectBoard": "Project board",
     "personalProject": "Personal",
+    "inbox": "Inbox",
     "defaultChip": "Default",
     "defaultHint": "New tasks are created here by default. This board can’t be shared.",
     "spaceChip": "Space",

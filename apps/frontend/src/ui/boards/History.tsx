@@ -3,6 +3,7 @@ import type { ReactElement } from 'react'
 
 import type { HistoryEntry } from '@/application/boards'
 import { Feed, FeedItem } from '@/ds/SidePanel'
+import { useBoardName, type BoardName } from '@/ui/boards/BoardsScreen'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import type { Board, Duration, Recurrence, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
@@ -20,9 +21,12 @@ type Translate = ReturnType<typeof useI18n>['t']
 const text = (value: unknown): string =>
   typeof value === 'string' || typeof value === 'number' ? String(value) : ''
 
-const boardName = (value: unknown): string =>
-  typeof value === 'object' && value !== null && 'name' in value
-    ? text(value.name)
+const loggedBoard = (value: unknown, boardName: BoardName): string =>
+  typeof value === 'object' &&
+  value !== null &&
+  'id' in value &&
+  'name' in value
+    ? boardName({ id: text(value.id), name: text(value.name) })
     : ''
 
 // History logs a due date as "YYYY-MM-DD[ HH:mm[ Zone]]".
@@ -35,7 +39,8 @@ export function describe(
   entry: HistoryEntry,
   board: Board | undefined,
   t: Translate,
-  lang: string
+  lang: string,
+  boardName: BoardName
 ): string {
   const actor = displayName(entry.actor)
   const value = text(entry.to ?? entry.from)
@@ -77,8 +82,8 @@ export function describe(
     case 'board':
       return t('history.board', {
         actor,
-        from: boardName(entry.from),
-        to: boardName(entry.to)
+        from: loggedBoard(entry.from, boardName),
+        to: loggedBoard(entry.to, boardName)
       })
     case 'completion':
       return t(
@@ -135,6 +140,7 @@ export function History({
   boardId: string
 }): ReactElement {
   const { t, lang } = useI18n()
+  const boardName = useBoardName()
   const history = useHistory(boardId, task.id)
   const board = useBoard(boardId)
   const format = momentFormat(lang)
@@ -157,7 +163,7 @@ export function History({
             }
           >
             <Typography variant="body2">
-              {`${describe(entry, board.data, t, lang)} · `}
+              {`${describe(entry, board.data, t, lang, boardName)} · `}
               <Typography
                 component="span"
                 variant="caption"

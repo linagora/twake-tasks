@@ -35,24 +35,29 @@ import {
 } from '@/ui/agenda/AgendaTaskPanel'
 import { FilterForm } from '@/ui/agenda/FiltersScreen'
 import { focusOnMount } from '@/ui/focusOnMount'
+import { useBoardName } from '@/ui/boards/BoardsScreen'
 import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
 import { formatDay } from '@/ui/boards/dueLabel'
 import { LayoutToggle } from '@/ui/boards/Layouts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useAgenda, useFilters, type AgendaView } from '@/ui/boards/queries'
-import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
+import { useI18n } from '@/ui/i18n/useI18n'
 import { NotFoundScreen } from '@/ui/shell/Problems'
 import { agendaPreset, useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
-const contextOf = (task: AgendaTask, t: I18nApi['t']): string =>
-  [
-    task.key,
-    task.boardName,
-    task.parentTitle && t('agenda.subtaskOf', { title: task.parentTitle })
-  ]
-    .filter(Boolean)
-    .join(' · ')
+function useContextOf(): (task: AgendaTask) => string {
+  const { t } = useI18n()
+  const boardName = useBoardName()
+  return task =>
+    [
+      task.key,
+      boardName({ id: task.boardId, name: task.boardName }),
+      task.parentTitle && t('agenda.subtaskOf', { title: task.parentTitle })
+    ]
+      .filter(Boolean)
+      .join(' · ')
+}
 
 export function Group({
   label,
@@ -90,7 +95,7 @@ function AgendaRow({
   showDue: boolean
   highlight: string
 }): ReactElement {
-  const { t } = useI18n()
+  const contextOf = useContextOf()
   const panel = useAgendaTaskPanel(task)
 
   return (
@@ -111,7 +116,7 @@ function AgendaRow({
           {panel.open && <AgendaTaskPanel task={task} onClose={panel.close} />}
         </>
       }
-      context={contextOf(task, t)}
+      context={contextOf(task)}
       excerpt={
         'excerpt' in task &&
         task.excerpt && <Highlight text={task.excerpt} query={highlight} />
@@ -254,12 +259,12 @@ function ByStatus({ tasks }: { tasks: AgendaTask[] }): ReactElement {
 }
 
 function FilterCard({ task }: { task: AgendaTask }): ReactElement {
-  const { t } = useI18n()
+  const contextOf = useContextOf()
   const panel = useAgendaTaskPanel(task)
   return (
     <Card label={`${task.key} ${task.title}`}>
       <Typography variant="caption" color="textSecondary">
-        {contextOf(task, t)}
+        {contextOf(task)}
       </Typography>
       <CardTitle>
         <Link
