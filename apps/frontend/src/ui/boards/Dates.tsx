@@ -1,4 +1,4 @@
-import { Icon, Pen } from '@linagora/twake-icons'
+import { Pen } from '@linagora/twake-icons'
 import {
   Box,
   Button,
@@ -14,6 +14,7 @@ import {
 import { Fragment, useId, useState, type ReactElement } from 'react'
 
 import { Row } from '@/ds/Columns'
+import { Icon } from '@/ds/Icon'
 import {
   DayCalendar,
   DayField,

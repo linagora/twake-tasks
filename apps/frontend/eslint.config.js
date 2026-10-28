@@ -41,6 +41,12 @@ const NO_STYLED = {
   message: 'No styled components outside @/ds/.'
 }
 
+const NO_RAW_ICON = {
+  name: '@linagora/twake-icons',
+  importNames: ['Icon'],
+  message: 'Use @/ds/Icon, which hides decorative icons from screen readers.'
+}
+
 const FRAMEWORKS = [
   'react',
   'react-dom',
@@ -79,7 +85,8 @@ const restrictImports = (layer, { wire = false } = {}) => {
       message: `Not allowed from ${layer}/ (hexagonal boundaries).`
     })
   }
-  return ['error', { paths: layer === 'ds' ? [] : [NO_STYLED], patterns }]
+  const paths = layer === 'ds' ? [NO_RAW_ICON] : [NO_STYLED, NO_RAW_ICON]
+  return ['error', { paths, patterns }]
 }
 
 const FORBIDDEN_SYNTAX = [
@@ -161,7 +168,12 @@ export default defineConfig(
   },
   {
     files: ['src/**/*.{ts,tsx}'],
-    rules: { 'no-restricted-imports': ['error', { patterns: [WIRE] }] }
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { paths: [NO_RAW_ICON], patterns: [WIRE] }
+      ]
+    }
   },
   ...LAYERS.map(layer => ({
     files: [`src/${layer}/**/*.{ts,tsx}`],

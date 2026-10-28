@@ -1,6 +1,8 @@
-import { Check, Icon } from '@linagora/twake-icons'
+import { Check } from '@linagora/twake-icons'
 import { Box, MenuItem, TextField } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
+
+import { Icon } from '@/ds/Icon'
 
 /** `shown` is what the field reads, picks or none. Picks keep the options' order. */
 export function MultiSelect<T extends string>({

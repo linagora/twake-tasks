@@ -1,4 +1,4 @@
-import { Task, Icon } from '@linagora/twake-icons'
+import { Task } from '@linagora/twake-icons'
 import {
   Badge,
   Box,
@@ -18,6 +18,7 @@ import {
 import { useState, type ReactElement, type ReactNode } from 'react'
 
 import { CRUMB_BAR, CrumbHostContext } from '@/ds/CrumbBar'
+import { Icon } from '@/ds/Icon'
 import { PanelHostContext } from '@/ds/SidePanel'
 
 export const TOP_BAR_HEIGHT = 64
@@ -158,7 +159,7 @@ export function BrandMark({ name }: { name: string }): ReactElement {
         color: 'primary.main'
       }}
     >
-      <Icon icon={Task} size={32} aria-hidden />
+      <Icon icon={Task} size={32} />
       <Typography
         variant="h5"
         component="span"

@@ -1,7 +1,6 @@
 import {
   CheckSquare,
   Drive,
-  Icon,
   Link as LinkIcon,
   List,
   Number as NumberIcon
@@ -25,6 +24,7 @@ import {
 import { find } from 'linkifyjs'
 
 import { EmojiPicker, type EmojiPickerOptions } from '@/ds/EmojiPicker'
+import { Icon } from '@/ds/Icon'
 
 const SCHEME_OR_PATH = /^(?:[a-z][a-z\d+.-]*:|[/#?])/i
 

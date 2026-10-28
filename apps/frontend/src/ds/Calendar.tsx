@@ -1,11 +1,4 @@
-import {
-  Bottom,
-  CalendarToday,
-  Icon,
-  Left,
-  Plus,
-  Right
-} from '@linagora/twake-icons'
+import { Bottom, CalendarToday, Left, Plus, Right } from '@linagora/twake-icons'
 import {
   Box,
   Button,
@@ -18,6 +11,8 @@ import {
   useTheme
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
+
+import { Icon } from '@/ds/Icon'
 
 /** Creating an item in a day or a tray: what its button says, and does */
 export interface CalendarAdd {

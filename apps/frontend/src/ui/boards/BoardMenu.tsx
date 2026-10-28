@@ -3,7 +3,6 @@ import {
   Check,
   Dots,
   FolderMoveto,
-  Icon,
   Pen,
   Restore,
   Stack,
@@ -24,6 +23,7 @@ import {
 import { useId, useState, type ElementType, type ReactElement } from 'react'
 
 import type { Shelf } from '@/application/boards'
+import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { Toast } from '@/ds/Toast'
 import {

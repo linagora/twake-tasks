@@ -14,7 +14,6 @@ import {
   Comment,
   Dots,
   FolderMoveto,
-  Icon,
   Label as LabelIcon,
   Link as LinkIcon,
   Moveto,
@@ -24,6 +23,7 @@ import {
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
 
 import { Card, CardTitle, LabelChip, Meta, MetaChip } from '@/ds/Columns'
+import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { SortableCard } from '@/ds/Sortable'
 import { Toast } from '@/ds/Toast'

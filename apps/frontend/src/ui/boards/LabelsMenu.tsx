@@ -1,10 +1,11 @@
-import { Icon, Pen } from '@linagora/twake-icons'
+import { Pen } from '@linagora/twake-icons'
 import { IconButton } from '@linagora/twake-mui'
 import { useRef, useState, type ReactElement, type ReactNode } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { leastUsedColor } from '@/ds/ColorPicker'
 import { LabelChip } from '@/ds/Columns'
+import { Icon } from '@/ds/Icon'
 import {
   PickerCreate,
   PickerEmpty,

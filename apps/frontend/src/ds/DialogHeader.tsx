@@ -1,6 +1,8 @@
-import { CrossMedium, Icon } from '@linagora/twake-icons'
+import { CrossMedium } from '@linagora/twake-icons'
 import { Box, IconButton, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
+
+import { Icon } from '@/ds/Icon'
 
 /** Title and close on one row, as in the dialogs of Twake Space. */
 export function DialogHeader({

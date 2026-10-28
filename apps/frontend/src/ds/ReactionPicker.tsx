@@ -1,4 +1,4 @@
-import { Icon, Plus } from '@linagora/twake-icons'
+import { Plus } from '@linagora/twake-icons'
 import { Box, IconButton, Popover, Tooltip } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 
@@ -8,6 +8,7 @@ import {
   type EmojiChoice,
   type EmojiPickerOptions
 } from '@/ds/EmojiPicker'
+import { Icon } from '@/ds/Icon'
 
 export interface ReactionPickerLabels {
   open: string

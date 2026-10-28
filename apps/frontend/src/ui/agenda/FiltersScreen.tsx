@@ -1,7 +1,6 @@
 import {
   Check,
   Filter,
-  Icon,
   Pen,
   Plus,
   Star,
@@ -28,6 +27,7 @@ import { Link as RouterLink } from 'react-router'
 import type { FilterCriteria, SavedFilter } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { FormPanel } from '@/ds/FormPanel'
+import { Icon } from '@/ds/Icon'
 import { MultiSelect } from '@/ds/MultiSelect'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import { Toast } from '@/ds/Toast'

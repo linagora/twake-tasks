@@ -8,18 +8,12 @@ import {
   useMediaQuery,
   useTheme
 } from '@linagora/twake-mui'
-import {
-  Archive,
-  Icon,
-  Mosaic,
-  Plus,
-  Star,
-  StarOutline
-} from '@linagora/twake-icons'
+import { Archive, Mosaic, Plus, Star, StarOutline } from '@linagora/twake-icons'
 import { useEffect, useId, useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
+import { Icon } from '@/ds/Icon'
 import { BoardCard, BoardChip, CardGrid, CreateCard } from '@/ds/TileGrid'
 import { Toast } from '@/ds/Toast'
 import {

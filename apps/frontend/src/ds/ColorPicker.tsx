@@ -1,4 +1,4 @@
-import { Check, Icon, Palette } from '@linagora/twake-icons'
+import { Check, Palette } from '@linagora/twake-icons'
 import {
   Avatar,
   Box,
@@ -11,6 +11,8 @@ import {
 } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 import { HexColorPicker } from 'react-colorful'
+
+import { Icon } from '@/ds/Icon'
 
 // The blue of folders, which twake-mui's swatches hold.
 const FALLBACK_COLOR = '#2D83FF'

@@ -1,4 +1,4 @@
-import { Icon, Narrow } from '@linagora/twake-icons'
+import { Narrow } from '@linagora/twake-icons'
 import {
   Box,
   Drawer,
@@ -27,6 +27,7 @@ import {
 import { createPortal } from 'react-dom'
 
 import { CRUMB_BAR } from '@/ds/CrumbBar'
+import { Icon } from '@/ds/Icon'
 
 function inField(element: Element | null): boolean {
   return element?.matches('input, textarea, [contenteditable]') ?? false

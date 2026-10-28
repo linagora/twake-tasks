@@ -1,8 +1,9 @@
-import { Icon, People } from '@linagora/twake-icons'
+import { People } from '@linagora/twake-icons'
 import { Avatar, TextField, Typography } from '@linagora/twake-mui'
 import { useRef, useState, type ReactElement, type ReactNode } from 'react'
 
 import { Highlight } from '@/ds/Highlight'
+import { Icon } from '@/ds/Icon'
 import { PickerEmpty, PickerOption, PickerPopover } from '@/ds/Picker'
 import { displayName } from '@/domain/person'
 import { matchingPeople, matchScore, suggestionOrder } from '@/ui/boards/people'

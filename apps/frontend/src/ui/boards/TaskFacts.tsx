@@ -1,8 +1,9 @@
 import { Avatar } from '@linagora/twake-mui'
-import { CalendarToday, Flag, Icon } from '@linagora/twake-icons'
+import { CalendarToday, Flag } from '@linagora/twake-icons'
 import type { ReactElement } from 'react'
 
 import { AvatarStack, MetaChip } from '@/ds/Columns'
+import { Icon } from '@/ds/Icon'
 import type { Person, Priority, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { dueLabel, shortDay, urgency } from '@/ui/boards/dueLabel'

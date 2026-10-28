@@ -1,8 +1,9 @@
-import { Bottom, Icon, Right } from '@linagora/twake-icons'
+import { Bottom, Right } from '@linagora/twake-icons'
 import { Box, ButtonBase, Paper, Typography } from '@linagora/twake-mui'
 import type { HTMLAttributes, ReactElement, ReactNode, Ref } from 'react'
 
 import { FittingChips, type FittingChip } from '@/ds/FittingChips'
+import { Icon } from '@/ds/Icon'
 
 // A list wide enough lines every row up in columns, the title keeping at
 // least 10rem; a narrower one puts the facts on a second line under the

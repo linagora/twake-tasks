@@ -4,7 +4,6 @@ import {
   Comment,
   Eye,
   EyeClosed,
-  Icon,
   People
 } from '@linagora/twake-icons'
 import { IconButton, Link, Tooltip, Typography } from '@linagora/twake-mui'
@@ -13,6 +12,7 @@ import { Link as RouterLink } from 'react-router'
 
 import type { Notification } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
+import { Icon } from '@/ds/Icon'
 import { LeadingBadge, TaskGroup, TaskRow } from '@/ds/TaskList'
 import type { Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
