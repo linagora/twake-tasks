@@ -237,7 +237,7 @@ export function Title({
             event.preventDefault()
             event.currentTarget.querySelector('textarea')?.blur()
           }
-          if (event.key === 'Escape') {
+          if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
             cancelled.current = true
             setDraft(task.title)
           }

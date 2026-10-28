@@ -251,6 +251,11 @@ describe('TaskPanel', () => {
     fireEvent.keyDown(screen.getByRole('dialog', { name: 'DES-1 Logo' }), {
       key: 'Escape'
     })
+    fireEvent.click(
+      within(
+        await screen.findByRole('dialog', { name: 'Discard your changes?' })
+      ).getByRole('button', { name: 'Discard' })
+    )
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
     })

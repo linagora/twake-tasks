@@ -49,7 +49,9 @@ function closeOnEscape(
     onClose()
     return
   }
-  if (target === document.activeElement) event.currentTarget.focus()
+  const now = document.activeElement
+  if (now === target || now === null || now === document.body)
+    event.currentTarget.focus()
 }
 
 /**
