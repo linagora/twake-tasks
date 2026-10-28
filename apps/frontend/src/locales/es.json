@@ -10,6 +10,7 @@
   "drag": {
     "card": "tarea arrastrable",
     "instructions": "Para mover una tarea, pulsa espacio o intro. Usa las flechas para moverla, espacio o intro para soltarla y escape para cancelar.",
+    "dayInstructions": "Para mover una tarea a otro día, pulsa espacio. Usa las flechas para moverla un día o una semana, espacio o intro para soltarla y escape para cancelar.",
     "picked": "%{task} seleccionada.",
     "over": "%{task} está sobre %{place}.",
     "dropped": "%{task} soltada en %{place}.",
