@@ -3,7 +3,7 @@ import { useState, type ReactElement } from 'react'
 import { PickerError } from '@/ds/Picker'
 import type { Person, Task } from '@/domain/board'
 import { PeopleMenu } from '@/ui/boards/PeopleMenu'
-import { useBoardChange } from '@/ui/boards/queries'
+import { useBoardChange } from '@/ui/queries/boards'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function AssignPicker({

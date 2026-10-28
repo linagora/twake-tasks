@@ -19,7 +19,7 @@ import {
   useAddReminder,
   useDeleteReminder,
   useReminders
-} from '@/ui/boards/queries'
+} from '@/ui/queries/reminders'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const BEFORE = ['0', '15', '60', '1440', 'at'] as const

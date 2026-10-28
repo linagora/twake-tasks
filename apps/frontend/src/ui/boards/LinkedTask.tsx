@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactElement } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 
 import { type Board } from '@/domain/board'
-import { useHiddenTasks } from '@/ui/boards/queries'
+import { useHiddenTasks } from '@/ui/queries/boards'
 import { LinkedTaskPanel } from '@/ui/boards/TaskPanel'
 import { lineage } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'

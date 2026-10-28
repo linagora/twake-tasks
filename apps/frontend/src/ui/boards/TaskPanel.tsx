@@ -37,12 +37,12 @@ import { Comments } from '@/ui/boards/Comments'
 import { CopyLinkButton } from '@/ui/boards/CopyLink'
 import { History } from '@/ui/boards/History'
 import { FollowButton } from '@/ui/boards/Notifications'
+import { useBoard } from '@/ui/queries/boards'
 import {
-  useBoard,
   useCreateTask,
   useDescription,
   useSetDescription
-} from '@/ui/boards/queries'
+} from '@/ui/queries/tasks'
 import { Subtasks } from '@/ui/boards/Subtasks'
 import { TaskBreadcrumb } from '@/ui/boards/TaskBreadcrumb'
 import { TaskProperties, Title } from '@/ui/boards/TaskProperties'

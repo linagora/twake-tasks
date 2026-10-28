@@ -25,12 +25,8 @@ import {
 import { ROLES, type Board, type Role } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import {
-  useBoardChange,
-  useBoards,
-  usePeopleSuggestions,
-  useSharing
-} from '@/ui/boards/queries'
+import { useBoardChange, useBoards } from '@/ui/queries/boards'
+import { usePeopleSuggestions, useSharing } from '@/ui/queries/sharing'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 

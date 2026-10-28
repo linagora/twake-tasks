@@ -42,10 +42,10 @@ import {
   useDeleteFilterNow,
   useFilters,
   useUnpinDeletedFilter,
-  useLabelNames,
   useSetFilterFavorite,
   useUpdateFilter
-} from '@/ui/boards/queries'
+} from '@/ui/queries/filters'
+import { useLabelNames } from '@/ui/queries/labels'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'

@@ -20,11 +20,8 @@ import { momentFormat, relativeMoment } from '@/ui/boards/dueLabel'
 import { useBoardName, type BoardName } from '@/ui/boards/BoardsScreen'
 import { describe } from '@/ui/boards/History'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import {
-  useFollowing,
-  useNotifications,
-  useSetFollowing
-} from '@/ui/boards/queries'
+import { useNotifications } from '@/ui/queries/notifications'
+import { useFollowing, useSetFollowing } from '@/ui/queries/tasks'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
 import { useI18n, type I18nApi } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'

@@ -10,7 +10,7 @@ import { useRef, useState, type ReactElement } from 'react'
 import { ColumnAddButton } from '@/ds/Columns'
 import { Icon } from '@/ds/Icon'
 import { Inline } from '@/ds/SidePanel'
-import { useCreateTask } from '@/ui/boards/queries'
+import { useCreateTask } from '@/ui/queries/tasks'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 

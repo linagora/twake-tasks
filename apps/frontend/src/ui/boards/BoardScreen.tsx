@@ -15,7 +15,7 @@ import {
   useArchivesOrigin,
   useBoardsOrigin
 } from '@/ui/boards/Crumbs'
-import { useBoardOf, useListedBoard } from '@/ui/boards/queries'
+import { useBoardOf, useListedBoard } from '@/ui/queries/boards'
 import { markBoardSeen } from '@/ui/boards/seenBoards'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'

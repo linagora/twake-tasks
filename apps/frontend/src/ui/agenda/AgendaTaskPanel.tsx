@@ -3,12 +3,8 @@ import { useSearchParams } from 'react-router'
 
 import type { AgendaTask } from '@/application/boards'
 import { isEditable } from '@/domain/board'
-import {
-  useBoard,
-  useBoards,
-  useCachedBoard,
-  useRefreshLists
-} from '@/ui/boards/queries'
+import { useRefreshLists } from '@/ui/queries/agenda'
+import { useBoard, useBoards, useCachedBoard } from '@/ui/queries/boards'
 import { TaskPanel } from '@/ui/boards/TaskPanel'
 import { useTaskPanel, type TaskPanelState } from '@/ui/boards/useTaskPanel'
 

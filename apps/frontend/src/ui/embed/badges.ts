@@ -2,7 +2,8 @@ import type { Badge, TwakeSpaceConnection } from '@linagora/twake-embed'
 import { useEffect, useRef } from 'react'
 
 import type { Project, ProjectUnread } from '@/application/boards'
-import { useProjects, useUnreadByProject } from '@/ui/boards/queries'
+import { useProjects } from '@/ui/queries/boards'
+import { useUnreadByProject } from '@/ui/queries/notifications'
 
 // What TwakeSpace accepts in one snapshot
 const MAX_BADGES = 1000

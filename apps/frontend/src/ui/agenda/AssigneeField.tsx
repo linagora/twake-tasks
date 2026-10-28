@@ -8,7 +8,7 @@ import { PickerEmpty, PickerOption, PickerPopover } from '@/ds/Picker'
 import { displayName } from '@/domain/person'
 import { matchingPeople, matchScore, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { usePeople } from '@/ui/boards/queries'
+import { usePeople } from '@/ui/queries/sharing'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 

@@ -15,12 +15,8 @@ import { defaultSection } from '@/application/newTask'
 import { isEditable, type BoardSummary, type Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { useBoardName } from '@/ui/boards/BoardsScreen'
-import {
-  useBoard,
-  useBoards,
-  usePreviewTransfer,
-  useTransferTask
-} from '@/ui/boards/queries'
+import { useBoard, useBoards } from '@/ui/queries/boards'
+import { usePreviewTransfer, useTransferTask } from '@/ui/queries/tasks'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 function SectionSelect({

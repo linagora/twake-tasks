@@ -32,7 +32,7 @@ import {
   isRenamable,
   type Board
 } from '@/domain/board'
-import { useSetBoardArchived, useSetLayout } from '@/ui/boards/queries'
+import { useSetBoardArchived, useSetLayout } from '@/ui/queries/boards'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
