@@ -30,7 +30,6 @@ export const boardRename = z.object({ name: boardName })
 
 export const keyPrefixParams = z.object({ keyPrefix })
 
-// `suggestion` is the prefix asked for when it is free, else a free one close to it.
 export const keyPrefixResponse = z.object({
   available: z.boolean(),
   suggestion: keyPrefix

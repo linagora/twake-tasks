@@ -1,10 +1,8 @@
--- Key prefixes become unique in an organization, Inboxes aside, before the
--- index goes in. A board using the prefix of an older board of its
--- organization takes the first free PREFIX2, PREFIX3…, cut to ten characters,
--- and its tasks keep their former keys, which search still finds. Forced
--- row-level security would hide every row from the owner, so it is lifted
--- around the renames. A new prefix is no change of the task: no history entry
--- and no live event.
+-- A board reusing the prefix of an older board of its organization takes the
+-- first free PREFIX2, PREFIX3…, and its tasks keep their former keys for
+-- search. Forced row-level security would hide every row from the owner, so
+-- it is lifted around the renames. A new prefix is no change of the task:
+-- no history entry and no live event.
 DO $$
 BEGIN
   IF NOT EXISTS (
