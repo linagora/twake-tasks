@@ -20,6 +20,8 @@ export interface Job {
   kind: string
   /** A job scheduled again under the same key replaces the waiting one. */
   key?: string
+  /** The task the job is about, whose purge removes the job. */
+  taskId?: string
   payload: unknown
   runAt: Date
 }

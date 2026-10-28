@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql as raw } from 'drizzle-orm'
+import { and, eq, inArray, or, sql as raw } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
 import { jobs } from '../../scheduler/schema.ts'
@@ -188,6 +188,54 @@ describe('archive and trash', () => {
     await db.transaction(tx => purgeTask(job?.payload, tx))
 
     expect(await ofThese()).toEqual([])
+  })
+
+  it('purges every job of a trashed task and its sub-tasks', async () => {
+    const owner = aUser()
+    const colleague = aUser({ organizationId: owner.organizationId })
+    const { boardId, ids } = await aBoard(owner, ['Logo'])
+    const [logo = ''] = ids
+    await joinBoard(db, owner, boardId, colleague, 'editor')
+    const sketch = (
+      await api
+        .as(owner)
+        .post(`/boards/${boardId}/tasks`, { parentId: logo, title: 'Sketch' })
+    ).json<{ id: string }>().id
+    await api.as(owner).put(`/boards/${boardId}/tasks/${logo}/assignees`, {
+      userIds: [colleague.userId]
+    })
+    await api.as(owner).delete(`/boards/${boardId}/tasks/${sketch}`)
+    await api.as(owner).delete(`/boards/${boardId}/tasks/${logo}`)
+    const ofThese = await db
+      .select({ id: jobs.id, kind: jobs.kind })
+      .from(jobs)
+      .where(
+        or(
+          inArray(raw`${jobs.payload}->>'taskId'`, [logo, sketch]),
+          raw`${jobs.payload}->>'userId' = ${colleague.userId}`
+        )
+      )
+    expect(new Set(ofThese.map(job => job.kind))).toEqual(
+      new Set(['notification_email', PURGE_JOB])
+    )
+
+    const [job] = await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.key, `${PURGE_JOB}:${logo}`))
+    await db.transaction(tx => purgeTask(job?.payload, tx))
+
+    expect(
+      await db
+        .select()
+        .from(jobs)
+        .where(
+          inArray(
+            jobs.id,
+            ofThese.map(job => job.id)
+          )
+        )
+    ).toEqual([])
   })
 
   it('moves a task between visible neighbours across a hidden one', async () => {
