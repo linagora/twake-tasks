@@ -55,7 +55,15 @@ describe('Dates', () => {
     Object.assign(logo, { dueDate: '2026-11-10', deadline: '2026-11-20' })
     const { panel, editor } = await openDates(board.id, boardsApi)
 
-    fireEvent.click(editor.getByRole('gridcell', { name: '2' }))
+    expect(
+      editor.getByRole('heading', { level: 3, name: 'Due date' })
+    ).toBeVisible()
+    fireEvent.click(
+      within(editor.getByRole('group', { name: 'Due date' })).getByRole(
+        'gridcell',
+        { name: '2' }
+      )
+    )
     change(
       within(editor.getByRole('group', { name: 'Time' })).getByDisplayValue(''),
       '09:30'

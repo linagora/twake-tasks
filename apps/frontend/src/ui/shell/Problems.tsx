@@ -24,6 +24,7 @@ export function NotFoundScreen({
     <main className="u-ph-2 u-pt-half u-pb-2">
       <PageCrumbs origin={origin} current={t('problems.notFound')} />
       <EmptyState
+        heading
         icon={Compass}
         title={title ?? t('problems.notFound')}
         text={t('problems.notFoundHint')}
@@ -53,6 +54,7 @@ export function CrashScreen(): ReactElement {
   return (
     <main className="u-p-2">
       <EmptyState
+        heading
         tone="error"
         icon={WarningCircle}
         title={t('problems.crash')}

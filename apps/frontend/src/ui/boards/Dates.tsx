@@ -1,5 +1,6 @@
 import { Icon, Pen } from '@linagora/twake-icons'
 import {
+  Box,
   Button,
   Checkbox,
   Chip,
@@ -10,7 +11,7 @@ import {
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { Fragment, useState, type ReactElement } from 'react'
+import { Fragment, useId, useState, type ReactElement } from 'react'
 
 import { Row } from '@/ds/Columns'
 import {
@@ -182,6 +183,7 @@ export function DatesEditor({
     setDraft(previous => ({ ...previous, ...changes }))
   }
   const deadlineTooEarly = deadlineBeforeDue(draft.dueDate, draft.deadline)
+  const dueId = useId()
   const picks = [
     { label: t('dates.today'), day: inDays(0) },
     { label: t('dates.tomorrow'), day: inDays(1) },
@@ -198,7 +200,9 @@ export function DatesEditor({
         save.mutate(draft, { onSuccess: onClose })
       }}
     >
-      <Typography variant="subtitle2">{t('dates.dueDate')}</Typography>
+      <Typography variant="subtitle2" component="h3" id={dueId}>
+        {t('dates.dueDate')}
+      </Typography>
       <QuickPicks>
         {picks.map(pick => (
           <Chip
@@ -212,12 +216,14 @@ export function DatesEditor({
           />
         ))}
       </QuickPicks>
-      <DayCalendar
-        value={draft.dueDate}
-        onChange={dueDate => {
-          set({ dueDate })
-        }}
-      />
+      <Box role="group" aria-labelledby={dueId}>
+        <DayCalendar
+          value={draft.dueDate}
+          onChange={dueDate => {
+            set({ dueDate })
+          }}
+        />
+      </Box>
       <TimeField
         label={t('dates.time')}
         value={draft.dueTime}

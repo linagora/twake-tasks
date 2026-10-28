@@ -131,10 +131,11 @@ export function BoardScreen({
           {/* Once loaded, the board titles itself with its breadcrumb. */}
           {back && !(shown && !waiting) && (
             // The size of the board's own title, so that nothing moves once it loads.
-            <PageCrumbs origin={origin} current={name} heading />
+            <PageCrumbs origin={origin} current={name} heading={!missing} />
           )}
           {missing && (
             <EmptyState
+              heading
               icon={Compass}
               title={t('board.notFound')}
               text={t('problems.notFoundHint')}

@@ -103,6 +103,7 @@ export function EmbedProjectScreen(): ReactElement {
     <main>
       {known === false && (
         <EmptyState
+          heading
           icon={Compass}
           title={t('boards.projectNotFound')}
           text={t('problems.notFoundHint')}

@@ -736,8 +736,12 @@ describe('BoardScreen', () => {
     renderRoute('/boards/00000000-0000-7000-8000-000000000000', { boardsApi })
 
     expect(
-      await screen.findByText("This board doesn't exist, or you can't open it.")
+      await screen.findByRole('heading', {
+        level: 1,
+        name: "This board doesn't exist, or you can't open it."
+      })
     ).toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     expect(
       within(
         screen.getByRole('navigation', { name: 'Where the page is' })
