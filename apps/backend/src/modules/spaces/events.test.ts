@@ -5,7 +5,7 @@ import { inject } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { MalformedEventError, NotYetKnownError } from '../../events/router.ts'
 import { eq, sql as raw } from 'drizzle-orm'
-import { accountRoutes } from '../boards/accounts.ts'
+import { accountRoutes } from '../accounts/accounts.ts'
 import { asOrganization, createDb } from '../../infra/db.ts'
 import { boards, projectMembers, projects } from '../boards/schema.ts'
 import {

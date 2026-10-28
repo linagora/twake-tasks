@@ -20,7 +20,7 @@ import { generateNKeysBetween } from 'fractional-indexing'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { userSettings } from '../settings/schema.ts'
-import { describeTasks, shown } from '../tasks/describe.ts'
+import { describeTasks, shown } from './describe.ts'
 import {
   accessibleBoards,
   claimInvites,

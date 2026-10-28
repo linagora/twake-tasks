@@ -25,8 +25,8 @@ import {
   startConsumer,
   startPublisher
 } from './infra/rabbitmq.ts'
+import { accountRoutes } from './modules/accounts/accounts.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
-import { accountRoutes } from './modules/boards/accounts.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
 import {
   emailInvite,

@@ -7,8 +7,8 @@ import {
   type Handler
 } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
-import { describeTasks } from '../tasks/describe.ts'
 import { membersOf, roleOn } from './access.ts'
+import { describeTasks } from './describe.ts'
 import { labelsOn } from './labels.ts'
 import { boards, projects, tasks } from './schema.ts'
 import {

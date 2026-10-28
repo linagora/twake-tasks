@@ -16,10 +16,10 @@ import {
   startApp,
   type TestUser
 } from '../../testing/app.ts'
+import { inviteEmails, notifications, projects } from '../boards/schema.ts'
 import { keepSettings } from '../settings/events.ts'
 import { userSettings } from '../settings/schema.ts'
 import { accountRoutes } from './accounts.ts'
-import { inviteEmails, notifications, projects } from './schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))

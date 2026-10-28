@@ -16,9 +16,7 @@ import {
 } from '../../events/router.ts'
 import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
 import { jobs } from '../../scheduler/schema.ts'
-import { userSettings } from '../settings/schema.ts'
-import { spaces } from '../spaces/schema.ts'
-import { bumpProjects } from './access.ts'
+import { bumpProjects } from '../boards/access.ts'
 import {
   commentReactions,
   inviteEmails,
@@ -29,7 +27,9 @@ import {
   taskAssignees,
   taskFollowers,
   taskReminders
-} from './schema.ts'
+} from '../boards/schema.ts'
+import { userSettings } from '../settings/schema.ts'
+import { spaces } from '../spaces/schema.ts'
 
 // An unreadable time must not drop a deletion, which then counts from now.
 const timestamp = z.iso
