@@ -103,10 +103,7 @@ const fold = (text: string): string =>
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
     .toLowerCase()
-    .replace(
-      /[æœßøłđðþħıŀﬀﬁﬂﬃﬄ]/gu,
-      letter => UNACCENT_LETTERS[letter] ?? letter
-    )
+    .replace(/\P{ASCII}/gu, letter => UNACCENT_LETTERS[letter] ?? letter)
 
 const accentless = (column: SQL | AnyColumn, pattern: string) =>
   sql`unaccent(${column}) ilike unaccent(${pattern})`
