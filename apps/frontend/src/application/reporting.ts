@@ -15,11 +15,14 @@ export interface FeedbackWidget {
 export interface Reporting {
   /** Sends an error the app caught at the edge of a screen or of the root. */
   reportCrash: (error: unknown, componentStack: string | null) => void
+  /** Sends where a response drifts from the contract: paths, never values. */
+  reportApiMismatch: (response: string, paths: string[]) => void
   /** Null when feedback is not turned on. */
   feedback: FeedbackWidget | null
 }
 
 export const noReporting: Reporting = {
   reportCrash: () => undefined,
+  reportApiMismatch: () => undefined,
   feedback: null
 }

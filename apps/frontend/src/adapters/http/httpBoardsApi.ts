@@ -1,3 +1,4 @@
+import { boardResponse } from '@twake-tasks/api-contract'
 import type * as wire from '@twake-tasks/api-contract'
 import type { z } from 'zod'
 
@@ -15,6 +16,7 @@ import {
   type HistoryEntry,
   type SearchResult
 } from '@/application/boards'
+import { noReporting, type Reporting } from '@/application/reporting'
 import type { BoardSummary, Person } from '@/domain/board'
 
 export type Send = (request: Request) => Promise<Response>
@@ -76,7 +78,11 @@ async function readVersions(
   }
 }
 
-export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
+export function httpBoardsApi(
+  baseUrl: string,
+  send: Send,
+  reportMismatch: Reporting['reportApiMismatch'] = noReporting.reportApiMismatch
+): BoardsApi {
   async function call<T>(
     method: string,
     path: string,
@@ -97,6 +103,38 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       throw new ApiError(response.status, await errorCode(response))
     }
     return (response.status === 204 ? undefined : await response.json()) as T
+  }
+
+  const reported = new Set<string>()
+
+  // The backend is released apart from this app: a response that drifts from
+  // the contract is reported, once, and still used as it came.
+  async function parsed<S extends z.ZodType>(
+    name: string,
+    schema: S,
+    method: string,
+    path: string,
+    body?: object
+  ) {
+    const response = await call<z.output<S>>(method, path, body)
+    const result = schema.safeParse(response)
+    if (result.success) return result.data
+    // Array indexes become `*` so a field drifted in many tasks reports once.
+    const paths = [
+      ...new Set(
+        result.error.issues.map(issue =>
+          issue.path
+            .map(key => (typeof key === 'number' ? '*' : String(key)))
+            .join('.')
+        )
+      )
+    ]
+    const mismatch = `${name} ${paths.join(' ')}`
+    if (!reported.has(mismatch)) {
+      reported.add(mismatch)
+      reportMismatch(name, paths)
+    }
+    return response
   }
 
   function watch(path: string, onVersion: (version: number) => void) {
@@ -178,11 +216,18 @@ export function httpBoardsApi(baseUrl: string, send: Send): BoardsApi {
       (await call<{ tasks: AgendaTask[] }>('GET', '/my-tasks')).tasks,
     listBoards: async () =>
       (await call<{ boards: BoardSummary[] }>('GET', '/boards')).boards,
-    getBoard: boardId => call('GET', route`/boards/${boardId}`),
+    getBoard: boardId =>
+      parsed('board', boardResponse, 'GET', route`/boards/${boardId}`),
     watchBoard: (boardId, onVersion) =>
       watch(route`/boards/${boardId}/events`, onVersion),
     createBoard: board =>
-      call('POST', '/boards', board satisfies Body<'newBoard'>),
+      parsed(
+        'board',
+        boardResponse,
+        'POST',
+        '/boards',
+        board satisfies Body<'newBoard'>
+      ),
     transferTask: (boardId, taskId, to) =>
       call(
         'POST',

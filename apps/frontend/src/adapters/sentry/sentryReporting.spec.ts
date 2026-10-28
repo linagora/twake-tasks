@@ -18,6 +18,7 @@ const handler = vi.fn()
 
 vi.mock('@sentry/react', () => ({
   init: vi.fn(),
+  captureMessage: vi.fn(),
   reactErrorHandler: vi.fn(() => handler)
 }))
 
@@ -109,6 +110,28 @@ describe('startSentry', () => {
     expect(handler).toHaveBeenCalledWith(error, {
       componentStack: '\n at Board'
     })
+  })
+
+  it('reports an API mismatch as a warning tagged api-contract, with the paths only', () => {
+    const reporting = startSentry(
+      {
+        dsn: 'https://key@errors.example.com/1',
+        environment: undefined,
+        feedback: false
+      },
+      '1.2.3'
+    )
+
+    reporting.reportApiMismatch('board', ['role', 'tasks.0.title'])
+
+    expect(Sentry.captureMessage).toHaveBeenCalledExactlyOnceWith(
+      'A board response does not match the API contract',
+      {
+        level: 'warning',
+        tags: { 'api-contract': 'board' },
+        extra: { paths: ['role', 'tasks.0.title'] }
+      }
+    )
   })
 
   it('adds the shared feedback integration, with its defaults, when turned on', () => {

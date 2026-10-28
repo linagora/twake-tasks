@@ -36,3 +36,9 @@ export const sectionMove = z.object({
 export const sectionDeletion = z.object({
   tasksTo: z.uuid().nullable().optional()
 })
+
+export const section = z.object({
+  id: z.string(),
+  name: z.string(),
+  category
+})

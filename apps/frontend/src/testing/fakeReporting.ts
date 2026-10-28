@@ -17,6 +17,7 @@ export function fakeReporting({
   const setColorScheme = vi.fn<FeedbackWidget['setColorScheme']>()
   return {
     reportCrash: vi.fn<Reporting['reportCrash']>(),
+    reportApiMismatch: vi.fn<Reporting['reportApiMismatch']>(),
     feedback: feedback ? { attach, setColorScheme } : null,
     attach,
     setColorScheme,

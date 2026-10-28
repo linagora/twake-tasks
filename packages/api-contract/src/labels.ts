@@ -22,3 +22,9 @@ export const labelChanges = z
   .refine(changes => Object.keys(changes).length > 0)
 
 export const labeling = z.object({ labelIds: z.array(z.uuid()).max(50) })
+
+export const label = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.string().nullable()
+})

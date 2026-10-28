@@ -1,9 +1,6 @@
 import { z } from 'zod'
 import { boardParams } from './boards.ts'
-
-export const MEMBER_ROLES = ['viewer', 'editor', 'admin'] as const
-
-export const role = z.enum(MEMBER_ROLES)
+import { role } from './people.ts'
 
 export const newInvite = z.object({
   email: z.email().max(254).toLowerCase(),
