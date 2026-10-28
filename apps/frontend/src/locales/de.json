@@ -310,6 +310,8 @@
     "deadlineTooEarly": "Die Frist darf nicht vor dem Fälligkeitsdatum liegen.",
     "duration": "Dauer",
     "unit": "Einheit",
+    "durationUnit": "Einheit der Dauer",
+    "repeatUnit": "Einheit der Wiederholung",
     "unitMinutes": "Minuten",
     "unitDays": "Tage",
     "minutes": "%{amount} Min.",

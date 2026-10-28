@@ -124,6 +124,13 @@ describe('NewTaskDialog', () => {
     expect(dialog.queryByText("The title can't be empty.")).toBe(null)
   })
 
+  it('keeps the title label as a tooltip once something is typed', async () => {
+    const { title } = await openNewTask()
+    fireEvent.change(title(), { target: { value: 'Logo' } })
+
+    expect(title()).toHaveAttribute('title', 'Title')
+  })
+
   it('leaves the focus in the description while it is typed', async () => {
     const { dialog, title } = await openNewTask()
     fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))

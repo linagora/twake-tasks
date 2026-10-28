@@ -310,6 +310,8 @@
     "deadlineTooEarly": "Hạn chót không thể sớm hơn ngày đến hạn.",
     "duration": "Thời lượng",
     "unit": "Đơn vị",
+    "durationUnit": "Đơn vị thời lượng",
+    "repeatUnit": "Đơn vị lặp lại",
     "unitMinutes": "Phút",
     "unitDays": "Ngày",
     "minutes": "%{amount} phút",

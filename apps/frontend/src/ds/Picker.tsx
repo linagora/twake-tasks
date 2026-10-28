@@ -141,6 +141,7 @@ export function PickerPopover({
               inputRef: searchRef,
               inputProps: {
                 'aria-label': searchLabel,
+                title: searchLabel,
                 maxLength: 50,
                 onKeyDown: onSearchKeyDown
               }

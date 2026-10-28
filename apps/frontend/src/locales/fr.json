@@ -310,6 +310,8 @@
     "deadlineTooEarly": "La date limite ne peut pas précéder la date d'échéance.",
     "duration": "Durée",
     "unit": "Unité",
+    "durationUnit": "Unité de durée",
+    "repeatUnit": "Unité de répétition",
     "unitMinutes": "Minutes",
     "unitDays": "Jours",
     "minutes": "%{amount} min",

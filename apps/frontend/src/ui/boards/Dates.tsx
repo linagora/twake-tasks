@@ -73,6 +73,16 @@ const RECURRENCE_UNITS: Recurrence['unit'][] = [
   'years'
 ]
 
+// Both unit fields show "Unit"; MUI names the select and its listbox after
+// that label unless aria-labelledby is cleared.
+const unitName = (name: string) => {
+  const named = { 'aria-labelledby': undefined, 'aria-label': name }
+  return {
+    SelectDisplayProps: named,
+    MenuProps: { slotProps: { list: named } }
+  }
+}
+
 function Summary({ task }: { task: Task }): ReactElement {
   const { t, lang } = useI18n()
   const due = dueLabel(task, lang)
@@ -274,6 +284,7 @@ export function DatesEditor({
             set({ unit: event.target.value as Duration['unit'] })
           }}
           size="small"
+          slotProps={{ select: unitName(t('dates.durationUnit')) }}
         >
           <MenuItem value="minutes">{t('dates.unitMinutes')}</MenuItem>
           <MenuItem value="days">{t('dates.unitDays')}</MenuItem>
@@ -300,6 +311,7 @@ export function DatesEditor({
             set({ recurUnit: event.target.value as Recurrence['unit'] })
           }}
           size="small"
+          slotProps={{ select: unitName(t('dates.repeatUnit')) }}
         >
           {RECURRENCE_UNITS.map(unit => (
             <MenuItem key={unit} value={unit}>
