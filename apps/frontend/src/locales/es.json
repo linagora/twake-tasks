@@ -92,6 +92,8 @@
     "create": "Crear",
     "close": "Cerrar",
     "keyPrefixTaken": "Otro tablero ya usa %{prefix}.",
+    "keyPrefixProposed": "%{prefix} ya está en uso, así que el tablero usa %{suggestion}.",
+    "useKeyPrefix": "Usar %{prefix}",
     "failed": "No se pudo crear el tablero."
   },
   "labelDialog": {

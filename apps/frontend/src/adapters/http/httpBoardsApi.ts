@@ -228,6 +228,13 @@ export function httpBoardsApi(
         '/boards',
         board satisfies Body<'newBoard'>
       ),
+    checkKeyPrefix: keyPrefix =>
+      parsed(
+        'key prefix',
+        wire.keyPrefixResponse,
+        'GET',
+        route`/key-prefixes/${keyPrefix}`
+      ),
     transferTask: (boardId, taskId, to) =>
       parsed(
         'transfer',

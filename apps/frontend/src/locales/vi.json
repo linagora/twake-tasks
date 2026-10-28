@@ -92,6 +92,8 @@
     "create": "Tạo",
     "close": "Đóng",
     "keyPrefixTaken": "Một bảng khác đã dùng %{prefix}.",
+    "keyPrefixProposed": "%{prefix} đã được dùng, nên bảng sẽ dùng %{suggestion}.",
+    "useKeyPrefix": "Dùng %{prefix}",
     "failed": "Không thể tạo bảng."
   },
   "labelDialog": {

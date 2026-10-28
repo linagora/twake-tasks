@@ -92,6 +92,8 @@
     "create": "Crea",
     "close": "Chiudi",
     "keyPrefixTaken": "Un’altra bacheca usa già %{prefix}.",
+    "keyPrefixProposed": "%{prefix} è già in uso, quindi la bacheca usa %{suggestion}.",
+    "useKeyPrefix": "Usa %{prefix}",
     "failed": "Impossibile creare la bacheca."
   },
   "labelDialog": {

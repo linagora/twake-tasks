@@ -92,6 +92,8 @@
     "create": "Créer",
     "close": "Fermer",
     "keyPrefixTaken": "Un autre tableau utilise déjà %{prefix}.",
+    "keyPrefixProposed": "%{prefix} est déjà utilisé, le tableau prend donc %{suggestion}.",
+    "useKeyPrefix": "Utiliser %{prefix}",
     "failed": "Le tableau n'a pas pu être créé."
   },
   "labelDialog": {

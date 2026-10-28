@@ -92,6 +92,8 @@
     "create": "Создать",
     "close": "Закрыть",
     "keyPrefixTaken": "Префикс %{prefix} уже занят другой доской.",
+    "keyPrefixProposed": "Префикс %{prefix} уже занят, поэтому доска получит %{suggestion}.",
+    "useKeyPrefix": "Использовать %{prefix}",
     "failed": "Не удалось создать доску."
   },
   "labelDialog": {
