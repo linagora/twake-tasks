@@ -553,6 +553,7 @@
     "empty": "No hay notificaciones",
     "emptyHint": "Sigue una tarea para enterarte aquí de sus cambios.",
     "loadFailed": "No se pudieron cargar las notificaciones.",
+    "markAllRead": "Marcar todo como leído",
     "follow": "Seguir",
     "followingTask": "Siguiendo",
     "unfollow": "Dejar de seguir",

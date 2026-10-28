@@ -288,6 +288,57 @@ describe('following and notifications', () => {
     expect(notification?.readAt).not.toBeNull()
   })
 
+  async function twoUnread() {
+    const team = await aTeam()
+    const boardPath = team.path.slice(0, team.path.lastIndexOf('/tasks/'))
+    const other = (
+      await api
+        .as(team.alice)
+        .post(`${boardPath}/tasks`, { sectionId: null, title: 'Colors' })
+    ).json<{ id: string }>()
+    await api.as(team.bob).patch(team.path, { title: 'New logo' })
+    await api
+      .as(team.bob)
+      .patch(`${boardPath}/tasks/${other.id}`, { title: 'New colors' })
+    const [newer, older] = await team.inbox(team.alice)
+    if (!newer || !older) throw new Error('two notifications expected')
+    const unreadIds = async () =>
+      (await team.inbox(team.alice)).flatMap(({ id, readAt }) =>
+        readAt === null ? [id] : []
+      )
+    return { ...team, newer, older, unreadIds }
+  }
+
+  it('marks one notification read, and leaves the others unread', async () => {
+    const { alice, newer, older, unreadIds } = await twoUnread()
+
+    expect(
+      (await api.as(alice).post(`/notifications/${older.id}/read`, {}))
+        .statusCode
+    ).toBe(204)
+
+    expect(await unreadIds()).toEqual([newer.id])
+  })
+
+  it('refuses to mark read the notification of someone else', async () => {
+    const { bob, older } = await twoUnread()
+
+    expect(
+      (await api.as(bob).post(`/notifications/${older.id}/read`, {})).statusCode
+    ).toBe(404)
+  })
+
+  it('marks read the notifications listed, not the ones received since', async () => {
+    const { alice, newer, older, unreadIds } = await twoUnread()
+
+    expect(
+      (await api.as(alice).post('/notifications/read', { ids: [older.id] }))
+        .statusCode
+    ).toBe(204)
+
+    expect(await unreadIds()).toEqual([newer.id])
+  })
+
   describe('unread counts by project', () => {
     const unread = async (user: TestUser) =>
       (await api.as(user).get('/notifications/unread')).json<{

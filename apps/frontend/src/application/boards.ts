@@ -330,7 +330,8 @@ export interface BoardsApi {
   ) => Promise<void>
   listNotifications: () => Promise<Notification[]>
   unreadByProject: () => Promise<ProjectUnread[]>
-  markNotificationsRead: () => Promise<void>
+  markNotificationsRead: (ids: string[]) => Promise<void>
+  markNotificationRead: (notificationId: string) => Promise<void>
   setAssignees: (
     boardId: string,
     taskId: string,

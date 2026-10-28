@@ -203,7 +203,7 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
       })
     },
 
-    markAllRead(identity: Identity) {
+    markAllRead(identity: Identity, ids?: string[]) {
       return writeOrRefuse(db, identity, async tx => {
         await tx
           .update(notifications)
@@ -212,9 +212,28 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
             and(
               eq(notifications.userId, identity.userId),
               isNull(notifications.readAt),
+              openableBy(tx, identity.userId),
+              ids && inArray(notifications.id, ids)
+            )
+          )
+        return null
+      })
+    },
+
+    markRead(identity: Identity, notificationId: string) {
+      return writeOrRefuse(db, identity, async tx => {
+        const [marked] = await tx
+          .update(notifications)
+          .set({ readAt: sql`coalesce(${notifications.readAt}, now())` })
+          .where(
+            and(
+              eq(notifications.id, notificationId),
+              eq(notifications.userId, identity.userId),
               openableBy(tx, identity.userId)
             )
           )
+          .returning({ id: notifications.id })
+        if (!marked) throw new Refused('not_found')
         return null
       })
     },

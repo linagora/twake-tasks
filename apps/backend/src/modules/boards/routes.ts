@@ -22,6 +22,8 @@ import {
   newReminder,
   newSection,
   newTask,
+  notificationParams,
+  notificationsRead,
   peopleQuery,
   reactionEmoji,
   reactionParams,
@@ -467,8 +469,18 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/notifications/read',
+      body: notificationsRead,
       status: 204,
-      handler: ({ identity }) => reminderStore.markAllRead(identity)
+      handler: ({ identity, body }) =>
+        reminderStore.markAllRead(identity, body?.ids)
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/notifications/:notificationId/read',
+      params: notificationParams,
+      status: 204,
+      handler: ({ identity, params }) =>
+        reminderStore.markRead(identity, params.notificationId)
     }),
     defineRoute({
       method: 'GET',

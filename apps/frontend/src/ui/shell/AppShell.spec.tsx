@@ -462,22 +462,33 @@ describe('AppShell', () => {
     })
   })
 
-  it('counts unread notifications until they are opened', async () => {
+  it('counts unread notifications until they are read, not when the page is visited', async () => {
     const boardsApi = fakeBoardsApi()
     boardsApi.notifications.push(aNotification({ reason: 'assigned' }))
     renderRoute('/today', { boardsApi })
 
     const nav = within(await screen.findByRole('list', { name: 'Main menu' }))
-    const link = await nav.findByRole('link', {
-      name: 'Notifications, 1 unread'
+    fireEvent.click(
+      await nav.findByRole('link', { name: 'Notifications, 1 unread' })
+    )
+    const markAll = await screen.findByRole('button', {
+      name: 'Mark all as read'
     })
-    expect(boardsApi.markNotificationsRead).not.toHaveBeenCalled()
+    await act(() => Promise.resolve())
+    expect(
+      nav.getByRole('link', { name: 'Notifications, 1 unread' })
+    ).toBeInTheDocument()
 
-    fireEvent.click(link)
+    fireEvent.click(markAll)
 
     expect(
       await nav.findByRole('link', { name: 'Notifications' })
     ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: 'Mark all as read' })
+      ).toBeNull()
+    })
   })
 
   it('follows the UI language in the header, page language and title', async () => {

@@ -643,12 +643,21 @@ export function fakeBoardsApi(boards: Board[] = []) {
         return [...counts].map(([projectId, count]) => ({ projectId, count }))
       })
     ),
-    markNotificationsRead: vi.fn<BoardsApi['markNotificationsRead']>(() =>
+    markNotificationsRead: vi.fn<BoardsApi['markNotificationsRead']>(ids =>
       Promise.resolve().then(() => {
         for (const notification of notifications) {
+          if (!ids.includes(notification.id)) continue
           notification.readAt ??= new Date().toISOString()
         }
       })
+    ),
+    markNotificationRead: vi.fn<BoardsApi['markNotificationRead']>(
+      notificationId =>
+        Promise.resolve().then(() => {
+          const opened = notifications.find(({ id }) => id === notificationId)
+          if (!opened) throw new Error('not_found')
+          opened.readAt ??= new Date().toISOString()
+        })
     ),
     listComments: vi.fn<BoardsApi['listComments']>((boardId, taskId) =>
       Promise.resolve().then(() => {

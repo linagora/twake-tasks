@@ -1,6 +1,8 @@
 import {
+  useMutation,
   useQuery,
   useQueryClient,
+  type UseMutationResult,
   type UseQueryResult
 } from '@tanstack/react-query'
 
@@ -9,22 +11,47 @@ import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { POLL_MS } from '@/ui/queries/boards'
 import { keys } from '@/ui/queries/keys'
 
-// Opening the list reads them all.
 export function useNotifications(): UseQueryResult<Notification[]> {
   const api = useBoardsApi()
-  const queryClient = useQueryClient()
   return useQuery({
     queryKey: keys.notifications(),
-    queryFn: async () => {
-      const notifications = await api.listNotifications()
-      if (notifications.some(notification => notification.readAt === null)) {
-        await api.markNotificationsRead()
-        queryClient.setQueryData(keys.unreadNotifications(), 0)
-        queryClient.setQueryData(keys.unreadByProject(), [])
-      }
-      return notifications
-    }
+    queryFn: () => api.listNotifications()
   })
+}
+
+function useMarkRead<T>(
+  read: (value: T) => Promise<void>
+): UseMutationResult<void, Error, T> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (value: T) => read(value),
+    onSettled: () =>
+      Promise.all(
+        [
+          keys.notifications(),
+          keys.unreadNotifications(),
+          keys.unreadByProject()
+        ].map(queryKey => queryClient.invalidateQueries({ queryKey }))
+      )
+  })
+}
+
+export function useMarkNotificationRead(): UseMutationResult<
+  void,
+  Error,
+  string
+> {
+  const api = useBoardsApi()
+  return useMarkRead(api.markNotificationRead)
+}
+
+export function useMarkNotificationsRead(): UseMutationResult<
+  void,
+  Error,
+  string[]
+> {
+  const api = useBoardsApi()
+  return useMarkRead(api.markNotificationsRead)
 }
 
 export function useUnreadNotifications(): UseQueryResult<number> {

@@ -553,6 +553,7 @@
     "empty": "Nessuna notifica",
     "emptyHint": "Segui un’attività per ricevere qui le sue modifiche.",
     "loadFailed": "Impossibile caricare le notifiche.",
+    "markAllRead": "Segna tutte come lette",
     "follow": "Segui",
     "followingTask": "Seguita",
     "unfollow": "Non seguire più",

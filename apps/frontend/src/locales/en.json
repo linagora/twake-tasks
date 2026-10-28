@@ -553,6 +553,7 @@
     "empty": "No notifications",
     "emptyHint": "Follow a task to hear about its changes here.",
     "loadFailed": "Couldn’t load notifications.",
+    "markAllRead": "Mark all as read",
     "follow": "Follow",
     "followingTask": "Following",
     "unfollow": "Unfollow",
