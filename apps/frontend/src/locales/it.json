@@ -520,6 +520,7 @@
     "task": "Attività",
     "due": "Scadenza",
     "today": "Oggi",
+    "todayDate": "%{date}, oggi",
     "nothingDue": "Nessuna scadenza in questo giorno."
   },
   "search": {

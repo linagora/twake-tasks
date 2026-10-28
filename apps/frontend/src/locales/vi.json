@@ -520,6 +520,7 @@
     "task": "Công việc",
     "due": "Hạn",
     "today": "Hôm nay",
+    "todayDate": "%{date}, hôm nay",
     "nothingDue": "Không có việc nào đến hạn hôm đó."
   },
   "search": {

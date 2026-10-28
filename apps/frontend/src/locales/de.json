@@ -520,6 +520,7 @@
     "task": "Aufgabe",
     "due": "Fällig",
     "today": "Heute",
+    "todayDate": "%{date}, heute",
     "nothingDue": "An diesem Tag ist nichts fällig."
   },
   "search": {
