@@ -375,6 +375,16 @@ describe('TaskPanel', () => {
     expect(value.queryByRole('link')).toBeNull()
   })
 
+  it('lets a long board name shrink within its row', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    const value = panel.getAllByRole('definition')[0]?.firstElementChild
+
+    expect(value).toHaveStyle({ minWidth: '0px' })
+  })
+
   it('names an assignee in full in a tooltip', async () => {
     const { board, logo, boardsApi } = logoBoard()
     Object.assign(logo, {

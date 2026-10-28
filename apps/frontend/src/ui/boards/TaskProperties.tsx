@@ -18,6 +18,7 @@ import {
   Properties,
   Property,
   PropertySelect,
+  PropertyText,
   TitleInput
 } from '@/ds/SidePanel'
 import { isShareable, type Board, type Task } from '@/domain/board'
@@ -261,7 +262,7 @@ function BoardRow({ board }: { board: Board }): ReactElement {
 
   return (
     <Property icon={<Icon icon={Mosaic} />} label={t('task.board')}>
-      <Typography variant="body2" className="u-miw-0">
+      <PropertyText variant="body2">
         {onBoard ? (
           board.name
         ) : (
@@ -274,7 +275,7 @@ function BoardRow({ board }: { board: Board }): ReactElement {
             {` · ${projectName}`}
           </Typography>
         )}
-      </Typography>
+      </PropertyText>
     </Property>
   )
 }
@@ -323,9 +324,9 @@ function SectionRow({
           }}
         />
       ) : (
-        <Typography variant="body2">
+        <PropertyText variant="body2">
           {current?.name ?? t('board.noSection')}
-        </Typography>
+        </PropertyText>
       )}
     </Property>
   )
