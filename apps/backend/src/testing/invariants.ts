@@ -7,7 +7,7 @@ const invariants: Record<string, string> = {
     select id, kind, task_id, payload from jobs
     where (kind = 'notification_email' and task_id is null)
       or (payload ? 'taskId'
-        and task_id is distinct from (payload->>'taskId')::uuid)`,
+        and task_id::text is distinct from payload->>'taskId')`,
   'a reminder job outlives its reminder': `
     select id, key from jobs
     where kind = 'reminder' and not exists (
@@ -35,12 +35,12 @@ const invariants: Record<string, string> = {
 
 /** Takes a superuser URL, so row level security hides no broken rows. */
 export async function checkInvariants(url: string): Promise<void> {
-  const sql = postgres(url, { onnotice: () => undefined })
+  const sql = postgres(url, { max: 1, onnotice: () => undefined })
   try {
     const results = await Promise.all(
       Object.entries(invariants).map(async ([rule, query]) => ({
         rule,
-        rows: await sql.unsafe(query)
+        rows: await sql.unsafe(`select * from (${query}) broken limit 20`)
       }))
     )
     const broken = results
