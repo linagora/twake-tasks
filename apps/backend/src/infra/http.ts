@@ -6,10 +6,17 @@ import Fastify, {
   type FastifyRequest
 } from 'fastify'
 import { randomUUID } from 'node:crypto'
+import { createRequire } from 'node:module'
 import { z } from 'zod'
 import { isTransient } from './db.ts'
 import type { Metrics } from './metrics.ts'
 import { runInRequest } from './requestId.ts'
+
+const contract = z
+  .object({ version: z.string() })
+  .parse(
+    createRequire(import.meta.url)('@twake-tasks/api-contract/package.json')
+  )
 
 declare module 'fastify' {
   interface FastifyContextConfig {
@@ -74,7 +81,7 @@ export function createServer(deps: {
     }
   })
 
-  app.get('/health/live', () => ({ status: 'ok' }))
+  app.get('/health/live', () => ({ status: 'ok', contract: contract.version }))
 
   app.get('/health/ready', async (_request, reply) => {
     const ready = await deps.isReady().catch(() => false)

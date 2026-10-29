@@ -172,7 +172,8 @@ export function fakeBoardsApi(boards: Board[] = []) {
   const me: Person = {
     userId: 'alice',
     email: 'alice@example.com',
-    name: 'Alice Martin'
+    name: 'Alice Martin',
+    avatar: null
   }
 
   const findComment = (boardId: string, taskId: string, commentId: string) => {
@@ -184,8 +185,12 @@ export function fakeBoardsApi(boards: Board[] = []) {
     return comment
   }
 
-  const agendaTask = (board: Board, task: Task): AgendaTask => ({
+  const agendaTask = (
+    board: Board,
+    task: Task
+  ): AgendaTask & { projectId: string } => ({
     ...structuredClone(task),
+    projectId: board.project.id,
     category:
       board.sections.find(section => section.id === task.sectionId)?.category ??
       null,
@@ -695,7 +700,12 @@ export function fakeBoardsApi(boards: Board[] = []) {
           ...(comments.get(taskId) ?? []),
           {
             id: nextId(),
-            author: { userId: 'me', email: 'me@example.com', name: null },
+            author: {
+              userId: 'me',
+              email: 'me@example.com',
+              name: null,
+              avatar: null
+            },
             body,
             createdAt: new Date().toISOString(),
             reactions: []

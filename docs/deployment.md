@@ -35,6 +35,15 @@ The backend and the frontend are released apart, by pushing a tag on `main`:
 
 The version must equal the one in the app's `package.json`. The release checks the app, publishes its image and writes the GitHub release notes.
 
+### Backend and frontend versions
+
+A frontend can run against an older or a newer backend. Both read their request and response shapes from [packages/api-contract](../packages/api-contract), and keep to these rules:
+
+- Within a 0.x minor version, the backend only adds optional response fields, and accepts every request the previous frontend release sends.
+- A breaking change takes a new path, or keeps the old field until the next frontend release.
+- Any change to `packages/api-contract` bumps its version. The backend's `/health/live` returns it in the `contract` field.
+- When a response does not match the contract, the frontend reports it to Sentry with the tag `api-contract`, and still uses it if it is a JSON object.
+
 ## Registry archive
 
 Twake Project shows in the Twake Workplace home and bar as a standalone app (`"standalone": true` in the manifest). The registry archive ships no code: [manifest/manifest.webapp](../manifest/manifest.webapp) and its icon are the whole archive.

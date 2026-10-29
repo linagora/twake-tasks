@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { pino } from 'pino'
 import { describe, expect, it, vi } from 'vitest'
 import { openStream } from '../testing/stream.ts'
@@ -25,6 +26,26 @@ function serverLoggingTo(lines: LogLine[]) {
 }
 
 describe('the server', () => {
+  it('names the API contract it answers by in its liveness check', async () => {
+    const app = createServer({
+      logger: pino({ level: 'silent' }),
+      isReady: () => Promise.resolve(true)
+    })
+
+    const live = await app.inject('/health/live')
+
+    const { version } = JSON.parse(
+      readFileSync(
+        new URL(
+          '../../../../packages/api-contract/package.json',
+          import.meta.url
+        ),
+        'utf8'
+      )
+    ) as { version: string }
+    expect(live.json()).toEqual({ status: 'ok', contract: version })
+  })
+
   it.each([
     [2, '198.51.100.1'],
     [0, '10.0.0.3']
