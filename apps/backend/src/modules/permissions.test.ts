@@ -255,9 +255,9 @@ const ownBoard = (me: TestUser) =>
     'own board'
   )
 
-const ownFilter = (me: TestUser) =>
+const ownFilter = (me: TestUser, criteria = {}) =>
   created<{ id: string }>(
-    api.as(me).post('/filters', { name: 'Mine', criteria: {} }),
+    api.as(me).post('/filters', { name: 'Mine', criteria }),
     'own filter'
   )
 
@@ -337,8 +337,9 @@ const EXAMPLES: Record<string, Example> = {
   'DELETE /filters/:filterId/favorite': async (_fixture, me) => ({
     params: { filterId: (await ownFilter(me)).id }
   }),
+  // A filter matching every task would load each board the matrix created.
   'GET /filters/:filterId/tasks': async (_fixture, me) => ({
-    params: { filterId: (await ownFilter(me)).id },
+    params: { filterId: (await ownFilter(me, { priority: [1] })).id },
     query: { zone: 'Europe/Paris' }
   }),
   [`GET ${task}/reminders`]: none,
