@@ -7,6 +7,7 @@ Start with [features](features.md) for what the app does, and [architecture](arc
 - [Development](development.md): run the app locally, the checks, the end to end suite, database migrations.
 - [Architecture](architecture.md): the parts of the app and how they talk to each other.
 - [Features](features.md): what people can do, in the terms the docs use.
+- [Permissions](permissions.md): the role each API route needs, generated from the route tables.
 
 ## Operators
 
