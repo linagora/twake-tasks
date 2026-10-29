@@ -23,8 +23,6 @@ import {
   newReminder,
   newSection,
   newTask,
-  notificationParams,
-  notificationsRead,
   peopleQuery,
   reactionEmoji,
   reactionParams,
@@ -52,7 +50,8 @@ import {
   type DeclaredRoute
 } from '../../infra/route.ts'
 import type { Identity, RequireIdentity } from '../auth/index.ts'
-import type { Refusal, Result } from '../kernel/index.ts'
+import { REFUSAL_STATUS } from '../../refusalStatus.ts'
+import { under, type Refusal } from '../kernel/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createCommentStore } from './comments.ts'
 import { createFilterStore } from './filters.ts'
@@ -111,32 +110,6 @@ export type ContractMatchesBackend = [
   >
 ]
 
-const REFUSAL_STATUS: Record<Refusal | 'invalid_request', number> = {
-  // A reaction's emoji is part of the URL, yet a bad one is a bad request,
-  // not a missing resource.
-  invalid_request: 400,
-  not_found: 404,
-  forbidden: 403,
-  archived: 409,
-  invalid_section: 400,
-  stale_neighbours: 409,
-  section_not_empty: 409,
-  invalid_assignee: 400,
-  stale_version: 409,
-  invalid_parent: 400,
-  too_deep: 400,
-  invalid_label: 400,
-  invalid_dates: 400,
-  invalid_reminder: 400,
-  too_many_mentions: 400,
-  too_many_reminders: 409,
-  label_taken: 409,
-  section_name_taken: 409,
-  last_admin: 409,
-  key_prefix_taken: 409,
-  same_board: 400
-}
-
 type BoardRoute = DeclaredRoute<Identity, Refusal | 'invalid_request'>
 
 const self = { on: 'self' } as const
@@ -144,16 +117,6 @@ const viewer = { on: 'board', role: 'viewer' } as const
 const editor = { on: 'board', role: 'editor' } as const
 const admin = { on: 'board', role: 'admin' } as const
 const sharing = { ...admin, refusedOnManaged: true } as const
-
-async function under<K extends string, T>(
-  key: K,
-  pending: Promise<Result<T>>
-): Promise<Result<Record<K, T>>> {
-  const result = await pending
-  return result.ok
-    ? { ok: true, value: { [key]: result.value } as Record<K, T> }
-    : result
-}
 
 export function registerBoards(
   app: HttpServer,
@@ -501,38 +464,6 @@ export function registerBoards(
           )
       })
     ),
-    defineRoute({
-      method: 'POST',
-      url: '/notifications/read',
-      access: self,
-      body: notificationsRead,
-      status: 204,
-      handler: ({ identity, body }) =>
-        reminderStore.markAllRead(identity, body?.ids)
-    }),
-    defineRoute({
-      method: 'POST',
-      url: '/notifications/:notificationId/read',
-      access: self,
-      params: notificationParams,
-      status: 204,
-      handler: ({ identity, params }) =>
-        reminderStore.markRead(identity, params.notificationId)
-    }),
-    defineRoute({
-      method: 'GET',
-      url: '/notifications/unread',
-      access: self,
-      handler: ({ identity }) =>
-        under('projects', reminderStore.unreadByProject(identity))
-    }),
-    defineRoute({
-      method: 'GET',
-      url: '/notifications',
-      access: self,
-      handler: ({ identity }) =>
-        under('notifications', reminderStore.notificationsOf(identity))
-    }),
     defineRoute({
       method: 'GET',
       url: '/boards',

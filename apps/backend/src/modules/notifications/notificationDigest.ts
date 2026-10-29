@@ -4,9 +4,15 @@ import type { Budget } from '../../config.ts'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Mail } from '../../infra/mail.ts'
 import { schedule, type Handler } from '../../scheduler/scheduler.ts'
-import { APP_NAME, COLORS, escape, languageOf, layout } from './mailLayout.ts'
+import {
+  APP_NAME,
+  COLORS,
+  escape,
+  languageOf,
+  layout
+} from '../boards/mailLayout.ts'
+import { notificationEmailBudgets as budgets } from '../boards/schema.ts'
 import { NOTIFICATION_MESSAGES } from './notificationMessages.ts'
-import { notificationEmailBudgets as budgets } from './schema.ts'
 
 export const NOTIFICATION_DIGEST_JOB = 'notification_digest'
 

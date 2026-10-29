@@ -1,5 +1,5 @@
-import type { UserBudget } from '../../config.ts'
-import type { BudgetsOf } from '../auth/userLimits.ts'
+import type { UserBudget } from './config.ts'
+import type { BudgetsOf } from './modules/auth/index.ts'
 
 const task = '/boards/:boardId/tasks/:taskId'
 const reaction = `${task}/comments/:commentId/reactions/:emoji`

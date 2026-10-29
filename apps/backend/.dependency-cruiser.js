@@ -1,6 +1,17 @@
+const CLOSED_MODULES = ['kernel', 'notifications']
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 export default {
   forbidden: [
+    ...CLOSED_MODULES.map(name => ({
+      name: `${name}-through-index`,
+      severity: 'error',
+      from: { pathNot: `^src/modules/${name}/` },
+      to: {
+        path: `^src/modules/${name}/`,
+        pathNot: `^src/modules/${name}/index\\.ts$`
+      }
+    })),
     {
       name: 'no-circular',
       severity: 'error',

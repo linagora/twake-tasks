@@ -6,15 +6,13 @@ import {
   emailInvite,
   PROJECT_INVITE_EMAIL_JOB
 } from './modules/boards/inviteEmails.ts'
+import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
 import {
   emailDigest,
-  NOTIFICATION_DIGEST_JOB
-} from './modules/boards/notificationDigest.ts'
-import {
   emailNotification,
+  NOTIFICATION_DIGEST_JOB,
   NOTIFICATION_EMAIL_JOB
-} from './modules/boards/notificationEmails.ts'
-import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
+} from './modules/notifications/index.ts'
 import { PURGE_SPACE_JOB, purgeSpace } from './modules/spaces/events.ts'
 import { reconcileJobs } from './modules/spaces/reconcile.ts'
 import { RETENTION_JOB, retention, type Retention } from './retention.ts'

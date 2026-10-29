@@ -24,6 +24,16 @@ export type Refusal =
   | 'same_board'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
+export async function under<K extends string, T>(
+  key: K,
+  pending: Promise<Result<T>>
+): Promise<Result<Record<K, T>>> {
+  const result = await pending
+  return result.ok
+    ? { ok: true, value: { [key]: result.value } as Record<K, T> }
+    : result
+}
+
 // Thrown, not returned, so the transaction rolls back whatever ran before it.
 export class Refused extends Error {
   readonly refusal: Refusal

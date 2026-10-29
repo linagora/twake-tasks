@@ -19,6 +19,7 @@ import { registerAuth } from './auth/index.ts'
 import { registerLive } from './boards/liveRoutes.ts'
 import { registerBoards } from './boards/routes.ts'
 import { notifications } from './boards/schema.ts'
+import { registerNotifications } from './notifications/index.ts'
 import { registerSettings } from './settings/routes.ts'
 
 interface Declared {
@@ -103,6 +104,7 @@ function declaredRoutes(): Declared[] {
       changes: createChanges(),
       streamVersions: unused
     }),
+    ...registerNotifications(scratch, { db, requireIdentity }),
     ...registerSettings(scratch, { db, requireIdentity })
   ]
 }
