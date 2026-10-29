@@ -4,7 +4,7 @@ import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { checkRole, membersOf } from './access.ts'
-import { revokeOutside } from './followers.ts'
+import { endAccessOutside } from './lifecycle.ts'
 import { labelsOn } from './labels.ts'
 import { boards, labels, taskAssignees, taskLabels, tasks } from './schema.ts'
 import { completionFor, inSection, sectionOf, shownTaskOf } from './tasks.ts'
@@ -224,7 +224,7 @@ export function createTransferStore(db: Db) {
           target
         )
         if (from.projectId !== target.projectId) {
-          await revokeOutside(tx, ids, target.projectId)
+          await endAccessOutside(tx, ids, target.projectId)
         }
         const first = target.number - ids.length + 1
         const [last] = await tx
@@ -259,17 +259,6 @@ export function createTransferStore(db: Db) {
           await followLabels(tx, ids, target)
           await tx.execute(
             sql`select set_config('app.following_labels', '', true)`
-          )
-        }
-        if (droppedAssignees.length > 0) {
-          await tx.delete(taskAssignees).where(
-            and(
-              inArray(taskAssignees.taskId, ids),
-              inArray(
-                taskAssignees.userId,
-                droppedAssignees.map(person => person.userId)
-              )
-            )
           )
         }
         return {

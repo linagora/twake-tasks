@@ -34,14 +34,12 @@ import {
   schedule,
   type Handler as JobHandler
 } from '../../scheduler/scheduler.ts'
-import { revokeProject } from '../boards/followers.ts'
+import { endAccess } from '../boards/lifecycle.ts'
 import {
   boards,
   memberRole,
   projectMembers,
-  projects,
-  taskAssignees,
-  tasks
+  projects
 } from '../boards/schema.ts'
 import { freeKeyPrefix } from '../boards/keyPrefixes.ts'
 import { addDefaultSections } from '../boards/store.ts'
@@ -351,39 +349,18 @@ async function removeMembers(
   which: SQL | undefined
 ): Promise<void> {
   const leaving = and(eq(projectMembers.projectId, projectId), which)
-  // Before the membership goes, so the unassignment history still names them.
+  const userIds = (
+    await tx
+      .select({ userId: projectMembers.userId })
+      .from(projectMembers)
+      .where(leaving)
+  ).map(m => m.userId)
+  if (userIds.length === 0) return
+  await endAccess(tx, userIds, projectId)
   await tx
-    .delete(taskAssignees)
-    .where(
-      and(
-        inArray(
-          taskAssignees.userId,
-          tx
-            .select({ userId: projectMembers.userId })
-            .from(projectMembers)
-            .where(leaving)
-        ),
-        inArray(
-          taskAssignees.taskId,
-          tx
-            .select({ id: tasks.id })
-            .from(tasks)
-            .innerJoin(boards, eq(boards.id, tasks.boardId))
-            .where(eq(boards.projectId, projectId))
-        )
-      )
-    )
-  const removed = await tx
     .delete(projectMembers)
-    .where(leaving)
-    .returning({ userId: projectMembers.userId })
-  if (removed.length === 0) return
+    .where(and(leaving, inArray(projectMembers.userId, userIds)))
   await bumpProjects(tx, [projectId])
-  await revokeProject(
-    tx,
-    removed.map(m => m.userId),
-    projectId
-  )
 }
 
 async function deleteLocked(

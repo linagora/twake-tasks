@@ -1,5 +1,4 @@
-import { and, asc, eq, inArray, ne, notExists, or, sql } from 'drizzle-orm'
-import { alias } from 'drizzle-orm/pg-core'
+import { eq, inArray, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import {
@@ -15,19 +14,8 @@ import {
   type Handler
 } from '../../events/router.ts'
 import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
-import { jobs } from '../../scheduler/schema.ts'
-import {
-  commentReactions,
-  inviteEmails,
-  notifications,
-  projectMembers,
-  projects,
-  savedFilters,
-  taskAssignees,
-  taskFollowers,
-  taskReminders
-} from '../boards/schema.ts'
-import { bumpProjects } from '../boards/versions.ts'
+import { eraseOrganization, forgetPerson } from '../boards/lifecycle.ts'
+import { inviteEmails, projectMembers } from '../boards/schema.ts'
 import { userSettings } from '../settings/schema.ts'
 import { spaces } from '../spaces/schema.ts'
 
@@ -77,70 +65,13 @@ async function userIdByEmail(tx: Tx, email: string) {
   return member?.userId
 }
 
-// A project whose only admin leaves goes to its oldest editor, or is deleted.
-// A managed project's members come from its integration, so it is left alone.
-async function handOnProjects(tx: Tx, userId: string) {
-  const otherAdmin = alias(projectMembers, 'other_admin')
-  const orphaned = await tx
-    .select({ projectId: projectMembers.projectId })
-    .from(projectMembers)
-    .innerJoin(projects, eq(projects.id, projectMembers.projectId))
-    .where(
-      and(
-        eq(projectMembers.userId, userId),
-        eq(projectMembers.role, 'admin'),
-        eq(projects.managed, false),
-        notExists(
-          tx
-            .select()
-            .from(otherAdmin)
-            .where(
-              and(
-                eq(otherAdmin.projectId, projectMembers.projectId),
-                eq(otherAdmin.role, 'admin'),
-                ne(otherAdmin.userId, userId)
-              )
-            )
-        )
-      )
-    )
-  for (const { projectId } of orphaned) {
-    const [editor] = await tx
-      .select({ userId: projectMembers.userId })
-      .from(projectMembers)
-      .where(
-        and(
-          eq(projectMembers.projectId, projectId),
-          eq(projectMembers.role, 'editor')
-        )
-      )
-      .orderBy(asc(projectMembers.joinedAt))
-      .limit(1)
-    if (editor) {
-      await tx
-        .update(projectMembers)
-        .set({ role: 'admin' })
-        .where(
-          and(
-            eq(projectMembers.projectId, projectId),
-            eq(projectMembers.userId, editor.userId)
-          )
-        )
-    } else {
-      await tx.delete(projects).where(eq(projects.id, projectId))
-    }
-  }
-}
-
 interface Person {
   userId: string | undefined
   email: string | undefined
 }
 
 // Found by uuid and email, not through memberships, which are gone once the
-// organization's deletion ran first. Runs as the user, so a B2C tenant shows
-// the projects they belong to; their memberships go last, since they are what
-// makes those projects visible.
+// organization's deletion ran first.
 async function forget(
   tx: Tx,
   organizationId: string | null,
@@ -177,29 +108,7 @@ async function forget(
         inArray(inviteEmails.email, emails)
       )
     )
-  if (userId) {
-    // While the boards are still visible through a B2C membership.
-    await bumpProjects(
-      tx,
-      (
-        await tx
-          .select({ projectId: projectMembers.projectId })
-          .from(projectMembers)
-          .where(eq(projectMembers.userId, userId))
-      ).map(m => m.projectId)
-    )
-    await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
-    await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
-    await tx.delete(commentReactions).where(eq(commentReactions.userId, userId))
-    await tx.delete(notifications).where(eq(notifications.userId, userId))
-    await tx.delete(taskReminders).where(eq(taskReminders.userId, userId))
-    await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
-    await tx
-      .delete(projects)
-      .where(and(eq(projects.createdBy, userId), eq(projects.personal, true)))
-    await handOnProjects(tx, userId)
-    await tx.delete(projectMembers).where(eq(projectMembers.userId, userId))
-  }
+  if (userId) await forgetPerson(tx, userId)
 }
 
 const onB2bDeleted: Handler<PlatformEvent> = async (event, tx) => {
@@ -260,15 +169,7 @@ const onOrganizationDeleted: Handler<PlatformEvent> = async (event, tx) => {
     .from(spaces)
     .orderBy(spaces.id)
     .for('update')
-  await tx.execute(
-    sql`select set_config('app.erasing_organization', 'on', true)`
-  )
-  await tx.delete(projects)
-  await tx.delete(savedFilters)
-  await tx.execute(sql`select set_config('app.erasing_organization', '', true)`)
-  await tx
-    .delete(jobs)
-    .where(sql`${jobs.payload}->>'organizationId' = ${organizationId}`)
+  await eraseOrganization(tx, organizationId)
 }
 
 export const accountRoutes: ReadonlyMap<
