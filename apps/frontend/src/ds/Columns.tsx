@@ -510,10 +510,6 @@ export function AvatarStack({
   )
 }
 
-export function Spacer(): ReactElement {
-  return <Box sx={{ flex: 1 }} />
-}
-
 export function Checklist({
   label,
   children

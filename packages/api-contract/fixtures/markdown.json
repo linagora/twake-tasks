@@ -1,0 +1,44 @@
+[
+  {
+    "name": "a mention inside a sentence",
+    "markdown": "Ping @bob@example.com about it",
+    "mentions": ["bob@example.com"],
+    "text": "Ping @bob@example.com about it"
+  },
+  {
+    "name": "a mention that starts the text",
+    "markdown": "@Alice.Martin@example.com can you look?",
+    "mentions": ["alice.martin@example.com"],
+    "text": "@Alice.Martin@example.com can you look?"
+  },
+  {
+    "name": "an email without an @ before it",
+    "markdown": "Mail bob@example.com or x@bob@example.com",
+    "mentions": [],
+    "text": "Mail bob@example.com or x@bob@example.com"
+  },
+  {
+    "name": "an underscore in the mentioned email",
+    "markdown": "Thanks @jean_dupont@example.com",
+    "mentions": ["jean_dupont@example.com"],
+    "text": "Thanks @jean_dupont@example.com"
+  },
+  {
+    "name": "escaped underscores around a mention",
+    "markdown": "The snake\\_case field, for @bob@example.com",
+    "mentions": ["bob@example.com"],
+    "text": "The snake_case field, for @bob@example.com"
+  },
+  {
+    "name": "a checklist with a mention",
+    "markdown": "- [ ] Buy milk\n- [x] Call @bob@example.com\n  - [ ] Nested, for @carol@example.com",
+    "mentions": ["bob@example.com", "carol@example.com"],
+    "text": "Buy milk\nCall @bob@example.com\nNested, for @carol@example.com"
+  },
+  {
+    "name": "headings, quotes and emphasis",
+    "markdown": "# Plan\n\n> **Ask** @bob@example.com\n\n*Done* by _Friday_",
+    "mentions": ["bob@example.com"],
+    "text": "Plan\nAsk @bob@example.com\nDone by Friday"
+  }
+]

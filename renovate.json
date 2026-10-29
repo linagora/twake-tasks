@@ -1,0 +1,50 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 6am on monday"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["dockerfile", "github-actions"],
+      "pinDigests": true
+    },
+    {
+      "groupName": "tiptap",
+      "matchPackageNames": ["@tiptap/**"]
+    },
+    {
+      "groupName": "mui",
+      "matchPackageNames": ["@mui/**", "@linagora/twake-mui"]
+    },
+    {
+      "groupName": "dnd-kit",
+      "matchPackageNames": ["@dnd-kit/**"]
+    },
+    {
+      "groupName": "drizzle",
+      "matchPackageNames": ["drizzle-orm", "drizzle-kit"]
+    },
+    {
+      "groupName": "testcontainers",
+      "matchPackageNames": ["@testcontainers/**", "testcontainers"]
+    },
+    {
+      "groupName": "eslint",
+      "matchPackageNames": ["eslint", "@eslint/**", "typescript-eslint"]
+    },
+    {
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"]
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchPackageNames": ["!drizzle-kit"],
+      "minimumReleaseAge": "3 days",
+      "automerge": true
+    }
+  ]
+}

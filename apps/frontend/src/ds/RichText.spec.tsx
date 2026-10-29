@@ -1,8 +1,18 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { RichText, RichTextEditor } from '@/ds/RichText'
 import { renderWithProviders } from '@/testing/renderWithProviders'
+
+// The backend's markdown.test.ts reads the same cases.
+const SHARED_CASES = JSON.parse(
+  readFileSync(
+    `${import.meta.dirname}/../../../../packages/api-contract/fixtures/markdown.json`,
+    'utf8'
+  )
+) as { name: string; markdown: string; mentions: string[]; text: string }[]
 
 const LABELS = {
   toolbar: 'Formatting',
@@ -83,6 +93,32 @@ describe('mentions in rich text', () => {
     const comment = await screen.findByTestId('comment')
     await screen.findByText(/Ask/)
     expect(comment.querySelector('.mention')).toBeNull()
+  })
+})
+
+describe.each(SHARED_CASES)('$name', ({ markdown, mentions, text }) => {
+  it('reads the mentions and the text the backend reads', async () => {
+    // Every email in the text names someone, so only the parser decides what is a mention.
+    const names = Object.fromEntries(
+      [...markdown.matchAll(/@([\w.%+-]+@[\w.-]*\w)/g)].map(
+        ([, email = '']) => [email.toLowerCase(), email]
+      )
+    )
+    const { container } = renderWithProviders(
+      <RichText markdown={markdown} mentions={names} />
+    )
+
+    const lines = () =>
+      [...container.querySelectorAll('p, h1, h2, h3, pre')]
+        .map(block => block.textContent)
+        .join('\n')
+    await waitFor(() => {
+      expect(lines()).toBe(text)
+    })
+    const shown = [...container.querySelectorAll('.mention')].map(chip =>
+      chip.getAttribute('data-email')?.toLowerCase()
+    )
+    expect(shown.sort()).toEqual(mentions.toSorted())
   })
 })
 

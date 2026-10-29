@@ -72,6 +72,7 @@ type Assert<T extends true> = T
 type Values<T extends readonly string[]> = T[number]
 
 // The contract declares its own enums, so tsc fails here when they drift.
+/** @public */
 export type ContractMatchesBackend = [
   Assert<
     Same<

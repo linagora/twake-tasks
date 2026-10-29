@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreExportsUsedInFile": true,
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/qa-environment/twakespace/server.ts"]
+    },
+    "apps/backend": {
+      "entry": ["src/migrate.ts"]
+    },
+    "e2e": {
+      "entry": ["oidc/server.ts"]
+    }
+  }
+}

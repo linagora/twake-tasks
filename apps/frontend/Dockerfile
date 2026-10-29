@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:24-slim AS build
+FROM --platform=$BUILDPLATFORM node:24-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c AS build
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY apps/frontend/package.json apps/frontend/
@@ -9,7 +9,7 @@ RUN npm run build --workspace @twake-tasks/api-contract
 COPY apps/frontend apps/frontend
 RUN npm run build --workspace @twake-tasks/frontend
 
-FROM nginxinc/nginx-unprivileged:1.31-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
 RUN rm /etc/nginx/conf.d/default.conf
 COPY apps/frontend/docker/nginx.conf /etc/nginx/nginx.conf
 COPY --chmod=755 apps/frontend/docker/40-twake-tasks-runtime.sh /docker-entrypoint.d/

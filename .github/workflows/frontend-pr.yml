@@ -10,6 +10,7 @@ on:
       - 'package-lock.json'
       - 'tsconfig.base.json'
       - 'eslint.config.js'
+      - 'knip.json'
       - '.prettierrc'
       - '.nvmrc'
       - '.dockerignore'
