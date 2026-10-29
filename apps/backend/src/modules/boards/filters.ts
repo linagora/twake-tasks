@@ -35,6 +35,7 @@ type Due = 'overdue' | 'today' | 'week' | 'none'
 
 // Each criterion matches any of its values; a task must match every criterion.
 export interface Criteria {
+  board?: string[] | undefined
   /** `me`, `nobody`, or a user id. */
   assignee?: string[] | undefined
   priority?: number[] | undefined
@@ -59,8 +60,9 @@ function dueIs(due: Due, today: string) {
 }
 
 function matching(tx: Tx, userId: string, criteria: Criteria, today: string) {
-  const { assignee, priority, label, due } = criteria
+  const { board, assignee, priority, label, due } = criteria
   return and(
+    board && inArray(tasks.boardId, board),
     assignee &&
       or(
         ...assignee.map(each =>

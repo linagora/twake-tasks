@@ -54,7 +54,7 @@ describe('FiltersScreen', () => {
     renderRoute('/filters', { boardsApi: boards() })
 
     fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
-    for (const name of ['Assignee', 'Priority', 'Label', 'Due']) {
+    for (const name of ['Board', 'Assignee', 'Priority', 'Label', 'Due']) {
       const field = await screen.findByRole('combobox', { name })
       expect(field).toHaveTextContent('Any')
       expect(
@@ -271,6 +271,88 @@ describe('FiltersScreen', () => {
       name: 'Team',
       criteria: { assignee: ['me', 'bob'] }
     })
+  })
+
+  it('keeps a filter to the boards picked, offered first, Inbox first', async () => {
+    const inbox = aBoard({ name: 'Inbox', keyPrefix: 'INB', inbox: true })
+    const website = aBoard({ name: 'Website relaunch', keyPrefix: 'WEB' })
+    const support = aBoard({ name: 'Support', keyPrefix: 'SUP' })
+    const old = aBoard({ name: 'Old', keyPrefix: 'OLD', archived: true })
+    website.tasks = [
+      aTask(null, { key: 'WEB-1', title: 'Hero', priority: 1 }),
+      aTask(null, { key: 'WEB-2', title: 'Footer', priority: 3 })
+    ]
+    support.tasks = [
+      aTask(null, { key: 'SUP-1', title: 'Ticket', priority: 1 })
+    ]
+    const boardsApi = fakeBoardsApi([support, website, old, inbox])
+    renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
+    const form = screen.getByLabelText('Name').closest('form')
+    const fields = within(form ?? document.body).getAllByRole('combobox')
+    expect(fields[0]).toHaveAccessibleName('Board')
+    expect(fields[0]).toHaveTextContent('Any')
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Board' }))
+    const options = within(
+      await screen.findByRole('listbox', { name: 'Board' })
+    ).getAllByRole('option')
+    expect(options.map(option => option.textContent)).toEqual([
+      'Inbox',
+      'Support',
+      'Website relaunch'
+    ])
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' })
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).toBeNull()
+    })
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'Launch fires' }
+    })
+    await pick('Board', 'Website relaunch')
+    await pick('Priority', 'P1')
+    fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
+
+    expect(
+      await screen.findByRole('listitem', { name: 'Launch fires' })
+    ).toHaveTextContent('Board: Website relaunch · Priority: P1')
+    expect(boardsApi.createFilter).toHaveBeenCalledWith({
+      name: 'Launch fires',
+      criteria: { board: [website.id], priority: [1] }
+    })
+    fireEvent.click(screen.getByRole('link', { name: 'Launch fires' }))
+    expect(await screen.findByText('Hero')).toBeVisible()
+    expect(screen.queryByText('Footer')).toBeNull()
+    expect(screen.queryByText('Ticket')).toBeNull()
+  })
+
+  it('says when the board of a filter is out of reach, with a way to edit it', async () => {
+    const support = aBoard({ name: 'Support', keyPrefix: 'SUP' })
+    support.tasks = [aTask(null, { key: 'SUP-1', title: 'Ticket' })]
+    const boardsApi = fakeBoardsApi([support])
+    const { id } = await boardsApi.createFilter({
+      name: 'On support',
+      criteria: { board: [support.id] }
+    })
+    await boardsApi.setBoardArchived(support.id, true)
+    const { unmount } = renderRoute('/filters', { boardsApi })
+
+    expect(
+      await screen.findByRole('listitem', { name: 'On support' })
+    ).toHaveTextContent('Board: unavailable')
+    unmount()
+
+    renderRoute(`/filters/${id}`, { boardsApi })
+    expect(
+      await findEmptyState(
+        'The board of this filter is archived or no longer shared with you.'
+      )
+    ).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit On support' }))
+    expect(await screen.findByLabelText('Name')).toHaveValue('On support')
+    expect(screen.getByRole('combobox', { name: 'Board' })).toHaveTextContent(
+      'unavailable'
+    )
   })
 
   it('names someone no longer on my boards, who can still be unpicked', async () => {

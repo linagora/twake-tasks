@@ -36,6 +36,7 @@ import {
   anyOf,
   useAssigneeName
 } from '@/ui/agenda/AssigneeField'
+import { useFilterBoards } from '@/ui/agenda/filterBoards'
 import {
   useCreateFilter,
   useDeleteFilter,
@@ -58,6 +59,7 @@ export function FiltersScreen(): ReactElement {
   const { t, lang } = useI18n()
   const filters = useFilters()
   const assigneeName = useAssigneeName()
+  const boards = useFilterBoards()
   const [form, setForm] = useState<SavedFilter | 'new' | null>(null)
   // What takes the focus once the form closes: 'new', 'link:<id>' or 'edit:<id>'
   const [landing, setLanding] = useState<string | null>(null)
@@ -78,8 +80,18 @@ export function FiltersScreen(): ReactElement {
   const unpinDeleted = useUnpinDeletedFilter()
   const shown = filters.data?.filter(filter => filter.id !== deleted?.id)
   useDocumentTitle(t('filters.title'))
-  const summary = ({ assignee, priority, label, due }: FilterCriteria) => {
+  const summary = ({
+    board,
+    assignee,
+    priority,
+    label,
+    due
+  }: FilterCriteria) => {
     const parts = [
+      board && {
+        name: t('filters.board'),
+        value: anyOf(lang, [...new Set(board.map(boards.labelOf))])
+      },
       assignee && {
         name: t('filters.assignee'),
         value: anyOf(lang, assignee.map(assigneeName))
@@ -312,8 +324,10 @@ export function FilterForm({
   const create = useCreateFilter()
   const update = useUpdateFilter(filter?.id ?? '')
   const labelNames = useLabelNames()
+  const filterBoards = useFilterBoards()
   const initial = filter?.criteria ?? {}
   const [name, setName] = useState(filter?.name ?? '')
+  const [board, setBoard] = useState(initial.board ?? [])
   const [assignee, setAssignee] = useState(initial.assignee ?? [])
   const [priority, setPriority] = useState((initial.priority ?? []).map(String))
   const [label, setLabel] = useState(initial.label ?? [])
@@ -321,8 +335,18 @@ export function FilterForm({
   const save = filter ? update : create
   // A label no board has any more stays choosable, so saving keeps it.
   const labels = [...new Set([...(labelNames.data ?? []), ...label])]
+  // Likewise a board out of reach, so it can be seen and unpicked.
+  const boardOptions = [
+    ...filterBoards.options,
+    ...board.flatMap(id =>
+      filterBoards.nameOf(id) === undefined
+        ? [{ value: id, name: filterBoards.labelOf(id) }]
+        : []
+    )
+  ]
 
   const criteria: FilterCriteria = {
+    ...(board.length > 0 && { board }),
     ...(assignee.length > 0 && { assignee }),
     ...(priority.length > 0 && { priority: priority.map(Number) }),
     ...(label.length > 0 && { label }),
@@ -382,6 +406,12 @@ export function FilterForm({
           setName(event.target.value)
         }}
         slotProps={{ htmlInput: { maxLength: 100 } }}
+      />
+      <AnyOf
+        label={t('filters.board')}
+        value={board}
+        onChange={setBoard}
+        options={boardOptions}
       />
       <AssigneeField value={assignee} onChange={setAssignee} />
       <AnyOf

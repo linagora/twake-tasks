@@ -200,7 +200,9 @@ export function fakeBoardsApi(boards: Board[] = []) {
   const openTasks = () =>
     [...store.values()].flatMap(board =>
       board.tasks
-        .filter(task => !task.completedAt && !task.canceledAt)
+        .filter(
+          task => !board.archived && !task.completedAt && !task.canceledAt
+        )
         .map(task => agendaTask(board, task))
     )
 
@@ -387,10 +389,11 @@ export function fakeBoardsApi(boards: Board[] = []) {
       Promise.resolve().then(() => {
         const filter = filters.find(candidate => candidate.id === filterId)
         if (!filter) throw new ApiError(404, 'not_found')
-        const { priority, label } = filter.criteria
+        const { board, priority, label } = filter.criteria
         const labels = label?.map(name => name.toLowerCase())
         return openTasks().filter(
           task =>
+            (board === undefined || board.includes(task.boardId)) &&
             (priority === undefined ||
               (task.priority !== null && priority.includes(task.priority))) &&
             (labels === undefined ||

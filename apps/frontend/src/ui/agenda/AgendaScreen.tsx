@@ -33,6 +33,7 @@ import {
   AgendaTaskPanel,
   useAgendaTaskPanel
 } from '@/ui/agenda/AgendaTaskPanel'
+import { useFilterBoards } from '@/ui/agenda/filterBoards'
 import { FilterForm } from '@/ui/agenda/FiltersScreen'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useBoardName } from '@/ui/boards/BoardsScreen'
@@ -178,6 +179,13 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
   // The Edit button takes the focus back from the form that replaced it
   const [closed, setClosed] = useState(false)
   const filter = filters.data?.find(each => each.id === filterId)
+  const boards = useFilterBoards()
+  const boardsGone =
+    boards.loaded &&
+    filter?.criteria.board?.every(id => boards.nameOf(id) === undefined)
+  const edit = () => {
+    setEditing(true)
+  }
   if (agenda.error instanceof ApiError && agenda.error.status === 404) {
     return (
       <NotFoundScreen
@@ -198,9 +206,7 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
               ref={closed ? focusOnMount : undefined}
               variant="secondary"
               startIcon={<Icon icon={Pen} />}
-              onClick={() => {
-                setEditing(true)
-              }}
+              onClick={edit}
             >
               {t('filters.editTitle')}
             </Button>
@@ -228,6 +234,23 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
       }
       body={
         layout === 'board' ? tasks => <ByStatus tasks={tasks} /> : undefined
+      }
+      empty={
+        filter &&
+        boardsGone && (
+          <EmptyState
+            icon={Filter}
+            illustrated
+            title={t('filters.boardGone')}
+            action={
+              !editing && (
+                <Button startIcon={<Icon icon={Pen} />} onClick={edit}>
+                  {t('filters.edit', { name: filter.name })}
+                </Button>
+              )
+            }
+          />
+        )
       }
     />
   )
@@ -314,6 +337,7 @@ export function AgendaScreen(
         actions?: ReactNode
         form?: ReactNode
         body?: ((tasks: AgendaTask[]) => ReactNode) | undefined
+        empty?: ReactNode
       }
 ): ReactElement {
   const { t } = useI18n()
@@ -358,6 +382,8 @@ export function AgendaScreen(
         {empty &&
           (typeof view === 'string' ? (
             <AgendaEmpty view={view} />
+          ) : 'empty' in props && props.empty ? (
+            props.empty
           ) : (
             <EmptyState
               icon={Filter}

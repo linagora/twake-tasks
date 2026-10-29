@@ -6,6 +6,7 @@ const due = z.enum(['overdue', 'today', 'week', 'none'])
 export const newFilter = z.object({
   name: z.string().trim().min(1).max(100),
   criteria: z.strictObject({
+    board: z.array(z.uuid()).min(1).max(50).optional(),
     assignee: z
       .array(z.union([z.enum(['me', 'nobody']), z.uuid()]))
       .min(1)
@@ -33,6 +34,7 @@ export const filtersResponse = z.object({
       id: z.string(),
       name: z.string(),
       criteria: z.object({
+        board: z.array(z.string()).exactOptional(),
         assignee: z.array(z.string()).exactOptional(),
         priority: z.array(z.number()).exactOptional(),
         label: z.array(z.string()).exactOptional(),

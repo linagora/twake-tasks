@@ -167,6 +167,7 @@ export interface Agenda {
 
 // Each criterion matches any of its values; a task must match every criterion.
 export interface FilterCriteria {
+  board?: string[]
   /** `me`, `nobody`, or a user id. */
   assignee?: string[]
   priority?: number[]
