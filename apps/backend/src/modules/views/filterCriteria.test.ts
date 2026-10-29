@@ -5,7 +5,7 @@ import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createDb, inTenant, migrateDb } from '../../infra/db.ts'
 import { aUser } from '../../testing/app.ts'
-import { savedFilters } from './schema.ts'
+import { savedFilters } from '../boards/schema.ts'
 
 // The migration switches row-level security off and on again for a moment,
 // which locks the tables the other test files use, so it runs on a database

@@ -18,8 +18,8 @@ import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { userSettings } from '../settings/schema.ts'
-import { memberLooks, settingsOfMember } from './access.ts'
-import { shift, todayIn } from './recurrence.ts'
+import { memberLooks, settingsOfMember } from '../boards/access.ts'
+import { shift, todayIn } from '../boards/recurrence.ts'
 import {
   labels,
   projectMembers,
@@ -28,7 +28,7 @@ import {
   taskAssignees,
   taskLabels,
   tasks
-} from './schema.ts'
+} from '../boards/schema.ts'
 import { assignedTo, openTasksOf } from './store.ts'
 
 type Due = 'overdue' | 'today' | 'week' | 'none'
