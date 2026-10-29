@@ -229,6 +229,27 @@ export default defineConfig(
     }
   },
   {
+    files: ['src/adapters/http/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...FORBIDDEN_SYNTAX,
+        NO_SX,
+        NO_LITERAL_QUERY_KEY,
+        {
+          selector: 'TSAsExpression',
+          message:
+            'No cast on what the backend answers: parse it with its schema.'
+        }
+      ]
+    }
+  },
+  {
+    files: ['src/testing/fakeBoardsApi.contract.spec.ts'],
+    rules: { 'no-restricted-imports': ['error', { paths: [NO_RAW_ICON] }] }
+  },
+  {
     files: ['src/ds/**/*.{ts,tsx}'],
     rules: { 'no-restricted-syntax': ['error', ...FORBIDDEN_SYNTAX] }
   },

@@ -68,7 +68,16 @@ export function httpBoardsApi(
   send: Send,
   reportMismatch: Reporting['reportApiMismatch'] = noReporting.reportApiMismatch
 ): BoardsApi {
-  async function call<T>(
+  async function call(
+    method: string,
+    path: string,
+    body?: object,
+    keepalive = false
+  ): Promise<void> {
+    await respond(method, path, body, keepalive)
+  }
+
+  async function respond(
     method: string,
     path: string,
     body?: object,
@@ -87,7 +96,7 @@ export function httpBoardsApi(
     if (!response.ok) {
       throw new ApiError(response.status, await errorCode(response))
     }
-    return (response.status === 204 ? undefined : await response.json()) as T
+    return response
   }
 
   const reported = new Set<string>()
@@ -101,7 +110,13 @@ export function httpBoardsApi(
     path: string,
     body?: object
   ) {
-    const response = await call<z.output<S>>(method, path, body)
+    const response: unknown = await (
+      await respond(method, path, body)
+    )
+      .json()
+      .catch(() => {
+        throw new ApiError(502, null)
+      })
     const result = schema.safeParse(response)
     if (result.success) return result.data
     // Array indexes become `*` so a field drifted in many tasks reports once.
@@ -119,7 +134,11 @@ export function httpBoardsApi(
       reported.add(mismatch)
       reportMismatch(name, paths)
     }
-    return response
+    // The one place a body is typed without passing its schema.
+    const usableAsIs = (value: unknown): value is z.output<S> =>
+      typeof value === 'object' && value !== null
+    if (usableAsIs(response)) return response
+    throw new ApiError(502, null)
   }
 
   function watch(path: string, onVersion: (version: number) => void) {

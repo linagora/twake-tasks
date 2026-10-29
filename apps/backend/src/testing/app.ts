@@ -216,6 +216,7 @@ export async function startApp(
     tokenOf,
     inject: app.inject.bind(app),
     hasRoute: app.hasRoute.bind(app),
+    printRoutes: app.printRoutes.bind(app),
     listen: () => app.listen({ host: '127.0.0.1', port: 0 }),
     close: async () => {
       broker.close()

@@ -34,6 +34,8 @@ import { aUser, startApp } from '../../testing/app.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 
+const parsedGets = new Set<string>()
+
 function contracted<S extends z.ZodType>(
   schema: S,
   response: LightMyRequestResponse
@@ -41,8 +43,26 @@ function contracted<S extends z.ZodType>(
   expect(response.statusCode).toBeLessThan(300)
   const result = schema.safeParse(response.json())
   if (!result.success) throw result.error
+  const { method, url = '' } = response.raw.req
+  if (method === 'GET') parsedGets.add(url.split('?')[0] ?? url)
   return result.data
 }
+
+// One line of the tree per segment, four columns deeper per level.
+function getRoutes(tree: string) {
+  const prefixes: string[] = []
+  return tree.split('\n').flatMap(line => {
+    const at = line.search(/[├└]── /)
+    if (at < 0) return []
+    const [segment = '', methods] = line.slice(at + 4).split(' (')
+    prefixes.length = at / 4
+    prefixes.push(segment)
+    return methods?.includes('GET') ? [prefixes.join('')] : []
+  })
+}
+
+// Server-sent events, not JSON.
+const NOT_JSON = new Set(['/api/boards/:boardId/events'])
 
 beforeAll(async () => {
   api = await startApp()
@@ -83,11 +103,12 @@ describe('the API contract', () => {
     await api.as(alice).post(`${at}/comments`, { body: 'Looks good' })
     await api.as(alice).post(`${at}/complete`, { state: 'canceled' })
 
-    const board = await api.as(alice).get(`/boards/${boardId}`)
+    const board = contracted(
+      boardResponse,
+      await api.as(alice).get(`/boards/${boardId}`)
+    )
 
-    const parsed = boardResponse.safeParse(board.json())
-    expect(parsed.error).toBeUndefined()
-    expect(parsed.data?.tasks).toMatchObject([
+    expect(board.tasks).toMatchObject([
       {
         priority: 2,
         dueTime: '09:30',
@@ -96,7 +117,7 @@ describe('the API contract', () => {
         commentCount: 1
       }
     ])
-    expect(parsed.data?.tasks[0]?.canceledAt).not.toBeNull()
+    expect(board.tasks[0]?.canceledAt).not.toBeNull()
   })
 
   it('describes every other response the app reads', async () => {
@@ -284,5 +305,30 @@ describe('the API contract', () => {
 
     contracted(projectsResponse, await api.as(alice).get('/projects'))
     contracted(settingsResponse, await api.as(alice).get('/settings'))
+  })
+
+  // Runs last: it checks what the tests above parsed.
+  it('parses a response of every GET route of the API', () => {
+    const routes = getRoutes(
+      api.printRoutes({ commonPrefix: false, method: 'GET' })
+    )
+    const served = (route: string, path: string) => {
+      const [want, got] = [route.split('/'), path.split('/')]
+      return (
+        want.length === got.length &&
+        want.every(
+          (segment, i) => segment.startsWith(':') || segment === got[i]
+        )
+      )
+    }
+    const unparsed = routes.filter(
+      route =>
+        route.startsWith('/api/') &&
+        !NOT_JSON.has(route) &&
+        ![...parsedGets].some(path => served(route, path))
+    )
+
+    expect(routes).toContain('/api/boards/:boardId')
+    expect(unparsed).toEqual([])
   })
 })
