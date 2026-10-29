@@ -1,4 +1,4 @@
-FROM node:24-slim AS build
+FROM node:24-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c AS build
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY apps/backend/package.json apps/backend/
@@ -12,7 +12,7 @@ RUN npm run build --workspace @twake-tasks/backend
 FROM build AS deps
 RUN npm prune --omit=dev
 
-FROM node:24-slim
+FROM node:24-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=deps /app/node_modules node_modules

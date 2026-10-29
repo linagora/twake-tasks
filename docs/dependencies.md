@@ -60,3 +60,10 @@ No frontend code imports `@mui/lab` or `cozy-intent`. They stay in the frontend'
 ## Drizzle
 
 `drizzle-orm` and `drizzle-kit` are pinned to the release candidate `1.0.0-rc.4`. Once 1.0 is stable, move both in one PR. That PR is ready when `npm run db:generate` produces no migration and the backend tests pass.
+
+## Updates
+
+- Renovate opens the dependency updates every Monday, grouped as [`renovate.json`](../renovate.json) lists, and merges minor and patch devDependency updates once the release is three days old and CI passes. Base images and workflow actions are pinned by digest, and Renovate moves the digests too.
+- A new pre-release dependency gets a section here that says when it leaves the pre-release.
+- `knip`, in the root `npm run lint` and in CI, fails on a package nothing imports and on an export nothing uses.
+- CI fails on a high or critical advisory in a production dependency. The weekly audit opens or updates an issue labelled `security` for moderate ones and above, and closes it once none are left.
