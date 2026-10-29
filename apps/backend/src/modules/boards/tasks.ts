@@ -83,6 +83,18 @@ export async function taskOf(tx: Tx, boardId: string, taskId: string) {
   return task
 }
 
+export async function visibleTask(
+  tx: Tx,
+  identity: Identity,
+  boardId: string,
+  taskId: string
+) {
+  if (!(await roleOn(tx, identity.userId, boardId))) {
+    throw new Refused('not_found')
+  }
+  return taskOf(tx, boardId, taskId)
+}
+
 // Archived and trashed tasks stay read only until they are restored.
 export async function shownTaskOf(tx: Tx, boardId: string, taskId: string) {
   const task = await taskOf(tx, boardId, taskId)

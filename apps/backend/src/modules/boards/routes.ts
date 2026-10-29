@@ -13,15 +13,12 @@ import {
   layoutChoice,
   memberParams,
   newBoard,
-  newComment,
   newInvite,
   newLabel,
   newReminder,
   newSection,
   newTask,
   peopleQuery,
-  reactionEmoji,
-  reactionParams,
   reminderParams,
   roleChange,
   sectionChanges,
@@ -46,7 +43,6 @@ import type { Identity, RequireIdentity } from '../auth/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import { under, type Refusal } from '../kernel/index.ts'
 import { createArchiveStore } from './archive.ts'
-import { createCommentStore } from './comments.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
@@ -116,7 +112,6 @@ export function registerBoards(
     db: Db
     requireIdentity: RequireIdentity
     // 0 for no cap.
-    mentionsPerComment: number
     pendingReminders: number
   }
 ): BoardRoute[] {
@@ -124,7 +119,6 @@ export function registerBoards(
   const taskStore = createTaskStore(deps.db)
   const sectionStore = createSectionStore(deps.db)
   const labelStore = createLabelStore(deps.db)
-  const commentStore = createCommentStore(deps.db, deps.mentionsPerComment)
   const reminderStore = createReminderStore(deps.db, deps.pendingReminders)
   const layoutStore = createLayoutStore(deps.db)
   const sharingStore = createSharingStore(deps.db)
@@ -347,38 +341,6 @@ export function registerBoards(
     }),
     defineRoute({
       method: 'GET',
-      url: '/boards/:boardId/tasks/:taskId/follow',
-      access: viewer,
-      params: taskParams,
-      handler: ({ identity, params }) =>
-        under(
-          'following',
-          reminderStore.following(identity, params.boardId, params.taskId)
-        )
-    }),
-    ...(
-      [
-        ['PUT', true],
-        ['DELETE', false]
-      ] as const
-    ).map(([method, following]): BoardRoute =>
-      defineRoute({
-        method,
-        url: '/boards/:boardId/tasks/:taskId/follow',
-        access: viewer,
-        params: taskParams,
-        status: 204,
-        handler: ({ identity, params }) =>
-          reminderStore.setFollowing(
-            identity,
-            params.boardId,
-            params.taskId,
-            following
-          )
-      })
-    ),
-    defineRoute({
-      method: 'GET',
       url: '/boards',
       access: self,
       handler: async ({ identity }) => ({
@@ -587,56 +549,6 @@ export function registerBoards(
           historyOf(deps.db, identity, params.boardId, params.taskId)
         )
     }),
-    defineRoute({
-      method: 'GET',
-      url: '/boards/:boardId/tasks/:taskId/comments',
-      access: viewer,
-      params: taskParams,
-      handler: ({ identity, params }) =>
-        under(
-          'comments',
-          commentStore.listComments(identity, params.boardId, params.taskId)
-        )
-    }),
-    defineRoute({
-      method: 'POST',
-      url: '/boards/:boardId/tasks/:taskId/comments',
-      access: viewer,
-      params: taskParams,
-      body: newComment,
-      status: 201,
-      handler: ({ identity, params, body }) =>
-        commentStore.addComment(
-          identity,
-          params.boardId,
-          params.taskId,
-          body.body
-        )
-    }),
-    ...(['PUT', 'DELETE'] as const).map((method): BoardRoute =>
-      defineRoute({
-        method,
-        url: '/boards/:boardId/tasks/:taskId/comments/:commentId/reactions/:emoji',
-        access: viewer,
-        params: reactionParams,
-        status: 204,
-        handler: async ({ identity, params }) => {
-          const emoji = reactionEmoji.safeParse(params.emoji)
-          if (!emoji.success) return { ok: false, error: 'invalid_request' }
-          const { boardId, taskId, commentId } = params
-          const args = [
-            identity,
-            boardId,
-            taskId,
-            commentId,
-            emoji.data
-          ] as const
-          return method === 'PUT'
-            ? commentStore.addReaction(...args)
-            : commentStore.removeReaction(...args)
-        }
-      })
-    ),
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/sections',
