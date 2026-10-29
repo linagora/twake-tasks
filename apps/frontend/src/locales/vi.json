@@ -418,7 +418,9 @@
     "title": "Phím tắt",
     "hint": "Phím tắt hoạt động khi bạn không nhập vào một trường.",
     "then": "g rồi %{key}",
-    "close": "Đóng"
+    "close": "Đóng",
+    "toggle": "Phím tắt một phím",
+    "toggleHint": "Tắt nếu bạn dùng nhận dạng giọng nói hoặc hay nhấn nhầm phím."
   },
   "transfer": {
     "title": "Chuyển sang bảng khác",

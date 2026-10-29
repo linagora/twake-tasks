@@ -418,7 +418,9 @@
     "title": "Atajos de teclado",
     "hint": "Los atajos funcionan cuando no estás escribiendo en un campo.",
     "then": "g y luego %{key}",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "toggle": "Atajos de una tecla",
+    "toggleHint": "Desactívalos si usas reconocimiento de voz o pulsas teclas por accidente."
   },
   "transfer": {
     "title": "Mover a otro tablero",

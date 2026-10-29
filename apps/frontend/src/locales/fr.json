@@ -418,7 +418,9 @@
     "title": "Raccourcis clavier",
     "hint": "Les raccourcis fonctionnent quand vous n'êtes pas en train de saisir dans un champ.",
     "then": "g puis %{key}",
-    "close": "Fermer"
+    "close": "Fermer",
+    "toggle": "Raccourcis à une touche",
+    "toggleHint": "Désactivez-les si vous utilisez la reconnaissance vocale ou appuyez sur des touches par erreur."
   },
   "transfer": {
     "title": "Déplacer vers un autre tableau",
