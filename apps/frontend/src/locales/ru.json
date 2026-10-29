@@ -28,6 +28,9 @@
     "mainMenu": "Главное меню",
     "skipToContent": "Перейти к содержимому"
   },
+  "account": {
+    "highContrast": "Высокая контрастность"
+  },
   "session": {
     "signingIn": "Выполняется вход…",
     "opening": {

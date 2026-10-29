@@ -4,6 +4,7 @@ import {
   Bottom,
   Calendar,
   CalendarToday,
+  Check,
   Filter,
   HelpOutlined,
   Logout,
@@ -61,6 +62,7 @@ import {
   WideScreenAction,
   WideScreenNavItem
 } from '@/ds/AppFrame'
+import { useContrast } from '@/ds/contrast'
 import { HomeIcon } from '@/ds/HomeIcon'
 import { Icon } from '@/ds/Icon'
 import { displayName } from '@/domain/person'
@@ -224,6 +226,7 @@ function Header({
 function AccountMenu({ onHelp }: { onHelp: () => void }): ReactElement {
   const { t } = useI18n()
   const { user, signOut } = useSession()
+  const contrast = useContrast()
   const { data: settings } = useSettings()
   const email = user.email ?? ''
   const name = displayName({ email, name: settings?.name ?? user.name ?? null })
@@ -308,6 +311,20 @@ function AccountMenu({ onHelp }: { onHelp: () => void }): ReactElement {
               ?
             </Typography>
           </MenuItem>
+          {/* Stays open, so the change shows at once. */}
+          <MenuItem
+            role="menuitemcheckbox"
+            aria-checked={contrast.high}
+            onClick={() => {
+              contrast.setChoice(contrast.high ? 'standard' : 'high')
+            }}
+          >
+            <ListItemIcon>
+              {contrast.high && <Icon icon={Check} />}
+            </ListItemIcon>
+            <ListItemText>{t('account.highContrast')}</ListItemText>
+          </MenuItem>
+          <Divider component="li" />
           <MenuItem
             onClick={() => {
               close()
