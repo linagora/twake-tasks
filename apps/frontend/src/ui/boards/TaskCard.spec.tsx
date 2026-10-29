@@ -30,6 +30,17 @@ describe('TaskCard', () => {
     expect(card.getByLabelText('Overdue, due Mar 2, 2020')).toBeInTheDocument()
   })
 
+  it('says overdue in words in high contrast, not by the colour alone', async () => {
+    localStorage.setItem('twake-tasks:contrast', 'high')
+    const card = await cardOf({ dueDate: '2020-03-02' })
+
+    expect(
+      within(card.getByLabelText('Overdue, due Mar 2, 2020')).getByText(
+        /^Overdue, due /
+      )
+    ).toBeVisible()
+  })
+
   it('does not mark a done task as overdue', async () => {
     const card = await cardOf({
       dueDate: '2020-03-02',

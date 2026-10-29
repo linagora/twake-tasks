@@ -28,6 +28,9 @@
     "mainMenu": "Menu principale",
     "skipToContent": "Vai al contenuto"
   },
+  "account": {
+    "highContrast": "Contrasto elevato"
+  },
   "session": {
     "signingIn": "Accesso in corso…",
     "opening": {

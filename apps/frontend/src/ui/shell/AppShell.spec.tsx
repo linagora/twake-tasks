@@ -188,9 +188,35 @@ describe('AppShell', () => {
     const menu = await screen.findByRole('menu')
 
     expect([...menu.children].map(child => child.getAttribute('role'))).toEqual(
-      ['menuitem', 'menuitem']
+      ['menuitem', 'menuitemcheckbox', 'separator', 'menuitem']
     )
     expect(screen.getByText('alice@example.com')).toBeVisible()
+  })
+
+  it('turns high contrast on and off from the account menu, which stays open', async () => {
+    renderRoute('/', { boardsApi: fakeBoardsApi() })
+
+    fireEvent.click(
+      within(await screen.findByRole('banner')).getByRole('button', {
+        name: 'Alice Martin'
+      })
+    )
+    const item = await screen.findByRole('menuitemcheckbox', {
+      name: 'High contrast'
+    })
+    expect(item).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(item)
+
+    expect(item).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+    expect(document.documentElement).toHaveAttribute('data-contrast', 'high')
+    expect(localStorage.getItem('twake-tasks:contrast')).toBe('high')
+
+    fireEvent.click(item)
+
+    expect(item).toHaveAttribute('aria-checked', 'false')
+    expect(document.documentElement).not.toHaveAttribute('data-contrast')
+    expect(localStorage.getItem('twake-tasks:contrast')).toBe('standard')
   })
 
   it('closes the account menu when the page changes', async () => {

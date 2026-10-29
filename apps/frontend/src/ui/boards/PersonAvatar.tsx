@@ -1,6 +1,7 @@
 import { Avatar, getInitials, nameToColor } from '@linagora/twake-mui'
 import type { ComponentProps, ReactElement } from 'react'
 
+import { HIGH_CONTRAST_AVATAR, useContrast } from '@/ds/contrast'
 import { displayName } from '@/domain/person'
 
 export function PersonAvatar({
@@ -16,11 +17,12 @@ export function PersonAvatar({
   label?: string
   size?: ComponentProps<typeof Avatar>['size']
 }): ReactElement {
+  const { high } = useContrast()
   return (
     <Avatar
       size={size}
       {...(avatar && { src: avatar })}
-      color={nameToColor(email) ?? 'sunrise'}
+      color={high ? HIGH_CONTRAST_AVATAR : (nameToColor(email) ?? 'sunrise')}
       {...(label
         ? { role: 'img', 'aria-label': label }
         : { 'aria-hidden': true })}

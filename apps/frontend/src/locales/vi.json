@@ -28,6 +28,9 @@
     "mainMenu": "Menu chính",
     "skipToContent": "Chuyển đến nội dung"
   },
+  "account": {
+    "highContrast": "Độ tương phản cao"
+  },
   "session": {
     "signingIn": "Đang đăng nhập…",
     "opening": {

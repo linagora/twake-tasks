@@ -286,6 +286,12 @@ export const SidebarEntry = styled('div')(({ theme }) => ({
       outlineOffset: -2
     }
   },
+  // The current page told by a bar and a weight, not by its colour alone
+  'html[data-contrast="high"] & > a[aria-current="page"] > div': {
+    backgroundColor: theme.alpha(theme.vars.palette.primary.main, 0.12),
+    boxShadow: `inset 4px 0 0 ${theme.vars.palette.primary.main}`,
+    fontWeight: 600
+  },
   // The bottom bar greys the entries that are not current, as twake-mui 10.0
   // did; its NavLink now keeps them in the primary text colour.
   [theme.breakpoints.down('lg')]: {

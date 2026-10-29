@@ -10,6 +10,8 @@ import {
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
+import { HIGH_CONTRAST_BADGE, useContrast } from '@/ds/contrast'
+
 const CARD_RADIUS = '20px'
 
 export function CardGrid({
@@ -66,6 +68,7 @@ export function BoardCard({
   /** On the last row, before the people. */
   footerAction?: ReactNode
 }): ReactElement {
+  const { high } = useContrast()
   return (
     <Card
       component="li"
@@ -82,9 +85,9 @@ export function BoardCard({
         '& a': { color: 'text.primary', textDecoration: 'none' },
         '& a::after': { content: '""', position: 'absolute', inset: 0 },
         '&:focus-within': {
-          outline: 2,
-          outlineColor: 'primary.main',
-          outlineOffset: -2
+          outline: high ? 3 : 2,
+          outlineColor: high ? 'text.primary' : 'primary.main',
+          outlineOffset: high ? -3 : -2
         },
         '& a:focus-visible': { outline: 'none' }
       }}
@@ -93,7 +96,7 @@ export function BoardCard({
         <Avatar
           variant="rounded"
           size={40}
-          color={nameToColor(label) ?? 'sunrise'}
+          color={high ? HIGH_CONTRAST_BADGE : (nameToColor(label) ?? 'sunrise')}
           role="img"
           aria-label={badgeLabel}
           sx={{ borderRadius: 2, fontWeight: 600 }}
