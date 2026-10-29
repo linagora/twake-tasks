@@ -13,6 +13,7 @@ import {
 } from '@linagora/twake-mui'
 import type { HTMLAttributes, ReactElement, ReactNode, Ref } from 'react'
 
+import { useContrast } from '@/ds/contrast'
 import { Icon } from '@/ds/Icon'
 
 /** Creating an item in a day or a tray: what its button says, and does */
@@ -63,6 +64,7 @@ export function CalendarToolbar({
 }): ReactElement {
   const theme = useTheme()
   const compact = useMediaQuery(theme.breakpoints.down('md'))
+  const { high } = useContrast()
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -130,7 +132,8 @@ export function CalendarToolbar({
           fontWeight: 400,
           textTransform: 'capitalize'
         }}
-        noWrap
+        // High contrast wraps the month rather than cutting it
+        noWrap={!high}
       >
         {title}
       </Typography>

@@ -138,6 +138,7 @@ const prose = (theme: Theme) => ({
     textDecoration: 'line-through'
   },
   '& a': { color: theme.vars.palette.primary.main },
+  'html[data-contrast="high"] & a': { textDecoration: 'underline' },
   '& .mention': {
     padding: '0.05em 0.35em',
     borderRadius: 4,

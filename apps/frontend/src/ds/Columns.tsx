@@ -18,10 +18,12 @@ import {
   type Ref
 } from 'react'
 
+import { useContrast } from '@/ds/contrast'
 import { Highlight } from '@/ds/Highlight'
 import { Icon } from '@/ds/Icon'
 
 export function Columns({ children }: { children: ReactNode }): ReactElement {
+  const { high } = useContrast()
   return (
     <Box
       sx={{
@@ -30,8 +32,8 @@ export function Columns({ children }: { children: ReactNode }): ReactElement {
         gap: 2,
         overflowX: 'auto',
         // Room for a focus ring at either end, which the scroll would cut.
-        px: 0.5,
-        mx: -0.5,
+        px: high ? 1 : 0.5,
+        mx: high ? -1 : -0.5,
         pb: 2
       }}
     >
@@ -417,20 +419,42 @@ export function LabelChip({
   remove?: ChipRemoval | undefined
 }): ReactElement {
   const hue = hueOf(name)
+  const { high } = useContrast()
   return (
     <Box
       component="span"
       sx={theme => ({
-        ...(color === null
+        ...(high
           ? {
-              color: `hsl(${String(hue)} 60% 32%)`,
-              bgcolor: `hsl(${String(hue)} 75% 93%)`,
-              ...theme.applyStyles('dark', {
-                color: `hsl(${String(hue)} 70% 78%)`,
-                bgcolor: `hsl(${String(hue)} 40% 24%)`
-              })
+              // The text on the page's ground; the colour in a ring and a dot
+              '--tint': color ?? `hsl(${String(hue)} 60% 45%)`,
+              ...(color === null &&
+                theme.applyStyles('dark', {
+                  '--tint': `hsl(${String(hue)} 70% 70%)`
+                })),
+              color: 'text.primary',
+              bgcolor: 'background.paper',
+              border: '2px solid var(--tint)',
+              gap: 0.5,
+              '&::before': {
+                content: '""',
+                flexShrink: 0,
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                bgcolor: 'var(--tint)'
+              }
             }
-          : { color: theme.palette.getContrastText(color), bgcolor: color }),
+          : color === null
+            ? {
+                color: `hsl(${String(hue)} 60% 32%)`,
+                bgcolor: `hsl(${String(hue)} 75% 93%)`,
+                ...theme.applyStyles('dark', {
+                  color: `hsl(${String(hue)} 70% 78%)`,
+                  bgcolor: `hsl(${String(hue)} 40% 24%)`
+                })
+              }
+            : { color: theme.palette.getContrastText(color), bgcolor: color }),
         display: 'inline-flex',
         alignItems: 'center',
         height: 20,

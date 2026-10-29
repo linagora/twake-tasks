@@ -4,9 +4,19 @@ import {
   ButtonBase,
   styled,
   ToggleButtonGroup,
-  Typography
+  Typography,
+  type Theme
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
+
+// The toggle shown told by a line and a weight, not by its ground alone
+const markedInHighContrast = (theme: Theme) => ({
+  'html[data-contrast="high"] && .MuiToggleButton-root.Mui-selected': {
+    color: theme.vars.palette.primary.main,
+    boxShadow: `inset 0 0 0 2px ${theme.vars.palette.primary.main}`,
+    fontWeight: 600
+  }
+})
 
 // Same height as the buttons it sits next to. The selected button is grey
 // like the current entry of the sidebar, where twake-mui greys the others.
@@ -25,7 +35,8 @@ export const HeaderToggleGroup = styled(ToggleButtonGroup)(({ theme }) => ({
     color: theme.vars.palette.primary.main,
     backgroundColor: theme.vars.palette.action.selected,
     '&:hover': { backgroundColor: theme.vars.palette.action.focus }
-  }
+  },
+  ...markedInHighContrast(theme)
 }))
 
 // Icons alone, as the list and grid switch of Twake Drive: the one shown on
@@ -49,7 +60,8 @@ export const ViewToggleGroup = styled(ToggleButtonGroup)(({ theme }) => ({
     color: theme.vars.palette.text.primary,
     backgroundColor: theme.vars.palette.action.selected,
     '&:hover': { backgroundColor: theme.vars.palette.action.focus }
-  }
+  },
+  ...markedInHighContrast(theme)
 }))
 
 // Phones show the icon alone; the button keeps its label for screen readers.

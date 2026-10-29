@@ -1,8 +1,9 @@
 import { Avatar } from '@linagora/twake-mui'
-import { CalendarToday, Flag } from '@linagora/twake-icons'
+import { CalendarToday, Flag, Warning } from '@linagora/twake-icons'
 import type { ReactElement } from 'react'
 
 import { AvatarStack, MetaChip } from '@/ds/Columns'
+import { useContrast } from '@/ds/contrast'
 import { Icon } from '@/ds/Icon'
 import type { Person, Priority, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
@@ -36,12 +37,16 @@ export function PriorityChip({
 
 export function DueChip({ task }: { task: Task }): ReactElement | null {
   const { t, lang } = useI18n()
+  const { high } = useContrast()
   const due = dueLabel(task, lang)
   if (!task.dueDate || !due) return null
   const tone = urgency(task)
+  const day = shortDay(task.dueDate, lang)
+  // High contrast says it in words, not by the red alone
+  const spelled = high && tone === 'error'
   return (
     <MetaChip
-      icon={<Icon icon={CalendarToday} />}
+      icon={<Icon icon={spelled ? Warning : CalendarToday} />}
       tone={tone}
       label={
         tone === 'error'
@@ -49,7 +54,7 @@ export function DueChip({ task }: { task: Task }): ReactElement | null {
           : t('board.due', { date: due })
       }
     >
-      {shortDay(task.dueDate, lang)}
+      {spelled ? t('board.overdue', { date: day }) : day}
     </MetaChip>
   )
 }

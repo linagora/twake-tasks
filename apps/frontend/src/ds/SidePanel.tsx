@@ -275,7 +275,9 @@ function Panel({
               minWidth: 0,
               overflow: 'hidden',
               whiteSpace: 'nowrap'
-            }
+            },
+            // High contrast wraps the actions onto a second line instead
+            'html[data-contrast="high"] &': { flexWrap: 'wrap', py: 1 }
           }}
         >
           {host && (
