@@ -17,7 +17,7 @@ import {
   startApp,
   type TestUser
 } from '../../testing/app.ts'
-import { inviteEmails, notifications, projects } from '../boards/schema.ts'
+import { inviteEmails, notifications, projects } from '../boards/index.ts'
 import { NOTIFICATION_DIGEST_JOB } from '../notifications/index.ts'
 import { keepSettings, userSettings } from '../settings/index.ts'
 import { accountRoutes } from './accounts.ts'

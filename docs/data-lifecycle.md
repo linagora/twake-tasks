@@ -3,7 +3,7 @@
 When a row goes, for every table in the database. A row ends in one of four ways:
 
 - Cascade: a foreign key deletes it with the row it belongs to.
-- Removal path: code deletes it when something ends, such as a person losing access to a project or an account being deleted. When a person's access, a person or an organization ends, the removal path calls the function for that end in [`lifecycle.ts`](../apps/backend/src/modules/boards/lifecycle.ts) rather than deleting on its own.
+- Removal path: code deletes it when something ends, such as a person losing access to a project or an account being deleted. When a person's access, a person or an organization ends, the removal path calls the function for that end in [`lifecycle.ts`](../apps/backend/src/modules/boards/lifecycle.ts) rather than deleting on its own. The jobs of a deleted person or organization are the exception: the account handlers in [`accounts.ts`](../apps/backend/src/modules/accounts/accounts.ts) delete them, since the scheduler sits outside the boards module.
 - Retention: it is deleted once it is older than a fixed period.
 - Kept: it stays forever.
 

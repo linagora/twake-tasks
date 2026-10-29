@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { asOrganization, type Tx } from '../../infra/db.ts'
 import type { LdapRest } from '../../infra/ldapRest.ts'
 import { schedule, type Handler } from '../../scheduler/scheduler.ts'
-import { projects } from '../boards/schema.ts'
+import { projects } from '../boards/index.ts'
 import { deleteSpace, matchSpace } from './events.ts'
 import { spaces } from './schema.ts'
 

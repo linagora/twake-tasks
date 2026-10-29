@@ -2,25 +2,27 @@ import { and, asc, desc, eq, ne, notInArray, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { checkRole, membersOf, roleOn } from '../boards/access.ts'
 import {
+  boards,
+  bumpBoard,
+  checkRole,
+  completionFor,
   daysBetween,
+  inSection,
+  membersOf,
   nextOccurrence,
+  positionBetween,
   recurrenceOf,
+  roleOn,
+  sectionOf,
   shift,
+  shownTaskOf,
+  taskAssignees,
+  taskOf,
+  tasks,
   todayIn,
   type Recurrence
-} from '../boards/recurrence.ts'
-import { boards, taskAssignees, tasks } from '../boards/schema.ts'
-import {
-  completionFor,
-  inSection,
-  positionBetween,
-  sectionOf,
-  shownTaskOf,
-  taskOf
-} from '../boards/taskRows.ts'
-import { bumpBoard } from '../boards/versions.ts'
+} from '../boards/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { plainText } from './markdown.ts'
 import { moveReminders } from './reminderJobs.ts'

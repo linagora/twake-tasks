@@ -11,7 +11,7 @@ import {
   aUser,
   type TestUser
 } from '../../testing/app.ts'
-import { taskReminders, tasks } from '../boards/schema.ts'
+import { taskReminders, tasks } from '../boards/index.ts'
 import { scheduleReminder } from './reminderJobs.ts'
 
 // The migration switches row-level security off and on again for a moment,

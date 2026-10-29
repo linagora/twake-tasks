@@ -18,24 +18,24 @@ import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { userSettings } from '../settings/index.ts'
 import {
-  checkRole,
-  memberLooks,
-  roleIn,
-  roleOn,
-  settingsOfMember,
-  type Role
-} from '../boards/access.ts'
-import { endAccess, endAccessOutside } from '../boards/lifecycle.ts'
-import {
   boards,
+  bumpBoard,
+  bumpProjects,
+  checkRole,
+  endAccess,
+  endAccessOutside,
   inviteEmails,
+  memberLooks,
   projectInvites,
   projectMembers,
   projects,
+  roleIn,
+  roleOn,
+  settingsOfMember,
   taskLabels,
-  tasks
-} from '../boards/schema.ts'
-import { bumpBoard, bumpProjects } from '../boards/versions.ts'
+  tasks,
+  type Role
+} from '../boards/index.ts'
 import { PROJECT_INVITE_EMAIL_JOB } from './inviteEmails.ts'
 
 async function projectOfBoard(tx: Tx, boardId: string) {

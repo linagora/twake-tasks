@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { durationUnit, recurrenceUnit } from '../modules/boards/schema.ts'
+import { durationUnit, recurrenceUnit } from '../modules/boards/index.ts'
 
 type ObjectOf = <S extends z.core.$ZodLooseShape>(
   shape: S

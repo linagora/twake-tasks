@@ -7,7 +7,7 @@ import {
   uuid
 } from 'drizzle-orm/pg-core'
 import { organizationId, tenantPolicy, timestamptz } from '../../infra/db.ts'
-import { projects } from '../boards/schema.ts'
+import { projects } from '../boards/index.ts'
 
 // The space integration's own table: the project it keeps for each space.
 export const spaces = pgTable.withRLS(

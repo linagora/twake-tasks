@@ -34,16 +34,16 @@ import {
   schedule,
   type Handler as JobHandler
 } from '../../scheduler/scheduler.ts'
-import { endAccess } from '../boards/lifecycle.ts'
 import {
+  addDefaultSections,
   boards,
+  bumpProjects,
+  endAccess,
+  freeKeyPrefix,
   memberRole,
   projectMembers,
   projects
-} from '../boards/schema.ts'
-import { freeKeyPrefix } from '../boards/keyPrefixes.ts'
-import { addDefaultSections } from '../boards/store.ts'
-import { bumpProjects } from '../boards/versions.ts'
+} from '../boards/index.ts'
 import { spaces } from './schema.ts'
 
 const MAX_CLOCK_AHEAD_MS = 24 * 60 * 60 * 1000

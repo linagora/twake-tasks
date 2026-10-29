@@ -3,18 +3,16 @@ import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import {
   accessibleBoards,
-  memberLooks,
-  memberNames,
-  settingsOfMember
-} from '../boards/access.ts'
-import {
   boards,
   comments,
+  memberLooks,
+  memberNames,
   notifications,
   projectMembers,
+  settingsOfMember,
   taskHistory,
   tasks
-} from '../boards/schema.ts'
+} from '../boards/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { userSettings } from '../settings/index.ts'
 import { mentionedEmails, plainText, withNames } from '../tasks/index.ts'

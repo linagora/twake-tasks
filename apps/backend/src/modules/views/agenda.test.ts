@@ -7,7 +7,7 @@ import {
   startApp,
   type TestUser
 } from '../../testing/app.ts'
-import { shift, todayIn } from '../boards/recurrence.ts'
+import { shift, todayIn } from '../boards/index.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))

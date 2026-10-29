@@ -9,7 +9,7 @@ import {
   startApp,
   type TestUser
 } from '../../testing/app.ts'
-import { projectMembers, tasks } from '../boards/schema.ts'
+import { projectMembers, tasks } from '../boards/index.ts'
 
 interface Person {
   userId: string

@@ -15,17 +15,20 @@ import {
 import { alias } from 'drizzle-orm/pg-core'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { accessibleBoards, membersOf } from '../boards/access.ts'
-import { describeTasks, shown } from '../boards/describe.ts'
-import { labelsOn } from '../boards/labels.ts'
-import { shift, todayIn } from '../boards/recurrence.ts'
 import {
+  accessibleBoards,
   boards,
+  describeTasks,
+  labelsOn,
+  membersOf,
   projects,
   sections,
+  shift,
+  shown,
   taskAssignees,
-  tasks
-} from '../boards/schema.ts'
+  tasks,
+  todayIn
+} from '../boards/index.ts'
 
 const SEARCH_LIMIT = 50
 
