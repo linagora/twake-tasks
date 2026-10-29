@@ -17,7 +17,7 @@ import {
   tasks
 } from '../boards/schema.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
-import { userSettings } from '../settings/schema.ts'
+import { userSettings } from '../settings/index.ts'
 
 const EXCERPT_LENGTH = 120
 

@@ -19,8 +19,7 @@ import {
 } from '../../testing/app.ts'
 import { inviteEmails, notifications, projects } from '../boards/schema.ts'
 import { NOTIFICATION_DIGEST_JOB } from '../notifications/index.ts'
-import { keepSettings } from '../settings/events.ts'
-import { userSettings } from '../settings/schema.ts'
+import { keepSettings, userSettings } from '../settings/index.ts'
 import { accountRoutes } from './accounts.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>

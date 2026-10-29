@@ -1,4 +1,13 @@
-const CLOSED_MODULES = ['kernel', 'notifications', 'views', 'collaboration']
+const CLOSED_MODULES = [
+  'kernel',
+  'notifications',
+  'views',
+  'collaboration',
+  'projects',
+  'settings',
+  'accounts',
+  'spaces'
+]
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 export default {

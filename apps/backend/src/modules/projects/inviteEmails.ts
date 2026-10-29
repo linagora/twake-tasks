@@ -3,8 +3,8 @@ import { z } from 'zod'
 import { asTenant } from '../../infra/db.ts'
 import type { Mail } from '../../infra/mail.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
-import { userSettings } from '../settings/schema.ts'
-import { memberLooks, settingsOfMember } from './access.ts'
+import { userSettings } from '../settings/index.ts'
+import { memberLooks, settingsOfMember } from '../boards/access.ts'
 import {
   APP_NAME,
   COLORS,
@@ -13,8 +13,13 @@ import {
   layout,
   plain,
   type Language
-} from './mailLayout.ts'
-import { boards, projectInvites, projectMembers, projects } from './schema.ts'
+} from '../boards/mailLayout.ts'
+import {
+  boards,
+  projectInvites,
+  projectMembers,
+  projects
+} from '../boards/schema.ts'
 
 export const PROJECT_INVITE_EMAIL_JOB = 'project_invite_email'
 
