@@ -21,6 +21,7 @@ async function aBoardOf(owner: TestUser, keyPrefix: string) {
   ).json<{ id: string }>()
   const path = `/boards/${board.id}`
   return {
+    id: board.id,
     label: async (name: string) =>
       (await api.as(owner).post(`${path}/labels`, { name })).json<{
         id: string
@@ -192,6 +193,47 @@ describe('saved filters', () => {
     expect(await keys({ priority: [2, 3], label: ['client'] })).toEqual([
       'DES-3'
     ])
+  })
+
+  it('keeps to the boards picked, and finds nothing on a board out of reach', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    const home = await aBoardOf(owner, 'HOM')
+    const support = await aBoardOf(owner, 'SUP')
+    await design.add('Design, urgent', { priority: 1 })
+    await design.add('Design, low', { priority: 4 })
+    await home.add('Home, urgent', { priority: 1 })
+    await support.add('Support, urgent', { priority: 1 })
+    const elsewhere = await aBoardOf(aUser(), 'OTH')
+    await elsewhere.add('Not mine', { priority: 1 })
+    const keys = async (criteria: object) => {
+      const { id } = (
+        await api.as(owner).post('/filters', { name: 'Some', criteria })
+      ).json<{ id: string }>()
+      return keysOf(owner, id)
+    }
+
+    expect(await keys({ board: [design.id], priority: [1] })).toEqual(['DES-1'])
+    expect((await keys({ board: [design.id, home.id] })).sort()).toEqual([
+      'DES-1',
+      'DES-2',
+      'HOM-1'
+    ])
+    expect(await keys({ board: [elsewhere.id] })).toEqual([])
+    expect(await keys({ board: [support.id] })).toEqual(['SUP-1'])
+
+    expect(
+      (await api.as(owner).post(`/boards/${support.id}/archive`, {})).statusCode
+    ).toBe(204)
+
+    expect(await keys({ board: [support.id] })).toEqual([])
+    expect(
+      (
+        await api
+          .as(owner)
+          .post('/filters', { name: 'Odd', criteria: { board: ['support'] } })
+      ).statusCode
+    ).toBe(400)
   })
 
   it('keeps filters to the person who saved them, until deleted', async () => {
