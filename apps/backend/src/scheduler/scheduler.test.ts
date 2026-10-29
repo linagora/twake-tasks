@@ -333,4 +333,43 @@ describe('scheduler', () => {
     }
     expect(text).toContain(`jobs_oldest_due_seconds{kind="${kind}"} 0`)
   })
+
+  it('counts no drop of a kind before its first one, so the first drop shows as an increase', async () => {
+    const kind = aKind()
+    const metrics = createMetrics()
+    createScheduler({
+      db,
+      logger,
+      metrics,
+      handlers: { [kind]: () => Promise.resolve(undefined) }
+    })
+
+    expect(await metrics.registry.metrics()).toContain(
+      `jobs_run_total{kind="${kind}",outcome="dropped"} 0`
+    )
+  })
+
+  it('measures what is due while a drain of the kind is stuck', async () => {
+    const kind = aKind()
+    const metrics = createMetrics()
+    const { promise: stuck, resolve: release } =
+      Promise.withResolvers<undefined>()
+    const scheduler = createScheduler({
+      db,
+      logger,
+      metrics,
+      handlers: { [kind]: () => stuck }
+    })
+    await schedule(db, { kind, payload: 1, runAt: past() })
+    await schedule(db, { kind, payload: 2, runAt: past() })
+
+    const stop = scheduler.start(10)
+    await vi.waitFor(async () => {
+      expect(await metrics.registry.metrics()).toContain(
+        `jobs_due{kind="${kind}"} 2`
+      )
+    })
+    release(undefined)
+    await stop()
+  })
 })

@@ -15,6 +15,7 @@ Start with [features](features.md) for what the app does, and [architecture](arc
 - [Dependencies](dependencies.md): the services the app needs, and what it expects from each.
 - [Configuration](configuration.md): every setting of the backend and the frontend.
 - [Error reporting and feedback](error-reporting.md): Sentry and the feedback button.
+- [Operations](operations.md): the backend's metrics, dashboards and alert rules.
 
 ## Integrators
 

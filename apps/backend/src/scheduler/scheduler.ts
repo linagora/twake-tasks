@@ -77,6 +77,12 @@ export function createScheduler(deps: {
   const kinds = Object.keys(deps.handlers)
   const record = (kind: string, outcome: Outcome) =>
     deps.metrics?.jobsRun.inc({ kind, outcome })
+  // Starts every series at 0, so increase() counts the first drop of a kind.
+  for (const kind of kinds) {
+    for (const outcome of ['done', 'retried', 'dropped'] as const) {
+      deps.metrics?.jobsRun.inc({ kind, outcome }, 0)
+    }
+  }
   const now = deps.now ?? (() => new Date())
   const leaseMs = (deps.leaseSeconds ?? 600) * 1000
   const due = (kind: string) => and(eq(jobs.kind, kind), lte(jobs.runAt, now()))
@@ -195,25 +201,38 @@ export function createScheduler(deps: {
 
   return {
     runDue,
+    async measure() {
+      await Promise.all(kinds.map(measureLag))
+    },
     start(intervalMs: number) {
-      const running = new Map<string, Promise<void>>()
+      const running = new Map<string, Promise<unknown>>()
+      const measuring = new Map<string, Promise<void>>()
+      const fail = (kind: string) => (error: unknown) => {
+        deps.logger.error({ err: error, kind }, 'scheduler tick failed')
+      }
       const timer = setInterval(() => {
         for (const kind of kinds) {
+          // Not chained to the drain, so a stuck drain still shows its backlog.
+          if (!measuring.has(kind)) {
+            measuring.set(
+              kind,
+              measureLag(kind)
+                .catch(fail(kind))
+                .finally(() => measuring.delete(kind))
+            )
+          }
           if (running.has(kind)) continue
           running.set(
             kind,
             drain(kind, 100)
-              .then(() => measureLag(kind))
-              .catch((error: unknown) => {
-                deps.logger.error({ err: error, kind }, 'scheduler tick failed')
-              })
+              .catch(fail(kind))
               .finally(() => running.delete(kind))
           )
         }
       }, intervalMs)
       return async () => {
         clearInterval(timer)
-        await Promise.all(running.values())
+        await Promise.all([...running.values(), ...measuring.values()])
       }
     }
   }
