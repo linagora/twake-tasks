@@ -1,9 +1,9 @@
 import { and, asc, eq, sql } from 'drizzle-orm'
 import type { Db } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { taskReminders, tasks } from '../boards/schema.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { remindersWaitingFor, scheduleReminder } from './reminderJobs.ts'
-import { taskReminders, tasks } from './schema.ts'
 import { refuseIfShelved, visibleTask } from './tasks.ts'
 
 export type NewReminder = { at: Date } | { beforeMinutes: number; zone: string }

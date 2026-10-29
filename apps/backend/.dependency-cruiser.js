@@ -4,6 +4,7 @@ const CLOSED_MODULES = [
   'views',
   'collaboration',
   'projects',
+  'tasks',
   'settings',
   'accounts',
   'spaces'

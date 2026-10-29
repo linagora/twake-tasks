@@ -7,7 +7,6 @@ import {
   memberNames,
   settingsOfMember
 } from '../boards/access.ts'
-import { mentionedEmails, plainText, withNames } from '../boards/markdown.ts'
 import {
   boards,
   comments,
@@ -18,6 +17,7 @@ import {
 } from '../boards/schema.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { userSettings } from '../settings/index.ts'
+import { mentionedEmails, plainText, withNames } from '../tasks/index.ts'
 
 const EXCERPT_LENGTH = 120
 

@@ -23,6 +23,7 @@ import { registerCollaboration } from './collaboration/index.ts'
 import { registerNotifications } from './notifications/index.ts'
 import { registerProjects } from './projects/index.ts'
 import { registerSettings } from './settings/index.ts'
+import { registerTasks } from './tasks/index.ts'
 import { registerViews } from './views/index.ts'
 
 interface Declared {
@@ -94,7 +95,8 @@ function declaredRoutes(): Declared[] {
       addressLimits: { refusedTokens: off, logoutRefusals: off, tokenChecks: 0 }
     }).routes,
     ...registerProjects(scratch, { db, requireIdentity }),
-    ...registerBoards(scratch, {
+    ...registerBoards(scratch, { db, requireIdentity }),
+    ...registerTasks(scratch, {
       db,
       requireIdentity,
       pendingReminders: 0
@@ -253,9 +255,9 @@ const ownBoard = (me: TestUser) =>
     'own board'
   )
 
-const ownFilter = (me: TestUser) =>
+const ownFilter = (me: TestUser, criteria = {}) =>
   created<{ id: string }>(
-    api.as(me).post('/filters', { name: 'Mine', criteria: {} }),
+    api.as(me).post('/filters', { name: 'Mine', criteria }),
     'own filter'
   )
 
@@ -335,8 +337,9 @@ const EXAMPLES: Record<string, Example> = {
   'DELETE /filters/:filterId/favorite': async (_fixture, me) => ({
     params: { filterId: (await ownFilter(me)).id }
   }),
+  // A filter matching every task would load each board the matrix created.
   'GET /filters/:filterId/tasks': async (_fixture, me) => ({
-    params: { filterId: (await ownFilter(me)).id },
+    params: { filterId: (await ownFilter(me, { priority: [1] })).id },
     query: { zone: 'Europe/Paris' }
   }),
   [`GET ${task}/reminders`]: none,

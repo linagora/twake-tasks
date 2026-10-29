@@ -11,7 +11,12 @@ import {
 } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { generateNKeysBetween } from 'fractional-indexing'
-import { inTenant, type Db, type Tx } from '../../infra/db.ts'
+import {
+  inTenant,
+  isUniqueViolation,
+  type Db,
+  type Tx
+} from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse, type Result } from '../kernel/index.ts'
 import { userSettings } from '../settings/index.ts'
@@ -35,8 +40,7 @@ import {
   projects,
   tasks
 } from './schema.ts'
-import { isUniqueViolation } from './tasks.ts'
-import { bumpBoard } from './versions.ts'
+import { bumpBoard, bumpBoards } from './versions.ts'
 import { freeKeyPrefix, INBOX_KEY_PREFIX } from './keyPrefixes.ts'
 import { labelsOn } from './labels.ts'
 import { languageOf, type Language } from './mailLayout.ts'
@@ -101,6 +105,23 @@ export function createBoardStore(db: Db) {
               )
             )
           )
+        return null
+      })
+    },
+
+    setBoardArchived(identity: Identity, boardId: string, archived: boolean) {
+      return writeOrRefuse(db, identity, async tx => {
+        await checkRole(tx, identity, boardId, 'admin')
+        const [board] = await bumpBoards(
+          tx,
+          and(eq(boards.id, boardId), eq(boards.inbox, false)),
+          {
+            archivedAt: archived
+              ? sql`coalesce(${boards.archivedAt}, now())`
+              : null
+          }
+        )
+        if (!board) throw new Refused('forbidden')
         return null
       })
     },

@@ -161,6 +161,15 @@ export function isTransient(error: unknown): boolean {
   return false
 }
 
+const UNIQUE_VIOLATION = '23505'
+
+export function isUniqueViolation(error: unknown): boolean {
+  const cause = error instanceof Error ? error.cause : undefined
+  return (
+    cause instanceof postgres.PostgresError && cause.code === UNIQUE_VIOLATION
+  )
+}
+
 interface TenantIdentity {
   organizationId: string | null
   userId: string

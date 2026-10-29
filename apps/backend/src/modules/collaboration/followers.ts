@@ -3,7 +3,7 @@ import type { Db } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { writeOrRefuse } from '../kernel/index.ts'
 import { taskFollowers } from '../boards/schema.ts'
-import { visibleTask } from '../boards/tasks.ts'
+import { visibleTask } from '../tasks/index.ts'
 
 export function createFollowerStore(db: Db) {
   return {

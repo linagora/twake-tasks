@@ -1,11 +1,8 @@
-import { and, asc, desc, eq, isNull, ne, notInArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ne, notInArray, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
-import postgres from 'postgres'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { Refused, writeOrRefuse } from '../kernel/index.ts'
-import { checkRole, membersOf, roleOn } from './access.ts'
-import { plainText } from './markdown.ts'
+import { checkRole, membersOf, roleOn } from '../boards/access.ts'
 import {
   daysBetween,
   nextOccurrence,
@@ -13,75 +10,20 @@ import {
   shift,
   todayIn,
   type Recurrence
-} from './recurrence.ts'
+} from '../boards/recurrence.ts'
+import { boards, taskAssignees, tasks } from '../boards/schema.ts'
+import {
+  completionFor,
+  inSection,
+  positionBetween,
+  sectionOf,
+  shownTaskOf,
+  taskOf
+} from '../boards/taskRows.ts'
+import { bumpBoard } from '../boards/versions.ts'
+import { Refused, writeOrRefuse } from '../kernel/index.ts'
+import { plainText } from './markdown.ts'
 import { moveReminders } from './reminderJobs.ts'
-import { boards, sections, taskAssignees, tasks } from './schema.ts'
-import { bumpBoard } from './versions.ts'
-
-export function completionFor(
-  category: string | null,
-  since?: { completedAt: Date | null; canceledAt: Date | null }
-) {
-  return {
-    completedAt:
-      category === 'completed' ? (since?.completedAt ?? new Date()) : null,
-    canceledAt:
-      category === 'canceled' ? (since?.canceledAt ?? new Date()) : null
-  }
-}
-
-// Neighbours come from what the client saw. When they no longer sit next to
-// each other the board changed underneath, so the client reloads and retries.
-// Archived and trashed tasks keep their place between the ones it saw.
-export function positionBetween(
-  others: { id: string; position: string; hidden?: boolean }[],
-  afterId: string | undefined,
-  beforeId: string | undefined
-): string {
-  const after = afterId ? others.findIndex(task => task.id === afterId) : -1
-  const before = beforeId ? others.findIndex(task => task.id === beforeId) : -1
-  if ((afterId && after < 0) || (beforeId && before < 0)) {
-    throw new Refused('stale_neighbours')
-  }
-  if (
-    afterId &&
-    beforeId &&
-    (before <= after ||
-      others.slice(after + 1, before).some(task => !task.hidden))
-  ) {
-    throw new Refused('stale_neighbours')
-  }
-  const lower = afterId
-    ? others[after]
-    : beforeId
-      ? others[before - 1]
-      : others.at(-1)
-  const upper = afterId ? others[after + 1] : beforeId ? others[before] : null
-  return generateKeyBetween(lower?.position ?? null, upper?.position ?? null)
-}
-
-export async function sectionOf(
-  tx: Tx,
-  boardId: string,
-  sectionId: string | null
-) {
-  if (sectionId === null) return null
-  const [section] = await tx
-    .select()
-    .from(sections)
-    .where(and(eq(sections.id, sectionId), eq(sections.boardId, boardId)))
-  if (!section) throw new Refused('invalid_section')
-  return section
-}
-
-export async function taskOf(tx: Tx, boardId: string, taskId: string) {
-  const [task] = await tx
-    .select()
-    .from(tasks)
-    .where(and(eq(tasks.id, taskId), eq(tasks.boardId, boardId)))
-  if (!task) throw new Refused('not_found')
-  return task
-}
 
 export async function visibleTask(
   tx: Tx,
@@ -93,13 +35,6 @@ export async function visibleTask(
     throw new Refused('not_found')
   }
   return taskOf(tx, boardId, taskId)
-}
-
-// Archived and trashed tasks stay read only until they are restored.
-export async function shownTaskOf(tx: Tx, boardId: string, taskId: string) {
-  const task = await taskOf(tx, boardId, taskId)
-  if (task.archivedAt || task.deletedAt) throw new Refused('archived')
-  return task
 }
 
 export async function refuseIfShelved(
@@ -128,25 +63,6 @@ async function depthOf(tx: Tx, taskId: string): Promise<number> {
     )
     select count(*)::int as depth from chain`)
   return chain?.depth ?? 0
-}
-
-export function inSection(boardId: string, sectionId: string | null) {
-  return and(
-    eq(tasks.boardId, boardId),
-    isNull(tasks.parentId),
-    sectionId === null
-      ? isNull(tasks.sectionId)
-      : eq(tasks.sectionId, sectionId)
-  )
-}
-
-const UNIQUE_VIOLATION = '23505'
-
-export function isUniqueViolation(error: unknown): boolean {
-  const cause = error instanceof Error ? error.cause : undefined
-  return (
-    cause instanceof postgres.PostgresError && cause.code === UNIQUE_VIOLATION
-  )
 }
 
 type Maybe<T> = T | undefined

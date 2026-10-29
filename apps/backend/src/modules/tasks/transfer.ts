@@ -2,13 +2,24 @@ import { and, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { checkRole, membersOf } from '../boards/access.ts'
+import { labelsOn } from '../boards/labels.ts'
+import { endAccessOutside } from '../boards/lifecycle.ts'
+import {
+  boards,
+  labels,
+  taskAssignees,
+  taskLabels,
+  tasks
+} from '../boards/schema.ts'
+import {
+  completionFor,
+  inSection,
+  sectionOf,
+  shownTaskOf
+} from '../boards/taskRows.ts'
+import { bumpBoard } from '../boards/versions.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
-import { checkRole, membersOf } from './access.ts'
-import { endAccessOutside } from './lifecycle.ts'
-import { labelsOn } from './labels.ts'
-import { boards, labels, taskAssignees, taskLabels, tasks } from './schema.ts'
-import { completionFor, inSection, sectionOf, shownTaskOf } from './tasks.ts'
-import { bumpBoard } from './versions.ts'
 
 export interface TransferPreview {
   /** People assigned to the task or a sub-task who are not on the target board. */

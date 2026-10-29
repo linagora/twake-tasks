@@ -7,13 +7,13 @@ import {
   type Handler
 } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
+import { checkRole, membersOf, roleOn } from '../boards/access.ts'
+import { describeTasks } from '../boards/describe.ts'
+import { labelsOn } from '../boards/labels.ts'
+import { boards, projects, tasks } from '../boards/schema.ts'
+import { taskOf } from '../boards/taskRows.ts'
+import { bumpBoard } from '../boards/versions.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
-import { checkRole, membersOf, roleOn } from './access.ts'
-import { describeTasks } from './describe.ts'
-import { labelsOn } from './labels.ts'
-import { boards, projects, tasks } from './schema.ts'
-import { taskOf } from './tasks.ts'
-import { bumpBoard, bumpBoards } from './versions.ts'
 
 export const PURGE_JOB = 'purge-task'
 
@@ -81,9 +81,6 @@ export const purgeTask: Handler = async (raw, tx) => {
 }
 
 export function createArchiveStore(db: Db) {
-  const write = <T>(identity: Identity, work: (tx: Tx) => Promise<T>) =>
-    writeOrRefuse(db, identity, work)
-
   const visibleTask = async (
     tx: Tx,
     identity: Identity,
@@ -99,7 +96,7 @@ export function createArchiveStore(db: Db) {
 
   return {
     archiveTask(identity: Identity, boardId: string, taskId: string) {
-      return write(identity, async tx => {
+      return writeOrRefuse(db, identity, async tx => {
         await visibleTask(tx, identity, boardId, taskId)
         await hide(tx, taskId, 'archivedAt')
         return null
@@ -107,7 +104,7 @@ export function createArchiveStore(db: Db) {
     },
 
     trashTask(identity: Identity, boardId: string, taskId: string) {
-      return write(identity, async tx => {
+      return writeOrRefuse(db, identity, async tx => {
         const { board, task } = await visibleTask(tx, identity, boardId, taskId)
         await hide(tx, taskId, 'deletedAt')
         const [project] = await tx
@@ -131,7 +128,7 @@ export function createArchiveStore(db: Db) {
     },
 
     restoreTask(identity: Identity, boardId: string, taskId: string) {
-      return write(identity, async tx => {
+      return writeOrRefuse(db, identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
         await bumpBoard(tx, boardId)
         const task = await taskOf(tx, boardId, taskId)
@@ -181,23 +178,6 @@ export function createArchiveStore(db: Db) {
           ...task,
           at: rows[index]?.[stamp] ?? null
         }))
-      })
-    },
-
-    setBoardArchived(identity: Identity, boardId: string, archived: boolean) {
-      return write(identity, async tx => {
-        await checkRole(tx, identity, boardId, 'admin')
-        const [board] = await bumpBoards(
-          tx,
-          and(eq(boards.id, boardId), eq(boards.inbox, false)),
-          {
-            archivedAt: archived
-              ? sql`coalesce(${boards.archivedAt}, now())`
-              : null
-          }
-        )
-        if (!board) throw new Refused('forbidden')
-        return null
       })
     }
   }
