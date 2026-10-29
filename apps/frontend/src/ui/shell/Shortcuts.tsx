@@ -77,6 +77,7 @@ export function ShortcutsHelp({
 }): ReactElement {
   const { t } = useI18n()
   const titleId = useId()
+  const hintId = useId()
   const rows = [
     ['q', t('newTask.title')],
     ['/', t('search.label')],
@@ -87,9 +88,17 @@ export function ShortcutsHelp({
     ['?', t('shortcuts.title')]
   ]
   return (
-    <Dialog open onClose={onClose} aria-labelledby={titleId}>
+    <Dialog
+      open
+      onClose={onClose}
+      aria-labelledby={titleId}
+      aria-describedby={hintId}
+    >
       <DialogTitle id={titleId}>{t('shortcuts.title')}</DialogTitle>
       <DialogContent>
+        <Typography id={hintId} className="u-mb-1">
+          {t('shortcuts.hint')}
+        </Typography>
         <dl>
           {rows.map(([keys, label]) => (
             <div key={keys} className="u-flex u-mb-half">
