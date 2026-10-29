@@ -9,7 +9,7 @@ import {
   startApp,
   type TestUser
 } from '../../testing/app.ts'
-import { projectMembers } from './schema.ts'
+import { projectMembers, tasks } from './schema.ts'
 
 interface Person {
   userId: string
@@ -65,8 +65,13 @@ async function aSharedTask(
       .put(`/boards/${board.id}/tasks/${task.id}/assignees`, { userIds })
   const load = async () =>
     (await api.as(alice).get(`/boards/${board.id}`)).json<Board>()
-  return { assign, load }
+  return { taskId: task.id, assign, load }
 }
+
+// A membership deleted by hand skips the removal path, so the person's rows on
+// the task would break the orphan invariants. Deleting the task cascades them.
+const dropTask = (user: TestUser, taskId: string) =>
+  inTenant(db, user, tx => tx.delete(tasks).where(eq(tasks.id, taskId)))
 
 describe('assignees', () => {
   it('assigns board members and lists them on the task', async () => {
@@ -106,7 +111,7 @@ describe('assignees', () => {
   it('assigns a repeated member once, and hides a member who left', async () => {
     const alice = aUser()
     const bob = aUser({ organizationId: alice.organizationId })
-    const { assign, load } = await aSharedTask(alice, bob, 'editor')
+    const { taskId, assign, load } = await aSharedTask(alice, bob, 'editor')
 
     const repeated = await assign(alice, [bob.userId, bob.userId])
     const assigned = (await load()).tasks[0]?.assignees
@@ -114,6 +119,7 @@ describe('assignees', () => {
       tx.delete(projectMembers).where(eq(projectMembers.userId, bob.userId))
     )
     const board = await load()
+    await dropTask(alice, taskId)
 
     expect(repeated.statusCode).toBe(204)
     expect(assigned).toEqual([person(bob)])
@@ -160,6 +166,7 @@ describe('assignees', () => {
         )
     )
     const left = (await api.as(alice).get(`/boards/${boardId}`)).json<Board>()
+    await dropTask(alice, task.id)
 
     expect(outsider.statusCode).toBe(400)
     expect(assigned.statusCode).toBe(204)
