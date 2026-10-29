@@ -5,6 +5,7 @@ import {
   pgPolicy,
   text,
   timestamp,
+  uuid,
   type AnyPgColumn
 } from 'drizzle-orm/pg-core'
 import { readMigrationFiles } from 'drizzle-orm/migrator'
@@ -15,6 +16,11 @@ import { currentRequestId } from './requestId.ts'
 
 export const timestamptz = (name: string) =>
   timestamp(name, { withTimezone: true })
+
+export const id = () =>
+  uuid()
+    .primaryKey()
+    .default(sql`uuidv7()`)
 
 // Fractional keys must compare byte by byte, whatever the database locale.
 export const sortKey = customType<{ data: string }>({
@@ -47,6 +53,15 @@ export function tenantPolicy(
   return pgPolicy('tenant', {
     using: scoped(b2cScope),
     withCheck: scoped(b2cWriteScope)
+  })
+}
+
+export function ownRows(userId: AnyPgColumn, orReach?: SQL) {
+  const own = sql`${userId} = ${currentUser}`
+  return pgPolicy('own', {
+    as: 'restrictive',
+    using: orReach ? sql`${own} or ${orReach}` : own,
+    withCheck: own
   })
 }
 

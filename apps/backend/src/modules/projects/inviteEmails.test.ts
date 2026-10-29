@@ -6,9 +6,10 @@ import type { Mail } from '../../infra/mail.ts'
 import { createScheduler } from '../../scheduler/scheduler.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
-import { boards, inviteEmails } from '../boards/index.ts'
+import { boards } from '../boards/index.ts'
 import { userSettings } from '../settings/index.ts'
 import { emailInvite, PROJECT_INVITE_EMAIL_JOB } from './inviteEmails.ts'
+import { inviteEmails } from './schema.ts'
 import { EMAILS_PER_INVITER } from './sharing.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>

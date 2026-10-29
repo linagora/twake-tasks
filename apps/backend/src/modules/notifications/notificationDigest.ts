@@ -6,13 +6,13 @@ import type { Mail } from '../../infra/mail.ts'
 import { schedule, type Handler } from '../../scheduler/scheduler.ts'
 import {
   APP_NAME,
-  notificationEmailBudgets as budgets,
   COLORS,
   escape,
   languageOf,
   layout
 } from '../boards/index.ts'
 import { NOTIFICATION_MESSAGES } from './notificationMessages.ts'
+import { notificationEmailBudgets as budgets } from './schema.ts'
 
 export const NOTIFICATION_DIGEST_JOB = 'notification_digest'
 

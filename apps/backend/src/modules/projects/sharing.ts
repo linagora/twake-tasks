@@ -24,7 +24,6 @@ import {
   checkRole,
   endAccess,
   endAccessOutside,
-  inviteEmails,
   memberLooks,
   projectInvites,
   projectMembers,
@@ -37,6 +36,7 @@ import {
   type Role
 } from '../boards/index.ts'
 import { PROJECT_INVITE_EMAIL_JOB } from './inviteEmails.ts'
+import { inviteEmails } from './schema.ts'
 
 async function projectOfBoard(tx: Tx, boardId: string) {
   const [project] = await tx

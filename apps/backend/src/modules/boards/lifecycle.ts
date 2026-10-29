@@ -14,11 +14,9 @@ import { alias, type AnyPgColumn } from 'drizzle-orm/pg-core'
 import type { Tx } from '../../infra/db.ts'
 import {
   boards,
-  commentReactions,
   notifications,
   projectMembers,
   projects,
-  savedFilters,
   taskAssignees,
   taskFollowers,
   taskReminders,
@@ -165,10 +163,8 @@ export async function forgetPerson(tx: Tx, userId: string): Promise<void> {
   )
   await tx.delete(taskAssignees).where(eq(taskAssignees.userId, userId))
   await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
-  await tx.delete(commentReactions).where(eq(commentReactions.userId, userId))
   await tx.delete(notifications).where(eq(notifications.userId, userId))
   await tx.delete(taskReminders).where(eq(taskReminders.userId, userId))
-  await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
   await tx
     .delete(projects)
     .where(and(eq(projects.createdBy, userId), eq(projects.personal, true)))
@@ -186,12 +182,7 @@ export async function forgetReadNotifications(
   await tx.execute(sql`select set_config('app.pruning', '', true)`)
 }
 
-/** Erases an organization's projects and saved filters. Runs as that organization. */
+/** Erases an organization's projects. Runs as that organization. */
 export async function eraseOrganization(tx: Tx): Promise<void> {
-  await tx.execute(
-    sql`select set_config('app.erasing_organization', 'on', true)`
-  )
   await tx.delete(projects)
-  await tx.delete(savedFilters)
-  await tx.execute(sql`select set_config('app.erasing_organization', '', true)`)
 }

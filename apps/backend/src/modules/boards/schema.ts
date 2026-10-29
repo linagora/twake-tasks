@@ -22,7 +22,9 @@ import {
 } from 'drizzle-orm/pg-core'
 import {
   currentUser,
+  id,
   organizationId,
+  ownRows,
   sortKey,
   tenant,
   tenantPolicy,
@@ -51,11 +53,6 @@ export const recurrenceUnit = pgEnum('recurrence_unit', [
 export const LAYOUTS = ['board', 'list', 'calendar'] as const
 
 export const boardLayout = pgEnum('board_layout', LAYOUTS)
-
-const id = () =>
-  uuid()
-    .primaryKey()
-    .default(sql`uuidv7()`)
 
 export const projects = pgTable.withRLS(
   'projects',
@@ -91,7 +88,7 @@ export const projects = pgTable.withRLS(
 )
 
 // The projects policy applies inside the subquery: a B2C row is visible when its project is.
-const visibleProject = (projectId: AnyPgColumn): SQL =>
+export const visibleProject = (projectId: AnyPgColumn): SQL =>
   sql`exists (select 1 from ${projects} where ${projects.id} = ${projectId})`
 
 export const projectMembers = pgTable.withRLS(
@@ -161,32 +158,6 @@ export const projectInvites = pgTable.withRLS(
       sql`${visibleProject(table.projectId)} or ${table.email} = lower(current_setting('app.user_email', true))`,
       visibleProject(table.projectId)
     )
-  ]
-)
-
-// Every invitation e-mail scheduled, to rate limit them: an invite can be
-// canceled and made again, and the job queue forgets a job once delivered.
-export const inviteEmails = pgTable.withRLS(
-  'invite_emails',
-  {
-    id: id(),
-    projectId: uuid('project_id')
-      .notNull()
-      .references(() => projects.id, { onDelete: 'cascade' }),
-    organizationId: organizationId(),
-    email: text().notNull(),
-    invitedBy: uuid('invited_by').notNull(),
-    sentAt: timestamptz('sent_at').notNull().defaultNow(),
-    tenant: tenant()
-  },
-  table => [
-    index().on(table.projectId, table.email, table.sentAt),
-    index().on(table.invitedBy, table.sentAt),
-    foreignKey({
-      columns: [table.tenant, table.projectId],
-      foreignColumns: [projects.tenant, projects.id]
-    }),
-    tenantPolicy(table.organizationId, visibleProject(table.projectId))
   ]
 )
 
@@ -464,34 +435,6 @@ export const comments = pgTable.withRLS(
   ]
 )
 
-// One emoji per person per comment can be added once; the comment's task
-// decides who sees it, as for the comment.
-export const commentReactions = pgTable.withRLS(
-  'comment_reactions',
-  {
-    commentId: uuid('comment_id')
-      .notNull()
-      .references(() => comments.id, { onDelete: 'cascade' }),
-    organizationId: organizationId(),
-    userId: uuid('user_id').notNull(),
-    userEmail: text('user_email').notNull(),
-    emoji: text().notNull(),
-    createdAt: timestamptz('created_at').notNull().defaultNow(),
-    tenant: tenant()
-  },
-  table => [
-    primaryKey({ columns: [table.commentId, table.userId, table.emoji] }),
-    foreignKey({
-      columns: [table.tenant, table.commentId],
-      foreignColumns: [comments.tenant, comments.id]
-    }),
-    tenantPolicy(
-      table.organizationId,
-      sql`exists (select 1 from ${comments} where ${comments.id} = ${table.commentId})`
-    )
-  ]
-)
-
 // Written by triggers on tasks, task_assignees and task_labels.
 export const taskHistory = pgTable.withRLS(
   'task_history',
@@ -548,30 +491,6 @@ export const boardFavorites = pgTable.withRLS(
   ]
 )
 
-export const savedFilters = pgTable.withRLS(
-  'saved_filters',
-  {
-    id: id(),
-    organizationId: organizationId(),
-    userId: uuid('user_id').notNull(),
-    name: text().notNull(),
-    criteria: jsonb().notNull(),
-    favorite: boolean().notNull().default(false),
-    createdAt: timestamptz('created_at').notNull().defaultNow()
-  },
-  table => [
-    index().on(table.userId),
-    tenantPolicy(table.organizationId, sql`${table.userId} = ${currentUser}`),
-    // No board cascades to saved filters, so the erase of an organization
-    // reaches every person's through this flag; the tenant policy still keeps
-    // it to that organization.
-    ownRows(
-      table.userId,
-      sql`current_setting('app.erasing_organization', true) = 'on'`
-    )
-  ]
-)
-
 export const boardLayouts = pgTable.withRLS(
   'board_layouts',
   {
@@ -593,15 +512,6 @@ export const boardLayouts = pgTable.withRLS(
     ownRows(table.userId)
   ]
 )
-
-function ownRows(userId: AnyPgColumn, orReach?: SQL) {
-  const own = sql`${userId} = ${currentUser}`
-  return pgPolicy('own', {
-    as: 'restrictive',
-    using: orReach ? sql`${own} or ${orReach}` : own,
-    withCheck: own
-  })
-}
 
 const visibleTask = (taskId: AnyPgColumn): SQL =>
   sql`exists (select 1 from ${tasks} where ${tasks.id} = ${taskId})`
@@ -726,14 +636,3 @@ export const taskFollowers = pgTable.withRLS(
     tenantPolicy(table.organizationId, visibleTask(table.taskId))
   ]
 )
-
-// Read by the email jobs across organizations, so outside row level security.
-// The notification emails a person got in the current window, and those held
-// back past the limit, which a digest then counts.
-export const notificationEmailBudgets = pgTable('notification_email_budgets', {
-  userId: uuid('user_id').primaryKey(),
-  windowStart: timestamptz('window_start').notNull(),
-  sent: integer().notNull().default(0),
-  held: integer().notNull().default(0),
-  digestScheduled: boolean('digest_scheduled').notNull().default(false)
-})

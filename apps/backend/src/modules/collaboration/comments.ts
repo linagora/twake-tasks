@@ -4,7 +4,6 @@ import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import {
   bumpBoard,
-  commentReactions,
   comments,
   looksOn,
   roleOn,
@@ -16,6 +15,7 @@ import {
   refuseIfShelved,
   visibleTask
 } from '../tasks/index.ts'
+import { commentReactions } from './schema.ts'
 
 interface Reactor {
   userId: string
