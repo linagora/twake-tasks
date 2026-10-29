@@ -1,8 +1,7 @@
-import { eq } from 'drizzle-orm'
 import type { FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import type { Changes, StreamVersions } from '../../infra/changes.ts'
-import { inTenant, type Db } from '../../infra/db.ts'
+import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import type { Metrics } from '../../infra/metrics.ts'
 import {
@@ -11,8 +10,11 @@ import {
   type DeclaredRoute
 } from '../../infra/route.ts'
 import type { Identity, RequireIdentity } from '../auth/index.ts'
-import { claimInvites, roleOn } from './access.ts'
-import { boards } from './schema.ts'
+
+export interface LiveBoards {
+  canView: (tx: Tx, userId: string, boardId: string) => Promise<boolean>
+  version: (tx: Tx, boardId: string) => Promise<number>
+}
 
 const boardParams = z.object({ boardId: z.uuid() })
 
@@ -23,6 +25,7 @@ export function registerLive(
   app: HttpServer,
   deps: {
     db: Db
+    boards: LiveBoards
     requireIdentity: RequireIdentity
     changes: Changes
     streamVersions: StreamVersions
@@ -59,24 +62,16 @@ export function registerLive(
         const streams = deps.metrics?.liveStreamsOpen
         streams?.inc()
         reply.raw.once('close', () => streams?.dec())
-        const role = await inTenant(deps.db, identity, async tx => {
-          await claimInvites(tx)
-          return roleOn(tx, identity.userId, boardId)
-        })
-        if (!role) return { ok: false, error: 'not_found' }
+        const canView = await inTenant(deps.db, identity, tx =>
+          deps.boards.canView(tx, userId, boardId)
+        )
+        if (!canView) return { ok: false, error: 'not_found' }
 
         await deps.streamVersions(request, reply, {
           changes: deps.changes,
           key: boardId,
           current: () =>
-            inTenant(deps.db, identity, async tx => {
-              const [row] = await tx
-                .select({ version: boards.version })
-                .from(boards)
-                .where(eq(boards.id, boardId))
-              if (!row) throw new Error(`board ${boardId} is gone`)
-              return row.version
-            })
+            inTenant(deps.db, identity, tx => deps.boards.version(tx, boardId))
         })
         return { ok: true, value: undefined }
       }

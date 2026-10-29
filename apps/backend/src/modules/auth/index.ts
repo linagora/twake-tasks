@@ -12,6 +12,7 @@ import {
 import { postgresAuthStore } from './store.ts'
 
 export type { Authenticate } from './authenticator.ts'
+export { fullName } from './fullName.ts'
 export type { Identity, IdentityProvider } from './oidc.ts'
 export type { RequireIdentity } from './routes.ts'
 export { registerAuth } from './routes.ts'

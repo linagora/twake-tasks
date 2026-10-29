@@ -2,6 +2,7 @@ import { and, asc, eq, inArray, isNull, lte, sql } from 'drizzle-orm'
 import type { Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused } from '../kernel/index.ts'
+import type { LiveBoards } from '../live/index.ts'
 import { userSettings } from '../settings/index.ts'
 import { boards, projectInvites, projectMembers, projects } from './schema.ts'
 import { bumpProjects } from './versions.ts'
@@ -207,6 +208,21 @@ export async function roleOn(
     .from(accessible)
     .where(eq(accessible.boardId, boardId))
   return row?.role ?? null
+}
+
+export const liveBoards: LiveBoards = {
+  canView: async (tx, userId, boardId) => {
+    await claimInvites(tx)
+    return (await roleOn(tx, userId, boardId)) !== null
+  },
+  version: async (tx, boardId) => {
+    const [row] = await tx
+      .select({ version: boards.version })
+      .from(boards)
+      .where(eq(boards.id, boardId))
+    if (!row) throw new Error(`board ${boardId} is gone`)
+    return row.version
+  }
 }
 
 export async function checkRole(

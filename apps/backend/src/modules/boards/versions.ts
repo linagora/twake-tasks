@@ -1,7 +1,7 @@
 import { and, eq, inArray, sql, type SQL } from 'drizzle-orm'
 import type { Tx } from '../../infra/db.ts'
 import { Refused } from '../kernel/index.ts'
-import { tellBoardChanged } from './live.ts'
+import { tellBoardChanged } from '../live/index.ts'
 import { boards } from './schema.ts'
 
 // Updating the board row serializes writes to the board, so call it before
