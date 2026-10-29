@@ -14,8 +14,13 @@ import {
   type Handler
 } from '../../events/router.ts'
 import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
-import { eraseOrganization, forgetPerson } from '../boards/lifecycle.ts'
-import { inviteEmails, projectMembers } from '../boards/schema.ts'
+import { jobs } from '../../scheduler/schema.ts'
+import {
+  eraseOrganization,
+  forgetPerson,
+  inviteEmails,
+  projectMembers
+} from '../boards/index.ts'
 import { userSettings } from '../settings/index.ts'
 import { spaces } from '../spaces/index.ts'
 
@@ -108,7 +113,10 @@ async function forget(
         inArray(inviteEmails.email, emails)
       )
     )
-  if (userId) await forgetPerson(tx, userId)
+  if (userId) {
+    await forgetPerson(tx, userId)
+    await tx.delete(jobs).where(eq(jobs.userId, userId))
+  }
 }
 
 const onB2bDeleted: Handler<PlatformEvent> = async (event, tx) => {
@@ -169,7 +177,10 @@ const onOrganizationDeleted: Handler<PlatformEvent> = async (event, tx) => {
     .from(spaces)
     .orderBy(spaces.id)
     .for('update')
-  await eraseOrganization(tx, organizationId)
+  await eraseOrganization(tx)
+  await tx
+    .delete(jobs)
+    .where(sql`${jobs.payload}->>'organizationId' = ${organizationId}`)
 }
 
 export const accountRoutes: ReadonlyMap<

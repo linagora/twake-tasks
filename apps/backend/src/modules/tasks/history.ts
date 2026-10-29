@@ -1,9 +1,7 @@
 import { desc, eq } from 'drizzle-orm'
 import type { Db } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { looksOn, roleOn } from '../boards/access.ts'
-import { taskHistory } from '../boards/schema.ts'
-import { taskOf } from '../boards/taskRows.ts'
+import { looksOn, roleOn, taskHistory, taskOf } from '../boards/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 
 export function historyOf(

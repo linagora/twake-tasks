@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { asTenant, type Tx } from '../../infra/db.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
 import { jobs } from '../../scheduler/schema.ts'
-import { notifications, taskReminders, tasks } from '../boards/schema.ts'
+import { notifications, taskReminders, tasks } from '../boards/index.ts'
 
 export const REMINDER_JOB = 'reminder'
 

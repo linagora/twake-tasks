@@ -7,7 +7,7 @@ import { MalformedEventError, NotYetKnownError } from '../../events/router.ts'
 import { eq, sql as raw } from 'drizzle-orm'
 import { accountRoutes } from '../accounts/index.ts'
 import { asOrganization, createDb } from '../../infra/db.ts'
-import { boards, projectMembers, projects } from '../boards/schema.ts'
+import { boards, projectMembers, projects } from '../boards/index.ts'
 import {
   aUser,
   followersOf,

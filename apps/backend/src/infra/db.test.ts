@@ -2,7 +2,6 @@ import { readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { eq, sql as statement, type SQL } from 'drizzle-orm'
 import { afterAll, describe, expect, inject, it, vi } from 'vitest'
-import type { Role } from '../modules/boards/access.ts'
 import {
   boardFavorites,
   boards,
@@ -10,8 +9,9 @@ import {
   projectMembers,
   projects,
   sections,
-  tasks
-} from '../modules/boards/schema.ts'
+  tasks,
+  type Role
+} from '../modules/boards/index.ts'
 import { aB2cUser, aUser, type TestUser } from '../testing/app.ts'
 import { PostgreSqlContainer } from '@testcontainers/postgresql'
 import postgres from 'postgres'

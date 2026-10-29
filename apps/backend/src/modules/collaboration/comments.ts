@@ -2,10 +2,14 @@ import { and, asc, eq, inArray } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
-import { looksOn, roleOn } from '../boards/access.ts'
-import { commentReactions, comments } from '../boards/schema.ts'
-import { taskOf } from '../boards/taskRows.ts'
-import { bumpBoard } from '../boards/versions.ts'
+import {
+  bumpBoard,
+  commentReactions,
+  comments,
+  looksOn,
+  roleOn,
+  taskOf
+} from '../boards/index.ts'
 import {
   mentionedEmails,
   plainText,

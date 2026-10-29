@@ -4,26 +4,26 @@ import type { Budget } from '../../config.ts'
 import { asTenant, type Tx } from '../../infra/db.ts'
 import type { Mail } from '../../infra/mail.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
-import { memberLooks, memberNames, settingsOfMember } from '../boards/access.ts'
 import {
   APP_NAME,
+  boards,
   COLORS,
+  comments,
   escape,
   languageOf,
   layout,
-  plain,
-  type Language
-} from '../boards/mailLayout.ts'
-import {
-  boards,
-  comments,
+  memberLooks,
+  memberNames,
   notifications,
+  plain,
   projectMembers,
   projects,
   sections,
+  settingsOfMember,
   taskHistory,
-  tasks
-} from '../boards/schema.ts'
+  tasks,
+  type Language
+} from '../boards/index.ts'
 import { userSettings } from '../settings/index.ts'
 import { mentionedEmails, plainText, withNames } from '../tasks/index.ts'
 import { sendCounted, takeEmail } from './notificationDigest.ts'

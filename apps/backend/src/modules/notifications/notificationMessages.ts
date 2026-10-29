@@ -1,4 +1,4 @@
-import type { Language } from '../boards/mailLayout.ts'
+import type { Language } from '../boards/index.ts'
 
 export type Why = 'assigned' | 'mentioned' | 'following' | 'reminder'
 

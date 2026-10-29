@@ -1,5 +1,5 @@
 import { forgetProcessedEvents } from './events/dedupe.ts'
-import { forgetReadNotifications } from './modules/boards/lifecycle.ts'
+import { forgetReadNotifications } from './modules/boards/index.ts'
 import { schedule, type Handler } from './scheduler/scheduler.ts'
 
 export const RETENTION_JOB = 'retention'

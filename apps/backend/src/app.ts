@@ -14,8 +14,7 @@ import {
   type Authenticate,
   type IdentityProvider
 } from './modules/auth/index.ts'
-import { liveBoards } from './modules/boards/access.ts'
-import { registerBoards } from './modules/boards/routes.ts'
+import { liveBoards, registerBoards } from './modules/boards/index.ts'
 import { registerCollaboration } from './modules/collaboration/index.ts'
 import { registerLive } from './modules/live/index.ts'
 import { registerNotifications } from './modules/notifications/index.ts'

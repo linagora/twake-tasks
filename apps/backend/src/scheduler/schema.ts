@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { index, integer, jsonb, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { timestamptz } from '../infra/db.ts'
-import { tasks } from '../modules/boards/schema.ts'
+import { tasks } from '../modules/boards/index.ts'
 
 // Read by the scheduler across organizations, so outside row level security.
 // A handler runs its work as the tenant its payload names.

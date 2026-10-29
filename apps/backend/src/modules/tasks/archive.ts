@@ -7,12 +7,18 @@ import {
   type Handler
 } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
-import { checkRole, membersOf, roleOn } from '../boards/access.ts'
-import { describeTasks } from '../boards/describe.ts'
-import { labelsOn } from '../boards/labels.ts'
-import { boards, projects, tasks } from '../boards/schema.ts'
-import { taskOf } from '../boards/taskRows.ts'
-import { bumpBoard } from '../boards/versions.ts'
+import {
+  boards,
+  bumpBoard,
+  checkRole,
+  describeTasks,
+  labelsOn,
+  membersOf,
+  projects,
+  roleOn,
+  taskOf,
+  tasks
+} from '../boards/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 
 export const PURGE_JOB = 'purge-task'

@@ -8,7 +8,7 @@ import {
   startApp,
   type TestUser
 } from '../../testing/app.ts'
-import { comments, notifications } from '../boards/schema.ts'
+import { comments, notifications } from '../boards/index.ts'
 
 interface Notification {
   id: string

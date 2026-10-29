@@ -2,23 +2,22 @@ import { and, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { checkRole, membersOf } from '../boards/access.ts'
-import { labelsOn } from '../boards/labels.ts'
-import { endAccessOutside } from '../boards/lifecycle.ts'
 import {
   boards,
+  bumpBoard,
+  checkRole,
+  completionFor,
+  endAccessOutside,
+  inSection,
   labels,
+  labelsOn,
+  membersOf,
+  sectionOf,
+  shownTaskOf,
   taskAssignees,
   taskLabels,
   tasks
-} from '../boards/schema.ts'
-import {
-  completionFor,
-  inSection,
-  sectionOf,
-  shownTaskOf
-} from '../boards/taskRows.ts'
-import { bumpBoard } from '../boards/versions.ts'
+} from '../boards/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 
 export interface TransferPreview {

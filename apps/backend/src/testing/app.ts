@@ -9,14 +9,14 @@ import { createDb, inTenant, type Db } from '../infra/db.ts'
 import type { Metrics } from '../infra/metrics.ts'
 import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
-import type { Role } from '../modules/boards/access.ts'
-import { listenForBoardChanges, type Broker } from '../modules/live/index.ts'
 import {
   boards,
   projectMembers,
   projects,
-  taskFollowers
-} from '../modules/boards/schema.ts'
+  taskFollowers,
+  type Role
+} from '../modules/boards/index.ts'
+import { listenForBoardChanges, type Broker } from '../modules/live/index.ts'
 
 export interface TestUser {
   userId: string

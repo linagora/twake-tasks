@@ -7,7 +7,7 @@ import { createDb, inTenant, migrateDb } from '../../infra/db.ts'
 import { schedule } from '../../scheduler/scheduler.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { aBoardIn, aManagedProject, aUser } from '../../testing/app.ts'
-import { notifications, tasks } from '../boards/schema.ts'
+import { notifications, tasks } from '../boards/index.ts'
 import { PURGE_JOB } from './archive.ts'
 import { REMINDER_JOB } from './reminderJobs.ts'
 

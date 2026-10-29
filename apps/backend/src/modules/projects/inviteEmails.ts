@@ -4,22 +4,21 @@ import { asTenant } from '../../infra/db.ts'
 import type { Mail } from '../../infra/mail.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
 import { userSettings } from '../settings/index.ts'
-import { memberLooks, settingsOfMember } from '../boards/access.ts'
 import {
   APP_NAME,
+  boards,
   COLORS,
   escape,
   languageOf,
   layout,
+  memberLooks,
   plain,
-  type Language
-} from '../boards/mailLayout.ts'
-import {
-  boards,
   projectInvites,
   projectMembers,
-  projects
-} from '../boards/schema.ts'
+  projects,
+  settingsOfMember,
+  type Language
+} from '../boards/index.ts'
 
 export const PROJECT_INVITE_EMAIL_JOB = 'project_invite_email'
 
