@@ -1,7 +1,13 @@
 import { createTransport } from 'nodemailer'
 import type { Logger } from 'pino'
 import type { Config } from '../config.ts'
-import type { Mail } from '../modules/boards/notificationEmails.ts'
+
+export interface Mail {
+  to: string
+  subject: string
+  text: string
+  html: string
+}
 
 // Without SMTP_URL, notifications stay in the app.
 export function createMailer(

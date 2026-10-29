@@ -1,16 +1,12 @@
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { looksOn, roleOn } from './access.ts'
 import { mentionedEmails } from './markdown.ts'
 import { commentReactions, comments } from './schema.ts'
-import {
-  bumpBoard,
-  Refused,
-  refuseIfShelved,
-  taskOf,
-  writeOrRefuse
-} from './tasks.ts'
+import { refuseIfShelved, taskOf } from './tasks.ts'
+import { bumpBoard } from './versions.ts'
 
 interface Reactor {
   userId: string

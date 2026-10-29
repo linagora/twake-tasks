@@ -7,7 +7,7 @@ import {
 import amqplib from 'amqplib'
 import type { Logger } from 'pino'
 import { isTransient } from './db.ts'
-import type { OutgoingEvent } from '../events/envelope.ts'
+import type { Delivery, OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 
 export interface ConsumerNames {
@@ -18,13 +18,6 @@ export interface ConsumerNames {
   queue: string
   oldQueue: string
   deadLetterExchange: string
-}
-
-export interface Delivery {
-  exchange: string
-  routingKey: string
-  messageId: string | undefined
-  body: unknown
 }
 
 export interface Consumer {

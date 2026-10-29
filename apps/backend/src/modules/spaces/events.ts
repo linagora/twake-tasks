@@ -34,7 +34,6 @@ import {
   schedule,
   type Handler as JobHandler
 } from '../../scheduler/scheduler.ts'
-import { bumpProjects } from '../boards/access.ts'
 import { revokeProject } from '../boards/followers.ts'
 import {
   boards,
@@ -46,6 +45,7 @@ import {
 } from '../boards/schema.ts'
 import { freeKeyPrefix } from '../boards/keyPrefixes.ts'
 import { addDefaultSections } from '../boards/store.ts'
+import { bumpProjects } from '../boards/versions.ts'
 import { spaces } from './schema.ts'
 
 const MAX_CLOCK_AHEAD_MS = 24 * 60 * 60 * 1000

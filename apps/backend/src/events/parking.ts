@@ -13,7 +13,7 @@ import {
 import type { Logger } from 'pino'
 import type { Db } from '../infra/db.ts'
 import type { Metrics } from '../infra/metrics.ts'
-import type { Delivery } from '../infra/rabbitmq.ts'
+import type { Delivery } from './envelope.ts'
 import { spaces } from '../modules/spaces/schema.ts'
 import type { Outcome, Park } from './router.ts'
 import { parkedEvents } from './schema.ts'

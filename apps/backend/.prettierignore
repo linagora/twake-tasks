@@ -2,4 +2,3 @@ dist/
 coverage/
 drizzle/
 *.md
-.dependency-cruiser-known-violations.json

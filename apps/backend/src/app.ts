@@ -14,7 +14,7 @@ import {
   type IdentityProvider
 } from './modules/auth/index.ts'
 import { boardBudgets } from './modules/boards/budgets.ts'
-import { registerLive } from './modules/boards/live.ts'
+import { registerLive } from './modules/boards/liveRoutes.ts'
 import { registerBoards } from './modules/boards/routes.ts'
 import { registerSettings } from './modules/settings/routes.ts'
 

@@ -2,9 +2,12 @@ import type { Logger } from 'pino'
 import { z } from 'zod'
 import type { Tx } from '../infra/db.ts'
 import type { Metrics } from '../infra/metrics.ts'
-import type { Delivery } from '../infra/rabbitmq.ts'
 import type { Deduplicator } from './dedupe.ts'
-import { parsePlatformEvent, type PlatformEvent } from './envelope.ts'
+import {
+  parsePlatformEvent,
+  type Delivery,
+  type PlatformEvent
+} from './envelope.ts'
 
 export type Handler<E> = (event: E, tx: Tx, log: Logger) => Promise<void>
 

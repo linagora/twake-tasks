@@ -2,9 +2,8 @@ import { pino } from 'pino'
 import { describe, expect, it, vi } from 'vitest'
 import type { Tx } from '../infra/db.ts'
 import { createMetrics, type Metrics } from '../infra/metrics.ts'
-import type { Delivery } from '../infra/rabbitmq.ts'
 import type { Deduplicator, EventKey } from './dedupe.ts'
-import type { PlatformEvent } from './envelope.ts'
+import type { Delivery, PlatformEvent } from './envelope.ts'
 import {
   createMessageHandler,
   MalformedEventError,

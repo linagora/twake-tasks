@@ -1,9 +1,10 @@
 import { eq } from 'drizzle-orm'
 import type { Db } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { roleOn } from './access.ts'
+import { Refused, writeOrRefuse } from '../kernel/index.ts'
+import { checkRole, roleOn } from './access.ts'
 import { boardLayouts, boards, type LAYOUTS } from './schema.ts'
-import { bumpBoard, checkRole, Refused, writeOrRefuse } from './tasks.ts'
+import { bumpBoard } from './versions.ts'
 
 export type Layout = (typeof LAYOUTS)[number]
 

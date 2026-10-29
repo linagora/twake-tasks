@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { asTenant } from '../../infra/db.ts'
+import type { Mail } from '../../infra/mail.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
 import { userSettings } from '../settings/schema.ts'
 import { memberLooks, settingsOfMember } from './access.ts'
@@ -13,7 +14,6 @@ import {
   plain,
   type Language
 } from './mailLayout.ts'
-import type { Mail } from './notificationEmails.ts'
 import { boards, projectInvites, projectMembers, projects } from './schema.ts'
 
 export const PROJECT_INVITE_EMAIL_JOB = 'project_invite_email'

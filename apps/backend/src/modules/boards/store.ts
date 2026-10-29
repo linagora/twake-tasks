@@ -19,10 +19,12 @@ import { alias } from 'drizzle-orm/pg-core'
 import { generateNKeysBetween } from 'fractional-indexing'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { Refused, writeOrRefuse, type Result } from '../kernel/index.ts'
 import { userSettings } from '../settings/schema.ts'
 import { describeTasks, shown } from './describe.ts'
 import {
   accessibleBoards,
+  checkRole,
   claimInvites,
   invitedTo,
   firstMembersOfProjects,
@@ -40,14 +42,8 @@ import {
   taskAssignees,
   tasks
 } from './schema.ts'
-import {
-  bumpBoard,
-  checkRole,
-  isUniqueViolation,
-  Refused,
-  writeOrRefuse,
-  type Result
-} from './tasks.ts'
+import { isUniqueViolation } from './tasks.ts'
+import { bumpBoard } from './versions.ts'
 import { freeKeyPrefix, INBOX_KEY_PREFIX } from './keyPrefixes.ts'
 import { labelsOn } from './labels.ts'
 import { languageOf, type Language } from './mailLayout.ts'

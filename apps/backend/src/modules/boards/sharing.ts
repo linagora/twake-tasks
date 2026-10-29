@@ -15,9 +15,10 @@ import {
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import { schedule } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
+import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { userSettings } from '../settings/schema.ts'
 import {
-  bumpProjects,
+  checkRole,
   memberLooks,
   membersOf,
   roleIn,
@@ -37,7 +38,7 @@ import {
   tasks
 } from './schema.ts'
 import { PROJECT_INVITE_EMAIL_JOB } from './inviteEmails.ts'
-import { bumpBoard, checkRole, Refused, writeOrRefuse } from './tasks.ts'
+import { bumpBoard, bumpProjects } from './versions.ts'
 
 async function projectOfBoard(tx: Tx, boardId: string) {
   const [project] = await tx

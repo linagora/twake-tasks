@@ -19,7 +19,7 @@ export default tseslint.config(
     // A stream, and a call from the identity provider, not declared yet.
     ignores: [
       '**/*.test.ts',
-      'apps/backend/src/modules/boards/live.ts',
+      'apps/backend/src/modules/boards/liveRoutes.ts',
       'apps/backend/src/modules/auth/routes.ts'
     ],
     rules: {

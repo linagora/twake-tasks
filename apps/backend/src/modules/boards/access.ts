@@ -1,8 +1,10 @@
 import { and, asc, eq, inArray, isNull, lte, sql } from 'drizzle-orm'
 import type { Tx } from '../../infra/db.ts'
+import type { Identity } from '../auth/index.ts'
+import { Refused } from '../kernel/index.ts'
 import { userSettings } from '../settings/schema.ts'
 import { boards, projectInvites, projectMembers, projects } from './schema.ts'
-import { bumpBoards } from './tasks.ts'
+import { bumpProjects } from './versions.ts'
 
 export type Role = 'viewer' | 'editor' | 'admin'
 
@@ -39,12 +41,6 @@ export async function claimInvites(tx: Tx) {
     tx,
     joined.map(row => row.projectId)
   )
-}
-
-/** Their open boards reload, members and roles included. */
-export async function bumpProjects(tx: Tx, projectIds: string[]) {
-  if (projectIds.length === 0) return
-  await bumpBoards(tx, inArray(boards.projectId, projectIds))
 }
 
 export interface Member {
@@ -211,6 +207,19 @@ export async function roleOn(
     .from(accessible)
     .where(eq(accessible.boardId, boardId))
   return row?.role ?? null
+}
+
+export async function checkRole(
+  tx: Tx,
+  identity: Identity,
+  boardId: string,
+  needed: 'editor' | 'admin'
+) {
+  const role = await roleOn(tx, identity.userId, boardId)
+  if (!role) throw new Refused('not_found')
+  if (role === 'viewer' || (needed === 'admin' && role !== 'admin')) {
+    throw new Refused('forbidden')
+  }
 }
 
 export async function roleIn(

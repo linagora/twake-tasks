@@ -1,4 +1,9 @@
-import type { Delivery } from '../infra/rabbitmq.ts'
+export interface Delivery {
+  exchange: string
+  routingKey: string
+  messageId: string | undefined
+  body: unknown
+}
 
 export interface OutgoingEvent {
   specversion: '1.0'

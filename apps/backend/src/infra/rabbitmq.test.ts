@@ -14,7 +14,7 @@ import {
   it,
   vi
 } from 'vitest'
-import type { OutgoingEvent } from '../events/envelope.ts'
+import type { Delivery, OutgoingEvent } from '../events/envelope.ts'
 import type { Outcome } from '../events/router.ts'
 import {
   listenForBoardChanges,
@@ -28,8 +28,7 @@ import {
   startConsumer,
   startPublisher,
   type Consumer,
-  type ConsumerNames,
-  type Delivery
+  type ConsumerNames
 } from './rabbitmq.ts'
 
 const names: ConsumerNames = {
