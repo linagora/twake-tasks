@@ -1,4 +1,10 @@
-import type { FastifyReply, FastifyRequest, HTTPMethods } from 'fastify'
+import type {
+  FastifyContextConfig,
+  FastifyReply,
+  FastifyRequest,
+  HTTPMethods,
+  onRequestHookHandler
+} from 'fastify'
 import type { HttpServer } from './http.ts'
 
 interface Schema<T> {
@@ -7,13 +13,28 @@ interface Schema<T> {
 
 type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 
+// What a route needs from its caller. The stores enforce it inside their
+// transaction; the declaration is what the permission tests hold them to.
+export type Access =
+  | { on: 'self' }
+  | {
+      on: 'board'
+      role: 'viewer' | 'editor' | 'admin'
+      // Members of a managed project take their roles from its integration,
+      // so the route refuses them whatever their role.
+      refusedOnManaged?: true
+    }
+
 interface Route<I, P, Q, B, T, E extends string> {
   method: HTTPMethods
   url: string
+  access: Access
   params?: Schema<P>
   query?: Schema<Q>
   body?: Schema<B>
   status?: number
+  onRequest?: onRequestHookHandler
+  config?: FastifyContextConfig
   handler: (request: {
     identity: I
     params: P
@@ -58,6 +79,8 @@ export function registerRoutes<I, E extends string>(
     app.route({
       method: route.method,
       url: route.url,
+      ...(route.onRequest && { onRequest: route.onRequest }),
+      ...(route.config && { config: route.config }),
       preHandler: deps.requireIdentity,
       handler: async (request, reply) => {
         const identity = deps.identify(request)

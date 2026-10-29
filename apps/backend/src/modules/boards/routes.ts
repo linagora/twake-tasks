@@ -109,7 +109,10 @@ export type ContractMatchesBackend = [
   >
 ]
 
-const REFUSAL_STATUS: Record<Refusal, number> = {
+const REFUSAL_STATUS: Record<Refusal | 'invalid_request', number> = {
+  // A reaction's emoji is part of the URL, yet a bad one is a bad request,
+  // not a missing resource.
+  invalid_request: 400,
   not_found: 404,
   forbidden: 403,
   archived: 409,
@@ -132,7 +135,13 @@ const REFUSAL_STATUS: Record<Refusal, number> = {
   same_board: 400
 }
 
-type BoardRoute = DeclaredRoute<Identity, Refusal>
+type BoardRoute = DeclaredRoute<Identity, Refusal | 'invalid_request'>
+
+const self = { on: 'self' } as const
+const viewer = { on: 'board', role: 'viewer' } as const
+const editor = { on: 'board', role: 'editor' } as const
+const admin = { on: 'board', role: 'admin' } as const
+const sharing = { ...admin, refusedOnManaged: true } as const
 
 async function under<K extends string, T>(
   key: K,
@@ -155,7 +164,7 @@ export function registerBoards(
     mentionsPerComment: number
     pendingReminders: number
   }
-) {
+): BoardRoute[] {
   const store = createBoardStore(deps.db)
   const taskStore = createTaskStore(deps.db)
   const sectionStore = createSectionStore(deps.db)
@@ -173,10 +182,11 @@ export function registerBoards(
     refusalStatus: REFUSAL_STATUS
   }
 
-  registerRoutes(app, routing, [
+  const routes: BoardRoute[] = [
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/invites',
+      access: sharing,
       params: boardParams,
       body: newInvite,
       status: 202,
@@ -193,6 +203,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/boards/:boardId/sharing',
+      access: sharing,
       params: boardParams,
       handler: ({ identity, params }) =>
         sharingStore.sharing(identity, params.boardId)
@@ -200,6 +211,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/boards/:boardId/sharing/people',
+      access: sharing,
       params: boardParams,
       query: peopleQuery,
       handler: ({ identity, params, query }) =>
@@ -211,6 +223,7 @@ export function registerBoards(
     defineRoute({
       method: 'DELETE',
       url: '/boards/:boardId/invites/:inviteId',
+      access: sharing,
       params: inviteParams,
       status: 204,
       handler: ({ identity, params }) =>
@@ -219,6 +232,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/projects',
+      access: self,
       handler: async ({ identity }) => ({
         ok: true,
         value: { projects: await sharingStore.myProjects(identity) }
@@ -227,6 +241,8 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/move',
+      // An editor of the target project too.
+      access: admin,
       params: boardParams,
       body: boardMove,
       status: 204,
@@ -236,6 +252,7 @@ export function registerBoards(
     defineRoute({
       method: 'PUT',
       url: '/boards/:boardId/members/:userId',
+      access: sharing,
       params: memberParams,
       body: roleChange,
       status: 204,
@@ -245,14 +262,14 @@ export function registerBoards(
     defineRoute({
       method: 'DELETE',
       url: '/boards/:boardId/members/:userId',
+      // To remove someone else. Any member may leave, but not a personal or
+      // managed project.
+      access: sharing,
       params: memberParams,
       status: 204,
       handler: ({ identity, params }) =>
         sharingStore.removeMember(identity, params.boardId, params.userId)
-    })
-  ])
-
-  registerRoutes(app, routing, [
+    }),
     ...(
       [
         ['archive', true],
@@ -262,6 +279,7 @@ export function registerBoards(
       defineRoute({
         method: 'POST',
         url: `/boards/:boardId/${path}`,
+        access: admin,
         params: boardParams,
         status: 204,
         handler: ({ identity, params }) =>
@@ -277,6 +295,7 @@ export function registerBoards(
       defineRoute({
         method: 'GET',
         url: `/boards/:boardId/${path}`,
+        access: viewer,
         params: boardParams,
         handler: async ({ identity, params }) => {
           const hidden = await archiveStore.hiddenTasks(
@@ -300,6 +319,7 @@ export function registerBoards(
       defineRoute({
         method,
         url: `/boards/:boardId/tasks/:taskId${path}`,
+        access: editor,
         params: taskParams,
         status: 204,
         handler: ({ identity, params }) =>
@@ -309,6 +329,8 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/tasks/:taskId/transfer/preview',
+      // On the target board too.
+      access: editor,
       params: taskParams,
       body: transferTarget,
       handler: ({ identity, params, body }) =>
@@ -322,6 +344,8 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/tasks/:taskId/transfer',
+      // On the target board too.
+      access: editor,
       params: taskParams,
       body: transferTarget,
       handler: ({ identity, params, body }) =>
@@ -331,30 +355,31 @@ export function registerBoards(
           params.taskId,
           body
         )
-    })
-  ])
-
-  registerRoutes(app, routing, [
+    }),
     defineRoute({
       method: 'GET',
       url: '/filters',
+      access: self,
       handler: ({ identity }) =>
         under('filters', filterStore.listFilters(identity))
     }),
     defineRoute({
       method: 'GET',
       url: '/labels',
+      access: self,
       handler: ({ identity }) =>
         under('labels', filterStore.labelNames(identity))
     }),
     defineRoute({
       method: 'GET',
       url: '/people',
+      access: self,
       handler: ({ identity }) => under('people', filterStore.people(identity))
     }),
     defineRoute({
       method: 'POST',
       url: '/filters',
+      access: self,
       body: newFilter,
       status: 201,
       handler: ({ identity, body }) =>
@@ -363,6 +388,7 @@ export function registerBoards(
     defineRoute({
       method: 'PATCH',
       url: '/filters/:filterId',
+      access: self,
       params: filterParams,
       body: filterChanges,
       status: 204,
@@ -372,6 +398,7 @@ export function registerBoards(
     defineRoute({
       method: 'DELETE',
       url: '/filters/:filterId',
+      access: self,
       params: filterParams,
       status: 204,
       handler: ({ identity, params }) =>
@@ -386,6 +413,7 @@ export function registerBoards(
       defineRoute({
         method,
         url: '/filters/:filterId/favorite',
+        access: self,
         params: filterParams,
         status: 204,
         handler: ({ identity, params }) =>
@@ -395,6 +423,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/filters/:filterId/tasks',
+      access: self,
       params: filterParams,
       query: zoneQuery,
       handler: ({ identity, params, query }) =>
@@ -402,13 +431,11 @@ export function registerBoards(
           'tasks',
           filterStore.filteredTasks(identity, params.filterId, query.zone)
         )
-    })
-  ])
-
-  registerRoutes(app, routing, [
+    }),
     defineRoute({
       method: 'GET',
       url: '/boards/:boardId/tasks/:taskId/reminders',
+      access: viewer,
       params: taskParams,
       handler: ({ identity, params }) =>
         under(
@@ -419,6 +446,7 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/tasks/:taskId/reminders',
+      access: viewer,
       params: taskParams,
       body: newReminder,
       status: 201,
@@ -428,6 +456,7 @@ export function registerBoards(
     defineRoute({
       method: 'DELETE',
       url: '/boards/:boardId/tasks/:taskId/reminders/:reminderId',
+      access: viewer,
       params: reminderParams,
       status: 204,
       handler: ({ identity, params }) =>
@@ -441,6 +470,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/boards/:boardId/tasks/:taskId/follow',
+      access: viewer,
       params: taskParams,
       handler: ({ identity, params }) =>
         under(
@@ -457,6 +487,7 @@ export function registerBoards(
       defineRoute({
         method,
         url: '/boards/:boardId/tasks/:taskId/follow',
+        access: viewer,
         params: taskParams,
         status: 204,
         handler: ({ identity, params }) =>
@@ -471,6 +502,7 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/notifications/read',
+      access: self,
       body: notificationsRead,
       status: 204,
       handler: ({ identity, body }) =>
@@ -479,6 +511,7 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/notifications/:notificationId/read',
+      access: self,
       params: notificationParams,
       status: 204,
       handler: ({ identity, params }) =>
@@ -487,21 +520,21 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/notifications/unread',
+      access: self,
       handler: ({ identity }) =>
         under('projects', reminderStore.unreadByProject(identity))
     }),
     defineRoute({
       method: 'GET',
       url: '/notifications',
+      access: self,
       handler: ({ identity }) =>
         under('notifications', reminderStore.notificationsOf(identity))
-    })
-  ])
-
-  registerRoutes(app, routing, [
+    }),
     defineRoute({
       method: 'GET',
       url: '/boards',
+      access: self,
       handler: async ({ identity }) => ({
         ok: true,
         value: { boards: await store.listBoards(identity) }
@@ -510,6 +543,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/my-tasks',
+      access: self,
       handler: async ({ identity }) => ({
         ok: true,
         value: { tasks: await store.assignedTasks(identity) }
@@ -518,6 +552,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/agenda',
+      access: self,
       query: agendaQuery,
       handler: async ({ identity, query }) => ({
         ok: true,
@@ -527,6 +562,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/boards/:boardId',
+      access: viewer,
       params: boardParams,
       handler: async ({ identity, params }) => {
         const board = await store.getBoard(identity, params.boardId)
@@ -538,6 +574,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/key-prefixes/:keyPrefix',
+      access: self,
       params: keyPrefixParams,
       handler: async ({ identity, params }) => ({
         ok: true,
@@ -547,6 +584,8 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/boards',
+      // An admin of the project it is made in, if any.
+      access: self,
       body: newBoard,
       status: 201,
       handler: ({ identity, body }) =>
@@ -557,6 +596,7 @@ export function registerBoards(
     defineRoute({
       method: 'PATCH',
       url: '/boards/:boardId',
+      access: admin,
       params: boardParams,
       body: boardRename,
       status: 204,
@@ -572,6 +612,7 @@ export function registerBoards(
       defineRoute({
         method,
         url: '/boards/:boardId/favorite',
+        access: viewer,
         params: boardParams,
         status: 204,
         handler: async ({ identity, params }) =>
@@ -582,47 +623,44 @@ export function registerBoards(
     ),
     ...(
       [
-        ['/boards/:boardId/layout', 'setLayout'],
-        ['/boards/:boardId/default-layout', 'setDefaultLayout']
+        ['/boards/:boardId/layout', 'setLayout', viewer],
+        ['/boards/:boardId/default-layout', 'setDefaultLayout', admin]
       ] as const
-    ).map(([url, set]): BoardRoute =>
+    ).map(([url, set, access]): BoardRoute =>
       defineRoute({
         method: 'PUT',
         url,
+        access,
         params: boardParams,
         body: layoutChoice,
         status: 204,
         handler: ({ identity, params, body }) =>
           layoutStore[set](identity, params.boardId, body.layout)
       })
-    )
-  ])
-
-  app.get(
-    '/search',
-    {
+    ),
+    defineRoute({
+      method: 'GET',
+      url: '/search',
+      access: self,
       onRequest: allowOrigins(app, '/search', deps.searchAllowedOrigins),
-      preHandler: deps.requireIdentity,
-      config: { searchTokens: true }
-    },
-    async (request, reply) => {
-      const identity = request.identity
-      if (!identity) return reply.code(401).send()
-      const query = searchQuery.safeParse(request.query)
-      if (!query.success) {
-        return reply.code(400).send({ error: 'invalid_request' })
-      }
-      // Other apps search as the user types: a query too short to search
-      // finds nothing rather than failing.
-      if (query.data.q.length < deps.searchMinLength) return { tasks: [] }
-      return { tasks: await store.search(identity, query.data.q) }
-    }
-  )
-
-  registerRoutes(app, routing, [
+      config: { searchTokens: true },
+      query: searchQuery,
+      handler: async ({ identity, query }) => ({
+        ok: true,
+        value: {
+          // Other apps search as the user types: a query too short to search
+          // finds nothing rather than failing.
+          tasks:
+            query.q.length < deps.searchMinLength
+              ? []
+              : await store.search(identity, query.q)
+        }
+      })
+    }),
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/tasks',
+      access: editor,
       params: boardParams,
       body: newTask,
       status: 201,
@@ -632,6 +670,7 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/tasks/:taskId/move',
+      access: editor,
       params: taskParams,
       body: taskMove,
       status: 204,
@@ -641,6 +680,7 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/tasks/:taskId/complete',
+      access: editor,
       params: taskParams,
       body: completion,
       status: 204,
@@ -655,6 +695,7 @@ export function registerBoards(
     defineRoute({
       method: 'PATCH',
       url: '/boards/:boardId/tasks/:taskId',
+      access: editor,
       params: taskParams,
       body: taskChanges,
       status: 204,
@@ -664,6 +705,7 @@ export function registerBoards(
     defineRoute({
       method: 'PUT',
       url: '/boards/:boardId/tasks/:taskId/assignees',
+      access: editor,
       params: taskParams,
       body: assignment,
       status: 204,
@@ -678,6 +720,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/boards/:boardId/tasks/:taskId/description',
+      access: viewer,
       params: taskParams,
       handler: ({ identity, params }) =>
         taskStore.getDescription(identity, params.boardId, params.taskId)
@@ -685,17 +728,16 @@ export function registerBoards(
     defineRoute({
       method: 'PUT',
       url: '/boards/:boardId/tasks/:taskId/description',
+      access: editor,
       params: taskParams,
       body: descriptionEdit,
       handler: ({ identity, params, body }) =>
         taskStore.setDescription(identity, params.boardId, params.taskId, body)
-    })
-  ])
-
-  registerRoutes(app, routing, [
+    }),
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/labels',
+      access: editor,
       params: boardParams,
       body: newLabel,
       status: 201,
@@ -705,6 +747,7 @@ export function registerBoards(
     defineRoute({
       method: 'PATCH',
       url: '/boards/:boardId/labels/:labelId',
+      access: editor,
       params: labelParams,
       body: labelChanges,
       handler: ({ identity, params, body }) =>
@@ -713,6 +756,7 @@ export function registerBoards(
     defineRoute({
       method: 'PUT',
       url: '/boards/:boardId/tasks/:taskId/labels',
+      access: editor,
       params: taskParams,
       body: labeling,
       status: 204,
@@ -723,13 +767,11 @@ export function registerBoards(
           params.taskId,
           body.labelIds
         )
-    })
-  ])
-
-  registerRoutes(app, routing, [
+    }),
     defineRoute({
       method: 'GET',
       url: '/boards/:boardId/tasks/:taskId/history',
+      access: viewer,
       params: taskParams,
       handler: ({ identity, params }) =>
         under(
@@ -740,6 +782,7 @@ export function registerBoards(
     defineRoute({
       method: 'GET',
       url: '/boards/:boardId/tasks/:taskId/comments',
+      access: viewer,
       params: taskParams,
       handler: ({ identity, params }) =>
         under(
@@ -750,6 +793,7 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/tasks/:taskId/comments',
+      access: viewer,
       params: taskParams,
       body: newComment,
       status: 201,
@@ -760,44 +804,35 @@ export function registerBoards(
           params.taskId,
           body.body
         )
-    })
-  ])
-
-  // The emoji is part of the URL, yet a bad one is a bad request, not a
-  // missing resource.
-  registerRoutes(
-    app,
-    { ...routing, refusalStatus: { ...REFUSAL_STATUS, invalid_request: 400 } },
-    (['PUT', 'DELETE'] as const).map(
-      (method): DeclaredRoute<Identity, Refusal | 'invalid_request'> =>
-        defineRoute({
-          method,
-          url: '/boards/:boardId/tasks/:taskId/comments/:commentId/reactions/:emoji',
-          params: reactionParams,
-          status: 204,
-          handler: async ({ identity, params }) => {
-            const emoji = reactionEmoji.safeParse(params.emoji)
-            if (!emoji.success) return { ok: false, error: 'invalid_request' }
-            const { boardId, taskId, commentId } = params
-            const args = [
-              identity,
-              boardId,
-              taskId,
-              commentId,
-              emoji.data
-            ] as const
-            return method === 'PUT'
-              ? commentStore.addReaction(...args)
-              : commentStore.removeReaction(...args)
-          }
-        })
-    )
-  )
-
-  registerRoutes(app, routing, [
+    }),
+    ...(['PUT', 'DELETE'] as const).map((method): BoardRoute =>
+      defineRoute({
+        method,
+        url: '/boards/:boardId/tasks/:taskId/comments/:commentId/reactions/:emoji',
+        access: viewer,
+        params: reactionParams,
+        status: 204,
+        handler: async ({ identity, params }) => {
+          const emoji = reactionEmoji.safeParse(params.emoji)
+          if (!emoji.success) return { ok: false, error: 'invalid_request' }
+          const { boardId, taskId, commentId } = params
+          const args = [
+            identity,
+            boardId,
+            taskId,
+            commentId,
+            emoji.data
+          ] as const
+          return method === 'PUT'
+            ? commentStore.addReaction(...args)
+            : commentStore.removeReaction(...args)
+        }
+      })
+    ),
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/sections',
+      access: admin,
       params: boardParams,
       body: newSection,
       status: 201,
@@ -807,6 +842,7 @@ export function registerBoards(
     defineRoute({
       method: 'PATCH',
       url: '/boards/:boardId/sections/:sectionId',
+      access: admin,
       params: sectionParams,
       body: sectionChanges,
       status: 204,
@@ -821,6 +857,7 @@ export function registerBoards(
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/sections/:sectionId/move',
+      access: admin,
       params: sectionParams,
       body: sectionMove,
       status: 204,
@@ -835,6 +872,7 @@ export function registerBoards(
     defineRoute({
       method: 'DELETE',
       url: '/boards/:boardId/sections/:sectionId',
+      access: admin,
       params: sectionParams,
       // A delete may come without a body.
       body: sectionDeletion.nullish(),
@@ -847,5 +885,7 @@ export function registerBoards(
           body?.tasksTo
         )
     })
-  ])
+  ]
+  registerRoutes(app, routing, routes)
+  return routes
 }

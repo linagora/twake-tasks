@@ -29,6 +29,7 @@ function serverWith(
     defineRoute({
       method: 'POST',
       url: '/things/:thingId',
+      access: { on: 'self' },
       params: z.object({ thingId: z.uuid() }),
       query: z.object({ dry: z.enum(['yes', 'no']).default('no') }),
       body: z.object({ name: z.string().min(1) }),
@@ -51,11 +52,13 @@ function serverWith(
     defineRoute({
       method: 'GET',
       url: '/things',
+      access: { on: 'self' },
       handler: () => Promise.resolve({ ok: true, value: { things: [] } })
     }),
     defineRoute({
       method: 'DELETE',
       url: '/things',
+      access: { on: 'self' },
       status: 204,
       handler: () => Promise.resolve({ ok: true, value: null })
     })
