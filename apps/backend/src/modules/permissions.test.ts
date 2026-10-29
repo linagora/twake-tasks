@@ -396,9 +396,9 @@ const routes = declaredRoutes()
 
 describe('the permission matrix', () => {
   it('declares every route the app serves', () => {
-    expect(servedRoutes(api.printRoutes({ commonPrefix: false })).sort()).toEqual(
-      [...routes.map(idOf), ...UNDECLARED].sort()
-    )
+    expect(
+      servedRoutes(api.printRoutes({ commonPrefix: false })).sort()
+    ).toEqual([...routes.map(idOf), ...UNDECLARED].sort())
   })
 
   it('has an example for every declared route', () => {
