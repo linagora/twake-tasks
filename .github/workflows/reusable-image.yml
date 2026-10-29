@@ -17,6 +17,11 @@ on:
         required: false
         type: string
         default: ''
+      previous-release:
+        description: Also smoke test the latest released image on the schema this build migrates
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   image:
@@ -48,6 +53,23 @@ jobs:
           else
             echo "No smoke test for ${{ inputs.project }}"
           fi
+
+      - name: Previous release on the new schema
+        if: inputs.previous-release
+        env:
+          PROJECT: ${{ inputs.project }}
+          REGISTRY: ghcr.io/${{ github.repository_owner }}
+        # A tag gets its image only once its release workflow publishes it.
+        run: |
+          for tag in $(git ls-remote --tags --refs --sort=-v:refname origin "refs/tags/$PROJECT-v*" \
+            | grep -oE "$PROJECT-v[0-9]+\.[0-9]+\.[0-9]+$"); do
+            image="$REGISTRY/twake-tasks-$PROJECT:${tag#"$PROJECT"-v}"
+            if docker manifest inspect "$image" >/dev/null 2>&1; then
+              exec "$SMOKE_TEST" "$LOCAL_IMAGE" "$image"
+            fi
+          done
+          echo "FAIL no published $PROJECT release image"
+          exit 1
 
       - name: Tags and labels
         if: inputs.push
