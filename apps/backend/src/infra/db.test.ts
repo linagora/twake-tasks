@@ -29,9 +29,11 @@ import {
 } from './db.ts'
 
 const { sql, db } = createDb(inject('databaseUrl'))
+const asOwner = createDb(inject('ownerDatabaseUrl'))
 
 afterAll(async () => {
   await sql.end()
+  await asOwner.sql.end()
 })
 
 function aProjectRow(owner: TestUser) {
@@ -289,7 +291,8 @@ describe('tenant foreign keys', () => {
          values (${taskId}, null, uuidv7())`
   }
 
-  // Row level security already refuses these, so it is lifted to reach the keys.
+  // Row level security already refuses these, so the owner lifts it to reach
+  // the keys.
   it.each(Object.entries(stray))(
     'refuses a B2C row in %s on an organization project',
     async (table, insert) => {
@@ -310,7 +313,7 @@ describe('tenant foreign keys', () => {
       )
 
       await expect(
-        db.transaction(async tx => {
+        asOwner.db.transaction(async tx => {
           await tx.execute(
             statement`alter table ${statement.identifier(table)} no force row level security`
           )
@@ -325,8 +328,28 @@ describe('tenant foreign keys', () => {
 })
 
 describe('assertRowLevelSecurity', () => {
-  it('accepts the app role, which is not a superuser', async () => {
-    await expect(assertRowLevelSecurity(sql)).resolves.toBeUndefined()
+  it('accepts the app role, which is not a superuser and owns no table', async () => {
+    const warn = vi.fn()
+
+    await expect(assertRowLevelSecurity(sql, { warn })).resolves.toBeUndefined()
+    expect(warn).not.toHaveBeenCalled()
+  })
+
+  it('warns about a role that owns the tables', async () => {
+    const warn = vi.fn()
+
+    await assertRowLevelSecurity(asOwner.sql, { warn })
+
+    expect(warn).toHaveBeenCalledWith(
+      { tables: expect.arrayContaining(['tasks']) as string[] },
+      expect.stringContaining('owns tables')
+    )
+  })
+
+  it('leaves the app role unable to lift row level security', async () => {
+    await expect(
+      sql`alter table tasks no force row level security`
+    ).rejects.toHaveProperty('code', '42501')
   })
 
   it('forces row level security wherever it is enabled', async () => {

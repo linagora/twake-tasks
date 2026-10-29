@@ -58,8 +58,13 @@ const { sql, db } = createDb(config.DATABASE_URL, logger, {
   poolMax: config.DATABASE_POOL_MAX,
   statementTimeoutMs: config.DATABASE_STATEMENT_TIMEOUT_MS
 })
-await assertRowLevelSecurity(sql)
-if (config.MIGRATE_ON_START) await migrateLocked(config.DATABASE_URL)
+await assertRowLevelSecurity(sql, logger)
+if (config.MIGRATE_ON_START) {
+  await migrateLocked(
+    config.DATABASE_MIGRATION_URL ?? config.DATABASE_URL,
+    config.DATABASE_URL
+  )
+}
 // Readiness must not wait behind the requests that fill the pool.
 const probe = postgres(config.DATABASE_URL, { max: 1 })
 // Without MIGRATE_ON_START, a replica may start before its release migrated.

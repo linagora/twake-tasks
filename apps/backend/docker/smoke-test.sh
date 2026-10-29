@@ -58,6 +58,7 @@ docker run -d --name "$RUN-backend" --network "$RUN" \
   -e NODE_EXTRA_CA_CERTS=/certs/oidc.crt \
   -e RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672 \
   -e DATABASE_URL=postgres://twake_tasks:twake_tasks@postgres:5432/twake_tasks \
+  -e DATABASE_MIGRATION_URL=postgres://twake_tasks_owner:twake_tasks_owner@postgres:5432/twake_tasks \
   -e APP_URL=http://localhost:3000 \
   -e OIDC_ISSUER=https://oidc:8443 \
   -e OIDC_CLIENT_SECRET=e2e-backend-secret \

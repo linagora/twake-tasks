@@ -26,6 +26,8 @@ By default each replica migrates at start instead. Either way, a migration holds
 
 A replica that starts before the migrations of its image ran logs which ones it lacks and stays not ready until they run.
 
+Migrations run as the owner role, and the replicas serve as a role that owns nothing (see [dependencies](dependencies.md#postgresql)). To split a database that has one role: keep that role as the owner in `DATABASE_MIGRATION_URL`, create a serving role with `LOGIN` only, put it in `DATABASE_URL`, then migrate once to grant it its rights.
+
 ## Releases
 
 The backend and the frontend are released apart, by pushing a tag on `main`:
