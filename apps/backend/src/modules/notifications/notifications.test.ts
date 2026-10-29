@@ -8,7 +8,7 @@ import {
   startApp,
   type TestUser
 } from '../../testing/app.ts'
-import { notifications } from '../boards/schema.ts'
+import { comments, notifications } from '../boards/schema.ts'
 
 interface Notification {
   id: string
@@ -225,6 +225,23 @@ describe('following and notifications', () => {
       expect(mention?.commentExcerpt).toBe(
         `${`Look @carol@example.com ${words}`.slice(0, 120).trimEnd()}…`
       )
+    })
+
+    it('quotes a comment stored without its plain text', async () => {
+      const { bob, carol, path, inbox } = await aTeam()
+      await api.as(bob).post(`${path}/comments`, {
+        body: '**Look** @carol@example.com'
+      })
+
+      await inTenant(db, bob, tx =>
+        tx
+          .update(comments)
+          .set({ bodyText: null })
+          .where(eq(comments.authorId, bob.userId))
+      )
+
+      const [mention] = await inbox(carol)
+      expect(mention?.commentExcerpt).toBe('Look @carol@example.com')
     })
 
     it('quotes a mention as the name of the person it mentions, as the comment shows it', async () => {

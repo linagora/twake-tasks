@@ -1,0 +1,1 @@
+ALTER TABLE "comments" ADD COLUMN "body_text" text;

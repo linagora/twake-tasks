@@ -30,20 +30,59 @@ describe('plainText', () => {
     )
   })
 
-  // Parsing Markdown nested this deep takes seconds, more in a parallel run.
-  it(
-    'copes with containers nested as deep as a comment allows',
-    { timeout: 30_000 },
-    () => {
-      expect(() => plainText('>- - 1. '.repeat(1250))).not.toThrow()
+  // CPU time, so that other test files running at once do not count.
+  function millisecondsToRead(markdown: string) {
+    const start = process.cpuUsage()
+    plainText(markdown)
+    const { user, system } = process.cpuUsage(start)
+    return (user + system) / 1000
+  }
+
+  it.each([
+    ['as deep as a comment allows', '>- - 1. '.repeat(1250)],
+    ['as deep as a description allows', '>- - 1. '.repeat(6250)],
+    [
+      'after a line that looks like a fence',
+      `\`\`\` a\`b\n${'>- - 1. '.repeat(1250)}`
+    ]
+  ])('reads containers nested %s quickly', (_, markdown) => {
+    expect(millisecondsToRead(markdown)).toBeLessThan(200)
+  })
+
+  it.each([
+    ['lists nested line after line', '- - a\n'.repeat(8000)],
+    ['lists nested by indentation', '- a\n  - b\n'.repeat(5000)],
+    ['emphasis nested', `${'*'.repeat(24999)}a${'*'.repeat(24999)}`],
+    ['emphasis far apart', `${'*a '.repeat(8000)}${'b* '.repeat(8000)}`],
+    [
+      'emphasis far apart on lines',
+      `${'*a\n'.repeat(8000)}${'b*\n'.repeat(8000)}`
+    ]
+  ])(
+    'reads a description of %s in time linear in its length',
+    (_, markdown) => {
+      expect(millisecondsToRead(markdown)).toBeLessThan(3000)
     }
   )
 
-  it(
-    'copes with emphasis nested as deep as a description allows',
-    { timeout: 30_000 },
-    () => {
-      expect(plainText(`${'*'.repeat(8000)}a${'*'.repeat(8000)}`)).toBe('a')
-    }
-  )
+  it('keeps the text of containers nested too deep', () => {
+    expect(plainText(`${'- '.repeat(40)}a`)).toBe(`${'- '.repeat(8)}a`)
+  })
+
+  it('reads a long paragraph and a long code block whole', () => {
+    const code = Array.from({ length: 600 }, () => '*a*').join('\n\n')
+    expect(plainText(`${'line\n'.repeat(1000)}\n\`\`\`\n${code}\n\`\`\``)).toBe(
+      `${'line\n'.repeat(1000)}${code}`
+    )
+  })
+
+  it('keeps emphasis nested too deep as text', () => {
+    const markdown = `${'*'.repeat(8000)}a${'*'.repeat(8000)}`
+    expect(plainText(markdown)).toBe(markdown)
+  })
+
+  it('reads a long tilde fence holding a backtick fence whole', () => {
+    const code = `${'x\n'.repeat(500)}\`\`\`\n${'*a*\n'.repeat(500)}`
+    expect(plainText(`~~~\n${code}~~~`)).toBe(code.slice(0, -1))
+  })
 })

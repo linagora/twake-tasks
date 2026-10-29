@@ -122,7 +122,8 @@ export function createNotificationStore(db: Db) {
             to: taskHistory.to,
             name: taskHistory.name,
             at: taskHistory.at,
-            comment: comments.body
+            comment: comments.body,
+            commentText: comments.bodyText
           })
           .from(notifications)
           .innerJoin(tasks, eq(tasks.id, notifications.taskId))
@@ -145,9 +146,9 @@ export function createNotificationStore(db: Db) {
           )
           .orderBy(desc(notifications.createdAt))
           .limit(50)
-        const quoted = rows.map(({ comment, ...row }) => ({
+        const quoted = rows.map(({ comment, commentText, ...row }) => ({
           ...row,
-          quote: comment === null ? null : plainText(comment)
+          quote: comment === null ? null : (commentText ?? plainText(comment))
         }))
         const nameOf = await memberNames(
           tx,

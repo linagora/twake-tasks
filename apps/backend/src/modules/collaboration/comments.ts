@@ -8,6 +8,7 @@ import { taskOf } from '../boards/taskRows.ts'
 import { bumpBoard } from '../boards/versions.ts'
 import {
   mentionedEmails,
+  plainText,
   refuseIfShelved,
   visibleTask
 } from '../tasks/index.ts'
@@ -129,7 +130,8 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
             authorId: identity.userId,
             authorEmail: identity.email,
             authorName: looksOf(identity.userId).name,
-            body
+            body,
+            bodyText: plainText(body)
           })
           .returning({ id: comments.id, createdAt: comments.createdAt })
         if (!comment) throw new Error('comment insert returned nothing')
