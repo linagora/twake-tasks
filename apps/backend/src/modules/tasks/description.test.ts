@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb, inTenant } from '../../infra/db.ts'
 import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
-import { tasks } from './schema.ts'
+import { tasks } from '../boards/schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))

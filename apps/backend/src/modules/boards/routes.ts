@@ -1,9 +1,6 @@
 import {
-  assignment,
   boardParams,
   boardRename,
-  completion,
-  descriptionEdit,
   keyPrefixParams,
   labelChanges,
   labeling,
@@ -11,18 +8,12 @@ import {
   layoutChoice,
   newBoard,
   newLabel,
-  newReminder,
   newSection,
-  newTask,
-  reminderParams,
   sectionChanges,
   sectionDeletion,
   sectionMove,
   sectionParams,
-  taskChanges,
-  taskMove,
-  taskParams,
-  transferTarget
+  taskParams
 } from '@twake-tasks/api-contract'
 import type * as wire from '@twake-tasks/api-contract'
 import type { FastifyRequest } from 'fastify'
@@ -35,18 +26,13 @@ import {
 } from '../../infra/route.ts'
 import type { Identity, RequireIdentity } from '../auth/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
-import { under, type Refusal } from '../kernel/index.ts'
-import { createArchiveStore } from './archive.ts'
-import { historyOf } from './history.ts'
+import type { Refusal } from '../kernel/index.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
-import { createReminderStore } from './reminders.ts'
 import type * as db from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { INBOX_KEY_PREFIX } from './keyPrefixes.ts'
 import { createBoardStore } from './store.ts'
-import { createTaskStore } from './tasks.ts'
-import { createTransferStore } from './transfer.ts'
 
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false
 type Assert<T extends true> = T
@@ -100,21 +86,12 @@ const admin = { on: 'board', role: 'admin' } as const
 
 export function registerBoards(
   app: HttpServer,
-  deps: {
-    db: Db
-    requireIdentity: RequireIdentity
-    // 0 for no cap.
-    pendingReminders: number
-  }
+  deps: { db: Db; requireIdentity: RequireIdentity }
 ): BoardRoute[] {
   const store = createBoardStore(deps.db)
-  const taskStore = createTaskStore(deps.db)
   const sectionStore = createSectionStore(deps.db)
   const labelStore = createLabelStore(deps.db)
-  const reminderStore = createReminderStore(deps.db, deps.pendingReminders)
   const layoutStore = createLayoutStore(deps.db)
-  const archiveStore = createArchiveStore(deps.db)
-  const transferStore = createTransferStore(deps.db)
   const routing = {
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,
@@ -135,114 +112,9 @@ export function registerBoards(
         params: boardParams,
         status: 204,
         handler: ({ identity, params }) =>
-          archiveStore.setBoardArchived(identity, params.boardId, archived)
+          store.setBoardArchived(identity, params.boardId, archived)
       })
     ),
-    ...(
-      [
-        ['archived', 'archivedAt'],
-        ['trash', 'deletedAt']
-      ] as const
-    ).map(([path, stamp]): BoardRoute =>
-      defineRoute({
-        method: 'GET',
-        url: `/boards/:boardId/${path}`,
-        access: viewer,
-        params: boardParams,
-        handler: async ({ identity, params }) => {
-          const hidden = await archiveStore.hiddenTasks(
-            identity,
-            params.boardId,
-            stamp
-          )
-          return hidden
-            ? { ok: true, value: { tasks: hidden } }
-            : { ok: false, error: 'not_found' }
-        }
-      })
-    ),
-    ...(
-      [
-        ['POST', '/archive', 'archiveTask'],
-        ['POST', '/restore', 'restoreTask'],
-        ['DELETE', '', 'trashTask']
-      ] as const
-    ).map(([method, path, change]): BoardRoute =>
-      defineRoute({
-        method,
-        url: `/boards/:boardId/tasks/:taskId${path}`,
-        access: editor,
-        params: taskParams,
-        status: 204,
-        handler: ({ identity, params }) =>
-          archiveStore[change](identity, params.boardId, params.taskId)
-      })
-    ),
-    defineRoute({
-      method: 'POST',
-      url: '/boards/:boardId/tasks/:taskId/transfer/preview',
-      // On the target board too.
-      access: editor,
-      params: taskParams,
-      body: transferTarget,
-      handler: ({ identity, params, body }) =>
-        transferStore.previewTransfer(
-          identity,
-          params.boardId,
-          params.taskId,
-          body
-        )
-    }),
-    defineRoute({
-      method: 'POST',
-      url: '/boards/:boardId/tasks/:taskId/transfer',
-      // On the target board too.
-      access: editor,
-      params: taskParams,
-      body: transferTarget,
-      handler: ({ identity, params, body }) =>
-        transferStore.transferTask(
-          identity,
-          params.boardId,
-          params.taskId,
-          body
-        )
-    }),
-    defineRoute({
-      method: 'GET',
-      url: '/boards/:boardId/tasks/:taskId/reminders',
-      access: viewer,
-      params: taskParams,
-      handler: ({ identity, params }) =>
-        under(
-          'reminders',
-          reminderStore.listReminders(identity, params.boardId, params.taskId)
-        )
-    }),
-    defineRoute({
-      method: 'POST',
-      url: '/boards/:boardId/tasks/:taskId/reminders',
-      access: viewer,
-      params: taskParams,
-      body: newReminder,
-      status: 201,
-      handler: ({ identity, params, body }) =>
-        reminderStore.addReminder(identity, params.boardId, params.taskId, body)
-    }),
-    defineRoute({
-      method: 'DELETE',
-      url: '/boards/:boardId/tasks/:taskId/reminders/:reminderId',
-      access: viewer,
-      params: reminderParams,
-      status: 204,
-      handler: ({ identity, params }) =>
-        reminderStore.deleteReminder(
-          identity,
-          params.boardId,
-          params.taskId,
-          params.reminderId
-        )
-    }),
     defineRoute({
       method: 'GET',
       url: '/boards',
@@ -333,83 +205,6 @@ export function registerBoards(
     ),
     defineRoute({
       method: 'POST',
-      url: '/boards/:boardId/tasks',
-      access: editor,
-      params: boardParams,
-      body: newTask,
-      status: 201,
-      handler: ({ identity, params, body }) =>
-        taskStore.createTask(identity, params.boardId, body)
-    }),
-    defineRoute({
-      method: 'POST',
-      url: '/boards/:boardId/tasks/:taskId/move',
-      access: editor,
-      params: taskParams,
-      body: taskMove,
-      status: 204,
-      handler: ({ identity, params, body }) =>
-        taskStore.moveTask(identity, params.boardId, params.taskId, body)
-    }),
-    defineRoute({
-      method: 'POST',
-      url: '/boards/:boardId/tasks/:taskId/complete',
-      access: editor,
-      params: taskParams,
-      body: completion,
-      status: 204,
-      handler: ({ identity, params, body }) =>
-        taskStore.completeTask(
-          identity,
-          params.boardId,
-          params.taskId,
-          body.state
-        )
-    }),
-    defineRoute({
-      method: 'PATCH',
-      url: '/boards/:boardId/tasks/:taskId',
-      access: editor,
-      params: taskParams,
-      body: taskChanges,
-      status: 204,
-      handler: ({ identity, params, body }) =>
-        taskStore.editTask(identity, params.boardId, params.taskId, body)
-    }),
-    defineRoute({
-      method: 'PUT',
-      url: '/boards/:boardId/tasks/:taskId/assignees',
-      access: editor,
-      params: taskParams,
-      body: assignment,
-      status: 204,
-      handler: ({ identity, params, body }) =>
-        taskStore.setAssignees(
-          identity,
-          params.boardId,
-          params.taskId,
-          body.userIds
-        )
-    }),
-    defineRoute({
-      method: 'GET',
-      url: '/boards/:boardId/tasks/:taskId/description',
-      access: viewer,
-      params: taskParams,
-      handler: ({ identity, params }) =>
-        taskStore.getDescription(identity, params.boardId, params.taskId)
-    }),
-    defineRoute({
-      method: 'PUT',
-      url: '/boards/:boardId/tasks/:taskId/description',
-      access: editor,
-      params: taskParams,
-      body: descriptionEdit,
-      handler: ({ identity, params, body }) =>
-        taskStore.setDescription(identity, params.boardId, params.taskId, body)
-    }),
-    defineRoute({
-      method: 'POST',
       url: '/boards/:boardId/labels',
       access: editor,
       params: boardParams,
@@ -440,17 +235,6 @@ export function registerBoards(
           params.boardId,
           params.taskId,
           body.labelIds
-        )
-    }),
-    defineRoute({
-      method: 'GET',
-      url: '/boards/:boardId/tasks/:taskId/history',
-      access: viewer,
-      params: taskParams,
-      handler: ({ identity, params }) =>
-        under(
-          'entries',
-          historyOf(deps.db, identity, params.boardId, params.taskId)
         )
     }),
     defineRoute({

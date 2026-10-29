@@ -23,6 +23,7 @@ import { registerCollaboration } from './collaboration/index.ts'
 import { registerNotifications } from './notifications/index.ts'
 import { registerProjects } from './projects/index.ts'
 import { registerSettings } from './settings/index.ts'
+import { registerTasks } from './tasks/index.ts'
 import { registerViews } from './views/index.ts'
 
 interface Declared {
@@ -94,7 +95,8 @@ function declaredRoutes(): Declared[] {
       addressLimits: { refusedTokens: off, logoutRefusals: off, tokenChecks: 0 }
     }).routes,
     ...registerProjects(scratch, { db, requireIdentity }),
-    ...registerBoards(scratch, {
+    ...registerBoards(scratch, { db, requireIdentity }),
+    ...registerTasks(scratch, {
       db,
       requireIdentity,
       pendingReminders: 0

@@ -1,10 +1,10 @@
 import { and, asc, eq, ne, notInArray } from 'drizzle-orm'
-import type { Db, Tx } from '../../infra/db.ts'
+import { isUniqueViolation, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse, type Result } from '../kernel/index.ts'
 import { checkRole } from './access.ts'
 import { boards, labels, taskLabels } from './schema.ts'
-import { isUniqueViolation, shownTaskOf } from './tasks.ts'
+import { shownTaskOf } from './taskRows.ts'
 import { bumpBoard, bumpBoards } from './versions.ts'
 
 const shape = { id: labels.id, name: labels.name, color: labels.color }

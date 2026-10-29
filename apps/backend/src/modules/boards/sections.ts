@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, ne, sql } from 'drizzle-orm'
 import { generateNKeysBetween } from 'fractional-indexing'
-import type { Db, Tx } from '../../infra/db.ts'
+import { isUniqueViolation, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse, type Result } from '../kernel/index.ts'
 import { checkRole } from './access.ts'
@@ -9,10 +9,9 @@ import { sections, sectionCategory, tasks } from './schema.ts'
 import {
   completionFor,
   inSection,
-  isUniqueViolation,
   positionBetween,
   sectionOf
-} from './tasks.ts'
+} from './taskRows.ts'
 import { bumpBoard } from './versions.ts'
 
 type Category = (typeof sectionCategory.enumValues)[number]

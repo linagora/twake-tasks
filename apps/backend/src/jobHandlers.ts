@@ -1,8 +1,6 @@
 import type { Budget } from './config.ts'
 import type { LdapRest } from './infra/ldapRest.ts'
 import type { Mail } from './infra/mail.ts'
-import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
-import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
 import {
   emailDigest,
   emailNotification,
@@ -18,6 +16,12 @@ import {
   purgeSpace,
   reconcileJobs
 } from './modules/spaces/index.ts'
+import {
+  deliverReminder,
+  PURGE_JOB,
+  purgeTask,
+  REMINDER_JOB
+} from './modules/tasks/index.ts'
 import { RETENTION_JOB, retention, type Retention } from './retention.ts'
 import type { Handler } from './scheduler/scheduler.ts'
 

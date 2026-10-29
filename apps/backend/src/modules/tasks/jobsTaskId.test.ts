@@ -7,9 +7,9 @@ import { createDb, inTenant, migrateDb } from '../../infra/db.ts'
 import { schedule } from '../../scheduler/scheduler.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import { aBoardIn, aManagedProject, aUser } from '../../testing/app.ts'
+import { notifications, tasks } from '../boards/schema.ts'
 import { PURGE_JOB } from './archive.ts'
 import { REMINDER_JOB } from './reminderJobs.ts'
-import { notifications, tasks } from './schema.ts'
 
 // The migration switches row-level security off and on again for a moment,
 // which locks the tables the other test files use, so it runs on a database

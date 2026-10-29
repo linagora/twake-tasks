@@ -20,6 +20,7 @@ import { registerCollaboration } from './modules/collaboration/index.ts'
 import { registerNotifications } from './modules/notifications/index.ts'
 import { registerProjects } from './modules/projects/index.ts'
 import { registerSettings } from './modules/settings/index.ts'
+import { registerTasks } from './modules/tasks/index.ts'
 import { registerViews } from './modules/views/index.ts'
 
 export async function buildApp(deps: {
@@ -66,7 +67,8 @@ export async function buildApp(deps: {
       })
       const streamVersions = versionStreams(api)
       registerProjects(api, { db: deps.db, requireIdentity })
-      registerBoards(api, {
+      registerBoards(api, { db: deps.db, requireIdentity })
+      registerTasks(api, {
         db: deps.db,
         requireIdentity,
         pendingReminders: deps.limits?.pendingReminders ?? 0

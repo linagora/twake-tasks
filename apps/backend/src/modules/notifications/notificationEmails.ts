@@ -14,7 +14,6 @@ import {
   plain,
   type Language
 } from '../boards/mailLayout.ts'
-import { mentionedEmails, plainText, withNames } from '../boards/markdown.ts'
 import {
   boards,
   comments,
@@ -26,6 +25,7 @@ import {
   tasks
 } from '../boards/schema.ts'
 import { userSettings } from '../settings/index.ts'
+import { mentionedEmails, plainText, withNames } from '../tasks/index.ts'
 import { sendCounted, takeEmail } from './notificationDigest.ts'
 import {
   NOTIFICATION_MESSAGES,

@@ -11,8 +11,8 @@ import {
   aUser,
   type TestUser
 } from '../../testing/app.ts'
+import { taskReminders, tasks } from '../boards/schema.ts'
 import { scheduleReminder } from './reminderJobs.ts'
-import { taskReminders, tasks } from './schema.ts'
 
 // The migration switches row-level security off and on again for a moment,
 // which locks the tables the other test files use, so it runs on a database
