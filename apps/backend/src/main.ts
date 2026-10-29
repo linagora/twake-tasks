@@ -28,7 +28,7 @@ import {
 import { accountRoutes } from './modules/accounts/index.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { jobHandlers } from './jobHandlers.ts'
-import { listenForBoardChanges } from './modules/boards/live.ts'
+import { listenForBoardChanges } from './modules/live/index.ts'
 import {
   NOTIFICATION_DIGEST_JOB,
   NOTIFICATION_EMAIL_JOB

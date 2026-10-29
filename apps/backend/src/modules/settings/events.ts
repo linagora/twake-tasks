@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { parseOrDrop, type Handler } from '../../events/router.ts'
 import type { Tx } from '../../infra/db.ts'
-import { fullName } from '../auth/fullName.ts'
+import { fullName } from '../auth/index.ts'
 import { theme, userSettings } from './schema.ts'
 
 const optional = <T extends z.ZodType>(schema: T) =>

@@ -7,7 +7,9 @@ const CLOSED_MODULES = [
   'tasks',
   'settings',
   'accounts',
-  'spaces'
+  'spaces',
+  'auth',
+  'live'
 ]
 
 /** @type {import('dependency-cruiser').IConfiguration} */

@@ -19,7 +19,7 @@ import type { Outcome } from '../events/router.ts'
 import {
   listenForBoardChanges,
   tellBoardChanged
-} from '../modules/boards/live.ts'
+} from '../modules/live/index.ts'
 import { createChanges } from './changes.ts'
 import { createDb } from './db.ts'
 import {

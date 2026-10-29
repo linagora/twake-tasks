@@ -14,9 +14,10 @@ import {
   type Authenticate,
   type IdentityProvider
 } from './modules/auth/index.ts'
-import { registerLive } from './modules/boards/liveRoutes.ts'
+import { liveBoards } from './modules/boards/access.ts'
 import { registerBoards } from './modules/boards/routes.ts'
 import { registerCollaboration } from './modules/collaboration/index.ts'
+import { registerLive } from './modules/live/index.ts'
 import { registerNotifications } from './modules/notifications/index.ts'
 import { registerProjects } from './modules/projects/index.ts'
 import { registerSettings } from './modules/settings/index.ts'
@@ -80,6 +81,7 @@ export async function buildApp(deps: {
       })
       registerLive(api, {
         db: deps.db,
+        boards: liveBoards,
         requireIdentity,
         changes: deps.boardChanges,
         streamVersions,

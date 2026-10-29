@@ -16,10 +16,11 @@ import {
 } from '../testing/app.ts'
 import { openStream } from '../testing/stream.ts'
 import { registerAuth } from './auth/index.ts'
-import { registerLive } from './boards/liveRoutes.ts'
+import { liveBoards } from './boards/access.ts'
 import { registerBoards } from './boards/routes.ts'
 import { notifications } from './boards/schema.ts'
 import { registerCollaboration } from './collaboration/index.ts'
+import { registerLive } from './live/index.ts'
 import { registerNotifications } from './notifications/index.ts'
 import { registerProjects } from './projects/index.ts'
 import { registerSettings } from './settings/index.ts'
@@ -114,6 +115,7 @@ function declaredRoutes(): Declared[] {
     }),
     ...registerLive(scratch, {
       db,
+      boards: liveBoards,
       requireIdentity,
       changes: createChanges(),
       streamVersions: unused
