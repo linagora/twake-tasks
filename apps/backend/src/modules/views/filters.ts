@@ -23,7 +23,6 @@ import {
   memberLooks,
   projectMembers,
   projects,
-  savedFilters,
   settingsOfMember,
   shift,
   taskAssignees,
@@ -31,6 +30,7 @@ import {
   tasks,
   todayIn
 } from '../boards/index.ts'
+import { savedFilters } from './schema.ts'
 import { assignedTo, openTasksOf } from './store.ts'
 
 type Due = 'overdue' | 'today' | 'week' | 'none'
@@ -238,4 +238,13 @@ export function createFilterStore(db: Db) {
       })
     }
   }
+}
+
+/** Erases an organization's saved filters. Runs as that organization. */
+export async function eraseSavedFilters(tx: Tx): Promise<void> {
+  await tx.execute(
+    sql`select set_config('app.erasing_organization', 'on', true)`
+  )
+  await tx.delete(savedFilters)
+  await tx.execute(sql`select set_config('app.erasing_organization', '', true)`)
 }

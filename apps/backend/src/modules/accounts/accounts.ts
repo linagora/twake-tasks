@@ -18,11 +18,13 @@ import { jobs } from '../../scheduler/schema.ts'
 import {
   eraseOrganization,
   forgetPerson,
-  inviteEmails,
   projectMembers
 } from '../boards/index.ts'
+import { commentReactions } from '../collaboration/index.ts'
+import { inviteEmails } from '../projects/index.ts'
 import { userSettings } from '../settings/index.ts'
 import { spaces } from '../spaces/index.ts'
+import { eraseSavedFilters, savedFilters } from '../views/index.ts'
 
 // An unreadable time must not drop a deletion, which then counts from now.
 const timestamp = z.iso
@@ -114,7 +116,10 @@ async function forget(
       )
     )
   if (userId) {
+    // Before forgetPerson ends the memberships that show B2C comments.
+    await tx.delete(commentReactions).where(eq(commentReactions.userId, userId))
     await forgetPerson(tx, userId)
+    await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
     await tx.delete(jobs).where(eq(jobs.userId, userId))
   }
 }
@@ -178,6 +183,7 @@ const onOrganizationDeleted: Handler<PlatformEvent> = async (event, tx) => {
     .orderBy(spaces.id)
     .for('update')
   await eraseOrganization(tx)
+  await eraseSavedFilters(tx)
   await tx
     .delete(jobs)
     .where(sql`${jobs.payload}->>'organizationId' = ${organizationId}`)

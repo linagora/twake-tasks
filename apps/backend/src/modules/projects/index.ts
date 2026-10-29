@@ -1,2 +1,3 @@
 export { emailInvite, PROJECT_INVITE_EMAIL_JOB } from './inviteEmails.ts'
 export { registerProjects } from './routes.ts'
+export { inviteEmails } from './schema.ts'

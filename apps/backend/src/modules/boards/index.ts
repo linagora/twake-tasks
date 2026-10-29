@@ -42,26 +42,23 @@ export { registerBoards } from './routes.ts'
 export {
   boardFavorites,
   boards,
-  commentReactions,
   comments,
   durationUnit,
-  inviteEmails,
   labels,
   memberRole,
-  notificationEmailBudgets,
   notifications,
   projectInvites,
   projectMembers,
   projects,
   recurrenceUnit,
-  savedFilters,
   sections,
   taskAssignees,
   taskFollowers,
   taskHistory,
   taskLabels,
   taskReminders,
-  tasks
+  tasks,
+  visibleProject
 } from './schema.ts'
 export { addDefaultSections } from './store.ts'
 export {
