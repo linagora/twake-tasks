@@ -201,14 +201,27 @@ export function inTenant<T>(
   })
 }
 
+// The owner of a table can lift its row level security. Deployments that serve
+// as the owner get a warning for one release before it becomes an error.
 export async function assertRowLevelSecurity(
-  client: postgres.Sql
+  client: postgres.Sql,
+  log: { warn(object: object, message: string): void }
 ): Promise<void> {
   const [role] = await client<{ rolsuper: boolean; rolbypassrls: boolean }[]>`
     select rolsuper, rolbypassrls from pg_roles where rolname = current_user`
   if (!role || role.rolsuper || role.rolbypassrls) {
     throw new Error(
       'The database role bypasses row level security: connect as a role without SUPERUSER and BYPASSRLS'
+    )
+  }
+  const owned = await client<{ tablename: string }[]>`
+    select tablename from pg_tables
+    where schemaname = 'public'
+      and pg_has_role(current_user, tableowner, 'MEMBER')`
+  if (owned.length > 0) {
+    log.warn(
+      { tables: owned.map(row => row.tablename) },
+      'the database role owns tables, so it can lift their row level security: serve as a role without ownership and migrate through DATABASE_MIGRATION_URL'
     )
   }
 }
@@ -264,13 +277,37 @@ export async function pendingMigrations(
 // the applied migrations outside any lock, so two migrators would both apply them.
 const MIGRATION_LOCK = 0x6d696772
 
+// Granted again on every migration, so the tables a migration adds are covered.
+async function grantServing(client: postgres.Sql, role: string): Promise<void> {
+  const [session] = await client<
+    { user: string }[]
+  >`select current_user as user`
+  if (session?.user === role) return
+  const to = client(role)
+  await client`grant usage on schema public, drizzle to ${to}`
+  await client`grant select, insert, update, delete on all tables in schema public to ${to}`
+  await client`grant usage, select on all sequences in schema public to ${to}`
+  await client`grant select on drizzle.__drizzle_migrations to ${to}`
+}
+
 // A single connection, since an advisory lock belongs to its session. It never
 // expires, or a long wait for the lock would close it and drop the lock.
-export async function migrateLocked(url: string): Promise<void> {
+// The role of `servingUrl` gets the rights to read and write the data, and
+// nothing more, when it is not the role that migrates.
+export async function migrateLocked(
+  url: string,
+  servingUrl = url
+): Promise<void> {
+  // postgres.js resolves the user as it would to connect, PGUSER included,
+  // and opens no connection until a query.
+  const serving = postgres(servingUrl)
+  const servingRole = serving.options.user
+  await serving.end()
   const { sql: client, db } = connect(url, { max: 1, max_lifetime: null })
   try {
     await client`select pg_advisory_lock(${MIGRATION_LOCK})`
     await migrateDb(db)
+    await grantServing(client, servingRole)
     await client`select pg_advisory_unlock(${MIGRATION_LOCK})`
   } finally {
     await client.end()

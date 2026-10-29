@@ -10,7 +10,7 @@ docker compose up -d
 cp apps/backend/.env.example apps/backend/.env
 ```
 
-Compose starts PostgreSQL and RabbitMQ, and creates the `twake_tasks` role and database on a fresh volume. If your volume predates that role, recreate it with `docker compose down -v`.
+Compose starts PostgreSQL and RabbitMQ, and creates the `twake_tasks_owner` and `twake_tasks` roles and the database on a fresh volume. If your volume predates either role, recreate it with `docker compose down -v`.
 
 Fill in `OIDC_CLIENT_SECRET` in `apps/backend/.env` (and the `LDAP_REST_*` settings for [space mode](modes.md#space-mode)), then put your SSO settings in `apps/frontend/public/.env.js`, which git ignores:
 

@@ -52,6 +52,7 @@ const configSchema = z
     RABBITMQ_DEAD_LETTER_EXCHANGE: z.string().min(1).default('twake-tasks.dlx'),
     RABBITMQ_LIVE_EXCHANGE: z.string().min(1).default('twake-tasks.live'),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+    DATABASE_MIGRATION_URL: z.url({ protocol: /^postgres(ql)?$/ }).optional(),
     DATABASE_POOL_MAX: z.coerce.number().int().min(1).default(20),
     DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(0).default(5000),
     MIGRATE_ON_START: z.stringbool().default(true),

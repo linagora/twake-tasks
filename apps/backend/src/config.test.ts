@@ -125,6 +125,12 @@ describe('the migration setting', () => {
       loadConfig({ ...required, MIGRATE_ON_START: 'later' })
     ).toThrow(/MIGRATE_ON_START/)
   })
+
+  it('refuses a migration URL that is not a postgres:// one', () => {
+    expect(() =>
+      loadConfig({ ...required, DATABASE_MIGRATION_URL: 'mysql://owner@db' })
+    ).toThrow(/DATABASE_MIGRATION_URL/)
+  })
 })
 
 describe('the server settings', () => {

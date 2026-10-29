@@ -4,7 +4,10 @@
 
 - Version 16 or later. Development and the tests use 18, and one test migrates a 16 database. On a server older than 18, the backend creates the `uuidv7()` function that 18 has built in before it migrates.
 - The backend runs its migrations at start, unless the migrate command runs them (see [deployment](deployment.md#migrations)).
-- Its role must have neither `SUPERUSER` nor `BYPASSRLS`, since either skips the row level security that keeps organizations apart. The backend refuses to start with one.
+- Two roles, neither with `SUPERUSER` nor `BYPASSRLS`, since either skips the row level security that keeps organizations apart. The backend refuses to start when the serving role has one.
+  - The owner role owns the database and runs the migrations, through `DATABASE_MIGRATION_URL`.
+  - The serving role, in `DATABASE_URL`, owns nothing and is not a member of the owner role: the migrations grant it the right to read and write the tables. Only the owner of a table, or a member of the owner, can lift its row level security, so the serving role cannot.
+- A backend whose `DATABASE_URL` role owns tables, or is a member of their owner, still starts, with a warning, so deployments with one role keep working for this release. A later release refuses it.
 
 ## RabbitMQ
 

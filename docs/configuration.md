@@ -65,11 +65,10 @@ Database:
 
 - `DATABASE_POOL_MAX` (`20`): how many connections each replica keeps at most for requests, events and jobs. Each replica also keeps one more connection, which answers `/health/ready`, so a busy pool never fails the probe.
 - `DATABASE_STATEMENT_TIMEOUT_MS` (`5000`): how long a statement of a request may run before Postgres cancels it. The request then gets 503. Jobs, RabbitMQ events and migrations have no such limit. `0` turns it off.
-- `MIGRATE_ON_START` (`true`): whether each replica migrates the database before it serves. Set it to `false` when the migrate command runs before the replicas (see [deployment](deployment.md#migrations)). While it is `true`, `DATABASE_URL` must reach Postgres directly, not through a pooler in transaction mode, since the migration lock belongs to the session.
+- `MIGRATE_ON_START` (`true`): whether each replica migrates the database before it serves. Set it to `false` when the migrate command runs before the replicas (see [deployment](deployment.md#migrations)).
+- `DATABASE_MIGRATION_URL` (`DATABASE_URL`): the `postgres://` URL migrations run through, with the role that owns the tables (see [dependencies](dependencies.md#postgresql)). Each migration grants the role of `DATABASE_URL` the right to read and write every table, and nothing more. It must reach Postgres directly, not through a pooler in transaction mode, since the migration lock belongs to the session.
 
-The migrate command, `node dist/migrate.js`, reads only:
-
-- `DATABASE_MIGRATION_URL` (`DATABASE_URL`): the `postgres://` URL it migrates through. Its role must be the role of `DATABASE_URL`: the migrations grant nothing, so the tables belong to the role that creates them. It must reach Postgres directly, not through a pooler in transaction mode, since the migration lock belongs to the session.
+The migrate command, `node dist/migrate.js`, reads only `DATABASE_MIGRATION_URL` and `DATABASE_URL`.
 
 Server:
 
