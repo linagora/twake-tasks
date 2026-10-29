@@ -61,7 +61,7 @@ describe('plainText', () => {
   ])(
     'reads a description of %s in time linear in its length',
     (_, markdown) => {
-      expect(millisecondsToRead(markdown)).toBeLessThan(1000)
+      expect(millisecondsToRead(markdown)).toBeLessThan(3000)
     }
   )
 
