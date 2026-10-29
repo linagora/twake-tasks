@@ -36,3 +36,4 @@ jobs:
     uses: ./.github/workflows/reusable-image.yml
     with:
       project: backend
+      previous-release: true

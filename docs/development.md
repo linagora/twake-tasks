@@ -74,6 +74,12 @@ The backend applies pending migrations at start.
 
 During a rolling update, and after a rollback, the previous release serves on the new schema. A migration therefore only adds: a column or table is dropped, renamed, changes type, or becomes `NOT NULL` without a default only in a release after the one whose code stopped using it. Put the comment `-- contract: <reason>, unused since backend <that version>` on the line above such a statement. `npm run check` refuses one without it, or naming a version not yet released.
 
+Every backend pull request tests this: the new image migrates a database, then the latest release serves on it and has to answer `/health/ready` and a few read routes. To run the same test locally:
+
+```bash
+apps/backend/docker/smoke-test.sh <image> ghcr.io/linagora/twake-tasks-backend:<latest release>
+```
+
 Database functions and triggers have their current definition in [`apps/backend/sql`](../apps/backend/sql/README.md). To change one, edit its file, then generate the migration from the files the branch changed:
 
 ```bash
