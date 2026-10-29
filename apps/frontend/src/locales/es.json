@@ -143,6 +143,7 @@
     "loadFailed": "No se pudo cargar el tablero.",
     "noSection": "Sin sección",
     "emptyColumn": "No hay tareas",
+    "completedFold": "%{smart_count} completada |||| %{smart_count} completadas",
     "addTask": "Añadir una tarea a %{section}",
     "taskTitle": "Título de la tarea",
     "add": "Añadir",

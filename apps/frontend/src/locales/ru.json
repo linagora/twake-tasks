@@ -143,6 +143,7 @@
     "loadFailed": "Не удалось загрузить доску.",
     "noSection": "Без раздела",
     "emptyColumn": "Нет задач",
+    "completedFold": "Выполнено: %{smart_count}",
     "addTask": "Добавить задачу в %{section}",
     "taskTitle": "Название задачи",
     "add": "Добавить",

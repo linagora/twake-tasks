@@ -143,6 +143,7 @@
     "loadFailed": "Impossibile caricare la bacheca.",
     "noSection": "Nessuna sezione",
     "emptyColumn": "Nessuna attività",
+    "completedFold": "%{smart_count} completata |||| %{smart_count} completate",
     "addTask": "Aggiungi un’attività a %{section}",
     "taskTitle": "Titolo dell’attività",
     "add": "Aggiungi",

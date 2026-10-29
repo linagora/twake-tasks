@@ -143,6 +143,7 @@
     "loadFailed": "Das Board konnte nicht geladen werden.",
     "noSection": "Kein Abschnitt",
     "emptyColumn": "Keine Aufgaben",
+    "completedFold": "%{smart_count} erledigt",
     "addTask": "Aufgabe zu %{section} hinzufügen",
     "taskTitle": "Aufgabentitel",
     "add": "Hinzufügen",

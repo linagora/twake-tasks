@@ -143,6 +143,7 @@
     "loadFailed": "Le tableau n'a pas pu être chargé.",
     "noSection": "Sans section",
     "emptyColumn": "Aucune tâche",
+    "completedFold": "%{smart_count} terminée |||| %{smart_count} terminées",
     "addTask": "Ajouter une tâche à %{section}",
     "taskTitle": "Titre de la tâche",
     "add": "Ajouter",
