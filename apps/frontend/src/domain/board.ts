@@ -212,3 +212,11 @@ export const isDone = (
   const section = sections.find(each => each.id === task.sectionId)
   return section ? section.category === 'completed' : task.completedAt !== null
 }
+
+/** Completed outside any section, so folded under its column. */
+export const isFolded = (
+  task: Pick<Task, 'sectionId' | 'completedAt'>,
+  sections: readonly Pick<Section, 'id'>[]
+): boolean =>
+  task.completedAt !== null &&
+  !sections.some(each => each.id === task.sectionId)

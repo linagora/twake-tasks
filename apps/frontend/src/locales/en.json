@@ -143,6 +143,7 @@
     "loadFailed": "The board could not be loaded.",
     "noSection": "No section",
     "emptyColumn": "No tasks",
+    "completedFold": "%{smart_count} completed",
     "addTask": "Add a task to %{section}",
     "taskTitle": "Task title",
     "add": "Add",

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router'
 
 import type { SectionMove, Shelf, TaskMove } from '@/application/boards'
 import { Card, CardTitle, Column, Columns, EmptyColumn } from '@/ds/Columns'
+import { CompletedFold } from '@/ds/CompletedFold'
 import { ListDragPreview } from '@/ds/ListView'
 import {
   DropColumn,
@@ -13,6 +14,7 @@ import {
 } from '@/ds/Sortable'
 import {
   isEditable,
+  isFolded,
   isManageable,
   isShareable,
   type Board,
@@ -34,6 +36,7 @@ import { useMoveTask } from '@/ui/queries/tasks'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { TaskCard } from '@/ui/boards/TaskCard'
 import { TaskListRow } from '@/ui/boards/TaskListRow'
+import { useCompletedFold } from '@/ui/boards/useCompletedFold'
 import { useReschedule } from '@/ui/boards/useReschedule'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
@@ -126,8 +129,12 @@ export function BoardColumns({
         }}
       />
     )
-  const tasksIn = (column: (typeof columns)[number]) =>
-    topLevel.filter(task => task.sectionId === column.id)
+  const tasksIn = (column: (typeof columns)[number], folded = false) =>
+    topLevel.filter(
+      task =>
+        task.sectionId === column.id &&
+        isFolded(task, board.sections) === folded
+    )
   const listRow = (task: Task, sortable = false) => (
     <TaskListRow
       key={task.id}
@@ -136,6 +143,33 @@ export function BoardColumns({
       sections={board.sections}
     />
   )
+  const completedFold = useCompletedFold(board.id)
+  const fold = (column: (typeof columns)[number], list = false) => {
+    const tasks = tasksIn(column, true)
+    return (
+      tasks.length > 0 && (
+        <CompletedFold
+          label={t('board.completedFold', { smart_count: tasks.length })}
+          expanded={completedFold.expanded}
+          onToggle={completedFold.toggle}
+          list={list}
+        >
+          {tasks.map(task => (list ? listRow(task) : card(task)))}
+        </CompletedFold>
+      )
+    )
+  }
+  const listFooter = (column: (typeof columns)[number]) => (
+    <>
+      {addTask(column)}
+      {fold(column, true)}
+    </>
+  )
+  const empty = (column: (typeof columns)[number], open: number) =>
+    open === 0 &&
+    tasksIn(column, true).length === 0 && (
+      <EmptyColumn label={t('board.emptyColumn')} />
+    )
   // The board and the list drag their tasks alike, among the sections.
   const drag = {
     lanes: columns.map(column => ({
@@ -174,9 +208,8 @@ export function BoardColumns({
               count={tasksIn(column).length}
             >
               {tasksIn(column).map(task => card(task))}
-              {tasksIn(column).length === 0 && (
-                <EmptyColumn label={t('board.emptyColumn')} />
-              )}
+              {empty(column, tasksIn(column).length)}
+              {fold(column)}
             </Column>
           ))}
         </Columns>
@@ -235,10 +268,9 @@ export function BoardColumns({
                         return task ? [card(task, true)] : []
                       })}
                     </SortableList>
-                    {ids.length === 0 && (
-                      <EmptyColumn label={t('board.emptyColumn')} />
-                    )}
+                    {empty(column, ids.length)}
                     {addTask(column)}
+                    {fold(column)}
                   </>
                 )
               }
@@ -299,7 +331,7 @@ export function BoardColumns({
             key: columnKey(column),
             name: column.name,
             tasks: tasksIn(column),
-            footer: addTask(column)
+            footer: listFooter(column)
           }))}
           row={listRow}
         />
@@ -324,7 +356,7 @@ export function BoardColumns({
                   const task = byId.get(id)
                   return task ? [task] : []
                 }),
-                footer: addTask(column),
+                footer: listFooter(column),
                 dropId: laneKey(column)
               }))}
               row={task => listRow(task, true)}
