@@ -16,6 +16,7 @@ import {
 import { alias } from 'drizzle-orm/pg-core'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { userSettings } from '../settings/schema.ts'
 import { memberLooks, settingsOfMember } from './access.ts'
 import { shift, todayIn } from './recurrence.ts'
@@ -29,7 +30,6 @@ import {
   tasks
 } from './schema.ts'
 import { assignedTo, openTasksOf } from './store.ts'
-import { Refused, writeOrRefuse } from './tasks.ts'
 
 type Due = 'overdue' | 'today' | 'week' | 'none'
 

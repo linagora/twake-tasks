@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
+import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { userSettings } from '../settings/schema.ts'
 import {
   accessibleBoards,
@@ -21,7 +22,7 @@ import {
   taskReminders,
   tasks
 } from './schema.ts'
-import { Refused, refuseIfShelved, taskOf, writeOrRefuse } from './tasks.ts'
+import { refuseIfShelved, taskOf } from './tasks.ts'
 
 const EXCERPT_LENGTH = 120
 

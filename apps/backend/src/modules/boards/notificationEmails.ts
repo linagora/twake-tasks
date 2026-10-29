@@ -2,6 +2,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Budget } from '../../config.ts'
 import { asTenant, type Tx } from '../../infra/db.ts'
+import type { Mail } from '../../infra/mail.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
 import { userSettings } from '../settings/schema.ts'
 import { memberLooks, memberNames, settingsOfMember } from './access.ts'
@@ -33,13 +34,6 @@ import {
 } from './schema.ts'
 
 export const NOTIFICATION_EMAIL_JOB = 'notification_email'
-
-export interface Mail {
-  to: string
-  subject: string
-  text: string
-  html: string
-}
 
 const payload = z.object({
   notificationId: z.uuid(),

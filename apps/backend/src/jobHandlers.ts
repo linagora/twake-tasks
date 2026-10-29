@@ -1,5 +1,6 @@
 import type { Budget } from './config.ts'
 import type { LdapRest } from './infra/ldapRest.ts'
+import type { Mail } from './infra/mail.ts'
 import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
 import {
   emailInvite,
@@ -11,8 +12,7 @@ import {
 } from './modules/boards/notificationDigest.ts'
 import {
   emailNotification,
-  NOTIFICATION_EMAIL_JOB,
-  type Mail
+  NOTIFICATION_EMAIL_JOB
 } from './modules/boards/notificationEmails.ts'
 import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
 import { PURGE_SPACE_JOB, purgeSpace } from './modules/spaces/events.ts'

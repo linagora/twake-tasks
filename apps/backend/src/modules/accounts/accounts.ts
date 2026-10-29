@@ -16,7 +16,6 @@ import {
 } from '../../events/router.ts'
 import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
 import { jobs } from '../../scheduler/schema.ts'
-import { bumpProjects } from '../boards/access.ts'
 import {
   commentReactions,
   inviteEmails,
@@ -28,6 +27,7 @@ import {
   taskFollowers,
   taskReminders
 } from '../boards/schema.ts'
+import { bumpProjects } from '../boards/versions.ts'
 import { userSettings } from '../settings/schema.ts'
 import { spaces } from '../spaces/schema.ts'
 

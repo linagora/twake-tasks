@@ -52,6 +52,7 @@ import {
   type DeclaredRoute
 } from '../../infra/route.ts'
 import type { Identity, RequireIdentity } from '../auth/index.ts'
+import type { Refusal, Result } from '../kernel/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createCommentStore } from './comments.ts'
 import { createFilterStore } from './filters.ts'
@@ -64,7 +65,7 @@ import type * as db from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { INBOX_KEY_PREFIX } from './keyPrefixes.ts'
 import { createBoardStore } from './store.ts'
-import { createTaskStore, type Refusal, type Result } from './tasks.ts'
+import { createTaskStore } from './tasks.ts'
 import { createTransferStore } from './transfer.ts'
 
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false

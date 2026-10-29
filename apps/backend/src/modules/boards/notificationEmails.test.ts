@@ -1,14 +1,14 @@
 import { pino } from 'pino'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
+import type { Mail } from '../../infra/mail.ts'
 import { createScheduler } from '../../scheduler/scheduler.ts'
 import { aUser, joinBoard, startApp } from '../../testing/app.ts'
 import { userSettings } from '../settings/schema.ts'
 import { emailDigest, NOTIFICATION_DIGEST_JOB } from './notificationDigest.ts'
 import {
   emailNotification,
-  NOTIFICATION_EMAIL_JOB,
-  type Mail
+  NOTIFICATION_EMAIL_JOB
 } from './notificationEmails.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>

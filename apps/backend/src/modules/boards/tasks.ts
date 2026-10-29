@@ -1,20 +1,10 @@
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  isNull,
-  ne,
-  notInArray,
-  sql,
-  type SQL
-} from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, ne, notInArray, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import postgres from 'postgres'
-import { inTenant, type Db, type Tx } from '../../infra/db.ts'
+import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
-import { membersOf, roleOn } from './access.ts'
-import { tellBoardChanged } from './live.ts'
+import { Refused, writeOrRefuse } from '../kernel/index.ts'
+import { checkRole, membersOf, roleOn } from './access.ts'
 import { plainText } from './markdown.ts'
 import {
   daysBetween,
@@ -26,39 +16,7 @@ import {
 } from './recurrence.ts'
 import { moveReminders } from './reminderJobs.ts'
 import { boards, sections, taskAssignees, tasks } from './schema.ts'
-
-export type Refusal =
-  | 'not_found'
-  | 'forbidden'
-  | 'archived'
-  | 'invalid_section'
-  | 'stale_neighbours'
-  | 'section_not_empty'
-  | 'invalid_assignee'
-  | 'stale_version'
-  | 'invalid_parent'
-  | 'too_deep'
-  | 'invalid_label'
-  | 'invalid_dates'
-  | 'invalid_reminder'
-  | 'too_many_mentions'
-  | 'too_many_reminders'
-  | 'label_taken'
-  | 'section_name_taken'
-  | 'last_admin'
-  | 'key_prefix_taken'
-  | 'same_board'
-export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
-
-// Thrown, not returned, so the transaction rolls back whatever ran before it.
-export class Refused extends Error {
-  readonly refusal: Refusal
-
-  constructor(refusal: Refusal) {
-    super(refusal)
-    this.refusal = refusal
-  }
-}
+import { bumpBoard } from './versions.ts'
 
 export function completionFor(
   category: string | null,
@@ -100,19 +58,6 @@ export function positionBetween(
       : others.at(-1)
   const upper = afterId ? others[after + 1] : beforeId ? others[before] : null
   return generateKeyBetween(lower?.position ?? null, upper?.position ?? null)
-}
-
-export async function checkRole(
-  tx: Tx,
-  identity: Identity,
-  boardId: string,
-  needed: 'editor' | 'admin'
-) {
-  const role = await roleOn(tx, identity.userId, boardId)
-  if (!role) throw new Refused('not_found')
-  if (role === 'viewer' || (needed === 'admin' && role !== 'admin')) {
-    throw new Refused('forbidden')
-  }
 }
 
 export async function sectionOf(
@@ -181,58 +126,6 @@ export function inSection(boardId: string, sectionId: string | null) {
       ? isNull(tasks.sectionId)
       : eq(tasks.sectionId, sectionId)
   )
-}
-
-// Updating the board row serializes writes to the board, so call it before
-// reading what the write depends on. The version bump rides in the same
-// transaction as the change.
-export async function bumpBoard(
-  tx: Tx,
-  boardId: string,
-  extra: { taskCounter?: SQL } = {}
-) {
-  const [board] = await bumpBoards(
-    tx,
-    and(eq(boards.id, boardId), sql`${boards.archivedAt} is null`),
-    extra
-  )
-  if (!board) throw new Refused('archived')
-  return board
-}
-
-/** Bumps the version of the boards matched, and tells their live viewers. */
-export async function bumpBoards(
-  tx: Tx,
-  where: SQL | undefined,
-  extra: { taskCounter?: SQL; archivedAt?: SQL | null } = {}
-) {
-  const bumped = await tx
-    .update(boards)
-    .set({ version: sql`${boards.version} + 1`, ...extra })
-    .where(where)
-    .returning({
-      id: boards.id,
-      version: boards.version,
-      number: boards.taskCounter,
-      keyPrefix: boards.keyPrefix,
-      organizationId: boards.organizationId,
-      projectId: boards.projectId
-    })
-  for (const board of bumped) tellBoardChanged(tx, board)
-  return bumped
-}
-
-export async function writeOrRefuse<T>(
-  db: Db,
-  identity: Identity,
-  work: (tx: Tx) => Promise<T>
-): Promise<Result<T>> {
-  try {
-    return { ok: true, value: await inTenant(db, identity, work) }
-  } catch (error) {
-    if (error instanceof Refused) return { ok: false, error: error.refusal }
-    throw error
-  }
 }
 
 const UNIQUE_VIOLATION = '23505'

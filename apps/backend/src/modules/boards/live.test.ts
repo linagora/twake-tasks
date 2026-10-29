@@ -9,7 +9,7 @@ import {
   type TestUser
 } from '../../testing/app.ts'
 import { openStream } from '../../testing/stream.ts'
-import { bumpBoard } from './tasks.ts'
+import { bumpBoard } from './versions.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 let baseUrl: string
