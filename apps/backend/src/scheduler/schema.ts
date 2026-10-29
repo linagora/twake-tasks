@@ -27,7 +27,7 @@ export const jobs = pgTable(
     createdAt: timestamptz('created_at').notNull().defaultNow()
   },
   table => [
-    index().on(table.runAt),
+    index().on(table.kind, table.runAt),
     index().on(table.taskId),
     // Counts a person's reminders, to cap them.
     index('jobs_reminder_user_index')

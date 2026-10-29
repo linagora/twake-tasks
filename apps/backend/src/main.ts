@@ -27,28 +27,13 @@ import {
 } from './infra/rabbitmq.ts'
 import { accountRoutes } from './modules/accounts/accounts.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
-import { PURGE_JOB, purgeTask } from './modules/boards/archive.ts'
-import {
-  emailInvite,
-  PROJECT_INVITE_EMAIL_JOB
-} from './modules/boards/inviteEmails.ts'
+import { jobHandlers } from './jobHandlers.ts'
+import { PROJECT_INVITE_EMAIL_JOB } from './modules/boards/inviteEmails.ts'
 import { listenForBoardChanges } from './modules/boards/live.ts'
-import {
-  emailDigest,
-  NOTIFICATION_DIGEST_JOB
-} from './modules/boards/notificationDigest.ts'
-import {
-  emailNotification,
-  NOTIFICATION_EMAIL_JOB
-} from './modules/boards/notificationEmails.ts'
-import { deliverReminder, REMINDER_JOB } from './modules/boards/reminderJobs.ts'
-import {
-  knowsAnySpace,
-  PURGE_SPACE_JOB,
-  purgeSpace,
-  spaceRoutes
-} from './modules/spaces/events.ts'
-import { planReconcile, reconcileJobs } from './modules/spaces/reconcile.ts'
+import { NOTIFICATION_DIGEST_JOB } from './modules/boards/notificationDigest.ts'
+import { NOTIFICATION_EMAIL_JOB } from './modules/boards/notificationEmails.ts'
+import { knowsAnySpace, spaceRoutes } from './modules/spaces/events.ts'
+import { planReconcile } from './modules/spaces/reconcile.ts'
 import { settingsRoutes } from './modules/settings/events.ts'
 import { createScheduler } from './scheduler/scheduler.ts'
 
@@ -200,34 +185,18 @@ const stopScheduler = createScheduler({
     ].includes(kind)
       ? config.JOBS_EMAIL_CONCURRENCY
       : config.JOBS_CONCURRENCY,
-  handlers: {
-    [REMINDER_JOB]: deliverReminder,
-    [PURGE_JOB]: purgeTask,
-    // Purges a space deleted while the integration was on.
-    [PURGE_SPACE_JOB]: purgeSpace,
-    [NOTIFICATION_EMAIL_JOB]: emailNotification({
-      appUrl: config.APP_URL,
-      budget: limits.notificationEmails,
-      send
-    }),
-    [NOTIFICATION_DIGEST_JOB]: emailDigest({
-      appUrl: config.APP_URL,
-      budget: limits.notificationEmails,
-      send
-    }),
-    [PROJECT_INVITE_EMAIL_JOB]: emailInvite({
-      appUrl: config.APP_URL,
-      send
-    }),
-    ...(spaces &&
-      reconcileJobs(
-        ldapRestClient({
+  handlers: jobHandlers({
+    appUrl: config.APP_URL,
+    budget: limits.notificationEmails,
+    send,
+    ldapRest: spaces
+      ? ldapRestClient({
           url: config.LDAP_REST_URL,
           serviceId: config.LDAP_REST_SERVICE_ID,
           secret: config.LDAP_REST_SECRET
         })
-      ))
-  }
+      : undefined
+  })
 }).start(5000)
 if (spaces) await planReconcile(db)
 const stopRelay = createRelay({
