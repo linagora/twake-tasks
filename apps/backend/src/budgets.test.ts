@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { loadConfig, rateLimits, type RateLimits } from '../../config.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { openStream } from '../../testing/stream.ts'
+import { loadConfig, rateLimits, type RateLimits } from './config.ts'
+import { aUser, startApp, type TestUser } from './testing/app.ts'
+import { openStream } from './testing/stream.ts'
 import { BUDGETED_ROUTES } from './budgets.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>

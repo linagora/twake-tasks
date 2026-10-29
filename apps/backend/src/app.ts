@@ -1,5 +1,6 @@
 import type { Redis } from 'ioredis'
 import type { Logger } from 'pino'
+import { boardBudgets } from './budgets.ts'
 import type { RateLimits } from './config.ts'
 import { versionStreams, type Changes } from './infra/changes.ts'
 import type { Db } from './infra/db.ts'
@@ -13,9 +14,9 @@ import {
   type Authenticate,
   type IdentityProvider
 } from './modules/auth/index.ts'
-import { boardBudgets } from './modules/boards/budgets.ts'
 import { registerLive } from './modules/boards/liveRoutes.ts'
 import { registerBoards } from './modules/boards/routes.ts'
+import { registerNotifications } from './modules/notifications/index.ts'
 import { registerSettings } from './modules/settings/routes.ts'
 
 export async function buildApp(deps: {
@@ -77,6 +78,7 @@ export async function buildApp(deps: {
         openStreams: deps.limits?.openStreams,
         metrics: deps.metrics
       })
+      registerNotifications(api, { db: deps.db, requireIdentity })
       registerSettings(api, { db: deps.db, requireIdentity })
       return Promise.resolve()
     },

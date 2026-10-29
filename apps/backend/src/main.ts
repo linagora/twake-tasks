@@ -30,8 +30,10 @@ import { connectIdentityProvider } from './modules/auth/index.ts'
 import { jobHandlers } from './jobHandlers.ts'
 import { PROJECT_INVITE_EMAIL_JOB } from './modules/boards/inviteEmails.ts'
 import { listenForBoardChanges } from './modules/boards/live.ts'
-import { NOTIFICATION_DIGEST_JOB } from './modules/boards/notificationDigest.ts'
-import { NOTIFICATION_EMAIL_JOB } from './modules/boards/notificationEmails.ts'
+import {
+  NOTIFICATION_DIGEST_JOB,
+  NOTIFICATION_EMAIL_JOB
+} from './modules/notifications/index.ts'
 import { knowsAnySpace, spaceRoutes } from './modules/spaces/events.ts'
 import { RECONCILE_SPACES_JOB } from './modules/spaces/reconcile.ts'
 import { settingsRoutes } from './modules/settings/events.ts'

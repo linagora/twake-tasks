@@ -15,7 +15,7 @@ export type { Authenticate } from './authenticator.ts'
 export type { Identity, IdentityProvider } from './oidc.ts'
 export type { RequireIdentity } from './routes.ts'
 export { registerAuth } from './routes.ts'
-export { limitUsers } from './userLimits.ts'
+export { limitUsers, type BudgetsOf } from './userLimits.ts'
 export { postgresAuthStore } from './store.ts'
 
 export async function connectIdentityProvider(deps: {

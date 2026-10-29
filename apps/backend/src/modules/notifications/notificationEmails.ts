@@ -4,8 +4,7 @@ import type { Budget } from '../../config.ts'
 import { asTenant, type Tx } from '../../infra/db.ts'
 import type { Mail } from '../../infra/mail.ts'
 import type { Handler } from '../../scheduler/scheduler.ts'
-import { userSettings } from '../settings/schema.ts'
-import { memberLooks, memberNames, settingsOfMember } from './access.ts'
+import { memberLooks, memberNames, settingsOfMember } from '../boards/access.ts'
 import {
   APP_NAME,
   COLORS,
@@ -14,14 +13,8 @@ import {
   layout,
   plain,
   type Language
-} from './mailLayout.ts'
-import { mentionedEmails, plainText, withNames } from './markdown.ts'
-import { sendCounted, takeEmail } from './notificationDigest.ts'
-import {
-  NOTIFICATION_MESSAGES,
-  type NotificationMessages,
-  type Why
-} from './notificationMessages.ts'
+} from '../boards/mailLayout.ts'
+import { mentionedEmails, plainText, withNames } from '../boards/markdown.ts'
 import {
   boards,
   comments,
@@ -31,7 +24,14 @@ import {
   sections,
   taskHistory,
   tasks
-} from './schema.ts'
+} from '../boards/schema.ts'
+import { userSettings } from '../settings/schema.ts'
+import { sendCounted, takeEmail } from './notificationDigest.ts'
+import {
+  NOTIFICATION_MESSAGES,
+  type NotificationMessages,
+  type Why
+} from './notificationMessages.ts'
 
 export const NOTIFICATION_EMAIL_JOB = 'notification_email'
 
