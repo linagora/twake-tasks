@@ -229,6 +229,7 @@ export function emailNotification(deps: {
         historyName: taskHistory.name,
         historyActorEmail: taskHistory.actorEmail,
         commentBody: comments.body,
+        commentText: comments.bodyText,
         commentAuthorEmail: comments.authorEmail,
         projectId: projects.id,
         project: projects.name,
@@ -300,7 +301,10 @@ export function emailNotification(deps: {
     const comment =
       row.commentBody === null
         ? undefined
-        : { body: row.commentBody, authorEmail: row.commentAuthorEmail }
+        : {
+            text: row.commentText ?? plainText(row.commentBody),
+            authorEmail: row.commentAuthorEmail
+          }
     const entry =
       row.historyField === null
         ? null
@@ -352,7 +356,7 @@ export function emailNotification(deps: {
             : task
 
     const quote = comment
-      ? await withMemberNames(tx, row.projectId, plain(plainText(comment.body)))
+      ? await withMemberNames(tx, row.projectId, plain(comment.text))
       : ''
     const chars = Array.from(quote)
     const excerpt =

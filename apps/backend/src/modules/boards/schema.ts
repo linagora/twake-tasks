@@ -445,6 +445,8 @@ export const comments = pgTable.withRLS(
     // As named then, for once the task moves to a board the author is not on.
     authorName: text('author_name'),
     body: text().notNull(),
+    // Null on the comments of releases that did not store it.
+    bodyText: text('body_text'),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     tenant: tenant()
   },
