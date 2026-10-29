@@ -22,6 +22,8 @@ export interface Job {
   key?: string
   /** The task the job is about, whose purge removes the job. */
   taskId?: string
+  /** The person the job is about, whose deletion removes the job. */
+  userId?: string
   payload: unknown
   runAt: Date
 }
@@ -53,6 +55,14 @@ export async function schedule(db: Db | Tx, job: Job): Promise<void> {
         requestId: sql`excluded.request_id`
       }
     })
+}
+
+/** Runs a recurring job now, unless one is already planned. */
+export async function plan(db: Db, kind: string): Promise<void> {
+  await db
+    .insert(jobs)
+    .values({ kind, key: kind, payload: {}, runAt: new Date() })
+    .onConflictDoNothing()
 }
 
 export async function unschedule(db: Db | Tx, key: string): Promise<void> {

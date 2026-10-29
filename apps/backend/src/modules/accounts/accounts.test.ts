@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import { RejectedEventError } from '../../events/router.ts'
 import { asOrganization, asTenant, createDb } from '../../infra/db.ts'
+import { schedule } from '../../scheduler/scheduler.ts'
 import { jobs } from '../../scheduler/schema.ts'
 import {
   aB2cUser,
@@ -16,6 +17,7 @@ import {
   startApp,
   type TestUser
 } from '../../testing/app.ts'
+import { NOTIFICATION_DIGEST_JOB } from '../boards/notificationDigest.ts'
 import { inviteEmails, notifications, projects } from '../boards/schema.ts'
 import { keepSettings } from '../settings/events.ts'
 import { userSettings } from '../settings/schema.ts'
@@ -252,6 +254,24 @@ describe.each([
     await deliver(routingKey, body(gone))
 
     expect(await remindersOf()).toEqual([])
+  })
+
+  it('loses the jobs about it, such as its digest email', async () => {
+    const gone = makeUser()
+    await boardsOf(gone)
+    await schedule(db, {
+      kind: NOTIFICATION_DIGEST_JOB,
+      userId: gone.userId,
+      payload: { userId: gone.userId, email: gone.email, language: null },
+      runAt: new Date(Date.now() + 60_000)
+    })
+    const jobsOf = () =>
+      db.select({ id: jobs.id }).from(jobs).where(eq(jobs.userId, gone.userId))
+    expect(await jobsOf()).toHaveLength(1)
+
+    await deliver(routingKey, body(gone))
+
+    expect(await jobsOf()).toEqual([])
   })
 
   it('loses its saved filters', async () => {

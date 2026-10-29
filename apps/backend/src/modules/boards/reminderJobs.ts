@@ -37,6 +37,7 @@ export async function scheduleReminder(tx: Tx, job: Payload, at: Date | null) {
     kind: REMINDER_JOB,
     key: keyOf(job.reminderId),
     taskId: job.taskId,
+    userId: job.userId,
     payload: value,
     runAt: runAt(time)
   })
@@ -59,13 +60,7 @@ export async function remindersWaitingFor(
       taskReminders,
       sql`${taskReminders.id} = (${jobs.payload}->>'reminderId')::uuid`
     )
-    .where(
-      and(
-        // A literal, so a prepared plan still matches the partial index.
-        sql`${jobs.kind} = 'reminder'`,
-        sql`${jobs.payload}->>'userId' = ${userId}`
-      )
-    )
+    .where(and(eq(jobs.userId, userId), eq(jobs.kind, REMINDER_JOB)))
   return row?.count ?? 0
 }
 

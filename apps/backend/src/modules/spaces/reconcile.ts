@@ -1,9 +1,8 @@
 import { eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
-import { asOrganization, type Db, type Tx } from '../../infra/db.ts'
+import { asOrganization, type Tx } from '../../infra/db.ts'
 import type { LdapRest } from '../../infra/ldapRest.ts'
 import { schedule, type Handler } from '../../scheduler/scheduler.ts'
-import { jobs } from '../../scheduler/schema.ts'
 import { projects } from '../boards/schema.ts'
 import { deleteSpace, matchSpace } from './events.ts'
 import { spaces } from './schema.ts'
@@ -17,19 +16,6 @@ const spaceJob = z.object({
   organizationId: z.string().min(1),
   spaceId: z.uuid()
 })
-
-/** Runs the first reconcile now, unless one is already planned. */
-export async function planReconcile(db: Db): Promise<void> {
-  await db
-    .insert(jobs)
-    .values({
-      kind: RECONCILE_SPACES_JOB,
-      key: RECONCILE_SPACES_JOB,
-      payload: {},
-      runAt: new Date()
-    })
-    .onConflictDoNothing()
-}
 
 async function localSpaceIds(tx: Tx, organizationId: string) {
   await asOrganization(tx, organizationId)

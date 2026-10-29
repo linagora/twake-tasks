@@ -70,6 +70,12 @@ const configSchema = z
     JOBS_CONCURRENCY: z.coerce.number().int().min(1).default(1),
     JOBS_EMAIL_CONCURRENCY: z.coerce.number().int().min(1).default(2),
     JOBS_LEASE_SECONDS: seconds(600),
+    RETENTION_PROCESSED_EVENTS_DAYS: z.coerce.number().int().min(1).default(30),
+    RETENTION_READ_NOTIFICATIONS_DAYS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(180),
     HTTP_HOST: z.string().min(1).default('0.0.0.0'),
     HTTP_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
     HTTP_TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).default(2),

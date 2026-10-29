@@ -45,6 +45,11 @@ Jobs (reminders, emails, purges), run by every replica:
 - `JOBS_EMAIL_CONCURRENCY` (`2`): the same for the notification, digest and invitation emails, which hold no connection while the mail is sent.
 - `JOBS_LEASE_SECONDS` (`600`): a job sends its mail after its transaction commits. Until it is done, no other replica runs it for this long. A replica that stops mid-send leaves the job to run again once the lease ends, so that mail may go out twice.
 
+Retention, applied once a day by the `retention` job (see [data lifecycle](data-lifecycle.md)):
+
+- `RETENTION_PROCESSED_EVENTS_DAYS` (`30`): how long the id of a consumed event is kept, so a redelivery of it is ignored. Keep it longer than any redelivery.
+- `RETENTION_READ_NOTIFICATIONS_DAYS` (`180`): how long a notification is kept once it is read.
+
 RabbitMQ:
 
 - `RABBITMQ_CONCURRENCY` (`5`): how many events each replica handles at once. Each holds a database connection, so keep it well under `DATABASE_POOL_MAX`.

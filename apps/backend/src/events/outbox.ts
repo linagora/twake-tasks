@@ -9,14 +9,10 @@ import {
   type PublishedEvent,
   publishedEvent
 } from './published.ts'
-import { outbox, processedEvents } from './schema.ts'
+import { outbox } from './schema.ts'
 
 const BATCH = 100
 const KEEP_SENT = '1 day'
-// Far longer than any redelivery of a consumed event. Pruned under the relay's
-// lock, so by one replica at a time.
-const KEEP_PROCESSED = '30 days'
-const PRUNE_PROCESSED_EVERY_MS = 60 * 60 * 1000
 // Any constant shared by every replica: only the holder relays, so events leave in order.
 const RELAY_LOCK = 0x7461736b
 
@@ -90,7 +86,6 @@ export function createRelay(deps: {
   metrics?: Metrics | undefined
 }) {
   const metrics = deps.metrics
-  let processedPrunedAt = -Infinity
   const locked = async (tx: Tx) => {
     const [lock] = await tx.execute<{ locked: boolean }>(
       sql`select pg_try_advisory_xact_lock(${RELAY_LOCK}) as locked`
@@ -99,7 +94,7 @@ export function createRelay(deps: {
   }
   // A failure stops the batch so later events wait for it; what was already
   // published is marked sent, and the rest is retried on the next run.
-  const relay = () =>
+  const relayOnce = () =>
     deps.db.transaction(async tx => {
       if (!(await locked(tx))) return 0
       const pending = await tx
@@ -158,30 +153,6 @@ export function createRelay(deps: {
         .where(lt(outbox.sentAt, sql`now() - ${KEEP_SENT}::interval`))
       return sent.length
     })
-  // Its own transaction, so a failed prune never undoes marking events sent.
-  const pruneProcessed = () =>
-    deps.db.transaction(async tx => {
-      if (!(await locked(tx))) return false
-      await tx
-        .delete(processedEvents)
-        .where(
-          lt(
-            processedEvents.processedAt,
-            sql`now() - ${KEEP_PROCESSED}::interval`
-          )
-        )
-      return true
-    })
-  const relayOnce = async () => {
-    const sent = await relay()
-    if (
-      Date.now() - processedPrunedAt >= PRUNE_PROCESSED_EVERY_MS &&
-      (await pruneProcessed())
-    ) {
-      processedPrunedAt = Date.now()
-    }
-    return sent
-  }
 
   return {
     relayOnce,

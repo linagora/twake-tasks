@@ -23,6 +23,10 @@ const invariants: Record<string, string> = {
     where (kind = 'notification_email' and task_id is null)
       or (payload ? 'taskId'
         and task_id::text is distinct from payload->>'taskId')`,
+  'a job about a person would outlive them': `
+    select id, kind, user_id, payload from jobs
+    where kind in ('reminder', 'notification_email', 'notification_digest')
+      and user_id::text is distinct from payload->>'userId'`,
   'a reminder job outlives its reminder': `
     select id, key from jobs
     where kind = 'reminder' and not exists (
