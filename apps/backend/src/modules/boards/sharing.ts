@@ -20,20 +20,18 @@ import { userSettings } from '../settings/schema.ts'
 import {
   checkRole,
   memberLooks,
-  membersOf,
   roleIn,
   roleOn,
   settingsOfMember,
   type Role
 } from './access.ts'
-import { revokeOutside, revokeProject } from './followers.ts'
+import { endAccess, endAccessOutside } from './lifecycle.ts'
 import {
   boards,
   inviteEmails,
   projectInvites,
   projectMembers,
   projects,
-  taskAssignees,
   taskLabels,
   tasks
 } from './schema.ts'
@@ -379,7 +377,7 @@ export function createSharingStore(db: Db) {
           )
         if (taken) throw new Refused('key_prefix_taken')
         await bumpBoard(tx, boardId)
-        await revokeOutside(
+        await endAccessOutside(
           tx,
           tx
             .select({ id: tasks.id })
@@ -404,23 +402,17 @@ export function createSharingStore(db: Db) {
               )
             )
           )
-        const boardTasks = tx
-          .select({ id: tasks.id })
-          .from(tasks)
-          .where(eq(tasks.boardId, boardId))
         await tx
           .delete(taskLabels)
-          .where(inArray(taskLabels.taskId, boardTasks))
-        const members = await membersOf(tx, { projectId })
-        await tx.delete(taskAssignees).where(
-          and(
-            inArray(taskAssignees.taskId, boardTasks),
-            notInArray(
-              taskAssignees.userId,
-              members.map(member => member.userId)
+          .where(
+            inArray(
+              taskLabels.taskId,
+              tx
+                .select({ id: tasks.id })
+                .from(tasks)
+                .where(eq(tasks.boardId, boardId))
             )
           )
-        )
       })
     },
 
@@ -445,22 +437,7 @@ export function createSharingStore(db: Db) {
         // and so their assignees, followers and notifications, stop being
         // visible to a member who has left.
         await bumpProjects(tx, [project.id])
-        await revokeProject(tx, [userId], project.id)
-        await tx
-          .delete(taskAssignees)
-          .where(
-            and(
-              eq(taskAssignees.userId, userId),
-              inArray(
-                taskAssignees.taskId,
-                tx
-                  .select({ id: tasks.id })
-                  .from(tasks)
-                  .innerJoin(boards, eq(boards.id, tasks.boardId))
-                  .where(eq(boards.projectId, project.id))
-              )
-            )
-          )
+        await endAccess(tx, [userId], project.id)
         const removed = await tx
           .delete(projectMembers)
           .where(

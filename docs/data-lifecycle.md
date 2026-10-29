@@ -3,16 +3,16 @@
 When a row goes, for every table in the database. A row ends in one of four ways:
 
 - Cascade: a foreign key deletes it with the row it belongs to.
-- Removal path: code deletes it when something ends, such as a person losing access to a project or an account being deleted.
+- Removal path: code deletes it when something ends, such as a person losing access to a project or an account being deleted. When a person's access, a person or an organization ends, the removal path calls the function for that end in [`lifecycle.ts`](../apps/backend/src/modules/boards/lifecycle.ts) rather than deleting on its own.
 - Retention: it is deleted once it is older than a fixed period.
 - Kept: it stays forever.
 
 Five things end:
 
 - A task, purged 30 days after it is trashed.
-- A person's access to a project: removed by hand or by a space event. Their access to a task also ends when the task, or its board, moves to a project they are not in.
-- A person, deleted by a platform event.
-- An organization, deleted by a platform event.
+- A person's access to a project: removed by hand or by a space event (`endAccess`). Their access to a task also ends when the task, or its board, moves to a project they are not in (`endAccessOutside`).
+- A person, deleted by a platform event (`forgetPerson`).
+- An organization, deleted by a platform event (`eraseOrganization`).
 - A project: deleted with its space, or erased with its organization.
 
 A test fails when a table is missing from this page, and the backend test suite fails when a row outlives what it belongs to (`apps/backend/src/testing/invariants.ts`).
