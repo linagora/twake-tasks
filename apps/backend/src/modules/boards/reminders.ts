@@ -1,11 +1,10 @@
 import { and, asc, eq, sql } from 'drizzle-orm'
-import type { Db, Tx } from '../../infra/db.ts'
+import type { Db } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
-import { roleOn } from './access.ts'
 import { remindersWaitingFor, scheduleReminder } from './reminderJobs.ts'
-import { taskFollowers, taskReminders, tasks } from './schema.ts'
-import { refuseIfShelved, taskOf } from './tasks.ts'
+import { taskReminders, tasks } from './schema.ts'
+import { refuseIfShelved, visibleTask } from './tasks.ts'
 
 export type NewReminder = { at: Date } | { beforeMinutes: number; zone: string }
 
@@ -14,18 +13,6 @@ const firesAt =
   else reminder_time(${tasks.dueDate}, ${tasks.dueTime}, ${tasks.dueZone}, ${taskReminders.zone}, ${taskReminders.beforeMinutes}) end`.mapWith(
     taskReminders.at
   )
-
-async function visibleTask(
-  tx: Tx,
-  identity: Identity,
-  boardId: string,
-  taskId: string
-) {
-  if (!(await roleOn(tx, identity.userId, boardId))) {
-    throw new Refused('not_found')
-  }
-  return taskOf(tx, boardId, taskId)
-}
 
 // Reminders are personal: anyone who can open the board sets their own.
 export function createReminderStore(db: Db, pendingReminders = 0) {
@@ -114,53 +101,6 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
           )
           .returning({ id: taskReminders.id })
         if (deleted.length === 0) throw new Refused('not_found')
-        return null
-      })
-    },
-
-    following(identity: Identity, boardId: string, taskId: string) {
-      return writeOrRefuse(db, identity, async tx => {
-        await visibleTask(tx, identity, boardId, taskId)
-        const [row] = await tx
-          .select({ taskId: taskFollowers.taskId })
-          .from(taskFollowers)
-          .where(
-            and(
-              eq(taskFollowers.taskId, taskId),
-              eq(taskFollowers.userId, identity.userId)
-            )
-          )
-        return row !== undefined
-      })
-    },
-
-    setFollowing(
-      identity: Identity,
-      boardId: string,
-      taskId: string,
-      following: boolean
-    ) {
-      return writeOrRefuse(db, identity, async tx => {
-        const task = await visibleTask(tx, identity, boardId, taskId)
-        if (following) {
-          await tx
-            .insert(taskFollowers)
-            .values({
-              taskId,
-              organizationId: task.organizationId,
-              userId: identity.userId
-            })
-            .onConflictDoNothing()
-        } else {
-          await tx
-            .delete(taskFollowers)
-            .where(
-              and(
-                eq(taskFollowers.taskId, taskId),
-                eq(taskFollowers.userId, identity.userId)
-              )
-            )
-        }
         return null
       })
     }

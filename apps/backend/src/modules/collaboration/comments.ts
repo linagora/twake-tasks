@@ -2,11 +2,11 @@ import { and, asc, eq, inArray } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
-import { looksOn, roleOn } from './access.ts'
-import { mentionedEmails } from './markdown.ts'
-import { commentReactions, comments } from './schema.ts'
-import { refuseIfShelved, taskOf } from './tasks.ts'
-import { bumpBoard } from './versions.ts'
+import { looksOn, roleOn } from '../boards/access.ts'
+import { mentionedEmails } from '../boards/markdown.ts'
+import { commentReactions, comments } from '../boards/schema.ts'
+import { refuseIfShelved, taskOf, visibleTask } from '../boards/tasks.ts'
+import { bumpBoard } from '../boards/versions.ts'
 
 interface Reactor {
   userId: string
@@ -17,16 +17,6 @@ async function seeBoard(tx: Tx, identity: Identity, boardId: string) {
   if (!(await roleOn(tx, identity.userId, boardId))) {
     throw new Refused('not_found')
   }
-}
-
-async function visibleTask(
-  tx: Tx,
-  identity: Identity,
-  boardId: string,
-  taskId: string
-) {
-  await seeBoard(tx, identity, boardId)
-  return taskOf(tx, boardId, taskId)
 }
 
 async function openTask(

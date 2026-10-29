@@ -16,6 +16,7 @@ import {
 } from './modules/auth/index.ts'
 import { registerLive } from './modules/boards/liveRoutes.ts'
 import { registerBoards } from './modules/boards/routes.ts'
+import { registerCollaboration } from './modules/collaboration/index.ts'
 import { registerNotifications } from './modules/notifications/index.ts'
 import { registerSettings } from './modules/settings/routes.ts'
 import { registerViews } from './modules/views/index.ts'
@@ -66,8 +67,12 @@ export async function buildApp(deps: {
       registerBoards(api, {
         db: deps.db,
         requireIdentity,
-        mentionsPerComment: deps.limits?.mentionsPerComment ?? 0,
         pendingReminders: deps.limits?.pendingReminders ?? 0
+      })
+      registerCollaboration(api, {
+        db: deps.db,
+        requireIdentity,
+        mentionsPerComment: deps.limits?.mentionsPerComment ?? 0
       })
       registerLive(api, {
         db: deps.db,

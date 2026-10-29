@@ -19,6 +19,7 @@ import { registerAuth } from './auth/index.ts'
 import { registerLive } from './boards/liveRoutes.ts'
 import { registerBoards } from './boards/routes.ts'
 import { notifications } from './boards/schema.ts'
+import { registerCollaboration } from './collaboration/index.ts'
 import { registerNotifications } from './notifications/index.ts'
 import { registerSettings } from './settings/routes.ts'
 import { registerViews } from './views/index.ts'
@@ -94,8 +95,12 @@ function declaredRoutes(): Declared[] {
     ...registerBoards(scratch, {
       db,
       requireIdentity,
-      mentionsPerComment: 0,
       pendingReminders: 0
+    }),
+    ...registerCollaboration(scratch, {
+      db,
+      requireIdentity,
+      mentionsPerComment: 0
     }),
     ...registerViews(scratch, {
       db,
