@@ -6,36 +6,42 @@ const lastUnchecked = '20261029182608_jobs_user_id'
 const destructive = [
   /\bDROP\s+COLUMN\b/i,
   /\bDROP\s+TABLE\b/i,
-  /\bRENAME\b/i,
+  /\bALTER\s+(TABLE|TYPE)\b[^;]*\bRENAME\b/i,
   /\bSET\s+NOT\s+NULL\b/i,
-  /\bALTER\s+COLUMN\s+("[^"]+"|\S+)\s+(SET\s+DATA\s+)?TYPE\b/i
+  /\bDROP\s+DEFAULT\b/i,
+  /\bALTER\s+COLUMN\s+\S+\s+(SET\s+DATA\s+)?TYPE\b/i
 ]
 const marker = /^--\s*contract:.+,\s*unused since backend (\d+\.\d+\.\d+)\s*$/m
 
 // The replicas of the previous release still insert rows without the column.
 const addsRequiredColumn = (code: string) =>
-  (code.match(/\bADD\s+COLUMN\b[^,;]*/gi) ?? []).some(
-    clause => /\bNOT\s+NULL\b/i.test(clause) && !/\bDEFAULT\b/i.test(clause)
+  code
+    .split(/\bADD\s+COLUMN\b/i)
+    .slice(1)
+    .some(
+      clause => /\bNOT\s+NULL\b/i.test(clause) && !/\bDEFAULT\b/i.test(clause)
+    )
+
+// Identifiers and literals are emptied so that a column named "default" or a
+// value 'rename' is not read as a keyword.
+const withoutNamesAndComments = (statement: string) =>
+  statement.replace(/"[^"]*"|'[^']*'|--.*$/gm, match =>
+    match.startsWith('--') ? '' : '""'
   )
-
-const parts = (version: string) => version.split('.').map(Number)
-
-function released(version: string, current: string): boolean {
-  const [a, b] = [parts(version), parts(current)]
-  const differs = a.findIndex((part, i) => part !== b[i])
-  return differs === -1 || (a[differs] ?? 0) < (b[differs] ?? 0)
-}
 
 export function uncontracted(sql: string, current: string): string[] {
   return sql.split('--> statement-breakpoint\n').filter(statement => {
-    const code = statement.replace(/--.*$/gm, '')
+    const code = withoutNamesAndComments(statement)
     if (
       !destructive.some(pattern => pattern.test(code)) &&
       !addsRequiredColumn(code)
     )
       return false
     const version = marker.exec(statement)?.[1]
-    return !version || !released(version, current)
+    return (
+      !version ||
+      version.localeCompare(current, undefined, { numeric: true }) > 0
+    )
   })
 }
 

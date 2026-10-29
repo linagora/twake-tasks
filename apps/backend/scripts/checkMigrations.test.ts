@@ -10,7 +10,10 @@ describe('uncontracted', () => {
     'ALTER TABLE "boards" RENAME COLUMN "name" TO "title";',
     'ALTER TABLE "tasks" ALTER COLUMN "due" SET NOT NULL;',
     'ALTER TABLE "people" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;',
-    'ALTER TABLE "jobs" ADD COLUMN "user_id" uuid NOT NULL;'
+    'ALTER TABLE "jobs" ADD COLUMN "user_id" uuid NOT NULL;',
+    'ALTER TABLE "jobs" ADD COLUMN "cost" numeric(10, 2) NOT NULL;',
+    'ALTER TABLE "jobs" ADD COLUMN "default" text NOT NULL;',
+    'ALTER TABLE "jobs" ALTER COLUMN "tries" DROP DEFAULT;'
   ])('refuses %s without a contract marker', statement => {
     expect(uncontracted(statement, '0.2.20')).toEqual([statement])
   })
@@ -19,7 +22,9 @@ describe('uncontracted', () => {
     'ALTER TABLE "jobs" ADD COLUMN "user_id" uuid;',
     'ALTER TABLE "jobs" ADD COLUMN "tries" integer DEFAULT 0 NOT NULL;',
     'CREATE TABLE "x" ("id" uuid NOT NULL);',
-    '-- the rows are renamed, not the columns\nUPDATE "boards" SET "key_prefix" = \'A2\';'
+    '-- the rows are renamed, not the columns\nUPDATE "boards" SET "key_prefix" = \'A2\';',
+    'UPDATE "boards" SET "name" = \'rename me\';',
+    'ALTER INDEX "a" RENAME TO "b";'
   ])('lets %s through', statement => {
     expect(uncontracted(statement, '0.2.20')).toEqual([])
   })
