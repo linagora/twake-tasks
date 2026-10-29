@@ -21,6 +21,7 @@ import { registerBoards } from './boards/routes.ts'
 import { notifications } from './boards/schema.ts'
 import { registerNotifications } from './notifications/index.ts'
 import { registerSettings } from './settings/routes.ts'
+import { registerViews } from './views/index.ts'
 
 interface Declared {
   method: HTTPMethods
@@ -93,10 +94,14 @@ function declaredRoutes(): Declared[] {
     ...registerBoards(scratch, {
       db,
       requireIdentity,
-      searchAllowedOrigins: [],
-      searchMinLength: 2,
       mentionsPerComment: 0,
       pendingReminders: 0
+    }),
+    ...registerViews(scratch, {
+      db,
+      requireIdentity,
+      searchAllowedOrigins: [],
+      searchMinLength: 2
     }),
     ...registerLive(scratch, {
       db,

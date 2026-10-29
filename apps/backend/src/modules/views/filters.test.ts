@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { shift, todayIn } from './recurrence.ts'
+import { shift, todayIn } from '../boards/recurrence.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 

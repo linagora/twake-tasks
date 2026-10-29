@@ -18,6 +18,7 @@ import { registerLive } from './modules/boards/liveRoutes.ts'
 import { registerBoards } from './modules/boards/routes.ts'
 import { registerNotifications } from './modules/notifications/index.ts'
 import { registerSettings } from './modules/settings/routes.ts'
+import { registerViews } from './modules/views/index.ts'
 
 export async function buildApp(deps: {
   logger: Logger
@@ -65,8 +66,6 @@ export async function buildApp(deps: {
       registerBoards(api, {
         db: deps.db,
         requireIdentity,
-        searchAllowedOrigins: deps.searchAllowedOrigins,
-        searchMinLength: deps.searchMinLength,
         mentionsPerComment: deps.limits?.mentionsPerComment ?? 0,
         pendingReminders: deps.limits?.pendingReminders ?? 0
       })
@@ -77,6 +76,12 @@ export async function buildApp(deps: {
         streamVersions,
         openStreams: deps.limits?.openStreams,
         metrics: deps.metrics
+      })
+      registerViews(api, {
+        db: deps.db,
+        requireIdentity,
+        searchAllowedOrigins: deps.searchAllowedOrigins,
+        searchMinLength: deps.searchMinLength
       })
       registerNotifications(api, { db: deps.db, requireIdentity })
       registerSettings(api, { db: deps.db, requireIdentity })
