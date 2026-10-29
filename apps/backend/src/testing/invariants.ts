@@ -1,8 +1,23 @@
 import postgres from 'postgres'
 
+const outsideTheProject = (table: string) => `
+    select r.task_id, r.user_id from ${table} r
+    join tasks t on t.id = r.task_id
+    join boards b on b.id = t.board_id
+    where not exists (
+      select 1 from project_members m
+      where m.project_id = b.project_id and m.user_id = r.user_id
+    )`
+
 // Lifecycle rules the whole suite leaves intact. Each query lists the rows
 // that break its rule.
 const invariants: Record<string, string> = {
+  'a follower outlives their access to the task':
+    outsideTheProject('task_followers'),
+  'a notification outlives its access to the task':
+    outsideTheProject('notifications'),
+  'an assignee is outside the project of the task':
+    outsideTheProject('task_assignees'),
   'a job about a task would outlive it': `
     select id, kind, task_id, payload from jobs
     where (kind = 'notification_email' and task_id is null)
@@ -13,14 +28,8 @@ const invariants: Record<string, string> = {
     where kind = 'reminder' and not exists (
       select 1 from task_reminders r where jobs.key = 'reminder:' || r.id
     )`,
-  'a reminder outlives its access to the task': `
-    select r.id, r.user_id, r.task_id from task_reminders r
-    join tasks t on t.id = r.task_id
-    join boards b on b.id = t.board_id
-    where not exists (
-      select 1 from project_members m
-      where m.project_id = b.project_id and m.user_id = r.user_id
-    )`,
+  'a reminder outlives its access to the task':
+    outsideTheProject('task_reminders'),
   'a trashed task is never purged': `
     select t.id from tasks t
     left join tasks parent on parent.id = t.parent_id
