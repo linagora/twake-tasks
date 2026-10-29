@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
-import { userSettings } from '../settings/schema.ts'
+import { userSettings } from '../settings/index.ts'
 import {
   aB2cUser,
   aBoardIn,

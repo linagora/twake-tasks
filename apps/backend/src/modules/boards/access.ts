@@ -2,7 +2,7 @@ import { and, asc, eq, inArray, isNull, lte, sql } from 'drizzle-orm'
 import type { Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused } from '../kernel/index.ts'
-import { userSettings } from '../settings/schema.ts'
+import { userSettings } from '../settings/index.ts'
 import { boards, projectInvites, projectMembers, projects } from './schema.ts'
 import { bumpProjects } from './versions.ts'
 

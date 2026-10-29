@@ -4,7 +4,7 @@ import { createDb } from '../../infra/db.ts'
 import type { Mail } from '../../infra/mail.ts'
 import { createScheduler } from '../../scheduler/scheduler.ts'
 import { aUser, joinBoard, startApp } from '../../testing/app.ts'
-import { userSettings } from '../settings/schema.ts'
+import { userSettings } from '../settings/index.ts'
 import { emailDigest, NOTIFICATION_DIGEST_JOB } from './notificationDigest.ts'
 import {
   emailNotification,

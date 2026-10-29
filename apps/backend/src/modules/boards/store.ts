@@ -14,7 +14,7 @@ import { generateNKeysBetween } from 'fractional-indexing'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse, type Result } from '../kernel/index.ts'
-import { userSettings } from '../settings/schema.ts'
+import { userSettings } from '../settings/index.ts'
 import { describeTasks, shown } from './describe.ts'
 import {
   accessibleBoards,

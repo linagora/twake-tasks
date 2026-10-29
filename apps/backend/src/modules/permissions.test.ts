@@ -21,7 +21,8 @@ import { registerBoards } from './boards/routes.ts'
 import { notifications } from './boards/schema.ts'
 import { registerCollaboration } from './collaboration/index.ts'
 import { registerNotifications } from './notifications/index.ts'
-import { registerSettings } from './settings/routes.ts'
+import { registerProjects } from './projects/index.ts'
+import { registerSettings } from './settings/index.ts'
 import { registerViews } from './views/index.ts'
 
 interface Declared {
@@ -92,6 +93,7 @@ function declaredRoutes(): Declared[] {
       store: { isRevoked: unused, revoke: unused },
       addressLimits: { refusedTokens: off, logoutRefusals: off, tokenChecks: 0 }
     }).routes,
+    ...registerProjects(scratch, { db, requireIdentity }),
     ...registerBoards(scratch, {
       db,
       requireIdentity,

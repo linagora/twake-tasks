@@ -16,7 +16,7 @@ import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import { schedule } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
-import { userSettings } from '../settings/schema.ts'
+import { userSettings } from '../settings/index.ts'
 import {
   checkRole,
   memberLooks,
@@ -24,8 +24,8 @@ import {
   roleOn,
   settingsOfMember,
   type Role
-} from './access.ts'
-import { endAccess, endAccessOutside } from './lifecycle.ts'
+} from '../boards/access.ts'
+import { endAccess, endAccessOutside } from '../boards/lifecycle.ts'
 import {
   boards,
   inviteEmails,
@@ -34,9 +34,9 @@ import {
   projects,
   taskLabels,
   tasks
-} from './schema.ts'
+} from '../boards/schema.ts'
+import { bumpBoard, bumpProjects } from '../boards/versions.ts'
 import { PROJECT_INVITE_EMAIL_JOB } from './inviteEmails.ts'
-import { bumpBoard, bumpProjects } from './versions.ts'
 
 async function projectOfBoard(tx: Tx, boardId: string) {
   const [project] = await tx

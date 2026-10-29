@@ -25,18 +25,21 @@ import {
   startConsumer,
   startPublisher
 } from './infra/rabbitmq.ts'
-import { accountRoutes } from './modules/accounts/accounts.ts'
+import { accountRoutes } from './modules/accounts/index.ts'
 import { connectIdentityProvider } from './modules/auth/index.ts'
 import { jobHandlers } from './jobHandlers.ts'
-import { PROJECT_INVITE_EMAIL_JOB } from './modules/boards/inviteEmails.ts'
 import { listenForBoardChanges } from './modules/boards/live.ts'
 import {
   NOTIFICATION_DIGEST_JOB,
   NOTIFICATION_EMAIL_JOB
 } from './modules/notifications/index.ts'
-import { knowsAnySpace, spaceRoutes } from './modules/spaces/events.ts'
-import { RECONCILE_SPACES_JOB } from './modules/spaces/reconcile.ts'
-import { settingsRoutes } from './modules/settings/events.ts'
+import { PROJECT_INVITE_EMAIL_JOB } from './modules/projects/index.ts'
+import {
+  knowsAnySpace,
+  RECONCILE_SPACES_JOB,
+  spaceRoutes
+} from './modules/spaces/index.ts'
+import { settingsRoutes } from './modules/settings/index.ts'
 import { RETENTION_JOB } from './retention.ts'
 import { createScheduler, plan } from './scheduler/scheduler.ts'
 

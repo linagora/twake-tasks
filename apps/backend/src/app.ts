@@ -18,7 +18,8 @@ import { registerLive } from './modules/boards/liveRoutes.ts'
 import { registerBoards } from './modules/boards/routes.ts'
 import { registerCollaboration } from './modules/collaboration/index.ts'
 import { registerNotifications } from './modules/notifications/index.ts'
-import { registerSettings } from './modules/settings/routes.ts'
+import { registerProjects } from './modules/projects/index.ts'
+import { registerSettings } from './modules/settings/index.ts'
 import { registerViews } from './modules/views/index.ts'
 
 export async function buildApp(deps: {
@@ -64,6 +65,7 @@ export async function buildApp(deps: {
           deps.limits && limitUsers(api, deps.limits.user, boardBudgets)
       })
       const streamVersions = versionStreams(api)
+      registerProjects(api, { db: deps.db, requireIdentity })
       registerBoards(api, {
         db: deps.db,
         requireIdentity,

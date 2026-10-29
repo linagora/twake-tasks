@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
 import { aUser, joinBoard, startApp } from '../../testing/app.ts'
-import { keepSettings } from '../settings/events.ts'
+import { keepSettings } from '../settings/index.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))

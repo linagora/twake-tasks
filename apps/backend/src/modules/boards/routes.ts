@@ -1,26 +1,20 @@
 import {
   assignment,
-  boardMove,
   boardParams,
   boardRename,
   completion,
   descriptionEdit,
-  inviteParams,
   keyPrefixParams,
   labelChanges,
   labeling,
   labelParams,
   layoutChoice,
-  memberParams,
   newBoard,
-  newInvite,
   newLabel,
   newReminder,
   newSection,
   newTask,
-  peopleQuery,
   reminderParams,
-  roleChange,
   sectionChanges,
   sectionDeletion,
   sectionMove,
@@ -46,7 +40,6 @@ import { createArchiveStore } from './archive.ts'
 import { historyOf } from './history.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
-import { createSharingStore } from './sharing.ts'
 import { createReminderStore } from './reminders.ts'
 import type * as db from './schema.ts'
 import { createSectionStore } from './sections.ts'
@@ -104,7 +97,6 @@ const self = { on: 'self' } as const
 const viewer = { on: 'board', role: 'viewer' } as const
 const editor = { on: 'board', role: 'editor' } as const
 const admin = { on: 'board', role: 'admin' } as const
-const sharing = { ...admin, refusedOnManaged: true } as const
 
 export function registerBoards(
   app: HttpServer,
@@ -121,7 +113,6 @@ export function registerBoards(
   const labelStore = createLabelStore(deps.db)
   const reminderStore = createReminderStore(deps.db, deps.pendingReminders)
   const layoutStore = createLayoutStore(deps.db)
-  const sharingStore = createSharingStore(deps.db)
   const archiveStore = createArchiveStore(deps.db)
   const transferStore = createTransferStore(deps.db)
   const routing = {
@@ -131,93 +122,6 @@ export function registerBoards(
   }
 
   const routes: BoardRoute[] = [
-    defineRoute({
-      method: 'POST',
-      url: '/boards/:boardId/invites',
-      access: sharing,
-      params: boardParams,
-      body: newInvite,
-      status: 202,
-      handler: async ({ identity, params, body }) => {
-        const result = await sharingStore.invite(
-          identity,
-          params.boardId,
-          body.email,
-          body.role
-        )
-        return result.ok ? { ok: true, value: { status: 'invited' } } : result
-      }
-    }),
-    defineRoute({
-      method: 'GET',
-      url: '/boards/:boardId/sharing',
-      access: sharing,
-      params: boardParams,
-      handler: ({ identity, params }) =>
-        sharingStore.sharing(identity, params.boardId)
-    }),
-    defineRoute({
-      method: 'GET',
-      url: '/boards/:boardId/sharing/people',
-      access: sharing,
-      params: boardParams,
-      query: peopleQuery,
-      handler: ({ identity, params, query }) =>
-        under(
-          'people',
-          sharingStore.suggestPeople(identity, params.boardId, query.q)
-        )
-    }),
-    defineRoute({
-      method: 'DELETE',
-      url: '/boards/:boardId/invites/:inviteId',
-      access: sharing,
-      params: inviteParams,
-      status: 204,
-      handler: ({ identity, params }) =>
-        sharingStore.cancelInvite(identity, params.boardId, params.inviteId)
-    }),
-    defineRoute({
-      method: 'GET',
-      url: '/projects',
-      access: self,
-      handler: async ({ identity }) => ({
-        ok: true,
-        value: { projects: await sharingStore.myProjects(identity) }
-      })
-    }),
-    defineRoute({
-      method: 'POST',
-      url: '/boards/:boardId/move',
-      // An editor of the target project too.
-      access: admin,
-      params: boardParams,
-      body: boardMove,
-      status: 204,
-      handler: ({ identity, params, body }) =>
-        sharingStore.moveToProject(identity, params.boardId, body.projectId)
-    }),
-    defineRoute({
-      method: 'PUT',
-      url: '/boards/:boardId/members/:userId',
-      access: sharing,
-      params: memberParams,
-      body: roleChange,
-      status: 204,
-      handler: ({ identity, params, body }) =>
-        sharingStore.setRole(identity, params.boardId, params.userId, body.role)
-    }),
-    defineRoute({
-      method: 'DELETE',
-      url: '/boards/:boardId/members/:userId',
-      // To remove someone else. Any member may leave, but not a personal or
-      // managed project.
-      access: sharing,
-      params: memberParams,
-      status: 204,
-      handler: ({ identity, params }) =>
-        sharingStore.removeMember(identity, params.boardId, params.userId)
-    }),
     ...(
       [
         ['archive', true],

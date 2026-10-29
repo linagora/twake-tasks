@@ -17,7 +17,7 @@ import { alias } from 'drizzle-orm/pg-core'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
-import { userSettings } from '../settings/schema.ts'
+import { userSettings } from '../settings/index.ts'
 import { memberLooks, settingsOfMember } from '../boards/access.ts'
 import { shift, todayIn } from '../boards/recurrence.ts'
 import {

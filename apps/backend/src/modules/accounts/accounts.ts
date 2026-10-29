@@ -16,8 +16,8 @@ import {
 import { asOrganization, asTenant, type Tx } from '../../infra/db.ts'
 import { eraseOrganization, forgetPerson } from '../boards/lifecycle.ts'
 import { inviteEmails, projectMembers } from '../boards/schema.ts'
-import { userSettings } from '../settings/schema.ts'
-import { spaces } from '../spaces/schema.ts'
+import { userSettings } from '../settings/index.ts'
+import { spaces } from '../spaces/index.ts'
 
 // An unreadable time must not drop a deletion, which then counts from now.
 const timestamp = z.iso
