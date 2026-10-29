@@ -52,7 +52,7 @@ export async function buildApp(deps: {
   // The frontend serves its own routes, such as /boards/<id>, on the same origin.
   await app.register(
     api => {
-      const requireIdentity = registerAuth(api, {
+      const { requireIdentity } = registerAuth(api, {
         authenticate: deps.authenticate,
         provider: deps.provider,
         store: postgresAuthStore(deps.db),

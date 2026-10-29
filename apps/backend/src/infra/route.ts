@@ -16,6 +16,7 @@ type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 // What a route needs from its caller. The stores enforce it inside their
 // transaction; the declaration is what the permission tests hold them to.
 export type Access =
+  | { on: 'public' }
   | { on: 'self' }
   | {
       on: 'board'
@@ -28,7 +29,9 @@ export type Access =
 interface Route<I, P, Q, B, T, E extends string> {
   method: HTTPMethods
   url: string
-  access: Access
+  // A public route runs without an identity, so only a table without one
+  // may declare it.
+  access: null extends I ? Access : Exclude<Access, { on: 'public' }>
   params?: Schema<P>
   query?: Schema<Q>
   body?: Schema<B>
@@ -40,6 +43,9 @@ interface Route<I, P, Q, B, T, E extends string> {
     params: P
     query: Q
     body: B
+    // For a route that answers with more than a status and a body, such as
+    // a stream or a header.
+    http: { request: FastifyRequest; reply: FastifyReply }
   }) => Promise<Result<T, E>>
 }
 
@@ -76,15 +82,16 @@ export function registerRoutes<I, E extends string>(
   routes: readonly DeclaredRoute<I, E>[]
 ) {
   for (const route of routes) {
+    const open = route.access.on === 'public'
     app.route({
       method: route.method,
       url: route.url,
       ...(route.onRequest && { onRequest: route.onRequest }),
       ...(route.config && { config: route.config }),
-      preHandler: deps.requireIdentity,
+      ...(!open && { preHandler: deps.requireIdentity }),
       handler: async (request, reply) => {
         const identity = deps.identify(request)
-        if (!identity) return reply.code(401).send()
+        if (!identity && !open) return reply.code(401).send()
         const params = parse(route.params, request.params)
         if (!params.success) return reply.code(404).send({ error: 'not_found' })
         const query = parse(route.query, request.query)
@@ -93,11 +100,15 @@ export function registerRoutes<I, E extends string>(
           return reply.code(400).send({ error: 'invalid_request' })
         }
         const result = await route.handler({
-          identity,
+          // Null only on a public route, whose table has a null identity.
+          identity: identity as I,
           params: params.data,
           query: query.data,
-          body: body.data
+          body: body.data,
+          http: { request, reply }
         })
+        // A stream has taken the reply over.
+        if (reply.sent) return reply
         if (!result.ok) {
           const refused: number = deps.refusalStatus[result.error]
           return reply.code(refused).send({ error: result.error })

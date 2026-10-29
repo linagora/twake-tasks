@@ -16,12 +16,7 @@ export default tseslint.config(
   { files: ['**/*.js'], ...tseslint.configs.disableTypeChecked },
   {
     files: ['apps/backend/src/modules/**/*.ts'],
-    // A stream, and a call from the identity provider, not declared yet.
-    ignores: [
-      '**/*.test.ts',
-      'apps/backend/src/modules/boards/liveRoutes.ts',
-      'apps/backend/src/modules/auth/routes.ts'
-    ],
+    ignores: ['**/*.test.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',

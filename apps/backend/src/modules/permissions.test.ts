@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { HTTPMethods, LightMyRequestResponse } from 'fastify'
 import { pino } from 'pino'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
+import { createChanges } from '../infra/changes.ts'
 import { createDb, inTenant } from '../infra/db.ts'
 import { createServer } from '../infra/http.ts'
 import type { Access } from '../infra/route.ts'
@@ -13,6 +14,9 @@ import {
   startApp,
   type TestUser
 } from '../testing/app.ts'
+import { openStream } from '../testing/stream.ts'
+import { registerAuth } from './auth/index.ts'
+import { registerLive } from './boards/liveRoutes.ts'
 import { registerBoards } from './boards/routes.ts'
 import { notifications } from './boards/schema.ts'
 import { registerSettings } from './settings/routes.ts'
@@ -22,6 +26,7 @@ interface Declared {
   url: string
   access: Access
   status?: number
+  config?: { stream?: boolean }
 }
 
 interface Fixture {
@@ -37,20 +42,16 @@ interface Request {
   params?: Record<string, string>
   query?: Record<string, string>
   body?: object
+  // The status a permitted caller gets when the example is refused by design.
+  answer?: number
 }
 
 type Example = (fixture: Fixture, me: TestUser) => Request | Promise<Request>
 
 type Kind = 'shared' | 'managed'
 
-// Not declared through a route table yet: a stream, and a call from the
-// identity provider.
-const UNDECLARED = new Set([
-  'GET /boards/:boardId/events',
-  'POST /auth/backchannel-logout'
-])
-
 let api: Awaited<ReturnType<typeof startApp>>
+let baseUrl: string
 const { sql, db } = createDb(inject('databaseUrl'))
 
 const organizationId = `org-${randomUUID()}`
@@ -79,7 +80,15 @@ function declaredRoutes(): Declared[] {
     isReady: () => Promise.resolve(true)
   })
   const requireIdentity = () => Promise.resolve(undefined)
+  const unused = () => Promise.reject(new Error('not called'))
+  const off = { max: 0, windowSeconds: 1 }
   return [
+    ...registerAuth(scratch, {
+      authenticate: unused,
+      provider: { identify: unused, verifyLogoutToken: unused },
+      store: { isRevoked: unused, revoke: unused },
+      addressLimits: { refusedTokens: off, logoutRefusals: off, tokenChecks: 0 }
+    }).routes,
     ...registerBoards(scratch, {
       db,
       requireIdentity,
@@ -87,6 +96,12 @@ function declaredRoutes(): Declared[] {
       searchMinLength: 2,
       mentionsPerComment: 0,
       pendingReminders: 0
+    }),
+    ...registerLive(scratch, {
+      db,
+      requireIdentity,
+      changes: createChanges(),
+      streamVersions: unused
     }),
     ...registerSettings(scratch, { db, requireIdentity })
   ]
@@ -96,6 +111,7 @@ const idOf = (route: Declared) => `${route.method} ${route.url}`
 
 beforeAll(async () => {
   api = await startApp()
+  baseUrl = await api.listen()
 })
 
 afterAll(async () => {
@@ -103,12 +119,12 @@ afterAll(async () => {
   await sql.end()
 })
 
-function send(
+async function send(
   user: TestUser,
   route: Declared,
   request: Request,
   fixture?: Fixture
-): Promise<LightMyRequestResponse> {
+): Promise<{ statusCode: number; body: string }> {
   const values: Record<string, string> = { ...fixture, ...request.params }
   const url = route.url.replace(/:(\w+)/g, (_match, name: string) => {
     const value = values[name]
@@ -117,6 +133,13 @@ function send(
   })
   const method = METHODS.find(known => known === route.method)
   if (!method) throw new Error(`no method for ${idOf(route)}`)
+  if (route.config?.stream) {
+    const stream = openStream(`${baseUrl}/api${url}`, api.tokenOf(user))
+    const response = await stream.response
+    const body = response.ok ? '' : await response.text()
+    stream.close()
+    return { statusCode: response.status, body }
+  }
   return api.inject({
     method,
     url: `/api${url}`,
@@ -376,7 +399,13 @@ const EXAMPLES: Record<string, Example> = {
   }),
   'POST /boards/:boardId/sections/:sectionId/move': () => ({ body: {} }),
   'DELETE /boards/:boardId/sections/:sectionId': none,
-  'GET /settings': none
+  'GET /settings': none,
+  'GET /boards/:boardId/events': none,
+  // The tests' identity provider refuses every logout token.
+  'POST /auth/backchannel-logout': () => ({
+    body: { logout_token: 'forged' },
+    answer: 400
+  })
 }
 
 function expected(
@@ -385,7 +414,7 @@ function expected(
   kind: Kind,
   role: 'admin' | 'editor' | 'viewer' | null
 ) {
-  if (access.on === 'self') return success
+  if (access.on === 'public' || access.on === 'self') return success
   if (!role) return 404
   if (RANK[role] < RANK[access.role]) return 403
   if (kind === 'managed' && access.refusedOnManaged) return 403
@@ -398,7 +427,7 @@ describe('the permission matrix', () => {
   it('declares every route the app serves', () => {
     expect(
       servedRoutes(api.printRoutes({ commonPrefix: false })).sort()
-    ).toEqual([...routes.map(idOf), ...UNDECLARED].sort())
+    ).toEqual(routes.map(idOf).sort())
   })
 
   it('has an example for every declared route', () => {
@@ -410,9 +439,8 @@ describe('the permission matrix', () => {
     async (id, route) => {
       const example = EXAMPLES[id]
       if (!example) throw new Error(`no example for ${id}`)
-      const success = route.status ?? 200
       const kinds: Kind[] =
-        route.access.on === 'self' ? ['shared'] : ['shared', 'managed']
+        route.access.on === 'board' ? ['shared', 'managed'] : ['shared']
       const mismatches = []
       for (const kind of kinds) {
         // A refusal changes nothing, so its fixture serves the next caller.
@@ -421,6 +449,7 @@ describe('the permission matrix', () => {
           if (route.access.on === 'board') current ??= await fixture(kind)
           const request = await example(current ?? EMPTY, user)
           const response = await send(user, route, request, current)
+          const success = request.answer ?? route.status ?? 200
           const want = expected(route.access, success, kind, role)
           if (response.statusCode !== want) {
             mismatches.push({
@@ -477,6 +506,7 @@ function servedRoutes(tree: string): string[] {
 }
 
 const GROUPS = {
+  public: 'Anyone, signed in or not',
   self: 'Any signed-in person, on their own data',
   viewer: 'Viewers of the board',
   editor: 'Editors of the board',
@@ -490,7 +520,7 @@ function permissionsDoc(declared: Declared[]): string {
   const sections = Object.entries(GROUPS).map(([group, title]) => {
     const lines = sorted
       .filter(({ access }) =>
-        access.on === 'self' ? group === 'self' : group === access.role
+        access.on === 'board' ? group === access.role : group === access.on
       )
       .map(route => {
         const managed =

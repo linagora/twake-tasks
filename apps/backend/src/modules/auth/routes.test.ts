@@ -33,7 +33,7 @@ async function setUp(
     isRevoked: vi.fn(() => Promise.resolve(false)),
     revoke: vi.fn(() => Promise.resolve())
   } satisfies AuthStore
-  const requireIdentity = registerAuth(app, {
+  const { requireIdentity } = registerAuth(app, {
     authenticate,
     provider,
     store,
@@ -314,5 +314,15 @@ describe('POST /auth/backchannel-logout', () => {
     expect(response.statusCode).toBe(429)
     expect(Number(response.headers['retry-after'])).toBeGreaterThan(0)
     expect(store.revoke).not.toHaveBeenCalled()
+  })
+
+  it('answers a blocked address 429 whatever its body', async () => {
+    const { app } = await setUp()
+    for (let i = 0; i < 60; i++) await logout(app, 'logout_token=forged')
+
+    const response = await logout(app, '')
+
+    expect(response.statusCode).toBe(429)
+    expect(response.headers['cache-control']).toBe('no-store')
   })
 })
