@@ -418,7 +418,9 @@
     "title": "Tastenkürzel",
     "hint": "Tastenkürzel funktionieren, wenn Sie nicht in einem Feld tippen.",
     "then": "g, dann %{key}",
-    "close": "Schließen"
+    "close": "Schließen",
+    "toggle": "Einzeltasten-Kürzel",
+    "toggleHint": "Schalten Sie sie aus, wenn Sie Spracherkennung nutzen oder versehentlich Tasten drücken."
   },
   "transfer": {
     "title": "In ein anderes Board verschieben",

@@ -4,6 +4,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
+  FormHelperText,
+  Switch,
   Typography
 } from '@linagora/twake-mui'
 import {
@@ -11,6 +14,7 @@ import {
   useEffectEvent,
   useId,
   useRef,
+  useState,
   type ReactElement
 } from 'react'
 import { useNavigate } from 'react-router'
@@ -24,6 +28,16 @@ const GO = {
   m: { path: '/mine', label: 'agenda.mine' },
   f: { path: '/filters', label: 'filters.title' }
 } as const
+
+const KEY = 'twake-tasks:shortcuts'
+
+function shortcutsOn(): boolean {
+  try {
+    return localStorage.getItem(KEY) !== 'off'
+  } catch {
+    return true
+  }
+}
 
 const typing = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
@@ -40,7 +54,7 @@ export function useShortcuts(actions: {
 
   const onKey = useEffectEvent((event: KeyboardEvent) => {
     if (event.ctrlKey || event.metaKey || event.altKey) return
-    if (typing(event.target)) return
+    if (typing(event.target) || !shortcutsOn()) return
     if (going.current) {
       going.current = false
       if (event.key in GO) {
@@ -78,6 +92,16 @@ export function ShortcutsHelp({
   const { t } = useI18n()
   const titleId = useId()
   const hintId = useId()
+  const toggleHintId = useId()
+  const [on, setOn] = useState(shortcutsOn)
+  const toggle = (next: boolean): void => {
+    setOn(next)
+    try {
+      localStorage.setItem(KEY, next ? 'on' : 'off')
+    } catch {
+      // Storage blocked: the shortcuts stay on.
+    }
+  }
   const rows = [
     ['q', t('newTask.title')],
     ['/', t('search.label')],
@@ -99,6 +123,21 @@ export function ShortcutsHelp({
         <Typography id={hintId} className="u-mb-1">
           {t('shortcuts.hint')}
         </Typography>
+        <FormControlLabel
+          label={t('shortcuts.toggle')}
+          control={
+            <Switch
+              checked={on}
+              onChange={event => {
+                toggle(event.target.checked)
+              }}
+              slotProps={{ input: { 'aria-describedby': toggleHintId } }}
+            />
+          }
+        />
+        <FormHelperText id={toggleHintId} className="u-mt-0 u-mb-1">
+          {t('shortcuts.toggleHint')}
+        </FormHelperText>
         <dl>
           {rows.map(([keys, label]) => (
             <div key={keys} className="u-flex u-mb-half">

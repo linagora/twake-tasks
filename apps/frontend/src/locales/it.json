@@ -418,7 +418,9 @@
     "title": "Scorciatoie da tastiera",
     "hint": "Le scorciatoie funzionano quando non stai scrivendo in un campo.",
     "then": "g poi %{key}",
-    "close": "Chiudi"
+    "close": "Chiudi",
+    "toggle": "Scorciatoie a un tasto",
+    "toggleHint": "Disattivale se usi il riconoscimento vocale o premi tasti per errore."
   },
   "transfer": {
     "title": "Sposta in un’altra bacheca",

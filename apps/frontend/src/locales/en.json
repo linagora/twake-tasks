@@ -418,7 +418,9 @@
     "title": "Keyboard shortcuts",
     "hint": "Shortcuts work when you are not typing in a field.",
     "then": "g then %{key}",
-    "close": "Close"
+    "close": "Close",
+    "toggle": "Single-key shortcuts",
+    "toggleHint": "Turn off if you use speech recognition or press keys by accident."
   },
   "transfer": {
     "title": "Move to another board",
