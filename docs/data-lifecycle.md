@@ -41,14 +41,14 @@ A test fails when a table is missing from this page, and the backend test suite 
 - `comments`: cascade with the task. Kept after their author's account is deleted, with the author's name as it was.
 - `comment_reactions`: cascade with the comment, or deleted by hand. Removed with the person.
 - `task_history`: cascade with the task. Kept as long as the task, with the actor's name as it was.
-- `notifications`: cascade with the task. Removed when the person loses access to the task, or with the person. Read notifications are kept.
+- `notifications`: cascade with the task. Removed when the person loses access to the task, or with the person. Retention: 180 days after it is read (`RETENTION_READ_NOTIFICATIONS_DAYS`), deleted by the daily `retention` job.
 - `notification_email_budgets`: one row per person who got a notification email. Kept, even after the person is deleted.
 
 ## Jobs and events
 
-- `jobs`: deleted once done, or after the 10th failed attempt. A job about a task cascades with it through `task_id`, a reminder job goes with its reminder, and the jobs of an organization go with it. The jobs of a deleted person are kept until they run.
+- `jobs`: deleted once done, or after the 10th failed attempt. A job about a task cascades with it through `task_id`, a reminder job goes with its reminder, and the jobs of an organization go with it. A job about a person (reminder, notification email, digest) names them in `user_id` and is removed with them.
 - `outbox`: retention: one day after the event is sent.
-- `processed_events`: retention: 30 days, far longer than any redelivery.
+- `processed_events`: retention: 30 days (`RETENTION_PROCESSED_EVENTS_DAYS`), far longer than any redelivery, deleted by the daily `retention` job.
 - `parked_events`: deleted once the event is handled, or once it is sent to the dead letter queue after waiting 30 minutes for its space.
 - `last_changes`: kept, so a late event cannot bring back a deleted organization, space or person.
 

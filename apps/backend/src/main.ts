@@ -33,9 +33,10 @@ import { listenForBoardChanges } from './modules/boards/live.ts'
 import { NOTIFICATION_DIGEST_JOB } from './modules/boards/notificationDigest.ts'
 import { NOTIFICATION_EMAIL_JOB } from './modules/boards/notificationEmails.ts'
 import { knowsAnySpace, spaceRoutes } from './modules/spaces/events.ts'
-import { planReconcile } from './modules/spaces/reconcile.ts'
+import { RECONCILE_SPACES_JOB } from './modules/spaces/reconcile.ts'
 import { settingsRoutes } from './modules/settings/events.ts'
-import { createScheduler } from './scheduler/scheduler.ts'
+import { RETENTION_JOB } from './retention.ts'
+import { createScheduler, plan } from './scheduler/scheduler.ts'
 
 const config = loadConfig()
 const stopErrorReporting = config.SENTRY_DSN
@@ -194,6 +195,10 @@ const stopScheduler = createScheduler({
     appUrl: config.APP_URL,
     budget: limits.notificationEmails,
     send,
+    retention: {
+      processedEventsDays: config.RETENTION_PROCESSED_EVENTS_DAYS,
+      readNotificationsDays: config.RETENTION_READ_NOTIFICATIONS_DAYS
+    },
     ldapRest: spaces
       ? ldapRestClient({
           url: config.LDAP_REST_URL,
@@ -203,7 +208,8 @@ const stopScheduler = createScheduler({
       : undefined
   })
 }).start(5000)
-if (spaces) await planReconcile(db)
+await plan(db, RETENTION_JOB)
+if (spaces) await plan(db, RECONCILE_SPACES_JOB)
 const stopRelay = createRelay({
   db,
   logger,

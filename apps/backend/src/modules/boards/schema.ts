@@ -607,6 +607,9 @@ const visibleTask = (taskId: AnyPgColumn): SQL =>
 // Set while someone loses access, so their rows on those tasks can be deleted.
 const revokingAccess = sql`current_setting('app.revoking_access', true) = 'on'`
 
+const pruningRead = (readAt: AnyPgColumn) =>
+  sql`current_setting('app.pruning', true) = 'on' and ${readAt} is not null`
+
 // Either at a fixed moment, or some minutes before the due date. A due date
 // without a time counts from nine in the morning, and a floating due time in
 // the zone of whoever set the reminder.
@@ -671,6 +674,9 @@ export const notifications = pgTable.withRLS(
     uniqueIndex()
       .on(table.userId, table.taskId, table.reason)
       .where(sql`${table.readAt} is null`),
+    index()
+      .on(table.readAt)
+      .where(sql`${table.readAt} is not null`),
     foreignKey({
       columns: [table.tenant, table.taskId],
       foreignColumns: [tasks.tenant, tasks.id]
@@ -678,7 +684,14 @@ export const notifications = pgTable.withRLS(
     tenantPolicy(table.organizationId, visibleTask(table.taskId)),
     // Anyone who sees the task may notify someone of a change to it. Taking
     // someone's access away drops their notifications through the flag, which
-    // a delete needs on select too.
+    // a delete needs on select too. The retention job drops read ones in every
+    // tenant through its own flag.
+    ...(['select', 'delete'] as const).map(command =>
+      pgPolicy(`retention_${command}`, {
+        for: command,
+        using: pruningRead(table.readAt)
+      })
+    ),
     ...(['select', 'update', 'delete'] as const).map(command =>
       pgPolicy(`own_${command}`, {
         as: 'restrictive',
@@ -686,7 +699,7 @@ export const notifications = pgTable.withRLS(
         using:
           command === 'update'
             ? sql`${table.userId} = ${currentUser}`
-            : sql`${table.userId} = ${currentUser} or ${revokingAccess}`
+            : sql`${table.userId} = ${currentUser} or ${revokingAccess} or ${pruningRead(table.readAt)}`
       })
     )
   ]

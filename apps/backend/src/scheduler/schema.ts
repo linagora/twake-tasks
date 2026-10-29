@@ -17,6 +17,7 @@ export const jobs = pgTable(
     taskId: uuid('task_id').references(() => tasks.id, {
       onDelete: 'cascade'
     }),
+    userId: uuid('user_id'),
     runAt: timestamptz('run_at').notNull(),
     attempts: integer().notNull().default(0),
     lastError: text('last_error'),
@@ -29,9 +30,6 @@ export const jobs = pgTable(
   table => [
     index().on(table.kind, table.runAt),
     index().on(table.taskId),
-    // Counts a person's reminders, to cap them.
-    index('jobs_reminder_user_index')
-      .on(sql`(${table.payload}->>'userId')`)
-      .where(sql`${table.kind} = 'reminder'`)
+    index().on(table.userId)
   ]
 )

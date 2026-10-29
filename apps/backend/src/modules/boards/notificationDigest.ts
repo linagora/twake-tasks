@@ -96,6 +96,7 @@ export async function takeEmail(
   if (!row.digestScheduled) {
     await schedule(tx, {
       kind: NOTIFICATION_DIGEST_JOB,
+      userId: to.userId,
       payload: to,
       runAt: row.windowEnd
     })
@@ -151,6 +152,7 @@ export function emailDigest(deps: {
     if (!row.ended && row.sent >= deps.budget.max) {
       await schedule(tx, {
         kind: NOTIFICATION_DIGEST_JOB,
+        userId: to.userId,
         payload: to,
         runAt: row.windowEnd
       })
@@ -179,6 +181,7 @@ export function emailDigest(deps: {
       if (left && left.held > 0) {
         await schedule(db, {
           kind: NOTIFICATION_DIGEST_JOB,
+          userId: to.userId,
           payload: to,
           runAt: left.windowEnd
         })

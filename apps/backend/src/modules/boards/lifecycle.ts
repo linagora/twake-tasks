@@ -3,6 +3,7 @@ import {
   asc,
   eq,
   inArray,
+  lt,
   ne,
   notExists,
   sql,
@@ -169,11 +170,22 @@ export async function forgetPerson(tx: Tx, userId: string): Promise<void> {
   await tx.delete(notifications).where(eq(notifications.userId, userId))
   await tx.delete(taskReminders).where(eq(taskReminders.userId, userId))
   await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
+  await tx.delete(jobs).where(eq(jobs.userId, userId))
   await tx
     .delete(projects)
     .where(and(eq(projects.createdBy, userId), eq(projects.personal, true)))
   await handOnProjects(tx, userId)
   await tx.delete(projectMembers).where(eq(projectMembers.userId, userId))
+}
+
+/** Reaches every tenant through the `app.pruning` flag the notification policies allow. */
+export async function forgetReadNotifications(
+  tx: Tx,
+  readBefore: Date
+): Promise<void> {
+  await tx.execute(sql`select set_config('app.pruning', 'on', true)`)
+  await tx.delete(notifications).where(lt(notifications.readAt, readBefore))
+  await tx.execute(sql`select set_config('app.pruning', '', true)`)
 }
 
 /** Erases an organization's projects, saved filters and jobs. Runs as that organization. */

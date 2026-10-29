@@ -16,6 +16,7 @@ it('measures the backlog of every job kind the app runs', async () => {
     appUrl: 'https://tasks.example',
     budget: { max: 1, windowSeconds: 60 },
     send: () => Promise.resolve(),
+    retention: { processedEventsDays: 30, readNotificationsDays: 180 },
     ldapRest: {
       organizations: () => Promise.resolve([]),
       spaceIds: () => Promise.resolve([]),

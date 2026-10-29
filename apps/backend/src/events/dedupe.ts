@@ -1,3 +1,4 @@
+import { lt } from 'drizzle-orm'
 import type { Db, Tx } from '../infra/db.ts'
 import { processedEvents } from './schema.ts'
 
@@ -24,4 +25,13 @@ export function postgresDeduplicator(db: Db, consumer: string): Deduplicator {
         return true
       })
   }
+}
+
+export async function forgetProcessedEvents(
+  tx: Tx,
+  processedBefore: Date
+): Promise<void> {
+  await tx
+    .delete(processedEvents)
+    .where(lt(processedEvents.processedAt, processedBefore))
 }
