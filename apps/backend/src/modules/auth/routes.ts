@@ -4,6 +4,11 @@ import { z } from 'zod'
 import type { Budget } from '../../config.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import {
+  defineRoute,
+  registerRoutes,
+  type DeclaredRoute
+} from '../../infra/route.ts'
+import {
   IdentityProviderBusy,
   TooManyFailures,
   type Authenticate,
@@ -94,7 +99,7 @@ export function registerAuth(
     // Runs once the caller is known, and may answer in place of the route.
     limitUser?: RequireIdentity | undefined
   }
-): RequireIdentity {
+) {
   const addressLimits = deps.addressLimits ?? DEFAULT_ADDRESS_LIMITS
   app.decorateRequest('identity', null)
   app.addContentTypeParser(
@@ -172,23 +177,47 @@ export function registerAuth(
     return deps.limitUser?.(request, reply)
   }
 
-  app.post('/auth/backchannel-logout', async (request, reply) => {
-    reply.header('cache-control', 'no-store')
-    const blockedFor = await logoutFailures.blockedFor(request)
-    if (blockedFor) return tooManyRequests(reply, blockedFor)
-    const body = logoutBody.safeParse(request.body)
-    if (!body.success) return reply.code(400).send({ error: 'invalid_request' })
-    let sessionId: string
-    try {
-      sessionId = await deps.provider.verifyLogoutToken(body.data.logout_token)
-    } catch (error) {
-      request.log.warn({ err: error }, 'logout token refused')
-      await logoutFailures.count(request)
-      return reply.code(400).send({ error: 'invalid_request' })
-    }
-    await deps.store.revoke(sessionId, new Date(Date.now() + REVOCATION_TTL_MS))
-    return reply.code(200).send()
-  })
+  const routes: DeclaredRoute<null, 'invalid_request'>[] = [
+    defineRoute({
+      method: 'POST',
+      url: '/auth/backchannel-logout',
+      // Called by the identity provider, with a logout token for proof.
+      access: { on: 'public' },
+      body: logoutBody,
+      // A blocked address gets 429 before its body is even read.
+      onRequest: (request, reply, done) => {
+        reply.header('cache-control', 'no-store')
+        logoutFailures.blockedFor(request).then(blockedFor => {
+          if (blockedFor) tooManyRequests(reply, blockedFor)
+          else done()
+        }, done)
+      },
+      handler: async ({ body, http: { request } }) => {
+        let sessionId: string
+        try {
+          sessionId = await deps.provider.verifyLogoutToken(body.logout_token)
+        } catch (error) {
+          request.log.warn({ err: error }, 'logout token refused')
+          await logoutFailures.count(request)
+          return { ok: false, error: 'invalid_request' }
+        }
+        await deps.store.revoke(
+          sessionId,
+          new Date(Date.now() + REVOCATION_TTL_MS)
+        )
+        return { ok: true, value: undefined }
+      }
+    })
+  ]
+  registerRoutes(
+    app,
+    {
+      requireIdentity,
+      identify: () => null,
+      refusalStatus: { invalid_request: 400 }
+    },
+    routes
+  )
 
-  return requireIdentity
+  return { requireIdentity, routes }
 }

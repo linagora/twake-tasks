@@ -14,7 +14,7 @@ import { postgresAuthStore } from './store.ts'
 export type { Authenticate } from './authenticator.ts'
 export type { Identity, IdentityProvider } from './oidc.ts'
 export type { RequireIdentity } from './routes.ts'
-export { registerAuth, tooManyRequests } from './routes.ts'
+export { registerAuth } from './routes.ts'
 export { limitUsers } from './userLimits.ts'
 export { postgresAuthStore } from './store.ts'
 

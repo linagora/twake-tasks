@@ -4,6 +4,10 @@ The role each API route needs, a role above it included. A caller who is not a m
 
 Generated from the route tables by `apps/backend/src/modules/permissions.test.ts`, which fails when this file is stale. After changing a route, run `npx vitest run src/modules/permissions.test.ts -u` in `apps/backend`.
 
+## Anyone, signed in or not
+
+- `POST /api/auth/backchannel-logout`
+
 ## Any signed-in person, on their own data
 
 - `GET /api/agenda`
@@ -32,6 +36,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 
 - `GET /api/boards/:boardId`
 - `GET /api/boards/:boardId/archived`
+- `GET /api/boards/:boardId/events`
 - `DELETE /api/boards/:boardId/favorite`
 - `PUT /api/boards/:boardId/favorite`
 - `PUT /api/boards/:boardId/layout`

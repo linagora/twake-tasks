@@ -48,7 +48,7 @@ async function setUp(
   } satisfies AuthStore
   await app.register(
     api => {
-      const requireIdentity = registerAuth(api, {
+      const { requireIdentity } = registerAuth(api, {
         authenticate: token => Promise.resolve(anIdentity({ userId: token })),
         provider: { identify: vi.fn(), verifyLogoutToken: vi.fn() },
         store,

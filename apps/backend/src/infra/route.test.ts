@@ -63,6 +63,18 @@ function serverWith(
       handler: () => Promise.resolve({ ok: true, value: null })
     })
   ])
+  registerRoutes(
+    app,
+    { requireIdentity, identify: () => null, refusalStatus },
+    [
+      defineRoute({
+        method: 'GET',
+        url: '/open',
+        access: { on: 'public' },
+        handler: () => Promise.resolve({ ok: true, value: { open: true } })
+      })
+    ]
+  )
   return app
 }
 
@@ -150,5 +162,15 @@ describe('a declared route', () => {
     const response = await serverWith(signedIn, null).inject('/things')
 
     expect(response.statusCode).toBe(401)
+  })
+
+  it('answers a public route without checking the identity', async () => {
+    const response = await serverWith(
+      async (_request, reply) => reply.code(401).send(),
+      null
+    ).inject('/open')
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ open: true })
   })
 })
