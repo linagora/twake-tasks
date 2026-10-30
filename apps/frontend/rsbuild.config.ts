@@ -14,6 +14,7 @@ export default defineConfig({
   plugins: [pluginReact()],
   html: {
     template: './index.html',
+    favicon: './src/assets/project.svg',
     // The splash draws them before any script runs, SignInScreen after.
     templateParameters: {
       projectIcon: svg('project'),
