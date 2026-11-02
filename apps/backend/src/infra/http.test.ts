@@ -9,9 +9,10 @@ import { createMetrics } from './metrics.ts'
 interface LogLine {
   level: number
   msg?: string
+  proxyHops?: number
 }
 
-function serverLoggingTo(lines: LogLine[]) {
+function serverLoggingTo(lines: LogLine[], proxyHops?: number) {
   return createServer({
     logger: pino(
       {},
@@ -21,7 +22,8 @@ function serverLoggingTo(lines: LogLine[]) {
         }
       }
     ),
-    isReady: () => Promise.resolve(true)
+    isReady: () => Promise.resolve(true),
+    proxyHops
   })
 }
 
@@ -68,6 +70,21 @@ describe('the server', () => {
       })
 
       expect(response.json()).toEqual({ ip })
+    }
+  )
+
+  it.each([
+    [0, []],
+    [2, [2]]
+  ])(
+    'behind %i trusted proxies, warns at start with the hops it trusts',
+    (proxyHops, warned) => {
+      const lines: LogLine[] = []
+      serverLoggingTo(lines, proxyHops)
+
+      expect(
+        lines.filter(line => line.level === 40).map(line => line.proxyHops)
+      ).toEqual(warned)
     }
   )
 

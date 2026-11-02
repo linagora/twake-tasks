@@ -78,7 +78,7 @@ The migrate command, `node dist/migrate.js`, reads only `DATABASE_MIGRATION_URL`
 Server:
 
 - `HTTP_HOST` (`0.0.0.0`), `HTTP_PORT` (`8080`).
-- `HTTP_TRUSTED_PROXY_HOPS` (`2`): how many proxies in front of the backend add the address they got the request from to `X-Forwarded-For`. The backend trusts that many hops when it reads the caller's address. `2` fits the chart: the ingress, then the frontend's nginx. Set `0` when nothing proxies the backend. Too low groups every caller under the proxy's address. Too high lets a caller pick its own.
+- `HTTP_TRUSTED_PROXY_HOPS` (`0`): how many proxies in front of the backend add the address they got the request from to `X-Forwarded-For`. The backend trusts that many hops when it reads the caller's address. Set it to the exact length of each environment's ingress chain: `2` fits the chart, the ingress then the frontend's nginx. Too low groups every caller under the proxy's address. Too high lets a caller pick its own, and every per-address rate limit with it. Above `0`, the backend logs the count it trusts as a warning at start, to check against the ingress.
 - `LOG_LEVEL` (`info`): `fatal`, `error`, `warn`, `info`, `debug` or `trace`.
 - `METRICS_ENABLED` (`true`): whether the backend serves Prometheus metrics on `GET /metrics`, on `HTTP_PORT`. The path is outside `/api`, so the frontend's nginx never proxies it: scrape the backend directly. `false` removes the route and the metrics; the scheduler still reads its backlog to log late jobs.
   - `events_parked`, `jobs_due` and `outbox_pending` are read from the database, so every replica reports the same global value: aggregate them with `max()`, not `sum()`.
