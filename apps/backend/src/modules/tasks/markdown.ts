@@ -312,16 +312,64 @@ function capMarks(line: string): [string, number] {
   return [capped, MAX_MARKS - Math.max(left, 0)]
 }
 
+function parse(markdown: string) {
+  return fromMarkdown(markdown, {
+    extensions: [gfmTaskListItem()],
+    mdastExtensions: [gfmTaskListItemFromMarkdown()]
+  })
+}
+
+function definitionsOf(root: Nodes): Set<string> {
+  const identifiers = new Set<string>()
+  const pending: Nodes[] = [root]
+  for (let node = pending.pop(); node; node = pending.pop()) {
+    if (node.type === 'definition') identifiers.add(node.identifier)
+    else if ('children' in node)
+      for (const child of node.children) pending.push(child)
+  }
+  return identifiers
+}
+
+const LABEL = /\[((?:[^\\[\]]|\\[^])*)\]/g
+
+// Case folded as micromark matches labels, without the whitespace and quote
+// markers a label can span.
+function squash(text: string): string {
+  return text
+    .toLowerCase()
+    .toUpperCase()
+    .toLowerCase()
+    .replace(/[\s>]+/g, '')
+}
+
+// A reference resolves against the definitions of the whole document, so a
+// chunk that may use one from elsewhere is read again after them. Reading
+// every chunk after every definition would take time quadratic in their size.
 export function plainText(markdown: string): string {
-  return chunks(markdown)
-    .map(chunk =>
-      textOf(
-        fromMarkdown(chunk, {
-          extensions: [gfmTaskListItem()],
-          mdastExtensions: [gfmTaskListItemFromMarkdown()]
-        })
+  const parts = chunks(markdown)
+  const trees = parts.map(parse)
+  const defined = trees.map(definitionsOf)
+  const byKey = new Map<string, string[]>()
+  if (trees.length > 1)
+    for (const id of new Set(defined.flatMap(ids => [...ids]))) {
+      const key = squash(id)
+      byKey.set(key, [...(byKey.get(key) ?? []), id])
+    }
+  return parts
+    .map((part, i) => {
+      const used = new Set<string>()
+      if (byKey.size)
+        for (const [, key = ''] of squash(part).matchAll(LABEL))
+          for (const id of byKey.get(key) ?? [])
+            if (!defined[i]?.has(id)) used.add(id)
+      if (!used.size) return textOf(trees[i] as Nodes)
+      const prefix = `${[...used].map(id => `[${id}]: x\n`).join('')}\n`
+      const root = parse(prefix + part)
+      root.children = root.children.filter(
+        child => (child.position?.start.offset ?? 0) >= prefix.length
       )
-    )
+      return textOf(root)
+    })
     .filter(Boolean)
     .join('\n')
 }
