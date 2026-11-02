@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mentionedEmails, plainText } from './markdown.ts'
 
 // The frontend's RichText.spec.tsx reads the same cases.
@@ -225,5 +225,54 @@ describe('plainText', () => {
   it('ends a fence with the list item holding it', () => {
     const markdown = `- \`\`\`\n  x\n${'*a*\n\n'.repeat(600)}`
     expect(plainText(markdown)).toBe(`x\n${'a\n'.repeat(600)}`.trimEnd())
+  })
+
+  describe('out of budget', () => {
+    // The deadline, then the check before each part.
+    function outAfterOnePart() {
+      vi.spyOn(performance, 'now')
+        .mockReturnValueOnce(0)
+        .mockReturnValueOnce(0)
+        .mockReturnValue(1000)
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('keeps the markdown as written', () => {
+      expect(plainText('  **a** [b](c)\n', 0)).toBe('**a** [b](c)')
+    })
+
+    it('reads the parts parsed in time and keeps the rest as written', () => {
+      outAfterOnePart()
+      const markdown = `**a**\n\n${'p\n'.repeat(600)}\n**b**\n`
+      expect(plainText(markdown, 10)).toBe(`a\n${'p\n'.repeat(600)}**b**`)
+    })
+
+    it('parses a long line a part at a time', () => {
+      outAfterOnePart()
+      const markdown = '[ab](x) '.repeat(3000)
+      expect(plainText(markdown, 10)).toBe(
+        `${'ab '.repeat(1000)}${'[ab](x) '.repeat(1999)}[ab](x)`
+      )
+    })
+  })
+
+  describe('a line longer than a part', () => {
+    it.each([
+      ['a fence', '```b'],
+      ['a heading', '# b'],
+      ['a break', '***'],
+      ['a list item', '- b']
+    ])('reads a piece starting like %s as text', (_, start) => {
+      const markdown = `${'a'.repeat(8000)}${start} **c**\n\n**d**\n`
+      expect(plainText(markdown)).toBe(`${'a'.repeat(8000)}${start} c\nd`)
+    })
+
+    it('reads text cut at a space whole', () => {
+      const markdown = `${'[ab](x) '.repeat(3000)}\n\n**c**`
+      expect(plainText(markdown)).toBe(`${'ab '.repeat(2999)}ab\nc`)
+    })
   })
 })

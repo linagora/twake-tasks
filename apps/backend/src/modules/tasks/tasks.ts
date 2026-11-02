@@ -329,6 +329,7 @@ export function createTaskStore(db: Db) {
       taskId: string,
       edit: { markdown: string; version: number }
     ) {
+      const descriptionText = plainText(edit.markdown)
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
         await bumpBoard(tx, boardId)
@@ -341,7 +342,7 @@ export function createTaskStore(db: Db) {
           .update(tasks)
           .set({
             description: edit.markdown,
-            descriptionText: plainText(edit.markdown),
+            descriptionText,
             descriptionVersion: version
           })
           .where(eq(tasks.id, taskId))

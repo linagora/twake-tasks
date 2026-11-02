@@ -48,11 +48,18 @@ function textOf(root: Nodes): string {
 
 // micromark takes time quadratic in the length of containers and in the
 // emphasis marks it pairs. So plain text parses those a few thousand
-// characters at a time, and reads a line's markers past MAX_DEPTH, or its
-// marks past MAX_MARKS, as text.
+// characters, or MAX_MARKS marks, at a time, and reads a line's markers past
+// MAX_DEPTH, or its marks past MAX_MARKS, as text. micromark cannot be stopped
+// mid-parse, so no part handed to it is much longer than MAX_PART, and plain
+// text parses for BUDGET milliseconds at most.
 const CHUNK = 2000
+const MAX_PART = 4 * CHUNK
 const MAX_DEPTH = 32
 const MAX_MARKS = 1000
+const BUDGET = 250
+// Glued to both sides of a cut in a long line, so neither piece reads as a
+// line of its own: a heading, a fence or a break.
+const GLUE = 'x'
 
 const LINE = /[^\r\n]*(?:\r\n?|\n|$)/g
 const HTML =
@@ -96,17 +103,30 @@ interface Before {
   paragraph: boolean
 }
 
+// A chunk's text, where it starts in the markdown, and whether it starts or
+// ends at a cut in a line.
+interface Part {
+  text: string
+  start: number
+  head: boolean
+  tail: boolean
+}
+
 // Once half full, cut before an unindented line after a blank line outside a
 // fence or an HTML block that blank lines do not end: CommonMark has closed
-// every block there. Once full, cut a fence, or a paragraph holding more than
-// MAX_MARKS marks, at any line, reopening the fence. Cut a container before a
-// line opening one, or at any line once twice full, and other blocks after a
-// heading or a break. A paragraph parses in linear time, so it is not cut.
-// Lines in a fence are capped too: a line can look like a fence to this and
-// not to micromark.
-function chunks(markdown: string): string[] {
-  const done: string[] = []
+// every block there. Cut a paragraph before a line taking it past MAX_MARKS
+// marks. Once full, cut a fence at any line, reopening it. Cut a container
+// before a line opening one, or at any line once twice full, and other blocks
+// after a heading or a break. A paragraph parses in linear time, so it is not
+// cut before MAX_PART, where any block is, and a long line's pieces each go
+// to a part of their own. Lines in a fence are capped too: a line can look
+// like a fence to this and not to micromark.
+function chunks(markdown: string): Part[] {
+  const done: Part[] = []
   let chunk = ''
+  let start = 0
+  let head = false
+  let tail = false
   let fence: Fence | undefined
   let html = ''
   let blank = false
@@ -116,34 +136,41 @@ function chunks(markdown: string): string[] {
   let fresh = true
   let contained = false
   let marks = 0
-  for (const [line] of markdown.matchAll(LINE)) {
+  for (const piece of linesOf(markdown)) {
+    const line = `${piece.head ? GLUE : ''}${piece.line}${piece.tail ? GLUE : ''}`
     const inBlock = !!fence || !!html
     const closed = blank && UNINDENTED.test(line)
     if (closed) contained = false
     if (blank) marks = 0
+    const capped = capDepth(line)
+    const [text, pairable] = capMarks(capped)
+    const counted = inBlock ? 0 : pairable
     const full =
-      chunk.length >= CHUNK &&
-      (!!fence ||
-        marks > MAX_MARKS ||
-        (contained
-          ? INTERRUPTING.test(line) || chunk.length >= 2 * CHUNK
-          : ended))
+      piece.head ||
+      chunk.length >= MAX_PART ||
+      marks + counted > MAX_MARKS ||
+      (chunk.length >= CHUNK &&
+        (!!fence ||
+          (contained
+            ? INTERRUPTING.test(line) || chunk.length >= 2 * CHUNK
+            : ended)))
     if ((closed && chunk.length >= CHUNK / 2) || full) {
-      done.push(chunk)
+      done.push({ text: chunk, start, head, tail })
+      start = piece.at
+      head = piece.head
       chunk = fence?.reopen ?? ''
       contained = false
       marks = 0
     }
+    tail = piece.tail
     CONTAINER.lastIndex = 0
     if (
       !inBlock &&
       (INTERRUPTING.test(line) || ((fresh || !chunk) && CONTAINER.test(line)))
     )
       contained = true
-    const capped = capDepth(line)
-    const [text, pairable] = capMarks(capped)
     chunk += text
-    if (!inBlock) marks += pairable
+    marks += counted
     const columns = expandTabs(capped)
     const open = fence
     const inHtml = html
@@ -169,7 +196,41 @@ function chunks(markdown: string): string[] {
     blank = !fence && !html && BLANK.test(line)
     fresh = !fence && !html && (blank || ended || inBlock || HTML.test(line))
   }
-  return [...done, chunk]
+  return [...done, { text: chunk, start, head, tail }]
+}
+
+interface Piece {
+  line: string
+  at: number
+  head: boolean
+  tail: boolean
+}
+
+// A line longer than MAX_PART comes in pieces, cut before a space where one
+// is near, and never inside a surrogate pair.
+function* linesOf(markdown: string): Generator<Piece> {
+  for (const { 0: line, index } of markdown.matchAll(LINE)) {
+    let from = 0
+    while (line.length - from > MAX_PART) {
+      const space = line.lastIndexOf(' ', from + MAX_PART)
+      let to = space > from + MAX_PART / 2 ? space : from + MAX_PART
+      const code = line.charCodeAt(to)
+      if (code >= 0xdc00 && code <= 0xdfff) to--
+      yield {
+        line: line.slice(from, to),
+        at: index + from,
+        head: from > 0,
+        tail: true
+      }
+      from = to
+    }
+    yield {
+      line: line.slice(from),
+      at: index + from,
+      head: from > 0,
+      tail: false
+    }
+  }
 }
 
 // The end of the HTML block the line opens, unless it closes on that line.
@@ -293,17 +354,20 @@ function capDepth(line: string): string {
   return line
 }
 
-// A run between spaces, or an underscore inside a word, never pairs. Returns
-// the line and the count of marks that may pair.
+// A run of one mark between spaces, or of underscores inside a word, never
+// pairs. Returns the line and the count of marks that may pair.
 function capMarks(line: string): [string, number] {
   let left = MAX_MARKS
   const capped = line.replace(MARKS, (run, at: number) => {
     const before = line[at - 1] ?? ' '
     const after = line[at + run.length] ?? ' '
+    const stars = run.includes('*')
     if (
       run.startsWith('\\') ||
-      (SPACE.test(before) && SPACE.test(after)) ||
-      (run.startsWith('_') && WORD.test(before) && WORD.test(after))
+      (stars !== run.includes('_') &&
+        SPACE.test(before) &&
+        SPACE.test(after)) ||
+      (!stars && WORD.test(before) && WORD.test(after))
     )
       return run
     left -= run.length
@@ -345,9 +409,16 @@ function squash(text: string): string {
 // A reference resolves against the definitions of the whole document, so a
 // chunk that may use one from elsewhere is read again after them. Reading
 // every chunk after every definition would take time quadratic in their size.
-export function plainText(markdown: string): string {
+// Out of budget, the chunks left keep their markup, and references their
+// labels.
+export function plainText(markdown: string, budget = BUDGET): string {
+  const deadline = performance.now() + budget
   const parts = chunks(markdown)
-  const trees = parts.map(parse)
+  const trees: Nodes[] = []
+  for (const part of parts) {
+    if (performance.now() >= deadline) break
+    trees.push(parse(part.text))
+  }
   const defined = trees.map(definitionsOf)
   const byKey = new Map<string, string[]>()
   if (trees.length > 1)
@@ -355,21 +426,34 @@ export function plainText(markdown: string): string {
       const key = squash(id)
       byKey.set(key, [...(byKey.get(key) ?? []), id])
     }
-  return parts
-    .map((part, i) => {
-      const used = new Set<string>()
-      if (byKey.size)
-        for (const [, key = ''] of squash(part).matchAll(LABEL))
-          for (const id of byKey.get(key) ?? [])
-            if (!defined[i]?.has(id)) used.add(id)
-      if (!used.size) return textOf(trees[i] as Nodes)
+  const texts = trees.map((tree, i) => {
+    const part = parts[i] as Part
+    const used = new Set<string>()
+    if (byKey.size && performance.now() < deadline)
+      for (const [, key = ''] of squash(part.text).matchAll(LABEL))
+        for (const id of byKey.get(key) ?? [])
+          if (!defined[i]?.has(id)) used.add(id)
+    let text = textOf(tree)
+    if (used.size) {
       const prefix = `${[...used].map(id => `[${id}]: x\n`).join('')}\n`
-      const root = parse(prefix + part)
+      const root = parse(prefix + part.text)
       root.children = root.children.filter(
         child => (child.position?.start.offset ?? 0) >= prefix.length
       )
-      return textOf(root)
-    })
-    .filter(Boolean)
-    .join('\n')
+      text = textOf(root)
+    }
+    if (part.head && text.startsWith(GLUE)) text = text.slice(GLUE.length)
+    if (part.tail && text.endsWith(GLUE)) text = text.slice(0, -GLUE.length)
+    return text
+  })
+  const rest = parts[trees.length]
+  if (rest) {
+    const raw = markdown.slice(rest.start)
+    texts.push(rest.head ? raw.trimEnd() : raw.trim())
+  }
+  return texts.reduce(
+    (all, text, i) =>
+      !text ? all : all && !parts[i]?.head ? `${all}\n${text}` : all + text,
+    ''
+  )
 }
