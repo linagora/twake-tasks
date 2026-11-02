@@ -81,6 +81,28 @@ describe('plainText', () => {
     expect(plainText(markdown)).toBe(markdown)
   })
 
+  it.each([
+    ['<pre>', '</pre>'],
+    ['<!--', '-->'],
+    ['<?', '?>'],
+    ['<!DOCTYPE', '>'],
+    ['<![CDATA[', ']]>']
+  ])('reads a long %s block holding blank lines whole', (start, end) => {
+    const html = `${start}\n${'x\n'.repeat(600)}\n*a*\n\n\`\`\`\n\n\`\`\`\n${end}`
+    expect(plainText(`${html}\n\nafter`)).toBe(`${html}\nafter`)
+  })
+
+  it('cuts at blank lines after an HTML block closed on its line', () => {
+    const paragraph = `*${'a\n'.repeat(300)}a*\n\n`
+    const markdown = `${'p\n'.repeat(600)}<?>\n\n${paragraph.repeat(3)}`
+    expect(plainText(markdown)).not.toContain('*')
+  })
+
+  it('reads a long list item with indented paragraphs whole', () => {
+    const markdown = `10. a\n${'    b\n'.repeat(200)}\n    *c*\n`
+    expect(plainText(markdown)).toBe(`a\n${'b\n'.repeat(200)}c`)
+  })
+
   it('reads a long tilde fence holding a backtick fence whole', () => {
     const code = `${'x\n'.repeat(500)}\`\`\`\n${'*a*\n'.repeat(500)}`
     expect(plainText(`~~~\n${code}~~~`)).toBe(code.slice(0, -1))
