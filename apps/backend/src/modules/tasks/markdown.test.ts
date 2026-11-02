@@ -107,4 +107,57 @@ describe('plainText', () => {
     const code = `${'x\n'.repeat(500)}\`\`\`\n${'*a*\n'.repeat(500)}`
     expect(plainText(`~~~\n${code}~~~`)).toBe(code.slice(0, -1))
   })
+
+  it('reads a long fence in a list item whole', () => {
+    const markdown = `- \`\`\`\n${'  x\n'.repeat(300)}\n  *a*\n  \`\`\`\n`
+    expect(plainText(markdown)).toBe(`${'x\n'.repeat(300)}\n*a*`)
+  })
+
+  it('reads a long fence in a list in a quote whole', () => {
+    const markdown = `> - ~~~\n${'>   *x*\n'.repeat(600)}>\n>   *a*\n>   ~~~\n`
+    expect(plainText(markdown)).toBe(`${'*x*\n'.repeat(600)}\n*a*`)
+  })
+
+  it('reads a long fence indented in a nested list item whole', () => {
+    const markdown = `1. a\n   - b\n\n     \`\`\`\n${'     x\n'.repeat(600)}\n     *a*\n     \`\`\`\n`
+    expect(plainText(markdown)).toBe(`a\nb\n${'x\n'.repeat(600)}\n*a*`)
+  })
+
+  it('takes a backtick line with a backtick in its info string for text', () => {
+    const markdown = `\`\`\` a\`b\n~~~\n${'x\n'.repeat(600)}\`\`\`\n\n*a*\n~~~\n`
+    expect(plainText(markdown)).toBe(
+      `\`\`\` a\`b\n${'x\n'.repeat(600)}\`\`\`\n\n*a*`
+    )
+  })
+
+  it('reads a long fence on a later item of a numbered list whole', () => {
+    const markdown = `1. a\n2. \`\`\`\n${'   x\n'.repeat(300)}\n${'   *a*\n'.repeat(300)}   \`\`\`\n`
+    expect(plainText(markdown)).toBe(
+      `a\n${'x\n'.repeat(300)}\n${'*a*\n'.repeat(300)}`.trimEnd()
+    )
+  })
+
+  it('reads a long fence after an empty quote line whole', () => {
+    const markdown = `> a\n>\n2. \`\`\`\n${'   x\n'.repeat(300)}\n${'   *a*\n'.repeat(300)}   \`\`\`\n`
+    expect(plainText(markdown)).toBe(
+      `a\n${'x\n'.repeat(300)}\n${'*a*\n'.repeat(300)}`.trimEnd()
+    )
+  })
+
+  it('reads a long fence in a list nested 4 spaces deep whole', () => {
+    const markdown = `1. a\n    - \`\`\`\n${'      *x*\n'.repeat(600)}      \`\`\`\n`
+    expect(plainText(markdown)).toBe(`a\n${'*x*\n'.repeat(600)}`.trimEnd())
+  })
+
+  it('reads a long fence indented by a tab whole', () => {
+    const markdown = `- a\n\n\t\`\`\`\n${'\tx\n'.repeat(300)}\n${'\t*a*\n'.repeat(300)}\t\`\`\`\n`
+    expect(plainText(markdown)).toBe(
+      `a\n${'x\n'.repeat(300)}\n${'*a*\n'.repeat(300)}`.trimEnd()
+    )
+  })
+
+  it('ends a fence with the list item holding it', () => {
+    const markdown = `- \`\`\`\n  x\n${'*a*\n\n'.repeat(600)}`
+    expect(plainText(markdown)).toBe(`x\n${'a\n'.repeat(600)}`.trimEnd())
+  })
 })
