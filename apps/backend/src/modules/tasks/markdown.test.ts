@@ -57,6 +57,16 @@ describe('plainText', () => {
     [
       'emphasis far apart on lines',
       `${'*a\n'.repeat(8000)}${'b*\n'.repeat(8000)}`
+    ],
+    ['setext headings', 'a\n=\n'.repeat(12000)],
+    ['a quote with lazy lines', `> a\n${'b\n'.repeat(24000)}`],
+    [
+      'a list after a break with lazy lines',
+      `***\n2. a\n${'b\n'.repeat(24000)}`
+    ],
+    [
+      'a list with lazy lines indented by a tab',
+      `> - a\n${'\tb\n'.repeat(16000)}`
     ]
   ])(
     'reads a description of %s in time linear in its length',
@@ -76,6 +86,30 @@ describe('plainText', () => {
     )
   })
 
+  it('reads a setext heading over a long paragraph whole', () => {
+    expect(plainText(`${'p\n'.repeat(1000)}===\n`)).toBe(
+      `${'p\n'.repeat(999)}p`
+    )
+  })
+
+  it('reads emphasis across a long paragraph whole', () => {
+    expect(plainText(`*a\n${'p\n'.repeat(1000)}b*`)).toBe(
+      `a\n${'p\n'.repeat(1000)}b`
+    )
+  })
+
+  it('reads indented lines of a long paragraph as its text', () => {
+    const lines = '10. word\n                        10. word\n'.repeat(150)
+    expect(plainText(`p\n${lines}`)).toBe(
+      `p\n${'10. word\n'.repeat(300)}`.trimEnd()
+    )
+  })
+
+  it('reads a long HTML block ended by a blank line whole', () => {
+    const html = `<custom-tag>\n${'x *a*\n'.repeat(400)}</custom-tag>`
+    expect(plainText(`${html}\n\nafter`)).toBe(`${html}\nafter`)
+  })
+
   it('keeps emphasis nested too deep as text', () => {
     const markdown = `${'*'.repeat(8000)}a${'*'.repeat(8000)}`
     expect(plainText(markdown)).toBe(markdown)
@@ -90,6 +124,11 @@ describe('plainText', () => {
   ])('reads a long %s block holding blank lines whole', (start, end) => {
     const html = `${start}\n${'x\n'.repeat(600)}\n*a*\n\n\`\`\`\n\n\`\`\`\n${end}`
     expect(plainText(`${html}\n\nafter`)).toBe(`${html}\nafter`)
+  })
+
+  it('reads a long <pre> block holding list items whole', () => {
+    const html = `<pre>\n${'- x *a*\n'.repeat(600)}</pre>`
+    expect(plainText(html)).toBe(html)
   })
 
   it('cuts at blank lines after an HTML block closed on its line', () => {
