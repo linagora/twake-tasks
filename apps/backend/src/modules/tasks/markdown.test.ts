@@ -267,12 +267,14 @@ describe('plainText', () => {
       ['a list item', '- b']
     ])('reads a piece starting like %s as text', (_, start) => {
       const markdown = `${'a'.repeat(8000)}${start} **c**\n\n**d**\n`
-      expect(plainText(markdown)).toBe(`${'a'.repeat(8000)}${start} c\nd`)
+      expect(plainText(markdown, Infinity)).toBe(
+        `${'a'.repeat(8000)}${start} c\nd`
+      )
     })
 
     it('reads text cut at a space whole', () => {
       const markdown = `${'[ab](x) '.repeat(3000)}\n\n**c**`
-      expect(plainText(markdown)).toBe(`${'ab '.repeat(2999)}ab\nc`)
+      expect(plainText(markdown, Infinity)).toBe(`${'ab '.repeat(2999)}ab\nc`)
     })
   })
 })
