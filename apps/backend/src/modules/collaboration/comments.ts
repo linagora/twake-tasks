@@ -122,6 +122,7 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
       taskId: string,
       body: string
     ) {
+      const bodyText = plainText(body)
       return writeOrRefuse(db, identity, async tx => {
         const task = await openTask(tx, identity, boardId, taskId)
         if (
@@ -140,7 +141,7 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
             authorEmail: identity.email,
             authorName: looksOf(identity.userId).name,
             body,
-            bodyText: plainText(body)
+            bodyText
           })
           .returning({ id: comments.id, createdAt: comments.createdAt })
         if (!comment) throw new Error('comment insert returned nothing')
