@@ -220,7 +220,11 @@ export async function startApp(
     listen: () => app.listen({ host: '127.0.0.1', port: 0 }),
     close: async () => {
       broker.close()
-      await app.close()
+      const closing = app.close()
+      // fetch may open a spare connection it never sends on, which Node keeps
+      // open until its headers time out.
+      app.server.closeAllConnections()
+      await closing
       await sql.end()
     }
   }

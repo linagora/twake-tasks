@@ -7,12 +7,12 @@ import type { Metrics } from '../../infra/metrics.ts'
 import {
   defineRoute,
   registerRoutes,
+  type CheckBoardAccess,
   type DeclaredRoute
 } from '../../infra/route.ts'
 import type { Identity, RequireIdentity } from '../auth/index.ts'
 
 export interface LiveBoards {
-  canView: (tx: Tx, userId: string, boardId: string) => Promise<boolean>
   version: (tx: Tx, boardId: string) => Promise<number>
 }
 
@@ -26,6 +26,7 @@ export function registerLive(
   deps: {
     db: Db
     boards: LiveBoards
+    checkBoardAccess: CheckBoardAccess<Identity>
     requireIdentity: RequireIdentity
     changes: Changes
     streamVersions: StreamVersions
@@ -47,6 +48,9 @@ export function registerLive(
       handler: async ({ identity, params, http: { request, reply } }) => {
         const { boardId } = params
         const { userId } = identity
+        // Gone during the board check: its close has fired, so the listeners
+        // below would never run and its count would leak.
+        if (request.raw.socket.destroyed) return { ok: true, value: undefined }
         const open = openBy.get(userId) ?? 0
         if (maxOpen > 0 && open >= maxOpen) {
           reply.header('retry-after', STREAM_RETRY_AFTER_SECONDS)
@@ -62,11 +66,6 @@ export function registerLive(
         const streams = deps.metrics?.liveStreamsOpen
         streams?.inc()
         reply.raw.once('close', () => streams?.dec())
-        const canView = await inTenant(deps.db, identity, tx =>
-          deps.boards.canView(tx, userId, boardId)
-        )
-        if (!canView) return { ok: false, error: 'not_found' }
-
         await deps.streamVersions(request, reply, {
           changes: deps.changes,
           key: boardId,
@@ -82,7 +81,8 @@ export function registerLive(
     {
       requireIdentity: deps.requireIdentity,
       identify: (request: FastifyRequest) => request.identity,
-      refusalStatus: { not_found: 404, too_many_requests: 429 }
+      refusalStatus: { not_found: 404, too_many_requests: 429 },
+      checkBoardAccess: deps.checkBoardAccess
     },
     routes
   )

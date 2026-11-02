@@ -1,5 +1,6 @@
 export {
   accessibleBoards,
+  checkBoardAccess,
   checkRole,
   liveBoards,
   looksOn,

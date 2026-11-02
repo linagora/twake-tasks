@@ -13,8 +13,9 @@ interface Schema<T> {
 
 type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 
-// What a route needs from its caller. The stores enforce it inside their
-// transaction; the declaration is what the permission tests hold them to.
+// What a route needs from its caller. A board route checks it before its
+// handler runs and the stores check it again inside their transaction, so a
+// store that forgets its check is still covered.
 export type Access =
   | { on: 'public' }
   | { on: 'self' }
@@ -24,7 +25,19 @@ export type Access =
       // Members of a managed project take their roles from its integration,
       // so the route refuses them whatever their role.
       refusedOnManaged?: true
+      // Any member may also do it when they are the path's `:userId`.
+      orSelf?: true
     }
+
+export type BoardAccess = Extract<Access, { on: 'board' }>
+
+export type CheckBoardAccess<I> = (
+  identity: I,
+  params: { boardId: string; userId?: string },
+  access: BoardAccess
+) => Promise<'not_found' | 'forbidden' | null>
+
+const BOARD_REFUSAL_STATUS = { not_found: 404, forbidden: 403 }
 
 interface Route<I, P, Q, B, T, E extends string> {
   method: HTTPMethods
@@ -78,11 +91,14 @@ export function registerRoutes<I, E extends string>(
     ) => Promise<FastifyReply | undefined>
     identify: (request: FastifyRequest) => I | null
     refusalStatus: Readonly<Record<E, number>>
+    // Required by a table with a board route.
+    checkBoardAccess?: CheckBoardAccess<I>
   },
   routes: readonly DeclaredRoute<I, E>[]
 ) {
   for (const route of routes) {
     const open = route.access.on === 'public'
+    const checkAccess = boardAccessCheck(route, deps.checkBoardAccess)
     app.route({
       method: route.method,
       url: route.url,
@@ -94,6 +110,12 @@ export function registerRoutes<I, E extends string>(
         if (!identity && !open) return reply.code(401).send()
         const params = parse(route.params, request.params)
         if (!params.success) return reply.code(404).send({ error: 'not_found' })
+        const refused = await checkAccess?.(identity as I, params.data)
+        if (refused) {
+          return reply
+            .code(BOARD_REFUSAL_STATUS[refused])
+            .send({ error: refused })
+        }
         const query = parse(route.query, request.query)
         const body = parse(route.body, request.body)
         if (!query.success || !body.success) {
@@ -120,6 +142,21 @@ export function registerRoutes<I, E extends string>(
       }
     })
   }
+}
+
+function boardAccessCheck<I>(
+  route: DeclaredRoute<I, string>,
+  check: CheckBoardAccess<I> | undefined
+) {
+  const { access } = route
+  if (access.on !== 'board') return null
+  if (!check || !route.url.includes(':boardId')) {
+    throw new Error(
+      `${route.method} ${route.url} needs a board in its path and a board access check`
+    )
+  }
+  return (identity: I, params: unknown) =>
+    check(identity, params as { boardId: string; userId?: string }, access)
 }
 
 function parse(schema: Schema<unknown> | undefined, value: unknown) {

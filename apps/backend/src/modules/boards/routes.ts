@@ -27,6 +27,7 @@ import {
 import type { Identity, RequireIdentity } from '../auth/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import type { Refusal } from '../kernel/index.ts'
+import { checkBoardAccess } from './access.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
 import type * as db from './schema.ts'
@@ -95,7 +96,8 @@ export function registerBoards(
   const routing = {
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,
-    refusalStatus: REFUSAL_STATUS
+    refusalStatus: REFUSAL_STATUS,
+    checkBoardAccess: checkBoardAccess(deps.db)
   }
 
   const routes: BoardRoute[] = [

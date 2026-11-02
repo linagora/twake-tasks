@@ -13,6 +13,7 @@ import {
   type DeclaredRoute
 } from '../../infra/route.ts'
 import type { Identity, RequireIdentity } from '../auth/index.ts'
+import { checkBoardAccess } from '../boards/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import { under, type Refusal } from '../kernel/index.ts'
 import { createCommentStore } from './comments.ts'
@@ -122,7 +123,8 @@ export function registerCollaboration(
     {
       requireIdentity: deps.requireIdentity,
       identify: (request: FastifyRequest) => request.identity,
-      refusalStatus: REFUSAL_STATUS
+      refusalStatus: REFUSAL_STATUS,
+      checkBoardAccess: checkBoardAccess(deps.db)
     },
     routes
   )

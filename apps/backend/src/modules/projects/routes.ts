@@ -16,6 +16,7 @@ import {
   type DeclaredRoute
 } from '../../infra/route.ts'
 import type { Identity, RequireIdentity } from '../auth/index.ts'
+import { checkBoardAccess } from '../boards/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import { under, type Refusal } from '../kernel/index.ts'
 import { createSharingStore } from './sharing.ts'
@@ -34,7 +35,8 @@ export function registerProjects(
   const routing = {
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,
-    refusalStatus: REFUSAL_STATUS
+    refusalStatus: REFUSAL_STATUS,
+    checkBoardAccess: checkBoardAccess(deps.db)
   }
 
   const routes: ProjectRoute[] = [
@@ -117,9 +119,8 @@ export function registerProjects(
     defineRoute({
       method: 'DELETE',
       url: '/boards/:boardId/members/:userId',
-      // To remove someone else. Any member may leave, but not a personal or
-      // managed project.
-      access: sharing,
+      // Any member may leave, but not a personal or managed project.
+      access: { ...sharing, orSelf: true },
       params: memberParams,
       status: 204,
       handler: ({ identity, params }) =>
