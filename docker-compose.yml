@@ -54,10 +54,13 @@ services:
       DATABASE_MIGRATION_URL: postgres://twake_tasks_owner:twake_tasks_owner@postgres:5432/twake_tasks
       APP_URL: ${APP_URL:-http://localhost:3000}
       OIDC_ISSUER: ${OIDC_ISSUER:-https://sign-up.twake.app/}
-      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-local-development-secret}
+      # No fallback: the backend refuses to start with an empty secret. Not
+      # `:?` either, which would also stop `docker compose up` without the app
+      # profile and the e2e and QA stacks that set them in their own files.
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
       SPACE_INTEGRATION: ${SPACE_INTEGRATION:-false}
       LDAP_REST_URL: ${LDAP_REST_URL:-http://host.docker.internal:8081}
-      LDAP_REST_SECRET: ${LDAP_REST_SECRET:-local-development-secret}
+      LDAP_REST_SECRET: ${LDAP_REST_SECRET:-}
 
   frontend:
     profiles: [app]
