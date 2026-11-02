@@ -4,7 +4,13 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
 import { createScheduler } from '../../scheduler/scheduler.ts'
 import { jobs } from '../../scheduler/schema.ts'
-import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
+import {
+  aUser,
+  joinBoard,
+  startApp,
+  withOwnPolicyLiftedFor,
+  type TestUser
+} from '../../testing/app.ts'
 import { REMINDER_JOB, deliverReminder } from './reminderJobs.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
@@ -108,6 +114,29 @@ describe('reminders', () => {
     expect(await reminders(colleague)).toMatchObject([
       { at: '2099-01-01T10:00:00.000Z', firesAt: '2099-01-01T10:00:00.000Z' }
     ])
+  })
+
+  it('keeps reminders to the person who set them without row level security', async () => {
+    const owner = aUser()
+    const colleague = aUser({ organizationId: owner.organizationId })
+    const { boardId, taskId, remind, reminders } = await aTaskOf(owner)
+    await joinBoard(db, owner, boardId, colleague, 'viewer')
+    const { id } = (await remind(owner, { at: '2099-01-01T10:00:00Z' })).json<{
+      id: string
+    }>()
+
+    await withOwnPolicyLiftedFor('task_reminders', colleague, async () => {
+      expect(await reminders(colleague)).toEqual([])
+      expect(
+        (
+          await api
+            .as(colleague)
+            .delete(`/boards/${boardId}/tasks/${taskId}/reminders/${id}`)
+        ).statusCode
+      ).toBe(404)
+    })
+
+    expect(await reminders(owner)).toMatchObject([{ id }])
   })
 
   it('drops the reminders of someone removed from the board, and their jobs', async () => {

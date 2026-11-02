@@ -99,6 +99,12 @@ function matching(tx: Tx, userId: string, criteria: Criteria, today: string) {
   )
 }
 
+const filtersOf = (identity: Identity) =>
+  eq(savedFilters.userId, identity.userId)
+
+const filterOf = (identity: Identity, filterId: string) =>
+  and(eq(savedFilters.id, filterId), filtersOf(identity))
+
 export function createFilterStore(db: Db) {
   return {
     listFilters(identity: Identity) {
@@ -111,6 +117,7 @@ export function createFilterStore(db: Db) {
             favorite: savedFilters.favorite
           })
           .from(savedFilters)
+          .where(filtersOf(identity))
           .orderBy(asc(savedFilters.name), asc(savedFilters.id))
       )
     },
@@ -202,7 +209,7 @@ export function createFilterStore(db: Db) {
         const updated = await tx
           .update(savedFilters)
           .set(changes)
-          .where(eq(savedFilters.id, filterId))
+          .where(filterOf(identity, filterId))
           .returning({ id: savedFilters.id })
         if (updated.length === 0) throw new Refused('not_found')
       })
@@ -212,7 +219,7 @@ export function createFilterStore(db: Db) {
       return writeOrRefuse(db, identity, async tx => {
         const deleted = await tx
           .delete(savedFilters)
-          .where(eq(savedFilters.id, filterId))
+          .where(filterOf(identity, filterId))
           .returning({ id: savedFilters.id })
         if (deleted.length === 0) throw new Refused('not_found')
       })
@@ -223,7 +230,7 @@ export function createFilterStore(db: Db) {
         const [filter] = await tx
           .select()
           .from(savedFilters)
-          .where(eq(savedFilters.id, filterId))
+          .where(filterOf(identity, filterId))
         if (!filter) throw new Refused('not_found')
         return openTasksOf(
           tx,

@@ -29,7 +29,12 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
           })
           .from(taskReminders)
           .innerJoin(tasks, eq(tasks.id, taskReminders.taskId))
-          .where(eq(taskReminders.taskId, taskId))
+          .where(
+            and(
+              eq(taskReminders.taskId, taskId),
+              eq(taskReminders.userId, identity.userId)
+            )
+          )
           .orderBy(asc(taskReminders.id))
       })
     },
@@ -96,7 +101,8 @@ export function createReminderStore(db: Db, pendingReminders = 0) {
           .where(
             and(
               eq(taskReminders.id, reminderId),
-              eq(taskReminders.taskId, taskId)
+              eq(taskReminders.taskId, taskId),
+              eq(taskReminders.userId, identity.userId)
             )
           )
           .returning({ id: taskReminders.id })
