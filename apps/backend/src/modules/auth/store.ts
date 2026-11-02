@@ -1,21 +1,33 @@
-import { eq, lt } from 'drizzle-orm'
+import { and, eq, lt, sql } from 'drizzle-orm'
 import type { Db } from '../../infra/db.ts'
 import { oidcRevokedSessions } from './schema.ts'
 
 export interface AuthStore {
-  isRevoked: (sessionId: string) => Promise<boolean>
+  isRevoked: (sessionId: string, until: Date) => Promise<boolean>
   revoke: (sessionId: string, until: Date) => Promise<void>
 }
 
 export function postgresAuthStore(db: Db): AuthStore {
   return {
-    async isRevoked(sessionId) {
-      const rows = await db
-        .select({ sid: oidcRevokedSessions.sid })
+    async isRevoked(sessionId, until) {
+      const [row] = await db
+        .select({ expiresAt: oidcRevokedSessions.expiresAt })
         .from(oidcRevokedSessions)
         .where(eq(oidcRevokedSessions.sid, sessionId))
         .limit(1)
-      return rows.length > 0
+      if (!row) return false
+      if (row.expiresAt < until) {
+        await db
+          .update(oidcRevokedSessions)
+          .set({ expiresAt: until })
+          .where(
+            and(
+              eq(oidcRevokedSessions.sid, sessionId),
+              lt(oidcRevokedSessions.expiresAt, until)
+            )
+          )
+      }
+      return true
     },
 
     async revoke(sessionId, until) {
@@ -26,7 +38,12 @@ export function postgresAuthStore(db: Db): AuthStore {
         await tx
           .insert(oidcRevokedSessions)
           .values({ sid: sessionId, expiresAt: until })
-          .onConflictDoNothing()
+          .onConflictDoUpdate({
+            target: oidcRevokedSessions.sid,
+            set: {
+              expiresAt: sql`greatest(${oidcRevokedSessions.expiresAt}, excluded.expires_at)`
+            }
+          })
       })
     }
   }

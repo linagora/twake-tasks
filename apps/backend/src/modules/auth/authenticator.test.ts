@@ -18,10 +18,12 @@ function setUp(
     identify: vi.fn(() => Promise.resolve(identity)),
     verifyLogoutToken: vi.fn()
   }
-  const store: AuthStore = {
-    isRevoked: sessionId => Promise.resolve(revoked.has(sessionId)),
+  const store = {
+    isRevoked: vi.fn<AuthStore['isRevoked']>(sessionId =>
+      Promise.resolve(revoked.has(sessionId))
+    ),
     revoke: vi.fn()
-  }
+  } satisfies AuthStore
   const authenticate = createAuthenticator({
     provider,
     store,
@@ -31,6 +33,7 @@ function setUp(
   return {
     authenticate,
     identify: provider.identify,
+    isRevoked: store.isRevoked,
     revoked,
     advance: (ms: number) => {
       clock += ms
@@ -290,5 +293,16 @@ describe('createAuthenticator', () => {
     revoked.add('session-1')
 
     await expect(authenticate('token')).resolves.toBeNull()
+  })
+
+  it('checks revocation against the expiry of the token checked', async () => {
+    const identity = anIdentity({
+      expiresAt: new Date(Date.now() + 172_800_000)
+    })
+    const { authenticate, isRevoked } = setUp(identity)
+
+    await authenticate('token')
+
+    expect(isRevoked).toHaveBeenCalledWith('session-1', identity.expiresAt)
   })
 })

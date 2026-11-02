@@ -27,7 +27,7 @@ declare module 'fastify' {
   }
 }
 
-// Longer than any access token issued in the revoked session can live.
+// A revoked-session token checked within this window extends the revocation to its own expiry.
 const REVOCATION_TTL_MS = 24 * 60 * 60 * 1000
 
 const logoutBody = z.object({ logout_token: z.string().min(1) })
