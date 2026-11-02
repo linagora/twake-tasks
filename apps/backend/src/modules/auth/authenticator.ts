@@ -137,7 +137,10 @@ export function createAuthenticator(deps: {
         gate?.leave()
       }
     }
-    if (!identity || (await deps.store.isRevoked(identity.sessionId))) {
+    if (
+      !identity ||
+      (await deps.store.isRevoked(identity.sessionId, identity.expiresAt))
+    ) {
       return null
     }
     return identity
