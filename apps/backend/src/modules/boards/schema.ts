@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   check,
+  customType,
   date,
   foreignKey,
   index,
@@ -53,6 +54,24 @@ export const recurrenceUnit = pgEnum('recurrence_unit', [
 export const LAYOUTS = ['board', 'list', 'calendar', 'progress'] as const
 
 export const boardLayout = pgEnum('board_layout', LAYOUTS)
+
+// The pictures the frontend ships, then the one an admin sent.
+export const BACKGROUNDS = [
+  'orbitalblue',
+  'earlymorning',
+  'dawn',
+  'stellarburst',
+  'blossom',
+  'lagoon',
+  'ripple',
+  'eclipse',
+  'stripes',
+  'custom'
+] as const
+
+export const boardBackground = pgEnum('board_background', BACKGROUNDS)
+
+const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' })
 
 export const projects = pgTable.withRLS(
   'projects',
@@ -180,6 +199,10 @@ export const boards = pgTable.withRLS(
     layout: boardLayout().notNull().default('board'),
     // Offered to start new boards from, by whoever sees it.
     boardTemplate: boolean('board_template').notNull().default(false),
+    // Null for the default: white, or a space's picture on a space's board.
+    background: boardBackground(),
+    // A plain color instead of a picture, with `background` null.
+    backgroundColor: text('background_color'),
     tenant: tenant()
   },
   table => [
@@ -580,6 +603,29 @@ export const boardFavorites = pgTable.withRLS(
     }),
     tenantPolicy(table.organizationId, visibleBoard(table.boardId)),
     ownRows(table.userId)
+  ]
+)
+
+// The picture an admin sent for a board's background, replaced by the next
+// one: a new id each time, which clients cache it by.
+export const boardBackgroundImages = pgTable.withRLS(
+  'board_background_images',
+  {
+    boardId: uuid('board_id')
+      .primaryKey()
+      .references(() => boards.id, { onDelete: 'cascade' }),
+    id: uuid().notNull().defaultRandom(),
+    organizationId: organizationId(),
+    contentType: text('content_type').notNull(),
+    content: bytea().notNull(),
+    tenant: tenant()
+  },
+  table => [
+    foreignKey({
+      columns: [table.tenant, table.boardId],
+      foreignColumns: [boards.tenant, boards.id]
+    }),
+    tenantPolicy(table.organizationId, visibleBoard(table.boardId))
   ]
 )
 

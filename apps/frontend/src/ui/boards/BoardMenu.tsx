@@ -7,6 +7,7 @@ import {
   Files,
   FolderMoveto,
   Logout,
+  Palette,
   Pen,
   Restore,
   Stack,
@@ -33,12 +34,14 @@ import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { Toast } from '@/ds/Toast'
 import {
+  hasOwnCover,
   isArchivable,
   isEditable,
   isManageable,
   isRenamable,
   type Board
 } from '@/domain/board'
+import { BackgroundDialog } from '@/ui/boards/Backgrounds'
 import { ExportDialog } from '@/ui/boards/ExportDialog'
 import { ImportDialog } from '@/ui/boards/ImportDialog'
 import { LeaveBoardDialog } from '@/ui/boards/LeaveBoardDialog'
@@ -68,12 +71,20 @@ export function BoardMenu({
   // The editor and the dialog open once the menu is gone, which gives the focus
   // back to its button first: the editor would lose the focus and close at once
   const [next, setNext] = useState<
-    'rename' | 'archive' | 'export' | 'import' | 'copy' | 'leave' | null
+    | 'rename'
+    | 'archive'
+    | 'export'
+    | 'import'
+    | 'copy'
+    | 'leave'
+    | 'background'
+    | null
   >(null)
   const [confirming, setConfirming] = useState(false)
   const [csv, setCsv] = useState<'export' | 'import' | null>(null)
   const [copying, setCopying] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const [choosing, setChoosing] = useState(false)
   const [archivedNotice, setArchivedNotice] = useState(false)
   const [templateNotice, setTemplateNotice] = useState(false)
   const setLayout = useSetLayout(board.id)
@@ -133,6 +144,7 @@ export function BoardMenu({
               if (next === 'export' || next === 'import') setCsv(next)
               if (next === 'copy') setCopying(true)
               if (next === 'leave') setLeaving(true)
+              if (next === 'background') setChoosing(true)
             }
           }
         }}
@@ -186,6 +198,14 @@ export function BoardMenu({
           item(Pen, t('board.rename'), () => {
             setNext('rename')
           })}
+        {isManageable(board) &&
+          item(
+            Palette,
+            t(hasOwnCover(board) ? 'background.change' : 'background.add'),
+            () => {
+              setNext('background')
+            }
+          )}
         {onMove && item(FolderMoveto, t('moveBoard.action'), onMove)}
         {archivable &&
           item(
@@ -271,6 +291,14 @@ export function BoardMenu({
           <Alert severity="error">{t('boardTemplate.failed')}</Alert>
         </Toast>
       )}
+      {choosing && (
+        <BackgroundDialog
+          board={board}
+          onClose={() => {
+            setChoosing(false)
+          }}
+        />
+      )}
       {confirming && (
         <ArchiveBoardDialog
           name={board.name}
@@ -316,7 +344,7 @@ export function BoardMenu({
   )
 }
 
-function ArchiveBoardDialog({
+export function ArchiveBoardDialog({
   name,
   onCancel,
   onArchive

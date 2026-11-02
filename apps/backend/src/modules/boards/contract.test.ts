@@ -72,10 +72,11 @@ function getRoutes(tree: string) {
   })
 }
 
-// Server-sent events, not JSON.
+// Server-sent events, a calendar feed and a picture sent as is: not JSON.
 const NOT_JSON = new Set([
   '/api/boards/:boardId/events',
-  '/api/calendar/:token.ics'
+  '/api/calendar/:token.ics',
+  '/api/boards/:boardId/background/:imageId'
 ])
 
 beforeAll(async () => {

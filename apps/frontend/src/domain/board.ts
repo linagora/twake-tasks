@@ -43,6 +43,10 @@ export interface BoardSummary {
    */
   members: Person[]
   memberCount: number
+  background: BoardBackground
+  backgroundImage: string | null
+  /** A plain color instead of a picture, in six hex digits. */
+  backgroundColor: string | null
 }
 
 export interface Section {
@@ -204,6 +208,34 @@ export const takesBoards = (project: {
 }): boolean => project.role !== 'viewer' && !project.personal
 
 export const LAYOUTS = ['board', 'list', 'calendar', 'progress'] as const
+/**
+ * The pictures shipped with the app, under `/backgrounds/`, offered: the
+ * wallpapers of Twake Workplace's Home, in its order.
+ */
+export const BACKGROUNDS = [
+  'orbitalblue',
+  'earlymorning',
+  'eclipse',
+  'dawn',
+  'stellarburst',
+  'stripes'
+] as const
+
+/** No longer offered, still shown on the boards that have them. */
+type RetiredBackground = 'ripple' | 'lagoon' | 'blossom'
+
+export type Background = (typeof BACKGROUNDS)[number] | RetiredBackground
+
+/**
+ * A shipped picture, one an admin sent (`custom`, whose id is
+ * `backgroundImage`), or null for the default.
+ */
+export type BoardBackground = Background | 'custom' | null
+
+/** Whether the board has a cover of its own, not a space's it shows by default. */
+export const hasOwnCover = (
+  board: Pick<BoardSummary, 'background' | 'backgroundColor'>
+): boolean => board.background !== null || board.backgroundColor !== null
 
 export type Layout = (typeof LAYOUTS)[number]
 
@@ -219,6 +251,10 @@ export interface Board {
   role: Role
   layout: Layout
   defaultLayout: Layout
+  background: BoardBackground
+  backgroundImage: string | null
+  /** A plain color instead of a picture, in six hex digits. */
+  backgroundColor: string | null
   members: Person[]
   /** The emails invited to it, members once they sign in. Admins only. */
   invited: string[]

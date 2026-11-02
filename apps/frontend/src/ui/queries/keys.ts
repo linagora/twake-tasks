@@ -22,6 +22,8 @@ export const keys = {
   shelf: (boardId: string, shelf: Shelf) => [...board(boardId), shelf] as const,
   completions: (boardId: string, zone: string) =>
     [...board(boardId), 'completions', zone] as const,
+  backgroundImage: (boardId: string, imageId: string | null) =>
+    [...board(boardId), 'background', imageId] as const,
   description: (boardId: string, taskId: string) =>
     [...task(boardId, taskId), 'description'] as const,
   history: (boardId: string, taskId: string) =>

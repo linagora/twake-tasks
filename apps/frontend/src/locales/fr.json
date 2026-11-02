@@ -107,11 +107,9 @@
     "emptyArchivedHint": "Les tableaux archivés restent ici, en lecture seule.",
     "loadFailed": "Les tableaux n'ont pas pu être chargés.",
     "projectNotFound": "Ce projet n'existe pas, ou vous ne pouvez pas l'ouvrir.",
+    "menu": "Options de %{name}",
     "star": "Ajouter %{name} aux favoris",
     "unstar": "Retirer %{name} des favoris",
-    "personal": "Tableau personnel",
-    "space": "Tableau d'espace",
-    "projectBoard": "Tableau de projet",
     "personalProject": "Personnel",
     "inbox": "Boîte de réception",
     "defaultChip": "Par défaut",
@@ -251,6 +249,7 @@
     "addFailed": "La tâche n'a pas pu être ajoutée.",
     "rename": "Renommer le tableau",
     "renameName": "Nom du tableau",
+    "renameSave": "Renommer",
     "renameFailed": "Le tableau n'a pas pu être renommé."
   },
   "task": {
@@ -708,6 +707,33 @@
     "empty": "Aucune tâche pour l’instant",
     "emptyHint": "L’avancement apparaît dès que le tableau a des tâches.",
     "loadFailed": "Impossible de charger l’avancement."
+  },
+  "background": {
+    "add": "Ajouter une couverture",
+    "change": "Changer la couverture",
+    "title": "Couverture du tableau",
+    "choices": "Couvertures",
+    "color": "Couleur",
+    "customColor": "Couleur personnalisée",
+    "none": "Pas de couverture",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple",
+      "eclipse": "Eclipse",
+      "stripes": "Stripes"
+    },
+    "mine": "Mon image",
+    "import": "Depuis mon ordinateur",
+    "failed": "La couverture n’a pas pu être changée.",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "close": "Fermer"
   },
   "search": {
     "label": "Rechercher",

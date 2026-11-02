@@ -107,11 +107,9 @@
     "emptyArchivedHint": "Boards you archive stay here, read only.",
     "loadFailed": "The boards could not be loaded.",
     "projectNotFound": "This project doesn't exist, or you can't open it.",
+    "menu": "Options for %{name}",
     "star": "Add %{name} to favorites",
     "unstar": "Remove %{name} from favorites",
-    "personal": "Personal board",
-    "space": "Space board",
-    "projectBoard": "Project board",
     "personalProject": "Personal",
     "inbox": "Inbox",
     "defaultChip": "Default",
@@ -251,6 +249,7 @@
     "addFailed": "The task could not be added.",
     "rename": "Rename board",
     "renameName": "Board name",
+    "renameSave": "Rename",
     "renameFailed": "The board could not be renamed."
   },
   "task": {
@@ -708,6 +707,33 @@
     "empty": "No tasks yet",
     "emptyHint": "Progress appears once the board has tasks.",
     "loadFailed": "The progress could not be loaded."
+  },
+  "background": {
+    "add": "Add cover",
+    "change": "Change cover",
+    "title": "Board cover",
+    "choices": "Covers",
+    "color": "Color",
+    "customColor": "Custom color",
+    "none": "No cover",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple",
+      "eclipse": "Eclipse",
+      "stripes": "Stripes"
+    },
+    "mine": "My picture",
+    "import": "From my computer",
+    "failed": "The cover could not be changed.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close"
   },
   "search": {
     "label": "Search",

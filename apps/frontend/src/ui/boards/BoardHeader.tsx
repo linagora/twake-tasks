@@ -21,6 +21,7 @@ import {
   useBoardFilter,
   useFilterShortcut
 } from '@/ui/boards/BoardFilter'
+import { isLightCover, useBoardBackground } from '@/ui/boards/Backgrounds'
 import { BoardMenu } from '@/ui/boards/BoardMenu'
 import { BoardTitle } from '@/ui/boards/BoardTitle'
 import { PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
@@ -42,15 +43,21 @@ const NOT_SHAREABLE = {
 export function BoardHeader({
   board,
   origin,
-  shareButton
+  shareButton,
+  cover
 }: {
   board: Board
   /** Where its breadcrumb starts, which then titles the page. */
   origin?: Origin | undefined
   /** Off in an embed, whose host shares the project: no Share, read-only avatars. */
   shareButton: boolean
+  /** Off in an embed, as in Twake Space: the board shows without its cover. */
+  cover: boolean
 }): ReactElement {
   const { t } = useI18n()
+  const backdrop = useBoardBackground(board)
+  // A board without cover keeps the header of a page without picture.
+  const picture = cover && !isLightCover(board) ? backdrop : undefined
   const navigate = useNavigate()
   const openShelf = (shelf: Shelf): void => {
     void navigate(shelf)
@@ -188,6 +195,7 @@ export function BoardHeader({
           // A heading would take the name of the field that renames it.
           heading={!renaming}
           actions={headerActions}
+          picture={picture}
         />
       ) : (
         <PageHeader
@@ -199,6 +207,7 @@ export function BoardHeader({
             />
           }
           actions={headerActions}
+          picture={picture}
         />
       )}
       {filtering && filterable && (

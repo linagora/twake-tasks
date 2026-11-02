@@ -61,6 +61,9 @@ export function aBoard(overrides: Partial<Board> = {}): Board {
     role: 'admin',
     layout: 'board',
     defaultLayout: 'board',
+    background: null,
+    backgroundImage: null,
+    backgroundColor: null,
     members: [],
     invited: [],
     labels: [],
@@ -145,6 +148,9 @@ function summaryOf(
     totalTasks: counted.length,
     members: board.members.slice(0, 3),
     memberCount: board.members.length,
+    background: board.background,
+    backgroundImage: board.backgroundImage,
+    backgroundColor: board.backgroundColor,
     ...share
   }
 }
@@ -785,6 +791,43 @@ export function fakeBoardsApi(boards: Board[] = []) {
           .map(([day, done]) => ({ day, done }))
           .sort((a, b) => a.day.localeCompare(b.day))
       })
+    ),
+    setBackground: vi.fn<BoardsApi['setBackground']>((boardId, background) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        Object.assign(board, {
+          background,
+          backgroundImage: null,
+          backgroundColor: null
+        })
+        board.version += 1
+      })
+    ),
+    setBackgroundColor: vi.fn<BoardsApi['setBackgroundColor']>(
+      (boardId, color) =>
+        Promise.resolve().then(() => {
+          const board = find(boardId)
+          Object.assign(board, {
+            background: null,
+            backgroundImage: null,
+            backgroundColor: color
+          })
+          board.version += 1
+        })
+    ),
+    setBackgroundImage: vi.fn<BoardsApi['setBackgroundImage']>(boardId =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        Object.assign(board, {
+          background: 'custom',
+          backgroundImage: nextId(),
+          backgroundColor: null
+        })
+        board.version += 1
+      })
+    ),
+    backgroundImage: vi.fn<BoardsApi['backgroundImage']>(() =>
+      Promise.resolve(new Blob(['picture'], { type: 'image/jpeg' }))
     ),
     getBoard: vi.fn((boardId: string) =>
       Promise.resolve().then(() => structuredClone(find(boardId)))

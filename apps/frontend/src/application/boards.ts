@@ -1,4 +1,5 @@
 import type {
+  Background,
   Board,
   BoardSummary,
   Label,
@@ -470,6 +471,17 @@ export interface BoardsApi {
    * were completed, each completion of a recurring task counted.
    */
   completions: (boardId: string, zone: string) => Promise<DayCount[]>
+  /** A shipped picture, or null for the default. Admins only. */
+  setBackground: (
+    boardId: string,
+    background: Background | null
+  ) => Promise<void>
+  /** A plain color instead of a picture. Admins only. */
+  setBackgroundColor: (boardId: string, color: string) => Promise<void>
+  /** Sends a picture for the background. Admins only. */
+  setBackgroundImage: (boardId: string, image: Blob) => Promise<void>
+  /** The picture an admin sent, by the id the board gives. */
+  backgroundImage: (boardId: string, imageId: string) => Promise<Blob>
   createTask: (
     boardId: string,
     task: NewTask

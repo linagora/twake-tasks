@@ -235,16 +235,11 @@ describe('BoardsScreen', () => {
     // The key prefix shows on the tasks, not on the card.
     expect(designCard.queryByText(/DES/)).toBeNull()
     expect(designCard.getByText('2 open tasks')).toBeVisible()
-    expect(
-      designCard.getByRole('img', { name: 'Project board' })
-    ).toHaveTextContent('D')
-    expect(
-      inboxCard.getByRole('img', { name: 'Personal board' })
-    ).toHaveTextContent('I')
     expect(opsCard.getByText('No open tasks')).toBeVisible()
-    expect(opsCard.getByRole('img', { name: 'Space board' })).toHaveTextContent(
-      'O'
-    )
+    // The kind shows as a chip, the name on the cover in place of a badge.
+    expect(opsCard.getByText('Space')).toBeVisible()
+    expect(inboxCard.getByText('Default')).toBeVisible()
+    expect(designCard.queryByRole('img', { name: 'Project board' })).toBeNull()
   })
 
   it('puts a starred board first, after the create card, until it is unstarred', async () => {
@@ -582,5 +577,40 @@ describe('BoardsScreen', () => {
     expect(
       within(dialog).getByRole('button', { name: 'Create' })
     ).toBeDisabled()
+  })
+
+  it('renames a board from the menu of its card', async () => {
+    const board = aBoard({ name: 'Design' })
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute('/', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for Design' })
+    )
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: 'Rename board' })
+    )
+    const dialog = within(await screen.findByRole('dialog'))
+    fireEvent.change(dialog.getByLabelText(/Board name/), {
+      target: { value: 'Brand' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Rename' }))
+
+    expect(
+      await screen.findByRole('link', { name: 'Brand' })
+    ).toBeInTheDocument()
+  })
+
+  it('gives a board one does not run a star and no menu', async () => {
+    renderRoute('/', {
+      boardsApi: fakeBoardsApi([aBoard({ name: 'Design', role: 'editor' })])
+    })
+
+    expect(
+      await screen.findByRole('button', { name: 'Add Design to favorites' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Options for Design' })
+    ).toBeNull()
   })
 })

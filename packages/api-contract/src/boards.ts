@@ -47,7 +47,44 @@ export const boardParams = z.object({ boardId: z.uuid() })
 
 export const layoutChoice = z.object({ layout: z.enum(LAYOUTS) })
 
+/** The pictures shipped as boards' backgrounds, and one sent by an admin. */
+export const BACKGROUNDS = [
+  'orbitalblue',
+  'earlymorning',
+  'dawn',
+  'stellarburst',
+  'blossom',
+  'lagoon',
+  'ripple',
+  'eclipse',
+  'stripes',
+  'custom'
+] as const
+
+/** A plain color as a board's cover, in six hex digits. */
+export const backgroundColor = z.string().regex(/^#[0-9A-F]{6}$/i)
+
+/** A shipped picture, none, or a plain color. */
+export const backgroundChoice = z.union([
+  z.strictObject({
+    background: z.enum(BACKGROUNDS).exclude(['custom']).nullable()
+  }),
+  z.strictObject({ color: backgroundColor })
+])
+
+export const backgroundImageParams = z.object({
+  boardId: z.uuid(),
+  imageId: z.uuid()
+})
+
 export const boardMove = z.object({ projectId: z.uuid() })
+
+// The cover of a board, as a board and the boards list give it.
+const cover = {
+  background: z.enum(BACKGROUNDS).nullable(),
+  backgroundImage: z.string().nullable(),
+  backgroundColor: z.string().nullable()
+}
 
 export const boardResponse = z.object({
   id: z.string(),
@@ -61,6 +98,7 @@ export const boardResponse = z.object({
   layout: z.enum(LAYOUTS),
   defaultLayout: z.enum(LAYOUTS),
   boardTemplate: z.boolean(),
+  ...cover,
   members: z.array(person),
   invited: z.array(z.string()),
   labels: z.array(label),
@@ -96,7 +134,8 @@ export const boardsResponse = z.object({
       doneTasks: z.number(),
       totalTasks: z.number(),
       members: z.array(person),
-      memberCount: z.number()
+      memberCount: z.number(),
+      ...cover
     })
   )
 })

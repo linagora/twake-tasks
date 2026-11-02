@@ -107,11 +107,9 @@
     "emptyArchivedHint": "Le bacheche che archivi restano qui, in sola lettura.",
     "loadFailed": "Impossibile caricare le bacheche.",
     "projectNotFound": "Questo progetto non esiste, oppure non puoi aprirlo.",
+    "menu": "Opzioni per %{name}",
     "star": "Aggiungi %{name} ai preferiti",
     "unstar": "Rimuovi %{name} dai preferiti",
-    "personal": "Bacheca personale",
-    "space": "Bacheca di spazio",
-    "projectBoard": "Bacheca di progetto",
     "personalProject": "Personale",
     "inbox": "In arrivo",
     "defaultChip": "Predefinito",
@@ -251,6 +249,7 @@
     "addFailed": "Impossibile aggiungere l’attività.",
     "rename": "Rinomina bacheca",
     "renameName": "Nome della bacheca",
+    "renameSave": "Rinomina",
     "renameFailed": "Impossibile rinominare la bacheca."
   },
   "task": {
@@ -708,6 +707,33 @@
     "empty": "Ancora nessuna attività",
     "emptyHint": "L’avanzamento appare quando la bacheca ha delle attività.",
     "loadFailed": "Impossibile caricare l’avanzamento."
+  },
+  "background": {
+    "add": "Aggiungi copertina",
+    "change": "Cambia copertina",
+    "title": "Copertina della bacheca",
+    "choices": "Copertine",
+    "color": "Colore",
+    "customColor": "Colore personalizzato",
+    "none": "Nessuna copertina",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple",
+      "eclipse": "Eclipse",
+      "stripes": "Stripes"
+    },
+    "mine": "La mia immagine",
+    "import": "Dal mio computer",
+    "failed": "Impossibile cambiare la copertina.",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "close": "Chiudi"
   },
   "search": {
     "label": "Cerca",

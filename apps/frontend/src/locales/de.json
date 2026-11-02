@@ -107,11 +107,9 @@
     "emptyArchivedHint": "Archivierte Boards bleiben hier, schreibgeschützt.",
     "loadFailed": "Die Boards konnten nicht geladen werden.",
     "projectNotFound": "Dieses Projekt existiert nicht, oder Sie können es nicht öffnen.",
+    "menu": "Optionen für %{name}",
     "star": "%{name} zu den Favoriten hinzufügen",
     "unstar": "%{name} aus den Favoriten entfernen",
-    "personal": "Persönliches Board",
-    "space": "Space-Board",
-    "projectBoard": "Projekt-Board",
     "personalProject": "Persönlich",
     "inbox": "Eingang",
     "defaultChip": "Standard",
@@ -251,6 +249,7 @@
     "addFailed": "Die Aufgabe konnte nicht hinzugefügt werden.",
     "rename": "Board umbenennen",
     "renameName": "Board-Name",
+    "renameSave": "Umbenennen",
     "renameFailed": "Das Board konnte nicht umbenannt werden."
   },
   "task": {
@@ -708,6 +707,33 @@
     "empty": "Noch keine Aufgaben",
     "emptyHint": "Der Fortschritt erscheint, sobald das Board Aufgaben hat.",
     "loadFailed": "Der Fortschritt konnte nicht geladen werden."
+  },
+  "background": {
+    "add": "Titelbild hinzufügen",
+    "change": "Titelbild ändern",
+    "title": "Titelbild des Boards",
+    "choices": "Titelbilder",
+    "color": "Farbe",
+    "customColor": "Eigene Farbe",
+    "none": "Kein Titelbild",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple",
+      "eclipse": "Eclipse",
+      "stripes": "Stripes"
+    },
+    "mine": "Mein Bild",
+    "import": "Von meinem Computer",
+    "failed": "Das Titelbild konnte nicht geändert werden.",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "close": "Schließen"
   },
   "search": {
     "label": "Suchen",

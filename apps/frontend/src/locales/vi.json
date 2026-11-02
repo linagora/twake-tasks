@@ -107,11 +107,9 @@
     "emptyArchivedHint": "Các bảng đã lưu trữ nằm ở đây, chỉ để xem.",
     "loadFailed": "Không thể tải các bảng.",
     "projectNotFound": "Dự án này không tồn tại, hoặc bạn không thể mở nó.",
+    "menu": "Tùy chọn cho %{name}",
     "star": "Thêm %{name} vào mục yêu thích",
     "unstar": "Bỏ %{name} khỏi mục yêu thích",
-    "personal": "Bảng cá nhân",
-    "space": "Bảng không gian",
-    "projectBoard": "Bảng dự án",
     "personalProject": "Cá nhân",
     "inbox": "Hộp thư đến",
     "defaultChip": "Mặc định",
@@ -251,6 +249,7 @@
     "addFailed": "Không thể thêm công việc.",
     "rename": "Đổi tên bảng",
     "renameName": "Tên bảng",
+    "renameSave": "Đổi tên",
     "renameFailed": "Không thể đổi tên bảng."
   },
   "task": {
@@ -708,6 +707,33 @@
     "empty": "Chưa có công việc",
     "emptyHint": "Tiến độ sẽ hiện khi bảng có công việc.",
     "loadFailed": "Không thể tải tiến độ."
+  },
+  "background": {
+    "add": "Thêm ảnh bìa",
+    "change": "Đổi ảnh bìa",
+    "title": "Ảnh bìa của bảng",
+    "choices": "Ảnh bìa",
+    "color": "Màu",
+    "customColor": "Màu tùy chỉnh",
+    "none": "Không có ảnh bìa",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "blossom": "Blossom",
+      "lagoon": "Lagoon",
+      "ripple": "Ripple",
+      "eclipse": "Eclipse",
+      "stripes": "Stripes"
+    },
+    "mine": "Ảnh của tôi",
+    "import": "Từ máy tính của tôi",
+    "failed": "Không thể đổi ảnh bìa.",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "close": "Đóng"
   },
   "search": {
     "label": "Tìm kiếm",
