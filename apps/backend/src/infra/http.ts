@@ -34,6 +34,14 @@ export function createServer(deps: {
   metrics?: Metrics | undefined
 }): HttpServer {
   const proxyHops = deps.proxyHops ?? 0
+  // Too many hops lets a caller spoof its address, and nothing in a request
+  // shows it: the start log is the only place to check the count.
+  if (proxyHops > 0) {
+    deps.logger.warn(
+      { proxyHops },
+      'trusting X-Forwarded-For through this many proxies, it must match the ingress chain'
+    )
+  }
   const app = Fastify({
     loggerInstance: deps.logger,
     trustProxy: (_address, hop) => hop < proxyHops,

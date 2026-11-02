@@ -134,11 +134,11 @@ describe('the migration setting', () => {
 })
 
 describe('the server settings', () => {
-  it('trust two proxies and keep counters in memory by default', () => {
+  it('trust no proxy and keep counters in memory by default', () => {
     const config = loadConfig(required)
 
     expect(config).toMatchObject({
-      HTTP_TRUSTED_PROXY_HOPS: 2,
+      HTTP_TRUSTED_PROXY_HOPS: 0,
       JOBS_CONCURRENCY: 1,
       JOBS_EMAIL_CONCURRENCY: 2,
       JOBS_LEASE_SECONDS: 600,
