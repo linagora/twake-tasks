@@ -50,6 +50,26 @@ describe('the RabbitMQ names', () => {
   })
 })
 
+describe('the secrets', () => {
+  // docker-compose.yml passes an unset secret as an empty string.
+  it('refuse an empty OIDC client secret', () => {
+    expect(() => loadConfig({ ...required, OIDC_CLIENT_SECRET: '' })).toThrow(
+      /OIDC_CLIENT_SECRET/
+    )
+  })
+
+  it('refuse an empty ldap-rest secret in space mode', () => {
+    expect(() =>
+      loadConfig({
+        ...required,
+        SPACE_INTEGRATION: 'true',
+        LDAP_REST_URL: 'https://ldap-rest.example.com',
+        LDAP_REST_SECRET: ''
+      })
+    ).toThrow(/LDAP_REST_SECRET/)
+  })
+})
+
 describe('the space integration setting', () => {
   it('is off by default, and then needs no ldap-rest', () => {
     expect(loadConfig(required)).toMatchObject({ SPACE_INTEGRATION: 'false' })
