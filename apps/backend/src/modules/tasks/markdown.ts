@@ -46,10 +46,10 @@ function textOf(root: Nodes): string {
   return text
 }
 
-// micromark takes time quadratic in the length of nested blocks and in the
-// emphasis marks it pairs. So plain text parses a few thousand characters at
-// a time, and reads a line's markers past MAX_DEPTH, or its marks past
-// MAX_MARKS, as text.
+// micromark takes time quadratic in the length of containers and in the
+// emphasis marks it pairs. So plain text parses those a few thousand
+// characters at a time, and reads a line's markers past MAX_DEPTH, or its
+// marks past MAX_MARKS, as text.
 const CHUNK = 2000
 const MAX_DEPTH = 32
 const MAX_MARKS = 1000
@@ -70,6 +70,11 @@ const CLOSER = /([ \t]*)(?:(`{3,}|~{3,})[ \t]*[\r\n]*$)?/y
 const QUOTE = /[ \t]*>/y
 const SPACES = /[ \t]*/y
 const CONTAINER = /[ \t]*(?:>|(?:[-+*]|\d{1,9}[.)])(?=[ \t]|$))/y
+// A container that also starts after a paragraph's line.
+const INTERRUPTING = /^ {0,3}(?:>|(?:[-+*]|1[.)])[ \t]+\S)/
+// A heading, a setext underline or a thematic break.
+const ENDING =
+  /^ {0,3}(?:#{1,6}(?:[ \t].*)?|=+[ \t]*|-+[ \t]*|([-*_])[ \t]*(?:\1[ \t]*){2,})[\r\n]*$/
 const MARKS = /\\[^]|[*_]+/g
 const WORD = /[\p{L}\p{N}]/u
 const SPACE = /\s/
@@ -93,7 +98,10 @@ interface Before {
 
 // Once half full, cut before an unindented line after a blank line outside a
 // fence or an HTML block that blank lines do not end: CommonMark has closed
-// every block there. Once full, cut at any line, reopening the fence it cuts.
+// every block there. Once full, cut a fence, or a paragraph holding more than
+// MAX_MARKS marks, at any line, reopening the fence. Cut a container before a
+// line opening one, or at any line once twice full, and other blocks after a
+// heading or a break. A paragraph parses in linear time, so it is not cut.
 // Lines in a fence are capped too: a line can look like a fence to this and
 // not to micromark.
 function chunks(markdown: string): string[] {
@@ -103,13 +111,39 @@ function chunks(markdown: string): string[] {
   let html = ''
   let blank = false
   let before: Before = { indent: 0, paragraph: false }
+  let ended = false
+  // The line can start any block: the previous one is not a paragraph's.
+  let fresh = true
+  let contained = false
+  let marks = 0
   for (const [line] of markdown.matchAll(LINE)) {
-    if (blank && chunk.length >= CHUNK / 2 && UNINDENTED.test(line)) {
+    const inBlock = !!fence || !!html
+    const closed = blank && UNINDENTED.test(line)
+    if (closed) contained = false
+    if (blank) marks = 0
+    const full =
+      chunk.length >= CHUNK &&
+      (!!fence ||
+        marks > MAX_MARKS ||
+        (contained
+          ? INTERRUPTING.test(line) || chunk.length >= 2 * CHUNK
+          : ended))
+    if ((closed && chunk.length >= CHUNK / 2) || full) {
       done.push(chunk)
-      chunk = ''
+      chunk = fence?.reopen ?? ''
+      contained = false
+      marks = 0
     }
+    CONTAINER.lastIndex = 0
+    if (
+      !inBlock &&
+      (INTERRUPTING.test(line) || ((fresh || !chunk) && CONTAINER.test(line)))
+    )
+      contained = true
     const capped = capDepth(line)
-    chunk += capMarks(capped)
+    const [text, pairable] = capMarks(capped)
+    chunk += text
+    if (!inBlock) marks += pairable
     const columns = expandTabs(capped)
     const open = fence
     const inHtml = html
@@ -131,11 +165,9 @@ function chunks(markdown: string): string[] {
             !!columns.slice(indent).trim()
         }
       : { ...before, paragraph: false }
+    ended = !fence && !html && ENDING.test(line)
     blank = !fence && !html && BLANK.test(line)
-    if (chunk.length >= CHUNK) {
-      done.push(chunk)
-      chunk = fence?.reopen ?? ''
-    }
+    fresh = !fence && !html && (blank || ended || inBlock || HTML.test(line))
   }
   return [...done, chunk]
 }
@@ -261,10 +293,11 @@ function capDepth(line: string): string {
   return line
 }
 
-// A run between spaces, or an underscore inside a word, never pairs.
-function capMarks(line: string): string {
+// A run between spaces, or an underscore inside a word, never pairs. Returns
+// the line and the count of marks that may pair.
+function capMarks(line: string): [string, number] {
   let left = MAX_MARKS
-  return line.replace(MARKS, (run, at: number) => {
+  const capped = line.replace(MARKS, (run, at: number) => {
     const before = line[at - 1] ?? ' '
     const after = line[at + run.length] ?? ' '
     if (
@@ -276,6 +309,7 @@ function capMarks(line: string): string {
     left -= run.length
     return left < 0 ? run.replace(/./g, '\\$&') : run
   })
+  return [capped, MAX_MARKS - Math.max(left, 0)]
 }
 
 export function plainText(markdown: string): string {
