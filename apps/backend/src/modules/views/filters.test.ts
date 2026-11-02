@@ -1,5 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
+import {
+  aUser,
+  startApp,
+  withOwnPolicyLiftedFor,
+  type TestUser
+} from '../../testing/app.ts'
 import { shift, todayIn } from '../boards/index.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
@@ -265,6 +270,40 @@ describe('saved filters', () => {
       (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
         .filters
     ).toEqual([])
+  })
+
+  it('keeps filters to the person who saved them without row level security', async () => {
+    const owner = aUser()
+    const other = aUser({ organizationId: owner.organizationId })
+    const { id } = (
+      await api
+        .as(owner)
+        .post('/filters', { name: 'Urgent', criteria: { priority: [1] } })
+    ).json<{ id: string }>()
+
+    await withOwnPolicyLiftedFor('saved_filters', other, async () => {
+      expect(
+        (await api.as(other).get('/filters')).json<{ filters: unknown[] }>()
+          .filters
+      ).toEqual([])
+      expect(
+        (await api.as(other).get(`/filters/${id}/tasks?zone=UTC`)).statusCode
+      ).toBe(404)
+      expect(
+        (await api.as(other).patch(`/filters/${id}`, { name: 'Mine now' }))
+          .statusCode
+      ).toBe(404)
+      expect((await api.as(other).delete(`/filters/${id}`)).statusCode).toBe(
+        404
+      )
+    })
+
+    expect(
+      (await api.as(owner).get('/filters')).json<{ filters: unknown[] }>()
+        .filters
+    ).toEqual([
+      { id, name: 'Urgent', criteria: { priority: [1] }, favorite: false }
+    ])
   })
 
   it('tells the status kind of each task, to group them by', async () => {

@@ -64,6 +64,36 @@ export async function joinBoard(
   })
 }
 
+/**
+ * Runs with the table's `own` policy letting the person past it, to check the
+ * queries keep to the caller's rows by themselves. Other people still meet the
+ * policy as it is, so tests running alongside are unaffected.
+ */
+export async function withOwnPolicyLiftedFor(
+  table: string,
+  user: TestUser,
+  run: () => Promise<void>
+) {
+  const { sql } = createDb(inject('ownerDatabaseUrl'))
+  try {
+    const [policy] = await sql<{ qual: string }[]>`
+      select qual from pg_policies where tablename = ${table} and policyname = 'own'`
+    if (!policy) throw new Error(`no own policy on ${table}`)
+    const using = (qual: string) =>
+      sql.unsafe(`alter policy own on ${table} using (${qual})`)
+    try {
+      await using(
+        `(${policy.qual}) or current_setting('app.user_id', true) = '${user.userId}'`
+      )
+      await run()
+    } finally {
+      await using(policy.qual)
+    }
+  } finally {
+    await sql.end()
+  }
+}
+
 /** A project whose members come from an integration, such as a space. */
 export async function aManagedProject(
   db: Db,
