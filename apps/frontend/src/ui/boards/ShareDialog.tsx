@@ -170,7 +170,10 @@ export function ShareDialog({
           >
             {failure instanceof ApiError && failure.code === 'last_admin'
               ? t('sharing.lastAdmin')
-              : t('sharing.failed')}
+              : failure instanceof ApiError &&
+                  failure.code === 'too_many_invites'
+                ? t('sharing.tooManyInvites')
+                : t('sharing.failed')}
           </Alert>
         )}
         {sharing.isError && (

@@ -7,6 +7,7 @@ import {
   inArray,
   isNull,
   lt,
+  ne,
   notExists,
   notInArray,
   or,
@@ -135,7 +136,32 @@ async function keepAnAdmin(tx: Tx, projectId: string, leaving: string) {
   }
 }
 
-export function createSharingStore(db: Db) {
+// Serialises the invites to one project, so the cap holds in parallel. The
+// invite of this address is left out of the count, as inviting it again only
+// changes its role.
+async function refuseIfInvitesFull(
+  tx: Tx,
+  projectId: string,
+  email: string,
+  cap: number
+) {
+  if (cap <= 0) return
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`invites:${projectId}`}, 0))`
+  )
+  const [pending] = await tx
+    .select({ n: count() })
+    .from(projectInvites)
+    .where(
+      and(
+        eq(projectInvites.projectId, projectId),
+        ne(projectInvites.email, email)
+      )
+    )
+  if ((pending?.n ?? 0) >= cap) throw new Refused('too_many_invites')
+}
+
+export function createSharingStore(db: Db, pendingInvites = 0) {
   return {
     invite(identity: Identity, boardId: string, email: string, role: Role) {
       return writeOrRefuse(db, identity, async tx => {
@@ -150,6 +176,7 @@ export function createSharingStore(db: Db) {
             )
           )
         if (member) return
+        await refuseIfInvitesFull(tx, project.id, email, pendingInvites)
         const [existing] = await tx
           .select({ role: projectInvites.role })
           .from(projectInvites)

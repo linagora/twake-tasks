@@ -48,6 +48,7 @@ export async function buildApp(deps: {
         | 'address'
         | 'mentionsPerComment'
         | 'pendingReminders'
+        | 'pendingInvites'
       >
     | undefined
 }) {
@@ -70,7 +71,11 @@ export async function buildApp(deps: {
           deps.limits && limitUsers(api, deps.limits.user, boardBudgets)
       })
       const streamVersions = versionStreams(api)
-      registerProjects(api, { db: deps.db, requireIdentity })
+      registerProjects(api, {
+        db: deps.db,
+        requireIdentity,
+        pendingInvites: deps.limits?.pendingInvites ?? 0
+      })
       registerBoards(api, { db: deps.db, requireIdentity })
       registerTasks(api, {
         db: deps.db,

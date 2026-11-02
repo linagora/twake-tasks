@@ -98,7 +98,7 @@ function declaredRoutes(): Declared[] {
       store: { isRevoked: unused, revoke: unused },
       addressLimits: { refusedTokens: off, logoutRefusals: off, tokenChecks: 0 }
     }).routes,
-    ...registerProjects(scratch, { db, requireIdentity }),
+    ...registerProjects(scratch, { db, requireIdentity, pendingInvites: 0 }),
     ...registerBoards(scratch, { db, requireIdentity }),
     ...registerTasks(scratch, {
       db,

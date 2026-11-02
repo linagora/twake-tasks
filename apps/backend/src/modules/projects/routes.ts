@@ -29,9 +29,9 @@ const sharing = { ...admin, refusedOnManaged: true } as const
 
 export function registerProjects(
   app: HttpServer,
-  deps: { db: Db; requireIdentity: RequireIdentity }
+  deps: { db: Db; requireIdentity: RequireIdentity; pendingInvites: number }
 ): ProjectRoute[] {
-  const sharingStore = createSharingStore(deps.db)
+  const sharingStore = createSharingStore(deps.db, deps.pendingInvites)
   const routing = {
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,

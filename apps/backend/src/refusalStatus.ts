@@ -19,6 +19,7 @@ export const REFUSAL_STATUS: Record<Refusal | 'invalid_request', number> = {
   invalid_reminder: 400,
   too_many_mentions: 400,
   too_many_reminders: 409,
+  too_many_invites: 409,
   label_taken: 409,
   section_name_taken: 409,
   last_admin: 409,

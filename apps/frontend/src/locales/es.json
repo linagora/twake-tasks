@@ -492,6 +492,7 @@
     "roleOf": "Rol: %{role}",
     "roleOfPerson": "Rol de %{person}: %{role}",
     "lastAdmin": "Un proyecto necesita al menos un admin. Haz admin a otra persona primero.",
+    "tooManyInvites": "Este proyecto tiene demasiadas invitaciones pendientes. Cancela algunas primero.",
     "people": "Personas con acceso",
     "close": "Cerrar",
     "failed": "No se pudo guardar el cambio.",

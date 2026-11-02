@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb } from '../../infra/db.ts'
+import { createDb, inTenant } from '../../infra/db.ts'
 import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
+import { taskHistory } from '../boards/index.ts'
+import { HISTORY_LISTED } from './history.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -241,5 +243,35 @@ describe('task history', () => {
 
     expect((await api.as(bob).get(path)).statusCode).toBe(200)
     expect((await api.as(aUser()).get(path)).statusCode).toBe(404)
+  })
+
+  it('lists only the newest entries past the cap', async () => {
+    const alice = aUser()
+    const board = await aBoardOf(alice)
+    const task = (
+      await api
+        .as(alice)
+        .post(`/boards/${board.id}/tasks`, { sectionId: null, title: 'Logo' })
+    ).json<{ id: string }>()
+    const start = Date.now() + 1000
+    await inTenant(db, alice, tx =>
+      tx.insert(taskHistory).values(
+        Array.from({ length: HISTORY_LISTED }, (_, index) => ({
+          taskId: task.id,
+          organizationId: alice.organizationId,
+          actorId: alice.userId,
+          actorEmail: alice.email,
+          field: 'title',
+          to: `n${String(index)}`,
+          at: new Date(start + index * 1000)
+        }))
+      )
+    )
+
+    const entries = await historyOf(alice, board.id, task.id)
+
+    expect(entries).toHaveLength(HISTORY_LISTED)
+    expect(entries[0]?.to).toBe(`n${String(HISTORY_LISTED - 1)}`)
+    expect(entries.map(entry => entry.field)).not.toContain('created')
   })
 })

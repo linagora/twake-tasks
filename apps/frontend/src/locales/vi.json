@@ -492,6 +492,7 @@
     "roleOf": "Vai trò: %{role}",
     "roleOfPerson": "Vai trò của %{person}: %{role}",
     "lastAdmin": "Dự án cần ít nhất một quản trị viên. Hãy đặt người khác làm quản trị viên trước.",
+    "tooManyInvites": "Dự án này có quá nhiều lời mời đang chờ. Hãy hủy bớt một số lời mời trước.",
     "people": "Những người có quyền truy cập",
     "close": "Đóng",
     "failed": "Không thể lưu thay đổi.",

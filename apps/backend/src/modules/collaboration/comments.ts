@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
@@ -16,6 +16,8 @@ import {
   visibleTask
 } from '../tasks/index.ts'
 import { commentReactions } from './schema.ts'
+
+export const COMMENTS_LISTED = 500
 
 interface Reactor {
   userId: string
@@ -57,11 +59,14 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
     listComments(identity: Identity, boardId: string, taskId: string) {
       return writeOrRefuse(db, identity, async tx => {
         await visibleTask(tx, identity, boardId, taskId)
-        const rows = await tx
-          .select()
-          .from(comments)
-          .where(eq(comments.taskId, taskId))
-          .orderBy(asc(comments.createdAt), asc(comments.id))
+        const rows = (
+          await tx
+            .select()
+            .from(comments)
+            .where(eq(comments.taskId, taskId))
+            .orderBy(desc(comments.createdAt), desc(comments.id))
+            .limit(COMMENTS_LISTED)
+        ).reverse()
         const looksOf = await looksOn(tx, boardId)
         const reactions =
           rows.length === 0

@@ -4,6 +4,8 @@ import type { Identity } from '../auth/index.ts'
 import { looksOn, roleOn, taskHistory, taskOf } from '../boards/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 
+export const HISTORY_LISTED = 500
+
 export function historyOf(
   db: Db,
   identity: Identity,
@@ -20,6 +22,7 @@ export function historyOf(
       .from(taskHistory)
       .where(eq(taskHistory.taskId, taskId))
       .orderBy(desc(taskHistory.at), desc(taskHistory.id))
+      .limit(HISTORY_LISTED)
     const looksOf = await looksOn(tx, boardId)
     return rows.map(row => ({
       actor: {
