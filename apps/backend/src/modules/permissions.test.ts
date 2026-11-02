@@ -16,7 +16,12 @@ import {
 } from '../testing/app.ts'
 import { openStream } from '../testing/stream.ts'
 import { registerAuth } from './auth/index.ts'
-import { liveBoards, notifications, registerBoards } from './boards/index.ts'
+import {
+  checkBoardAccess,
+  liveBoards,
+  notifications,
+  registerBoards
+} from './boards/index.ts'
 import { registerCollaboration } from './collaboration/index.ts'
 import { registerLive } from './live/index.ts'
 import { registerNotifications } from './notifications/index.ts'
@@ -114,6 +119,7 @@ function declaredRoutes(): Declared[] {
     ...registerLive(scratch, {
       db,
       boards: liveBoards,
+      checkBoardAccess: checkBoardAccess(db),
       requireIdentity,
       changes: createChanges(),
       streamVersions: unused
@@ -540,11 +546,12 @@ function permissionsDoc(declared: Declared[]): string {
         access.on === 'board' ? group === access.role : group === access.on
       )
       .map(route => {
-        const managed =
-          route.access.on === 'board' && route.access.refusedOnManaged
-            ? ', refused on a managed project'
-            : ''
-        return `- \`${idOf(route).replace(' ', ' /api')}\`${managed}`
+        const board = route.access.on === 'board' ? route.access : null
+        const self = board?.orSelf ? ', or any member on themselves' : ''
+        const managed = board?.refusedOnManaged
+          ? ', refused on a managed project'
+          : ''
+        return `- \`${idOf(route).replace(' ', ' /api')}\`${self}${managed}`
       })
     return `## ${title}\n\n${lines.join('\n')}\n`
   })

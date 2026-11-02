@@ -174,3 +174,130 @@ describe('a declared route', () => {
     expect(response.json()).toEqual({ open: true })
   })
 })
+
+const boardId = '6a1f3c2e-4b5d-4e7f-8a9b-0c1d2e3f4a5b'
+
+function boardServer(role: 'viewer' | 'editor' | null, managed = false) {
+  const app = createServer({
+    logger: pino({ level: 'silent' }),
+    isReady: () => Promise.resolve(true)
+  })
+  const reached: string[] = []
+  const rank = { viewer: 0, editor: 1, admin: 2 }
+  registerRoutes(
+    app,
+    {
+      requireIdentity: signedIn,
+      identify: () => alice,
+      refusalStatus,
+      checkBoardAccess: (_identity, _params, access) =>
+        Promise.resolve(
+          !role
+            ? 'not_found'
+            : rank[role] < rank[access.role] ||
+                (managed && access.refusedOnManaged)
+              ? 'forbidden'
+              : null
+        )
+    },
+    [
+      defineRoute({
+        method: 'PATCH',
+        url: '/boards/:boardId',
+        access: { on: 'board', role: 'editor' },
+        params: z.object({ boardId: z.uuid() }),
+        handler: ({ params }) => {
+          reached.push(params.boardId)
+          return Promise.resolve({ ok: true, value: { renamed: true } })
+        }
+      }),
+      defineRoute({
+        method: 'GET',
+        url: '/boards/:boardId/sharing',
+        access: { on: 'board', role: 'viewer', refusedOnManaged: true },
+        params: z.object({ boardId: z.uuid() }),
+        handler: () => Promise.resolve({ ok: true, value: { people: [] } })
+      })
+    ]
+  )
+  return { app, reached }
+}
+
+describe('a route on a board', () => {
+  it('answers 404 to someone not on the board without running its handler', async () => {
+    const { app, reached } = boardServer(null)
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: `/boards/${boardId}`
+    })
+
+    expect(response.statusCode).toBe(404)
+    expect(response.json()).toEqual({ error: 'not_found' })
+    expect(reached).toEqual([])
+  })
+
+  it('answers 403 to a member below the declared role without running its handler', async () => {
+    const { app, reached } = boardServer('viewer')
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: `/boards/${boardId}`
+    })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.json()).toEqual({ error: 'forbidden' })
+    expect(reached).toEqual([])
+  })
+
+  it('answers 403 on a managed project when the route refuses one', async () => {
+    const { app } = boardServer('editor', true)
+
+    const response = await app.inject(`/boards/${boardId}/sharing`)
+
+    expect(response.statusCode).toBe(403)
+  })
+
+  it('runs its handler for a member with the declared role', async () => {
+    const { app, reached } = boardServer('editor')
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: `/boards/${boardId}`
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(reached).toEqual([boardId])
+  })
+
+  it.each([
+    ['without a board access check', '/boards/:boardId', undefined],
+    ['without a board in its path', '/boards', () => Promise.resolve(null)]
+  ])('cannot be registered %s', (_case, url, checkBoardAccess) => {
+    const app = createServer({
+      logger: pino({ level: 'silent' }),
+      isReady: () => Promise.resolve(true)
+    })
+    const register = () => {
+      registerRoutes(
+        app,
+        {
+          requireIdentity: signedIn,
+          identify: () => alice,
+          refusalStatus,
+          ...(checkBoardAccess && { checkBoardAccess })
+        },
+        [
+          defineRoute({
+            method: 'GET',
+            url,
+            access: { on: 'board', role: 'viewer' },
+            handler: () => Promise.resolve({ ok: true, value: {} })
+          })
+        ]
+      )
+    }
+
+    expect(register).toThrow(`GET ${url} needs a board`)
+  })
+})

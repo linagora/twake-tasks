@@ -14,7 +14,11 @@ import {
   type Authenticate,
   type IdentityProvider
 } from './modules/auth/index.ts'
-import { liveBoards, registerBoards } from './modules/boards/index.ts'
+import {
+  checkBoardAccess,
+  liveBoards,
+  registerBoards
+} from './modules/boards/index.ts'
 import { registerCollaboration } from './modules/collaboration/index.ts'
 import { registerLive } from './modules/live/index.ts'
 import { registerNotifications } from './modules/notifications/index.ts'
@@ -81,6 +85,7 @@ export async function buildApp(deps: {
       registerLive(api, {
         db: deps.db,
         boards: liveBoards,
+        checkBoardAccess: checkBoardAccess(deps.db),
         requireIdentity,
         changes: deps.boardChanges,
         streamVersions,

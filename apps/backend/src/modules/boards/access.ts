@@ -1,5 +1,6 @@
 import { and, asc, eq, inArray, isNull, lte, sql } from 'drizzle-orm'
-import type { Tx } from '../../infra/db.ts'
+import { inTenant, type Db, type Tx } from '../../infra/db.ts'
+import type { BoardAccess, CheckBoardAccess } from '../../infra/route.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused } from '../kernel/index.ts'
 import type { LiveBoards } from '../live/index.ts'
@@ -210,11 +211,46 @@ export async function roleOn(
   return row?.role ?? null
 }
 
-export const liveBoards: LiveBoards = {
-  canView: async (tx, userId, boardId) => {
+const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 }
+
+async function standingOn(tx: Tx, userId: string, boardId: string) {
+  const accessible = accessibleBoards(tx, userId)
+  const [row] = await tx
+    .select({ role: accessible.role, managed: projects.managed })
+    .from(accessible)
+    .innerJoin(boards, eq(boards.id, accessible.boardId))
+    .innerJoin(projects, eq(projects.id, boards.projectId))
+    .where(eq(accessible.boardId, boardId))
+  return row
+}
+
+async function boardRefusal(
+  tx: Tx,
+  userId: string,
+  params: { boardId: string; userId?: string },
+  access: BoardAccess
+): Promise<'not_found' | 'forbidden' | null> {
+  let standing = await standingOn(tx, userId, params.boardId)
+  if (!standing) {
+    // They may hold an invite not claimed yet.
     await claimInvites(tx)
-    return (await roleOn(tx, userId, boardId)) !== null
-  },
+    standing = await standingOn(tx, userId, params.boardId)
+  }
+  if (!standing) return 'not_found'
+  const onSelf = access.orSelf && params.userId === userId
+  if (!onSelf && RANK[standing.role] < RANK[access.role]) return 'forbidden'
+  if (access.refusedOnManaged && standing.managed) return 'forbidden'
+  return null
+}
+
+export const checkBoardAccess =
+  (db: Db): CheckBoardAccess<Identity> =>
+  (identity, params, access) =>
+    inTenant(db, identity, tx =>
+      boardRefusal(tx, identity.userId, params, access)
+    )
+
+export const liveBoards: LiveBoards = {
   version: async (tx, boardId) => {
     const [row] = await tx
       .select({ version: boards.version })

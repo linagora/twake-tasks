@@ -78,7 +78,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `PUT /api/boards/:boardId/default-layout`
 - `POST /api/boards/:boardId/invites`, refused on a managed project
 - `DELETE /api/boards/:boardId/invites/:inviteId`, refused on a managed project
-- `DELETE /api/boards/:boardId/members/:userId`, refused on a managed project
+- `DELETE /api/boards/:boardId/members/:userId`, or any member on themselves, refused on a managed project
 - `PUT /api/boards/:boardId/members/:userId`, refused on a managed project
 - `POST /api/boards/:boardId/move`
 - `POST /api/boards/:boardId/sections`
