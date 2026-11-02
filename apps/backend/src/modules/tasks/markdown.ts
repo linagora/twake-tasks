@@ -56,33 +56,64 @@ const MAX_MARKS = 1000
 
 const LINE = /[^\r\n]*(?:\r\n?|\n|$)/g
 const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)/
+const HTML =
+  /^ {0,3}<(?:(pre|script|style|textarea)(?=[\s>]|$)|(!--|\?|!\[CDATA\[|![A-Za-z]))/i
+const HTML_ENDS: Record<string, string> = {
+  '!--': '-->',
+  '?': '?>',
+  '![CDATA[': ']]>'
+}
+const BLANK = /^[ \t]*[\r\n]*$/
+const UNINDENTED = /^[^ \t\r\n]/
 const CONTAINER = /[ \t]*(?:>|(?:[-+*]|\d{1,9}[.)])(?=[ \t]|$))/y
 const MARKS = /\\[^]|[*_]+/g
 const WORD = /[\p{L}\p{N}]/u
 const SPACE = /\s/
 
-// Cut at a blank line outside a code fence once half full, at any line once
-// full, reopening the fence it cuts. Lines in a fence are capped too: a line
-// can look like a fence to this and not to micromark.
+// Once half full, cut before an unindented line after a blank line outside a
+// fence or an HTML block that blank lines do not end: CommonMark has closed
+// every block there. Once full, cut at any line, reopening the fence it cuts.
+// Fence lines are capped too, as micromark may not see the fence this sees.
 function chunks(markdown: string): string[] {
   const done: string[] = []
   let chunk = ''
   let fence = ''
+  let html = ''
+  let blank = false
   for (const [line] of markdown.matchAll(LINE)) {
+    if (blank && chunk.length >= CHUNK / 2 && UNINDENTED.test(line)) {
+      done.push(chunk)
+      chunk = ''
+    }
     chunk += capMarks(capDepth(line))
     const [, run = '', info = ''] = FENCE.exec(line) ?? []
-    if (!fence) fence = run
-    else if (run[0] === fence[0] && run.length >= fence.length && !info.trim())
+    if (html) {
+      if (line.toLowerCase().includes(html)) html = ''
+    } else if (!fence) {
+      fence = run
+      if (!fence) html = htmlEnd(line)
+    } else if (
+      run[0] === fence[0] &&
+      run.length >= fence.length &&
+      !info.trim()
+    )
       fence = ''
-    if (
-      chunk.length >= CHUNK ||
-      (chunk.length >= CHUNK / 2 && !fence && !line.trim())
-    ) {
+    blank = !fence && !html && BLANK.test(line)
+    if (chunk.length >= CHUNK) {
       done.push(chunk)
       chunk = fence && `${fence}\n`
     }
   }
   return [...done, chunk]
+}
+
+// The end of the HTML block the line opens, unless it closes on that line.
+function htmlEnd(line: string): string {
+  const match = HTML.exec(line)
+  if (!match) return ''
+  const [, tag, other = ''] = match
+  const end = tag ? `</${tag.toLowerCase()}>` : (HTML_ENDS[other] ?? '>')
+  return line.toLowerCase().includes(end) ? '' : end
 }
 
 function capDepth(line: string): string {
