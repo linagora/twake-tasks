@@ -16,6 +16,7 @@ export const REFUSALS = z.enum([
   'invalid_reminder',
   'too_many_mentions',
   'too_many_reminders',
+  'too_many_invites',
   'label_taken',
   'section_name_taken',
   'last_admin',

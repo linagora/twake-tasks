@@ -113,6 +113,7 @@ const configSchema = z
     RATE_LIMIT_OPEN_STREAMS: limit(10),
     RATE_LIMIT_MENTIONS_PER_COMMENT: limit(20),
     RATE_LIMIT_PENDING_REMINDERS: limit(100),
+    RATE_LIMIT_PENDING_INVITES: limit(200),
     RATE_LIMIT_NOTIFICATION_EMAILS_MAX: limit(10),
     RATE_LIMIT_NOTIFICATION_EMAILS_WINDOW_SECONDS: seconds(600),
     RATE_LIMIT_REFUSED_TOKENS_MAX: limit(30),
@@ -190,6 +191,7 @@ export interface RateLimits {
   openStreams: number
   mentionsPerComment: number
   pendingReminders: number
+  pendingInvites: number
   notificationEmails: Budget
   address: {
     refusedTokens: Budget
@@ -211,6 +213,7 @@ export function rateLimits(config: Config): RateLimits {
     openStreams: config.RATE_LIMIT_OPEN_STREAMS,
     mentionsPerComment: config.RATE_LIMIT_MENTIONS_PER_COMMENT,
     pendingReminders: config.RATE_LIMIT_PENDING_REMINDERS,
+    pendingInvites: config.RATE_LIMIT_PENDING_INVITES,
     notificationEmails: budget(config, 'NOTIFICATION_EMAILS'),
     address: {
       refusedTokens: budget(config, 'REFUSED_TOKENS'),

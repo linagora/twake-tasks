@@ -216,6 +216,7 @@ describe('the rate limits', () => {
       openStreams: 10,
       mentionsPerComment: 20,
       pendingReminders: 100,
+      pendingInvites: 200,
       notificationEmails: { max: 10, windowSeconds: 600 },
       address: {
         refusedTokens: { max: 30, windowSeconds: 60 },

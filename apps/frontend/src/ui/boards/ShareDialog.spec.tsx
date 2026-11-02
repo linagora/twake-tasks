@@ -314,6 +314,20 @@ describe('sharing a board', () => {
     )
   })
 
+  it('explains a refusal past the cap of pending invites', async () => {
+    const { boardsApi, dialog } = await openSharing()
+    boardsApi.invite.mockRejectedValueOnce(
+      new ApiError(409, 'too_many_invites')
+    )
+
+    type(dialog, 'bob@example.com')
+    fireEvent.click(dialog.getByRole('button', { name: 'Share' }))
+
+    expect(await dialog.findByRole('alert')).toHaveTextContent(
+      'This project has too many pending invitations. Cancel some first.'
+    )
+  })
+
   it('shows only the outcome of the last action', async () => {
     const { boardsApi, dialog } = await openSharing([me, bob])
     type(dialog, 'eve@example.com')

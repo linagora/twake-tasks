@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb } from '../../infra/db.ts'
+import { createDb, inTenant } from '../../infra/db.ts'
 import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
+import { comments } from '../boards/index.ts'
+import { COMMENTS_LISTED } from './comments.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const { sql, db } = createDb(inject('databaseUrl'))
@@ -130,6 +132,32 @@ describe('task comments', () => {
       .post(`/boards/${boardId}/tasks/${taskId}/comments`, { body: '  ' })
 
     expect(empty.statusCode).toBe(400)
+  })
+
+  it('lists only the newest comments past the cap, still oldest first', async () => {
+    const alice = aUser()
+    const { boardId, taskId } = await aTaskOf(alice)
+    const start = Date.now() - COMMENTS_LISTED * 1000
+    await inTenant(db, alice, tx =>
+      tx.insert(comments).values(
+        Array.from({ length: COMMENTS_LISTED + 1 }, (_, index) => ({
+          taskId,
+          organizationId: alice.organizationId,
+          authorId: alice.userId,
+          authorEmail: alice.email,
+          body: `n${String(index)}`,
+          createdAt: new Date(start + index * 1000)
+        }))
+      )
+    )
+
+    const list = (
+      await api.as(alice).get(`/boards/${boardId}/tasks/${taskId}/comments`)
+    ).json<{ comments: { body: string }[] }>()
+
+    expect(list.comments).toHaveLength(COMMENTS_LISTED)
+    expect(list.comments[0]?.body).toBe('n1')
+    expect(list.comments.at(-1)?.body).toBe(`n${String(COMMENTS_LISTED)}`)
   })
 })
 

@@ -110,10 +110,11 @@ Per user, once the token is checked. A user is counted across all their tokens, 
 - `RATE_LIMIT_STREAM_CONNECTS` (`30` in `60`): live board streams opened.
 - `RATE_LIMIT_OPEN_STREAMS` (`10`): live board streams a user keeps open at once on each replica. Each open tab of a board holds one.
 
-Caps per user, refused with the error named (not a 429, as waiting does not help):
+Caps, refused with the error named (not a 429, as waiting does not help):
 
 - `RATE_LIMIT_MENTIONS_PER_COMMENT` (`20`): different people one comment mentions. Past that, the comment is refused with 400 `too_many_mentions`.
 - `RATE_LIMIT_PENDING_REMINDERS` (`100`): reminders a user has waiting in an organization. A reminder at a fixed time stops counting once it fires, one before the due date keeps counting until it or its task is deleted. Past that, a new one is refused with 409 `too_many_reminders`.
+- `RATE_LIMIT_PENDING_INVITES` (`200`): invites a project has waiting to be accepted. Changing the role of a pending invite does not count. Past that, a new one is refused with 409 `too_many_invites`.
 
 Per address, before a user is known:
 

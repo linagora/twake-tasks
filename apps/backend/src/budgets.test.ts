@@ -28,7 +28,8 @@ beforeAll(async () => {
       RATE_LIMIT_OTHER_APP_SEARCH_MAX: '1',
       RATE_LIMIT_OPEN_STREAMS: '2',
       RATE_LIMIT_MENTIONS_PER_COMMENT: '2',
-      RATE_LIMIT_PENDING_REMINDERS: '2'
+      RATE_LIMIT_PENDING_REMINDERS: '2',
+      RATE_LIMIT_PENDING_INVITES: '2'
     })
   })
   baseUrl = await api.listen()
@@ -132,6 +133,30 @@ describe('caps', () => {
     expect(third.statusCode).toBe(409)
     expect(third.json()).toEqual({ error: 'too_many_reminders' })
     expect(again.statusCode).toBe(201)
+  })
+
+  it('refuse an invite past the cap of pending ones in a project, and free a place when one goes', async () => {
+    const alice = aUser()
+    const { boardId } = await aTaskOf(alice)
+    const invite = (email: string, role = 'editor') =>
+      api.as(alice).post(`/boards/${boardId}/invites`, { email, role })
+    await invite('ann@example.com')
+    await invite('bea@example.com')
+
+    const third = await invite('cid@example.com')
+    const newRole = await invite('ann@example.com', 'viewer')
+    const { invites } = (
+      await api.as(alice).get(`/boards/${boardId}/sharing`)
+    ).json<{ invites: { id: string }[] }>()
+    await api
+      .as(alice)
+      .delete(`/boards/${boardId}/invites/${invites[0]?.id ?? ''}`)
+    const again = await invite('cid@example.com')
+
+    expect(third.statusCode).toBe(409)
+    expect(third.json()).toEqual({ error: 'too_many_invites' })
+    expect(newRole.statusCode).toBe(202)
+    expect(again.statusCode).toBe(202)
   })
 })
 
