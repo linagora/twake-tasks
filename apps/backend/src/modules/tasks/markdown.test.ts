@@ -49,6 +49,9 @@ describe('plainText', () => {
     expect(millisecondsToRead(markdown)).toBeLessThan(200)
   })
 
+  const numbers = (count: number) =>
+    Array.from({ length: count }, (_, i) => String(i))
+
   it.each([
     ['lists nested line after line', '- - a\n'.repeat(8000)],
     ['lists nested by indentation', '- a\n  - b\n'.repeat(5000)],
@@ -67,6 +70,18 @@ describe('plainText', () => {
     [
       'a list with lazy lines indented by a tab',
       `> - a\n${'\tb\n'.repeat(16000)}`
+    ],
+    [
+      'definitions',
+      numbers(5000)
+        .map(n => `[a${n}]: b\n`)
+        .join('')
+    ],
+    [
+      'paragraphs holding the labels of many definitions',
+      `${numbers(1000)
+        .map(n => `[${n}]: b\n`)
+        .join('')}\n${`${numbers(700).join('')}\n\n`.repeat(20)}`
     ]
   ])(
     'reads a description of %s in time linear in its length',
@@ -193,6 +208,18 @@ describe('plainText', () => {
     expect(plainText(markdown)).toBe(
       `a\n${'x\n'.repeat(300)}\n${'*a*\n'.repeat(300)}`.trimEnd()
     )
+  })
+
+  it('resolves a link reference defined in another part of a long document', () => {
+    const markdown = `See [the spec][spec].\n${'p\n'.repeat(600)}\n[spec]: https://example.com/spec\n`
+    expect(plainText(markdown)).toBe(
+      `See the spec.\n${'p\n'.repeat(600)}`.trimEnd()
+    )
+  })
+
+  it('resolves a reference to a definition in a quote, in any case', () => {
+    const markdown = `[The Spec]\n\n${'p\n'.repeat(600)}\n> [the\n> spec]: /spec\n`
+    expect(plainText(markdown)).toMatch(/^The Spec\n/)
   })
 
   it('ends a fence with the list item holding it', () => {
