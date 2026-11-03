@@ -1,5 +1,5 @@
 import { Pen } from '@linagora/twake-icons'
-import { Button, Typography } from '@linagora/twake-mui'
+import { Button, Link, Tooltip, Typography } from '@linagora/twake-mui'
 import { useMemo, useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
@@ -12,6 +12,7 @@ import { CommentReactions, ReactButton } from '@/ui/boards/CommentReactions'
 import { momentFormat } from '@/ui/boards/dueLabel'
 import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
+import { CommentHistory } from '@/ui/boards/CommentHistory'
 import {
   useAddComment,
   useComments,
@@ -61,6 +62,8 @@ export function Comments({
     initial: string
     body: string
   } | null>(null)
+  const [historyId, setHistoryId] = useState<string | null>(null)
+  const historyOf = comments.data?.find(comment => comment.id === historyId)
   useUnsaved(
     body.trim() !== '' || (editing !== null && editing.body !== editing.initial)
   )
@@ -223,7 +226,29 @@ export function Comments({
                     color="textSecondary"
                   >
                     {` · ${format.format(new Date(comment.createdAt))}`}
-                    {comment.editedAt && ` · ${t('task.edited')}`}
+                    {comment.editedAt && (
+                      <>
+                        {' · '}
+                        <Tooltip
+                          title={format.format(new Date(comment.editedAt))}
+                          describeChild
+                        >
+                          <Link
+                            component="button"
+                            type="button"
+                            variant="caption"
+                            color="textSecondary"
+                            underline="hover"
+                            aria-haspopup="dialog"
+                            onClick={() => {
+                              setHistoryId(comment.id)
+                            }}
+                          >
+                            {t('task.edited')}
+                          </Link>
+                        </Tooltip>
+                      </>
+                    )}
                   </Typography>
                 </Typography>
                 {isEditing ? (
@@ -340,6 +365,17 @@ export function Comments({
         </form>
       )}
       {drive.dialog}
+      {historyOf && (
+        <CommentHistory
+          boardId={boardId}
+          taskId={task.id}
+          comment={historyOf}
+          mentions={names}
+          onClose={() => {
+            setHistoryId(null)
+          }}
+        />
+      )}
     </section>
   )
 }

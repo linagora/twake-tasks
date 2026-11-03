@@ -164,6 +164,41 @@ describe('Comments', () => {
       return seeded
     }
 
+    it('changes my comment, marks it edited and shows the earlier body', async () => {
+      const { board, logo, boardsApi } = withMyComment()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      const mine = within(
+        await panel.findByRole('article', { name: 'Alice Martin' })
+      )
+      fireEvent.click(panel.getByRole('button', { name: 'Edit comment' }))
+      await typeRichText(
+        await panel.findByRole('textbox', { name: 'Edit comment' }),
+        'Which fonts?'
+      )
+      fireEvent.click(panel.getByRole('button', { name: 'Save' }))
+
+      fireEvent.click(await mine.findByRole('button', { name: 'edited' }))
+      expect(mine.queryByRole('textbox')).not.toBeInTheDocument()
+      expect(mine.getByText('Which fonts?')).toBeInTheDocument()
+      expect(boardsApi.editComment).toHaveBeenCalledWith(
+        board.id,
+        logo.id,
+        'mine',
+        'Which fonts?'
+      )
+      const history = within(
+        await screen.findByRole('dialog', { name: 'Edit history' })
+      )
+      await waitFor(() => {
+        expect(history.getAllByRole('article')).toHaveLength(2)
+      })
+      const versions = history.getAllByRole('article')
+      expect(versions[0]).toHaveTextContent('Which fonts?')
+      expect(versions[1]).toHaveTextContent('Which palette?')
+    })
+
     it('leaves the comment as it was when the edit is cancelled', async () => {
       const { board, boardsApi } = withMyComment()
       renderRoute(`/boards/${board.id}`, { boardsApi })
