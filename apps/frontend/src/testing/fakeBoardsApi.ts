@@ -5,6 +5,7 @@ import {
   type AgendaTask,
   type BoardsApi,
   type Comment,
+  type CommentEdit,
   type Description,
   type HistoryEntry,
   type Notification,
@@ -158,6 +159,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
   const shares = new Map<string, Pick<BoardSummary, 'sharedBy' | 'joinedAt'>>()
   const descriptions = new Map<string, Description>()
   const comments = new Map<string, Comment[]>()
+  const commentEdits = new Map<string, CommentEdit[]>()
   const history = new Map<string, HistoryEntry[]>()
   const reminders = new Map<string, Reminder[]>()
   const followed = new Set<string>()
@@ -708,10 +710,34 @@ export function fakeBoardsApi(boards: Board[] = []) {
             },
             body,
             createdAt: new Date().toISOString(),
+            editedAt: null,
             reactions: []
           }
         ])
       })
+    ),
+    editComment: vi.fn<BoardsApi['editComment']>(
+      (boardId, taskId, commentId, body) =>
+        Promise.resolve().then(() => {
+          const comment = findComment(boardId, taskId, commentId)
+          if (body === comment.body) return
+          commentEdits.set(commentId, [
+            ...(commentEdits.get(commentId) ?? []),
+            {
+              body: comment.body,
+              writtenAt: comment.editedAt ?? comment.createdAt
+            }
+          ])
+          comment.body = body
+          comment.editedAt = new Date().toISOString()
+        })
+    ),
+    listCommentEdits: vi.fn<BoardsApi['listCommentEdits']>(
+      (boardId, taskId, commentId) =>
+        Promise.resolve().then(() => {
+          findComment(boardId, taskId, commentId)
+          return structuredClone(commentEdits.get(commentId) ?? [])
+        })
     ),
     addReaction: vi.fn<BoardsApi['addReaction']>(
       (boardId, taskId, commentId, emoji) =>

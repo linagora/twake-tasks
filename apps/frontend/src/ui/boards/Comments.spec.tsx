@@ -37,6 +37,7 @@ function logoBoard(role: 'admin' | 'viewer' = 'admin') {
       author: { userId: 'bob', email: 'bob@example.com', name: 'Bob Durand' },
       body: 'Which palette?',
       createdAt: '2026-10-05T09:00:00Z',
+      editedAt: null,
       reactions: []
     }
   ])
@@ -154,6 +155,7 @@ describe('Comments', () => {
         author: { userId: 'bob', email: 'bob@example.com', name: null },
         body: 'Use the **new** one:\n\n- [x] logo\n- [ ] icons',
         createdAt: '2026-10-05T09:00:00Z',
+        editedAt: null,
         reactions: []
       }
     ])
@@ -439,6 +441,7 @@ describe('Comments', () => {
           },
           body,
           createdAt: '2026-10-05T09:00:00Z',
+          editedAt: null,
           reactions: []
         }
       ])

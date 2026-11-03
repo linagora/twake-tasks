@@ -78,8 +78,16 @@ export interface Comment {
   author: Person
   body: string
   createdAt: string
+  /** Null until the author changes the body. */
+  editedAt: string | null
   /** Each emoji once, in the order it was first given. */
   reactions: Reaction[]
+}
+
+/** A body the comment had before an edit, and when it was written. */
+export interface CommentEdit {
+  body: string
+  writtenAt: string
 }
 
 /**
@@ -317,6 +325,18 @@ export interface BoardsApi {
   listHistory: (boardId: string, taskId: string) => Promise<HistoryEntry[]>
   listComments: (boardId: string, taskId: string) => Promise<Comment[]>
   addComment: (boardId: string, taskId: string, body: string) => Promise<void>
+  editComment: (
+    boardId: string,
+    taskId: string,
+    commentId: string,
+    body: string
+  ) => Promise<void>
+  /** Oldest first; the current body is not among them. */
+  listCommentEdits: (
+    boardId: string,
+    taskId: string,
+    commentId: string
+  ) => Promise<CommentEdit[]>
   addReaction: (
     boardId: string,
     taskId: string,

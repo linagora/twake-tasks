@@ -77,6 +77,7 @@ describe('a board open in two places', () => {
           author: bob,
           body: 'Which palette?',
           createdAt: '2026-10-05T09:00:00Z',
+          editedAt: null,
           reactions: [{ emoji: '🎉', people: [bob] }]
         }
       ])

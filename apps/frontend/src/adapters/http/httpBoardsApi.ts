@@ -404,6 +404,22 @@ export function httpBoardsApi(
         body
       } satisfies Body<'newComment'>)
     },
+    editComment: async (boardId, taskId, commentId, body) => {
+      await call(
+        'PATCH',
+        route`/boards/${boardId}/tasks/${taskId}/comments/${commentId}`,
+        { body } satisfies Body<'newComment'>
+      )
+    },
+    listCommentEdits: async (boardId, taskId, commentId) =>
+      (
+        await parsed(
+          'comment edits',
+          wire.commentEditsResponse,
+          'GET',
+          route`/boards/${boardId}/tasks/${taskId}/comments/${commentId}/edits`
+        )
+      ).edits,
     addReaction: async (boardId, taskId, commentId, emoji) => {
       await call(
         'PUT',
