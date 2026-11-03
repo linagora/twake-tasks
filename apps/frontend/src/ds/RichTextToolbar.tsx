@@ -63,6 +63,10 @@ export interface RichTextLabels {
   link: string
   linkUrl: string
   apply: string
+  /** Accessible name of the Write / Markdown tabs. */
+  mode: string
+  write: string
+  markdown: string
 }
 
 /** Picks links from elsewhere (Twake Drive); none when the user cancels. */
@@ -107,12 +111,11 @@ export function Toolbar({
       sx={{
         display: 'flex',
         alignItems: 'center',
+        flex: '1 0 auto',
         flexWrap: 'wrap',
         gap: 0.25,
         px: 0.5,
-        py: 0.5,
-        borderBottom: 1,
-        borderColor: 'divider'
+        py: 0.5
       }}
     >
       <Tool

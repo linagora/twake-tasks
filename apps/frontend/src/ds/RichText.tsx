@@ -1,4 +1,4 @@
-import { Box, type Theme } from '@linagora/twake-mui'
+import { Box, InputBase, Tab, Tabs, type Theme } from '@linagora/twake-mui'
 import { Link } from '@tiptap/extension-link'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Placeholder } from '@tiptap/extensions'
@@ -16,6 +16,7 @@ import {
   useId,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactElement,
   type ReactNode
 } from 'react'
@@ -250,7 +251,10 @@ export function RichTextEditor({
     latest.current = { onChange, onSubmit, mentions }
   })
   const [names] = useState(() => () => latest.current.mentions ?? {})
+  // The Markdown being edited; null while the Write tab is shown.
+  const [source, setSource] = useState<string | null>(null)
   const listId = useId()
+  const tabsId = useId()
   const [open, setOpen] = useState<OpenSuggestions | null>(null)
   const [active, setActive] = useState(0)
   const shown = useRef({ open, active })
@@ -368,6 +372,28 @@ export function RichTextEditor({
         }
       : {}
   )
+  const submitOnCtrlEnter = (event: ReactKeyboardEvent) => {
+    const submit = latest.current.onSubmit
+    if (
+      submit &&
+      !shown.current.open &&
+      event.key === 'Enter' &&
+      (event.metaKey || event.ctrlKey)
+    ) {
+      // ProseMirror drops Enter keydowns on Chrome for Android before its key handlers run.
+      event.preventDefault()
+      event.stopPropagation()
+      submit()
+    }
+  }
+  const showTab = (tab: 'write' | 'markdown') => {
+    if (tab === 'markdown') {
+      setSource(markdownOf(editor))
+      return
+    }
+    editor.commands.setContent(source ?? '', { contentType: 'markdown' })
+    setSource(null)
+  }
 
   return (
     <Box
@@ -383,37 +409,100 @@ export function RichTextEditor({
         }
       })}
     >
-      <Toolbar
-        editor={editor}
-        labels={labels}
-        linkPicker={linkPicker}
-        emoji={emoji}
-      />
       <Box
-        sx={theme => ({
-          ...prose(theme),
-          px: 1.5,
-          py: 1,
-          cursor: 'text',
-          '& .ProseMirror': { outline: 'none', minHeight }
-        })}
-        onClick={() => editor.commands.focus()}
-        onKeyDownCapture={event => {
-          const submit = latest.current.onSubmit
-          if (
-            submit &&
-            !shown.current.open &&
-            event.key === 'Enter' &&
-            (event.metaKey || event.ctrlKey)
-          ) {
-            // ProseMirror drops Enter keydowns on Chrome for Android before its key handlers run.
-            event.preventDefault()
-            event.stopPropagation()
-            submit()
-          }
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          minHeight: 41,
+          borderBottom: 1,
+          borderColor: 'divider'
         }}
       >
-        <EditorContent editor={editor} />
+        <Tabs
+          value={source === null ? 'write' : 'markdown'}
+          onChange={(_event, tab: 'write' | 'markdown') => {
+            showTab(tab)
+          }}
+          aria-label={labels.mode}
+          sx={{
+            minHeight: 0,
+            px: 0.5,
+            '& .MuiTab-root': {
+              minHeight: 40,
+              minWidth: 0,
+              px: 1,
+              textTransform: 'none'
+            }
+          }}
+        >
+          <Tab
+            value="write"
+            label={labels.write}
+            id={`${tabsId}-write`}
+            aria-controls={`${tabsId}-panel`}
+          />
+          <Tab
+            value="markdown"
+            label={labels.markdown}
+            id={`${tabsId}-markdown`}
+            aria-controls={`${tabsId}-panel`}
+          />
+        </Tabs>
+        {source === null && (
+          <Toolbar
+            editor={editor}
+            labels={labels}
+            linkPicker={linkPicker}
+            emoji={emoji}
+          />
+        )}
+      </Box>
+      <Box
+        id={`${tabsId}-panel`}
+        role="tabpanel"
+        aria-labelledby={`${tabsId}-${source === null ? 'write' : 'markdown'}`}
+      >
+        {source !== null && (
+          <InputBase
+            multiline
+            fullWidth
+            value={source}
+            placeholder={placeholder}
+            onChange={event => {
+              setSource(event.target.value)
+              // Not trim(): leading spaces on the first line make an indented code block.
+              latest.current.onChange(
+                event.target.value.replace(/^(?:[ \t]*\n)+/, '').trimEnd()
+              )
+            }}
+            onKeyDownCapture={submitOnCtrlEnter}
+            inputProps={{ 'aria-label': label }}
+            sx={theme => ({
+              alignItems: 'flex-start',
+              px: 1.5,
+              py: 1,
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+              fontSize: '0.8125rem',
+              color: theme.vars.palette.text.primary,
+              '& textarea': { minHeight }
+            })}
+          />
+        )}
+        <Box
+          hidden={source !== null}
+          sx={theme => ({
+            ...prose(theme),
+            px: 1.5,
+            py: 1,
+            cursor: 'text',
+            '& .ProseMirror': { outline: 'none', minHeight }
+          })}
+          onClick={() => editor.commands.focus()}
+          onKeyDownCapture={submitOnCtrlEnter}
+        >
+          <EditorContent editor={editor} />
+        </Box>
       </Box>
       {open && (
         <SuggestionList

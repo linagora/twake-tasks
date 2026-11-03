@@ -25,7 +25,10 @@ const LABELS = {
   taskList: 'Checklist',
   link: 'Link',
   linkUrl: 'URL',
-  apply: 'Apply'
+  apply: 'Apply',
+  mode: 'View',
+  write: 'Write',
+  markdown: 'Markdown'
 }
 
 const TEXT = 'See @bob@example.com tomorrow'
@@ -264,6 +267,75 @@ describe('link tool', () => {
     })
 
     expect(onSubmit).not.toHaveBeenCalled()
+  })
+})
+
+describe('markdown tab', () => {
+  it('shows the markdown of the text, without the formatting tools', async () => {
+    renderWithProviders(
+      <RichTextEditor
+        label="Comment"
+        initial="Ship **today**"
+        labels={LABELS}
+        onChange={vi.fn()}
+      />
+    )
+
+    await screen.findByRole('textbox', { name: 'Comment' })
+    fireEvent.click(screen.getByRole('tab', { name: 'Markdown' }))
+
+    expect(screen.getByRole('textbox', { name: 'Comment' })).toHaveValue(
+      'Ship **today**'
+    )
+    expect(
+      screen.queryByRole('toolbar', { name: 'Formatting' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('reports the markdown typed, and formats it back on the write tab', async () => {
+    const onChange = vi.fn()
+    renderWithProviders(
+      <RichTextEditor
+        label="Comment"
+        initial="Ship"
+        labels={LABELS}
+        onChange={onChange}
+      />
+    )
+
+    await screen.findByRole('textbox', { name: 'Comment' })
+    fireEvent.click(screen.getByRole('tab', { name: 'Markdown' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Comment' }), {
+      target: { value: 'Ship _now_\n' }
+    })
+    expect(onChange).toHaveBeenLastCalledWith('Ship _now_')
+    fireEvent.click(screen.getByRole('tab', { name: 'Write' }))
+
+    const editor = await screen.findByRole('textbox', { name: 'Comment' })
+    expect(editor.querySelector('em')).toHaveTextContent('now')
+    expect(onChange).toHaveBeenLastCalledWith('Ship *now*')
+  })
+
+  it('sends on Ctrl+Enter from the markdown', async () => {
+    const onSubmit = vi.fn()
+    renderWithProviders(
+      <RichTextEditor
+        label="Comment"
+        initial="Ship"
+        labels={LABELS}
+        onChange={vi.fn()}
+        onSubmit={onSubmit}
+      />
+    )
+
+    await screen.findByRole('textbox', { name: 'Comment' })
+    fireEvent.click(screen.getByRole('tab', { name: 'Markdown' }))
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Comment' }), {
+      key: 'Enter',
+      ctrlKey: true
+    })
+
+    expect(onSubmit).toHaveBeenCalledOnce()
   })
 })
 
