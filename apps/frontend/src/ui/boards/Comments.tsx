@@ -82,6 +82,52 @@ export function Comments({
       }
     })
   }
+  const tools = {
+    labels,
+    minHeight: 48,
+    mentions: names,
+    linkPicker: drive.linkPicker,
+    emoji: emojiInput.emoji,
+    suggestions: [
+      {
+        trigger: '@',
+        label: t('editor.mentionsLabel'),
+        search: (query: string) =>
+          mentionable(query).map(person => ({
+            key: person.userId,
+            insert: [
+              { type: 'mention', attrs: { email: person.email } },
+              { type: 'text', text: ' ' }
+            ],
+            label: (
+              <>
+                <PersonAvatar
+                  email={person.email}
+                  name={person.name}
+                  avatar={person.avatar}
+                />
+                <div className="u-ellipsis">
+                  <Typography variant="body2" className="u-ellipsis">
+                    <Highlight text={displayName(person)} query={query} />
+                  </Typography>
+                  {displayName(person) !== person.email && (
+                    <Typography
+                      variant="caption"
+                      color="textSecondary"
+                      component="div"
+                      className="u-ellipsis"
+                    >
+                      <Highlight text={person.email} query={query} />
+                    </Typography>
+                  )}
+                </div>
+              </>
+            )
+          }))
+      },
+      emojiInput.suggestions
+    ]
+  }
 
   return (
     <section aria-label={t('task.comments')}>
@@ -157,56 +203,10 @@ export function Comments({
             label={t('task.comment')}
             initial=""
             placeholder={t('editor.commentPlaceholder')}
-            labels={labels}
-            minHeight={48}
             onChange={setBody}
             onSubmit={send}
             focusOnOpen={draft > 0}
-            mentions={names}
-            linkPicker={drive.linkPicker}
-            emoji={emojiInput.emoji}
-            suggestions={[
-              {
-                trigger: '@',
-                label: t('editor.mentionsLabel'),
-                search: query =>
-                  mentionable(query).map(person => ({
-                    key: person.userId,
-                    insert: [
-                      { type: 'mention', attrs: { email: person.email } },
-                      { type: 'text', text: ' ' }
-                    ],
-                    label: (
-                      <>
-                        <PersonAvatar
-                          email={person.email}
-                          name={person.name}
-                          avatar={person.avatar}
-                        />
-                        <div className="u-ellipsis">
-                          <Typography variant="body2" className="u-ellipsis">
-                            <Highlight
-                              text={displayName(person)}
-                              query={query}
-                            />
-                          </Typography>
-                          {displayName(person) !== person.email && (
-                            <Typography
-                              variant="caption"
-                              color="textSecondary"
-                              component="div"
-                              className="u-ellipsis"
-                            >
-                              <Highlight text={person.email} query={query} />
-                            </Typography>
-                          )}
-                        </div>
-                      </>
-                    )
-                  }))
-              },
-              emojiInput.suggestions
-            ]}
+            {...tools}
             footer={
               <>
                 <Typography
