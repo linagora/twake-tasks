@@ -24,6 +24,7 @@ What people can do in Twake Project, with the terms the rest of the docs use.
 
 - Comments take Markdown, emoji reactions and `@` mentions of project members.
 - Authors can edit their comments. An edited comment says so, and anyone who sees it can open its earlier versions.
+- A description or comment is written as formatted text, or as Markdown in the editor's Markdown tab.
 - People follow tasks. A change to a followed task notifies them in the app, and by email when SMTP is set.
 - With the Drive picker on, a description or comment can link files from Twake Drive (see [configuration](configuration.md#frontend)).
 

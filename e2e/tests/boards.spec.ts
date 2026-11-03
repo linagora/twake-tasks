@@ -63,6 +63,28 @@ test('edits a comment and keeps its earlier version', async ({ page }) => {
   )
 })
 
+test('sends a comment written as Markdown', async ({ page }) => {
+  await signIn(page, 'alice')
+  const { prefix } = await newBoard(page)
+  await addTask(page, 'Write the press release')
+  await page.getByRole('button', { name: 'Write the press release' }).click()
+  const panel = page.getByRole('dialog', {
+    name: `${prefix}-1 Write the press release`
+  })
+
+  await panel.getByRole('tab', { name: 'Markdown' }).click()
+  await panel
+    .getByRole('textbox', { name: 'Comment' })
+    .fill('Draft by **Friday**')
+  await panel.getByRole('button', { name: 'Send' }).click()
+
+  await expect(
+    panel.getByRole('article', { name: 'Alice Martin' }).locator('strong', {
+      hasText: 'Friday'
+    })
+  ).toBeVisible()
+})
+
 test('changing the view does not reopen a closed task', async ({ page }) => {
   await signIn(page, 'alice')
   const { prefix } = await newBoard(page)

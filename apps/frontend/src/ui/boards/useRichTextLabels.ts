@@ -14,6 +14,9 @@ export function useRichTextLabels(): RichTextLabels {
     taskList: t('editor.taskList'),
     link: t('editor.link'),
     linkUrl: t('editor.linkUrl'),
-    apply: t('editor.apply')
+    apply: t('editor.apply'),
+    mode: t('editor.mode'),
+    write: t('editor.write'),
+    markdown: t('editor.markdown')
   }
 }

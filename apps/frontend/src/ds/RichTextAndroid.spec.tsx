@@ -23,7 +23,10 @@ const LABELS = {
   taskList: 'Checklist',
   link: 'Link',
   linkUrl: 'URL',
-  apply: 'Apply'
+  apply: 'Apply',
+  mode: 'View',
+  write: 'Write',
+  markdown: 'Markdown'
 }
 
 describe('Ctrl+Enter in the rich-text editor on Chrome for Android', () => {
