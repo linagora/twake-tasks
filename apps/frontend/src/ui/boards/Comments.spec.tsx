@@ -147,6 +147,68 @@ describe('Comments', () => {
     )
   })
 
+  describe('editing a comment', () => {
+    function withMyComment(role: 'admin' | 'viewer' = 'viewer') {
+      const seeded = logoBoard(role)
+      seeded.boardsApi.comments.set(seeded.logo.id, [
+        ...(seeded.boardsApi.comments.get(seeded.logo.id) ?? []),
+        {
+          id: 'mine',
+          author: alice,
+          body: 'Which palette?',
+          createdAt: '2026-10-05T10:00:00Z',
+          editedAt: null,
+          reactions: []
+        }
+      ])
+      return seeded
+    }
+
+    it('leaves the comment as it was when the edit is cancelled', async () => {
+      const { board, boardsApi } = withMyComment()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      await panel.findByRole('article', { name: 'Alice Martin' })
+      fireEvent.click(panel.getByRole('button', { name: 'Edit comment' }))
+      await typeRichText(
+        await panel.findByRole('textbox', { name: 'Edit comment' }),
+        'Never mind'
+      )
+      fireEvent.click(panel.getByRole('button', { name: 'Cancel' }))
+
+      expect(
+        panel.getByRole('article', { name: 'Alice Martin' })
+      ).toHaveTextContent('Which palette?')
+      expect(boardsApi.editComment).not.toHaveBeenCalled()
+    })
+
+    it('offers to edit only my own comments', async () => {
+      const { board, boardsApi } = withMyComment()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      await panel.findByRole('article', { name: 'Alice Martin' })
+
+      expect(
+        panel.getAllByRole('button', { name: 'Edit comment' })
+      ).toHaveLength(1)
+    })
+
+    it('hides the edit button on an archived board', async () => {
+      const { board, boardsApi } = withMyComment()
+      board.archived = true
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      await panel.findByRole('article', { name: 'Alice Martin' })
+
+      expect(
+        panel.queryByRole('button', { name: 'Edit comment' })
+      ).not.toBeInTheDocument()
+    })
+  })
+
   it('shows formatting written in a comment', async () => {
     const { board, logo, boardsApi } = logoBoard()
     boardsApi.comments.set(logo.id, [

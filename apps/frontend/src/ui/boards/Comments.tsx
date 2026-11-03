@@ -1,17 +1,23 @@
+import { Pen } from '@linagora/twake-icons'
 import { Button, Typography } from '@linagora/twake-mui'
 import { useMemo, useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { Highlight } from '@/ds/Highlight'
 import { RichText, RichTextEditor } from '@/ds/RichText'
-import { Feed, FeedItem } from '@/ds/SidePanel'
+import { Feed, FeedAction, FeedItem } from '@/ds/SidePanel'
 import type { Person, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { CommentReactions, ReactButton } from '@/ui/boards/CommentReactions'
 import { momentFormat } from '@/ui/boards/dueLabel'
 import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useAddComment, useComments, useReact } from '@/ui/queries/comments'
+import {
+  useAddComment,
+  useComments,
+  useEditComment,
+  useReact
+} from '@/ui/queries/comments'
 import { useUnsaved } from '@/ui/boards/unsaved'
 import { useEmojiInput } from '@/ui/boards/useEmojiInput'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
@@ -49,7 +55,15 @@ export function Comments({
   const react = useReact(boardId, task.id, me)
   const [body, setBody] = useState('')
   const [draft, setDraft] = useState(0)
-  useUnsaved(body.trim() !== '')
+  const edit = useEditComment(boardId, task.id)
+  const [editing, setEditing] = useState<{
+    id: string
+    initial: string
+    body: string
+  } | null>(null)
+  useUnsaved(
+    body.trim() !== '' || (editing !== null && editing.body !== editing.initial)
+  )
   const format = momentFormat(lang)
   const sendable = !add.isPending && body !== '' && body.length <= MAX_COMMENT
   const mentionable = (query: string) => {
@@ -128,6 +142,26 @@ export function Comments({
       emojiInput.suggestions
     ]
   }
+  const savable =
+    editing !== null &&
+    !edit.isPending &&
+    editing.body.trim() !== '' &&
+    editing.body.length <= MAX_COMMENT
+  const save = () => {
+    if (!editing || !savable) return
+    if (editing.body === editing.initial) {
+      setEditing(null)
+      return
+    }
+    edit.mutate(
+      { commentId: editing.id, body: editing.body },
+      {
+        onSuccess: () => {
+          setEditing(null)
+        }
+      }
+    )
+  }
 
   return (
     <section aria-label={t('task.comments')}>
@@ -135,55 +169,128 @@ export function Comments({
         <Typography role="alert">{t('task.commentsFailed')}</Typography>
       )}
       <Feed label={t('task.comments')}>
-        {comments.data?.map(comment => (
-          <FeedItem
-            key={comment.id}
-            avatar={
-              <PersonAvatar
-                email={comment.author.email}
-                name={comment.author.name}
-                avatar={comment.author.avatar}
-                size={28}
-              />
-            }
-            {...(archived
-              ? {}
-              : {
-                  actions: (
-                    <ReactButton
-                      reactions={comment.reactions}
-                      me={me}
-                      emojiInput={emojiInput}
-                      onReact={(emoji, on) => {
-                        react.mutate({ commentId: comment.id, emoji, on })
-                      }}
-                    />
-                  )
-                })}
-          >
-            <article aria-label={displayName(comment.author)}>
-              <Typography variant="body2" component="div">
-                <strong>{displayName(comment.author)}</strong>
-                <Typography
-                  component="span"
-                  variant="caption"
-                  color="textSecondary"
-                >
-                  {` · ${format.format(new Date(comment.createdAt))}`}
+        {comments.data?.map(comment => {
+          const isEditing = !archived && editing?.id === comment.id
+          const mine = comment.author.email.toLowerCase() === myEmail
+          return (
+            <FeedItem
+              key={comment.id}
+              avatar={
+                <PersonAvatar
+                  email={comment.author.email}
+                  name={comment.author.name}
+                  avatar={comment.author.avatar}
+                  size={28}
+                />
+              }
+              {...(archived || isEditing
+                ? {}
+                : {
+                    actions: (
+                      <>
+                        {mine && (
+                          <FeedAction
+                            label={t('task.editComment')}
+                            icon={Pen}
+                            onClick={() => {
+                              edit.reset()
+                              setEditing({
+                                id: comment.id,
+                                initial: comment.body,
+                                body: comment.body
+                              })
+                            }}
+                          />
+                        )}
+                        <ReactButton
+                          reactions={comment.reactions}
+                          me={me}
+                          emojiInput={emojiInput}
+                          onReact={(emoji, on) => {
+                            react.mutate({ commentId: comment.id, emoji, on })
+                          }}
+                        />
+                      </>
+                    )
+                  })}
+            >
+              <article aria-label={displayName(comment.author)}>
+                <Typography variant="body2" component="div">
+                  <strong>{displayName(comment.author)}</strong>
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    color="textSecondary"
+                  >
+                    {` · ${format.format(new Date(comment.createdAt))}`}
+                    {comment.editedAt && ` · ${t('task.edited')}`}
+                  </Typography>
                 </Typography>
-              </Typography>
-              <RichText markdown={comment.body} mentions={names} />
-              <CommentReactions
-                reactions={comment.reactions}
-                me={me}
-                readOnly={archived}
-                onReact={(emoji, on) => {
-                  react.mutate({ commentId: comment.id, emoji, on })
-                }}
-              />
-            </article>
-          </FeedItem>
-        ))}
+                {isEditing ? (
+                  <form
+                    className="u-mt-half"
+                    onSubmit={event => {
+                      event.preventDefault()
+                      save()
+                    }}
+                  >
+                    <RichTextEditor
+                      label={t('task.editComment')}
+                      initial={comment.body}
+                      onChange={next => {
+                        setEditing(
+                          previous => previous && { ...previous, body: next }
+                        )
+                      }}
+                      onSubmit={save}
+                      focusOnOpen
+                      {...tools}
+                      footer={
+                        <>
+                          <Button
+                            variant="secondary"
+                            size="small"
+                            className="u-ml-auto"
+                            onClick={() => {
+                              setEditing(null)
+                            }}
+                          >
+                            {t('task.cancelEdit')}
+                          </Button>
+                          <Button
+                            type="submit"
+                            size="small"
+                            disabled={!savable}
+                          >
+                            {t('task.saveComment')}
+                          </Button>
+                        </>
+                      }
+                    />
+                    {edit.isError && (
+                      <Typography role="alert" variant="caption">
+                        {edit.error instanceof ApiError &&
+                        edit.error.code === 'too_many_mentions'
+                          ? t('task.tooManyMentions')
+                          : t('task.commentEditFailed')}
+                      </Typography>
+                    )}
+                  </form>
+                ) : (
+                  <RichText markdown={comment.body} mentions={names} />
+                )}
+                <CommentReactions
+                  reactions={comment.reactions}
+                  me={me}
+                  readOnly={archived}
+                  onReact={(emoji, on) => {
+                    react.mutate({ commentId: comment.id, emoji, on })
+                  }}
+                />
+              </article>
+            </FeedItem>
+          )
+        })}
       </Feed>
       {react.isError && (
         <Typography role="alert" variant="caption">

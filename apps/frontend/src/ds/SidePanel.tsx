@@ -29,7 +29,7 @@ import {
 import { createPortal } from 'react-dom'
 
 import { CRUMB_BAR } from '@/ds/CrumbBar'
-import { Icon } from '@/ds/Icon'
+import { Icon, type IconProps } from '@/ds/Icon'
 
 function inField(element: Element | null): boolean {
   return element?.matches('input, textarea, [contenteditable]') ?? false
@@ -656,6 +656,30 @@ export function FeedItem({
         </Box>
       )}
     </Box>
+  )
+}
+
+/** An icon button among a feed item's actions, sized as its reaction button. */
+export function FeedAction({
+  label,
+  icon,
+  onClick
+}: {
+  label: string
+  icon: IconProps['icon']
+  onClick: () => void
+}): ReactElement {
+  return (
+    <Tooltip title={label}>
+      <IconButton
+        size="small"
+        aria-label={label}
+        onClick={onClick}
+        sx={{ width: 32, height: 32, color: 'text.secondary' }}
+      >
+        <Icon icon={icon} size={16} />
+      </IconButton>
+    </Tooltip>
   )
 }
 
