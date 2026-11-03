@@ -1,12 +1,14 @@
 import { sql } from 'drizzle-orm'
 import {
   foreignKey,
+  index,
   pgTable,
   primaryKey,
   text,
   uuid
 } from 'drizzle-orm/pg-core'
 import {
+  id,
   organizationId,
   tenant,
   tenantPolicy,
@@ -31,6 +33,32 @@ export const commentReactions = pgTable.withRLS(
   },
   table => [
     primaryKey({ columns: [table.commentId, table.userId, table.emoji] }),
+    foreignKey({
+      columns: [table.tenant, table.commentId],
+      foreignColumns: [comments.tenant, comments.id]
+    }),
+    tenantPolicy(
+      table.organizationId,
+      sql`exists (select 1 from ${comments} where ${comments.id} = ${table.commentId})`
+    )
+  ]
+)
+
+// The bodies a comment had before each edit, with the time each was written.
+export const commentEdits = pgTable.withRLS(
+  'comment_edits',
+  {
+    id: id(),
+    commentId: uuid('comment_id')
+      .notNull()
+      .references(() => comments.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    body: text().notNull(),
+    writtenAt: timestamptz('written_at').notNull(),
+    tenant: tenant()
+  },
+  table => [
+    index().on(table.commentId, table.writtenAt),
     foreignKey({
       columns: [table.tenant, table.commentId],
       foreignColumns: [comments.tenant, comments.id]

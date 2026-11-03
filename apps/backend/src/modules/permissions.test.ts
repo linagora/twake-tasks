@@ -408,6 +408,20 @@ const EXAMPLES: Record<string, Example> = {
   [`GET ${task}/history`]: none,
   [`GET ${task}/comments`]: none,
   [`POST ${task}/comments`]: () => ({ body: { body: 'Agreed' } }),
+  // Only the author edits a comment: each caller edits one of their own.
+  [`PATCH ${task}/comments/:commentId`]: async (fixture, me) => ({
+    params: {
+      commentId: await idOrNone(
+        api
+          .as(me)
+          .post(`/boards/${fixture.boardId}/tasks/${fixture.taskId}/comments`, {
+            body: 'Mine'
+          })
+      )
+    },
+    body: { body: 'Mine, edited' }
+  }),
+  [`GET ${task}/comments/:commentId/edits`]: none,
   [`PUT ${task}/comments/:commentId/reactions/:emoji`]: () => ({
     params: { emoji: '👍' }
   }),

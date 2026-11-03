@@ -2,6 +2,7 @@ import {
   agendaResponse,
   boardResponse,
   boardsResponse,
+  commentEditsResponse,
   commentsResponse,
   createdFilterResponse,
   createdTaskResponse,
@@ -240,6 +241,17 @@ describe('the API contract', () => {
       contracted(unreadResponse, await api.as(bob).get('/notifications/unread'))
         .projects
     ).toHaveLength(1)
+
+    // Edit after the notification check: its excerpt shows the current body.
+    await api
+      .as(alice)
+      .patch(`${at}/comments/${comment?.id ?? ''}`, { body: 'Looks great' })
+    expect(
+      contracted(
+        commentEditsResponse,
+        await api.as(alice).get(`${at}/comments/${comment?.id ?? ''}/edits`)
+      ).edits
+    ).toMatchObject([{ body: 'Looks good' }])
 
     const { id: filterId } = contracted(
       createdFilterResponse,

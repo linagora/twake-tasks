@@ -419,6 +419,8 @@ export const comments = pgTable.withRLS(
     // Null on the comments of releases that did not store it.
     bodyText: text('body_text'),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
+    // Null until the author first changes the body.
+    editedAt: timestamptz('edited_at'),
     tenant: tenant()
   },
   table => [

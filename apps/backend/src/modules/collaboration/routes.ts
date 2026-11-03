@@ -1,4 +1,5 @@
 import {
+  commentParams,
   newComment,
   reactionEmoji,
   reactionParams,
@@ -91,6 +92,38 @@ export function registerCollaboration(
           params.boardId,
           params.taskId,
           body.body
+        )
+    }),
+    defineRoute({
+      method: 'PATCH',
+      url: '/boards/:boardId/tasks/:taskId/comments/:commentId',
+      access: viewer,
+      params: commentParams,
+      body: newComment,
+      status: 204,
+      handler: ({ identity, params, body }) =>
+        commentStore.editComment(
+          identity,
+          params.boardId,
+          params.taskId,
+          params.commentId,
+          body.body
+        )
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/tasks/:taskId/comments/:commentId/edits',
+      access: viewer,
+      params: commentParams,
+      handler: ({ identity, params }) =>
+        under(
+          'edits',
+          commentStore.listEdits(
+            identity,
+            params.boardId,
+            params.taskId,
+            params.commentId
+          )
         )
     }),
     ...(['PUT', 'DELETE'] as const).map((method): CollaborationRoute =>
