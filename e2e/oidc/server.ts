@@ -171,6 +171,15 @@ function issueCode(
   })
 }
 
+const escape = (text: string) =>
+  text.replace(
+    /[&<>"']/g,
+    c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
+        c
+      ] ?? c
+  )
+
 function loginPage(query: URLSearchParams) {
   const buttons = Object.keys(PEOPLE)
     .map(
@@ -181,7 +190,7 @@ function loginPage(query: URLSearchParams) {
   const hidden = [...query]
     .map(
       ([k, v]) =>
-        `<input type="hidden" name="${k}" value="${v.replace(/"/g, '&quot;')}">`
+        `<input type="hidden" name="${escape(k)}" value="${escape(v)}">`
     )
     .join('')
   return `<!doctype html><title>Mock SSO</title><form method="post" action="/authorize">${hidden}${buttons}</form>`

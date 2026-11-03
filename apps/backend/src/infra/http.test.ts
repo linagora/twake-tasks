@@ -127,7 +127,7 @@ describe('the server', () => {
 
   it('still says what is wrong with a request it cannot read', async () => {
     const app = serverLoggingTo([])
-    app.post('/echo', request => request.body)
+    app.post('/echo', () => ({ ok: true }))
 
     const response = await app.inject({
       method: 'POST',
