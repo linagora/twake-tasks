@@ -60,7 +60,13 @@ function home() {
 }
 
 function space(resourceId: string, path: string) {
-  const config = JSON.stringify({ appOrigin: APP_ORIGIN, resourceId, path })
+  // The config lands inside a script element, where a "</script>" in an id
+  // would end it.
+  const config = JSON.stringify({
+    appOrigin: APP_ORIGIN,
+    resourceId,
+    path
+  }).replace(/</g, '\\x3c')
   return `<!doctype html><meta charset="utf-8"><title>TwakeSpace stand-in</title>
     <style>${style}</style>
     <header>
