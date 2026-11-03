@@ -298,7 +298,15 @@ describe('the embedded view', () => {
       target: { value: 'Ship it' }
     })
     fireEvent.click(dialog.getByRole('button', { name: 'Create' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'See the task' }))
+    // The toast waits for the board behind the dialog to refetch and render,
+    // which takes seconds when the whole suite runs at once.
+    fireEvent.click(
+      await screen.findByRole(
+        'button',
+        { name: 'See the task' },
+        { timeout: 10_000 }
+      )
+    )
 
     expect(router.state.location.pathname).toBe(
       `/embed/projects/${roadmap.id}/boards/${first.id}`
