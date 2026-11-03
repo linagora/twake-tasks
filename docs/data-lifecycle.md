@@ -40,6 +40,7 @@ A test fails when a table is missing from this page, and the backend test suite 
 - `task_labels`: cascade with the task or the label, or deleted by hand. Removed when the task or its board moves to a project without the label.
 - `comments`: cascade with the task. Kept after their author's account is deleted, with the author's name as it was.
 - `comment_reactions`: cascade with the comment, or deleted by hand. Removed with the person.
+- `comment_edits`: the earlier bodies of an edited comment. Cascade with the comment, and kept as long as it is.
 - `task_history`: cascade with the task. Kept as long as the task, with the actor's name as it was.
 - `notifications`: cascade with the task. Removed when the person loses access to the task, or with the person. Retention: 180 days after it is read (`RETENTION_READ_NOTIFICATIONS_DAYS`), deleted by the daily `retention` job.
 - `notification_email_budgets`: one row per person who got a notification email. Kept, even after the person is deleted.

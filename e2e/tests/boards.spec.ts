@@ -28,6 +28,41 @@ test('plans a board: a task and its comment survive a reload', async ({
   await expect(comment()).toContainText('First draft by Friday')
 })
 
+test('edits a comment and keeps its earlier version', async ({ page }) => {
+  await signIn(page, 'alice')
+  const { prefix } = await newBoard(page)
+  await addTask(page, 'Write the press release')
+  await page.getByRole('button', { name: 'Write the press release' }).click()
+  const panel = page.getByRole('dialog', {
+    name: `${prefix}-1 Write the press release`
+  })
+  const comment = panel.getByRole('article', { name: 'Alice Martin' })
+  await panel
+    .getByRole('textbox', { name: 'Comment' })
+    .fill('First draft by Friday')
+  await panel.getByRole('button', { name: 'Send' }).click()
+  await expect(comment).toContainText('First draft by Friday')
+
+  await comment.hover()
+  await panel.getByRole('button', { name: 'Edit comment' }).click()
+  await panel
+    .getByRole('textbox', { name: 'Edit comment' })
+    .fill('First draft by Monday')
+  await panel.getByRole('button', { name: 'Save' }).click()
+  await expect(comment).toContainText('First draft by Monday')
+  await page.reload()
+  await comment.getByRole('button', { name: 'edited' }).click()
+
+  const history = page.getByRole('dialog', { name: 'Edit history' })
+  await expect(history.getByRole('article')).toHaveCount(2)
+  await expect(history.getByRole('article').nth(0)).toContainText(
+    'First draft by Monday'
+  )
+  await expect(history.getByRole('article').nth(1)).toContainText(
+    'First draft by Friday'
+  )
+})
+
 test('changing the view does not reopen a closed task', async ({ page }) => {
   await signIn(page, 'alice')
   const { prefix } = await newBoard(page)

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
@@ -15,7 +15,7 @@ import {
   refuseIfShelved,
   visibleTask
 } from '../tasks/index.ts'
-import { commentReactions } from './schema.ts'
+import { commentEdits, commentReactions } from './schema.ts'
 
 export const COMMENTS_LISTED = 500
 
@@ -103,6 +103,7 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
           },
           body: row.body,
           createdAt: row.createdAt,
+          editedAt: row.editedAt,
           reactions: [...(byComment.get(row.id) ?? [])].map(
             ([emoji, people]) => ({
               emoji,
@@ -146,6 +147,65 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
           .returning({ id: comments.id, createdAt: comments.createdAt })
         if (!comment) throw new Error('comment insert returned nothing')
         return comment
+      })
+    },
+
+    editComment(
+      identity: Identity,
+      boardId: string,
+      taskId: string,
+      commentId: string,
+      body: string
+    ) {
+      const bodyText = plainText(body)
+      return writeOrRefuse(db, identity, async tx => {
+        await openTask(tx, identity, boardId, taskId)
+        const [comment] = await tx
+          .select()
+          .from(comments)
+          .where(and(eq(comments.id, commentId), eq(comments.taskId, taskId)))
+          .for('update')
+        if (!comment) throw new Refused('not_found')
+        if (comment.authorId !== identity.userId) {
+          throw new Refused('forbidden')
+        }
+        if (
+          mentionsPerComment > 0 &&
+          mentionedEmails(body).size > mentionsPerComment
+        ) {
+          throw new Refused('too_many_mentions')
+        }
+        if (body === comment.body) return
+        await tx.insert(commentEdits).values({
+          commentId,
+          organizationId: comment.organizationId,
+          body: comment.body,
+          writtenAt: comment.editedAt ?? comment.createdAt
+        })
+        await tx
+          .update(comments)
+          .set({ body, bodyText, editedAt: sql`now()` })
+          .where(eq(comments.id, commentId))
+      })
+    },
+
+    listEdits(
+      identity: Identity,
+      boardId: string,
+      taskId: string,
+      commentId: string
+    ) {
+      return writeOrRefuse(db, identity, async tx => {
+        await visibleTask(tx, identity, boardId, taskId)
+        await commentOf(tx, taskId, commentId)
+        return tx
+          .select({
+            body: commentEdits.body,
+            writtenAt: commentEdits.writtenAt
+          })
+          .from(commentEdits)
+          .where(eq(commentEdits.commentId, commentId))
+          .orderBy(asc(commentEdits.writtenAt), asc(commentEdits.id))
       })
     },
 

@@ -7,10 +7,9 @@ export const newComment = z.object({
   body: z.string().trim().min(1).max(10_000)
 })
 
-export const reactionParams = taskParams.extend({
-  commentId: z.uuid(),
-  emoji: z.string()
-})
+export const commentParams = taskParams.extend({ commentId: z.uuid() })
+
+export const reactionParams = commentParams.extend({ emoji: z.string() })
 
 const graphemes = new Intl.Segmenter('en', { granularity: 'grapheme' })
 
@@ -31,9 +30,16 @@ export const commentsResponse = z.object({
       author: person,
       body: z.string(),
       createdAt: instant,
+      editedAt: instant.nullable(),
       reactions: z.array(
         z.object({ emoji: z.string(), people: z.array(person) })
       )
     })
   )
+})
+
+// Oldest first: the body as first written, then as it read before each later
+// edit. The current body is not among them.
+export const commentEditsResponse = z.object({
+  edits: z.array(z.object({ body: z.string(), writtenAt: instant }))
 })

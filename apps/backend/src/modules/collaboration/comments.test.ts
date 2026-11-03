@@ -297,3 +297,106 @@ describe('comment reactions', () => {
     expect((await api.as(alice).put(reaction('🎉'))).statusCode).toBe(409)
   })
 })
+
+describe('comment edits', () => {
+  interface Listed {
+    id: string
+    body: string
+    createdAt: string
+    editedAt: string | null
+  }
+
+  async function aComment(owner: TestUser) {
+    const { boardId, taskId } = await aTaskOf(owner)
+    const list = `/boards/${boardId}/tasks/${taskId}/comments`
+    const { id } = (
+      await api.as(owner).post(list, { body: 'Which palette?' })
+    ).json<{ id: string }>()
+    const path = `${list}/${id}`
+    const listed = async (viewer: TestUser) =>
+      (await api.as(viewer).get(list))
+        .json<{ comments: Listed[] }>()
+        .comments.find(comment => comment.id === id)
+    const edits = async (viewer: TestUser) =>
+      (await api.as(viewer).get(`${path}/edits`)).json<{
+        edits: { body: string; writtenAt: string }[]
+      }>().edits
+    return { boardId, taskId, path, listed, edits }
+  }
+
+  it('changes the body, marks it edited and keeps the earlier bodies', async () => {
+    const alice = aUser()
+    const { path, listed, edits } = await aComment(alice)
+    const created = await listed(alice)
+
+    expect(created?.editedAt).toBeNull()
+    const first = await api.as(alice).patch(path, { body: 'Which colours?' })
+    const once = await listed(alice)
+    await api.as(alice).patch(path, { body: 'Which fonts?' })
+    const twice = await listed(alice)
+
+    expect(first.statusCode).toBe(204)
+    expect(twice?.body).toBe('Which fonts?')
+    expect(twice?.editedAt).not.toBeNull()
+    expect(await edits(alice)).toEqual([
+      { body: 'Which palette?', writtenAt: created?.createdAt },
+      { body: 'Which colours?', writtenAt: once?.editedAt }
+    ])
+  })
+
+  it('keeps no edit when the body does not change', async () => {
+    const alice = aUser()
+    const { path, listed, edits } = await aComment(alice)
+
+    const same = await api.as(alice).patch(path, { body: 'Which palette?' })
+
+    expect(same.statusCode).toBe(204)
+    expect((await listed(alice))?.editedAt).toBeNull()
+    expect(await edits(alice)).toEqual([])
+  })
+
+  it('lets only the author edit, and members see the earlier bodies', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const { boardId, path, edits } = await aComment(alice)
+    await joinBoard(db, alice, boardId, bob, 'admin')
+    await api.as(alice).patch(path, { body: 'Which fonts?' })
+
+    expect((await api.as(bob).patch(path, { body: 'Mine' })).statusCode).toBe(
+      403
+    )
+    expect(await edits(bob)).toEqual([
+      expect.objectContaining({ body: 'Which palette?' })
+    ])
+    expect((await api.as(aUser()).get(`${path}/edits`)).statusCode).toBe(404)
+  })
+
+  it('refuses an empty body and edits on an archived board', async () => {
+    const alice = aUser()
+    const { boardId, path } = await aComment(alice)
+
+    expect((await api.as(alice).patch(path, { body: ' ' })).statusCode).toBe(
+      400
+    )
+    await api.as(alice).post(`/boards/${boardId}/archive`, {})
+    expect((await api.as(alice).patch(path, { body: 'Late' })).statusCode).toBe(
+      409
+    )
+  })
+
+  it('refuses a comment of another task', async () => {
+    const alice = aUser()
+    const { path } = await aComment(alice)
+    const other = await aTaskOf(alice, 'OPS')
+    const commentId = path.split('/').at(-1) ?? ''
+
+    const response = await api
+      .as(alice)
+      .patch(
+        `/boards/${other.boardId}/tasks/${other.taskId}/comments/${commentId}`,
+        { body: 'Moved' }
+      )
+
+    expect(response.statusCode).toBe(404)
+  })
+})

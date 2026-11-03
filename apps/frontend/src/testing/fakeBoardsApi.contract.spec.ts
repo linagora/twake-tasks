@@ -55,6 +55,7 @@ describe('the fake boards API', () => {
     await fake.addComment(...at, 'Looks good')
     const [comment] = await fake.listComments(...at)
     await fake.addReaction(...at, comment?.id ?? '', '👍')
+    await fake.editComment(...at, comment?.id ?? '', 'Looks great')
     await fake.addReminder(...at, { at: '2099-01-01T09:00:00.000Z' })
     await fake.addReminder(...at, { beforeMinutes: 30, zone: 'Europe/Paris' })
     await fake.setDescription(...at, { markdown: 'Plan', version: 0 })
@@ -105,6 +106,10 @@ describe('the fake boards API', () => {
         listComments: [
           wire.commentsResponse,
           { comments: await fake.listComments(...at) }
+        ],
+        listCommentEdits: [
+          wire.commentEditsResponse,
+          { edits: await fake.listCommentEdits(...at, comment?.id ?? '') }
         ],
         listReminders: [
           wire.remindersResponse,

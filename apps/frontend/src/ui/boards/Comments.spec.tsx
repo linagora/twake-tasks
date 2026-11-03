@@ -37,6 +37,7 @@ function logoBoard(role: 'admin' | 'viewer' = 'admin') {
       author: { userId: 'bob', email: 'bob@example.com', name: 'Bob Durand' },
       body: 'Which palette?',
       createdAt: '2026-10-05T09:00:00Z',
+      editedAt: null,
       reactions: []
     }
   ])
@@ -146,6 +147,103 @@ describe('Comments', () => {
     )
   })
 
+  describe('editing a comment', () => {
+    function withMyComment(role: 'admin' | 'viewer' = 'viewer') {
+      const seeded = logoBoard(role)
+      seeded.boardsApi.comments.set(seeded.logo.id, [
+        ...(seeded.boardsApi.comments.get(seeded.logo.id) ?? []),
+        {
+          id: 'mine',
+          author: alice,
+          body: 'Which palette?',
+          createdAt: '2026-10-05T10:00:00Z',
+          editedAt: null,
+          reactions: []
+        }
+      ])
+      return seeded
+    }
+
+    it('changes my comment, marks it edited and shows the earlier body', async () => {
+      const { board, logo, boardsApi } = withMyComment()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      const mine = within(
+        await panel.findByRole('article', { name: 'Alice Martin' })
+      )
+      fireEvent.click(panel.getByRole('button', { name: 'Edit comment' }))
+      await typeRichText(
+        await panel.findByRole('textbox', { name: 'Edit comment' }),
+        'Which fonts?'
+      )
+      fireEvent.click(panel.getByRole('button', { name: 'Save' }))
+
+      fireEvent.click(await mine.findByRole('button', { name: 'edited' }))
+      expect(mine.queryByRole('textbox')).not.toBeInTheDocument()
+      expect(mine.getByText('Which fonts?')).toBeInTheDocument()
+      expect(boardsApi.editComment).toHaveBeenCalledWith(
+        board.id,
+        logo.id,
+        'mine',
+        'Which fonts?'
+      )
+      const history = within(
+        await screen.findByRole('dialog', { name: 'Edit history' })
+      )
+      await waitFor(() => {
+        expect(history.getAllByRole('article')).toHaveLength(2)
+      })
+      const versions = history.getAllByRole('article')
+      expect(versions[0]).toHaveTextContent('Which fonts?')
+      expect(versions[1]).toHaveTextContent('Which palette?')
+    })
+
+    it('leaves the comment as it was when the edit is cancelled', async () => {
+      const { board, boardsApi } = withMyComment()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      await panel.findByRole('article', { name: 'Alice Martin' })
+      fireEvent.click(panel.getByRole('button', { name: 'Edit comment' }))
+      await typeRichText(
+        await panel.findByRole('textbox', { name: 'Edit comment' }),
+        'Never mind'
+      )
+      fireEvent.click(panel.getByRole('button', { name: 'Cancel' }))
+
+      expect(
+        panel.getByRole('article', { name: 'Alice Martin' })
+      ).toHaveTextContent('Which palette?')
+      expect(boardsApi.editComment).not.toHaveBeenCalled()
+    })
+
+    it('offers to edit only my own comments', async () => {
+      const { board, boardsApi } = withMyComment()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      await panel.findByRole('article', { name: 'Alice Martin' })
+
+      expect(
+        panel.getAllByRole('button', { name: 'Edit comment' })
+      ).toHaveLength(1)
+    })
+
+    it('hides the edit button on an archived board', async () => {
+      const { board, boardsApi } = withMyComment()
+      board.archived = true
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      await panel.findByRole('article', { name: 'Alice Martin' })
+
+      expect(
+        panel.queryByRole('button', { name: 'Edit comment' })
+      ).not.toBeInTheDocument()
+    })
+  })
+
   it('shows formatting written in a comment', async () => {
     const { board, logo, boardsApi } = logoBoard()
     boardsApi.comments.set(logo.id, [
@@ -154,6 +252,7 @@ describe('Comments', () => {
         author: { userId: 'bob', email: 'bob@example.com', name: null },
         body: 'Use the **new** one:\n\n- [x] logo\n- [ ] icons',
         createdAt: '2026-10-05T09:00:00Z',
+        editedAt: null,
         reactions: []
       }
     ])
@@ -439,6 +538,7 @@ describe('Comments', () => {
           },
           body,
           createdAt: '2026-10-05T09:00:00Z',
+          editedAt: null,
           reactions: []
         }
       ])

@@ -6,7 +6,7 @@ import {
   type UseQueryResult
 } from '@tanstack/react-query'
 
-import { type Comment } from '@/application/boards'
+import { type Comment, type CommentEdit } from '@/application/boards'
 import { type Person } from '@/domain/board'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { keys } from '@/ui/queries/keys'
@@ -40,6 +40,40 @@ export function useAddComment(
           exact: true
         })
       ])
+  })
+}
+
+export interface CommentChange {
+  commentId: string
+  body: string
+}
+
+export function useEditComment(
+  boardId: string,
+  taskId: string
+): UseMutationResult<void, Error, CommentChange> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ commentId, body }: CommentChange) =>
+      api.editComment(boardId, taskId, commentId, body),
+    // Also refetches the edits listed under each comment.
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: keys.comments(boardId, taskId)
+      })
+  })
+}
+
+export function useCommentEdits(
+  boardId: string,
+  taskId: string,
+  commentId: string
+): UseQueryResult<CommentEdit[]> {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: keys.commentEdits(boardId, taskId, commentId),
+    queryFn: () => api.listCommentEdits(boardId, taskId, commentId)
   })
 }
 

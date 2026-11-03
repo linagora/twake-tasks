@@ -8,6 +8,7 @@ const ROUTES: Record<string, readonly UserBudget[]> = {
   'POST /boards': ['boardCreates'],
   'POST /boards/:boardId/tasks': ['taskCreates'],
   [`POST ${task}/comments`]: ['comments'],
+  [`PATCH ${task}/comments/:commentId`]: ['comments'],
   [`PUT ${reaction}`]: ['reactions'],
   [`DELETE ${reaction}`]: ['reactions'],
   [`POST ${task}/reminders`]: ['reminders'],
@@ -23,6 +24,7 @@ const ROUTES: Record<string, readonly UserBudget[]> = {
   'GET /filters/:filterId/tasks': ['heavyReads'],
   [`GET ${task}/history`]: ['heavyReads'],
   [`GET ${task}/comments`]: ['heavyReads'],
+  [`GET ${task}/comments/:commentId/edits`]: ['heavyReads'],
   'GET /boards/:boardId/archived': ['heavyReads'],
   'GET /boards/:boardId/trash': ['heavyReads']
 }
