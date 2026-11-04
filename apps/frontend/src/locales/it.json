@@ -643,7 +643,49 @@
     },
     "justNow": "Proprio ora",
     "minutesAgo": "%{smart_count} min fa",
-    "yesterdayAt": "Ieri, %{time}"
+    "yesterdayAt": "Ieri, %{time}",
+    "remove": "Rimuovi",
+    "removeOf": "Rimuovi la notifica su %{title}"
+  },
+  "notificationSettings": {
+    "open": "Impostazioni delle notifiche",
+    "title": "Notifiche",
+    "hint": "Scegli di cosa essere avvisato, nell’app e per email. Vale in ogni progetto.",
+    "loadFailed": "Impossibile caricare le impostazioni delle notifiche.",
+    "saved": "Salvato",
+    "saveFailed": "Impossibile salvare le impostazioni.",
+    "inApp": "Nell’app",
+    "byEmail": "Per email",
+    "inAppOf": "%{kind}, nell’app",
+    "byEmailOf": "%{kind}, per email",
+    "inAppFirst": "Attivalo prima nell’app.",
+    "kinds": {
+      "assigned": "Assegnato o rimosso da me",
+      "mentioned": "Menzionato in un commento",
+      "reminder": "I miei promemoria",
+      "changes": "Modifiche alle attività che seguo",
+      "comments": "Commenti alle attività che seguo"
+    },
+    "frequency": "Frequenza delle email",
+    "frequencyHint": "Gli inviti vengono sempre inviati per email.",
+    "frequencies": {
+      "instant": "Subito",
+      "daily": "Un riepilogo giornaliero alle 8:00",
+      "never": "Mai"
+    }
+  },
+  "unsubscribe": {
+    "all": "tutte le email di notifica",
+    "about": "le email su «%{kind}»",
+    "ask": "Non ricevere più %{subject}?",
+    "askHint": "Vedrai comunque le notifiche nell’app.",
+    "done": "Non riceverai più %{subject}.",
+    "doneHint": "Puoi riattivarle nelle impostazioni.",
+    "retryHint": "Riprova tra un momento.",
+    "invalid": "Questo link non funziona",
+    "invalidHint": "Potrebbe essere incompleto o scaduto. Scegli le tue email nelle impostazioni.",
+    "confirm": "Annulla iscrizione",
+    "settings": "Modifica le impostazioni"
   },
   "filters": {
     "title": "Filtri",

@@ -59,4 +59,5 @@ A test fails when a table is missing from this page, and the backend test suite 
 ## People
 
 - `user_settings`: removed with the person, by email.
+- `notification_preferences`: removed with the person.
 - `oidc_revoked_sessions`: retention: until the session would have expired, pruned when the next session is revoked.

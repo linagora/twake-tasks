@@ -17,6 +17,7 @@ import { findPreferredLanguage } from '@/ui/i18n/languages'
 import { ReportingProvider } from '@/ui/reporting/ReportingProvider'
 import { SessionGate } from '@/ui/session/SessionGate'
 import { FollowSettings } from '@/ui/settings/FollowSettings'
+import { UnsubscribeScreen } from '@/ui/settings/UnsubscribeScreen'
 
 export interface AppProps {
   session: SessionService
@@ -36,6 +37,18 @@ export function App({
 }: AppProps): ReactElement {
   const [queryClient] = useState(makeQueryClient)
   const [lang] = useState(findPreferredLanguage)
+
+  // Opened from an email, where the person may not be signed in.
+  if (window.location.pathname === '/unsubscribe') {
+    return (
+      <AppProviders lang={lang} queryClient={queryClient}>
+        <UnsubscribeScreen
+          search={window.location.search}
+          unsubscribe={boardsApi.unsubscribe}
+        />
+      </AppProviders>
+    )
+  }
 
   return (
     <AppProviders lang={lang} queryClient={queryClient} overlay={overlay}>

@@ -41,6 +41,15 @@ export function registerNotifications(
         store.markRead(identity, params.notificationId)
     }),
     defineRoute({
+      method: 'DELETE',
+      url: '/notifications/:notificationId',
+      access: self,
+      params: notificationParams,
+      status: 204,
+      handler: ({ identity, params }) =>
+        store.remove(identity, params.notificationId)
+    }),
+    defineRoute({
       method: 'GET',
       url: '/notifications/unread',
       access: self,

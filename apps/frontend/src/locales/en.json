@@ -643,7 +643,49 @@
     },
     "justNow": "Just now",
     "minutesAgo": "%{smart_count} min ago",
-    "yesterdayAt": "Yesterday, %{time}"
+    "yesterdayAt": "Yesterday, %{time}",
+    "remove": "Remove",
+    "removeOf": "Remove the notification about %{title}"
+  },
+  "notificationSettings": {
+    "open": "Notification settings",
+    "title": "Notifications",
+    "hint": "Choose what you hear about, in the app and by email. It applies in every project.",
+    "loadFailed": "Couldn’t load your notification settings.",
+    "saved": "Saved",
+    "saveFailed": "Your settings could not be saved.",
+    "inApp": "In the app",
+    "byEmail": "By email",
+    "inAppOf": "%{kind}, in the app",
+    "byEmailOf": "%{kind}, by email",
+    "inAppFirst": "Turn on in the app first.",
+    "kinds": {
+      "assigned": "Assigned to me or unassigned",
+      "mentioned": "Mentioned in a comment",
+      "reminder": "My reminders",
+      "changes": "Changes on tasks I follow",
+      "comments": "Comments on tasks I follow"
+    },
+    "frequency": "Email frequency",
+    "frequencyHint": "Invitations are always emailed.",
+    "frequencies": {
+      "instant": "Right away",
+      "daily": "One daily summary at 8:00",
+      "never": "Never"
+    }
+  },
+  "unsubscribe": {
+    "all": "all notification emails",
+    "about": "emails about “%{kind}”",
+    "ask": "Stop %{subject}?",
+    "askHint": "You will still see your notifications in the app.",
+    "done": "You won’t get %{subject} any more.",
+    "doneHint": "You can turn them back on in your settings.",
+    "retryHint": "Try again in a moment.",
+    "invalid": "This link does not work",
+    "invalidHint": "It may be incomplete or out of date. Choose your emails in the settings.",
+    "confirm": "Unsubscribe",
+    "settings": "Change your settings"
   },
   "filters": {
     "title": "Filters",

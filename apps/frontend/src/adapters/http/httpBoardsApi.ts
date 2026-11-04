@@ -176,6 +176,26 @@ export function httpBoardsApi(
   return {
     settings: () =>
       parsed('settings', wire.settingsResponse, 'GET', '/settings'),
+    notificationPreferences: () =>
+      parsed(
+        'notification settings',
+        wire.notificationPreferences,
+        'GET',
+        '/settings/notifications'
+      ),
+    keepNotificationPreferences: preferences =>
+      parsed(
+        'notification settings',
+        wire.notificationPreferences,
+        'PUT',
+        '/settings/notifications',
+        preferences satisfies Body<'notificationPreferences'>
+      ),
+    unsubscribe: (token, kind) =>
+      call(
+        'POST',
+        `/settings/notifications/unsubscribe?${new URLSearchParams({ token, kind }).toString()}`
+      ),
     agenda: (zone, days) => {
       const query = { zone, days } satisfies z.output<typeof wire.agendaQuery>
       return parsed(
@@ -528,6 +548,8 @@ export function httpBoardsApi(
       } satisfies Body<'notificationsRead'>),
     markNotificationRead: notificationId =>
       call('POST', route`/notifications/${notificationId}/read`, {}),
+    removeNotification: notificationId =>
+      call('DELETE', route`/notifications/${notificationId}`),
     setAssignees: (boardId, taskId, userIds) =>
       call('PUT', route`/boards/${boardId}/tasks/${taskId}/assignees`, {
         userIds

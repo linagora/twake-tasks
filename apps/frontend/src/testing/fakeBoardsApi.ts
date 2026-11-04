@@ -9,6 +9,7 @@ import {
   type Description,
   type HistoryEntry,
   type Notification,
+  type NotificationPreferences,
   type Reminder,
   type SavedFilter,
   type Sharing,
@@ -177,6 +178,11 @@ export function fakeBoardsApi(boards: Board[] = []) {
   }
   const followed = new Set<string>()
   const notifications: Notification[] = []
+  let preferences: NotificationPreferences = {
+    mutedInApp: [],
+    mutedEmail: [],
+    emailFrequency: 'instant'
+  }
   const findTask = (boardId: string, taskId: string) => {
     const task = find(boardId).tasks.find(candidate => candidate.id === taskId)
     if (!task) throw new ApiError(404, 'not_found')
@@ -513,6 +519,21 @@ export function fakeBoardsApi(boards: Board[] = []) {
         name: null
       })
     ),
+    notificationPreferences: vi.fn<BoardsApi['notificationPreferences']>(() =>
+      Promise.resolve(structuredClone(preferences))
+    ),
+    keepNotificationPreferences: vi.fn<
+      BoardsApi['keepNotificationPreferences']
+    >(kept =>
+      Promise.resolve().then(() => {
+        preferences = {
+          ...kept,
+          mutedEmail: [...new Set([...kept.mutedEmail, ...kept.mutedInApp])]
+        }
+        return structuredClone(preferences)
+      })
+    ),
+    unsubscribe: vi.fn<BoardsApi['unsubscribe']>(() => Promise.resolve()),
     agenda: vi.fn<BoardsApi['agenda']>((_zone, days) =>
       Promise.resolve().then(() => {
         const today = new Intl.DateTimeFormat('en-CA').format(new Date())
@@ -811,6 +832,13 @@ export function fakeBoardsApi(boards: Board[] = []) {
           if (!opened) throw new Error('not_found')
           opened.readAt ??= new Date().toISOString()
         })
+    ),
+    removeNotification: vi.fn<BoardsApi['removeNotification']>(notificationId =>
+      Promise.resolve().then(() => {
+        const at = notifications.findIndex(({ id }) => id === notificationId)
+        if (at === -1) throw new ApiError(404, 'not_found')
+        notifications.splice(at, 1)
+      })
     ),
     listComments: vi.fn<BoardsApi['listComments']>((boardId, taskId) =>
       Promise.resolve().then(() => {

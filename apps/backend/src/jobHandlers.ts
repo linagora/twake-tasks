@@ -2,8 +2,10 @@ import type { Budget } from './config.ts'
 import type { LdapRest } from './infra/ldapRest.ts'
 import type { Mail } from './infra/mail.ts'
 import {
+  emailDailySummary,
   emailDigest,
   emailNotification,
+  NOTIFICATION_DAILY_JOB,
   NOTIFICATION_DIGEST_JOB,
   NOTIFICATION_EMAIL_JOB
 } from './modules/notifications/index.ts'
@@ -42,6 +44,7 @@ export function jobHandlers(deps: {
     [PURGE_SPACE_JOB]: purgeSpace,
     [NOTIFICATION_EMAIL_JOB]: emailNotification({ appUrl, budget, send }),
     [NOTIFICATION_DIGEST_JOB]: emailDigest({ appUrl, budget, send }),
+    [NOTIFICATION_DAILY_JOB]: emailDailySummary({ appUrl, send }),
     [PROJECT_INVITE_EMAIL_JOB]: emailInvite({ appUrl, send }),
     ...(deps.ldapRest && reconcileJobs(deps.ldapRest))
   }

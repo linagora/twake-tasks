@@ -3,8 +3,10 @@ import {
   Check,
   Clock,
   Comment,
+  Cross,
   Eye,
   EyeClosed,
+  Gear,
   People
 } from '@linagora/twake-icons'
 import {
@@ -30,7 +32,8 @@ import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import {
   useMarkNotificationRead,
   useMarkNotificationsRead,
-  useNotifications
+  useNotifications,
+  useRemoveNotification
 } from '@/ui/queries/notifications'
 import { useFollowing, useSetFollowing } from '@/ui/queries/tasks'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
@@ -125,6 +128,7 @@ export function NotificationsScreen(): ReactElement {
   }, [])
   const markRead = useMarkNotificationRead()
   const markAllRead = useMarkNotificationsRead()
+  const remove = useRemoveNotification()
   const all = notifications.data ?? []
   const unread = all.filter(each => each.readAt === null)
   const groups = [
@@ -148,18 +152,29 @@ export function NotificationsScreen(): ReactElement {
         }}
         heading
         actions={
-          unread.length > 0 && (
-            <Button
-              variant="text"
-              startIcon={<Icon icon={Check} />}
-              disabled={markAllRead.isPending}
-              onClick={() => {
-                markAllRead.mutate(unread.map(({ id }) => id))
-              }}
-            >
-              {t('notifications.markAllRead')}
-            </Button>
-          )
+          <>
+            {unread.length > 0 && (
+              <Button
+                variant="text"
+                startIcon={<Icon icon={Check} />}
+                disabled={markAllRead.isPending}
+                onClick={() => {
+                  markAllRead.mutate(unread.map(({ id }) => id))
+                }}
+              >
+                {t('notifications.markAllRead')}
+              </Button>
+            )}
+            <Tooltip title={t('notificationSettings.open')}>
+              <IconButton
+                component={RouterLink}
+                to="/settings#notifications"
+                aria-label={t('notificationSettings.open')}
+              >
+                <Icon icon={Gear} />
+              </IconButton>
+            </Tooltip>
+          </>
         }
       />
       {notifications.isError && (
@@ -235,6 +250,25 @@ export function NotificationsScreen(): ReactElement {
                       >
                         {relativeMoment(at, t, lang)}
                       </Typography>
+                    }
+                    trailing={
+                      <Tooltip title={t('notifications.remove')}>
+                        <IconButton
+                          size="small"
+                          aria-label={t('notifications.removeOf', {
+                            title: notification.title
+                          })}
+                          disabled={
+                            remove.isPending &&
+                            remove.variables === notification.id
+                          }
+                          onClick={() => {
+                            remove.mutate(notification.id)
+                          }}
+                        >
+                          <Icon icon={Cross} />
+                        </IconButton>
+                      </Tooltip>
                     }
                   />
                 )

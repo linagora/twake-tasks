@@ -643,7 +643,49 @@
     },
     "justNow": "À l’instant",
     "minutesAgo": "il y a %{smart_count} min",
-    "yesterdayAt": "Hier, %{time}"
+    "yesterdayAt": "Hier, %{time}",
+    "remove": "Retirer",
+    "removeOf": "Retirer la notification sur %{title}"
+  },
+  "notificationSettings": {
+    "open": "Paramètres des notifications",
+    "title": "Notifications",
+    "hint": "Choisissez ce dont vous êtes informé, dans l’application et par e-mail. Cela s’applique à tous les projets.",
+    "loadFailed": "Impossible de charger vos paramètres de notification.",
+    "saved": "Enregistré",
+    "saveFailed": "Vos paramètres n’ont pas pu être enregistrés.",
+    "inApp": "Dans l’application",
+    "byEmail": "Par e-mail",
+    "inAppOf": "%{kind}, dans l’application",
+    "byEmailOf": "%{kind}, par e-mail",
+    "inAppFirst": "Activez-le d’abord dans l’application.",
+    "kinds": {
+      "assigned": "Assigné ou désassigné",
+      "mentioned": "Mentionné dans un commentaire",
+      "reminder": "Mes rappels",
+      "changes": "Modifications des tâches suivies",
+      "comments": "Commentaires des tâches suivies"
+    },
+    "frequency": "Fréquence des e-mails",
+    "frequencyHint": "Les invitations sont toujours envoyées par e-mail.",
+    "frequencies": {
+      "instant": "Immédiatement",
+      "daily": "Un résumé quotidien à 8:00",
+      "never": "Jamais"
+    }
+  },
+  "unsubscribe": {
+    "all": "tous les e-mails de notification",
+    "about": "les e-mails « %{kind} »",
+    "ask": "Ne plus recevoir %{subject} ?",
+    "askHint": "Vous verrez toujours vos notifications dans l’application.",
+    "done": "Vous ne recevrez plus %{subject}.",
+    "doneHint": "Vous pouvez les réactiver dans vos paramètres.",
+    "retryHint": "Réessayez dans un instant.",
+    "invalid": "Ce lien ne fonctionne pas",
+    "invalidHint": "Il est peut-être incomplet ou périmé. Choisissez vos e-mails dans les paramètres.",
+    "confirm": "Se désabonner",
+    "settings": "Modifier vos paramètres"
   },
   "filters": {
     "title": "Filtres",

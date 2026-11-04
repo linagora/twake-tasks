@@ -22,7 +22,7 @@ import {
 } from '../boards/index.ts'
 import { commentReactions } from '../collaboration/index.ts'
 import { inviteEmails } from '../projects/index.ts'
-import { userSettings } from '../settings/index.ts'
+import { notificationPreferences, userSettings } from '../settings/index.ts'
 import { spaces } from '../spaces/index.ts'
 import { eraseSavedFilters, savedFilters } from '../views/index.ts'
 
@@ -120,6 +120,9 @@ async function forget(
     await tx.delete(commentReactions).where(eq(commentReactions.userId, userId))
     await forgetPerson(tx, userId)
     await tx.delete(savedFilters).where(eq(savedFilters.userId, userId))
+    await tx
+      .delete(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId))
     await tx.delete(jobs).where(eq(jobs.userId, userId))
   }
 }

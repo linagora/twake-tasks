@@ -643,7 +643,49 @@
     },
     "justNow": "Vừa xong",
     "minutesAgo": "%{smart_count} phút trước",
-    "yesterdayAt": "Hôm qua, %{time}"
+    "yesterdayAt": "Hôm qua, %{time}",
+    "remove": "Xóa",
+    "removeOf": "Xóa thông báo về %{title}"
+  },
+  "notificationSettings": {
+    "open": "Cài đặt thông báo",
+    "title": "Thông báo",
+    "hint": "Chọn những gì bạn được báo, trong ứng dụng và qua email. Áp dụng cho mọi dự án.",
+    "loadFailed": "Không thể tải cài đặt thông báo của bạn.",
+    "saved": "Đã lưu",
+    "saveFailed": "Không thể lưu cài đặt của bạn.",
+    "inApp": "Trong ứng dụng",
+    "byEmail": "Qua email",
+    "inAppOf": "%{kind}, trong ứng dụng",
+    "byEmailOf": "%{kind}, qua email",
+    "inAppFirst": "Hãy bật trong ứng dụng trước.",
+    "kinds": {
+      "assigned": "Được giao hoặc bỏ giao việc",
+      "mentioned": "Được nhắc đến trong bình luận",
+      "reminder": "Lời nhắc của tôi",
+      "changes": "Thay đổi trên công việc tôi theo dõi",
+      "comments": "Bình luận trên công việc tôi theo dõi"
+    },
+    "frequency": "Tần suất email",
+    "frequencyHint": "Lời mời luôn được gửi qua email.",
+    "frequencies": {
+      "instant": "Ngay lập tức",
+      "daily": "Một bản tóm tắt mỗi ngày lúc 8:00",
+      "never": "Không bao giờ"
+    }
+  },
+  "unsubscribe": {
+    "all": "mọi email thông báo",
+    "about": "email về “%{kind}”",
+    "ask": "Ngừng nhận %{subject}?",
+    "askHint": "Bạn vẫn thấy thông báo trong ứng dụng.",
+    "done": "Bạn sẽ không nhận %{subject} nữa.",
+    "doneHint": "Bạn có thể bật lại trong cài đặt.",
+    "retryHint": "Hãy thử lại sau giây lát.",
+    "invalid": "Liên kết này không dùng được",
+    "invalidHint": "Có thể nó không đầy đủ hoặc đã cũ. Hãy chọn email trong cài đặt.",
+    "confirm": "Hủy đăng ký",
+    "settings": "Thay đổi cài đặt"
   },
   "filters": {
     "title": "Bộ lọc",

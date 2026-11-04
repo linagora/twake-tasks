@@ -234,9 +234,24 @@ export interface UserSettings {
   name: string | null
 }
 
+export type NotificationKind =
+  'assigned' | 'mentioned' | 'reminder' | 'changes' | 'comments'
+
+export interface NotificationPreferences {
+  mutedInApp: NotificationKind[]
+  mutedEmail: NotificationKind[]
+  emailFrequency: 'instant' | 'daily' | 'never'
+}
+
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
   settings: () => Promise<UserSettings>
+  notificationPreferences: () => Promise<NotificationPreferences>
+  keepNotificationPreferences: (
+    preferences: NotificationPreferences
+  ) => Promise<NotificationPreferences>
+  /** Without a session, from the link of an email. */
+  unsubscribe: (token: string, kind: NotificationKind | 'all') => Promise<void>
   /** Calls back with the board's version now, then with each new one. */
   watchBoard: (
     boardId: string,
@@ -420,6 +435,7 @@ export interface BoardsApi {
   unreadByProject: () => Promise<ProjectUnread[]>
   markNotificationsRead: (ids: string[]) => Promise<void>
   markNotificationRead: (notificationId: string) => Promise<void>
+  removeNotification: (notificationId: string) => Promise<void>
   setAssignees: (
     boardId: string,
     taskId: string,
