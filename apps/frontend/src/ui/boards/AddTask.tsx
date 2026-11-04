@@ -20,7 +20,8 @@ export function AddTask({
   sectionName,
   open,
   onOpen,
-  onClose
+  onClose,
+  onCreated
 }: {
   boardId: string
   sectionId: string | null
@@ -28,6 +29,7 @@ export function AddTask({
   open: boolean
   onOpen: () => void
   onClose: () => void
+  onCreated?: (taskId: string) => void
 }): ReactElement {
   const { t } = useI18n()
   const create = useCreateTask(boardId)
@@ -67,8 +69,9 @@ export function AddTask({
           create.mutate(
             { sectionId, title: title.trim() },
             {
-              onSuccess: () => {
+              onSuccess: task => {
                 setTitle('')
+                onCreated?.(task.id)
               }
             }
           )

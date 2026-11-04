@@ -67,7 +67,7 @@ export function ListSection({
   children
 }: {
   label: string
-  count: number
+  count: number | string
   expanded: boolean
   onToggle: () => void
   footer?: ReactNode

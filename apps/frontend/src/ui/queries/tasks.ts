@@ -30,7 +30,7 @@ import { keys } from '@/ui/queries/keys'
 
 export function useCreateTask(
   boardId: string
-): UseMutationResult<unknown, Error, NewTask> {
+): UseMutationResult<{ id: string }, Error, NewTask> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
