@@ -2,8 +2,10 @@ import { Compass, Restore, Stack, Trash } from '@linagora/twake-icons'
 import {
   Alert,
   Button,
+  IconButton,
   Link,
   ToggleButton,
+  Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import {
@@ -19,12 +21,13 @@ import { useNavigate, useParams } from 'react-router'
 
 import type { HiddenTask, Shelf } from '@/application/boards'
 import { LabelChip } from '@/ds/Columns'
+import { ConfirmDialog } from '@/ds/ConfirmDialog'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Icon } from '@/ds/Icon'
 import { HeaderToggleGroup, ToggleLabel } from '@/ds/PageHeader'
 import { ShelfHeader, ShelfList, ShelfRow, ShelfWhen } from '@/ds/ShelfList'
 import { Toast } from '@/ds/Toast'
-import { isEditable, type Board, type Task } from '@/domain/board'
+import { isAdmin, isEditable, type Board, type Task } from '@/domain/board'
 import { momentFormat } from '@/ui/boards/dueLabel'
 import { useBoardChange, useBoardOf, useHiddenTasks } from '@/ui/queries/boards'
 import { Assignees, PriorityChip } from '@/ui/boards/TaskFacts'
@@ -261,14 +264,57 @@ function ShelfTasks({
     failed: boolean
   } | null>(null)
   const editable = isEditable(board)
+  const purgeable = shelf === 'trash' && editable && isAdmin(board.role)
+  const [emptying, setEmptying] = useState(false)
+  const empty = useBoardChange(board.id, api => api.emptyTrash(board.id))
   const tasks = hidden.data ?? []
 
   return (
     <>
       {shelf === 'trash' && tasks.length > 0 && (
-        <Alert severity="info" className="u-mb-1">
+        <Alert
+          severity="info"
+          className="u-mb-1"
+          action={
+            purgeable ? (
+              <Button
+                variant="text"
+                size="small"
+                color="error"
+                onClick={() => {
+                  empty.reset()
+                  setEmptying(true)
+                }}
+              >
+                {t('archive.emptyTrashAction')}
+              </Button>
+            ) : undefined
+          }
+        >
           {t('archive.retention')}
         </Alert>
+      )}
+      {emptying && (
+        <ConfirmDialog
+          labels={{
+            title: t('archive.emptyTrashTitle'),
+            text: t('archive.emptyTrashText', { smart_count: tasks.length }),
+            cancel: t('archive.cancel'),
+            confirm: t('archive.emptyTrashAction')
+          }}
+          pending={empty.isPending}
+          error={empty.isError && t('archive.purgeFailed')}
+          onCancel={() => {
+            setEmptying(false)
+          }}
+          onConfirm={() => {
+            empty.mutate(undefined, {
+              onSuccess: () => {
+                setEmptying(false)
+              }
+            })
+          }}
+        />
       )}
       {hidden.isError && (
         <Alert severity="error" className="u-mb-1">
@@ -315,6 +361,7 @@ function ShelfTasks({
                 board={board}
                 shelf={shelf}
                 editable={editable}
+                purgeable={purgeable}
                 onRestored={failed => {
                   setRestored({ task, failed })
                 }}
@@ -374,18 +421,24 @@ function ShelfTask({
   board,
   shelf,
   editable,
+  purgeable,
   onRestored
 }: {
   task: HiddenTask
   board: Board
   shelf: Shelf
   editable: boolean
+  purgeable: boolean
   onRestored: (failed: boolean) => void
 }): ReactElement {
   const { t, lang } = useI18n()
   const panel = useTaskPanel(task.key)
   const restore = useBoardChange(board.id, api =>
     api.restoreTask(board.id, task.id)
+  )
+  const [purging, setPurging] = useState(false)
+  const purge = useBoardChange(board.id, api =>
+    api.deleteForGood(board.id, task.id)
   )
   const mounted = useRef(true)
   useEffect(() => {
@@ -461,8 +514,51 @@ function ShelfTask({
             tone={left <= 3 ? 'error' : left <= 7 ? 'warning' : 'textSecondary'}
           />
         }
-        action={restoreButton('secondary')}
+        action={
+          <>
+            {restoreButton('secondary')}
+            {purgeable && (
+              <Tooltip title={t('archive.deleteForGood')}>
+                <IconButton
+                  size="small"
+                  className="u-ml-half"
+                  aria-label={t('archive.deleteForGoodTask', { key: task.key })}
+                  onClick={() => {
+                    purge.reset()
+                    setPurging(true)
+                  }}
+                >
+                  <Icon icon={Trash} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </>
+        }
       />
+      {purging && (
+        <ConfirmDialog
+          labels={{
+            title: t('archive.deleteForGoodTitle', { key: task.key }),
+            text: t('archive.deleteForGoodText'),
+            cancel: t('archive.cancel'),
+            confirm: t('archive.deleteForGood')
+          }}
+          pending={purge.isPending}
+          error={purge.isError && t('archive.purgeFailed')}
+          onCancel={() => {
+            setPurging(false)
+          }}
+          onConfirm={() => {
+            purge.mutate(undefined, {
+              onSuccess: () => {
+                if (!mounted.current) return
+                setPurging(false)
+                panel.close()
+              }
+            })
+          }}
+        />
+      )}
       {panel.open && (
         <TaskPanel
           task={task}
