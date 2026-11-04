@@ -22,7 +22,7 @@ import {
   useState,
   type ReactElement
 } from 'react'
-import { Link as RouterLink } from 'react-router'
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router'
 
 import type { FilterCriteria, SavedFilter } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
@@ -48,19 +48,25 @@ import {
 } from '@/ui/queries/filters'
 import { useLabelNames } from '@/ui/queries/labels'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
+import { DUES } from '@/ui/boards/taskFilter'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 const PRIORITIES = ['1', '2', '3', '4'] as const
-const DUES = ['overdue', 'today', 'week', 'none'] as const
 
 export function FiltersScreen(): ReactElement {
   const { t, lang } = useI18n()
   const filters = useFilters()
   const assigneeName = useAssigneeName()
   const boards = useFilterBoards()
-  const [form, setForm] = useState<SavedFilter | 'new' | null>(null)
+  const navigate = useNavigate()
+  // A board's filter bar opens the form with its criteria.
+  const preset = (useLocation().state as { criteria?: FilterCriteria } | null)
+    ?.criteria
+  const [form, setForm] = useState<SavedFilter | 'new' | null>(
+    preset ? 'new' : null
+  )
   // What takes the focus once the form closes: 'new', 'link:<id>' or 'edit:<id>'
   const [landing, setLanding] = useState<string | null>(null)
   // Once: a later remount of the target, or a link listed late, must not take it
@@ -138,7 +144,10 @@ export function FiltersScreen(): ReactElement {
         <FilterForm
           key={form === 'new' ? form : form.id}
           filter={form === 'new' ? undefined : form}
+          criteria={form === 'new' ? preset : undefined}
           onClose={saved => {
+            // Clears the preset, or a reload would open the form again.
+            if (preset) void navigate('.', { replace: true, state: null })
             setLanding(
               saved
                 ? `link:${saved}`
@@ -314,9 +323,12 @@ function DeletedNotice({
 
 export function FilterForm({
   filter,
+  criteria: given,
   onClose
 }: {
   filter?: SavedFilter | undefined
+  /** What a new filter starts with. */
+  criteria?: FilterCriteria | undefined
   /** Gets the id of the filter when it was saved. */
   onClose: (saved?: string) => void
 }): ReactElement {
@@ -325,7 +337,7 @@ export function FilterForm({
   const update = useUpdateFilter(filter?.id ?? '')
   const labelNames = useLabelNames()
   const filterBoards = useFilterBoards()
-  const initial = filter?.criteria ?? {}
+  const initial = filter?.criteria ?? given ?? {}
   const [name, setName] = useState(filter?.name ?? '')
   const [board, setBoard] = useState(initial.board ?? [])
   const [assignee, setAssignee] = useState(initial.assignee ?? [])

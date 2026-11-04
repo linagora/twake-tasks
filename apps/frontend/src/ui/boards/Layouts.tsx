@@ -94,6 +94,8 @@ export function ListLayout({
     key: string
     name: string
     tasks: Task[]
+    /** What the heading counts, the tasks by default. */
+    count?: number | string
     footer: ReactNode
     /** Where its tasks are dropped, when the list can be reordered. */
     dropId?: string
@@ -124,7 +126,7 @@ export function ListLayout({
       {columns.map(column => {
         const section = {
           label: column.name,
-          count: column.tasks.length,
+          count: column.count ?? column.tasks.length,
           expanded: !collapsed.has(column.key),
           onToggle: () => {
             toggle(column.key)

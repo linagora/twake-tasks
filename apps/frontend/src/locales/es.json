@@ -688,6 +688,19 @@
       "none": "Sin fecha"
     }
   },
+  "boardFilter": {
+    "button": "Filtrar",
+    "buttonCount": "Filtrar · %{count}",
+    "label": "Filtrar el tablero",
+    "text": "Filtrar por título o clave",
+    "remove": "Quitar el criterio %{name}",
+    "save": "Guardar como filtro",
+    "clear": "Borrar",
+    "count": "%{shown} de %{total}",
+    "noMatch": "Ninguna tarea de este tablero coincide con estos filtros.",
+    "clearAll": "Borrar filtros",
+    "shortcut": "Filtrar el tablero"
+  },
   "agenda": {
     "subtaskOf": "Subtarea de %{title}",
     "today": "Hoy",

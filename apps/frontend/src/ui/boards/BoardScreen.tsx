@@ -82,6 +82,7 @@ export function BoardScreen({
           {shown && !waiting && (
             <>
               <BoardHeader
+                key={shown.id}
                 board={shown}
                 origin={back ? origin : undefined}
                 shareButton={!flush}

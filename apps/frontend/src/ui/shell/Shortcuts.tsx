@@ -31,7 +31,7 @@ const GO = {
 
 const KEY = 'twake-tasks:shortcuts'
 
-function shortcutsOn(): boolean {
+export function shortcutsOn(): boolean {
   try {
     return localStorage.getItem(KEY) !== 'off'
   } catch {
@@ -39,7 +39,7 @@ function shortcutsOn(): boolean {
   }
 }
 
-const typing = (target: EventTarget | null) =>
+export const typing = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
   (target.isContentEditable ||
     ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
@@ -105,6 +105,7 @@ export function ShortcutsHelp({
   const rows = [
     ['q', t('newTask.title')],
     ['/', t('search.label')],
+    ['f', t('boardFilter.shortcut')],
     ...Object.entries(GO).map(([key, { label }]) => [
       t('shortcuts.then', { key }),
       t(label)

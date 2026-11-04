@@ -97,7 +97,7 @@ export function ColumnsSkeleton({ label }: { label: string }): ReactElement {
 
 export interface ColumnProps {
   title: string
-  count: number
+  count: number | string
   actions?: ReactNode
   children: ReactNode
 }
@@ -333,6 +333,26 @@ export function CardTitle({
     >
       {children}
     </Box>
+  )
+}
+
+/** A card being dragged, or carried along in a dragged column (`none`). */
+export function CardDragPreview({
+  taskKey,
+  title,
+  drag = 'lifted'
+}: {
+  taskKey: string
+  title: string
+  drag?: 'lifted' | 'none'
+}): ReactElement {
+  return (
+    <Card label={`${taskKey} ${title}`} drag={drag}>
+      <Typography variant="caption" color="textSecondary">
+        {taskKey}
+      </Typography>
+      <CardTitle>{title}</CardTitle>
+    </Card>
   )
 }
 

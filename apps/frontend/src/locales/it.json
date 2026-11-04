@@ -688,6 +688,19 @@
       "none": "Nessuna data"
     }
   },
+  "boardFilter": {
+    "button": "Filtra",
+    "buttonCount": "Filtra · %{count}",
+    "label": "Filtra la bacheca",
+    "text": "Filtra per titolo o chiave",
+    "remove": "Rimuovi il criterio %{name}",
+    "save": "Salva come filtro",
+    "clear": "Cancella",
+    "count": "%{shown} di %{total}",
+    "noMatch": "Nessuna attività di questa bacheca corrisponde a questi filtri.",
+    "clearAll": "Cancella i filtri",
+    "shortcut": "Filtra la bacheca"
+  },
   "agenda": {
     "subtaskOf": "Sottoattività di %{title}",
     "today": "Oggi",

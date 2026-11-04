@@ -688,6 +688,19 @@
       "none": "No date"
     }
   },
+  "boardFilter": {
+    "button": "Filter",
+    "buttonCount": "Filter · %{count}",
+    "label": "Filter the board",
+    "text": "Filter by title or key",
+    "remove": "Remove the %{name} criterion",
+    "save": "Save as filter",
+    "clear": "Clear",
+    "count": "%{shown} of %{total}",
+    "noMatch": "No task on this board matches these filters.",
+    "clearAll": "Clear filters",
+    "shortcut": "Filter the board"
+  },
   "agenda": {
     "subtaskOf": "Sub-task of %{title}",
     "today": "Today",

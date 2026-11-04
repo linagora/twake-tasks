@@ -688,6 +688,19 @@
       "none": "Kein Datum"
     }
   },
+  "boardFilter": {
+    "button": "Filtern",
+    "buttonCount": "Filtern · %{count}",
+    "label": "Board filtern",
+    "text": "Nach Titel oder Schlüssel filtern",
+    "remove": "Kriterium %{name} entfernen",
+    "save": "Als Filter speichern",
+    "clear": "Zurücksetzen",
+    "count": "%{shown} von %{total}",
+    "noMatch": "Keine Aufgabe dieses Boards entspricht diesen Filtern.",
+    "clearAll": "Filter zurücksetzen",
+    "shortcut": "Board filtern"
+  },
   "agenda": {
     "subtaskOf": "Teilaufgabe von %{title}",
     "today": "Heute",
