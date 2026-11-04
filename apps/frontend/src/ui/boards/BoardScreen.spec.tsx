@@ -389,7 +389,6 @@ describe('BoardScreen', () => {
     const logo = await screen.findByRole('listitem', { name: 'DES-1 Logo' })
     const title = within(logo).getByRole('button', { name: 'Logo' })
 
-    expect(within(logo).queryByRole('checkbox')).toBeNull()
     expect(fireEvent.keyDown(title, { key: 'Enter', code: 'Enter' })).toBe(true)
   })
 

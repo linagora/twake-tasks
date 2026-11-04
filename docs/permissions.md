@@ -73,6 +73,8 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `POST /api/boards/:boardId/tasks/:taskId/restore`
 - `POST /api/boards/:boardId/tasks/:taskId/transfer`
 - `POST /api/boards/:boardId/tasks/:taskId/transfer/preview`
+- `POST /api/boards/:boardId/tasks/bulk`
+- `POST /api/boards/:boardId/tasks/bulk/transfer/preview`
 
 ## Admins of the board
 

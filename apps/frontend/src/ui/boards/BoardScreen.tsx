@@ -8,6 +8,7 @@ import { EmptyState } from '@/ds/EmptyState'
 import { BoardColumns } from '@/ui/boards/BoardColumns'
 import { BoardHeader } from '@/ui/boards/BoardHeader'
 import { useBoardName } from '@/ui/boards/BoardsScreen'
+import { BoardSelection } from '@/ui/boards/BulkActions'
 import {
   BoardStepsContext,
   OriginContext,
@@ -87,7 +88,9 @@ export function BoardScreen({
                 origin={back ? origin : undefined}
                 shareButton={!flush}
               />
-              <BoardColumns board={shown} settled={!board.isFetching} />
+              <BoardSelection key={shown.id} board={shown}>
+                <BoardColumns board={shown} settled={!board.isFetching} />
+              </BoardSelection>
             </>
           )}
         </main>

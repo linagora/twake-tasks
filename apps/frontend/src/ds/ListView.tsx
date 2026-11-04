@@ -2,6 +2,7 @@ import { Bottom, Right } from '@linagora/twake-icons'
 import { Box, ButtonBase, Paper, Typography } from '@linagora/twake-mui'
 import type { HTMLAttributes, ReactElement, ReactNode, Ref } from 'react'
 
+import { SelectableKey, type KeySelect } from '@/ds/Columns'
 import { FittingChips, type FittingChip } from '@/ds/FittingChips'
 import { Icon } from '@/ds/Icon'
 
@@ -135,8 +136,10 @@ export function ListRow({
   ref,
   drag = 'none',
   highlighted = false,
+  select,
   ...rest
 }: Omit<HTMLAttributes<HTMLElement>, 'title'> & {
+  select?: KeySelect | undefined
   label: string
   taskKey: string
   title: ReactNode
@@ -174,7 +177,7 @@ export function ListRow({
           outlineOffset: -2
         },
         ...(drag === 'placeholder' && { opacity: 0.5 }),
-        ...(highlighted && {
+        ...((highlighted || select?.checked) && {
           bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.08),
           '&:hover, &:focus-within': {
             bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.12)
@@ -196,9 +199,7 @@ export function ListRow({
         '& .ListRow-title button:focus-visible': { outline: 'none' }
       })}
     >
-      <Typography variant="caption" color="textSecondary" noWrap>
-        {taskKey}
-      </Typography>
+      <SelectableKey taskKey={taskKey} select={select} />
       <Box
         className="ListRow-title u-ellipsis"
         sx={{

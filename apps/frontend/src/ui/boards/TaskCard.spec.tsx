@@ -95,7 +95,7 @@ describe('TaskCard', () => {
     expect(card.getByLabelText('3 more assignees')).toBeInTheDocument()
   })
 
-  it('strikes the title of a card in a done section through, with no checkbox', async () => {
+  it('strikes the title of a card in a done section through, with no done checkbox', async () => {
     const board = aBoard()
     board.tasks = [
       aTask(board.sections[2] ?? null, { key: 'DES-1', title: 'Logo' })
@@ -105,7 +105,9 @@ describe('TaskCard', () => {
     expect(await screen.findByRole('button', { name: 'Logo' })).toHaveStyle({
       textDecoration: 'line-through'
     })
-    expect(screen.queryByRole('checkbox')).toBeNull()
+    expect(
+      screen.getAllByRole('checkbox').map(box => box.getAttribute('aria-label'))
+    ).toEqual(['Select DES-1'])
   })
 
   describe('menu', () => {
@@ -143,6 +145,7 @@ describe('TaskCard', () => {
           'Move to Done',
           'Move to another board',
           'Copy link',
+          'Select',
           'Archive',
           'Delete'
         ])

@@ -720,6 +720,26 @@
     "count": "%{smart_count} thành viên",
     "invitedCount": "%{smart_count} được mời"
   },
+  "bulk": {
+    "select": "Chọn %{key}",
+    "selectTask": "Chọn",
+    "bar": "Công việc đã chọn",
+    "selected": "Đã chọn %{smart_count}",
+    "clear": "Bỏ chọn",
+    "tooMany": "Chỉ chọn tối đa %{max} công việc.",
+    "moveTo": "Chuyển đến",
+    "assignTitle": "Giao %{smart_count} công việc",
+    "labelsTitle": "Gắn nhãn %{smart_count} công việc",
+    "transferTitle": "Chuyển %{smart_count} công việc sang bảng khác",
+    "deleteTitle": "Xóa %{smart_count} công việc?",
+    "deleteText": "Chúng nằm trong thùng rác trong 30 ngày.",
+    "updated": "Đã cập nhật %{smart_count} công việc",
+    "archived": "Đã lưu trữ %{smart_count} công việc",
+    "trashed": "Đã xóa %{smart_count} công việc",
+    "transferred": "Đã chuyển %{smart_count} công việc sang %{board}",
+    "partial": "Đã cập nhật %{changed} trên %{total} công việc. %{smart_count} công việc không thể thay đổi.",
+    "failed": "Không thể thay đổi các công việc."
+  },
   "page": {
     "breadcrumb": "Vị trí của trang"
   }

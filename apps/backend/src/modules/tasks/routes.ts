@@ -1,6 +1,8 @@
 import {
   assignment,
   boardParams,
+  bulkChange,
+  bulkTransferPreview,
   completion,
   descriptionEdit,
   newReminder,
@@ -24,6 +26,7 @@ import { checkBoardAccess } from '../boards/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import { under, type Refusal } from '../kernel/index.ts'
 import { createArchiveStore } from './archive.ts'
+import { createBulkStore } from './bulk.ts'
 import { historyOf } from './history.ts'
 import { createReminderStore } from './reminders.ts'
 import { createTaskStore } from './tasks.ts'
@@ -47,6 +50,7 @@ export function registerTasks(
   const reminderStore = createReminderStore(deps.db, deps.pendingReminders)
   const archiveStore = createArchiveStore(deps.db)
   const transferStore = createTransferStore(deps.db)
+  const bulkStore = createBulkStore(deps.db)
   const routing = {
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,
@@ -95,6 +99,24 @@ export function registerTasks(
           archiveStore[change](identity, params.boardId, params.taskId)
       })
     ),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks/bulk',
+      access: editor,
+      params: boardParams,
+      body: bulkChange,
+      handler: ({ identity, params, body }) =>
+        bulkStore.changeTasks(identity, params.boardId, body)
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks/bulk/transfer/preview',
+      access: editor,
+      params: boardParams,
+      body: bulkTransferPreview,
+      handler: ({ identity, params, body }) =>
+        bulkStore.previewTransfer(identity, params.boardId, body)
+    }),
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/tasks/:taskId/transfer/preview',

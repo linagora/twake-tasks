@@ -720,6 +720,26 @@
     "count": "%{smart_count} участник |||| %{smart_count} участника |||| %{smart_count} участников",
     "invitedCount": "%{smart_count} приглашённый |||| %{smart_count} приглашённых |||| %{smart_count} приглашённых"
   },
+  "bulk": {
+    "select": "Выбрать %{key}",
+    "selectTask": "Выбрать",
+    "bar": "Выбранные задачи",
+    "selected": "Выбрана %{smart_count} |||| Выбрано %{smart_count} |||| Выбрано %{smart_count}",
+    "clear": "Снять выделение",
+    "tooMany": "Выберите не больше %{max} задач.",
+    "moveTo": "Переместить в",
+    "assignTitle": "Назначить %{smart_count} задачу |||| Назначить %{smart_count} задачи |||| Назначить %{smart_count} задач",
+    "labelsTitle": "Метки для %{smart_count} задачи |||| Метки для %{smart_count} задач |||| Метки для %{smart_count} задач",
+    "transferTitle": "Переместить %{smart_count} задачу на другую доску |||| Переместить %{smart_count} задачи на другую доску |||| Переместить %{smart_count} задач на другую доску",
+    "deleteTitle": "Удалить %{smart_count} задачу? |||| Удалить %{smart_count} задачи? |||| Удалить %{smart_count} задач?",
+    "deleteText": "Задачи хранятся в корзине 30 дней.",
+    "updated": "Изменена %{smart_count} задача |||| Изменено %{smart_count} задачи |||| Изменено %{smart_count} задач",
+    "archived": "В архиве %{smart_count} задача |||| В архиве %{smart_count} задачи |||| В архиве %{smart_count} задач",
+    "trashed": "Удалена %{smart_count} задача |||| Удалено %{smart_count} задачи |||| Удалено %{smart_count} задач",
+    "transferred": "На доску %{board} перемещена %{smart_count} задача |||| На доску %{board} перемещено %{smart_count} задачи |||| На доску %{board} перемещено %{smart_count} задач",
+    "partial": "Изменено %{changed} из %{total}. Не удалось изменить: %{smart_count}.",
+    "failed": "Не удалось изменить задачи."
+  },
   "page": {
     "breadcrumb": "Расположение страницы"
   }

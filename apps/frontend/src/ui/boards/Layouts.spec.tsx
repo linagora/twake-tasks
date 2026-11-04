@@ -77,14 +77,16 @@ describe('board layouts', () => {
     expect(screen.getByRole('list', { name: 'To do' })).toBeVisible()
   })
 
-  it('opens a task from its row, which has no checkbox', async () => {
+  it('opens a task from its row, which has no done checkbox', async () => {
     const board = designBoard({ layout: 'list', defaultLayout: 'list' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
     const row = within(
       await screen.findByRole('listitem', { name: 'DES-2 Palette' })
     )
-    expect(row.queryByRole('checkbox')).toBeNull()
+    expect(
+      row.getAllByRole('checkbox').map(box => box.getAttribute('aria-label'))
+    ).toEqual(['Select DES-2'])
 
     fireEvent.click(row.getByRole('button', { name: 'Palette' }))
     expect(

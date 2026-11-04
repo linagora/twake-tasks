@@ -19,7 +19,7 @@ import { useBoard, useBoards } from '@/ui/queries/boards'
 import { usePreviewTransfer, useTransferTask } from '@/ui/queries/tasks'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-function SectionSelect({
+export function SectionSelect({
   boardId,
   value,
   onChange
@@ -57,7 +57,7 @@ function SectionSelect({
   )
 }
 
-function personName(
+export function personName(
   person: TransferPreview['droppedAssignees'][number],
   former: string
 ): string {
@@ -152,7 +152,7 @@ function ConfirmTransfer({
   )
 }
 
-const isTarget = (board: BoardSummary, boardId: string) =>
+export const isTarget = (board: BoardSummary, boardId: string): boolean =>
   board.id !== boardId && isEditable(board)
 
 export function useTransferable(task: Task, boardId: string): boolean {
