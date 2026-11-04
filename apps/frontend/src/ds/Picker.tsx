@@ -60,6 +60,20 @@ function SearchStatus({
   )
 }
 
+/**
+ * Below the anchor, or above it when it sits low on the screen, as the bar of
+ * picked tasks does.
+ */
+export function popoverOrigins(anchor: Element | null) {
+  const above =
+    anchor !== null &&
+    anchor.getBoundingClientRect().top > window.innerHeight * 0.6
+  return {
+    anchorOrigin: { vertical: above ? 'top' : 'bottom', horizontal: 'left' },
+    transformOrigin: { vertical: above ? 'bottom' : 'top', horizontal: 'left' }
+  } as const
+}
+
 export function PickerPopover({
   label,
   anchor,
@@ -111,7 +125,7 @@ export function PickerPopover({
       anchorEl={anchor}
       onClose={onClose}
       disableAutoFocus
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      {...popoverOrigins(anchor)}
       slotProps={{
         transition: {
           onEntering: () => {

@@ -19,6 +19,8 @@ import {
 import dayjs, { type Dayjs } from 'dayjs'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 
+import { popoverOrigins } from '@/ds/Picker'
+
 type LocaleText = NonNullable<
   ComponentProps<typeof LocalizationProvider>['localeText']
 >
@@ -236,7 +238,8 @@ export function DayPopover({
   label: string
   anchor: HTMLElement | null
   onClose: () => void
-  value: string
+  /** Null when there is no one value, for several things at once. */
+  value: string | null
   onChange: (day: string) => void
   /** An empty day clears the value. */
   picks: { label: string; day: string }[]
@@ -246,7 +249,7 @@ export function DayPopover({
       open={anchor !== null}
       anchorEl={anchor}
       onClose={onClose}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      {...popoverOrigins(anchor)}
       slotProps={{
         paper: {
           role: 'dialog',
@@ -269,7 +272,7 @@ export function DayPopover({
             />
           ))}
         </QuickPicks>
-        <DayCalendar value={value} onChange={onChange} />
+        <DayCalendar value={value ?? ''} onChange={onChange} />
       </Box>
     </Popover>
   )

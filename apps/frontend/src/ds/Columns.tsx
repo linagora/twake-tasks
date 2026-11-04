@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   ButtonBase,
+  Checkbox,
   Skeleton,
   styled,
   Tooltip,
@@ -216,6 +217,8 @@ export interface CardProps {
   children: ReactNode
   /** The task just created, standing out as a selected one. */
   highlighted?: boolean
+  /** Picked to change along with other tasks. */
+  selected?: boolean
   // Capture phase: the drag sensor owns the card's own onKeyDown.
   onKeyDownCapture?: KeyboardEventHandler<HTMLElement>
 }
@@ -228,6 +231,7 @@ export function Card({
   ref,
   drag = 'none',
   highlighted = false,
+  selected = false,
   ...rest
 }: CardProps &
   HTMLAttributes<HTMLElement> & {
@@ -259,7 +263,7 @@ export function Card({
           outline: `2px solid ${theme.vars.palette.primary.main}`,
           outlineOffset: 2
         },
-        ...(highlighted && {
+        ...((highlighted || selected) && {
           bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.08),
           borderColor: 'primary.main',
           '&:hover': { boxShadow: 2 }
@@ -299,6 +303,72 @@ export function Card({
         </Box>
       )}
       {children}
+    </Box>
+  )
+}
+
+export interface KeySelect {
+  label: string
+  checked: boolean
+  /** `range` when Shift was held. */
+  onToggle: (range: boolean) => void
+  /** Shows the box on every task, not only the hovered one. */
+  selecting: boolean
+}
+
+/**
+ * The task's key, which gives its place to a check box while the card or row
+ * is hovered or focused, or while `selecting`. The box sits above the title's
+ * link, which covers the card.
+ */
+export function SelectableKey({
+  taskKey,
+  select
+}: {
+  taskKey: string
+  select?: KeySelect | undefined
+}): ReactElement {
+  const key = (
+    <Typography variant="caption" color="textSecondary" noWrap>
+      {taskKey}
+    </Typography>
+  )
+  if (!select) return key
+  const shown = {
+    '& > [data-select]': { opacity: 1 },
+    '& > [data-key]': { opacity: 0 }
+  }
+  return (
+    <Box
+      sx={{
+        display: 'inline-grid',
+        alignItems: 'center',
+        justifyItems: 'start',
+        '& > *': { gridArea: '1 / 1', transition: 'opacity 120ms' },
+        '& > [data-select]': { opacity: 0, position: 'relative', zIndex: 1 },
+        '@media (hover: hover)': {
+          ':is(article, li):is(:hover, :focus-within) > * > &, :is(article, li):is(:hover, :focus-within) > &':
+            shown
+        },
+        '&:focus-within': shown,
+        ...(select.selecting && shown)
+      }}
+    >
+      <Box component="span" data-key="" sx={{ display: 'flex' }}>
+        {key}
+      </Box>
+      <Box component="span" data-select="" sx={{ display: 'flex' }}>
+        <Checkbox
+          size="small"
+          checked={select.checked}
+          onChange={event => {
+            const click = event.nativeEvent
+            select.onToggle('shiftKey' in click && click.shiftKey === true)
+          }}
+          slotProps={{ input: { 'aria-label': select.label } }}
+          sx={{ p: 0 }}
+        />
+      </Box>
     </Box>
   )
 }
