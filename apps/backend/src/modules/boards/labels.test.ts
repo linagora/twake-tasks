@@ -35,6 +35,12 @@ function on(user: TestUser, boardId: string) {
       as.post(`/boards/${boardId}/labels`, { name, color }),
     editLabel: (labelId: string, changes: object) =>
       as.patch(`/boards/${boardId}/labels/${labelId}`, changes),
+    deleteLabel: (labelId: string) =>
+      as.delete(`/boards/${boardId}/labels/${labelId}`),
+    history: async (taskId: string) =>
+      (await as.get(`/boards/${boardId}/tasks/${taskId}/history`)).json<{
+        entries: { field: string; from: unknown; name: string | null }[]
+      }>().entries,
     addTask: async () =>
       (
         await as.post(`/boards/${boardId}/tasks`, {
@@ -276,6 +282,50 @@ describe('labels', () => {
       (await asBob.editLabel(label.id, { name: 'Later' })).statusCode
     ).toBe(403)
     expect((await asBob.label(task.id, [label.id])).statusCode).toBe(403)
+    expect((await asBob.deleteLabel(label.id)).statusCode).toBe(403)
     expect((await asBob.load()).labels).toEqual([label])
+  })
+})
+
+describe('label deletion', () => {
+  it('takes the label off every task of the project, in their history', async () => {
+    const alice = aUser()
+    const design = await aBoard(alice, 'DES')
+    const ops = await aBoard(alice, 'OPS', design.projectId)
+    const label = (await design.addLabel('Urgnet')).json<Label>()
+    const kept = (await design.addLabel('Later')).json<Label>()
+    const here = await design.addTask()
+    const there = await ops.addTask()
+    await design.label(here.id, [label.id, kept.id])
+    await ops.label(there.id, [label.id])
+    const before = (await ops.load()).version
+
+    const deleted = await design.deleteLabel(label.id)
+
+    expect(deleted.statusCode).toBe(204)
+    const loaded = await design.load()
+    expect(loaded.labels).toEqual([kept])
+    expect(loaded.tasks[0]?.labels).toEqual([kept])
+    const elsewhere = await ops.load()
+    expect(elsewhere.version).toBeGreaterThan(before)
+    expect(elsewhere.tasks[0]?.labels).toEqual([])
+    expect((await ops.history(there.id))[0]).toMatchObject({
+      field: 'labels',
+      from: label.id,
+      name: 'Urgnet'
+    })
+  })
+
+  it('frees the name and leaves the labels of other projects alone', async () => {
+    const alice = aUser()
+    const design = await aBoard(alice, 'DES')
+    const elsewhere = await aBoard(alice, 'ELS')
+    const label = (await design.addLabel('Urgent')).json<Label>()
+
+    expect((await elsewhere.deleteLabel(label.id)).statusCode).toBe(404)
+    expect((await design.load()).labels).toEqual([label])
+    await design.deleteLabel(label.id)
+    expect((await design.deleteLabel(label.id)).statusCode).toBe(404)
+    expect((await design.addLabel('Urgent')).statusCode).toBe(201)
   })
 })
