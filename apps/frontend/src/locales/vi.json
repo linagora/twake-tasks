@@ -688,6 +688,19 @@
       "none": "Không có ngày"
     }
   },
+  "boardFilter": {
+    "button": "Lọc",
+    "buttonCount": "Lọc · %{count}",
+    "label": "Lọc bảng",
+    "text": "Lọc theo tiêu đề hoặc mã",
+    "remove": "Bỏ tiêu chí %{name}",
+    "save": "Lưu thành bộ lọc",
+    "clear": "Xóa",
+    "count": "%{shown} / %{total}",
+    "noMatch": "Không có công việc nào trên bảng này khớp với các bộ lọc.",
+    "clearAll": "Xóa bộ lọc",
+    "shortcut": "Lọc bảng"
+  },
   "agenda": {
     "subtaskOf": "Việc con của %{title}",
     "today": "Hôm nay",
