@@ -21,6 +21,36 @@ export function createLabelStore(db: Db) {
   const write = <T>(identity: Identity, work: (tx: Tx) => Promise<T>) =>
     writeOrRefuse(db, identity, work)
 
+  // A label shows on every board of the project, so each one's live viewers
+  // have to reload. Locking them all in id order first keeps two changes from
+  // different boards from deadlocking.
+  const onEveryBoard = <T>(
+    identity: Identity,
+    boardId: string,
+    work: (tx: Tx, projectId: string) => Promise<T>
+  ) =>
+    write(identity, async tx => {
+      await checkRole(tx, identity, boardId, 'editor')
+      const [owner] = await tx
+        .select({ projectId: boards.projectId })
+        .from(boards)
+        .where(eq(boards.id, boardId))
+      if (!owner) throw new Refused('not_found')
+      await tx
+        .select({ id: boards.id })
+        .from(boards)
+        .where(eq(boards.projectId, owner.projectId))
+        .orderBy(asc(boards.id))
+        .for('update')
+      const board = await bumpBoard(tx, boardId)
+      const done = await work(tx, board.projectId)
+      await bumpBoards(
+        tx,
+        and(eq(boards.projectId, board.projectId), ne(boards.id, boardId))
+      )
+      return done
+    })
+
   return {
     createLabel(
       identity: Identity,
@@ -52,41 +82,35 @@ export function createLabelStore(db: Db) {
       changes: { name?: string | undefined; color?: string | null | undefined }
     ): Promise<Result<{ id: string; name: string; color: string | null }>> {
       try {
-        return await write(identity, async tx => {
-          await checkRole(tx, identity, boardId, 'editor')
-          // The label shows on every board of the project, so each one's
-          // live viewers have to reload. Locking them all in id order first
-          // keeps two edits from different boards from deadlocking.
-          const [owner] = await tx
-            .select({ projectId: boards.projectId })
-            .from(boards)
-            .where(eq(boards.id, boardId))
-          if (!owner) throw new Refused('not_found')
-          await tx
-            .select({ id: boards.id })
-            .from(boards)
-            .where(eq(boards.projectId, owner.projectId))
-            .orderBy(asc(boards.id))
-            .for('update')
-          const board = await bumpBoard(tx, boardId)
+        return await onEveryBoard(identity, boardId, async (tx, projectId) => {
           const [label] = await tx
             .update(labels)
             .set(changes)
-            .where(
-              and(eq(labels.id, labelId), eq(labels.projectId, board.projectId))
-            )
+            .where(and(eq(labels.id, labelId), eq(labels.projectId, projectId)))
             .returning(shape)
           if (!label) throw new Refused('not_found')
-          await bumpBoards(
-            tx,
-            and(eq(boards.projectId, board.projectId), ne(boards.id, boardId))
-          )
           return label
         })
       } catch (error) {
         if (isUniqueViolation(error)) return { ok: false, error: 'label_taken' }
         throw error
       }
+    },
+
+    // Taken off each task first, while the label still names the history
+    // entries those removals write.
+    deleteLabel(identity: Identity, boardId: string, labelId: string) {
+      return onEveryBoard(identity, boardId, async (tx, projectId) => {
+        const [label] = await tx
+          .select({ id: labels.id })
+          .from(labels)
+          .where(and(eq(labels.id, labelId), eq(labels.projectId, projectId)))
+          .for('update')
+        if (!label) throw new Refused('not_found')
+        await tx.delete(taskLabels).where(eq(taskLabels.labelId, labelId))
+        await tx.delete(labels).where(eq(labels.id, labelId))
+        return null
+      })
     },
 
     setLabels(

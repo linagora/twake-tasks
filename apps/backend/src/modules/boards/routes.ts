@@ -225,6 +225,15 @@ export function registerBoards(
         labelStore.editLabel(identity, params.boardId, params.labelId, body)
     }),
     defineRoute({
+      method: 'DELETE',
+      url: '/boards/:boardId/labels/:labelId',
+      access: editor,
+      params: labelParams,
+      status: 204,
+      handler: ({ identity, params }) =>
+        labelStore.deleteLabel(identity, params.boardId, params.labelId)
+    }),
+    defineRoute({
       method: 'PUT',
       url: '/boards/:boardId/tasks/:taskId/labels',
       access: editor,

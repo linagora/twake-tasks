@@ -111,6 +111,20 @@ export function registerCollaboration(
         )
     }),
     defineRoute({
+      method: 'DELETE',
+      url: '/boards/:boardId/tasks/:taskId/comments/:commentId',
+      access: viewer,
+      params: commentParams,
+      status: 204,
+      handler: ({ identity, params }) =>
+        commentStore.deleteComment(
+          identity,
+          params.boardId,
+          params.taskId,
+          params.commentId
+        )
+    }),
+    defineRoute({
       method: 'GET',
       url: '/boards/:boardId/tasks/:taskId/comments/:commentId/edits',
       access: viewer,

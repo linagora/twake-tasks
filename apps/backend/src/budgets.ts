@@ -15,6 +15,7 @@ const ROUTES: Record<string, readonly UserBudget[]> = {
   // A label belongs to the project: changing one changes every board of it.
   'POST /boards/:boardId/labels': ['labelEdits'],
   'PATCH /boards/:boardId/labels/:labelId': ['labelEdits'],
+  'DELETE /boards/:boardId/labels/:labelId': ['labelEdits'],
   'POST /boards/:boardId/invites': ['invites', 'invitesDaily'],
   'GET /boards/:boardId/sharing/people': ['peopleSearch'],
   'GET /boards/:boardId/events': ['streamConnects'],

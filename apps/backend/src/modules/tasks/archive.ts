@@ -151,6 +151,36 @@ export function createArchiveStore(db: Db) {
       })
     },
 
+    /**
+     * Purges one trashed task, or the whole trash without one. A sub-task
+     * trashed with its parent goes only with the parent.
+     */
+    purgeTrash(identity: Identity, boardId: string, taskId?: string) {
+      return writeOrRefuse(db, identity, async tx => {
+        await checkRole(tx, identity, boardId, 'admin')
+        await bumpBoard(tx, boardId)
+        const purged = await tx
+          .delete(tasks)
+          .where(
+            and(
+              eq(tasks.boardId, boardId),
+              isNotNull(tasks.deletedAt),
+              taskId === undefined
+                ? undefined
+                : and(
+                    eq(tasks.id, taskId),
+                    sql`not exists (select 1 from tasks parent where parent.id = ${tasks.parentId} and parent.deleted_at = ${tasks.deletedAt})`
+                  )
+            )
+          )
+          .returning({ id: tasks.id })
+        if (taskId !== undefined && purged.length === 0) {
+          throw new Refused('not_found')
+        }
+        return null
+      })
+    },
+
     /** The tasks archived or trashed on their own, latest first. */
     hiddenTasks(identity: Identity, boardId: string, stamp: Stamp) {
       return inTenant(db, identity, async tx => {
