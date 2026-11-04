@@ -341,6 +341,23 @@ export function fakeBoardsApi(boards: Board[] = []) {
         hidden.delete(taskId)
       })
     ),
+    deleteForGood: vi.fn<BoardsApi['deleteForGood']>((boardId, taskId) =>
+      Promise.resolve().then(() => {
+        find(boardId)
+        if (hidden.get(taskId)?.shelf !== 'trash') {
+          throw new ApiError(404, 'not_found')
+        }
+        hidden.delete(taskId)
+      })
+    ),
+    emptyTrash: vi.fn<BoardsApi['emptyTrash']>(boardId =>
+      Promise.resolve().then(() => {
+        find(boardId)
+        for (const [taskId, entry] of hidden) {
+          if (entry.shelf === 'trash') hidden.delete(taskId)
+        }
+      })
+    ),
     hiddenTasks: vi.fn<BoardsApi['hiddenTasks']>((boardId, shelf) =>
       Promise.resolve().then(() => {
         find(boardId)
@@ -883,6 +900,18 @@ export function fakeBoardsApi(boards: Board[] = []) {
           comment.editedAt = new Date().toISOString()
         })
     ),
+    deleteComment: vi.fn<BoardsApi['deleteComment']>(
+      (boardId, taskId, commentId) =>
+        Promise.resolve().then(() => {
+          findComment(boardId, taskId, commentId)
+          findTask(boardId, taskId).commentCount -= 1
+          comments.set(
+            taskId,
+            (comments.get(taskId) ?? []).filter(({ id }) => id !== commentId)
+          )
+          commentEdits.delete(commentId)
+        })
+    ),
     listCommentEdits: vi.fn<BoardsApi['listCommentEdits']>(
       (boardId, taskId, commentId) =>
         Promise.resolve().then(() => {
@@ -964,6 +993,18 @@ export function fakeBoardsApi(boards: Board[] = []) {
         board.labels = swap(board.labels)
         for (const task of board.tasks) task.labels = swap(task.labels)
         return label
+      })
+    ),
+    deleteLabel: vi.fn<BoardsApi['deleteLabel']>((boardId, labelId) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        if (!board.labels.some(each => each.id === labelId)) {
+          throw new ApiError(404, 'not_found')
+        }
+        const kept = (labels: Label[]) =>
+          labels.filter(each => each.id !== labelId)
+        board.labels = kept(board.labels)
+        for (const task of board.tasks) task.labels = kept(task.labels)
       })
     ),
     setLabels: vi.fn<BoardsApi['setLabels']>((boardId, taskId, labelIds) =>

@@ -292,6 +292,10 @@ export interface BoardsApi {
   /** The trash is purged after 30 days. */
   trashTask: (boardId: string, taskId: string) => Promise<void>
   restoreTask: (boardId: string, taskId: string) => Promise<void>
+  /** A trashed task, with its sub-tasks, without waiting the 30 days. Admins only. */
+  deleteForGood: (boardId: string, taskId: string) => Promise<void>
+  /** Admins only. */
+  emptyTrash: (boardId: string) => Promise<void>
   hiddenTasks: (boardId: string, shelf: Shelf) => Promise<HiddenTask[]>
   /** An archived board is read only. Admins only. */
   setBoardArchived: (boardId: string, archived: boolean) => Promise<void>
@@ -396,6 +400,12 @@ export interface BoardsApi {
     commentId: string,
     body: string
   ) => Promise<void>
+  /** By its author, or a board admin; its earlier bodies and reactions go too. */
+  deleteComment: (
+    boardId: string,
+    taskId: string,
+    commentId: string
+  ) => Promise<void>
   /** Oldest first; the current body is not among them. */
   listCommentEdits: (
     boardId: string,
@@ -452,6 +462,8 @@ export interface BoardsApi {
     labelId: string,
     changes: Partial<Pick<Label, 'name' | 'color'>>
   ) => Promise<Label>
+  /** Takes it off every task of the board's project. */
+  deleteLabel: (boardId: string, labelId: string) => Promise<void>
   setLabels: (
     boardId: string,
     taskId: string,
