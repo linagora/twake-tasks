@@ -22,6 +22,45 @@
     "columnCanceled": "Spostamento della sezione %{section} annullato.",
     "columnInstructions": "Per spostare una sezione, premi Spazio o Invio. Usa le frecce sinistra e destra per spostarla, Spazio o Invio per rilasciarla ed Esc per annullare."
   },
+  "settings": {
+    "title": "Impostazioni"
+  },
+  "templates": {
+    "title": "Modelli",
+    "hint": "Avvia un’attività da un modello su qualsiasi bacheca. I tuoi modelli personali sono solo tuoi; quelli di un progetto sono condivisi con tutti i suoi membri.",
+    "new": "Nuovo modello",
+    "editTitle": "Modifica modello",
+    "close": "Chiudi",
+    "name": "Titolo dell’attività",
+    "nameHint": "Il titolo con cui inizia la nuova attività.",
+    "nameRequired": "Dai al modello un titolo di attività.",
+    "descriptionPlaceholder": "Cosa deve dire ogni attività creata da questo modello",
+    "where": "Disponibile in",
+    "assignTitle": "Assegna le attività create da questo modello",
+    "labelTitle": "Etichetta le attività create da questo modello",
+    "mine": "I miei modelli",
+    "onlyMe": "Solo io",
+    "mineHint": "Lo vedi solo tu, su ogni bacheca. Etichette e assegnatari appartengono a un progetto: scegline uno per aggiungerli.",
+    "projectHint": "Tutti nel progetto lo vedono, su ognuna delle sue bacheche. I suoi editor possono usarlo e modificarlo.",
+    "refused": "Un’etichetta o una persona non fa più parte del progetto. Controllale e salva di nuovo.",
+    "saveFailed": "Impossibile salvare il modello.",
+    "save": "Salva",
+    "create": "Crea modello",
+    "loadFailed": "Impossibile caricare i modelli.",
+    "empty": "Ancora nessun modello",
+    "emptyHint": "Salva le attività che crei di continuo, come un report mensile, e avviale con un clic.",
+    "labels": "%{smart_count} etichetta |||| %{smart_count} etichette",
+    "assignees": "%{smart_count} assegnatario |||| %{smart_count} assegnatari",
+    "withDescription": "Descrizione",
+    "viewOnly": "Sola lettura",
+    "titleOnly": "Solo titolo",
+    "options": "Opzioni per %{name}",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "deleteTitle": "Eliminare %{name}?",
+    "deleteHint": "Le attività già create da questo modello restano come sono.",
+    "deleteFailed": "Impossibile eliminare il modello."
+  },
   "app": {
     "name": "Twake Project",
     "loading": "Caricamento",
@@ -190,6 +229,8 @@
     "renameFailed": "Impossibile rinominare la bacheca."
   },
   "task": {
+    "template": "Modello",
+    "someonesTemplate": "Il modello personale di qualcun altro",
     "description": "Descrizione",
     "editDescription": "Modifica descrizione",
     "loadFailed": "Impossibile caricare la descrizione.",
@@ -315,6 +356,7 @@
     "someSection": "una sezione eliminata"
   },
   "dates": {
+    "templateNoRepeat": "Un’attività creata da un modello non si ripete.",
     "edit": "Modifica date",
     "none": "Nessuna",
     "save": "Salva date",
@@ -401,6 +443,12 @@
     "tooMany": "Hai troppi promemoria in attesa. Eliminane alcuni prima di aggiungerne un altro."
   },
   "newTask": {
+    "useTemplate": "Modello",
+    "noTemplates": "Nessun modello per questa bacheca",
+    "noTemplatesHint": "I modelli si creano nelle impostazioni.",
+    "manageTemplates": "Gestisci modelli",
+    "fromTemplate": "Da %{name}",
+    "removeTemplate": "Non collegare l’attività a questo modello",
     "title": "Crea un'attività",
     "open": "Crea attività",
     "close": "Chiudi",

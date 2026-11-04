@@ -1,6 +1,7 @@
 import {
   Bell,
   CalendarToday,
+  Copy,
   Flag,
   Folder,
   Label,
@@ -72,6 +73,7 @@ export function TaskProperties({
             sections={board.sections}
           />
         )}
+        {task.template && <TemplateRow template={task.template} />}
         <Property icon={<Icon icon={People} />} label={t('task.assignees')}>
           {task.assignees.map(person => (
             <PersonChip
@@ -287,6 +289,24 @@ function BoardRow({ board }: { board: Board }): ReactElement {
             {` · ${projectName}`}
           </Typography>
         )}
+      </PropertyText>
+    </Property>
+  )
+}
+
+function TemplateRow({
+  template
+}: {
+  template: NonNullable<Task['template']>
+}): ReactElement {
+  const { t } = useI18n()
+  return (
+    <Property icon={<Icon icon={Copy} />} label={t('task.template')}>
+      <PropertyText
+        variant="body2"
+        {...(template.title === null && { color: 'textSecondary' })}
+      >
+        {template.title ?? t('task.someonesTemplate')}
       </PropertyText>
     </Property>
   )

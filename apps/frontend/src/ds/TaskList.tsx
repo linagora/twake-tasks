@@ -1,15 +1,32 @@
-import { Badge, Box, Typography } from '@linagora/twake-mui'
+import { Badge, Box, ButtonBase, styled, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
+
+/** A row's title that opens it in place, where a link would leave the page. */
+export const RowButton = styled(ButtonBase)(({ theme }) => ({
+  // Inline, so the row's title still ends in an ellipsis
+  display: 'inline',
+  font: 'inherit',
+  color: 'inherit',
+  textAlign: 'start',
+  maxWidth: '100%',
+  '&:hover': { textDecoration: 'underline' },
+  '&:focus-visible': {
+    outline: `2px solid ${theme.vars.palette.primary.main}`,
+    outlineOffset: 2
+  }
+}))
 
 export function TaskGroup({
   label,
   count,
   tone = 'default',
+  heading = 'h2',
   children
 }: {
   label: string
   count: number
   tone?: 'default' | 'error' | undefined
+  heading?: 'h2' | 'h3'
   children: ReactNode
 }): ReactElement {
   return (
@@ -17,7 +34,7 @@ export function TaskGroup({
       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1 }}>
         <Typography
           variant="subtitle1"
-          component="h2"
+          component={heading}
           sx={{
             fontWeight: 600,
             color: tone === 'error' ? 'error.main' : 'text.primary'

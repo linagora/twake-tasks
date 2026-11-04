@@ -22,6 +22,45 @@
     "columnCanceled": "Đã hủy di chuyển mục %{section}.",
     "columnInstructions": "Để di chuyển một mục, nhấn phím cách hoặc Enter. Dùng phím mũi tên trái và phải để di chuyển, phím cách hoặc Enter để thả, và Escape để hủy."
   },
+  "settings": {
+    "title": "Cài đặt"
+  },
+  "templates": {
+    "title": "Mẫu",
+    "hint": "Bắt đầu một công việc từ mẫu trên bất kỳ bảng nào. Mẫu riêng của bạn chỉ mình bạn thấy; mẫu của dự án được chia sẻ với mọi thành viên.",
+    "new": "Mẫu mới",
+    "editTitle": "Sửa mẫu",
+    "close": "Đóng",
+    "name": "Tiêu đề công việc",
+    "nameHint": "Tiêu đề mà công việc mới bắt đầu với.",
+    "nameRequired": "Hãy đặt tiêu đề công việc cho mẫu.",
+    "descriptionPlaceholder": "Nội dung mà mỗi công việc tạo từ mẫu cần có",
+    "where": "Dùng được ở",
+    "assignTitle": "Giao các công việc tạo từ mẫu",
+    "labelTitle": "Gắn nhãn các công việc tạo từ mẫu",
+    "mine": "Mẫu của tôi",
+    "onlyMe": "Chỉ mình tôi",
+    "mineHint": "Chỉ bạn thấy, trên mọi bảng. Nhãn và người được giao thuộc về một dự án: hãy chọn một dự án để thêm.",
+    "projectHint": "Mọi người trong dự án đều thấy, trên từng bảng của dự án. Người chỉnh sửa của dự án có thể dùng và sửa mẫu.",
+    "refused": "Một nhãn hoặc một người không còn trong dự án. Hãy kiểm tra và lưu lại.",
+    "saveFailed": "Không thể lưu mẫu.",
+    "save": "Lưu",
+    "create": "Tạo mẫu",
+    "loadFailed": "Không thể tải các mẫu.",
+    "empty": "Chưa có mẫu nào",
+    "emptyHint": "Lưu những công việc bạn tạo đi tạo lại, như báo cáo hằng tháng, và bắt đầu chúng chỉ với một cú nhấp.",
+    "labels": "%{smart_count} nhãn",
+    "assignees": "%{smart_count} người được giao",
+    "withDescription": "Mô tả",
+    "viewOnly": "Chỉ xem",
+    "titleOnly": "Chỉ tiêu đề",
+    "options": "Tùy chọn cho %{name}",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "deleteTitle": "Xóa %{name}?",
+    "deleteHint": "Các công việc đã tạo từ mẫu này vẫn giữ nguyên.",
+    "deleteFailed": "Không thể xóa mẫu."
+  },
   "app": {
     "name": "Twake Project",
     "loading": "Đang tải",
@@ -190,6 +229,8 @@
     "renameFailed": "Không thể đổi tên bảng."
   },
   "task": {
+    "template": "Mẫu",
+    "someonesTemplate": "Mẫu riêng của người khác",
     "description": "Mô tả",
     "editDescription": "Sửa mô tả",
     "loadFailed": "Không thể tải mô tả.",
@@ -315,6 +356,7 @@
     "someSection": "mục đã xóa"
   },
   "dates": {
+    "templateNoRepeat": "Công việc tạo từ mẫu không lặp lại.",
     "edit": "Sửa ngày",
     "none": "Không có",
     "save": "Lưu ngày",
@@ -401,6 +443,12 @@
     "tooMany": "Bạn có quá nhiều lời nhắc đang chờ. Hãy xóa bớt trước khi thêm lời nhắc mới."
   },
   "newTask": {
+    "useTemplate": "Mẫu",
+    "noTemplates": "Chưa có mẫu cho bảng này",
+    "noTemplatesHint": "Mẫu được tạo trong phần Cài đặt.",
+    "manageTemplates": "Quản lý mẫu",
+    "fromTemplate": "Từ %{name}",
+    "removeTemplate": "Không liên kết công việc với mẫu này",
     "title": "Tạo công việc",
     "open": "Tạo công việc",
     "close": "Đóng",

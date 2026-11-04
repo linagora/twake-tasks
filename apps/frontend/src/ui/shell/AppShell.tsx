@@ -6,6 +6,7 @@ import {
   CalendarToday,
   Check,
   Filter,
+  Gear,
   HelpOutlined,
   Logout,
   Mosaic,
@@ -296,6 +297,14 @@ function AccountMenu({ onHelp }: { onHelp: () => void }): ReactElement {
               <ListItemText>{t('filters.title')}</ListItemText>
             </MenuItem>
           )}
+          {phone && (
+            <MenuItem component={RouterLink} to="/settings" onClick={close}>
+              <ListItemIcon>
+                <Icon icon={Gear} />
+              </ListItemIcon>
+              <ListItemText>{t('settings.title')}</ListItemText>
+            </MenuItem>
+          )}
           <MenuItem
             aria-keyshortcuts="?"
             onClick={() => {
@@ -444,14 +453,24 @@ function AppNavLink({
 function ShelfLinks({ archivesLit }: { archivesLit: boolean }): ReactElement {
   const { t } = useI18n()
   return (
-    <SidebarShelves label={t('boards.shelves')}>
-      <NavItem>
-        <SidebarLink to="/archives" active={archivesLit}>
-          <NavIcon icon={Archive} />
-          <NavText>{t('boards.archives')}</NavText>
-        </SidebarLink>
-      </NavItem>
-    </SidebarShelves>
+    <>
+      <SidebarShelves label={t('boards.shelves')}>
+        <NavItem>
+          <SidebarLink to="/archives" active={archivesLit}>
+            <NavIcon icon={Archive} />
+            <NavText>{t('boards.archives')}</NavText>
+          </SidebarLink>
+        </NavItem>
+      </SidebarShelves>
+      <SidebarShelves label={t('settings.title')}>
+        <NavItem>
+          <SidebarLink to="/settings">
+            <NavIcon icon={Gear} />
+            <NavText>{t('settings.title')}</NavText>
+          </SidebarLink>
+        </NavItem>
+      </SidebarShelves>
+    </>
   )
 }
 

@@ -1,6 +1,7 @@
 import {
   Bottom,
   CalendarToday,
+  Copy,
   Flag,
   Folder,
   Label,
@@ -34,21 +35,22 @@ import {
   type StartedTask
 } from '@/application/newTask'
 import { ClosableTitle } from '@/ds/ClosableTitle'
-import { LabelChip } from '@/ds/Columns'
+import { LabelChip, PersonChip } from '@/ds/Columns'
 import { DiscardDialog } from '@/ds/DiscardDialog'
 import { Icon } from '@/ds/Icon'
 import { DayPopover } from '@/ds/Pickers'
 import { RichTextEditor } from '@/ds/RichText'
 import { Inline, Properties, Property, PropertySelect } from '@/ds/SidePanel'
 import { Toast } from '@/ds/Toast'
-import { isShareable, type Priority } from '@/domain/board'
+import { isShareable, type Priority, type Template } from '@/domain/board'
 import { displayName } from '@/domain/person'
-import { useBoardName } from '@/ui/boards/BoardsScreen'
+import { useBoardName, useProjectName } from '@/ui/boards/BoardsScreen'
 import { inDays, shortDay, untilNextMonday } from '@/ui/boards/dueLabel'
 import { LabelsMenu } from '@/ui/boards/LabelsMenu'
 import { PeopleMenu } from '@/ui/boards/PeopleMenu'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useNewTask, useNewTaskBoard } from '@/ui/queries/tasks'
+import { useTemplates } from '@/ui/queries/templates'
 import { PriorityChip } from '@/ui/boards/TaskFacts'
 import { MAX_DESCRIPTION } from '@/ui/boards/TaskPanel'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
@@ -56,6 +58,7 @@ import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 import { useHighlightNewTask } from '@/ui/shell/NewTaskHighlight'
+import { TemplatePicker } from '@/ui/shell/TemplatePicker'
 import { useNewTaskParam, type NewTaskPreset } from '@/ui/shell/useNewTaskParam'
 
 const PRIORITIES: Priority[] = [1, 2, 3, 4]
@@ -242,6 +245,14 @@ export function NewTaskDialog({
     inBoardId,
     inProjectId
   )
+  const projectName = useProjectName()
+  const usable = (useTemplates().data ?? []).filter(
+    each => each.projectId === null || each.projectId === board?.project.id
+  )
+  // Dropped when another board's project cannot use it.
+  const [picking, setPicking] = useState<Template | null>(null)
+  const template =
+    picking && usable.some(each => each.id === picking.id) ? picking : null
 
   const change = (changes: Partial<typeof facts>) => {
     if (!create.isIdle && !create.isPending) create.reset()
@@ -273,6 +284,53 @@ export function NewTaskDialog({
     // Members, labels and sections belong to the board they were picked in;
     // whoever picks a board is one of its members.
     change({ assigneeIds: assignedToMe ? [myId] : [], labelIds: [] })
+  }
+
+  // What was typed stays; what the last template filled in is replaced.
+  const applyTemplate = (next: Template) => {
+    if (!board) return
+    const ours = (typed: string, filled: string | undefined) =>
+      typed.trim() === '' || typed === filled
+    if (ours(title, template?.title)) setTitle(next.title)
+    if (ours(description, template?.description)) {
+      setDescription(next.description)
+      setCleared(cleared + 1)
+    }
+    const merged = (
+      picked: string[],
+      filled: string[] | undefined,
+      fills: string[],
+      known: (id: string) => boolean
+    ) => [
+      ...new Set([
+        ...picked.filter(id => !filled?.includes(id)),
+        ...fills.filter(known)
+      ])
+    ]
+    change({
+      priority:
+        next.priority ??
+        (facts.priority === template?.priority ? null : facts.priority),
+      labelIds: merged(facts.labelIds, template?.labelIds, next.labelIds, id =>
+        board.labels.some(label => label.id === id)
+      ),
+      assigneeIds: merged(
+        facts.assigneeIds,
+        template?.assigneeIds,
+        next.assigneeIds,
+        id => board.members.some(member => member.userId === id)
+      )
+    })
+    setUntitled(false)
+    setPicking(next)
+    if (
+      next.description.trim() !== '' ||
+      next.priority !== null ||
+      next.labelIds.length > 0 ||
+      next.assigneeIds.length > 0
+    ) {
+      setDetails(true)
+    }
   }
 
   const sections = board?.sections ?? []
@@ -309,7 +367,8 @@ export function NewTaskDialog({
           ...facts,
           title,
           description,
-          ...(section && { sectionId: section.id })
+          ...(section && { sectionId: section.id }),
+          ...(template && { templateId: template.id })
         },
         started
       },
@@ -331,6 +390,7 @@ export function NewTaskDialog({
           setDescription(current => (current === description ? '' : current))
           setCleared(cleared + 1)
           setStarted(undefined)
+          setPicking(null)
           setLast(created)
           create.reset()
           titleRef.current?.focus()
@@ -411,6 +471,20 @@ export function NewTaskDialog({
                 }
               }}
             />
+            {template && (
+              <div className="u-flex-self-start u-maw-100">
+                <PersonChip
+                  avatar={<Icon icon={Copy} size={16} />}
+                  name={t('newTask.fromTemplate', { name: template.title })}
+                  remove={{
+                    label: t('newTask.removeTemplate'),
+                    onClick: () => {
+                      setPicking(null)
+                    }
+                  }}
+                />
+              </div>
+            )}
             {last && (
               <Stack
                 direction="row"
@@ -436,7 +510,8 @@ export function NewTaskDialog({
             <Stack
               direction="row"
               spacing={1}
-              className="u-flex-items-center u-flex-justify-between"
+              useFlexGap
+              className="u-flex-items-center u-flex-justify-between u-flex-wrap"
             >
               {destination ? (
                 <Button
@@ -450,17 +525,27 @@ export function NewTaskDialog({
               ) : (
                 <span />
               )}
-              <Button
-                variant="text"
-                size="small"
-                startIcon={<Icon icon={details ? Bottom : Right} size={14} />}
-                aria-expanded={details}
-                onClick={() => {
-                  setDetails(!details)
-                }}
-              >
-                {t(details ? 'newTask.hideDetails' : 'newTask.addDetails')}
-              </Button>
+              <Stack direction="row" spacing={1}>
+                {board && started === undefined && (
+                  <TemplatePicker
+                    templates={usable}
+                    projectName={projectName(board.project)}
+                    manageable={inProjectId === undefined}
+                    onPick={applyTemplate}
+                  />
+                )}
+                <Button
+                  variant="text"
+                  size="small"
+                  startIcon={<Icon icon={details ? Bottom : Right} size={14} />}
+                  aria-expanded={details}
+                  onClick={() => {
+                    setDetails(!details)
+                  }}
+                >
+                  {t(details ? 'newTask.hideDetails' : 'newTask.addDetails')}
+                </Button>
+              </Stack>
             </Stack>
             {details && (
               <>

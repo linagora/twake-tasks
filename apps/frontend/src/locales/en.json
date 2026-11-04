@@ -22,6 +22,45 @@
     "columnCanceled": "Moving the section %{section} was canceled.",
     "columnInstructions": "To move a section, press space or enter. Use the left and right arrow keys to move it, space or enter to drop it, and escape to cancel."
   },
+  "settings": {
+    "title": "Settings"
+  },
+  "templates": {
+    "title": "Templates",
+    "hint": "Start a task from a template on any board. Your own templates are yours alone; a project’s templates are shared with everyone in it.",
+    "new": "New template",
+    "editTitle": "Edit template",
+    "close": "Close",
+    "name": "Task title",
+    "nameHint": "The title the new task starts with.",
+    "nameRequired": "Give the template a task title.",
+    "descriptionPlaceholder": "What every task made from it should say",
+    "where": "Available in",
+    "assignTitle": "Assign the tasks made from it",
+    "labelTitle": "Label the tasks made from it",
+    "mine": "My templates",
+    "onlyMe": "Only me",
+    "mineHint": "Only you see it, on every board. Labels and assignees belong to a project: pick one to add them.",
+    "projectHint": "Everyone in the project sees it, on each of its boards. Its editors can use and change it.",
+    "refused": "A label or a person is no longer in the project. Check them and save again.",
+    "saveFailed": "Couldn’t save the template.",
+    "save": "Save",
+    "create": "Create template",
+    "loadFailed": "Couldn’t load templates.",
+    "empty": "No templates yet",
+    "emptyHint": "Save the tasks you make again and again, like a monthly report, and start them in one click.",
+    "labels": "%{smart_count} label |||| %{smart_count} labels",
+    "assignees": "%{smart_count} assignee |||| %{smart_count} assignees",
+    "withDescription": "Description",
+    "viewOnly": "View only",
+    "titleOnly": "Title only",
+    "options": "Options for %{name}",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteTitle": "Delete %{name}?",
+    "deleteHint": "Tasks already made from it stay as they are.",
+    "deleteFailed": "Couldn’t delete the template."
+  },
   "app": {
     "name": "Twake Project",
     "loading": "Loading",
@@ -190,6 +229,8 @@
     "renameFailed": "The board could not be renamed."
   },
   "task": {
+    "template": "Template",
+    "someonesTemplate": "Someone’s own template",
     "description": "Description",
     "editDescription": "Edit description",
     "loadFailed": "The description could not be loaded.",
@@ -315,6 +356,7 @@
     "someSection": "a deleted section"
   },
   "dates": {
+    "templateNoRepeat": "A task made from a template doesn’t repeat.",
     "edit": "Edit dates",
     "none": "None",
     "save": "Save dates",
@@ -401,6 +443,12 @@
     "tooMany": "You have too many reminders waiting. Delete some before adding another."
   },
   "newTask": {
+    "useTemplate": "Template",
+    "noTemplates": "No templates for this board",
+    "noTemplatesHint": "Templates are made in Settings.",
+    "manageTemplates": "Manage templates",
+    "fromTemplate": "From %{name}",
+    "removeTemplate": "Don’t link the task to this template",
     "title": "Create a task",
     "open": "Create task",
     "close": "Close",

@@ -36,6 +36,23 @@ afterEach(() => {
 })
 
 describe('Dates', () => {
+  it('does not repeat a task made from a template, and says so', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+    Object.assign(logo, {
+      dueDate: '2026-11-10',
+      template: { id: 't1', title: 'Monthly report' }
+    })
+    const { panel, editor } = await openDates(board.id, boardsApi)
+
+    expect(
+      editor.getByRole('spinbutton', { name: 'Repeat every' })
+    ).toBeDisabled()
+    expect(
+      editor.getByText('A task made from a template doesn’t repeat.')
+    ).toBeVisible()
+    expect(panel.getByText('Monthly report')).toBeVisible()
+  })
+
   it('says when a task has no dates', async () => {
     const { board, boardsApi } = logoBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })
