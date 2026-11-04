@@ -298,32 +298,32 @@ describe('comment reactions', () => {
   })
 })
 
+interface Listed {
+  id: string
+  body: string
+  createdAt: string
+  editedAt: string | null
+}
+
+async function aComment(owner: TestUser) {
+  const { boardId, taskId } = await aTaskOf(owner)
+  const list = `/boards/${boardId}/tasks/${taskId}/comments`
+  const { id } = (
+    await api.as(owner).post(list, { body: 'Which palette?' })
+  ).json<{ id: string }>()
+  const path = `${list}/${id}`
+  const listed = async (viewer: TestUser) =>
+    (await api.as(viewer).get(list))
+      .json<{ comments: Listed[] }>()
+      .comments.find(comment => comment.id === id)
+  const edits = async (viewer: TestUser) =>
+    (await api.as(viewer).get(`${path}/edits`)).json<{
+      edits: { body: string; writtenAt: string }[]
+    }>().edits
+  return { boardId, taskId, list, path, listed, edits }
+}
+
 describe('comment edits', () => {
-  interface Listed {
-    id: string
-    body: string
-    createdAt: string
-    editedAt: string | null
-  }
-
-  async function aComment(owner: TestUser) {
-    const { boardId, taskId } = await aTaskOf(owner)
-    const list = `/boards/${boardId}/tasks/${taskId}/comments`
-    const { id } = (
-      await api.as(owner).post(list, { body: 'Which palette?' })
-    ).json<{ id: string }>()
-    const path = `${list}/${id}`
-    const listed = async (viewer: TestUser) =>
-      (await api.as(viewer).get(list))
-        .json<{ comments: Listed[] }>()
-        .comments.find(comment => comment.id === id)
-    const edits = async (viewer: TestUser) =>
-      (await api.as(viewer).get(`${path}/edits`)).json<{
-        edits: { body: string; writtenAt: string }[]
-      }>().edits
-    return { boardId, taskId, path, listed, edits }
-  }
-
   it('changes the body, marks it edited and keeps the earlier bodies', async () => {
     const alice = aUser()
     const { path, listed, edits } = await aComment(alice)
@@ -398,5 +398,62 @@ describe('comment edits', () => {
       )
 
     expect(response.statusCode).toBe(404)
+  })
+})
+
+describe('comment deletion', () => {
+  it('deletes the comment with its earlier bodies and reactions', async () => {
+    const alice = aUser()
+    const { boardId, taskId, path, listed } = await aComment(alice)
+    await api.as(alice).patch(path, { body: 'Which fonts?' })
+    await api.as(alice).put(`${path}/reactions/${encodeURIComponent('👍')}`)
+
+    const deleted = await api.as(alice).delete(path)
+
+    expect(deleted.statusCode).toBe(204)
+    expect(await listed(alice)).toBeUndefined()
+    expect((await api.as(alice).get(`${path}/edits`)).statusCode).toBe(404)
+    const board = (await api.as(alice).get(`/boards/${boardId}`)).json<{
+      tasks: { id: string; commentCount: number }[]
+    }>()
+    expect(board.tasks).toEqual([
+      expect.objectContaining({ id: taskId, commentCount: 0 })
+    ])
+  })
+
+  it("lets the author and the board's admins delete, not other members", async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const carol = aUser({ organizationId: alice.organizationId })
+    const { boardId, list, path, listed } = await aComment(alice)
+    await joinBoard(db, alice, boardId, bob, 'editor')
+    await joinBoard(db, alice, boardId, carol, 'viewer')
+
+    expect((await api.as(bob).delete(path)).statusCode).toBe(403)
+    expect((await api.as(carol).delete(path)).statusCode).toBe(403)
+    expect((await api.as(aUser()).delete(path)).statusCode).toBe(404)
+    expect(await listed(alice)).toBeDefined()
+
+    const { id } = (await api.as(carol).post(list, { body: 'Mine' })).json<{
+      id: string
+    }>()
+    expect((await api.as(carol).delete(`${list}/${id}`)).statusCode).toBe(204)
+    const { id: bobs } = (
+      await api.as(bob).post(list, { body: 'Off topic' })
+    ).json<{ id: string }>()
+    expect((await api.as(alice).delete(`${list}/${bobs}`)).statusCode).toBe(204)
+    expect(
+      (await api.as(alice).get(list))
+        .json<{ comments: Listed[] }>()
+        .comments.map(comment => comment.body)
+    ).toEqual(['Which palette?'])
+  })
+
+  it('refuses a deletion on an archived board', async () => {
+    const alice = aUser()
+    const { boardId, path } = await aComment(alice)
+    await api.as(alice).post(`/boards/${boardId}/archive`, {})
+
+    expect((await api.as(alice).delete(path)).statusCode).toBe(409)
   })
 })

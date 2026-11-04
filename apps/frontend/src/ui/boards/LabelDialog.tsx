@@ -14,6 +14,7 @@ import { useId, useState, type ReactElement } from 'react'
 
 import { ApiError } from '@/application/boards'
 import { ColorField, leastUsedColor, swatchName } from '@/ds/ColorPicker'
+import { ConfirmDialog } from '@/ds/ConfirmDialog'
 import { DialogHeader } from '@/ds/DialogHeader'
 import { Icon } from '@/ds/Icon'
 import { labelName, type Label } from '@/domain/board'
@@ -33,6 +34,7 @@ export function LabelDialog({
   label,
   usedColors,
   onSaved,
+  onDeleted,
   onClose
 }: {
   boardId: string
@@ -41,10 +43,15 @@ export function LabelDialog({
   /** The colors of the board's labels, which a new label avoids */
   usedColors: readonly (string | null)[]
   onSaved: (label: Label) => void
+  onDeleted: (labelId: string) => void
   onClose: () => void
 }): ReactElement {
   const { t } = useI18n()
   const titleId = useId()
+  const [deleting, setDeleting] = useState(false)
+  const remove = useBoardChange(boardId, (api, labelId: string) =>
+    api.deleteLabel(boardId, labelId)
+  )
   const [name, setName] = useState(label?.name ?? '')
   const [color, setColor] = useState<string | null>(() =>
     label ? label.color : leastUsedColor(usedColors)
@@ -137,6 +144,19 @@ export function LabelDialog({
         </DialogContent>
         <Divider />
         <DialogActions>
+          {label && (
+            <Button
+              variant="text"
+              color="error"
+              className="u-mr-auto"
+              onClick={() => {
+                remove.reset()
+                setDeleting(true)
+              }}
+            >
+              {t('labelDialog.delete')}
+            </Button>
+          )}
           <Button variant="text" onClick={onClose}>
             {t('board.cancel')}
           </Button>
@@ -149,6 +169,28 @@ export function LabelDialog({
           </Button>
         </DialogActions>
       </form>
+      {label && deleting && (
+        <ConfirmDialog
+          labels={{
+            title: t('labelDialog.deleteTitle', { name: label.name }),
+            text: t('labelDialog.deleteText'),
+            cancel: t('board.cancel'),
+            confirm: t('labelDialog.delete')
+          }}
+          pending={remove.isPending}
+          error={remove.isError && t('labelDialog.deleteFailed')}
+          onCancel={() => {
+            setDeleting(false)
+          }}
+          onConfirm={() => {
+            remove.mutate(label.id, {
+              onSuccess: () => {
+                onDeleted(label.id)
+              }
+            })
+          }}
+        />
+      )}
     </Dialog>
   )
 }

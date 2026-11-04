@@ -189,6 +189,31 @@ export function createCommentStore(db: Db, mentionsPerComment = 0) {
       })
     },
 
+    // The edits and reactions go with it; notifications keep the task only.
+    deleteComment(
+      identity: Identity,
+      boardId: string,
+      taskId: string,
+      commentId: string
+    ) {
+      return writeOrRefuse(db, identity, async tx => {
+        await openTask(tx, identity, boardId, taskId)
+        const [comment] = await tx
+          .select({ authorId: comments.authorId })
+          .from(comments)
+          .where(and(eq(comments.id, commentId), eq(comments.taskId, taskId)))
+          .for('update')
+        if (!comment) throw new Refused('not_found')
+        if (
+          comment.authorId !== identity.userId &&
+          (await roleOn(tx, identity.userId, boardId)) !== 'admin'
+        ) {
+          throw new Refused('forbidden')
+        }
+        await tx.delete(comments).where(eq(comments.id, commentId))
+      })
+    },
+
     listEdits(
       identity: Identity,
       boardId: string,

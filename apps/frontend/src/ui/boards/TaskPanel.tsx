@@ -31,7 +31,7 @@ import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { RichText, RichTextEditor } from '@/ds/RichText'
 import { Grow, Inline, PanelSection, SidePanel } from '@/ds/SidePanel'
-import { MAX_TASK_DEPTH, type Task } from '@/domain/board'
+import { isAdmin, MAX_TASK_DEPTH, type Task } from '@/domain/board'
 import { useRemoveTask } from '@/ui/boards/Archive'
 import { Comments } from '@/ui/boards/Comments'
 import { CopyLinkButton } from '@/ui/boards/CopyLink'
@@ -214,6 +214,7 @@ export function TaskPanel({
                 members={board?.members ?? []}
                 tasks={board?.tasks ?? []}
                 archived={archived}
+                moderator={board !== undefined && isAdmin(board.role)}
               />
             </div>
             {tab === 'history' && <History task={task} boardId={boardId} />}

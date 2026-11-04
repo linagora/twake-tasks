@@ -36,6 +36,7 @@ type TaskRoute = DeclaredRoute<Identity, Refusal | 'invalid_request'>
 
 const viewer = { on: 'board', role: 'viewer' } as const
 const editor = { on: 'board', role: 'editor' } as const
+const admin = { on: 'board', role: 'admin' } as const
 
 export function registerTasks(
   app: HttpServer,
@@ -82,6 +83,24 @@ export function registerTasks(
         }
       })
     ),
+    defineRoute({
+      method: 'DELETE',
+      url: '/boards/:boardId/trash',
+      access: admin,
+      params: boardParams,
+      status: 204,
+      handler: ({ identity, params }) =>
+        archiveStore.purgeTrash(identity, params.boardId)
+    }),
+    defineRoute({
+      method: 'DELETE',
+      url: '/boards/:boardId/trash/:taskId',
+      access: admin,
+      params: taskParams,
+      status: 204,
+      handler: ({ identity, params }) =>
+        archiveStore.purgeTrash(identity, params.boardId, params.taskId)
+    }),
     ...(
       [
         ['POST', '/archive', 'archiveTask'],

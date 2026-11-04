@@ -65,6 +65,28 @@ export function useEditComment(
   })
 }
 
+export function useDeleteComment(
+  boardId: string,
+  taskId: string
+): UseMutationResult<void, Error, string> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (commentId: string) =>
+      api.deleteComment(boardId, taskId, commentId),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: keys.comments(boardId, taskId)
+        }),
+        queryClient.invalidateQueries({
+          queryKey: keys.board(boardId),
+          exact: true
+        })
+      ])
+  })
+}
+
 export function useCommentEdits(
   boardId: string,
   taskId: string,

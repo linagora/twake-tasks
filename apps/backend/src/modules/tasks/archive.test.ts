@@ -145,6 +145,77 @@ describe('archive and trash', () => {
     expect(await listed(owner, boardId, 'trash')).toEqual([])
   })
 
+  it('lets an admin delete a trashed task for good, with its sub-tasks and jobs', async () => {
+    const owner = aUser()
+    const { boardId, ids } = await aBoard(owner, ['Logo', 'Palette'])
+    const [logo = '', palette = ''] = ids
+    const sketch = (
+      await api
+        .as(owner)
+        .post(`/boards/${boardId}/tasks`, { parentId: logo, title: 'Sketch' })
+    ).json<{ id: string }>().id
+    await api.as(owner).delete(`/boards/${boardId}/tasks/${logo}`)
+    await api.as(owner).delete(`/boards/${boardId}/tasks/${palette}`)
+    expect(
+      (await api.as(owner).delete(`/boards/${boardId}/trash/${sketch}`))
+        .statusCode
+    ).toBe(404)
+
+    const purged = await api
+      .as(owner)
+      .delete(`/boards/${boardId}/trash/${logo}`)
+
+    expect(purged.statusCode).toBe(204)
+    expect(await listed(owner, boardId, 'trash')).toEqual(['Palette'])
+    expect(
+      (await api.as(owner).get(`/boards/${boardId}/tasks/${sketch}/history`))
+        .statusCode
+    ).toBe(404)
+    expect(
+      await db
+        .select()
+        .from(jobs)
+        .where(eq(jobs.key, `${PURGE_JOB}:${logo}`))
+    ).toEqual([])
+  })
+
+  it('empties the trash and leaves the tasks shown alone', async () => {
+    const owner = aUser()
+    const { boardId, ids } = await aBoard(owner, ['Logo', 'Palette', 'Brief'])
+    const [logo = '', palette = ''] = ids
+    await api.as(owner).delete(`/boards/${boardId}/tasks/${logo}`)
+    await api.as(owner).delete(`/boards/${boardId}/tasks/${palette}`)
+
+    const emptied = await api.as(owner).delete(`/boards/${boardId}/trash`)
+
+    expect(emptied.statusCode).toBe(204)
+    expect(await listed(owner, boardId, 'trash')).toEqual([])
+    expect(await titlesOn(owner, boardId)).toEqual(['Brief'])
+  })
+
+  it('deletes for good only what is in the trash, and only for admins', async () => {
+    const owner = aUser()
+    const editor = aUser({ organizationId: owner.organizationId })
+    const { boardId, ids } = await aBoard(owner, ['Logo', 'Palette'])
+    const [logo = '', palette = ''] = ids
+    await joinBoard(db, owner, boardId, editor, 'editor')
+    await api.as(owner).delete(`/boards/${boardId}/tasks/${logo}`)
+
+    expect(
+      (await api.as(editor).delete(`/boards/${boardId}/trash/${logo}`))
+        .statusCode
+    ).toBe(403)
+    expect(
+      (await api.as(editor).delete(`/boards/${boardId}/trash`)).statusCode
+    ).toBe(403)
+    expect(
+      (await api.as(owner).delete(`/boards/${boardId}/trash/${palette}`))
+        .statusCode
+    ).toBe(404)
+    expect(await listed(owner, boardId, 'trash')).toEqual(['Logo'])
+    expect(await titlesOn(owner, boardId)).toEqual(['Palette'])
+  })
+
   it('purges the reminder jobs of a trashed task and its sub-tasks', async () => {
     const owner = aUser()
     const colleague = aUser({ organizationId: owner.organizationId })

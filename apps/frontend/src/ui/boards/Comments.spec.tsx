@@ -242,6 +242,69 @@ describe('Comments', () => {
         panel.queryByRole('button', { name: 'Edit comment' })
       ).not.toBeInTheDocument()
     })
+
+    it('deletes my comment once I confirm', async () => {
+      const { board, logo, boardsApi } = withMyComment()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      await panel.findByRole('article', { name: 'Alice Martin' })
+      fireEvent.click(panel.getByRole('button', { name: 'Delete comment' }))
+      const confirm = within(
+        await screen.findByRole('dialog', { name: 'Delete this comment?' })
+      )
+      fireEvent.click(confirm.getByRole('button', { name: 'Delete comment' }))
+
+      await waitFor(() => {
+        expect(
+          panel.queryByRole('article', { name: 'Alice Martin' })
+        ).not.toBeInTheDocument()
+      })
+      expect(boardsApi.deleteComment).toHaveBeenCalledWith(
+        board.id,
+        logo.id,
+        'mine'
+      )
+      expect(panel.getByRole('article', { name: 'Bob Durand' })).toBeVisible()
+    })
+
+    it('keeps the comment when the deletion is cancelled', async () => {
+      const { board, boardsApi } = withMyComment()
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+
+      const panel = await openLogo()
+      await panel.findByRole('article', { name: 'Alice Martin' })
+      fireEvent.click(panel.getByRole('button', { name: 'Delete comment' }))
+      fireEvent.click(
+        within(
+          await screen.findByRole('dialog', { name: 'Delete this comment?' })
+        ).getByRole('button', { name: 'Cancel' })
+      )
+
+      expect(boardsApi.deleteComment).not.toHaveBeenCalled()
+      expect(panel.getByRole('article', { name: 'Alice Martin' })).toBeVisible()
+    })
+
+    it("offers to delete others' comments only to admins", async () => {
+      const viewer = withMyComment('viewer')
+      const { unmount } = renderRoute(`/boards/${viewer.board.id}`, {
+        boardsApi: viewer.boardsApi
+      })
+      const asViewer = await openLogo()
+      await asViewer.findByRole('article', { name: 'Alice Martin' })
+      expect(
+        asViewer.getAllByRole('button', { name: 'Delete comment' })
+      ).toHaveLength(1)
+      unmount()
+
+      const admin = withMyComment('admin')
+      renderRoute(`/boards/${admin.board.id}`, { boardsApi: admin.boardsApi })
+      const asAdmin = await openLogo()
+      await asAdmin.findByRole('article', { name: 'Alice Martin' })
+      expect(
+        asAdmin.getAllByRole('button', { name: 'Delete comment' })
+      ).toHaveLength(2)
+    })
   })
 
   it('shows formatting written in a comment', async () => {

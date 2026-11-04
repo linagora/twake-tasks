@@ -312,6 +312,9 @@ export function httpBoardsApi(
       call('DELETE', route`/boards/${boardId}/tasks/${taskId}`),
     restoreTask: (boardId, taskId) =>
       call('POST', route`/boards/${boardId}/tasks/${taskId}/restore`, {}),
+    deleteForGood: (boardId, taskId) =>
+      call('DELETE', route`/boards/${boardId}/trash/${taskId}`),
+    emptyTrash: boardId => call('DELETE', route`/boards/${boardId}/trash`),
     hiddenTasks: async (boardId, shelf) =>
       (
         await parsed(
@@ -468,6 +471,11 @@ export function httpBoardsApi(
         { body } satisfies Body<'newComment'>
       )
     },
+    deleteComment: (boardId, taskId, commentId) =>
+      call(
+        'DELETE',
+        route`/boards/${boardId}/tasks/${taskId}/comments/${commentId}`
+      ),
     listCommentEdits: async (boardId, taskId, commentId) =>
       (
         await parsed(
@@ -570,6 +578,8 @@ export function httpBoardsApi(
         route`/boards/${boardId}/labels/${labelId}`,
         changes satisfies Body<'labelChanges'>
       ),
+    deleteLabel: (boardId, labelId) =>
+      call('DELETE', route`/boards/${boardId}/labels/${labelId}`),
     setLabels: (boardId, taskId, labelIds) =>
       call('PUT', route`/boards/${boardId}/tasks/${taskId}/labels`, {
         labelIds

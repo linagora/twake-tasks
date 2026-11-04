@@ -1,4 +1,4 @@
-import { Pen } from '@linagora/twake-icons'
+import { Pen, Trash } from '@linagora/twake-icons'
 import { Button, Link, Tooltip, Typography } from '@linagora/twake-mui'
 import { useMemo, useState, type ReactElement } from 'react'
 
@@ -13,6 +13,7 @@ import { momentFormat } from '@/ui/boards/dueLabel'
 import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { CommentHistory } from '@/ui/boards/CommentHistory'
+import { DeleteCommentDialog } from '@/ui/boards/DeleteCommentDialog'
 import {
   useAddComment,
   useComments,
@@ -34,13 +35,16 @@ export function Comments({
   boardId,
   members,
   tasks,
-  archived
+  archived,
+  moderator
 }: {
   task: Task
   boardId: string
   members: Person[]
   tasks: Task[]
   archived: boolean
+  /** Whether everyone's comments may be deleted, not only one's own. */
+  moderator: boolean
 }): ReactElement {
   const { t, lang } = useI18n()
   const { user } = useSession()
@@ -62,6 +66,7 @@ export function Comments({
     initial: string
     body: string
   } | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [historyId, setHistoryId] = useState<string | null>(null)
   const historyOf = comments.data?.find(comment => comment.id === historyId)
   useUnsaved(
@@ -202,6 +207,15 @@ export function Comments({
                                 initial: comment.body,
                                 body: comment.body
                               })
+                            }}
+                          />
+                        )}
+                        {(mine || moderator) && (
+                          <FeedAction
+                            label={t('task.deleteComment')}
+                            icon={Trash}
+                            onClick={() => {
+                              setDeletingId(comment.id)
                             }}
                           />
                         )}
@@ -365,6 +379,16 @@ export function Comments({
         </form>
       )}
       {drive.dialog}
+      {deletingId && (
+        <DeleteCommentDialog
+          boardId={boardId}
+          taskId={task.id}
+          commentId={deletingId}
+          onClose={() => {
+            setDeletingId(null)
+          }}
+        />
+      )}
       {historyOf && (
         <CommentHistory
           boardId={boardId}

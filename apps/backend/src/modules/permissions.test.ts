@@ -339,6 +339,16 @@ const EXAMPLES: Record<string, Example> = {
   'POST /boards/:boardId/unarchive': none,
   'GET /boards/:boardId/archived': none,
   'GET /boards/:boardId/trash': none,
+  'DELETE /boards/:boardId/trash': none,
+  'DELETE /boards/:boardId/trash/:taskId': async fixture => {
+    const at = `/boards/${fixture.boardId}/tasks`
+    const trashed = await created<{ id: string }>(
+      api.as(admin).post(at, { sectionId: null, title: 'Old' }),
+      'trashed task'
+    )
+    await api.as(admin).delete(`${at}/${trashed.id}`)
+    return { params: { taskId: trashed.id } }
+  },
   [`POST ${task}/archive`]: none,
   [`POST ${task}/restore`]: none,
   [`DELETE ${task}`]: none,
@@ -439,6 +449,7 @@ const EXAMPLES: Record<string, Example> = {
   'PATCH /boards/:boardId/labels/:labelId': () => ({
     body: { name: 'Brand 2' }
   }),
+  'DELETE /boards/:boardId/labels/:labelId': none,
   [`PUT ${task}/labels`]: fixture => ({
     body: { labelIds: [fixture.labelId] }
   }),
@@ -463,6 +474,17 @@ const EXAMPLES: Record<string, Example> = {
       )
     },
     body: { body: 'Mine, edited' }
+  }),
+  [`DELETE ${task}/comments/:commentId`]: async (fixture, me) => ({
+    params: {
+      commentId: await idOrNone(
+        api
+          .as(me)
+          .post(`/boards/${fixture.boardId}/tasks/${fixture.taskId}/comments`, {
+            body: 'Mine'
+          })
+      )
+    }
   }),
   [`GET ${task}/comments/:commentId/edits`]: none,
   [`PUT ${task}/comments/:commentId/reactions/:emoji`]: () => ({

@@ -89,6 +89,70 @@ describe('archive and trash', () => {
     expect(item.getByText('this minute')).toBeVisible()
   })
 
+  it('deletes a trashed task for good once the admin confirms', async () => {
+    const { board, logo, boardsApi } = logoBoard()
+
+    await removeLogo('Delete')
+    const shelf = await openShelf('Trash')
+    const item = within(
+      await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
+    )
+    fireEvent.click(item.getByRole('button', { name: 'Delete DES-1 for good' }))
+    const confirm = within(
+      await screen.findByRole('dialog', { name: 'Delete DES-1 for good?' })
+    )
+    fireEvent.click(confirm.getByRole('button', { name: 'Delete for good' }))
+
+    await findEmptyState('The trash is empty')
+    expect(boardsApi.deleteForGood).toHaveBeenCalledWith(board.id, logo.id)
+  })
+
+  it('empties the trash once the admin confirms, and Cancel keeps it', async () => {
+    const { board, boardsApi } = logoBoard()
+
+    await removeLogo('Delete')
+    const shelf = await openShelf('Trash')
+    await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
+    fireEvent.click(shelf.getByRole('button', { name: 'Empty trash' }))
+    let confirm = within(
+      await screen.findByRole('dialog', { name: 'Empty the trash?' })
+    )
+    expect(
+      confirm.getByText(
+        "The task in the trash is deleted for good. It can't be restored."
+      )
+    ).toBeVisible()
+    fireEvent.click(confirm.getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(boardsApi.emptyTrash).not.toHaveBeenCalled()
+
+    fireEvent.click(shelf.getByRole('button', { name: 'Empty trash' }))
+    confirm = within(
+      await screen.findByRole('dialog', { name: 'Empty the trash?' })
+    )
+    fireEvent.click(confirm.getByRole('button', { name: 'Empty trash' }))
+
+    await findEmptyState('The trash is empty')
+    expect(boardsApi.emptyTrash).toHaveBeenCalledWith(board.id)
+  })
+
+  it('offers deleting for good only to admins', async () => {
+    logoBoard({ role: 'editor' })
+
+    await removeLogo('Delete')
+    const shelf = await openShelf('Trash')
+    const item = within(
+      await shelf.findByRole('listitem', { name: 'DES-1 Logo' })
+    )
+    expect(item.getByRole('button', { name: 'Restore DES-1' })).toBeVisible()
+    expect(
+      item.queryByRole('button', { name: 'Delete DES-1 for good' })
+    ).toBeNull()
+    expect(shelf.queryByRole('button', { name: 'Empty trash' })).toBeNull()
+  })
+
   it('switches between the archived tasks and the trash, and goes back to the board', async () => {
     logoBoard()
 

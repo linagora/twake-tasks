@@ -47,6 +47,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `PUT /api/boards/:boardId/layout`
 - `GET /api/boards/:boardId/tasks/:taskId/comments`
 - `POST /api/boards/:boardId/tasks/:taskId/comments`
+- `DELETE /api/boards/:boardId/tasks/:taskId/comments/:commentId`
 - `PATCH /api/boards/:boardId/tasks/:taskId/comments/:commentId`
 - `GET /api/boards/:boardId/tasks/:taskId/comments/:commentId/edits`
 - `DELETE /api/boards/:boardId/tasks/:taskId/comments/:commentId/reactions/:emoji`
@@ -64,6 +65,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 ## Editors of the board
 
 - `POST /api/boards/:boardId/labels`
+- `DELETE /api/boards/:boardId/labels/:labelId`
 - `PATCH /api/boards/:boardId/labels/:labelId`
 - `POST /api/boards/:boardId/tasks`
 - `DELETE /api/boards/:boardId/tasks/:taskId`
@@ -96,6 +98,8 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `POST /api/boards/:boardId/sections/:sectionId/move`
 - `GET /api/boards/:boardId/sharing`, refused on a managed project
 - `GET /api/boards/:boardId/sharing/people`, refused on a managed project
+- `DELETE /api/boards/:boardId/trash`
+- `DELETE /api/boards/:boardId/trash/:taskId`
 - `POST /api/boards/:boardId/unarchive`
 
 ## Editors of the project
