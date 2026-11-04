@@ -643,7 +643,49 @@
     },
     "justNow": "Justo ahora",
     "minutesAgo": "hace %{smart_count} min",
-    "yesterdayAt": "Ayer, %{time}"
+    "yesterdayAt": "Ayer, %{time}",
+    "remove": "Quitar",
+    "removeOf": "Quitar la notificación sobre %{title}"
+  },
+  "notificationSettings": {
+    "open": "Ajustes de notificaciones",
+    "title": "Notificaciones",
+    "hint": "Elige de qué te enteras, en la aplicación y por correo. Se aplica en todos los proyectos.",
+    "loadFailed": "No se pudieron cargar tus ajustes de notificaciones.",
+    "saved": "Guardado",
+    "saveFailed": "No se pudieron guardar tus ajustes.",
+    "inApp": "En la aplicación",
+    "byEmail": "Por correo",
+    "inAppOf": "%{kind}, en la aplicación",
+    "byEmailOf": "%{kind}, por correo",
+    "inAppFirst": "Actívalo primero en la aplicación.",
+    "kinds": {
+      "assigned": "Asignado o desasignado",
+      "mentioned": "Mencionado en un comentario",
+      "reminder": "Mis recordatorios",
+      "changes": "Cambios en tareas que sigo",
+      "comments": "Comentarios en tareas que sigo"
+    },
+    "frequency": "Frecuencia de correos",
+    "frequencyHint": "Las invitaciones siempre se envían por correo.",
+    "frequencies": {
+      "instant": "Al momento",
+      "daily": "Un resumen diario a las 8:00",
+      "never": "Nunca"
+    }
+  },
+  "unsubscribe": {
+    "all": "todos los correos de notificación",
+    "about": "los correos sobre «%{kind}»",
+    "ask": "¿Dejar de recibir %{subject}?",
+    "askHint": "Seguirás viendo tus notificaciones en la aplicación.",
+    "done": "Ya no recibirás %{subject}.",
+    "doneHint": "Puedes volver a activarlos en tus ajustes.",
+    "retryHint": "Vuelve a intentarlo en un momento.",
+    "invalid": "Este enlace no funciona",
+    "invalidHint": "Puede estar incompleto o caducado. Elige tus correos en los ajustes.",
+    "confirm": "Darse de baja",
+    "settings": "Cambiar tus ajustes"
   },
   "filters": {
     "title": "Filtros",

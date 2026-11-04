@@ -32,6 +32,7 @@ import { useProjectName } from '@/ui/boards/BoardsScreen'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useProjects } from '@/ui/queries/boards'
 import { useDeleteTemplate, useTemplates } from '@/ui/queries/templates'
+import { NotificationSettings } from '@/ui/settings/NotificationSettings'
 import { TemplateDialog } from '@/ui/settings/TemplateDialog'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -45,6 +46,7 @@ export function SettingsScreen(): ReactElement {
         origin={{ icon: Gear, label: t('settings.title'), to: '/settings' }}
         heading
       />
+      <NotificationSettings />
       <TemplateSettings />
     </main>
   )

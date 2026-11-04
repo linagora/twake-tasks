@@ -643,7 +643,49 @@
     },
     "justNow": "Gerade eben",
     "minutesAgo": "vor %{smart_count} Min.",
-    "yesterdayAt": "Gestern, %{time}"
+    "yesterdayAt": "Gestern, %{time}",
+    "remove": "Entfernen",
+    "removeOf": "Benachrichtigung zu %{title} entfernen"
+  },
+  "notificationSettings": {
+    "open": "Benachrichtigungseinstellungen",
+    "title": "Benachrichtigungen",
+    "hint": "Wähle, worüber du informiert wirst, in der App und per E-Mail. Das gilt in jedem Projekt.",
+    "loadFailed": "Deine Benachrichtigungseinstellungen konnten nicht geladen werden.",
+    "saved": "Gespeichert",
+    "saveFailed": "Deine Einstellungen konnten nicht gespeichert werden.",
+    "inApp": "In der App",
+    "byEmail": "Per E-Mail",
+    "inAppOf": "%{kind}, in der App",
+    "byEmailOf": "%{kind}, per E-Mail",
+    "inAppFirst": "Zuerst in der App einschalten.",
+    "kinds": {
+      "assigned": "Mir zugewiesen oder entzogen",
+      "mentioned": "In einem Kommentar erwähnt",
+      "reminder": "Meine Erinnerungen",
+      "changes": "Änderungen an Aufgaben, denen ich folge",
+      "comments": "Kommentare zu Aufgaben, denen ich folge"
+    },
+    "frequency": "E-Mail-Häufigkeit",
+    "frequencyHint": "Einladungen werden immer per E-Mail gesendet.",
+    "frequencies": {
+      "instant": "Sofort",
+      "daily": "Eine Tageszusammenfassung um 8:00",
+      "never": "Nie"
+    }
+  },
+  "unsubscribe": {
+    "all": "alle Benachrichtigungs-E-Mails",
+    "about": "E-Mails zu „%{kind}“",
+    "ask": "Keine %{subject} mehr erhalten?",
+    "askHint": "Deine Benachrichtigungen siehst du weiterhin in der App.",
+    "done": "Du erhältst keine %{subject} mehr.",
+    "doneHint": "In deinen Einstellungen kannst du sie wieder einschalten.",
+    "retryHint": "Versuche es gleich noch einmal.",
+    "invalid": "Dieser Link funktioniert nicht",
+    "invalidHint": "Er ist vielleicht unvollständig oder veraltet. Wähle deine E-Mails in den Einstellungen.",
+    "confirm": "Abbestellen",
+    "settings": "Einstellungen ändern"
   },
   "filters": {
     "title": "Filter",

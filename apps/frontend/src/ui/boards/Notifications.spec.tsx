@@ -210,6 +210,43 @@ describe('notifications', () => {
     })
   })
 
+  it('removes one notification from the list', async () => {
+    const { boardsApi } = anInbox(
+      { id: 'n2', createdAt: '2026-10-05T11:00:00Z' },
+      { id: 'n1', createdAt: '2026-10-05T10:00:00Z' }
+    )
+    renderRoute('/notifications', { boardsApi })
+
+    const [newer] = await screen.findAllByRole('button', {
+      name: 'Remove the notification about Logo'
+    })
+    if (!newer) throw new Error('a remove button expected')
+    fireEvent.click(newer)
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole('region', { name: 'New' })).getAllByRole(
+          'listitem'
+        )
+      ).toHaveLength(1)
+    })
+    expect(boardsApi.removeNotification).toHaveBeenCalledWith('n2')
+  })
+
+  it('links to the notification settings', async () => {
+    const { boardsApi } = anInbox({})
+    const { router } = renderRoute('/notifications', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('link', { name: 'Notification settings' })
+    )
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/settings')
+    })
+    expect(router.state.location.hash).toBe('#notifications')
+  })
+
   it('tells the reader they were unassigned', async () => {
     const { boardsApi } = anInbox({ reason: 'unassigned', actor: alice })
     renderRoute('/notifications', { boardsApi })
