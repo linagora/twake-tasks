@@ -194,6 +194,7 @@ export function DatesEditor({
     setDraft(previous => ({ ...previous, ...changes }))
   }
   const deadlineTooEarly = deadlineBeforeDue(draft.dueDate, draft.deadline)
+  const repeatable = draft.dueDate !== '' && task.template === null
   const dueId = useId()
   const picks = [
     { label: t('dates.today'), day: inDays(0) },
@@ -296,7 +297,7 @@ export function DatesEditor({
           type="number"
           label={t('dates.repeatEvery')}
           value={draft.every}
-          disabled={!draft.dueDate}
+          disabled={!repeatable}
           onChange={event => {
             set({ every: event.target.value })
           }}
@@ -307,7 +308,7 @@ export function DatesEditor({
           select
           label={t('dates.unit')}
           value={draft.recurUnit}
-          disabled={!draft.dueDate}
+          disabled={!repeatable}
           onChange={event => {
             set({ recurUnit: event.target.value as Recurrence['unit'] })
           }}
@@ -323,7 +324,7 @@ export function DatesEditor({
       </FieldRow>
       <FormControlLabel
         label={t('dates.fromCompletion')}
-        disabled={!draft.dueDate}
+        disabled={!repeatable}
         control={
           <Checkbox
             size="small"
@@ -334,6 +335,11 @@ export function DatesEditor({
           />
         }
       />
+      {task.template !== null && (
+        <Typography variant="caption" color="textSecondary">
+          {t('dates.templateNoRepeat')}
+        </Typography>
+      )}
       {save.isError && (
         <Typography role="alert" variant="caption" color="error">
           {t('dates.saveFailed')}

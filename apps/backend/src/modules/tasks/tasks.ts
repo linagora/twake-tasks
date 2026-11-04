@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ne, notInArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ne, notInArray, or, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
@@ -20,6 +20,7 @@ import {
   taskAssignees,
   taskOf,
   tasks,
+  taskTemplates,
   todayIn,
   type Recurrence
 } from '../boards/index.ts'
@@ -94,6 +95,7 @@ function withDates(task: typeof tasks.$inferSelect, changes: TaskChanges) {
   if ((changes.dueTime || recurrence) && dueDate === null) {
     throw new Refused('invalid_dates')
   }
+  if (recurrence && task.templateId !== null) throw new Refused('invalid_dates')
   const deadline =
     changes.deadline === undefined ? task.deadline : changes.deadline
   // Only an edit of either date is checked, so a task saved before this rule
@@ -163,6 +165,28 @@ async function recur(tx: Tx, task: typeof tasks.$inferSelect) {
   return true
 }
 
+// One of the project's templates, or one of the person's own.
+async function usableTemplate(
+  tx: Tx,
+  identity: Identity,
+  projectId: string,
+  templateId: string
+): Promise<boolean> {
+  const [template] = await tx
+    .select({ id: taskTemplates.id })
+    .from(taskTemplates)
+    .where(
+      and(
+        eq(taskTemplates.id, templateId),
+        or(
+          eq(taskTemplates.projectId, projectId),
+          eq(taskTemplates.userId, identity.userId)
+        )
+      )
+    )
+  return template !== undefined
+}
+
 export function createTaskStore(db: Db) {
   const write = <T>(identity: Identity, work: (tx: Tx) => Promise<T>) =>
     writeOrRefuse(db, identity, work)
@@ -172,7 +196,8 @@ export function createTaskStore(db: Db) {
       identity: Identity,
       boardId: string,
       input: { title: string } & (
-        { sectionId: string | null } | { parentId: string }
+        | { sectionId: string | null; templateId?: string | undefined }
+        | { parentId: string }
       )
     ) {
       return write(identity, async tx => {
@@ -180,6 +205,13 @@ export function createTaskStore(db: Db) {
         const board = await bumpBoard(tx, boardId, {
           taskCounter: sql`${boards.taskCounter} + 1`
         })
+        const templateId = 'templateId' in input ? input.templateId : undefined
+        if (
+          templateId !== undefined &&
+          !(await usableTemplate(tx, identity, board.projectId, templateId))
+        ) {
+          throw new Refused('invalid_template')
+        }
         const sectionId = 'sectionId' in input ? input.sectionId : null
         const parentId = 'parentId' in input ? input.parentId : null
         const section = await sectionOf(tx, boardId, sectionId)
@@ -215,6 +247,7 @@ export function createTaskStore(db: Db) {
             boardId,
             sectionId,
             parentId,
+            templateId,
             organizationId: board.organizationId,
             number: board.number,
             title: input.title,

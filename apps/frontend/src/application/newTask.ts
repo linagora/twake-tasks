@@ -16,6 +16,8 @@ export interface NewTaskDraft {
   priority: Priority | null
   /** Left out, the task lands in the board's default section. */
   sectionId?: string
+  /** The template the draft was filled from, which the task links to. */
+  templateId?: string
 }
 
 /**
@@ -72,7 +74,8 @@ export async function createTask(
       sectionId:
         draft.sectionId ??
         defaultSection((await api.getBoard(boardId)).sections)?.id ??
-        null
+        null,
+      ...(draft.templateId && { templateId: draft.templateId })
     }))
   try {
     await addDetails(api, boardId, task.id, draft, started !== undefined)

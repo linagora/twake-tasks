@@ -22,6 +22,7 @@ export const REFUSALS = z.enum([
   'last_admin',
   'key_prefix_taken',
   'same_board',
+  'invalid_template',
   'invalid_request',
   'unavailable',
   'server_error'

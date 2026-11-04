@@ -18,6 +18,23 @@ const invariants: Record<string, string> = {
     outsideTheProject('notifications'),
   'an assignee is outside the project of the task':
     outsideTheProject('task_assignees'),
+  'a template assignee is outside the project of the template': `
+    select a.template_id, a.user_id from task_template_assignees a
+    join task_templates t on t.id = a.template_id
+    where not exists (
+      select 1 from project_members m
+      where m.project_id = t.project_id and m.user_id = a.user_id
+    )`,
+  'a template label is of another project': `
+    select l.template_id, l.label_id from task_template_labels l
+    join task_templates t on t.id = l.template_id
+    join labels on labels.id = l.label_id
+    where labels.project_id is distinct from t.project_id`,
+  'a task is linked to a template of another project': `
+    select t.id, t.template_id from tasks t
+    join boards b on b.id = t.board_id
+    join task_templates tt on tt.id = t.template_id
+    where tt.project_id <> b.project_id`,
   'a job about a task would outlive it': `
     select id, kind, task_id, payload from jobs
     where (kind = 'notification_email' and task_id is null)

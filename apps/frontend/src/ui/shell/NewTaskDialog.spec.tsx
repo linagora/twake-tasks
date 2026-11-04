@@ -6,7 +6,12 @@ import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { typeRichText } from '@/testing/richText'
 
-async function openNewTask() {
+async function openNewTask(
+  seed?: (
+    boardsApi: ReturnType<typeof fakeBoardsApi>,
+    design: ReturnType<typeof aBoard>
+  ) => Promise<unknown>
+) {
   const inbox = aBoard({
     name: 'Inbox',
     keyPrefix: 'INB',
@@ -20,6 +25,7 @@ async function openNewTask() {
     labels: [{ id: 'l1', name: 'ops', color: null }]
   })
   const boardsApi = fakeBoardsApi([inbox, design])
+  await seed?.(boardsApi, design)
   renderRoute(`/boards/${design.id}`, { boardsApi })
   fireEvent.click(await screen.findByRole('button', { name: 'Create task' }))
   const dialog = within(
@@ -540,6 +546,115 @@ describe('NewTaskDialog', () => {
       ).toBeVisible()
     }
   )
+})
+
+describe('NewTaskDialog with templates', () => {
+  async function openWithTemplates() {
+    let reportId = ''
+    const opened = await openNewTask(async (boardsApi, design) => {
+      reportId = (
+        await boardsApi.createTemplate(
+          { projectId: design.project.id },
+          {
+            title: 'Monthly report',
+            description: 'Check the invoices',
+            priority: 2,
+            labelIds: ['l1'],
+            assigneeIds: ['u-ana']
+          }
+        )
+      ).id
+      await boardsApi.createTemplate(
+        { projectId: null },
+        {
+          title: 'Weekly review',
+          description: '',
+          priority: null,
+          labelIds: [],
+          assigneeIds: []
+        }
+      )
+    })
+    const report = { id: reportId }
+    const pick = async (name: RegExp) => {
+      fireEvent.click(
+        await opened.dialog.findByRole('button', { name: 'Template' })
+      )
+      fireEvent.click(await screen.findByRole('menuitem', { name }))
+    }
+    return { ...opened, report, pick }
+  }
+
+  it('fills the task from a template, and links the task to it', async () => {
+    const { dialog, title, create, design, report, pick } =
+      await openWithTemplates()
+
+    await pick(/Monthly report/)
+
+    expect(title()).toHaveValue('Monthly report')
+    expect(dialog.getByText('From Monthly report')).toBeVisible()
+    expect(dialog.getByText('Ana Lopez')).toBeVisible()
+    fireEvent.click(create())
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBe(null)
+    })
+    expect(design.tasks).toMatchObject([
+      {
+        title: 'Monthly report',
+        priority: 2,
+        template: { id: report.id },
+        labels: [{ id: 'l1' }],
+        assignees: [{ userId: 'u-ana' }]
+      }
+    ])
+  })
+
+  it('offers my own templates too, and keeps a title already typed', async () => {
+    const { title, pick } = await openWithTemplates()
+    fireEvent.change(title(), { target: { value: 'Sprint 12 review' } })
+
+    await pick(/Weekly review/)
+
+    expect(title()).toHaveValue('Sprint 12 review')
+  })
+
+  it('unlinks the task when the template is taken off', async () => {
+    const { dialog, create, design, pick } = await openWithTemplates()
+    await pick(/Weekly review/)
+
+    fireEvent.click(
+      dialog.getByRole('button', {
+        name: 'Don’t link the task to this template'
+      })
+    )
+    expect(dialog.queryByText('From Weekly review')).toBe(null)
+    fireEvent.click(create())
+
+    await waitFor(() => {
+      expect(design.tasks).toMatchObject([
+        { title: 'Weekly review', template: null }
+      ])
+    })
+  })
+
+  it('drops a project template once a board of another project is picked', async () => {
+    const { dialog, pick } = await openWithTemplates()
+    await pick(/Monthly report/)
+
+    fireEvent.mouseDown(dialog.getByRole('combobox', { name: 'Board' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Inbox' }))
+
+    await waitFor(() => {
+      expect(dialog.queryByText('From Monthly report')).toBe(null)
+    })
+    fireEvent.click(await dialog.findByRole('button', { name: 'Template' }))
+    expect(screen.queryByRole('menuitem', { name: /Monthly report/ })).toBe(
+      null
+    )
+    expect(
+      screen.getByRole('menuitem', { name: /Weekly review/ })
+    ).toBeVisible()
+  })
 })
 
 describe('NewTaskDialog opened from an agenda', () => {

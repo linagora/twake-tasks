@@ -28,6 +28,7 @@ import { registerNotifications } from './notifications/index.ts'
 import { registerProjects } from './projects/index.ts'
 import { registerSettings } from './settings/index.ts'
 import { registerTasks } from './tasks/index.ts'
+import { registerTemplates } from './templates/index.ts'
 import { registerViews } from './views/index.ts'
 
 interface Declared {
@@ -40,11 +41,13 @@ interface Declared {
 
 interface Fixture {
   boardId: string
+  projectId: string
   taskId: string
   sectionId: string
   labelId: string
   commentId: string
   inviteId: string
+  templateId: string
 }
 
 interface Request {
@@ -105,6 +108,7 @@ function declaredRoutes(): Declared[] {
       requireIdentity,
       pendingReminders: 0
     }),
+    ...registerTemplates(scratch, { db, requireIdentity }),
     ...registerCollaboration(scratch, {
       db,
       requireIdentity,
@@ -193,7 +197,11 @@ async function fixture(kind: Kind): Promise<Fixture> {
           [bystander, 'viewer']
         ])
       : undefined
-  const board = await created<{ id: string; sections: { id: string }[] }>(
+  const board = await created<{
+    id: string
+    project: { id: string }
+    sections: { id: string }[]
+  }>(
     as.post('/boards', { name: 'Design', keyPrefix: aKeyPrefix(), projectId }),
     'board'
   )
@@ -223,6 +231,10 @@ async function fixture(kind: Kind): Promise<Fixture> {
     as.post(`${at}/tasks/${task.id}/comments`, { body: 'Nice' }),
     'comment'
   )
+  const template = await created<{ id: string }>(
+    as.post(`/projects/${board.project.id}/templates`, templateFields),
+    'template'
+  )
   let inviteId: string = randomUUID()
   if (kind === 'shared') {
     await created(
@@ -240,11 +252,13 @@ async function fixture(kind: Kind): Promise<Fixture> {
   }
   return {
     boardId,
+    projectId: board.project.id,
     taskId: task.id,
     sectionId: section.id,
     labelId: label.id,
     commentId: comment.id,
-    inviteId
+    inviteId,
+    templateId: template.id
   }
 }
 
@@ -290,6 +304,20 @@ async function ownNotification(me: TestUser) {
     return row.id
   })
 }
+
+const ownTemplateFields = {
+  title: 'Monthly report',
+  description: '',
+  priority: null
+}
+
+const templateFields = { ...ownTemplateFields, labelIds: [], assigneeIds: [] }
+
+const ownTemplate = (me: TestUser) =>
+  created<{ id: string }>(
+    api.as(me).post('/templates', ownTemplateFields),
+    'own template'
+  )
 
 const later = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 const task = '/boards/:boardId/tasks/:taskId'
@@ -405,6 +433,20 @@ const EXAMPLES: Record<string, Example> = {
   [`PUT ${task}/labels`]: fixture => ({
     body: { labelIds: [fixture.labelId] }
   }),
+  'GET /templates': none,
+  'POST /templates': () => ({ body: ownTemplateFields }),
+  'PUT /templates/:templateId': async (_fixture, me) => ({
+    params: { templateId: (await ownTemplate(me)).id },
+    body: { ...ownTemplateFields, title: 'Weekly report' }
+  }),
+  'DELETE /templates/:templateId': async (_fixture, me) => ({
+    params: { templateId: (await ownTemplate(me)).id }
+  }),
+  'POST /projects/:projectId/templates': () => ({ body: templateFields }),
+  'PUT /projects/:projectId/templates/:templateId': () => ({
+    body: { ...templateFields, title: 'Weekly report' }
+  }),
+  'DELETE /projects/:projectId/templates/:templateId': none,
   [`GET ${task}/history`]: none,
   [`GET ${task}/comments`]: none,
   [`POST ${task}/comments`]: () => ({ body: { body: 'Agreed' } }),
@@ -454,7 +496,8 @@ function expected(
   if (access.on === 'public' || access.on === 'self') return success
   if (!role) return 404
   if (RANK[role] < RANK[access.role]) return 403
-  if (kind === 'managed' && access.refusedOnManaged) return 403
+  if (kind === 'managed' && access.on === 'board' && access.refusedOnManaged)
+    return 403
   return success
 }
 
@@ -476,14 +519,15 @@ describe('the permission matrix', () => {
     async (id, route) => {
       const example = EXAMPLES[id]
       if (!example) throw new Error(`no example for ${id}`)
-      const kinds: Kind[] =
-        route.access.on === 'board' ? ['shared', 'managed'] : ['shared']
+      const onMembers =
+        route.access.on === 'board' || route.access.on === 'project'
+      const kinds: Kind[] = onMembers ? ['shared', 'managed'] : ['shared']
       const mismatches = []
       for (const kind of kinds) {
         // A refusal changes nothing, so its fixture serves the next caller.
         let current: Fixture | undefined
         for (const [name, user, role] of actors) {
-          if (route.access.on === 'board') current ??= await fixture(kind)
+          if (onMembers) current ??= await fixture(kind)
           const request = await example(current ?? EMPTY, user)
           const response = await send(user, route, request, current)
           const success = request.answer ?? route.status ?? 200
@@ -514,11 +558,13 @@ describe('the permission matrix', () => {
 
 const EMPTY: Fixture = {
   boardId: '',
+  projectId: '',
   taskId: '',
   sectionId: '',
   labelId: '',
   commentId: '',
-  inviteId: ''
+  inviteId: '',
+  templateId: ''
 }
 
 // Reads the tree Fastify prints, one path segment per line.
@@ -547,8 +593,16 @@ const GROUPS = {
   self: 'Any signed-in person, on their own data',
   viewer: 'Viewers of the board',
   editor: 'Editors of the board',
-  admin: 'Admins of the board'
+  admin: 'Admins of the board',
+  'project editor': 'Editors of the project'
 }
+
+const groupOf = (access: Access) =>
+  access.on === 'board'
+    ? access.role
+    : access.on === 'project'
+      ? `project ${access.role}`
+      : access.on
 
 function permissionsDoc(declared: Declared[]): string {
   const sorted = declared.toSorted(
@@ -556,9 +610,7 @@ function permissionsDoc(declared: Declared[]): string {
   )
   const sections = Object.entries(GROUPS).map(([group, title]) => {
     const lines = sorted
-      .filter(({ access }) =>
-        access.on === 'board' ? group === access.role : group === access.on
-      )
+      .filter(({ access }) => groupOf(access) === group)
       .map(route => {
         const board = route.access.on === 'board' ? route.access : null
         const self = board?.orSelf ? ', or any member on themselves' : ''
@@ -572,7 +624,7 @@ function permissionsDoc(declared: Declared[]): string {
   return [
     '# Permissions',
     '',
-    'The role each API route needs, a role above it included. A caller who is not a member of the board gets 404, a member below the role gets 403.',
+    'The role each API route needs, a role above it included. A caller who is not a member of the board or project gets 404, a member below the role gets 403.',
     '',
     'Generated from the route tables by `apps/backend/src/modules/permissions.test.ts`, which fails when this file is stale. After changing a route, run `npx vitest run src/modules/permissions.test.ts -u` in `apps/backend`.',
     '',

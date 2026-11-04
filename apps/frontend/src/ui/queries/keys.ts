@@ -39,6 +39,7 @@ export const keys = {
   keyPrefixes,
   keyPrefix: (keyPrefix: string) => [...keyPrefixes(), keyPrefix] as const,
   filters: () => ['filters'] as const,
+  templates: () => ['templates'] as const,
   labels: () => ['labels'] as const,
   people: () => ['people'] as const,
   projects: () => ['projects'] as const,

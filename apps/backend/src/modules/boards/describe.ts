@@ -1,8 +1,15 @@
-import { and, inArray, isNull, sql } from 'drizzle-orm'
-import type { Tx } from '../../infra/db.ts'
+import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm'
+import { currentUser, type Tx } from '../../infra/db.ts'
 import type { Member } from './access.ts'
 import { recurrenceOf } from './recurrence.ts'
-import { boards, comments, taskAssignees, taskLabels, tasks } from './schema.ts'
+import {
+  boards,
+  comments,
+  taskAssignees,
+  taskLabels,
+  tasks,
+  taskTemplates
+} from './schema.ts'
 
 export const shown = and(isNull(tasks.archivedAt), isNull(tasks.deletedAt))
 
@@ -28,6 +35,23 @@ export async function describeTasks(
     .from(comments)
     .where(inArray(comments.taskId, ids))
     .groupBy(comments.taskId)
+  const templateIds = rows.flatMap(task => task.templateId ?? [])
+  const templates =
+    templateIds.length === 0
+      ? []
+      : await tx
+          .select({ id: taskTemplates.id, title: taskTemplates.title })
+          .from(taskTemplates)
+          .where(
+            and(
+              inArray(taskTemplates.id, templateIds),
+              or(
+                eq(taskTemplates.projectId, board.projectId),
+                sql`${taskTemplates.userId} = ${currentUser}`
+              )
+            )
+          )
+  const templateTitles = new Map(templates.map(t => [t.id, t.title]))
   const assigned = new Set(assignments.map(a => `${a.taskId}:${a.userId}`))
   const labeledWith = new Set(labeled.map(l => `${l.taskId}:${l.labelId}`))
   const commentCounts = new Map(commented.map(c => [c.taskId, c.count]))
@@ -47,6 +71,13 @@ export async function describeTasks(
         ? { amount: task.duration, unit: task.durationUnit }
         : null,
     recurrence: recurrenceOf(task),
+    template:
+      task.templateId === null
+        ? null
+        : {
+            id: task.templateId,
+            title: templateTitles.get(task.templateId) ?? null
+          },
     completedAt: task.completedAt,
     canceledAt: task.canceledAt,
     // Someone who left the board stays assigned, but is not shown.

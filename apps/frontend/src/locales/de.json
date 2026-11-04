@@ -22,6 +22,45 @@
     "columnCanceled": "Verschieben des Abschnitts %{section} abgebrochen.",
     "columnInstructions": "Um einen Abschnitt zu verschieben, drücken Sie die Leertaste oder Eingabe. Verschieben Sie ihn mit den Pfeiltasten links und rechts, legen Sie ihn mit Leertaste oder Eingabe ab und brechen Sie mit Escape ab."
   },
+  "settings": {
+    "title": "Einstellungen"
+  },
+  "templates": {
+    "title": "Vorlagen",
+    "hint": "Starten Sie eine Aufgabe auf jedem Board aus einer Vorlage. Ihre eigenen Vorlagen gehören nur Ihnen; die Vorlagen eines Projekts teilen alle seine Mitglieder.",
+    "new": "Neue Vorlage",
+    "editTitle": "Vorlage bearbeiten",
+    "close": "Schließen",
+    "name": "Aufgabentitel",
+    "nameHint": "Der Titel, mit dem die neue Aufgabe beginnt.",
+    "nameRequired": "Geben Sie der Vorlage einen Aufgabentitel.",
+    "descriptionPlaceholder": "Was jede daraus erstellte Aufgabe enthalten soll",
+    "where": "Verfügbar in",
+    "assignTitle": "Daraus erstellte Aufgaben zuweisen",
+    "labelTitle": "Daraus erstellte Aufgaben mit Labels versehen",
+    "mine": "Meine Vorlagen",
+    "onlyMe": "Nur ich",
+    "mineHint": "Nur Sie sehen sie, auf jedem Board. Labels und Zuständige gehören zu einem Projekt: Wählen Sie eines, um sie hinzuzufügen.",
+    "projectHint": "Alle im Projekt sehen sie, auf jedem seiner Boards. Seine Bearbeiter können sie verwenden und ändern.",
+    "refused": "Ein Label oder eine Person gehört nicht mehr zum Projekt. Prüfen Sie sie und speichern Sie erneut.",
+    "saveFailed": "Die Vorlage konnte nicht gespeichert werden.",
+    "save": "Speichern",
+    "create": "Vorlage erstellen",
+    "loadFailed": "Vorlagen konnten nicht geladen werden.",
+    "empty": "Noch keine Vorlagen",
+    "emptyHint": "Speichern Sie Aufgaben, die Sie immer wieder anlegen, etwa einen Monatsbericht, und starten Sie sie mit einem Klick.",
+    "labels": "%{smart_count} Label |||| %{smart_count} Labels",
+    "assignees": "%{smart_count} Zuständige(r) |||| %{smart_count} Zuständige",
+    "withDescription": "Beschreibung",
+    "viewOnly": "Nur ansehen",
+    "titleOnly": "Nur Titel",
+    "options": "Optionen für %{name}",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "deleteTitle": "%{name} löschen?",
+    "deleteHint": "Bereits daraus erstellte Aufgaben bleiben, wie sie sind.",
+    "deleteFailed": "Die Vorlage konnte nicht gelöscht werden."
+  },
   "app": {
     "name": "Twake Project",
     "loading": "Wird geladen",
@@ -190,6 +229,8 @@
     "renameFailed": "Das Board konnte nicht umbenannt werden."
   },
   "task": {
+    "template": "Vorlage",
+    "someonesTemplate": "Die eigene Vorlage einer anderen Person",
     "description": "Beschreibung",
     "editDescription": "Beschreibung bearbeiten",
     "loadFailed": "Die Beschreibung konnte nicht geladen werden.",
@@ -315,6 +356,7 @@
     "someSection": "einem gelöschten Abschnitt"
   },
   "dates": {
+    "templateNoRepeat": "Eine aus einer Vorlage erstellte Aufgabe wiederholt sich nicht.",
     "edit": "Termine bearbeiten",
     "none": "Keine",
     "save": "Termine speichern",
@@ -401,6 +443,12 @@
     "tooMany": "Sie haben zu viele ausstehende Erinnerungen. Löschen Sie einige, bevor Sie eine neue hinzufügen."
   },
   "newTask": {
+    "useTemplate": "Vorlage",
+    "noTemplates": "Keine Vorlagen für dieses Board",
+    "noTemplatesHint": "Vorlagen werden in den Einstellungen erstellt.",
+    "manageTemplates": "Vorlagen verwalten",
+    "fromTemplate": "Aus %{name}",
+    "removeTemplate": "Aufgabe nicht mit dieser Vorlage verknüpfen",
     "title": "Aufgabe erstellen",
     "open": "Aufgabe erstellen",
     "close": "Schließen",

@@ -25,6 +25,7 @@ import {
   checkRole,
   endAccess,
   endAccessOutside,
+  leaveTemplatesOutside,
   memberLooks,
   projectInvites,
   projectMembers,
@@ -404,14 +405,12 @@ export function createSharingStore(db: Db, pendingInvites = 0) {
           )
         if (taken) throw new Refused('key_prefix_taken')
         await bumpBoard(tx, boardId)
-        await endAccessOutside(
-          tx,
-          tx
-            .select({ id: tasks.id })
-            .from(tasks)
-            .where(eq(tasks.boardId, boardId)),
-          projectId
-        )
+        const onBoard = tx
+          .select({ id: tasks.id })
+          .from(tasks)
+          .where(eq(tasks.boardId, boardId))
+        await endAccessOutside(tx, onBoard, projectId)
+        await leaveTemplatesOutside(tx, onBoard, projectId)
         await tx.update(boards).set({ projectId }).where(eq(boards.id, boardId))
         await tx
           .update(projects)

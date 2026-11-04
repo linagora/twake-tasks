@@ -1,6 +1,7 @@
 export {
   accessibleBoards,
   checkBoardAccess,
+  checkProjectAccess,
   checkRole,
   liveBoards,
   looksOn,
@@ -20,7 +21,8 @@ export {
   endAccessOutside,
   eraseOrganization,
   forgetPerson,
-  forgetReadNotifications
+  forgetReadNotifications,
+  leaveTemplatesOutside
 } from './lifecycle.ts'
 export {
   APP_NAME,
@@ -59,6 +61,9 @@ export {
   taskLabels,
   taskReminders,
   tasks,
+  taskTemplateAssignees,
+  taskTemplateLabels,
+  taskTemplates,
   visibleProject
 } from './schema.ts'
 export { addDefaultSections } from './store.ts'
@@ -70,4 +75,4 @@ export {
   shownTaskOf,
   taskOf
 } from './taskRows.ts'
-export { bumpBoard, bumpProjects } from './versions.ts'
+export { bumpBoard, bumpBoards, bumpProjects } from './versions.ts'

@@ -22,6 +22,45 @@
     "columnCanceled": "Le déplacement de la section %{section} est annulé.",
     "columnInstructions": "Pour déplacer une section, appuyez sur Espace ou Entrée. Utilisez les flèches gauche et droite pour la déplacer, Espace ou Entrée pour la déposer, et Échap pour annuler."
   },
+  "settings": {
+    "title": "Paramètres"
+  },
+  "templates": {
+    "title": "Modèles",
+    "hint": "Démarrez une tâche à partir d’un modèle sur n’importe quel tableau. Vos modèles personnels ne sont qu’à vous ; ceux d’un projet sont partagés avec tous ses membres.",
+    "new": "Nouveau modèle",
+    "editTitle": "Modifier le modèle",
+    "close": "Fermer",
+    "name": "Titre de la tâche",
+    "nameHint": "Le titre avec lequel la nouvelle tâche démarre.",
+    "nameRequired": "Donnez un titre de tâche au modèle.",
+    "descriptionPlaceholder": "Ce que chaque tâche créée à partir de lui doit dire",
+    "where": "Disponible dans",
+    "assignTitle": "Assigner les tâches créées à partir de lui",
+    "labelTitle": "Étiqueter les tâches créées à partir de lui",
+    "mine": "Mes modèles",
+    "onlyMe": "Moi seulement",
+    "mineHint": "Vous seul le voyez, sur tous les tableaux. Les étiquettes et les responsables appartiennent à un projet : choisissez-en un pour les ajouter.",
+    "projectHint": "Tous les membres du projet le voient, sur chacun de ses tableaux. Ses éditeurs peuvent l’utiliser et le modifier.",
+    "refused": "Une étiquette ou une personne ne fait plus partie du projet. Vérifiez-les et enregistrez à nouveau.",
+    "saveFailed": "Impossible d’enregistrer le modèle.",
+    "save": "Enregistrer",
+    "create": "Créer le modèle",
+    "loadFailed": "Impossible de charger les modèles.",
+    "empty": "Aucun modèle pour l’instant",
+    "emptyHint": "Enregistrez les tâches que vous refaites sans cesse, comme un rapport mensuel, et démarrez-les en un clic.",
+    "labels": "%{smart_count} étiquette |||| %{smart_count} étiquettes",
+    "assignees": "%{smart_count} responsable |||| %{smart_count} responsables",
+    "withDescription": "Description",
+    "viewOnly": "Lecture seule",
+    "titleOnly": "Titre seulement",
+    "options": "Options de %{name}",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "deleteTitle": "Supprimer %{name} ?",
+    "deleteHint": "Les tâches déjà créées à partir de lui restent telles quelles.",
+    "deleteFailed": "Impossible de supprimer le modèle."
+  },
   "app": {
     "name": "Twake Project",
     "loading": "Chargement",
@@ -190,6 +229,8 @@
     "renameFailed": "Le tableau n'a pas pu être renommé."
   },
   "task": {
+    "template": "Modèle",
+    "someonesTemplate": "Le modèle personnel de quelqu’un",
     "description": "Description",
     "editDescription": "Modifier la description",
     "loadFailed": "La description n'a pas pu être chargée.",
@@ -315,6 +356,7 @@
     "someSection": "une section supprimée"
   },
   "dates": {
+    "templateNoRepeat": "Une tâche créée à partir d’un modèle ne se répète pas.",
     "edit": "Modifier les dates",
     "none": "Aucune",
     "save": "Enregistrer les dates",
@@ -401,6 +443,12 @@
     "tooMany": "Vous avez trop de rappels en attente. Supprimez-en avant d'en ajouter un autre."
   },
   "newTask": {
+    "useTemplate": "Modèle",
+    "noTemplates": "Aucun modèle pour ce tableau",
+    "noTemplatesHint": "Les modèles se créent dans les paramètres.",
+    "manageTemplates": "Gérer les modèles",
+    "fromTemplate": "D’après %{name}",
+    "removeTemplate": "Ne pas lier la tâche à ce modèle",
     "title": "Créer une tâche",
     "open": "Créer une tâche",
     "close": "Fermer",

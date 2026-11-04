@@ -22,7 +22,8 @@ import type {
   Person,
   ProjectSummary,
   Section,
-  Task
+  Task,
+  Template
 } from '@/domain/board'
 
 let counter = 0
@@ -82,6 +83,7 @@ export function aTask(section: Section | null, overrides: Partial<Task> = {}) {
     deadline: null,
     duration: null,
     recurrence: null,
+    template: null,
     completedAt: null,
     canceledAt: null,
     assignees: [],
@@ -162,6 +164,17 @@ export function fakeBoardsApi(boards: Board[] = []) {
   const commentEdits = new Map<string, CommentEdit[]>()
   const history = new Map<string, HistoryEntry[]>()
   const reminders = new Map<string, Reminder[]>()
+  let templates: Template[] = []
+  const templateOf = ({
+    id,
+    projectId
+  }: Pick<Template, 'id' | 'projectId'>) => {
+    const template = templates.find(
+      each => each.id === id && each.projectId === projectId
+    )
+    if (!template) throw new ApiError(404, 'not_found')
+    return template
+  }
   const followed = new Set<string>()
   const notifications: Notification[] = []
   const findTask = (boardId: string, taskId: string) => {
@@ -243,6 +256,10 @@ export function fakeBoardsApi(boards: Board[] = []) {
         source.tasks = source.tasks.filter(candidate => candidate !== task)
         task.key = `${target.keyPrefix}-${String(target.tasks.length + 1)}`
         task.sectionId = to.sectionId
+        const template = templates.find(({ id }) => id === task.template?.id)
+        if (template?.projectId && template.projectId !== target.project.id) {
+          task.template = null
+        }
         target.tasks.push(task)
         return { key: task.key, droppedAssignees: [], createdLabels: [] }
       })
@@ -543,11 +560,22 @@ export function fakeBoardsApi(boards: Board[] = []) {
     createTask: vi.fn<BoardsApi['createTask']>((boardId, input) =>
       Promise.resolve().then(() => {
         const board = find(boardId)
+        const templateId = 'templateId' in input ? input.templateId : undefined
+        const template = templates.find(({ id }) => id === templateId)
+        if (
+          templateId !== undefined &&
+          (!template ||
+            (template.projectId !== null &&
+              template.projectId !== board.project.id))
+        ) {
+          throw new ApiError(400, 'invalid_template')
+        }
         const task = aTask(null, {
           sectionId: 'sectionId' in input ? input.sectionId : null,
           parentId: 'parentId' in input ? input.parentId : null,
           title: input.title,
-          key: `${board.keyPrefix}-${String(board.tasks.length + 1)}`
+          key: `${board.keyPrefix}-${String(board.tasks.length + 1)}`,
+          template: template ? { id: template.id, title: template.title } : null
         })
         board.tasks.push(task)
         board.version += 1
@@ -556,6 +584,55 @@ export function fakeBoardsApi(boards: Board[] = []) {
           key: task.key,
           title: task.title,
           sectionId: task.sectionId
+        }
+      })
+    ),
+    listTemplates: vi.fn<BoardsApi['listTemplates']>(() =>
+      Promise.resolve().then(() =>
+        structuredClone(
+          templates.toSorted((a, b) => a.title.localeCompare(b.title))
+        )
+      )
+    ),
+    createTemplate: vi.fn<BoardsApi['createTemplate']>(
+      ({ projectId }, fields) =>
+        Promise.resolve().then(() => {
+          const template = {
+            id: nextId(),
+            projectId,
+            ...structuredClone(fields),
+            ...(projectId === null && { labelIds: [], assigneeIds: [] })
+          }
+          templates.push(template)
+          return structuredClone(template)
+        })
+    ),
+    editTemplate: vi.fn<BoardsApi['editTemplate']>((owner, fields) =>
+      Promise.resolve().then(() => {
+        const template = templateOf(owner)
+        Object.assign(template, structuredClone(fields))
+        if (template.projectId === null) {
+          template.labelIds = []
+          template.assigneeIds = []
+        }
+        for (const board of store.values()) {
+          for (const task of board.tasks) {
+            if (task.template?.id === template.id) {
+              task.template.title = template.title
+            }
+          }
+        }
+        return structuredClone(template)
+      })
+    ),
+    deleteTemplate: vi.fn<BoardsApi['deleteTemplate']>(owner =>
+      Promise.resolve().then(() => {
+        const template = templateOf(owner)
+        templates = templates.filter(each => each !== template)
+        for (const board of store.values()) {
+          for (const task of board.tasks) {
+            if (task.template?.id === template.id) task.template = null
+          }
         }
       })
     ),

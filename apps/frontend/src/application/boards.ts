@@ -8,8 +8,14 @@ import type {
   Role,
   Section,
   SectionCategory,
-  Task
+  Task,
+  Template
 } from '@/domain/board'
+
+export type TemplateFields = Omit<Template, 'id' | 'projectId'>
+
+/** A project's template, or with no project one of the person's own. */
+export type TemplateOwner = Pick<Template, 'projectId'>
 
 /**
  * The task and its sub-tasks lose their assignees who are not on the target
@@ -37,7 +43,7 @@ export interface KeyPrefixCheck {
 }
 
 export type NewTask = { title: string } & (
-  { sectionId: string | null } | { parentId: string }
+  { sectionId: string | null; templateId?: string } | { parentId: string }
 )
 
 export type Completion = 'completed' | 'canceled' | null
@@ -299,6 +305,27 @@ export interface BoardsApi {
     boardId: string,
     task: NewTask
   ) => Promise<Pick<Task, 'id' | 'key' | 'title' | 'sectionId'>>
+  /**
+   * The person's own templates and those of every project they are in, by
+   * title.
+   */
+  listTemplates: () => Promise<Template[]>
+  /**
+   * Rejects with `invalid_label` or `invalid_assignee` for one not in the
+   * project. One of the person's own drops labels and assignees.
+   */
+  createTemplate: (
+    owner: TemplateOwner,
+    template: TemplateFields
+  ) => Promise<Template>
+  editTemplate: (
+    template: Pick<Template, 'id' | 'projectId'>,
+    fields: TemplateFields
+  ) => Promise<Template>
+  /** The tasks made from it stay, unlinked. */
+  deleteTemplate: (
+    template: Pick<Template, 'id' | 'projectId'>
+  ) => Promise<void>
   moveTask: (boardId: string, taskId: string, move: TaskMove) => Promise<void>
   /** Only for a task outside sections: one in a section completes by moving. */
   completeTask: (

@@ -22,6 +22,45 @@
     "columnCanceled": "Se canceló el movimiento de la sección %{section}.",
     "columnInstructions": "Para mover una sección, pulsa Espacio o Intro. Usa las flechas izquierda y derecha para moverla, Espacio o Intro para soltarla y Escape para cancelar."
   },
+  "settings": {
+    "title": "Ajustes"
+  },
+  "templates": {
+    "title": "Plantillas",
+    "hint": "Empieza una tarea desde una plantilla en cualquier tablero. Tus plantillas propias son solo tuyas; las de un proyecto se comparten con todos sus miembros.",
+    "new": "Nueva plantilla",
+    "editTitle": "Editar plantilla",
+    "close": "Cerrar",
+    "name": "Título de la tarea",
+    "nameHint": "El título con el que empieza la nueva tarea.",
+    "nameRequired": "Dale a la plantilla un título de tarea.",
+    "descriptionPlaceholder": "Lo que debe decir cada tarea creada con ella",
+    "where": "Disponible en",
+    "assignTitle": "Asignar las tareas creadas con ella",
+    "labelTitle": "Etiquetar las tareas creadas con ella",
+    "mine": "Mis plantillas",
+    "onlyMe": "Solo yo",
+    "mineHint": "Solo tú la ves, en todos los tableros. Las etiquetas y los responsables pertenecen a un proyecto: elige uno para añadirlos.",
+    "projectHint": "Todos en el proyecto la ven, en cada uno de sus tableros. Sus editores pueden usarla y cambiarla.",
+    "refused": "Una etiqueta o una persona ya no está en el proyecto. Revísalas y guarda de nuevo.",
+    "saveFailed": "No se pudo guardar la plantilla.",
+    "save": "Guardar",
+    "create": "Crear plantilla",
+    "loadFailed": "No se pudieron cargar las plantillas.",
+    "empty": "Aún no hay plantillas",
+    "emptyHint": "Guarda las tareas que creas una y otra vez, como un informe mensual, y empiézalas con un clic.",
+    "labels": "%{smart_count} etiqueta |||| %{smart_count} etiquetas",
+    "assignees": "%{smart_count} responsable |||| %{smart_count} responsables",
+    "withDescription": "Descripción",
+    "viewOnly": "Solo lectura",
+    "titleOnly": "Solo título",
+    "options": "Opciones de %{name}",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "deleteTitle": "¿Eliminar %{name}?",
+    "deleteHint": "Las tareas ya creadas con ella se quedan como están.",
+    "deleteFailed": "No se pudo eliminar la plantilla."
+  },
   "app": {
     "name": "Twake Project",
     "loading": "Cargando",
@@ -190,6 +229,8 @@
     "renameFailed": "No se pudo renombrar el tablero."
   },
   "task": {
+    "template": "Plantilla",
+    "someonesTemplate": "La plantilla propia de otra persona",
     "description": "Descripción",
     "editDescription": "Editar descripción",
     "loadFailed": "No se pudo cargar la descripción.",
@@ -315,6 +356,7 @@
     "someSection": "una sección eliminada"
   },
   "dates": {
+    "templateNoRepeat": "Una tarea creada con una plantilla no se repite.",
     "edit": "Editar fechas",
     "none": "Ninguna",
     "save": "Guardar fechas",
@@ -401,6 +443,12 @@
     "tooMany": "Tienes demasiados recordatorios pendientes. Elimina algunos antes de añadir otro."
   },
   "newTask": {
+    "useTemplate": "Plantilla",
+    "noTemplates": "No hay plantillas para este tablero",
+    "noTemplatesHint": "Las plantillas se crean en Ajustes.",
+    "manageTemplates": "Gestionar plantillas",
+    "fromTemplate": "Desde %{name}",
+    "removeTemplate": "No vincular la tarea a esta plantilla",
     "title": "Crear una tarea",
     "open": "Crear tarea",
     "close": "Cerrar",

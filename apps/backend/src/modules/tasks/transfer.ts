@@ -8,6 +8,7 @@ import {
   checkRole,
   completionFor,
   endAccessOutside,
+  leaveTemplatesOutside,
   inSection,
   labels,
   labelsOn,
@@ -235,6 +236,7 @@ export function createTransferStore(db: Db) {
         )
         if (from.projectId !== target.projectId) {
           await endAccessOutside(tx, ids, target.projectId)
+          await leaveTemplatesOutside(tx, ids, target.projectId)
         }
         const first = target.number - ids.length + 1
         const [last] = await tx
