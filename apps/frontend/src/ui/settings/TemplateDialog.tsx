@@ -359,6 +359,9 @@ export function TemplateDialog({
           onCreated={labelId => {
             setLabelIds([...labelIds, labelId])
           }}
+          onDeleted={labelId => {
+            setLabelIds(labelIds.filter(id => id !== labelId))
+          }}
           anchor={menu.anchor}
           onClose={() => {
             setMenu(null)

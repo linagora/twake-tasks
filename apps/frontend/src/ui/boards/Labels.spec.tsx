@@ -249,6 +249,59 @@ describe('Labels', () => {
     expect(boardsApi.setLabels).not.toHaveBeenCalled()
   })
 
+  it('deletes a label once confirmed, which comes off the task', async () => {
+    const { board, boardsApi } = labeledBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const picker = await openLabels()
+    fireEvent.click(picker.getByRole('button', { name: 'Edit Urgent' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Edit label' })
+    )
+    fireEvent.click(dialog.getByRole('button', { name: 'Delete label' }))
+    const confirm = within(
+      await screen.findByRole('dialog', { name: 'Delete “Urgent”?' })
+    )
+    fireEvent.click(confirm.getByRole('button', { name: 'Delete label' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Edit label' })).toBeNull()
+    })
+    expect(boardsApi.deleteLabel).toHaveBeenCalledWith(board.id, urgent.id)
+    await waitFor(async () => {
+      expect((await logoCard()).queryByText('Urgent')).toBeNull()
+    })
+    expect(
+      picker.queryByRole('menuitemcheckbox', { name: 'Urgent' })
+    ).toBeNull()
+  })
+
+  it('keeps the label when its deletion is cancelled', async () => {
+    const { board, boardsApi } = labeledBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const picker = await openLabels()
+    fireEvent.click(picker.getByRole('button', { name: 'Edit Urgent' }))
+    fireEvent.click(
+      within(
+        await screen.findByRole('dialog', { name: 'Edit label' })
+      ).getByRole('button', { name: 'Delete label' })
+    )
+    fireEvent.click(
+      within(
+        await screen.findByRole('dialog', { name: 'Delete “Urgent”?' })
+      ).getByRole('button', { name: 'Cancel' })
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Delete “Urgent”?' })
+      ).toBeNull()
+    })
+    expect(screen.getByRole('dialog', { name: 'Edit label' })).toBeVisible()
+    expect(boardsApi.deleteLabel).not.toHaveBeenCalled()
+  })
+
   it('says how many labels match the search', async () => {
     const { board, boardsApi } = labeledBoard()
     board.labels = [urgent, { id: 'urgency', name: 'Urgency', color: null }]

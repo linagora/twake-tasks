@@ -51,6 +51,11 @@ export function LabelsPicker({
       onCreated={labelId => {
         apply(new Set(chosen).add(labelId))
       }}
+      onDeleted={labelId => {
+        setChosen(
+          previous => new Set([...previous].filter(id => id !== labelId))
+        )
+      }}
       anchor={anchor}
       onClose={onClose}
       footer={

@@ -31,6 +31,7 @@ export function LabelsMenu({
   chosen,
   onToggle,
   onCreated,
+  onDeleted,
   anchor,
   onClose,
   footer
@@ -41,6 +42,8 @@ export function LabelsMenu({
   chosen: Set<string>
   onToggle: (labelId: string) => void
   onCreated: (labelId: string) => void
+  /** For a caller that keeps the checked ids, which may hold the deleted one. */
+  onDeleted?: (labelId: string) => void
   anchor: HTMLElement
   onClose: () => void
   footer?: ReactNode
@@ -155,6 +158,10 @@ export function LabelsMenu({
           onSaved={saved => {
             setEditing(null)
             if (!editing.label) onCreated(saved.id)
+          }}
+          onDeleted={labelId => {
+            setEditing(null)
+            onDeleted?.(labelId)
           }}
         />
       )}

@@ -791,6 +791,9 @@ export function NewTaskDialog({
           onCreated={labelId => {
             change({ labelIds: [...facts.labelIds, labelId] })
           }}
+          onDeleted={labelId => {
+            change({ labelIds: facts.labelIds.filter(id => id !== labelId) })
+          }}
           anchor={menu.anchor}
           onClose={closeMenu}
         />
