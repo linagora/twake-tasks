@@ -4,13 +4,13 @@ import {
   Divider,
   IconButton,
   Link,
-  Menu,
-  Typography
+  Menu
 } from '@linagora/twake-mui'
 import {
   Archive,
   CalendarToday,
   CheckList,
+  CheckSquare,
   Comment,
   Dots,
   FolderMoveto,
@@ -22,7 +22,14 @@ import {
 } from '@linagora/twake-icons'
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
 
-import { Card, CardTitle, LabelChip, Meta, MetaChip } from '@/ds/Columns'
+import {
+  Card,
+  CardTitle,
+  LabelChip,
+  Meta,
+  MetaChip,
+  SelectableKey
+} from '@/ds/Columns'
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { SortableCard } from '@/ds/Sortable'
@@ -35,6 +42,7 @@ import {
   type Task
 } from '@/domain/board'
 import { useRemoveTask } from '@/ui/boards/Archive'
+import { useKeySelect, usePickByClick } from '@/ui/boards/Selection'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
 import { useCopyLink } from '@/ui/boards/CopyLink'
 import { DatesEditor } from '@/ui/boards/Dates'
@@ -83,6 +91,8 @@ export function TaskCard({
   const remove = useRemoveTask(boardId, task)
   const panel = useTaskPanel(task.key)
   const newTask = useNewTaskHighlight(task.key)
+  const select = useKeySelect(task)
+  const pickByClick = usePickByClick(task)
   const editable = onMove !== undefined
   const taskDone = isDone(task, sections)
   const [showSubtasks, setShowSubtasks] = useState(false)
@@ -101,9 +111,7 @@ export function TaskCard({
   const body = (
     <>
       <Meta>
-        <Typography variant="caption" color="textSecondary">
-          {task.key}
-        </Typography>
+        <SelectableKey taskKey={task.key} select={select} />
         {task.labels.map(label => (
           <LabelChip key={label.id} name={label.name} color={label.color} />
         ))}
@@ -115,7 +123,8 @@ export function TaskCard({
           color={taskDone ? 'textSecondary' : 'textPrimary'}
           underline={taskDone ? 'none' : 'hover'}
           className="u-ta-left"
-          onClick={() => {
+          onClick={event => {
+            if (pickByClick(event)) return
             newTask.clear()
             panel.show()
           }}
@@ -170,6 +179,7 @@ export function TaskCard({
   const frame = {
     label: `${task.key} ${task.title}`,
     highlighted: newTask.isNew,
+    selected: select?.checked ?? false,
     menu: onMove && (
       <IconButton
         size="small"
@@ -271,6 +281,16 @@ export function TaskCard({
         >
           {t('task.copyLink')}
         </IconMenuItem>
+        {select && !select.checked && (
+          <IconMenuItem
+            icon={CheckSquare}
+            onClick={choose(() => {
+              select.onToggle(false)
+            })}
+          >
+            {t('bulk.selectTask')}
+          </IconMenuItem>
+        )}
         <Divider />
         <IconMenuItem
           icon={Archive}

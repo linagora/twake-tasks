@@ -720,6 +720,26 @@
     "count": "%{smart_count} membro |||| %{smart_count} membri",
     "invitedCount": "%{smart_count} invitato |||| %{smart_count} invitati"
   },
+  "bulk": {
+    "select": "Seleziona %{key}",
+    "selectTask": "Seleziona",
+    "bar": "Attività selezionate",
+    "selected": "%{smart_count} selezionata |||| %{smart_count} selezionate",
+    "clear": "Cancella la selezione",
+    "tooMany": "Seleziona al massimo %{max} attività.",
+    "moveTo": "Sposta in",
+    "assignTitle": "Assegna 1 attività |||| Assegna %{smart_count} attività",
+    "labelsTitle": "Etichetta 1 attività |||| Etichetta %{smart_count} attività",
+    "transferTitle": "Sposta 1 attività in un'altra bacheca |||| Sposta %{smart_count} attività in un'altra bacheca",
+    "deleteTitle": "Eliminare 1 attività? |||| Eliminare %{smart_count} attività?",
+    "deleteText": "Resta nel cestino per 30 giorni. |||| Restano nel cestino per 30 giorni.",
+    "updated": "1 attività modificata |||| %{smart_count} attività modificate",
+    "archived": "1 attività archiviata |||| %{smart_count} attività archiviate",
+    "trashed": "1 attività eliminata |||| %{smart_count} attività eliminate",
+    "transferred": "1 attività spostata in %{board} |||| %{smart_count} attività spostate in %{board}",
+    "partial": "%{changed} attività su %{total} modificate. 1 non è stata modificata. |||| %{changed} attività su %{total} modificate. %{smart_count} non sono state modificate.",
+    "failed": "Non è stato possibile modificare le attività."
+  },
   "page": {
     "breadcrumb": "Posizione della pagina"
   }

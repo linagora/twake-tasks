@@ -720,6 +720,26 @@
     "count": "%{smart_count} member |||| %{smart_count} members",
     "invitedCount": "%{smart_count} invited"
   },
+  "bulk": {
+    "select": "Select %{key}",
+    "selectTask": "Select",
+    "bar": "Selected tasks",
+    "selected": "%{smart_count} selected",
+    "clear": "Clear selection",
+    "tooMany": "Select at most %{max} tasks.",
+    "moveTo": "Move to",
+    "assignTitle": "Assign 1 task |||| Assign %{smart_count} tasks",
+    "labelsTitle": "Label 1 task |||| Label %{smart_count} tasks",
+    "transferTitle": "Move 1 task to another board |||| Move %{smart_count} tasks to another board",
+    "deleteTitle": "Delete 1 task? |||| Delete %{smart_count} tasks?",
+    "deleteText": "It stays in the trash for 30 days. |||| They stay in the trash for 30 days.",
+    "updated": "1 task updated |||| %{smart_count} tasks updated",
+    "archived": "1 task archived |||| %{smart_count} tasks archived",
+    "trashed": "1 task deleted |||| %{smart_count} tasks deleted",
+    "transferred": "1 task moved to %{board} |||| %{smart_count} tasks moved to %{board}",
+    "partial": "%{changed} of %{total} tasks updated. 1 could not be changed. |||| %{changed} of %{total} tasks updated. %{smart_count} could not be changed.",
+    "failed": "The tasks could not be changed."
+  },
   "page": {
     "breadcrumb": "Where the page is"
   }

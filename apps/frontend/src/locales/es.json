@@ -720,6 +720,26 @@
     "count": "%{smart_count} miembro |||| %{smart_count} miembros",
     "invitedCount": "%{smart_count} invitado |||| %{smart_count} invitados"
   },
+  "bulk": {
+    "select": "Seleccionar %{key}",
+    "selectTask": "Seleccionar",
+    "bar": "Tareas seleccionadas",
+    "selected": "%{smart_count} seleccionada |||| %{smart_count} seleccionadas",
+    "clear": "Borrar la selección",
+    "tooMany": "Selecciona como máximo %{max} tareas.",
+    "moveTo": "Mover a",
+    "assignTitle": "Asignar 1 tarea |||| Asignar %{smart_count} tareas",
+    "labelsTitle": "Etiquetar 1 tarea |||| Etiquetar %{smart_count} tareas",
+    "transferTitle": "Mover 1 tarea a otro tablero |||| Mover %{smart_count} tareas a otro tablero",
+    "deleteTitle": "¿Eliminar 1 tarea? |||| ¿Eliminar %{smart_count} tareas?",
+    "deleteText": "Se queda en la papelera durante 30 días. |||| Se quedan en la papelera durante 30 días.",
+    "updated": "1 tarea modificada |||| %{smart_count} tareas modificadas",
+    "archived": "1 tarea archivada |||| %{smart_count} tareas archivadas",
+    "trashed": "1 tarea eliminada |||| %{smart_count} tareas eliminadas",
+    "transferred": "1 tarea movida a %{board} |||| %{smart_count} tareas movidas a %{board}",
+    "partial": "%{changed} de %{total} tareas modificadas. 1 no se pudo modificar. |||| %{changed} de %{total} tareas modificadas. %{smart_count} no se pudieron modificar.",
+    "failed": "No se pudieron modificar las tareas."
+  },
   "page": {
     "breadcrumb": "Ubicación de la página"
   }

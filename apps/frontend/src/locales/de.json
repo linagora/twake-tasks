@@ -720,6 +720,26 @@
     "count": "%{smart_count} Mitglied |||| %{smart_count} Mitglieder",
     "invitedCount": "%{smart_count} eingeladen"
   },
+  "bulk": {
+    "select": "%{key} auswählen",
+    "selectTask": "Auswählen",
+    "bar": "Ausgewählte Aufgaben",
+    "selected": "%{smart_count} ausgewählt",
+    "clear": "Auswahl aufheben",
+    "tooMany": "Wählen Sie höchstens %{max} Aufgaben aus.",
+    "moveTo": "Verschieben nach",
+    "assignTitle": "1 Aufgabe zuweisen |||| %{smart_count} Aufgaben zuweisen",
+    "labelsTitle": "1 Aufgabe labeln |||| %{smart_count} Aufgaben labeln",
+    "transferTitle": "1 Aufgabe auf ein anderes Board verschieben |||| %{smart_count} Aufgaben auf ein anderes Board verschieben",
+    "deleteTitle": "1 Aufgabe löschen? |||| %{smart_count} Aufgaben löschen?",
+    "deleteText": "Sie bleibt 30 Tage im Papierkorb. |||| Sie bleiben 30 Tage im Papierkorb.",
+    "updated": "1 Aufgabe geändert |||| %{smart_count} Aufgaben geändert",
+    "archived": "1 Aufgabe archiviert |||| %{smart_count} Aufgaben archiviert",
+    "trashed": "1 Aufgabe gelöscht |||| %{smart_count} Aufgaben gelöscht",
+    "transferred": "1 Aufgabe nach %{board} verschoben |||| %{smart_count} Aufgaben nach %{board} verschoben",
+    "partial": "%{changed} von %{total} Aufgaben geändert. 1 konnte nicht geändert werden. |||| %{changed} von %{total} Aufgaben geändert. %{smart_count} konnten nicht geändert werden.",
+    "failed": "Die Aufgaben konnten nicht geändert werden."
+  },
   "page": {
     "breadcrumb": "Ort der Seite"
   }

@@ -720,6 +720,26 @@
     "count": "%{smart_count} membre |||| %{smart_count} membres",
     "invitedCount": "%{smart_count} invité |||| %{smart_count} invités"
   },
+  "bulk": {
+    "select": "Sélectionner %{key}",
+    "selectTask": "Sélectionner",
+    "bar": "Tâches sélectionnées",
+    "selected": "%{smart_count} sélectionnée |||| %{smart_count} sélectionnées",
+    "clear": "Effacer la sélection",
+    "tooMany": "Sélectionnez au plus %{max} tâches.",
+    "moveTo": "Déplacer vers",
+    "assignTitle": "Assigner 1 tâche |||| Assigner %{smart_count} tâches",
+    "labelsTitle": "Étiqueter 1 tâche |||| Étiqueter %{smart_count} tâches",
+    "transferTitle": "Déplacer 1 tâche vers un autre tableau |||| Déplacer %{smart_count} tâches vers un autre tableau",
+    "deleteTitle": "Supprimer 1 tâche ? |||| Supprimer %{smart_count} tâches ?",
+    "deleteText": "Elle reste dans la corbeille pendant 30 jours. |||| Elles restent dans la corbeille pendant 30 jours.",
+    "updated": "1 tâche modifiée |||| %{smart_count} tâches modifiées",
+    "archived": "1 tâche archivée |||| %{smart_count} tâches archivées",
+    "trashed": "1 tâche supprimée |||| %{smart_count} tâches supprimées",
+    "transferred": "1 tâche déplacée vers %{board} |||| %{smart_count} tâches déplacées vers %{board}",
+    "partial": "%{changed} tâches sur %{total} modifiées. 1 n'a pas pu être modifiée. |||| %{changed} tâches sur %{total} modifiées. %{smart_count} n'ont pas pu être modifiées.",
+    "failed": "Les tâches n'ont pas pu être modifiées."
+  },
   "page": {
     "breadcrumb": "Emplacement de la page"
   }

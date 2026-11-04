@@ -5,6 +5,7 @@ import { LabelChip } from '@/ds/Columns'
 import { ListRow } from '@/ds/ListView'
 import { SortableListRow } from '@/ds/Sortable'
 import { isDone, type Section, type Task } from '@/domain/board'
+import { useKeySelect, usePickByClick } from '@/ui/boards/Selection'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -41,6 +42,8 @@ export function TaskListRow({
   const { t } = useI18n()
   const panel = useTaskPanel(task.key)
   const newTask = useNewTaskHighlight(task.key)
+  const select = useKeySelect(task)
+  const pickByClick = usePickByClick(task)
 
   return (
     <Row
@@ -50,6 +53,7 @@ export function TaskListRow({
       label={`${task.key} ${task.title}`}
       highlighted={newTask.isNew}
       taskKey={task.key}
+      select={select}
       done={isDone(task, sections)}
       title={
         <Link
@@ -58,7 +62,8 @@ export function TaskListRow({
           color="inherit"
           underline="none"
           className="u-ta-left"
-          onClick={() => {
+          onClick={event => {
+            if (pickByClick(event)) return
             newTask.clear()
             panel.show()
           }}
