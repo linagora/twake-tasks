@@ -7,6 +7,7 @@ export interface Mail {
   subject: string
   text: string
   html: string
+  headers?: Record<string, string>
 }
 
 // Without SMTP_URL, notifications stay in the app.

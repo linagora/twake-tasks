@@ -26,7 +26,7 @@ import { registerCollaboration } from './collaboration/index.ts'
 import { registerLive } from './live/index.ts'
 import { registerNotifications } from './notifications/index.ts'
 import { registerProjects } from './projects/index.ts'
-import { registerSettings } from './settings/index.ts'
+import { notificationPreferences, registerSettings } from './settings/index.ts'
 import { registerTasks } from './tasks/index.ts'
 import { registerTemplates } from './templates/index.ts'
 import { registerViews } from './views/index.ts'
@@ -405,6 +405,9 @@ const EXAMPLES: Record<string, Example> = {
   'POST /notifications/:notificationId/read': async (_fixture, me) => ({
     params: { notificationId: await ownNotification(me) }
   }),
+  'DELETE /notifications/:notificationId': async (_fixture, me) => ({
+    params: { notificationId: await ownNotification(me) }
+  }),
   'GET /notifications/unread': none,
   'GET /notifications': none,
   'GET /boards': none,
@@ -477,6 +480,22 @@ const EXAMPLES: Record<string, Example> = {
   'POST /boards/:boardId/sections/:sectionId/move': () => ({ body: {} }),
   'DELETE /boards/:boardId/sections/:sectionId': none,
   'GET /settings': none,
+  'GET /settings/notifications': none,
+  'PUT /settings/notifications': () => ({
+    body: { mutedInApp: [], mutedEmail: ['changes'], emailFrequency: 'instant' }
+  }),
+  'POST /settings/notifications/unsubscribe': async (_fixture, me) => {
+    const [row] = await db
+      .insert(notificationPreferences)
+      .values({ userId: me.userId })
+      .onConflictDoUpdate({
+        target: notificationPreferences.userId,
+        set: { emailFrequency: 'instant' }
+      })
+      .returning({ token: notificationPreferences.unsubscribeToken })
+    if (!row) throw new Error('no preferences')
+    return { query: { token: row.token, kind: 'changes' } }
+  },
   'GET /boards/:boardId/events': none,
   // The tests' identity provider refuses every logout token.
   'POST /auth/backchannel-logout': () => ({

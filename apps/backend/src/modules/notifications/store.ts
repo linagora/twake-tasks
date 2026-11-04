@@ -76,6 +76,22 @@ export function createNotificationStore(db: Db) {
       })
     },
 
+    remove(identity: Identity, notificationId: string) {
+      return writeOrRefuse(db, identity, async tx => {
+        const [removed] = await tx
+          .delete(notifications)
+          .where(
+            and(
+              eq(notifications.id, notificationId),
+              eq(notifications.userId, identity.userId)
+            )
+          )
+          .returning({ id: notifications.id })
+        if (!removed) throw new Refused('not_found')
+        return null
+      })
+    },
+
     // One row per project with unread notifications, whatever their number.
     unreadByProject(identity: Identity) {
       return writeOrRefuse(db, identity, tx =>

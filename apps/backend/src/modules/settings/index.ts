@@ -1,3 +1,8 @@
 export { keepSettings, settingsRoutes } from './events.ts'
+export {
+  notificationKind,
+  preferencesOf,
+  unsubscribeTokenOf
+} from './notificationPreferences.ts'
 export { registerSettings } from './routes.ts'
-export { userSettings } from './schema.ts'
+export { notificationPreferences, userSettings } from './schema.ts'

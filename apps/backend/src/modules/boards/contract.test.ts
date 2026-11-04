@@ -15,6 +15,7 @@ import {
   keyPrefixResponse,
   label,
   labelNamesResponse,
+  notificationPreferences,
   notificationsResponse,
   peopleResponse,
   projectsResponse,
@@ -344,6 +345,10 @@ describe('the API contract', () => {
 
     contracted(projectsResponse, await api.as(alice).get('/projects'))
     contracted(settingsResponse, await api.as(alice).get('/settings'))
+    contracted(
+      notificationPreferences,
+      await api.as(alice).get('/settings/notifications')
+    )
   })
 
   // Runs last: it checks what the tests above parsed.

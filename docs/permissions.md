@@ -7,6 +7,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 ## Anyone, signed in or not
 
 - `POST /api/auth/backchannel-logout`
+- `POST /api/settings/notifications/unsubscribe`
 
 ## Any signed-in person, on their own data
 
@@ -24,6 +25,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `GET /api/labels`
 - `GET /api/my-tasks`
 - `GET /api/notifications`
+- `DELETE /api/notifications/:notificationId`
 - `POST /api/notifications/:notificationId/read`
 - `POST /api/notifications/read`
 - `GET /api/notifications/unread`
@@ -31,6 +33,8 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `GET /api/projects`
 - `GET /api/search`
 - `GET /api/settings`
+- `GET /api/settings/notifications`
+- `PUT /api/settings/notifications`
 - `GET /api/templates`
 
 ## Viewers of the board
