@@ -72,11 +72,33 @@ export interface Task {
   deadline: string | null
   duration: Duration | null
   recurrence: Recurrence | null
+  /**
+   * The template the task was made from, null once it is deleted. Its title
+   * is null for someone else's own template.
+   */
+  template: { id: string; title: string | null } | null
   completedAt: string | null
   canceledAt: string | null
   assignees: Person[]
   labels: Label[]
   commentCount: number
+}
+
+/**
+ * What a new task can start with. A project's template serves every board of
+ * the project; one of the person's own (`projectId` null) serves any board,
+ * without labels or assignees, which belong to a project. A task made from a
+ * template cannot repeat.
+ */
+export interface Template {
+  id: string
+  projectId: string | null
+  title: string
+  /** Markdown */
+  description: string
+  priority: Priority | null
+  labelIds: string[]
+  assigneeIds: string[]
 }
 
 export interface Duration {
@@ -132,6 +154,10 @@ export const isLastAdmin = (
 ): boolean =>
   isAdmin(member.role) &&
   members.filter(each => isAdmin(each.role)).length === 1
+
+/** Whether this user may change the project's templates. */
+export const editsProject = (project: { role: Role }): boolean =>
+  project.role !== 'viewer'
 
 /** Whether this user may add, change and move the board's tasks. */
 export const isEditable = (

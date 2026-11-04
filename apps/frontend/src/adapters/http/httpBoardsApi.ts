@@ -350,6 +350,48 @@ export function httpBoardsApi(
         route`/boards/${boardId}/tasks`,
         task satisfies Body<'newTask'>
       ),
+    listTemplates: async () =>
+      (await parsed('templates', wire.templatesResponse, 'GET', '/templates'))
+        .templates,
+    createTemplate: ({ projectId }, { labelIds, assigneeIds, ...own }) =>
+      projectId === null
+        ? parsed(
+            'template',
+            wire.template,
+            'POST',
+            '/templates',
+            own satisfies Body<'ownTemplateFields'>
+          )
+        : parsed(
+            'template',
+            wire.template,
+            'POST',
+            route`/projects/${projectId}/templates`,
+            { ...own, labelIds, assigneeIds } satisfies Body<'templateFields'>
+          ),
+    editTemplate: ({ id, projectId }, { labelIds, assigneeIds, ...own }) =>
+      projectId === null
+        ? parsed(
+            'template',
+            wire.template,
+            'PUT',
+            route`/templates/${id}`,
+            own satisfies Body<'ownTemplateFields'>
+          )
+        : parsed(
+            'template',
+            wire.template,
+            'PUT',
+            route`/projects/${projectId}/templates/${id}`,
+            { ...own, labelIds, assigneeIds } satisfies Body<'templateFields'>
+          ),
+    deleteTemplate: ({ id, projectId }) =>
+      call(
+        'DELETE',
+        projectId === null
+          ? route`/templates/${id}`
+          : route`/projects/${projectId}/templates/${id}`
+      ),
     moveTask: (boardId, taskId, move) =>
       call(
         'POST',

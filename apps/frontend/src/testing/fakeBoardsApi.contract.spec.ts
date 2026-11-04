@@ -2,6 +2,8 @@ import * as wire from '@twake-tasks/api-contract'
 import { describe, expect, it } from 'vitest'
 import type { z } from 'zod'
 
+import type { TemplateFields } from '@/application/boards'
+
 import {
   aBoard,
   aNotification,
@@ -23,6 +25,14 @@ const alice = {
   email: 'alice@example.com',
   name: 'Alice Martin',
   avatar: null
+}
+
+const templateFields: TemplateFields = {
+  title: 'Monthly report',
+  description: 'Check the **invoices**',
+  priority: 2,
+  labelIds: ['label-1'],
+  assigneeIds: ['alice']
 }
 
 function aSeededFake() {
@@ -135,6 +145,11 @@ describe('the fake boards API', () => {
     const { fake, board, target, task } = aSeededFake()
     const at = [board.id, task.id] as const
     const to = { boardId: target.id, sectionId: null }
+    const template = await fake.createTemplate(
+      { projectId: board.project.id },
+      templateFields
+    )
+    const own = await fake.createTemplate({ projectId: null }, templateFields)
     const answers: Answers = {
       createFilter: [
         wire.createdFilterResponse,
@@ -150,7 +165,11 @@ describe('the fake boards API', () => {
       ],
       createTask: [
         wire.createdTaskResponse,
-        await fake.createTask(board.id, { sectionId: null, title: 'Brief' })
+        await fake.createTask(board.id, {
+          sectionId: null,
+          title: 'Brief',
+          templateId: template.id
+        })
       ],
       setDescription: [
         wire.descriptionVersionResponse,
@@ -170,6 +189,15 @@ describe('the fake boards API', () => {
           name: 'Review',
           category: 'started'
         })
+      ],
+      createTemplate: [wire.template, template],
+      editTemplate: [
+        wire.template,
+        await fake.editTemplate(own, { ...templateFields, title: 'Weekly' })
+      ],
+      listTemplates: [
+        wire.templatesResponse,
+        { templates: await fake.listTemplates() }
       ],
       previewTransfer: [
         wire.transferPreviewResponse,

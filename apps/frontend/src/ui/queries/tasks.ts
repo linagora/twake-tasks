@@ -9,6 +9,7 @@ import {
 import { useEffect, useRef } from 'react'
 
 import {
+  ApiError,
   type Description,
   type HistoryEntry,
   type NewTask,
@@ -200,6 +201,11 @@ export function useNewTask(): UseMutationResult<
   return useMutation({
     mutationFn: ({ boardId, draft, started }) =>
       createTask(api, boardId, draft, started),
+    // The template is gone, or out of reach: the picker drops it once reloaded.
+    onError: error =>
+      error instanceof ApiError && error.code === 'invalid_template'
+        ? queryClient.invalidateQueries({ queryKey: keys.templates() })
+        : undefined,
     // Settled, not succeeded: the task exists once its first request is done,
     // even if adding its details fails. The boards list holds the counts.
     onSettled: () =>

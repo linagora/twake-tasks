@@ -36,6 +36,7 @@ const TASK = {
   deadline: null,
   duration: { amount: 30, unit: 'minutes' },
   recurrence: { every: 1, unit: 'weeks', fromCompletion: false },
+  template: null,
   completedAt: '2026-10-27T08:00:00.000Z',
   canceledAt: null,
   assignees: [ANA],
