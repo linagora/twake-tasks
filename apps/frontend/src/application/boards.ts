@@ -14,9 +14,6 @@ import type {
 
 export type TemplateFields = Omit<Template, 'id' | 'projectId'>
 
-/** A project's template, or with no project one of the person's own. */
-export type TemplateOwner = Pick<Template, 'projectId'>
-
 /**
  * The task and its sub-tasks lose their assignees who are not on the target
  * board. Labels follow by name, and the target project gets the ones it lacks.
@@ -305,17 +302,14 @@ export interface BoardsApi {
     boardId: string,
     task: NewTask
   ) => Promise<Pick<Task, 'id' | 'key' | 'title' | 'sectionId'>>
-  /**
-   * The person's own templates and those of every project they are in, by
-   * title.
-   */
+  /** The templates of every project the person is in, by title. */
   listTemplates: () => Promise<Template[]>
   /**
    * Rejects with `invalid_label` or `invalid_assignee` for one not in the
-   * project. One of the person's own drops labels and assignees.
+   * project.
    */
   createTemplate: (
-    owner: TemplateOwner,
+    projectId: string,
     template: TemplateFields
   ) => Promise<Template>
   editTemplate: (

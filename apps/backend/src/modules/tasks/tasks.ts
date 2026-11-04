@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ne, notInArray, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ne, notInArray, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
@@ -165,10 +165,8 @@ async function recur(tx: Tx, task: typeof tasks.$inferSelect) {
   return true
 }
 
-// One of the project's templates, or one of the person's own.
 async function usableTemplate(
   tx: Tx,
-  identity: Identity,
   projectId: string,
   templateId: string
 ): Promise<boolean> {
@@ -178,10 +176,7 @@ async function usableTemplate(
     .where(
       and(
         eq(taskTemplates.id, templateId),
-        or(
-          eq(taskTemplates.projectId, projectId),
-          eq(taskTemplates.userId, identity.userId)
-        )
+        eq(taskTemplates.projectId, projectId)
       )
     )
   return template !== undefined
@@ -208,7 +203,7 @@ export function createTaskStore(db: Db) {
         const templateId = 'templateId' in input ? input.templateId : undefined
         if (
           templateId !== undefined &&
-          !(await usableTemplate(tx, identity, board.projectId, templateId))
+          !(await usableTemplate(tx, board.projectId, templateId))
         ) {
           throw new Refused('invalid_template')
         }

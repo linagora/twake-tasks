@@ -257,7 +257,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
         task.key = `${target.keyPrefix}-${String(target.tasks.length + 1)}`
         task.sectionId = to.sectionId
         const template = templates.find(({ id }) => id === task.template?.id)
-        if (template?.projectId && template.projectId !== target.project.id) {
+        if (template && template.projectId !== target.project.id) {
           task.template = null
         }
         target.tasks.push(task)
@@ -564,9 +564,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
         const template = templates.find(({ id }) => id === templateId)
         if (
           templateId !== undefined &&
-          (!template ||
-            (template.projectId !== null &&
-              template.projectId !== board.project.id))
+          template?.projectId !== board.project.id
         ) {
           throw new ApiError(400, 'invalid_template')
         }
@@ -594,27 +592,17 @@ export function fakeBoardsApi(boards: Board[] = []) {
         )
       )
     ),
-    createTemplate: vi.fn<BoardsApi['createTemplate']>(
-      ({ projectId }, fields) =>
-        Promise.resolve().then(() => {
-          const template = {
-            id: nextId(),
-            projectId,
-            ...structuredClone(fields),
-            ...(projectId === null && { labelIds: [], assigneeIds: [] })
-          }
-          templates.push(template)
-          return structuredClone(template)
-        })
+    createTemplate: vi.fn<BoardsApi['createTemplate']>((projectId, fields) =>
+      Promise.resolve().then(() => {
+        const template = { id: nextId(), projectId, ...structuredClone(fields) }
+        templates.push(template)
+        return structuredClone(template)
+      })
     ),
     editTemplate: vi.fn<BoardsApi['editTemplate']>((owner, fields) =>
       Promise.resolve().then(() => {
         const template = templateOf(owner)
         Object.assign(template, structuredClone(fields))
-        if (template.projectId === null) {
-          template.labelIds = []
-          template.assigneeIds = []
-        }
         for (const board of store.values()) {
           for (const task of board.tasks) {
             if (task.template?.id === template.id) {

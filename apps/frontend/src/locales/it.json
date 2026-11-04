@@ -27,7 +27,7 @@
   },
   "templates": {
     "title": "Modelli",
-    "hint": "Avvia un’attività da un modello su qualsiasi bacheca. I tuoi modelli personali sono solo tuoi; quelli di un progetto sono condivisi con tutti i suoi membri.",
+    "hint": "Avvia un’attività da un modello su qualsiasi bacheca del suo progetto. I modelli di un progetto sono condivisi con tutti i suoi membri.",
     "new": "Nuovo modello",
     "editTitle": "Modifica modello",
     "close": "Chiudi",
@@ -38,9 +38,6 @@
     "where": "Disponibile in",
     "assignTitle": "Assegna le attività create da questo modello",
     "labelTitle": "Etichetta le attività create da questo modello",
-    "mine": "I miei modelli",
-    "onlyMe": "Solo io",
-    "mineHint": "Lo vedi solo tu, su ogni bacheca. Etichette e assegnatari appartengono a un progetto: scegline uno per aggiungerli.",
     "projectHint": "Tutti nel progetto lo vedono, su ognuna delle sue bacheche. I suoi editor possono usarlo e modificarlo.",
     "refused": "Un’etichetta o una persona non fa più parte del progetto. Controllale e salva di nuovo.",
     "saveFailed": "Impossibile salvare il modello.",
@@ -230,7 +227,6 @@
   },
   "task": {
     "template": "Modello",
-    "someonesTemplate": "Il modello personale di qualcun altro",
     "description": "Descrizione",
     "editDescription": "Modifica descrizione",
     "loadFailed": "Impossibile caricare la descrizione.",

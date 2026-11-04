@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, or } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import {
@@ -15,25 +15,18 @@ import {
 } from '../boards/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 
-export interface OwnTemplateFields {
+export interface TemplateFields {
   title: string
   description: string
   priority: number | null
-}
-
-export interface TemplateFields extends OwnTemplateFields {
   labelIds: string[]
   assigneeIds: string[]
 }
 
-type Owner = { projectId: string } | { userId: string }
+const inProject = (projectId: string, templateId: string) =>
+  and(eq(taskTemplates.id, templateId), eq(taskTemplates.projectId, projectId))
 
-const ownedBy = (owner: Owner) =>
-  'projectId' in owner
-    ? eq(taskTemplates.projectId, owner.projectId)
-    : eq(taskTemplates.userId, owner.userId)
-
-// The person's own templates and those of every project they are a member of.
+// The templates of every project the person is a member of.
 async function templatesOf(tx: Tx, userId: string, templateId?: string) {
   const rows = await tx
     .select({
@@ -44,11 +37,11 @@ async function templatesOf(tx: Tx, userId: string, templateId?: string) {
       priority: taskTemplates.priority
     })
     .from(taskTemplates)
-    .leftJoin(
+    .innerJoin(
       projects,
       and(eq(projects.id, taskTemplates.projectId), isNull(projects.deletedAt))
     )
-    .leftJoin(
+    .innerJoin(
       projectMembers,
       and(
         eq(projectMembers.projectId, projects.id),
@@ -56,10 +49,7 @@ async function templatesOf(tx: Tx, userId: string, templateId?: string) {
       )
     )
     .where(
-      and(
-        or(eq(taskTemplates.userId, userId), eq(projectMembers.userId, userId)),
-        templateId === undefined ? undefined : eq(taskTemplates.id, templateId)
-      )
+      templateId === undefined ? undefined : eq(taskTemplates.id, templateId)
     )
     .orderBy(asc(taskTemplates.title), asc(taskTemplates.id))
   if (rows.length === 0) return []
@@ -142,7 +132,7 @@ export function createTemplateStore(db: Db) {
   async function save(
     tx: Tx,
     identity: Identity,
-    owner: Owner,
+    projectId: string,
     fields: TemplateFields,
     templateId?: string
   ) {
@@ -157,7 +147,7 @@ export function createTemplateStore(db: Db) {
             .insert(taskTemplates)
             .values({
               ...values,
-              ...owner,
+              projectId,
               organizationId: identity.organizationId,
               createdBy: identity.userId
             })
@@ -165,88 +155,58 @@ export function createTemplateStore(db: Db) {
         : await tx
             .update(taskTemplates)
             .set(values)
-            .where(and(eq(taskTemplates.id, templateId), ownedBy(owner)))
+            .where(inProject(projectId, templateId))
             .returning({ id: taskTemplates.id })
     if (!saved) throw new Refused('not_found')
     if (templateId !== undefined) await bumpBoardsUsing(tx, templateId)
-    if ('projectId' in owner) {
-      const { labelIds, assigneeIds } = await checkProjectFields(
-        tx,
-        owner.projectId,
-        fields
+    const { labelIds, assigneeIds } = await checkProjectFields(
+      tx,
+      projectId,
+      fields
+    )
+    const { organizationId } = identity
+    await tx
+      .delete(taskTemplateLabels)
+      .where(eq(taskTemplateLabels.templateId, saved.id))
+    await tx
+      .delete(taskTemplateAssignees)
+      .where(eq(taskTemplateAssignees.templateId, saved.id))
+    if (labelIds.length > 0) {
+      await tx.insert(taskTemplateLabels).values(
+        labelIds.map(labelId => ({
+          templateId: saved.id,
+          labelId,
+          organizationId
+        }))
       )
-      const { organizationId } = identity
-      await tx
-        .delete(taskTemplateLabels)
-        .where(eq(taskTemplateLabels.templateId, saved.id))
-      await tx
-        .delete(taskTemplateAssignees)
-        .where(eq(taskTemplateAssignees.templateId, saved.id))
-      if (labelIds.length > 0) {
-        await tx.insert(taskTemplateLabels).values(
-          labelIds.map(labelId => ({
-            templateId: saved.id,
-            labelId,
-            organizationId
-          }))
-        )
-      }
-      if (assigneeIds.length > 0) {
-        await tx.insert(taskTemplateAssignees).values(
-          assigneeIds.map(userId => ({
-            templateId: saved.id,
-            userId,
-            organizationId
-          }))
-        )
-      }
+    }
+    if (assigneeIds.length > 0) {
+      await tx.insert(taskTemplateAssignees).values(
+        assigneeIds.map(userId => ({
+          templateId: saved.id,
+          userId,
+          organizationId
+        }))
+      )
     }
     const [template] = await templatesOf(tx, identity.userId, saved.id)
     if (!template) throw new Error('saved template is gone')
     return template
   }
 
-  async function remove(tx: Tx, owner: Owner, templateId: string) {
+  async function remove(tx: Tx, projectId: string, templateId: string) {
     await bumpBoardsUsing(tx, templateId)
     const deleted = await tx
       .delete(taskTemplates)
-      .where(and(eq(taskTemplates.id, templateId), ownedBy(owner)))
+      .where(inProject(projectId, templateId))
       .returning({ id: taskTemplates.id })
     if (deleted.length === 0) throw new Refused('not_found')
     return null
   }
 
-  const own = (fields: OwnTemplateFields) => ({
-    ...fields,
-    labelIds: [],
-    assigneeIds: []
-  })
-
   return {
     listTemplates(identity: Identity) {
       return write(identity, tx => templatesOf(tx, identity.userId))
-    },
-
-    createOwnTemplate(identity: Identity, fields: OwnTemplateFields) {
-      return write(identity, tx =>
-        save(tx, identity, { userId: identity.userId }, own(fields))
-      )
-    },
-
-    editOwnTemplate(
-      identity: Identity,
-      templateId: string,
-      fields: OwnTemplateFields
-    ) {
-      return write(identity, tx =>
-        save(tx, identity, { userId: identity.userId }, own(fields), templateId)
-      )
-    },
-
-    deleteOwnTemplate(identity: Identity, templateId: string) {
-      return write(identity, tx =>
-        remove(tx, { userId: identity.userId }, templateId)
-      )
     },
 
     createProjectTemplate(
@@ -256,7 +216,7 @@ export function createTemplateStore(db: Db) {
     ) {
       return write(identity, async tx => {
         await checkEditor(tx, identity, projectId)
-        return save(tx, identity, { projectId }, fields)
+        return save(tx, identity, projectId, fields)
       })
     },
 
@@ -268,7 +228,7 @@ export function createTemplateStore(db: Db) {
     ) {
       return write(identity, async tx => {
         await checkEditor(tx, identity, projectId)
-        return save(tx, identity, { projectId }, fields, templateId)
+        return save(tx, identity, projectId, fields, templateId)
       })
     },
 
@@ -279,7 +239,7 @@ export function createTemplateStore(db: Db) {
     ) {
       return write(identity, async tx => {
         await checkEditor(tx, identity, projectId)
-        return remove(tx, { projectId }, templateId)
+        return remove(tx, projectId, templateId)
       })
     }
   }

@@ -247,7 +247,7 @@ export function NewTaskDialog({
   )
   const projectName = useProjectName()
   const usable = (useTemplates().data ?? []).filter(
-    each => each.projectId === null || each.projectId === board?.project.id
+    each => each.projectId === board?.project.id
   )
   // Dropped when another board's project cannot use it.
   const [picking, setPicking] = useState<Template | null>(null)

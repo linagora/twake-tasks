@@ -32,9 +32,6 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `GET /api/search`
 - `GET /api/settings`
 - `GET /api/templates`
-- `POST /api/templates`
-- `DELETE /api/templates/:templateId`
-- `PUT /api/templates/:templateId`
 
 ## Viewers of the board
 

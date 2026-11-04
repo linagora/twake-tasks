@@ -22,7 +22,7 @@ export function useTemplates(): UseQueryResult<Template[]> {
 export interface TemplateSave {
   /** Left out, a new template. */
   templateId?: string | undefined
-  projectId: string | null
+  projectId: string
   fields: TemplateFields
 }
 
@@ -49,7 +49,7 @@ export function useSaveTemplate(): UseMutationResult<
   const api = useBoardsApi()
   return useTemplateChange(({ templateId, projectId, fields }: TemplateSave) =>
     templateId === undefined
-      ? api.createTemplate({ projectId }, fields)
+      ? api.createTemplate(projectId, fields)
       : api.editTemplate({ id: templateId, projectId }, fields)
   )
 }

@@ -84,12 +84,6 @@ async function aBoard(
 const filtersOf = async (user: TestUser) =>
   (await api.as(user).get('/filters')).json<{ filters: object[] }>().filters
 
-const templatesOf = async (user: TestUser) =>
-  (await api.as(user).get('/templates')).json<{ templates: object[] }>()
-    .templates
-
-const ownTemplate = { title: 'Weekly review', description: '', priority: null }
-
 async function personalProjectsOf(user: TestUser) {
   return db.transaction(async tx => {
     await asTenant(tx, user)
@@ -292,16 +286,6 @@ describe.each([
     expect(await filtersOf(gone)).toEqual([])
   })
 
-  it('loses its own templates', async () => {
-    const gone = makeUser()
-    await boardsOf(gone)
-    await api.as(gone).post('/templates', ownTemplate)
-
-    await deliver(routingKey, body(gone))
-
-    expect(await templatesOf(gone)).toEqual([])
-  })
-
   it('loses the invitation e-mails it sent and received', async () => {
     const gone = makeUser()
     const owner = aUser({ organizationId: gone.organizationId })
@@ -413,7 +397,6 @@ describe('a deleted organization', () => {
     await api
       .as(filterer)
       .post('/filters', { name: 'Mine', criteria: { priority: [1] } })
-    await api.as(filterer).post('/templates', ownTemplate)
   }
 
   it('erases everything the organization holds, and nothing of another', async () => {
@@ -437,11 +420,9 @@ describe('a deleted organization', () => {
     expect(await projectsOf(organizationId)).toEqual([])
     expect(await jobsOf(organizationId)).toEqual([])
     expect(await filtersOf(colleague)).toEqual([])
-    expect(await templatesOf(colleague)).toEqual([])
     expect(await projectsOf(outsider.organizationId)).not.toEqual([])
     expect(await jobsOf(outsider.organizationId)).not.toEqual([])
     expect(await filtersOf(outsider)).not.toEqual([])
-    expect(await templatesOf(outsider)).not.toEqual([])
   })
 
   it('changes nothing when replayed', async () => {

@@ -4,7 +4,7 @@ import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 
 interface Template {
   id: string
-  projectId: string | null
+  projectId: string
   title: string
   description: string
   priority: number | null
@@ -14,6 +14,7 @@ interface Template {
 
 interface Board {
   id: string
+  version: number
   sections: { id: string; name: string }[]
   tasks: {
     id: string
@@ -158,6 +159,25 @@ describe('project templates', () => {
     expect((await board.load()).tasks).toMatchObject([{ template: null }])
   })
 
+  it('reloads the boards whose tasks it made when edited or deleted', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+    const sibling = await aBoard(alice, 'OPS', board.projectId)
+    const template = (await board.addTemplate()).json<Template>()
+    await board.use(template.id)
+    const url = `/projects/${board.projectId}/templates/${template.id}`
+    const before = (await board.load()).version
+    const untouched = (await sibling.load()).version
+
+    await api.as(alice).put(url, { ...fields, title: 'Close the books' })
+    const edited = (await board.load()).version
+    await api.as(alice).delete(url)
+
+    expect(edited).toBeGreaterThan(before)
+    expect((await board.load()).version).toBeGreaterThan(edited)
+    expect((await sibling.load()).version).toBe(untouched)
+  })
+
   it('takes someone who leaves the project off its templates', async () => {
     const alice = aUser()
     const bob = aUser({ organizationId: alice.organizationId })
@@ -230,70 +250,12 @@ describe('project templates', () => {
   })
 })
 
-describe('personal templates', () => {
-  it('serve every board their owner adds tasks to, and stay private', async () => {
-    const alice = aUser()
-    const bob = aUser({ organizationId: alice.organizationId })
-    const board = await aBoard(alice)
-    const other = await aBoard(alice, 'OPS')
-    await joinBoard(db, alice, board.id, bob, 'editor')
-    const created = await api.as(alice).post('/templates', own)
-    const template = created.json<Template>()
+describe('templates without a project', () => {
+  it('are not offered', async () => {
+    const as = api.as(aUser())
 
-    await board.use(template.id)
-    await other.use(template.id)
-    const byBob = await board.use(template.id, bob)
+    const created = await as.post('/templates', own)
 
-    expect(created.statusCode).toBe(201)
-    expect(template).toMatchObject({ projectId: null, labelIds: [] })
-    expect(await templatesOf(alice)).toEqual([template])
-    expect(await templatesOf(bob)).toEqual([])
-    expect(byBob.json()).toEqual({ error: 'invalid_template' })
-    expect(
-      (await api.as(bob).get(`/boards/${board.id}`)).json<Board>().tasks
-    ).toMatchObject([{ template: { id: template.id, title: null } }])
-    expect((await other.load()).tasks).toMatchObject([
-      { template: { id: template.id, title: own.title } }
-    ])
-  })
-
-  it('hold no labels or assignees, which belong to a project', async () => {
-    const alice = aUser()
-
-    const refused = await api.as(alice).post('/templates', fields)
-
-    expect(refused.statusCode).toBe(400)
-  })
-
-  it('are edited and deleted by their owner alone', async () => {
-    const alice = aUser()
-    const mallory = aUser({ organizationId: alice.organizationId })
-    const template = (
-      await api.as(alice).post('/templates', own)
-    ).json<Template>()
-    const url = `/templates/${template.id}`
-
-    const edited = await api.as(mallory).put(url, { ...own, title: 'Mine' })
-    const deleted = await api.as(mallory).delete(url)
-    const renamed = await api.as(alice).put(url, { ...own, title: 'Books' })
-
-    expect(edited.statusCode).toBe(404)
-    expect(deleted.statusCode).toBe(404)
-    expect(renamed.json()).toMatchObject({ title: 'Books' })
-  })
-
-  it('are not reached through a project route', async () => {
-    const alice = aUser()
-    const board = await aBoard(alice)
-    const template = (
-      await api.as(alice).post('/templates', own)
-    ).json<Template>()
-
-    const deleted = await api
-      .as(alice)
-      .delete(`/projects/${board.projectId}/templates/${template.id}`)
-
-    expect(deleted.statusCode).toBe(404)
-    expect(await templatesOf(alice)).toEqual([template])
+    expect(created.statusCode).toBe(404)
   })
 })

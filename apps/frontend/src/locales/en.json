@@ -27,7 +27,7 @@
   },
   "templates": {
     "title": "Templates",
-    "hint": "Start a task from a template on any board. Your own templates are yours alone; a project’s templates are shared with everyone in it.",
+    "hint": "Start a task from a template on any board of its project. A project’s templates are shared with everyone in it.",
     "new": "New template",
     "editTitle": "Edit template",
     "close": "Close",
@@ -38,9 +38,6 @@
     "where": "Available in",
     "assignTitle": "Assign the tasks made from it",
     "labelTitle": "Label the tasks made from it",
-    "mine": "My templates",
-    "onlyMe": "Only me",
-    "mineHint": "Only you see it, on every board. Labels and assignees belong to a project: pick one to add them.",
     "projectHint": "Everyone in the project sees it, on each of its boards. Its editors can use and change it.",
     "refused": "A label or a person is no longer in the project. Check them and save again.",
     "saveFailed": "Couldn’t save the template.",
@@ -230,7 +227,6 @@
   },
   "task": {
     "template": "Template",
-    "someonesTemplate": "Someone’s own template",
     "description": "Description",
     "editDescription": "Edit description",
     "loadFailed": "The description could not be loaded.",

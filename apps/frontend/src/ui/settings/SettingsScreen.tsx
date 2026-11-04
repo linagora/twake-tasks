@@ -69,7 +69,6 @@ function TemplateSettings(): ReactElement {
   const groups = groupsOf(
     templates.data ?? [],
     projects.data ?? [],
-    t('templates.mine'),
     projectName
   )
   const failed = templates.isError || projects.isError
@@ -88,14 +87,16 @@ function TemplateSettings(): ReactElement {
           </>
         }
         actions={
-          <Button
-            startIcon={<Icon icon={Plus} />}
-            onClick={() => {
-              setEditing('new')
-            }}
-          >
-            {t('templates.new')}
-          </Button>
+          editable.length > 0 && (
+            <Button
+              startIcon={<Icon icon={Plus} />}
+              onClick={() => {
+                setEditing('new')
+              }}
+            >
+              {t('templates.new')}
+            </Button>
+          )
         }
       />
       {failed && (
@@ -172,30 +173,22 @@ function TemplateSettings(): ReactElement {
   )
 }
 
-// The person's own first, then each project's by name.
 function groupsOf(
   templates: Template[],
   projects: Project[],
-  mine: string,
   projectName: (project: Project) => string
 ): Group[] {
-  const own = templates.filter(template => template.projectId === null)
-  return [
-    ...(own.length > 0
-      ? [{ key: 'mine', label: mine, templates: own, editable: true }]
-      : []),
-    ...projects
-      .map(project => ({
-        key: project.id,
-        label: projectName(project),
-        templates: templates.filter(
-          template => template.projectId === project.id
-        ),
-        editable: editsProject(project)
-      }))
-      .filter(group => group.templates.length > 0)
-      .sort((a, b) => a.label.localeCompare(b.label))
-  ]
+  return projects
+    .map(project => ({
+      key: project.id,
+      label: projectName(project),
+      templates: templates.filter(
+        template => template.projectId === project.id
+      ),
+      editable: editsProject(project)
+    }))
+    .filter(group => group.templates.length > 0)
+    .sort((a, b) => a.label.localeCompare(b.label))
 }
 
 function TemplateRow({

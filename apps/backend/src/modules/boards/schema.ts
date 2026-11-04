@@ -412,17 +412,14 @@ export const taskLabels = pgTable.withRLS(
   ]
 )
 
-// A template belongs to a project, for every board of it, or to one person,
-// for any board they can add tasks to. Only a project's template holds labels
-// and assignees, which belong to the project.
+// A template belongs to a project, for every board of it.
 export const taskTemplates = pgTable.withRLS(
   'task_templates',
   {
     id: id(),
-    projectId: uuid('project_id').references(() => projects.id, {
-      onDelete: 'cascade'
-    }),
-    userId: uuid('user_id'),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
     organizationId: organizationId(),
     title: text().notNull(),
     description: text().notNull().default(''),
@@ -434,27 +431,12 @@ export const taskTemplates = pgTable.withRLS(
   table => [
     unique().on(table.tenant, table.id),
     index().on(table.projectId),
-    index().on(table.userId),
     foreignKey({
       columns: [table.tenant, table.projectId],
       foreignColumns: [projects.tenant, projects.id]
     }),
-    check(
-      'task_templates_project_or_person',
-      sql`(${table.projectId} is null) <> (${table.userId} is null)`
-    ),
     check('task_templates_priority', sql`${table.priority} between 1 and 4`),
-    tenantPolicy(
-      table.organizationId,
-      sql`${table.userId} = ${currentUser} or ${visibleProject(table.projectId)}`
-    ),
-    // Someone's own templates stay theirs inside an organization too. The
-    // erase of an organization reaches every person's through this flag.
-    pgPolicy('own', {
-      as: 'restrictive',
-      using: sql`${table.userId} is null or ${table.userId} = ${currentUser} or current_setting('app.erasing_organization', true) = 'on'`,
-      withCheck: sql`${table.userId} is null or ${table.userId} = ${currentUser}`
-    })
+    tenantPolicy(table.organizationId, visibleProject(table.projectId))
   ]
 )
 
