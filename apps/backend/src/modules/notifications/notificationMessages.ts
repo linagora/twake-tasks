@@ -1,3 +1,4 @@
+import type { NotificationKind } from '@twake-tasks/api-contract'
 import type { Language } from '../boards/index.ts'
 
 export type Why = 'assigned' | 'mentioned' | 'following' | 'reminder'
@@ -41,6 +42,13 @@ export interface NotificationMessages {
   digest: {
     subject: Partial<Record<Intl.LDMLPluralRule, string>> & { other: string }
     body: string
+  }
+  settings: string
+  unsubscribe: string
+  daily: {
+    subject: Partial<Record<Intl.LDMLPluralRule, string>> & { other: string }
+    body: string
+    kinds: Record<NotificationKind, string>
   }
 }
 
@@ -112,6 +120,22 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     digest: {
       subject: { one: '# more notification', other: '# more notifications' },
       body: 'You got many notifications in a short time, so we did not email each one. They are all in the app.'
+    },
+    settings: 'Change which emails you get',
+    unsubscribe: 'Unsubscribe from these emails',
+    daily: {
+      subject: {
+        one: 'Your daily summary: # notification',
+        other: 'Your daily summary: # notifications'
+      },
+      body: 'What happened on your tasks since yesterday.',
+      kinds: {
+        assigned: 'Assignment',
+        mentioned: 'Mention',
+        reminder: 'Reminder',
+        changes: 'Change',
+        comments: 'Comment'
+      }
     }
   },
   fr: {
@@ -183,6 +207,22 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     digest: {
       subject: { one: '# autre notification', other: '# autres notifications' },
       body: "Vous avez reçu beaucoup de notifications en peu de temps, nous ne les avons donc pas toutes envoyées par e-mail. Elles sont toutes dans l'application."
+    },
+    settings: 'Choisir les e-mails que vous recevez',
+    unsubscribe: 'Se désabonner de ces e-mails',
+    daily: {
+      subject: {
+        one: 'Votre résumé du jour : # notification',
+        other: 'Votre résumé du jour : # notifications'
+      },
+      body: 'Ce qui s’est passé sur vos tâches depuis hier.',
+      kinds: {
+        assigned: 'Assignation',
+        mentioned: 'Mention',
+        reminder: 'Rappel',
+        changes: 'Modification',
+        comments: 'Commentaire'
+      }
     }
   },
   de: {
@@ -257,6 +297,22 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
         other: '# weitere Benachrichtigungen'
       },
       body: 'Du hast in kurzer Zeit viele Benachrichtigungen erhalten, daher haben wir nicht jede per E-Mail geschickt. Alle findest du in der App.'
+    },
+    settings: 'Auswählen, welche E-Mails du bekommst',
+    unsubscribe: 'Diese E-Mails abbestellen',
+    daily: {
+      subject: {
+        one: 'Deine Tageszusammenfassung: # Benachrichtigung',
+        other: 'Deine Tageszusammenfassung: # Benachrichtigungen'
+      },
+      body: 'Was seit gestern bei deinen Aufgaben passiert ist.',
+      kinds: {
+        assigned: 'Zuweisung',
+        mentioned: 'Erwähnung',
+        reminder: 'Erinnerung',
+        changes: 'Änderung',
+        comments: 'Kommentar'
+      }
     }
   },
   it: {
@@ -327,6 +383,22 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     digest: {
       subject: { one: '# altra notifica', other: '# altre notifiche' },
       body: "Hai ricevuto molte notifiche in poco tempo, quindi non le abbiamo inviate tutte per email. Le trovi tutte nell'app."
+    },
+    settings: 'Scegli quali email ricevere',
+    unsubscribe: 'Annulla l’iscrizione a queste email',
+    daily: {
+      subject: {
+        one: 'Il tuo riepilogo del giorno: # notifica',
+        other: 'Il tuo riepilogo del giorno: # notifiche'
+      },
+      body: 'Cosa è successo sulle tue attività da ieri.',
+      kinds: {
+        assigned: 'Assegnazione',
+        mentioned: 'Menzione',
+        reminder: 'Promemoria',
+        changes: 'Modifica',
+        comments: 'Commento'
+      }
     }
   },
   es: {
@@ -395,6 +467,22 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     digest: {
       subject: { one: '# notificación más', other: '# notificaciones más' },
       body: 'Recibiste muchas notificaciones en poco tiempo, así que no te enviamos cada una por correo. Están todas en la aplicación.'
+    },
+    settings: 'Elegir qué correos recibes',
+    unsubscribe: 'Darse de baja de estos correos',
+    daily: {
+      subject: {
+        one: 'Tu resumen del día: # notificación',
+        other: 'Tu resumen del día: # notificaciones'
+      },
+      body: 'Lo que pasó en tus tareas desde ayer.',
+      kinds: {
+        assigned: 'Asignación',
+        mentioned: 'Mención',
+        reminder: 'Recordatorio',
+        changes: 'Cambio',
+        comments: 'Comentario'
+      }
     }
   },
   ru: {
@@ -468,6 +556,24 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
         other: 'Ещё # уведомления'
       },
       body: 'За короткое время пришло много уведомлений, поэтому мы не отправили каждое по почте. Все они есть в приложении.'
+    },
+    settings: 'Выбрать, какие письма получать',
+    unsubscribe: 'Отписаться от этих писем',
+    daily: {
+      subject: {
+        one: 'Ваша сводка за день: # уведомление',
+        few: 'Ваша сводка за день: # уведомления',
+        many: 'Ваша сводка за день: # уведомлений',
+        other: 'Ваша сводка за день: # уведомления'
+      },
+      body: 'Что произошло с вашими задачами со вчерашнего дня.',
+      kinds: {
+        assigned: 'Назначение',
+        mentioned: 'Упоминание',
+        reminder: 'Напоминание',
+        changes: 'Изменение',
+        comments: 'Комментарий'
+      }
     }
   },
   vi: {
@@ -531,6 +637,19 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
     digest: {
       subject: { other: '# thông báo khác' },
       body: 'Bạn nhận được nhiều thông báo trong thời gian ngắn nên chúng tôi không gửi email cho từng thông báo. Tất cả đều có trong ứng dụng.'
+    },
+    settings: 'Chọn những email bạn nhận',
+    unsubscribe: 'Hủy đăng ký các email này',
+    daily: {
+      subject: { other: 'Tóm tắt trong ngày của bạn: # thông báo' },
+      body: 'Những gì đã diễn ra với các công việc của bạn từ hôm qua.',
+      kinds: {
+        assigned: 'Giao việc',
+        mentioned: 'Nhắc đến',
+        reminder: 'Lời nhắc',
+        changes: 'Thay đổi',
+        comments: 'Bình luận'
+      }
     }
   }
 }

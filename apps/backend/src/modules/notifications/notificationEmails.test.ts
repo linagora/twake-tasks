@@ -3,8 +3,12 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb } from '../../infra/db.ts'
 import type { Mail } from '../../infra/mail.ts'
 import { createScheduler } from '../../scheduler/scheduler.ts'
-import { aUser, joinBoard, startApp } from '../../testing/app.ts'
+import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 import { userSettings } from '../settings/index.ts'
+import {
+  emailDailySummary,
+  NOTIFICATION_DAILY_JOB
+} from './notificationDaily.ts'
 import { emailDigest, NOTIFICATION_DIGEST_JOB } from './notificationDigest.ts'
 import {
   emailNotification,
@@ -38,7 +42,8 @@ function aMailbox(budget = { max: 0, windowSeconds: 600 }) {
     logger: pino({ level: 'silent' }),
     handlers: {
       [NOTIFICATION_EMAIL_JOB]: emailNotification(deps),
-      [NOTIFICATION_DIGEST_JOB]: emailDigest(deps)
+      [NOTIFICATION_DIGEST_JOB]: emailDigest(deps),
+      [NOTIFICATION_DAILY_JOB]: emailDailySummary(deps)
     }
   })
   // The job queue is shared with the other test files, which may have filled
@@ -92,7 +97,10 @@ describe('notification emails', () => {
         to: bob.email,
         subject: `Alice Martin assigned you ${task.key} Logo`,
         text: expect.stringContaining(link) as string,
-        html: expect.stringContaining(`href="${link}"`) as string
+        html: expect.stringContaining(`href="${link}"`) as string,
+        headers: expect.objectContaining({
+          'List-Unsubscribe': expect.stringContaining('kind=assigned') as string
+        }) as Record<string, string>
       }
     ])
     expect(sent[0]?.text).toContain('Alice Martin assigned you a task')
@@ -330,7 +338,10 @@ describe('notification emails', () => {
         text: expect.stringContaining(
           'https://tasks.example.com/notifications'
         ) as string,
-        html: expect.stringContaining('See all notifications') as string
+        html: expect.stringContaining('See all notifications') as string,
+        headers: expect.objectContaining({
+          'List-Unsubscribe': expect.stringContaining('kind=all') as string
+        }) as Record<string, string>
       }
     ])
   })
@@ -421,5 +432,259 @@ describe('notification emails', () => {
     await mailbox.deliver()
 
     expect(mailbox.sent.filter(mail => mail.to === bob.email)).toEqual([])
+  })
+})
+
+// Here and not in a file of their own: a second file running the email jobs
+// at the same time would take the other's jobs off the shared queue.
+async function aFollowedTask() {
+  const alice = aUser({ name: 'Alice Martin' })
+  const bob = aUser({ organizationId: alice.organizationId })
+  const board = (
+    await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
+  ).json<{ id: string }>()
+  await joinBoard(db, alice, board.id, bob, 'editor')
+  const task = (
+    await api
+      .as(alice)
+      .post(`/boards/${board.id}/tasks`, { sectionId: null, title: 'Logo' })
+  ).json<{ id: string; key: string }>()
+  const path = `/boards/${board.id}/tasks/${task.id}`
+  await api.as(bob).put(`${path}/follow`, {})
+  return { alice, bob, board, task, path }
+}
+
+const choose = (
+  user: TestUser,
+  preferences: {
+    mutedInApp?: string[]
+    mutedEmail?: string[]
+    emailFrequency?: string
+  }
+) =>
+  api.as(user).put('/settings/notifications', {
+    mutedInApp: [],
+    mutedEmail: [],
+    emailFrequency: 'instant',
+    ...preferences
+  })
+
+async function notificationsOf(user: TestUser) {
+  return (await api.as(user).get('/notifications')).json<{
+    notifications: { id: string; reason: string; change: unknown }[]
+  }>().notifications
+}
+
+const mailsTo = (sent: Mail[], user: TestUser, boardId: string) =>
+  sent.filter(mail => mail.to === user.email && mail.text.includes(boardId))
+
+describe('notification settings', () => {
+  it('turns every kind on for someone who never chose', async () => {
+    const response = await api.as(aUser()).get('/settings/notifications')
+
+    expect(response.json()).toEqual({
+      mutedInApp: [],
+      mutedEmail: [],
+      emailFrequency: 'instant'
+    })
+  })
+
+  it('keeps a kind turned off in the app off by email too', async () => {
+    const user = aUser()
+
+    const saved = await choose(user, { mutedInApp: ['changes'] })
+
+    expect(saved.json()).toEqual({
+      mutedInApp: ['changes'],
+      mutedEmail: ['changes'],
+      emailFrequency: 'instant'
+    })
+    expect((await api.as(user).get('/settings/notifications')).json()).toEqual(
+      saved.json()
+    )
+  })
+
+  it('refuses a kind it does not know', async () => {
+    const response = await choose(aUser(), { mutedEmail: ['everything'] })
+
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('still shows a change in the app with its email off', async () => {
+    const { alice, bob, board, path } = await aFollowedTask()
+    await choose(bob, { mutedEmail: ['changes'] })
+    const mailbox = aMailbox()
+
+    await api.as(alice).patch(path, { priority: 1 })
+    await mailbox.deliver()
+
+    expect(await notificationsOf(bob)).toHaveLength(1)
+    expect(mailsTo(mailbox.sent, bob, board.id)).toEqual([])
+  })
+
+  it('drops changes turned off in the app, but not an assignment', async () => {
+    const { alice, bob, board, path } = await aFollowedTask()
+    await choose(bob, { mutedInApp: ['changes'] })
+    const mailbox = aMailbox()
+
+    await api.as(alice).patch(path, { priority: 1 })
+    await mailbox.deliver()
+    expect(await notificationsOf(bob)).toEqual([])
+    expect(mailsTo(mailbox.sent, bob, board.id)).toEqual([])
+
+    await api.as(alice).put(`${path}/assignees`, { userIds: [bob.userId] })
+    await mailbox.deliver()
+    expect((await notificationsOf(bob)).map(each => each.reason)).toEqual([
+      'assigned'
+    ])
+    expect(mailsTo(mailbox.sent, bob, board.id)).toHaveLength(1)
+  })
+
+  it('drops comments turned off, but still tells of a rename', async () => {
+    const { alice, bob, path } = await aFollowedTask()
+    await choose(bob, { mutedInApp: ['comments'] })
+
+    await api.as(alice).post(`${path}/comments`, { body: 'Looks good' })
+    expect(await notificationsOf(bob)).toEqual([])
+
+    await api.as(alice).patch(path, { title: 'New logo' })
+    expect(await notificationsOf(bob)).toHaveLength(1)
+  })
+
+  it('emails nothing with the frequency never', async () => {
+    const { alice, bob, board, path } = await aFollowedTask()
+    await choose(bob, { emailFrequency: 'never' })
+    const mailbox = aMailbox()
+
+    await api.as(alice).put(`${path}/assignees`, { userIds: [bob.userId] })
+    await mailbox.deliver()
+
+    expect(await notificationsOf(bob)).toHaveLength(1)
+    expect(mailsTo(mailbox.sent, bob, board.id)).toEqual([])
+  })
+
+  it('sends one daily summary at 8:00 in the time zone of the person', async () => {
+    const { alice, bob, board, task, path } = await aFollowedTask()
+    await db.insert(userSettings).values({
+      email: bob.email.toLowerCase(),
+      version: 1,
+      timezone: 'Asia/Tokyo'
+    })
+    await choose(bob, { emailFrequency: 'daily' })
+    const mailbox = aMailbox()
+
+    await api.as(alice).put(`${path}/assignees`, { userIds: [bob.userId] })
+    await api.as(alice).post(`${path}/comments`, { body: 'Looks good' })
+    await mailbox.deliver()
+    expect(mailsTo(mailbox.sent, bob, board.id)).toEqual([])
+
+    const jobs = await sql<{ runAt: string }[]>`
+      select run_at as "runAt" from jobs
+      where kind = ${NOTIFICATION_DAILY_JOB} and user_id = ${bob.userId}`
+    expect(jobs).toHaveLength(1)
+    const runAt = new Date(jobs[0]?.runAt ?? '')
+    expect(
+      new Intl.DateTimeFormat('en', {
+        timeZone: 'Asia/Tokyo',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23'
+      }).format(runAt)
+    ).toBe('08:00')
+    expect(runAt.getTime() - Date.now()).toBeLessThanOrEqual(86_400_000)
+
+    await makeDue(NOTIFICATION_DAILY_JOB, bob.userId)
+    await mailbox.deliver()
+
+    const sent = mailsTo(mailbox.sent, bob, board.id)
+    expect(sent.map(mail => mail.subject)).toEqual([
+      'Your daily summary: 2 notifications'
+    ])
+    expect(sent[0]?.text).toContain(`Assignment · ${task.key} Logo`)
+    expect(sent[0]?.text).toContain(`Comment · ${task.key} Logo`)
+  })
+
+  it('ends each email with links to change or stop it', async () => {
+    const { alice, bob, board, path } = await aFollowedTask()
+    const mailbox = aMailbox()
+
+    await api.as(alice).patch(path, { priority: 1 })
+    await mailbox.deliver()
+
+    const [mail] = mailsTo(mailbox.sent, bob, board.id)
+    const unsubscribe =
+      /https:\/\/tasks\.example\.com\/unsubscribe\?token=([0-9a-f-]+)&kind=changes/.exec(
+        mail?.text ?? ''
+      )
+    expect(unsubscribe).not.toBeNull()
+    expect(mail?.text).toContain(
+      'Change which emails you get: https://tasks.example.com/settings#notifications'
+    )
+    expect(mail?.headers).toEqual({
+      'List-Unsubscribe': `<https://tasks.example.com/api/settings/notifications/unsubscribe?token=${unsubscribe?.[1] ?? ''}&kind=changes>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+    })
+  })
+
+  it('turns an email off from its one-click link, without a session', async () => {
+    const { alice, bob, board, path } = await aFollowedTask()
+    const mailbox = aMailbox()
+    await api.as(alice).patch(path, { priority: 1 })
+    await mailbox.deliver()
+    const [mail] = mailsTo(mailbox.sent, bob, board.id)
+    const url = /<https:\/\/tasks\.example\.com(\/api\/[^>]+)>/.exec(
+      mail?.headers?.['List-Unsubscribe'] ?? ''
+    )?.[1]
+
+    const response = await api.inject({
+      method: 'POST',
+      url: url ?? '',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      payload: 'List-Unsubscribe=One-Click'
+    })
+
+    expect(response.statusCode).toBe(204)
+    expect(
+      (await api.as(bob).get('/settings/notifications')).json()
+    ).toMatchObject({ mutedEmail: ['changes'], emailFrequency: 'instant' })
+  })
+
+  it('refuses a link no email carried', async () => {
+    const response = await api.inject({
+      method: 'POST',
+      url: `/api/settings/notifications/unsubscribe?token=${crypto.randomUUID()}&kind=all`
+    })
+
+    expect(response.statusCode).toBe(404)
+  })
+
+  it('removes a notification for good', async () => {
+    const { alice, bob, path } = await aFollowedTask()
+    await api.as(alice).patch(path, { priority: 1 })
+    const [notification] = await notificationsOf(bob)
+
+    const removed = await api
+      .as(bob)
+      .delete(`/notifications/${notification?.id ?? ''}`)
+    const again = await api
+      .as(bob)
+      .delete(`/notifications/${notification?.id ?? ''}`)
+
+    expect(removed.statusCode).toBe(204)
+    expect(again.statusCode).toBe(404)
+    expect(await notificationsOf(bob)).toEqual([])
+  })
+
+  it("does not remove someone else's notification", async () => {
+    const { alice, bob, path } = await aFollowedTask()
+    await api.as(alice).patch(path, { priority: 1 })
+    const [notification] = await notificationsOf(bob)
+
+    const response = await api
+      .as(alice)
+      .delete(`/notifications/${notification?.id ?? ''}`)
+
+    expect(response.statusCode).toBe(404)
+    expect(await notificationsOf(bob)).toHaveLength(1)
   })
 })

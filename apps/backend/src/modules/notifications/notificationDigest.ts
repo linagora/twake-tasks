@@ -11,7 +11,9 @@ import {
   languageOf,
   layout
 } from '../boards/index.ts'
+import { preferencesOf, unsubscribeTokenOf } from '../settings/index.ts'
 import { NOTIFICATION_MESSAGES } from './notificationMessages.ts'
+import { preferenceLinks } from './preferenceLinks.ts'
 import { notificationEmailBudgets as budgets } from './schema.ts'
 
 export const NOTIFICATION_DIGEST_JOB = 'notification_digest'
@@ -110,18 +112,32 @@ export async function takeEmail(
   return false
 }
 
-function digestMail(appUrl: string, to: Recipient, count: number): Mail {
+function digestMail(
+  appUrl: string,
+  to: Recipient,
+  count: number,
+  token: string
+): Mail {
   const lang = languageOf(to.language)
   const messages = NOTIFICATION_MESSAGES[lang]
   const form = new Intl.PluralRules(lang).select(count)
   const subject = (
     messages.digest.subject[form] ?? messages.digest.subject.other
   ).replace('#', String(count))
-  const link = `${appUrl.replace(/\/$/, '')}/notifications`
+  const base = appUrl.replace(/\/$/, '')
+  const link = `${base}/notifications`
+  const links = preferenceLinks(base, messages, token, 'all')
   return {
     to: to.email,
     subject,
-    text: `${messages.digest.body}\n\n${messages.all}: ${link}\n`,
+    text: [
+      messages.digest.body,
+      '',
+      `${messages.all}: ${link}`,
+      ...links.text,
+      ''
+    ].join('\n'),
+    headers: links.headers,
     html: layout({
       lang,
       appName: APP_NAME,
@@ -133,7 +149,7 @@ function digestMail(appUrl: string, to: Recipient, count: number): Mail {
         href: link,
         fallback: messages.fallback
       },
-      footer: APP_NAME
+      footer: `${APP_NAME}<br>${links.html}`
     })
   }
 }
@@ -148,10 +164,13 @@ export function emailDigest(deps: {
   return async (raw, tx) => {
     const to = recipient.parse(raw)
     const row = await lockBudget(tx, to.userId, deps.budget)
-    if (row.held === 0) {
+    if (
+      row.held === 0 ||
+      (await preferencesOf(tx, to.userId)).emailFrequency === 'never'
+    ) {
       await tx
         .update(budgets)
-        .set({ digestScheduled: false })
+        .set({ held: 0, digestScheduled: false })
         .where(eq(budgets.userId, to.userId))
       return undefined
     }
@@ -166,9 +185,10 @@ export function emailDigest(deps: {
     }
     await takeSlot(tx, to.userId, row)
     const count = row.held
+    const token = await unsubscribeTokenOf(tx, to.userId)
     return async (db: Db) => {
       await sendCounted(db, to.userId, () =>
-        deps.send(digestMail(deps.appUrl, to, count))
+        deps.send(digestMail(deps.appUrl, to, count, token))
       )
       const [left] = await db
         .update(budgets)

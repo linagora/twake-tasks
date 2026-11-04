@@ -24,14 +24,21 @@ import {
   tasks,
   type Language
 } from '../boards/index.ts'
-import { userSettings } from '../settings/index.ts'
+import {
+  notificationKind,
+  preferencesOf,
+  unsubscribeTokenOf,
+  userSettings
+} from '../settings/index.ts'
 import { mentionedEmails, plainText, withNames } from '../tasks/index.ts'
+import { planDailySummary } from './notificationDaily.ts'
 import { sendCounted, takeEmail } from './notificationDigest.ts'
 import {
   NOTIFICATION_MESSAGES,
   type NotificationMessages,
   type Why
 } from './notificationMessages.ts'
+import { preferenceLinks } from './preferenceLinks.ts'
 
 export const NOTIFICATION_EMAIL_JOB = 'notification_email'
 
@@ -222,6 +229,8 @@ export function emailNotification(deps: {
     const [row] = await tx
       .select({
         reason: notifications.reason,
+        commentId: notifications.commentId,
+        createdAt: notifications.createdAt,
         actorId: notifications.actorId,
         historyField: taskHistory.field,
         historyFrom: taskHistory.from,
@@ -275,6 +284,23 @@ export function emailNotification(deps: {
         )
       )
     if (!row) return undefined
+    const kind = notificationKind(row.reason, row.commentId !== null)
+    const preferences = await preferencesOf(tx, job.userId)
+    if (
+      preferences.emailFrequency === 'never' ||
+      preferences.mutedEmail.includes(kind)
+    ) {
+      return undefined
+    }
+    if (preferences.emailFrequency === 'daily') {
+      await planDailySummary(
+        tx,
+        { userId: job.userId, organizationId: job.organizationId },
+        row.createdAt,
+        row.timezone
+      )
+      return undefined
+    }
     const counted = row.reason !== 'reminder' && deps.budget.max > 0
     if (
       counted &&
@@ -369,6 +395,12 @@ export function emailNotification(deps: {
       row.priority && messages.priorityLabel(String(row.priority)),
       row.section && plain(row.section)
     ].filter((fact): fact is string => Boolean(fact))
+    const links = preferenceLinks(
+      base,
+      messages,
+      await unsubscribeTokenOf(tx, job.userId),
+      kind
+    )
 
     const text = [
       event,
@@ -382,6 +414,7 @@ export function emailNotification(deps: {
       '',
       messages.why[why](row.key),
       `${messages.all}: ${base}/notifications`,
+      ...links.text,
       ''
     ].join('\n')
 
@@ -411,10 +444,11 @@ export function emailNotification(deps: {
           : ''
       ].join('\n'),
       action: { label: messages.open, href: link, fallback: messages.fallback },
-      footer: `${escape(messages.why[why](row.key))}<br><a href="${escape(`${base}/notifications`)}" class="m-muted" style="color:${COLORS.muted};">${escape(messages.all)}</a> &middot; ${APP_NAME}`
+      footer: `${escape(messages.why[why](row.key))}<br><a href="${escape(`${base}/notifications`)}" class="m-muted" style="color:${COLORS.muted};">${escape(messages.all)}</a> &middot; ${APP_NAME}<br>${links.html}`
     })
 
-    const send = () => deps.send({ to: row.email, subject, text, html })
+    const send = () =>
+      deps.send({ to: row.email, subject, text, html, headers: links.headers })
     return db => (counted ? sendCounted(db, job.userId, send) : send())
   }
 }
