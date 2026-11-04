@@ -3,7 +3,7 @@ import { Fragment, useState, type ReactElement } from 'react'
 import { useNavigate } from 'react-router'
 
 import type { SectionMove, Shelf, TaskMove } from '@/application/boards'
-import { Card, CardTitle, Column, Columns, EmptyColumn } from '@/ds/Columns'
+import { CardDragPreview, Column, Columns, EmptyColumn } from '@/ds/Columns'
 import { CompletedFold } from '@/ds/CompletedFold'
 import { ListDragPreview } from '@/ds/ListView'
 import {
@@ -28,6 +28,7 @@ import {
   type Removal
 } from '@/ui/boards/Archive'
 import { BoardDrag, columnSortId } from '@/ui/boards/BoardDrag'
+import { NoMatch, useShownTasks } from '@/ui/boards/BoardFilter'
 import { CalendarTask } from '@/ui/boards/CalendarTask'
 import { CalendarLayout, ListLayout } from '@/ui/boards/Layouts'
 import { LinkedTask } from '@/ui/boards/LinkedTask'
@@ -58,12 +59,7 @@ export function BoardColumns({
   )
   // Only the column is lifted when it carries its cards along.
   const taskPreview = (task: Task, drag: 'lifted' | 'none' = 'lifted') => (
-    <Card label={`${task.key} ${task.title}`} drag={drag}>
-      <Typography variant="caption" color="textSecondary">
-        {task.key}
-      </Typography>
-      <CardTitle>{task.title}</CardTitle>
-    </Card>
+    <CardDragPreview taskKey={task.key} title={task.title} drag={drag} />
   )
   const editable = isEditable(board)
   const manageable = isManageable(board)
@@ -79,6 +75,7 @@ export function BoardColumns({
     setAdding(current => (current === key ? null : current))
   }
   const topLevel = board.tasks.filter(task => task.parentId === null)
+  const shown = useShownTasks(board, topLevel)
   const loose =
     board.sections.length === 0 ||
     topLevel.some(task => task.sectionId === null)
@@ -127,10 +124,11 @@ export function BoardColumns({
         onClose={() => {
           stopAdding(columnKey(column))
         }}
+        onCreated={shown.keep}
       />
     )
   const tasksIn = (column: (typeof columns)[number], folded = false) =>
-    topLevel.filter(
+    shown.tasks.filter(
       task =>
         task.sectionId === column.id &&
         isFolded(task, board.sections) === folded
@@ -199,13 +197,14 @@ export function BoardColumns({
           {t('section.moveFailed')}
         </Typography>
       )}
+      {shown.filtered && shown.tasks.length === 0 && <NoMatch />}
       {board.layout === 'board' && !editable && (
         <Columns>
           {columns.map(column => (
             <Column
               key={columnKey(column)}
               title={column.name}
-              count={tasksIn(column).length}
+              count={shown.count(tasksIn(column).length, column.id)}
             >
               {tasksIn(column).map(task => card(task))}
               {empty(column, tasksIn(column).length)}
@@ -237,7 +236,7 @@ export function BoardColumns({
                     return (
                       <Column
                         title={column.name}
-                        count={tasks.length}
+                        count={shown.count(tasks.length, column.id)}
                         drag="lifted"
                       >
                         {tasks.map(task => (
@@ -256,7 +255,7 @@ export function BoardColumns({
             const content = (column: (typeof columns)[number]) => {
               const ids = idsOf(laneKey(column))
               return {
-                count: ids.length,
+                count: shown.count(ids.length, column.id),
                 actions: manageable && column.section && (
                   <SectionMenu board={board} section={column.section} />
                 ),
@@ -304,7 +303,7 @@ export function BoardColumns({
                         instructions={t('drag.columnInstructions')}
                         label={t('board.sectionCount', {
                           section: column.name,
-                          smart_count: props.count
+                          smart_count: idsOf(laneKey(column)).length
                         })}
                         title={column.name}
                         {...props}
@@ -331,6 +330,7 @@ export function BoardColumns({
             key: columnKey(column),
             name: column.name,
             tasks: tasksIn(column),
+            count: shown.count(tasksIn(column).length, column.id),
             footer: listFooter(column)
           }))}
           row={listRow}
@@ -356,6 +356,7 @@ export function BoardColumns({
                   const task = byId.get(id)
                   return task ? [task] : []
                 }),
+                count: shown.count(idsOf(laneKey(column)).length, column.id),
                 footer: listFooter(column),
                 dropId: laneKey(column)
               }))}
@@ -366,7 +367,7 @@ export function BoardColumns({
       )}
       {board.layout === 'calendar' && (
         <CalendarLayout
-          tasks={topLevel}
+          tasks={shown.tasks}
           item={task => (
             <CalendarTask key={task.id} task={task} draggable={editable} />
           )}

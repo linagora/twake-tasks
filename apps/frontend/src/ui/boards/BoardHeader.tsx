@@ -1,6 +1,6 @@
 import { Share } from '@linagora/twake-icons'
 import { Alert, Button, Chip, Tooltip } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import { useRef, useState, type ReactElement } from 'react'
 import { useNavigate } from 'react-router'
 
 import type { Shelf } from '@/application/boards'
@@ -15,9 +15,16 @@ import {
   type Board,
   type NotShareable
 } from '@/domain/board'
+import {
+  BoardFilterBar,
+  BoardFilterButton,
+  useBoardFilter,
+  useFilterShortcut
+} from '@/ui/boards/BoardFilter'
 import { BoardMenu } from '@/ui/boards/BoardMenu'
 import { BoardTitle } from '@/ui/boards/BoardTitle'
 import { PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
+import { criteriaCount } from '@/ui/boards/taskFilter'
 import { LayoutSwitch } from '@/ui/boards/Layouts'
 import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
 import { MoveBoardDialog, useMoveTargets } from '@/ui/boards/MoveBoardDialog'
@@ -60,6 +67,15 @@ export function BoardHeader({
   const renamable = isRenamable(board)
   const targets = useMoveTargets(board)
   const movable = shareable && targets.length > 0
+  const [filter] = useBoardFilter()
+  const activeCriteria = criteriaCount(filter)
+  const [filtering, setFiltering] = useState(activeCriteria > 0)
+  const filterText = useRef<HTMLInputElement>(null)
+  const startFiltering = () => {
+    setFiltering(true)
+    requestAnimationFrame(() => filterText.current?.focus())
+  }
+  useFilterShortcut(shareButton ? startFiltering : undefined)
 
   const headerActions = (
     <>
@@ -113,6 +129,15 @@ export function BoardHeader({
           </UnavailableButton>
         </Tooltip>
       )}
+      <BoardFilterButton
+        count={activeCriteria}
+        open={filtering}
+        shortcut={shareButton}
+        onClick={() => {
+          if (filtering) setFiltering(false)
+          else startFiltering()
+        }}
+      />
       {/* After Share, as the list and grid switch of Twake Drive. */}
       <LayoutSwitch board={board} />
       <BoardMenu
@@ -163,6 +188,16 @@ export function BoardHeader({
             />
           }
           actions={headerActions}
+        />
+      )}
+      {filtering && (
+        <BoardFilterBar
+          board={board}
+          onClose={() => {
+            setFiltering(false)
+          }}
+          saveable={shareButton}
+          textRef={filterText}
         />
       )}
       {board.archived && <ArchivedBanner board={board} />}
