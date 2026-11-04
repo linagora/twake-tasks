@@ -31,30 +31,31 @@ export const taskMove = z.object({
   beforeId: z.uuid().optional()
 })
 
-export const taskChanges = z
-  .object({
-    title: taskTitle,
-    priority: z.int().min(1).max(4).nullable(),
-    dueDate: z.iso.date().nullable(),
-    dueTime: z.iso.time({ precision: -1 }).nullable(),
-    dueZone: z.string().max(64).refine(isTimeZone).nullable(),
-    deadline: z.iso.date().nullable(),
-    duration: z
-      .object({
-        amount: z.int().min(1).max(100_000),
-        unit: z.enum(DURATION_UNITS)
-      })
-      .nullable(),
-    recurrence: z
-      .object({
-        every: z.int().min(1).max(1000),
-        unit: z.enum(RECURRENCE_UNITS),
-        fromCompletion: z.boolean()
-      })
-      .nullable()
-  })
-  .partial()
-  .refine(changes => Object.keys(changes).length > 0)
+const nonEmpty = (changes: object) => Object.keys(changes).length > 0
+
+const taskFields = z.object({
+  title: taskTitle,
+  priority: z.int().min(1).max(4).nullable(),
+  dueDate: z.iso.date().nullable(),
+  dueTime: z.iso.time({ precision: -1 }).nullable(),
+  dueZone: z.string().max(64).refine(isTimeZone).nullable(),
+  deadline: z.iso.date().nullable(),
+  duration: z
+    .object({
+      amount: z.int().min(1).max(100_000),
+      unit: z.enum(DURATION_UNITS)
+    })
+    .nullable(),
+  recurrence: z
+    .object({
+      every: z.int().min(1).max(1000),
+      unit: z.enum(RECURRENCE_UNITS),
+      fromCompletion: z.boolean()
+    })
+    .nullable()
+})
+
+export const taskChanges = taskFields.partial().refine(nonEmpty)
 
 export const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
 
@@ -62,6 +63,50 @@ export const transferTarget = z.object({
   boardId: z.uuid(),
   sectionId: z.uuid().nullable()
 })
+
+const BULK_LIMIT = 200
+
+const bulkTasks = z.array(z.uuid()).min(1).max(BULK_LIMIT)
+
+const bulkAction = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('move'), sectionId: z.uuid().nullable() }),
+  z.strictObject({
+    kind: z.literal('assign'),
+    userId: z.uuid(),
+    assigned: z.boolean()
+  }),
+  z.strictObject({
+    kind: z.literal('label'),
+    labelId: z.uuid(),
+    labeled: z.boolean()
+  }),
+  z.strictObject({
+    kind: z.literal('edit'),
+    changes: taskFields
+      .pick({
+        priority: true,
+        dueDate: true,
+        dueTime: true,
+        dueZone: true,
+        recurrence: true
+      })
+      .partial()
+      .strict()
+      .refine(nonEmpty)
+  }),
+  z.strictObject({ kind: z.enum(['archive', 'trash', 'restore']) }),
+  z.strictObject({ kind: z.literal('transfer'), to: transferTarget })
+])
+
+export const bulkChange = z.object({ taskIds: bulkTasks, action: bulkAction })
+
+export const bulkTransferPreview = z.object({
+  taskIds: bulkTasks,
+  to: transferTarget
+})
+
+/** The tasks left unchanged, each refused on its own. */
+export const bulkResponse = z.object({ failed: z.array(z.string()) })
 
 export const descriptionEdit = z.object({
   markdown: z.string().max(50_000),
