@@ -17,6 +17,7 @@ import {
   type TransferPreview
 } from '@/application/boards'
 import { isEditable, type Board, type BoardSummary } from '@/domain/board'
+import type { BulkChange } from '@/application/bulkChange'
 import { applyMove } from '@/application/moveTask'
 import {
   createTask,
@@ -37,6 +38,52 @@ export function useCreateTask(
     mutationFn: (task: NewTask) => api.createTask(boardId, task),
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
+  })
+}
+
+/**
+ * Runs the changes in turn, and resolves with the tasks left unchanged.
+ * Rejects only when none could be changed.
+ */
+export function useChangeTasks(
+  boardId: string
+): UseMutationResult<string[], Error, BulkChange[]> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async changes => {
+      const failed: string[] = []
+      let refusal: Error | null = null
+      for (const { taskIds, action } of changes) {
+        try {
+          failed.push(
+            ...(await api.changeTasks(boardId, taskIds, action)).failed
+          )
+        } catch (error) {
+          failed.push(...taskIds)
+          refusal ??= error instanceof Error ? error : new Error(String(error))
+        }
+      }
+      const total = changes.reduce((sum, each) => sum + each.taskIds.length, 0)
+      if (refusal !== null && failed.length === total) throw refusal
+      return failed
+    },
+    // Every board: a move to another one changes it too.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.boards() })
+  })
+}
+
+export function usePreviewTasksTransfer(
+  boardId: string,
+  taskIds: string[]
+): UseMutationResult<
+  TransferPreview,
+  Error,
+  { boardId: string; sectionId: string | null }
+> {
+  const api = useBoardsApi()
+  return useMutation({
+    mutationFn: to => api.previewTasksTransfer(boardId, taskIds, to)
   })
 }
 

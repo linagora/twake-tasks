@@ -267,6 +267,64 @@ export function fakeBoardsApi(boards: Board[] = []) {
     previewTransfer: vi.fn<BoardsApi['previewTransfer']>(() =>
       Promise.resolve({ droppedAssignees: [], createdLabels: [] })
     ),
+    changeTasks: vi.fn<BoardsApi['changeTasks']>(
+      async (boardId, taskIds, action) => {
+        const change = (taskId: string): Promise<unknown> => {
+          switch (action.kind) {
+            case 'move':
+              return api.moveTask(boardId, taskId, {
+                sectionId: action.sectionId
+              })
+            case 'assign': {
+              const others = findTask(boardId, taskId)
+                .assignees.map(person => person.userId)
+                .filter(userId => userId !== action.userId)
+              return api.setAssignees(
+                boardId,
+                taskId,
+                action.assigned ? [...others, action.userId] : others
+              )
+            }
+            case 'label': {
+              const others = findTask(boardId, taskId)
+                .labels.map(label => label.id)
+                .filter(labelId => labelId !== action.labelId)
+              return api.setLabels(
+                boardId,
+                taskId,
+                action.labeled ? [...others, action.labelId] : others
+              )
+            }
+            case 'edit':
+              return api.editTask(boardId, taskId, action.changes)
+            case 'archive':
+              return api.archiveTask(boardId, taskId)
+            case 'trash':
+              return api.trashTask(boardId, taskId)
+            case 'restore':
+              return api.restoreTask(boardId, taskId)
+            case 'transfer':
+              return api.transferTask(boardId, taskId, action.to)
+          }
+        }
+        const failed: string[] = []
+        let refusal: unknown = null
+        for (const taskId of taskIds) {
+          try {
+            await change(taskId)
+          } catch (error) {
+            failed.push(taskId)
+            refusal ??= error
+          }
+        }
+        if (failed.length === taskIds.length) throw refusal
+        find(boardId).version += 1
+        return { failed }
+      }
+    ),
+    previewTasksTransfer: vi.fn<BoardsApi['previewTasksTransfer']>(() =>
+      Promise.resolve({ droppedAssignees: [], createdLabels: [] })
+    ),
     archiveTask: vi.fn<BoardsApi['archiveTask']>(hide('archived')),
     trashTask: vi.fn<BoardsApi['trashTask']>(hide('trash')),
     restoreTask: vi.fn<BoardsApi['restoreTask']>((boardId, taskId) =>

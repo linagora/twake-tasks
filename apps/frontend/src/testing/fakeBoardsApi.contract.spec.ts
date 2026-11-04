@@ -201,6 +201,17 @@ describe('the fake boards API', () => {
       previewTransfer: [
         wire.transferPreviewResponse,
         await fake.previewTransfer(...at, to)
+      ],
+      previewTasksTransfer: [
+        wire.transferPreviewResponse,
+        await fake.previewTasksTransfer(board.id, [task.id], to)
+      ],
+      changeTasks: [
+        wire.bulkResponse,
+        await fake.changeTasks(board.id, [task.id], {
+          kind: 'edit',
+          changes: { priority: 1 }
+        })
       ]
     }
     await fake.archiveTask(...at)

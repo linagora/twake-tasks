@@ -65,6 +65,20 @@ export type TaskChanges = Partial<
   >
 >
 
+export type BulkAction =
+  | { kind: 'move'; sectionId: string | null }
+  | { kind: 'assign'; userId: string; assigned: boolean }
+  | { kind: 'label'; labelId: string; labeled: boolean }
+  | {
+      kind: 'edit'
+      changes: Pick<
+        TaskChanges,
+        'priority' | 'dueDate' | 'dueTime' | 'dueZone' | 'recurrence'
+      >
+    }
+  | { kind: 'archive' | 'trash' | 'restore' }
+  | { kind: 'transfer'; to: { boardId: string; sectionId: string | null } }
+
 export interface Description {
   markdown: string
   version: number
@@ -237,6 +251,21 @@ export interface BoardsApi {
     taskId: string,
     to: { boardId: string; sectionId: string | null }
   ) => Promise<{ key: string } & TransferPreview>
+  /**
+   * Changes each task as its own request would, and resolves with those left
+   * unchanged. Rejects only when none could be changed.
+   */
+  changeTasks: (
+    boardId: string,
+    taskIds: string[],
+    action: BulkAction
+  ) => Promise<{ failed: string[] }>
+  /** What moving the tasks would change, each person and label once. */
+  previewTasksTransfer: (
+    boardId: string,
+    taskIds: string[],
+    to: { boardId: string; sectionId: string | null }
+  ) => Promise<TransferPreview>
   /** What moving the task would change, without moving it. */
   previewTransfer: (
     boardId: string,

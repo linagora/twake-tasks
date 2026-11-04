@@ -262,6 +262,22 @@ export function httpBoardsApi(
         route`/boards/${boardId}/tasks/${taskId}/transfer`,
         to satisfies Body<'transferTarget'>
       ),
+    changeTasks: (boardId, taskIds, action) =>
+      parsed(
+        'bulk change',
+        wire.bulkResponse,
+        'POST',
+        route`/boards/${boardId}/tasks/bulk`,
+        { taskIds, action } satisfies Body<'bulkChange'>
+      ),
+    previewTasksTransfer: (boardId, taskIds, to) =>
+      parsed(
+        'bulk transfer preview',
+        wire.transferPreviewResponse,
+        'POST',
+        route`/boards/${boardId}/tasks/bulk/transfer/preview`,
+        { taskIds, to } satisfies Body<'bulkTransferPreview'>
+      ),
     previewTransfer: (boardId, taskId, to) =>
       parsed(
         'transfer preview',
