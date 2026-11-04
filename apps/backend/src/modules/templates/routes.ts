@@ -1,6 +1,4 @@
 import {
-  ownTemplateFields,
-  ownTemplateParams,
   projectParams,
   projectTemplateParams,
   templateFields
@@ -43,32 +41,6 @@ export function registerTemplates(
       access: self,
       handler: ({ identity }) =>
         under('templates', store.listTemplates(identity))
-    }),
-    defineRoute({
-      method: 'POST',
-      url: '/templates',
-      access: self,
-      body: ownTemplateFields,
-      status: 201,
-      handler: ({ identity, body }) => store.createOwnTemplate(identity, body)
-    }),
-    defineRoute({
-      method: 'PUT',
-      url: '/templates/:templateId',
-      access: self,
-      params: ownTemplateParams,
-      body: ownTemplateFields,
-      handler: ({ identity, params, body }) =>
-        store.editOwnTemplate(identity, params.templateId, body)
-    }),
-    defineRoute({
-      method: 'DELETE',
-      url: '/templates/:templateId',
-      access: self,
-      params: ownTemplateParams,
-      status: 204,
-      handler: ({ identity, params }) =>
-        store.deleteOwnTemplate(identity, params.templateId)
     }),
     defineRoute({
       method: 'POST',

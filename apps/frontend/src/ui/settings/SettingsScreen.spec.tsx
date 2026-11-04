@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { ApiError } from '@/application/boards'
 import type { Role } from '@/domain/board'
-import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
+import { aBoard, aProject, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 
@@ -38,29 +38,30 @@ describe('SettingsScreen', () => {
     ).toBeVisible()
   })
 
-  it('lists my own templates, then each project’s', async () => {
+  it('lists each project’s templates', async () => {
     const { design, boardsApi } = aSetup()
-    await boardsApi.createTemplate(
-      { projectId: design.project.id },
-      { ...NO_DETAILS, title: 'Monthly report', priority: 2, labelIds: ['l1'] }
-    )
-    await boardsApi.createTemplate(
-      { projectId: null },
-      { ...NO_DETAILS, title: 'Weekly review' }
-    )
+    await boardsApi.createTemplate(design.project.id, {
+      ...NO_DETAILS,
+      title: 'Monthly report',
+      priority: 2,
+      labelIds: ['l1']
+    })
+    await boardsApi.createTemplate(design.project.id, {
+      ...NO_DETAILS,
+      title: 'Weekly review'
+    })
     renderRoute('/settings', { boardsApi })
 
-    const mine = await screen.findByRole('region', { name: 'My templates' })
-    const project = screen.getByRole('region', { name: 'Design' })
+    const project = await screen.findByRole('region', { name: 'Design' })
 
-    expect(within(mine).getByText('Weekly review')).toBeVisible()
-    expect(within(mine).getByText('Title only')).toBeVisible()
     expect(within(project).getByText('Monthly report')).toBeVisible()
     expect(within(project).getByText('P2 · 1 label')).toBeVisible()
+    expect(within(project).getByText('Weekly review')).toBeVisible()
+    expect(within(project).getByText('Title only')).toBeVisible()
   })
 
-  it('creates a template of mine', async () => {
-    const { boardsApi } = aSetup()
+  it('creates a template in the only project the person edits', async () => {
+    const { design, boardsApi } = aSetup()
     renderRoute('/settings', { boardsApi })
 
     fireEvent.click(await screen.findByRole('button', { name: 'New template' }))
@@ -70,20 +71,30 @@ describe('SettingsScreen', () => {
     fireEvent.change(dialog.getByRole('textbox', { name: 'Task title' }), {
       target: { value: 'Weekly review' }
     })
+    expect(dialog.queryByRole('combobox', { name: 'Available in' })).toBe(null)
     fireEvent.click(dialog.getByRole('button', { name: 'Create template' }))
 
     expect(
       await within(
-        await screen.findByRole('region', { name: 'My templates' })
+        await screen.findByRole('region', { name: 'Design' })
       ).findByText('Weekly review')
     ).toBeVisible()
     expect(await boardsApi.listTemplates()).toMatchObject([
-      { projectId: null, title: 'Weekly review' }
+      { projectId: design.project.id, title: 'Weekly review' }
     ])
   })
 
-  it('creates a project template with an assignee', async () => {
+  it('offers no new template to someone who edits no project', async () => {
+    renderRoute('/settings', aSetup('viewer'))
+
+    expect(await findEmptyState('No templates yet')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'New template' })).toBe(null)
+  })
+
+  it('creates a template in the project picked, with an assignee', async () => {
     const { design, boardsApi } = aSetup()
+    const ops = aBoard({ name: 'Ops', project: aProject({ name: 'Ops' }) })
+    boardsApi.projects.unshift({ ...ops.project, role: 'editor' })
     renderRoute('/settings', { boardsApi })
 
     fireEvent.click(await screen.findByRole('button', { name: 'New template' }))
@@ -116,11 +127,11 @@ describe('SettingsScreen', () => {
   })
 
   it('edits and deletes a template from its menu', async () => {
-    const { boardsApi } = aSetup()
-    await boardsApi.createTemplate(
-      { projectId: null },
-      { ...NO_DETAILS, title: 'Weekly review' }
-    )
+    const { design, boardsApi } = aSetup()
+    await boardsApi.createTemplate(design.project.id, {
+      ...NO_DETAILS,
+      title: 'Weekly review'
+    })
     renderRoute('/settings', { boardsApi })
 
     fireEvent.click(
@@ -149,10 +160,10 @@ describe('SettingsScreen', () => {
 
   it('shows a project’s templates to a viewer, without changing them', async () => {
     const { design, boardsApi } = aSetup('viewer')
-    await boardsApi.createTemplate(
-      { projectId: design.project.id },
-      { ...NO_DETAILS, title: 'Monthly report' }
-    )
+    await boardsApi.createTemplate(design.project.id, {
+      ...NO_DETAILS,
+      title: 'Monthly report'
+    })
     renderRoute('/settings', { boardsApi })
 
     const project = await screen.findByRole('region', { name: 'Design' })

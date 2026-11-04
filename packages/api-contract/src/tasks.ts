@@ -96,10 +96,7 @@ export const taskResponse = z.object({
       fromCompletion: z.boolean()
     })
     .nullable(),
-  // The title is null for a template the reader may not see.
-  template: z
-    .object({ id: z.string(), title: z.string().nullable() })
-    .nullable(),
+  template: z.object({ id: z.string(), title: z.string() }).nullable(),
   completedAt: instant.nullable(),
   canceledAt: instant.nullable(),
   assignees: z.array(person),

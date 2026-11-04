@@ -27,7 +27,7 @@
   },
   "templates": {
     "title": "Vorlagen",
-    "hint": "Starten Sie eine Aufgabe auf jedem Board aus einer Vorlage. Ihre eigenen Vorlagen gehören nur Ihnen; die Vorlagen eines Projekts teilen alle seine Mitglieder.",
+    "hint": "Starten Sie eine Aufgabe auf jedem Board ihres Projekts aus einer Vorlage. Die Vorlagen eines Projekts teilen alle seine Mitglieder.",
     "new": "Neue Vorlage",
     "editTitle": "Vorlage bearbeiten",
     "close": "Schließen",
@@ -38,9 +38,6 @@
     "where": "Verfügbar in",
     "assignTitle": "Daraus erstellte Aufgaben zuweisen",
     "labelTitle": "Daraus erstellte Aufgaben mit Labels versehen",
-    "mine": "Meine Vorlagen",
-    "onlyMe": "Nur ich",
-    "mineHint": "Nur Sie sehen sie, auf jedem Board. Labels und Zuständige gehören zu einem Projekt: Wählen Sie eines, um sie hinzuzufügen.",
     "projectHint": "Alle im Projekt sehen sie, auf jedem seiner Boards. Seine Bearbeiter können sie verwenden und ändern.",
     "refused": "Ein Label oder eine Person gehört nicht mehr zum Projekt. Prüfen Sie sie und speichern Sie erneut.",
     "saveFailed": "Die Vorlage konnte nicht gespeichert werden.",
@@ -230,7 +227,6 @@
   },
   "task": {
     "template": "Vorlage",
-    "someonesTemplate": "Die eigene Vorlage einer anderen Person",
     "description": "Beschreibung",
     "editDescription": "Beschreibung bearbeiten",
     "loadFailed": "Die Beschreibung konnte nicht geladen werden.",

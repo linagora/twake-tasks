@@ -145,11 +145,7 @@ describe('the fake boards API', () => {
     const { fake, board, target, task } = aSeededFake()
     const at = [board.id, task.id] as const
     const to = { boardId: target.id, sectionId: null }
-    const template = await fake.createTemplate(
-      { projectId: board.project.id },
-      templateFields
-    )
-    const own = await fake.createTemplate({ projectId: null }, templateFields)
+    const template = await fake.createTemplate(board.project.id, templateFields)
     const answers: Answers = {
       createFilter: [
         wire.createdFilterResponse,
@@ -193,7 +189,10 @@ describe('the fake boards API', () => {
       createTemplate: [wire.template, template],
       editTemplate: [
         wire.template,
-        await fake.editTemplate(own, { ...templateFields, title: 'Weekly' })
+        await fake.editTemplate(template, {
+          ...templateFields,
+          title: 'Weekly'
+        })
       ],
       listTemplates: [
         wire.templatesResponse,

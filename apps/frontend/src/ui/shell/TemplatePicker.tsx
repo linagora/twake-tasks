@@ -60,12 +60,7 @@ export function TemplatePicker({
             <ListItemIcon>
               <Icon icon={Copy} />
             </ListItemIcon>
-            <ListItemText
-              primary={template.title}
-              secondary={
-                template.projectId === null ? t('templates.mine') : projectName
-              }
-            />
+            <ListItemText primary={template.title} secondary={projectName} />
           </MenuItem>
         ))}
         {templates.length === 0 && (

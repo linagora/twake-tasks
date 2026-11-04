@@ -552,28 +552,28 @@ describe('NewTaskDialog with templates', () => {
   async function openWithTemplates() {
     let reportId = ''
     const opened = await openNewTask(async (boardsApi, design) => {
+      design.labels.push({ id: 'l2', name: 'finance', color: null })
+      design.members.push({
+        userId: 'u-bo',
+        email: 'bo@example.com',
+        name: 'Bo Chen'
+      })
       reportId = (
-        await boardsApi.createTemplate(
-          { projectId: design.project.id },
-          {
-            title: 'Monthly report',
-            description: 'Check the invoices',
-            priority: 2,
-            labelIds: ['l1'],
-            assigneeIds: ['u-ana']
-          }
-        )
+        await boardsApi.createTemplate(design.project.id, {
+          title: 'Monthly report',
+          description: 'Check the invoices',
+          priority: 2,
+          labelIds: ['l1'],
+          assigneeIds: ['u-ana']
+        })
       ).id
-      await boardsApi.createTemplate(
-        { projectId: null },
-        {
-          title: 'Weekly review',
-          description: '',
-          priority: null,
-          labelIds: [],
-          assigneeIds: []
-        }
-      )
+      await boardsApi.createTemplate(design.project.id, {
+        title: 'Weekly review',
+        description: '',
+        priority: null,
+        labelIds: [],
+        assigneeIds: []
+      })
     })
     const report = { id: reportId }
     const pick = async (name: RegExp) => {
@@ -609,13 +609,68 @@ describe('NewTaskDialog with templates', () => {
     ])
   })
 
-  it('offers my own templates too, and keeps a title already typed', async () => {
+  it('keeps a title already typed', async () => {
     const { title, pick } = await openWithTemplates()
     fireEvent.change(title(), { target: { value: 'Sprint 12 review' } })
 
     await pick(/Weekly review/)
 
     expect(title()).toHaveValue('Sprint 12 review')
+  })
+
+  it('keeps the labels and assignees already picked, adding its own', async () => {
+    const { dialog, title, create, design, pick } = await openWithTemplates()
+    fireEvent.change(title(), { target: { value: 'Invoices' } })
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    fireEvent.click(
+      await dialog.findByRole('button', { name: 'Add assignees' })
+    )
+    const assign = await screen.findByRole('dialog', {
+      name: 'Assign the new task'
+    })
+    fireEvent.click(
+      within(assign).getByRole('menuitemcheckbox', { name: /Bo Chen/ })
+    )
+    fireEvent.keyDown(assign, { key: 'Escape' })
+    fireEvent.click(dialog.getByRole('button', { name: 'Add labels' }))
+    const label = await screen.findByRole('dialog', {
+      name: 'Label the new task'
+    })
+    fireEvent.click(
+      within(label).getByRole('menuitemcheckbox', { name: 'finance' })
+    )
+    fireEvent.keyDown(label, { key: 'Escape' })
+
+    await pick(/Monthly report/)
+    fireEvent.click(create())
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBe(null)
+    })
+    expect(design.tasks).toMatchObject([
+      {
+        title: 'Invoices',
+        labels: [{ id: 'l1' }, { id: 'l2' }],
+        assignees: [{ userId: 'u-ana' }, { userId: 'u-bo' }]
+      }
+    ])
+  })
+
+  it('drops a template the board refuses, so it is not offered again', async () => {
+    const { dialog, create, design, boardsApi, report, pick } =
+      await openWithTemplates()
+    await pick(/Monthly report/)
+    await boardsApi.deleteTemplate({ ...report, projectId: design.project.id })
+
+    fireEvent.click(create())
+
+    await waitFor(() => {
+      expect(dialog.queryByText('From Monthly report')).toBe(null)
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Template' }))
+    expect(screen.queryByRole('menuitem', { name: /Monthly report/ })).toBe(
+      null
+    )
   })
 
   it('unlinks the task when the template is taken off', async () => {
@@ -637,7 +692,7 @@ describe('NewTaskDialog with templates', () => {
     })
   })
 
-  it('drops a project template once a board of another project is picked', async () => {
+  it('drops the template once a board of another project is picked', async () => {
     const { dialog, pick } = await openWithTemplates()
     await pick(/Monthly report/)
 
@@ -652,7 +707,7 @@ describe('NewTaskDialog with templates', () => {
       null
     )
     expect(
-      screen.getByRole('menuitem', { name: /Weekly review/ })
+      screen.getByRole('menuitem', { name: /No templates for this board/ })
     ).toBeVisible()
   })
 })

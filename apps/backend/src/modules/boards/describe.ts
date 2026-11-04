@@ -1,5 +1,5 @@
-import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm'
-import { currentUser, type Tx } from '../../infra/db.ts'
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
+import type { Tx } from '../../infra/db.ts'
 import type { Member } from './access.ts'
 import { recurrenceOf } from './recurrence.ts'
 import {
@@ -45,13 +45,10 @@ export async function describeTasks(
           .where(
             and(
               inArray(taskTemplates.id, templateIds),
-              or(
-                eq(taskTemplates.projectId, board.projectId),
-                sql`${taskTemplates.userId} = ${currentUser}`
-              )
+              eq(taskTemplates.projectId, board.projectId)
             )
           )
-  const templateTitles = new Map(templates.map(t => [t.id, t.title]))
+  const templatesById = new Map(templates.map(t => [t.id, t]))
   const assigned = new Set(assignments.map(a => `${a.taskId}:${a.userId}`))
   const labeledWith = new Set(labeled.map(l => `${l.taskId}:${l.labelId}`))
   const commentCounts = new Map(commented.map(c => [c.taskId, c.count]))
@@ -74,10 +71,7 @@ export async function describeTasks(
     template:
       task.templateId === null
         ? null
-        : {
-            id: task.templateId,
-            title: templateTitles.get(task.templateId) ?? null
-          },
+        : (templatesById.get(task.templateId) ?? null),
     completedAt: task.completedAt,
     canceledAt: task.canceledAt,
     // Someone who left the board stays assigned, but is not shown.

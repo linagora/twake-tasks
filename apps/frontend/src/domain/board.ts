@@ -72,11 +72,8 @@ export interface Task {
   deadline: string | null
   duration: Duration | null
   recurrence: Recurrence | null
-  /**
-   * The template the task was made from, null once it is deleted. Its title
-   * is null for someone else's own template.
-   */
-  template: { id: string; title: string | null } | null
+  /** The template the task was made from, null once it is deleted. */
+  template: { id: string; title: string } | null
   completedAt: string | null
   canceledAt: string | null
   assignees: Person[]
@@ -86,13 +83,11 @@ export interface Task {
 
 /**
  * What a new task can start with. A project's template serves every board of
- * the project; one of the person's own (`projectId` null) serves any board,
- * without labels or assignees, which belong to a project. A task made from a
- * template cannot repeat.
+ * the project. A task made from a template cannot repeat.
  */
 export interface Template {
   id: string
-  projectId: string | null
+  projectId: string
   title: string
   /** Markdown */
   description: string

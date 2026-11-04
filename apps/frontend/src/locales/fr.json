@@ -27,7 +27,7 @@
   },
   "templates": {
     "title": "Modèles",
-    "hint": "Démarrez une tâche à partir d’un modèle sur n’importe quel tableau. Vos modèles personnels ne sont qu’à vous ; ceux d’un projet sont partagés avec tous ses membres.",
+    "hint": "Démarrez une tâche à partir d’un modèle sur n’importe quel tableau de son projet. Les modèles d’un projet sont partagés avec tous ses membres.",
     "new": "Nouveau modèle",
     "editTitle": "Modifier le modèle",
     "close": "Fermer",
@@ -38,9 +38,6 @@
     "where": "Disponible dans",
     "assignTitle": "Assigner les tâches créées à partir de lui",
     "labelTitle": "Étiqueter les tâches créées à partir de lui",
-    "mine": "Mes modèles",
-    "onlyMe": "Moi seulement",
-    "mineHint": "Vous seul le voyez, sur tous les tableaux. Les étiquettes et les responsables appartiennent à un projet : choisissez-en un pour les ajouter.",
     "projectHint": "Tous les membres du projet le voient, sur chacun de ses tableaux. Ses éditeurs peuvent l’utiliser et le modifier.",
     "refused": "Une étiquette ou une personne ne fait plus partie du projet. Vérifiez-les et enregistrez à nouveau.",
     "saveFailed": "Impossible d’enregistrer le modèle.",
@@ -230,7 +227,6 @@
   },
   "task": {
     "template": "Modèle",
-    "someonesTemplate": "Le modèle personnel de quelqu’un",
     "description": "Description",
     "editDescription": "Modifier la description",
     "loadFailed": "La description n'a pas pu être chargée.",

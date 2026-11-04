@@ -35,14 +35,13 @@ import { keys } from '@/ui/queries/keys'
 import { useSaveTemplate } from '@/ui/queries/templates'
 
 const PRIORITIES: Priority[] = [1, 2, 3, 4]
-const MINE = ''
 
 const toggled = (ids: string[], id: string): string[] =>
   ids.includes(id) ? ids.filter(each => each !== id) : [...ids, id]
 
 // A project's labels and members are read from one of its boards, which all
 // share them.
-function useProjectBoard(projectId: string | null) {
+function useProjectBoard(projectId: string) {
   const api = useBoardsApi()
   const boards = useBoards().data?.filter(
     board => board.project.id === projectId
@@ -54,10 +53,7 @@ function useProjectBoard(projectId: string | null) {
   }).data
 }
 
-/**
- * Edits a template, or with none makes one, in one of the person's own
- * templates or in a project they edit.
- */
+/** Edits a template, or with none makes one in a project the person edits. */
 export function TemplateDialog({
   template,
   projects,
@@ -65,7 +61,7 @@ export function TemplateDialog({
   onClose
 }: {
   template?: Template | undefined
-  /** The projects the person edits. */
+  /** The projects the person edits, at least one. */
   projects: ProjectSummary[]
   projectName: (project: ProjectSummary) => string
   onClose: () => void
@@ -76,7 +72,9 @@ export function TemplateDialog({
   const priorityId = useId()
   const richTextLabels = useRichTextLabels()
   const save = useSaveTemplate()
-  const [projectId, setProjectId] = useState(template?.projectId ?? null)
+  const [projectId, setProjectId] = useState(
+    template?.projectId ?? projects[0]?.id ?? ''
+  )
   const [title, setTitle] = useState(template?.title ?? '')
   const [untitled, setUntitled] = useState(false)
   const [description, setDescription] = useState(template?.description ?? '')
@@ -124,16 +122,14 @@ export function TemplateDialog({
           title: title.trim(),
           description,
           priority,
-          labelIds: projectId === null ? [] : labelIds,
-          assigneeIds: projectId === null ? [] : assigneeIds
+          labelIds,
+          assigneeIds
         }
       },
       { onSuccess: onClose }
     )
   }
   const owner = projects.find(project => project.id === projectId)
-  // A personal project is the person's alone, as their own templates are.
-  const targets = projects.filter(project => !project.personal)
 
   return (
     <Dialog open onClose={close} aria-labelledby={titleId} size="medium">
@@ -185,23 +181,20 @@ export function TemplateDialog({
                 icon={<Icon icon={Folder} />}
                 label={t('templates.where')}
               >
-                {template || targets.length === 0 ? (
+                {template || projects.length === 1 ? (
                   <Typography variant="body2">
-                    {owner ? projectName(owner) : t('templates.onlyMe')}
+                    {owner && projectName(owner)}
                   </Typography>
                 ) : (
                   <PropertySelect
                     labelId={whereId}
-                    value={projectId ?? MINE}
-                    options={[
-                      { value: MINE, label: t('templates.onlyMe') },
-                      ...targets.map(project => ({
-                        value: project.id,
-                        label: projectName(project)
-                      }))
-                    ]}
+                    value={projectId}
+                    options={projects.map(project => ({
+                      value: project.id,
+                      label: projectName(project)
+                    }))}
                     onChange={value => {
-                      setProjectId(value === MINE ? null : value)
+                      setProjectId(value)
                       setLabelIds([])
                       setAssigneeIds([])
                     }}
@@ -232,86 +225,75 @@ export function TemplateDialog({
                   }}
                 />
               </Property>
-              {projectId !== null && (
-                <>
-                  <Property
-                    icon={<Icon icon={People} />}
-                    label={t('task.assignees')}
+              <Property
+                icon={<Icon icon={People} />}
+                label={t('task.assignees')}
+              >
+                {assignees.map(person => (
+                  <Inline key={person.userId}>
+                    <PersonAvatar
+                      email={person.email}
+                      name={person.name}
+                      avatar={person.avatar}
+                    />
+                    <Typography variant="body2">
+                      {displayName(person)}
+                    </Typography>
+                  </Inline>
+                ))}
+                {assignees.length === 0 && (
+                  <Typography variant="body2" color="textSecondary">
+                    {t('task.nobody')}
+                  </Typography>
+                )}
+                {board && (
+                  <IconButton
+                    size="small"
+                    aria-label={t('task.addAssignees')}
+                    aria-haspopup="dialog"
+                    onClick={event => {
+                      setMenu({
+                        name: 'members',
+                        anchor: event.currentTarget
+                      })
+                    }}
                   >
-                    {assignees.map(person => (
-                      <Inline key={person.userId}>
-                        <PersonAvatar
-                          email={person.email}
-                          name={person.name}
-                          avatar={person.avatar}
-                        />
-                        <Typography variant="body2">
-                          {displayName(person)}
-                        </Typography>
-                      </Inline>
-                    ))}
-                    {assignees.length === 0 && (
-                      <Typography variant="body2" color="textSecondary">
-                        {t('task.nobody')}
-                      </Typography>
-                    )}
-                    {board && (
-                      <IconButton
-                        size="small"
-                        aria-label={t('task.addAssignees')}
-                        aria-haspopup="dialog"
-                        onClick={event => {
-                          setMenu({
-                            name: 'members',
-                            anchor: event.currentTarget
-                          })
-                        }}
-                      >
-                        <Icon icon={Pen} size={14} />
-                      </IconButton>
-                    )}
-                  </Property>
-                  <Property
-                    icon={<Icon icon={Label} />}
-                    label={t('task.labels')}
+                    <Icon icon={Pen} size={14} />
+                  </IconButton>
+                )}
+              </Property>
+              <Property icon={<Icon icon={Label} />} label={t('task.labels')}>
+                {checkedLabels.map(each => (
+                  <LabelChip
+                    key={each.id}
+                    name={each.name}
+                    color={each.color}
+                  />
+                ))}
+                {checkedLabels.length === 0 && (
+                  <Typography variant="body2" color="textSecondary">
+                    {t('task.noLabels')}
+                  </Typography>
+                )}
+                {board && (
+                  <IconButton
+                    size="small"
+                    aria-label={t('task.addLabels')}
+                    aria-haspopup="dialog"
+                    onClick={event => {
+                      setMenu({
+                        name: 'labels',
+                        anchor: event.currentTarget
+                      })
+                    }}
                   >
-                    {checkedLabels.map(each => (
-                      <LabelChip
-                        key={each.id}
-                        name={each.name}
-                        color={each.color}
-                      />
-                    ))}
-                    {checkedLabels.length === 0 && (
-                      <Typography variant="body2" color="textSecondary">
-                        {t('task.noLabels')}
-                      </Typography>
-                    )}
-                    {board && (
-                      <IconButton
-                        size="small"
-                        aria-label={t('task.addLabels')}
-                        aria-haspopup="dialog"
-                        onClick={event => {
-                          setMenu({
-                            name: 'labels',
-                            anchor: event.currentTarget
-                          })
-                        }}
-                      >
-                        <Icon icon={Pen} size={14} />
-                      </IconButton>
-                    )}
-                  </Property>
-                </>
-              )}
+                    <Icon icon={Pen} size={14} />
+                  </IconButton>
+                )}
+              </Property>
             </Properties>
             <Typography variant="caption" color="textSecondary">
-              {t(
-                projectId === null
-                  ? 'templates.mineHint'
-                  : 'templates.projectHint'
-              )}
+              {t('templates.projectHint')}
             </Typography>
             {save.isError && (
               <Typography role="alert" variant="body2" color="error">

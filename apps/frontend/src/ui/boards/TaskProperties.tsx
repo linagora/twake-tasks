@@ -302,12 +302,7 @@ function TemplateRow({
   const { t } = useI18n()
   return (
     <Property icon={<Icon icon={Copy} />} label={t('task.template')}>
-      <PropertyText
-        variant="body2"
-        {...(template.title === null && { color: 'textSecondary' })}
-      >
-        {template.title ?? t('task.someonesTemplate')}
-      </PropertyText>
+      <PropertyText variant="body2">{template.title}</PropertyText>
     </Property>
   )
 }

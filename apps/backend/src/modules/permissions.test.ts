@@ -305,19 +305,13 @@ async function ownNotification(me: TestUser) {
   })
 }
 
-const ownTemplateFields = {
+const templateFields = {
   title: 'Monthly report',
   description: '',
-  priority: null
+  priority: null,
+  labelIds: [],
+  assigneeIds: []
 }
-
-const templateFields = { ...ownTemplateFields, labelIds: [], assigneeIds: [] }
-
-const ownTemplate = (me: TestUser) =>
-  created<{ id: string }>(
-    api.as(me).post('/templates', ownTemplateFields),
-    'own template'
-  )
 
 const later = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 const task = '/boards/:boardId/tasks/:taskId'
@@ -434,14 +428,6 @@ const EXAMPLES: Record<string, Example> = {
     body: { labelIds: [fixture.labelId] }
   }),
   'GET /templates': none,
-  'POST /templates': () => ({ body: ownTemplateFields }),
-  'PUT /templates/:templateId': async (_fixture, me) => ({
-    params: { templateId: (await ownTemplate(me)).id },
-    body: { ...ownTemplateFields, title: 'Weekly report' }
-  }),
-  'DELETE /templates/:templateId': async (_fixture, me) => ({
-    params: { templateId: (await ownTemplate(me)).id }
-  }),
   'POST /projects/:projectId/templates': () => ({ body: templateFields }),
   'PUT /projects/:projectId/templates/:templateId': () => ({
     body: { ...templateFields, title: 'Weekly report' }

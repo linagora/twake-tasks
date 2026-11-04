@@ -30,7 +30,7 @@ A test fails when a table is missing from this page, and the backend test suite 
 - `board_layouts`: cascade with the board.
 - `saved_filters`: deleted by hand, or removed with the person or their organization. No board cascades to them.
 - `spaces`: cascade with the project of the space.
-- `task_templates`: a project's template cascades with the project, and a person's own is removed with the person or their organization. Deleted by hand. The tasks made from a template keep existing without it, and leave a project's template when they or their board move to another project.
+- `task_templates`: cascade with the project, or deleted by hand. The tasks made from a template keep existing without it, and leave it when they or their board move to another project.
 - `task_template_labels`: cascade with the template or the label, or deleted by hand.
 - `task_template_assignees`: cascade with the template, or deleted by hand. Removed when the person leaves the project, or with the person.
 

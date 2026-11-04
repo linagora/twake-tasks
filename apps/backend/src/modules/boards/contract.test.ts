@@ -175,14 +175,6 @@ describe('the API contract', () => {
       })
     )
     contracted(
-      template,
-      await api.as(alice).post('/templates', {
-        title: 'Inbox zero',
-        description: '',
-        priority: 1
-      })
-    )
-    contracted(
       createdTaskResponse,
       await api.as(alice).post(`${board}/tasks`, {
         sectionId: null,
@@ -193,7 +185,7 @@ describe('the API contract', () => {
     expect(
       contracted(templatesResponse, await api.as(alice).get('/templates'))
         .templates
-    ).toHaveLength(2)
+    ).toHaveLength(1)
     await api.as(alice).patch(at, { dueDate: '2020-01-02', dueTime: '09:30' })
     expect(
       contracted(

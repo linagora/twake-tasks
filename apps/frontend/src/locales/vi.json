@@ -27,7 +27,7 @@
   },
   "templates": {
     "title": "Mẫu",
-    "hint": "Bắt đầu một công việc từ mẫu trên bất kỳ bảng nào. Mẫu riêng của bạn chỉ mình bạn thấy; mẫu của dự án được chia sẻ với mọi thành viên.",
+    "hint": "Bắt đầu một công việc từ mẫu trên bất kỳ bảng nào của dự án chứa mẫu. Mẫu của dự án được chia sẻ với mọi thành viên.",
     "new": "Mẫu mới",
     "editTitle": "Sửa mẫu",
     "close": "Đóng",
@@ -38,9 +38,6 @@
     "where": "Dùng được ở",
     "assignTitle": "Giao các công việc tạo từ mẫu",
     "labelTitle": "Gắn nhãn các công việc tạo từ mẫu",
-    "mine": "Mẫu của tôi",
-    "onlyMe": "Chỉ mình tôi",
-    "mineHint": "Chỉ bạn thấy, trên mọi bảng. Nhãn và người được giao thuộc về một dự án: hãy chọn một dự án để thêm.",
     "projectHint": "Mọi người trong dự án đều thấy, trên từng bảng của dự án. Người chỉnh sửa của dự án có thể dùng và sửa mẫu.",
     "refused": "Một nhãn hoặc một người không còn trong dự án. Hãy kiểm tra và lưu lại.",
     "saveFailed": "Không thể lưu mẫu.",
@@ -230,7 +227,6 @@
   },
   "task": {
     "template": "Mẫu",
-    "someonesTemplate": "Mẫu riêng của người khác",
     "description": "Mô tả",
     "editDescription": "Sửa mô tả",
     "loadFailed": "Không thể tải mô tả.",

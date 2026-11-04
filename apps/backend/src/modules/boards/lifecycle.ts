@@ -204,7 +204,6 @@ export async function forgetPerson(tx: Tx, userId: string): Promise<void> {
   await tx
     .delete(taskTemplateAssignees)
     .where(eq(taskTemplateAssignees.userId, userId))
-  await tx.delete(taskTemplates).where(eq(taskTemplates.userId, userId))
   await tx.delete(taskFollowers).where(eq(taskFollowers.userId, userId))
   await tx.delete(notifications).where(eq(notifications.userId, userId))
   await tx.delete(taskReminders).where(eq(taskReminders.userId, userId))
@@ -225,12 +224,7 @@ export async function forgetReadNotifications(
   await tx.execute(sql`select set_config('app.pruning', '', true)`)
 }
 
-/** Erases an organization's projects and templates. Runs as that organization. */
+/** Erases an organization's projects. Runs as that organization. */
 export async function eraseOrganization(tx: Tx): Promise<void> {
   await tx.delete(projects)
-  await tx.execute(
-    sql`select set_config('app.erasing_organization', 'on', true)`
-  )
-  await tx.delete(taskTemplates)
-  await tx.execute(sql`select set_config('app.erasing_organization', '', true)`)
 }
