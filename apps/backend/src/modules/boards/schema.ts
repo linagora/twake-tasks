@@ -266,6 +266,9 @@ export const tasks = pgTable.withRLS(
     recurFromCompletion: boolean('recur_from_completion')
       .notNull()
       .default(false),
+    templateId: uuid('template_id').references(() => taskTemplates.id, {
+      onDelete: 'set null'
+    }),
     position: sortKey().notNull(),
     createdBy: uuid('created_by').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
@@ -279,6 +282,7 @@ export const tasks = pgTable.withRLS(
     unique().on(table.tenant, table.id),
     unique().on(table.boardId, table.id),
     unique().on(table.boardId, table.number),
+    index().on(table.templateId),
     // Tasks without a section share one order on the board, and sub-tasks one
     // order under their parent.
     unique()
@@ -320,6 +324,11 @@ export const tasks = pgTable.withRLS(
     check(
       'tasks_recurrence_on_a_date',
       sql`${table.recurEvery} is null or ${table.dueDate} is not null`
+    ),
+    // A template brings the next task itself.
+    check(
+      'tasks_template_not_recurring',
+      sql`${table.templateId} is null or ${table.recurEvery} is null`
     ),
     tenantPolicy(table.organizationId, visibleBoard(table.boardId))
   ]
@@ -400,6 +409,103 @@ export const taskLabels = pgTable.withRLS(
       table.organizationId,
       sql`exists (select 1 from ${tasks} where ${tasks.id} = ${table.taskId})`
     )
+  ]
+)
+
+// A template belongs to a project, for every board of it, or to one person,
+// for any board they can add tasks to. Only a project's template holds labels
+// and assignees, which belong to the project.
+export const taskTemplates = pgTable.withRLS(
+  'task_templates',
+  {
+    id: id(),
+    projectId: uuid('project_id').references(() => projects.id, {
+      onDelete: 'cascade'
+    }),
+    userId: uuid('user_id'),
+    organizationId: organizationId(),
+    title: text().notNull(),
+    description: text().notNull().default(''),
+    priority: smallint(),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+    tenant: tenant()
+  },
+  table => [
+    unique().on(table.tenant, table.id),
+    index().on(table.projectId),
+    index().on(table.userId),
+    foreignKey({
+      columns: [table.tenant, table.projectId],
+      foreignColumns: [projects.tenant, projects.id]
+    }),
+    check(
+      'task_templates_project_or_person',
+      sql`(${table.projectId} is null) <> (${table.userId} is null)`
+    ),
+    check('task_templates_priority', sql`${table.priority} between 1 and 4`),
+    tenantPolicy(
+      table.organizationId,
+      sql`${table.userId} = ${currentUser} or ${visibleProject(table.projectId)}`
+    ),
+    // Someone's own templates stay theirs inside an organization too. The
+    // erase of an organization reaches every person's through this flag.
+    pgPolicy('own', {
+      as: 'restrictive',
+      using: sql`${table.userId} is null or ${table.userId} = ${currentUser} or current_setting('app.erasing_organization', true) = 'on'`,
+      withCheck: sql`${table.userId} is null or ${table.userId} = ${currentUser}`
+    })
+  ]
+)
+
+const visibleTemplate = (templateId: AnyPgColumn): SQL =>
+  sql`exists (select 1 from ${taskTemplates} where ${taskTemplates.id} = ${templateId})`
+
+export const taskTemplateLabels = pgTable.withRLS(
+  'task_template_labels',
+  {
+    templateId: uuid('template_id')
+      .notNull()
+      .references(() => taskTemplates.id, { onDelete: 'cascade' }),
+    labelId: uuid('label_id')
+      .notNull()
+      .references(() => labels.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    tenant: tenant()
+  },
+  table => [
+    primaryKey({ columns: [table.templateId, table.labelId] }),
+    index().on(table.labelId),
+    foreignKey({
+      columns: [table.tenant, table.templateId],
+      foreignColumns: [taskTemplates.tenant, taskTemplates.id]
+    }),
+    foreignKey({
+      columns: [table.tenant, table.labelId],
+      foreignColumns: [labels.tenant, labels.id]
+    }),
+    tenantPolicy(table.organizationId, visibleTemplate(table.templateId))
+  ]
+)
+
+export const taskTemplateAssignees = pgTable.withRLS(
+  'task_template_assignees',
+  {
+    templateId: uuid('template_id')
+      .notNull()
+      .references(() => taskTemplates.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    userId: uuid('user_id').notNull(),
+    tenant: tenant()
+  },
+  table => [
+    primaryKey({ columns: [table.templateId, table.userId] }),
+    index().on(table.userId),
+    foreignKey({
+      columns: [table.tenant, table.templateId],
+      foreignColumns: [taskTemplates.tenant, taskTemplates.id]
+    }),
+    tenantPolicy(table.organizationId, visibleTemplate(table.templateId))
   ]
 )
 

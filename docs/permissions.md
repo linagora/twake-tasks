@@ -1,6 +1,6 @@
 # Permissions
 
-The role each API route needs, a role above it included. A caller who is not a member of the board gets 404, a member below the role gets 403.
+The role each API route needs, a role above it included. A caller who is not a member of the board or project gets 404, a member below the role gets 403.
 
 Generated from the route tables by `apps/backend/src/modules/permissions.test.ts`, which fails when this file is stale. After changing a route, run `npx vitest run src/modules/permissions.test.ts -u` in `apps/backend`.
 
@@ -31,6 +31,10 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `GET /api/projects`
 - `GET /api/search`
 - `GET /api/settings`
+- `GET /api/templates`
+- `POST /api/templates`
+- `DELETE /api/templates/:templateId`
+- `PUT /api/templates/:templateId`
 
 ## Viewers of the board
 
@@ -90,3 +94,9 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `GET /api/boards/:boardId/sharing`, refused on a managed project
 - `GET /api/boards/:boardId/sharing/people`, refused on a managed project
 - `POST /api/boards/:boardId/unarchive`
+
+## Editors of the project
+
+- `POST /api/projects/:projectId/templates`
+- `DELETE /api/projects/:projectId/templates/:templateId`
+- `PUT /api/projects/:projectId/templates/:templateId`

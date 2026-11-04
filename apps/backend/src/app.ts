@@ -25,6 +25,7 @@ import { registerNotifications } from './modules/notifications/index.ts'
 import { registerProjects } from './modules/projects/index.ts'
 import { registerSettings } from './modules/settings/index.ts'
 import { registerTasks } from './modules/tasks/index.ts'
+import { registerTemplates } from './modules/templates/index.ts'
 import { registerViews } from './modules/views/index.ts'
 
 export async function buildApp(deps: {
@@ -82,6 +83,7 @@ export async function buildApp(deps: {
         requireIdentity,
         pendingReminders: deps.limits?.pendingReminders ?? 0
       })
+      registerTemplates(api, { db: deps.db, requireIdentity })
       registerCollaboration(api, {
         db: deps.db,
         requireIdentity,

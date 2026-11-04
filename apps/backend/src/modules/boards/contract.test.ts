@@ -24,6 +24,8 @@ import {
   settingsResponse,
   sharingResponse,
   tasksResponse,
+  template,
+  templatesResponse,
   transferPreviewResponse,
   transferResponse,
   unreadResponse
@@ -125,7 +127,10 @@ describe('the API contract', () => {
     const alice = aUser()
     const bob = aUser({ organizationId: alice.organizationId })
     const carol = aUser({ organizationId: alice.organizationId })
-    const { id: boardId } = contracted(
+    const {
+      id: boardId,
+      project: { id: projectId }
+    } = contracted(
       boardResponse,
       await api.as(alice).post('/boards', { name: 'Design', keyPrefix: 'DES' })
     )
@@ -159,6 +164,36 @@ describe('the API contract', () => {
         .patch(`${board}/labels/${labelId}`, { color: '#336699' })
     )
     await api.as(alice).put(`${at}/labels`, { labelIds: [labelId] })
+    const { id: templateId } = contracted(
+      template,
+      await api.as(alice).post(`/projects/${projectId}/templates`, {
+        title: 'Weekly review',
+        description: '',
+        priority: null,
+        labelIds: [labelId],
+        assigneeIds: []
+      })
+    )
+    contracted(
+      template,
+      await api.as(alice).post('/templates', {
+        title: 'Inbox zero',
+        description: '',
+        priority: 1
+      })
+    )
+    contracted(
+      createdTaskResponse,
+      await api.as(alice).post(`${board}/tasks`, {
+        sectionId: null,
+        title: 'Review',
+        templateId
+      })
+    )
+    expect(
+      contracted(templatesResponse, await api.as(alice).get('/templates'))
+        .templates
+    ).toHaveLength(2)
     await api.as(alice).patch(at, { dueDate: '2020-01-02', dueTime: '09:30' })
     expect(
       contracted(

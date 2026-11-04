@@ -1,6 +1,10 @@
 import { and, asc, eq, inArray, isNull, lte, sql } from 'drizzle-orm'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
-import type { BoardAccess, CheckBoardAccess } from '../../infra/route.ts'
+import type {
+  BoardAccess,
+  CheckBoardAccess,
+  CheckProjectAccess
+} from '../../infra/route.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused } from '../kernel/index.ts'
 import type { LiveBoards } from '../live/index.ts'
@@ -249,6 +253,19 @@ export const checkBoardAccess =
     inTenant(db, identity, tx =>
       boardRefusal(tx, identity.userId, params, access)
     )
+
+export const checkProjectAccess =
+  (db: Db): CheckProjectAccess<Identity> =>
+  (identity, params, access) =>
+    inTenant(db, identity, async tx => {
+      let role = await roleIn(tx, identity.userId, params.projectId)
+      if (!role) {
+        await claimInvites(tx)
+        role = await roleIn(tx, identity.userId, params.projectId)
+      }
+      if (!role) return 'not_found'
+      return RANK[role] < RANK[access.role] ? 'forbidden' : null
+    })
 
 export const liveBoards: LiveBoards = {
   version: async (tx, boardId) => {

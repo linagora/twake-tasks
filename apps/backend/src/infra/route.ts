@@ -28,8 +28,11 @@ export type Access =
       // Any member may also do it when they are the path's `:userId`.
       orSelf?: true
     }
+  | { on: 'project'; role: 'viewer' | 'editor' | 'admin' }
 
 export type BoardAccess = Extract<Access, { on: 'board' }>
+
+export type ProjectAccess = Extract<Access, { on: 'project' }>
 
 export type CheckBoardAccess<I> = (
   identity: I,
@@ -37,7 +40,13 @@ export type CheckBoardAccess<I> = (
   access: BoardAccess
 ) => Promise<'not_found' | 'forbidden' | null>
 
-const BOARD_REFUSAL_STATUS = { not_found: 404, forbidden: 403 }
+export type CheckProjectAccess<I> = (
+  identity: I,
+  params: { projectId: string },
+  access: ProjectAccess
+) => Promise<'not_found' | 'forbidden' | null>
+
+const ACCESS_REFUSAL_STATUS = { not_found: 404, forbidden: 403 }
 
 interface Route<I, P, Q, B, T, E extends string> {
   method: HTTPMethods
@@ -93,12 +102,16 @@ export function registerRoutes<I, E extends string>(
     refusalStatus: Readonly<Record<E, number>>
     // Required by a table with a board route.
     checkBoardAccess?: CheckBoardAccess<I>
+    // Required by a table with a project route.
+    checkProjectAccess?: CheckProjectAccess<I>
   },
   routes: readonly DeclaredRoute<I, E>[]
 ) {
   for (const route of routes) {
     const open = route.access.on === 'public'
-    const checkAccess = boardAccessCheck(route, deps.checkBoardAccess)
+    const checkAccess =
+      boardAccessCheck(route, deps.checkBoardAccess) ??
+      projectAccessCheck(route, deps.checkProjectAccess)
     app.route({
       method: route.method,
       url: route.url,
@@ -113,7 +126,7 @@ export function registerRoutes<I, E extends string>(
         const refused = await checkAccess?.(identity as I, params.data)
         if (refused) {
           return reply
-            .code(BOARD_REFUSAL_STATUS[refused])
+            .code(ACCESS_REFUSAL_STATUS[refused])
             .send({ error: refused })
         }
         const query = parse(route.query, request.query)
@@ -157,6 +170,21 @@ function boardAccessCheck<I>(
   }
   return (identity: I, params: unknown) =>
     check(identity, params as { boardId: string; userId?: string }, access)
+}
+
+function projectAccessCheck<I>(
+  route: DeclaredRoute<I, string>,
+  check: CheckProjectAccess<I> | undefined
+) {
+  const { access } = route
+  if (access.on !== 'project') return null
+  if (!check || !route.url.includes(':projectId')) {
+    throw new Error(
+      `${route.method} ${route.url} needs a project in its path and a project access check`
+    )
+  }
+  return (identity: I, params: unknown) =>
+    check(identity, params as { projectId: string }, access)
 }
 
 function parse(schema: Schema<unknown> | undefined, value: unknown) {

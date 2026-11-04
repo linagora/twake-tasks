@@ -11,7 +11,11 @@ export const RECURRENCE_UNITS = ['days', 'weeks', 'months', 'years'] as const
 export const taskTitle = z.string().trim().min(1).max(500)
 
 export const newTask = z.union([
-  z.strictObject({ sectionId: z.uuid().nullable(), title: taskTitle }),
+  z.strictObject({
+    sectionId: z.uuid().nullable(),
+    title: taskTitle,
+    templateId: z.uuid().optional()
+  }),
   z.strictObject({ parentId: z.uuid(), title: taskTitle })
 ])
 
@@ -91,6 +95,10 @@ export const taskResponse = z.object({
       unit: z.enum(RECURRENCE_UNITS),
       fromCompletion: z.boolean()
     })
+    .nullable(),
+  // The title is null for a template the reader may not see.
+  template: z
+    .object({ id: z.string(), title: z.string().nullable() })
     .nullable(),
   completedAt: instant.nullable(),
   canceledAt: instant.nullable(),
