@@ -369,6 +369,52 @@ export function fakeBoardsApi(boards: Board[] = []) {
           .map(({ task, at }) => ({ ...task, at }))
       })
     ),
+    exportTasks: vi.fn<BoardsApi['exportTasks']>((boardId, archived) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        const shelved = archived
+          ? [...hidden.values()]
+              .filter(entry => entry.shelf === 'archived')
+              .map(({ task }) => ({ task, archived: true }))
+          : []
+        return [
+          ...board.tasks.map(task => ({ task, archived: false })),
+          ...shelved
+        ].map(({ task, archived: isArchived }) => ({
+          ...structuredClone(task),
+          archived: isArchived,
+          description: descriptions.get(task.id)?.markdown ?? '',
+          createdAt: '2026-11-01T09:00:00.000Z',
+          createdBy: null
+        }))
+      })
+    ),
+    importTasks: vi.fn<BoardsApi['importTasks']>((boardId, rows) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        for (const row of rows) {
+          const section =
+            board.sections.find(
+              each => each.name.toLowerCase() === row.section?.toLowerCase()
+            ) ?? board.sections[0]
+          board.tasks.push(
+            aTask(section ?? null, {
+              key: `${board.keyPrefix}-${String(board.tasks.length + 1)}`,
+              title: row.title,
+              priority: row.priority ?? null,
+              dueDate: row.dueDate ?? null
+            })
+          )
+        }
+        board.version += 1
+        return {
+          imported: rows.length,
+          skipped: [],
+          unknownAssignees: [],
+          unplacedSections: []
+        }
+      })
+    ),
     renameBoard: vi.fn<BoardsApi['renameBoard']>((boardId, name) =>
       Promise.resolve().then(() => {
         find(boardId).name = name
