@@ -4,6 +4,7 @@ import {
   ApiError,
   type AgendaTask,
   type BoardsApi,
+  type CalendarFeed,
   type Comment,
   type CommentEdit,
   type Description,
@@ -183,6 +184,8 @@ export function fakeBoardsApi(boards: Board[] = []) {
     mutedEmail: [],
     emailFrequency: 'instant'
   }
+  let calendarFeed: CalendarFeed | null = null
+  let calendarLinks = 0
   const findTask = (boardId: string, taskId: string) => {
     const task = find(boardId).tasks.find(candidate => candidate.id === taskId)
     if (!task) throw new ApiError(404, 'not_found')
@@ -551,6 +554,30 @@ export function fakeBoardsApi(boards: Board[] = []) {
       })
     ),
     unsubscribe: vi.fn<BoardsApi['unsubscribe']>(() => Promise.resolve()),
+    calendarFeed: vi.fn<BoardsApi['calendarFeed']>(() =>
+      Promise.resolve(structuredClone(calendarFeed))
+    ),
+    openCalendarFeed: vi.fn<BoardsApi['openCalendarFeed']>(scope =>
+      Promise.resolve().then(() => {
+        calendarFeed = { scope, createdAt: new Date().toISOString() }
+        return {
+          ...calendarFeed,
+          url: `https://tasks.example.com/api/calendar/${String(++calendarLinks)}.ics`
+        }
+      })
+    ),
+    changeCalendarFeed: vi.fn<BoardsApi['changeCalendarFeed']>(scope =>
+      Promise.resolve().then(() => {
+        if (!calendarFeed) throw new ApiError(404, 'not_found')
+        calendarFeed = { ...calendarFeed, scope }
+        return structuredClone(calendarFeed)
+      })
+    ),
+    closeCalendarFeed: vi.fn<BoardsApi['closeCalendarFeed']>(() =>
+      Promise.resolve().then(() => {
+        calendarFeed = null
+      })
+    ),
     agenda: vi.fn<BoardsApi['agenda']>((_zone, days) =>
       Promise.resolve().then(() => {
         const today = new Intl.DateTimeFormat('en-CA').format(new Date())

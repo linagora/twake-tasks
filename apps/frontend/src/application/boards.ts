@@ -243,9 +243,23 @@ export interface NotificationPreferences {
   emailFrequency: 'instant' | 'daily' | 'never'
 }
 
+export type CalendarFeedScope = 'assigned' | 'mine'
+
+export interface CalendarFeed {
+  scope: CalendarFeedScope
+  createdAt: string
+}
+
 /** Rejects with an ApiError when the backend refuses the request. */
 export interface BoardsApi {
   settings: () => Promise<UserSettings>
+  calendarFeed: () => Promise<CalendarFeed | null>
+  /** A new link, which ends the one before: its address is only known now. */
+  openCalendarFeed: (
+    scope: CalendarFeedScope
+  ) => Promise<CalendarFeed & { url: string }>
+  changeCalendarFeed: (scope: CalendarFeedScope) => Promise<CalendarFeed>
+  closeCalendarFeed: () => Promise<void>
   notificationPreferences: () => Promise<NotificationPreferences>
   keepNotificationPreferences: (
     preferences: NotificationPreferences
