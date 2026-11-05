@@ -19,7 +19,6 @@ import { ldapRestClient } from './infra/ldapRest.ts'
 import { startErrorReporting } from './infra/errorReporting.ts'
 import { createMailer } from './infra/mail.ts'
 import { createMetrics } from './infra/metrics.ts'
-import { createObjectStorage } from './infra/objectStorage.ts'
 import { connectRedis } from './infra/rateLimit.ts'
 import {
   connectLive,
@@ -93,14 +92,12 @@ const boardChanges = createChanges()
 const redis = config.REDIS_URL
   ? connectRedis(config.REDIS_URL, logger)
   : undefined
-const storage = createObjectStorage(config, logger)
 const server = await buildApp({
   logger,
   proxyHops: config.HTTP_TRUSTED_PROXY_HOPS,
   redis,
   limits,
   metrics,
-  storage,
   contacts:
     config.COMMON_CONTACTS === 'true'
       ? contactSearchClient({
@@ -213,7 +210,6 @@ const stopScheduler = createScheduler({
     appUrl: config.APP_URL,
     budget: limits.notificationEmails,
     send,
-    storage,
     retention: {
       processedEventsDays: config.RETENTION_PROCESSED_EVENTS_DAYS,
       readNotificationsDays: config.RETENTION_READ_NOTIFICATIONS_DAYS

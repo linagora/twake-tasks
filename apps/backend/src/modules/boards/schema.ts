@@ -2,6 +2,7 @@ import { sql, type SQL } from 'drizzle-orm'
 import {
   bigint,
   boolean,
+  bytea,
   check,
   date,
   foreignKey,
@@ -197,8 +198,8 @@ export const boards = pgTable.withRLS(
     background: boardBackground(),
     // A plain color instead of a picture, with `background` null.
     backgroundColor: text('background_color'),
-    // The object storage key of the picture an admin sent, with `background`
-    // custom. A new one each time, which clients cache it by.
+    // The id of the picture an admin sent, in `board_covers`, with
+    // `background` custom. A new one each time, which clients cache it by.
     backgroundImage: uuid('background_image'),
     tenant: tenant()
   },
@@ -622,6 +623,27 @@ export const boardLayouts = pgTable.withRLS(
     }),
     tenantPolicy(table.organizationId, visibleBoard(table.boardId)),
     ownRows(table.userId)
+  ]
+)
+
+// Apart from `boards`, so that reading a board does not read its picture.
+export const boardCovers = pgTable.withRLS(
+  'board_covers',
+  {
+    boardId: uuid('board_id')
+      .primaryKey()
+      .references(() => boards.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    contentType: text('content_type').notNull(),
+    content: bytea().notNull(),
+    tenant: tenant()
+  },
+  table => [
+    foreignKey({
+      columns: [table.tenant, table.boardId],
+      foreignColumns: [boards.tenant, boards.id]
+    }),
+    tenantPolicy(table.organizationId, visibleBoard(table.boardId))
   ]
 )
 

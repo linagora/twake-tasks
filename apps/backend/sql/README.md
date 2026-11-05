@@ -26,7 +26,6 @@ flowchart LR
   comments -->|comments_notify| outbox
   notifications -->|notifications_email| jobs
   task_reminders -->|task_reminders_unschedule| jobs
-  boards -->|boards_delete_cover| jobs
   tasks -->|tasks_complete_subtasks| tasks
 ```
 
@@ -40,7 +39,6 @@ flowchart LR
 - `comments_notify`, after insert on `comments`: `notify_comment` makes the author and the mentioned members follow the task, notifies them and the followers, and queues the `commented` event.
 - `notifications_email`, after insert on `notifications`: `email_notification` queues a `notification_email` job.
 - `task_reminders_unschedule`, after delete on `task_reminders`: `unschedule_reminder` deletes the reminder's job.
-- `boards_delete_cover`, after delete on `boards` or a change of `background_image`: `delete_cover` queues a `cover_delete` job, which deletes the old picture from object storage.
 - `tasks_complete_subtasks`, after `completed_at` is set on `tasks`: `complete_subtasks` completes the open sub-tasks.
 
 The other functions are called from these or from TypeScript: `app_claim_invites` and `app_member_project_ids` (membership and row level security), `reminder_time`, and the value helpers `due_of`, `duration_of`, `recurrence_of`, `completion_of`, `followers_of`, `key_of` and `without_nulls`.
