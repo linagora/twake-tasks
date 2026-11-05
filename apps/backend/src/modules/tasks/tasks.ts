@@ -182,6 +182,84 @@ async function usableTemplate(
   return template !== undefined
 }
 
+/** Adds a task last in its section or under its parent, as `userId`. */
+export async function insertTask(
+  tx: Tx,
+  userId: string,
+  boardId: string,
+  input: { title: string } & (
+    | { sectionId: string | null; templateId?: string | undefined }
+    | { parentId: string }
+  ),
+  details: Pick<
+    typeof tasks.$inferInsert,
+    'description' | 'descriptionText' | 'priority' | 'scheduledFor'
+  > = {}
+) {
+  const board = await bumpBoard(tx, boardId, {
+    taskCounter: sql`${boards.taskCounter} + 1`
+  })
+  const templateId = 'templateId' in input ? input.templateId : undefined
+  if (
+    templateId !== undefined &&
+    !(await usableTemplate(tx, board.projectId, templateId))
+  ) {
+    throw new Refused('invalid_template')
+  }
+  const sectionId = 'sectionId' in input ? input.sectionId : null
+  const parentId = 'parentId' in input ? input.parentId : null
+  const section = await sectionOf(tx, boardId, sectionId)
+  if (parentId !== null) {
+    const [parent] = await tx
+      .select({
+        archivedAt: tasks.archivedAt,
+        deletedAt: tasks.deletedAt
+      })
+      .from(tasks)
+      .where(and(eq(tasks.id, parentId), eq(tasks.boardId, boardId)))
+    if (!parent) throw new Refused('invalid_parent')
+    if (parent.archivedAt || parent.deletedAt) {
+      throw new Refused('archived')
+    }
+    if ((await depthOf(tx, parentId)) >= MAX_DEPTH) {
+      throw new Refused('too_deep')
+    }
+  }
+  const [last] = await tx
+    .select({ position: tasks.position })
+    .from(tasks)
+    .where(
+      parentId === null
+        ? inSection(boardId, sectionId)
+        : and(eq(tasks.boardId, boardId), eq(tasks.parentId, parentId))
+    )
+    .orderBy(desc(tasks.position))
+    .limit(1)
+  const [task] = await tx
+    .insert(tasks)
+    .values({
+      ...details,
+      boardId,
+      sectionId,
+      parentId,
+      templateId,
+      organizationId: board.organizationId,
+      number: board.number,
+      title: input.title,
+      position: generateKeyBetween(last?.position ?? null, null),
+      createdBy: userId,
+      ...completionFor(section?.category ?? null)
+    })
+    .returning()
+  if (!task) throw new Error('task insert returned nothing')
+  return {
+    id: task.id,
+    key: `${board.keyPrefix}-${String(task.number)}`,
+    title: task.title,
+    sectionId: task.sectionId
+  }
+}
+
 export function createTaskStore(db: Db) {
   const write = <T>(identity: Identity, work: (tx: Tx) => Promise<T>) =>
     writeOrRefuse(db, identity, work)
@@ -197,67 +275,7 @@ export function createTaskStore(db: Db) {
     ) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
-        const board = await bumpBoard(tx, boardId, {
-          taskCounter: sql`${boards.taskCounter} + 1`
-        })
-        const templateId = 'templateId' in input ? input.templateId : undefined
-        if (
-          templateId !== undefined &&
-          !(await usableTemplate(tx, board.projectId, templateId))
-        ) {
-          throw new Refused('invalid_template')
-        }
-        const sectionId = 'sectionId' in input ? input.sectionId : null
-        const parentId = 'parentId' in input ? input.parentId : null
-        const section = await sectionOf(tx, boardId, sectionId)
-        if (parentId !== null) {
-          const [parent] = await tx
-            .select({
-              archivedAt: tasks.archivedAt,
-              deletedAt: tasks.deletedAt
-            })
-            .from(tasks)
-            .where(and(eq(tasks.id, parentId), eq(tasks.boardId, boardId)))
-          if (!parent) throw new Refused('invalid_parent')
-          if (parent.archivedAt || parent.deletedAt) {
-            throw new Refused('archived')
-          }
-          if ((await depthOf(tx, parentId)) >= MAX_DEPTH) {
-            throw new Refused('too_deep')
-          }
-        }
-        const [last] = await tx
-          .select({ position: tasks.position })
-          .from(tasks)
-          .where(
-            parentId === null
-              ? inSection(boardId, sectionId)
-              : and(eq(tasks.boardId, boardId), eq(tasks.parentId, parentId))
-          )
-          .orderBy(desc(tasks.position))
-          .limit(1)
-        const [task] = await tx
-          .insert(tasks)
-          .values({
-            boardId,
-            sectionId,
-            parentId,
-            templateId,
-            organizationId: board.organizationId,
-            number: board.number,
-            title: input.title,
-            position: generateKeyBetween(last?.position ?? null, null),
-            createdBy: identity.userId,
-            ...completionFor(section?.category ?? null)
-          })
-          .returning()
-        if (!task) throw new Error('task insert returned nothing')
-        return {
-          id: task.id,
-          key: `${board.keyPrefix}-${String(task.number)}`,
-          title: task.title,
-          sectionId: task.sectionId
-        }
+        return insertTask(tx, identity.userId, boardId, input)
       })
     },
 
