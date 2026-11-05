@@ -1,9 +1,11 @@
 import {
   and,
   asc,
+  desc,
   eq,
   exists,
   inArray,
+  isNotNull,
   isNull,
   lt,
   notExists,
@@ -18,8 +20,10 @@ import type { Identity } from '../auth/index.ts'
 import {
   accessibleBoards,
   boards,
+  comments,
   describeTasks,
   labelsOn,
+  looksOn,
   membersOf,
   projects,
   sections,
@@ -82,10 +86,19 @@ function excerptOf(description: string, folded: string): string | null {
   return `${from > 0 ? '…' : ''}${words.slice(from, to).join(' ')}${to < words.length ? '…' : ''}`
 }
 
-interface SearchMatch {
-  field: 'key' | 'previousKey' | 'title' | 'description'
-  text: string
-}
+type SearchMatch =
+  | { field: 'key' | 'previousKey' | 'title' | 'description'; text: string }
+  | {
+      field: 'comment'
+      text: string
+      commentId: string
+      author: {
+        userId: string
+        email: string
+        name: string | null
+        avatar: string | null
+      }
+    }
 
 function matchOf(
   task: { key?: string | undefined; title?: string | null | undefined },
@@ -102,6 +115,100 @@ function matchOf(
   if (previous) return { field: 'previousKey', text: previous }
   if (task.title && inTitle) return { field: 'title', text: task.title }
   return excerpt ? { field: 'description', text: excerpt } : null
+}
+
+const likePattern = (text: string) => text.replace(/[\\%_]/g, '\\$&')
+
+const keyMatches = (keyPattern: string) =>
+  sql`(${boards.keyPrefix} || '-' || ${tasks.number} ilike ${keyPattern}
+    or exists (select 1 from unnest(${tasks.previousKeys}) as key where key ilike ${keyPattern}))`
+
+/**
+ * Tasks whose key starts with, or whose title, description or one of whose
+ * comments contains, `text`, whatever the case and accents.
+ */
+export function containing(tx: Tx, text: string) {
+  const pattern = likePattern(text)
+  return or(
+    keyMatches(`${pattern}%`),
+    accentless(tasks.title, `%${pattern}%`),
+    accentless(tasks.descriptionText, `%${pattern}%`),
+    exists(
+      tx
+        .select({ one: sql`1` })
+        .from(comments)
+        .where(
+          and(
+            eq(comments.taskId, tasks.id),
+            accentless(comments.bodyText, `%${pattern}%`)
+          )
+        )
+    )
+  )
+}
+
+export interface SearchScope {
+  status?: 'open' | 'done' | undefined
+  board?: string | undefined
+}
+
+export const STATUS = {
+  open: and(isNull(tasks.completedAt), isNull(tasks.canceledAt)),
+  done: isNotNull(tasks.completedAt),
+  any: isNull(tasks.canceledAt)
+}
+
+// The latest comment of each task that quotes the text, for the tasks no
+// other field answers.
+async function commentMatches(
+  tx: Tx,
+  found: { id?: string | undefined; boardId: string }[],
+  text: string,
+  folded: string
+): Promise<Map<string, SearchMatch>> {
+  if (found.length === 0) return new Map()
+  const rows = await tx
+    .select({
+      id: comments.id,
+      taskId: comments.taskId,
+      authorId: comments.authorId,
+      authorEmail: comments.authorEmail,
+      authorName: comments.authorName,
+      bodyText: comments.bodyText
+    })
+    .from(comments)
+    .where(
+      and(
+        inArray(
+          comments.taskId,
+          found.flatMap(task => (task.id ? [task.id] : []))
+        ),
+        accentless(comments.bodyText, `%${likePattern(text)}%`)
+      )
+    )
+    .orderBy(desc(comments.createdAt), desc(comments.id))
+  const boardOf = new Map(found.map(task => [task.id, task.boardId]))
+  const looks = new Map<string, Awaited<ReturnType<typeof looksOn>>>()
+  const matches = new Map<string, SearchMatch>()
+  for (const row of rows) {
+    if (matches.has(row.taskId)) continue
+    const excerpt = excerptOf(row.bodyText ?? '', folded)
+    const boardId = boardOf.get(row.taskId)
+    if (!excerpt || !boardId) continue
+    const looksOf = looks.get(boardId) ?? (await looksOn(tx, boardId))
+    looks.set(boardId, looksOf)
+    matches.set(row.taskId, {
+      field: 'comment',
+      text: excerpt,
+      commentId: row.id,
+      author: {
+        userId: row.authorId,
+        email: row.authorEmail,
+        ...looksOf(row.authorId, row.authorName)
+      }
+    })
+  }
+  return matches
 }
 
 export function createViewStore(db: Db) {
@@ -131,15 +238,8 @@ export function createViewStore(db: Db) {
       )
     },
 
-    /**
-     * Tasks whose key starts with, or whose title or description contains,
-     * `text`, whatever the case and accents, an exact key match first.
-     */
-    search(identity: Identity, text: string) {
-      const pattern = text.replace(/[\\%_]/g, '\\$&')
-      const keyMatches = (keyPattern: string) =>
-        sql`(${boards.keyPrefix} || '-' || ${tasks.number} ilike ${keyPattern}
-          or exists (select 1 from unnest(${tasks.previousKeys}) as key where key ilike ${keyPattern}))`
+    /** Tasks `containing` the text, an exact key match first. */
+    search(identity: Identity, text: string, scope: SearchScope = {}) {
       return inTenant(db, identity, async tx => {
         // No index serves ilike under row level security, so the person's
         // boards are read first: the planner then scans only their tasks,
@@ -147,20 +247,21 @@ export function createViewStore(db: Db) {
         const accessible = accessibleBoards(tx, identity.userId)
         const boardIds = (
           await tx.select({ id: accessible.boardId }).from(accessible)
-        ).map(board => board.id)
+        ).flatMap(board =>
+          scope.board === undefined || board.id === scope.board
+            ? [board.id]
+            : []
+        )
         const found = await tasksOf(
           tx,
           identity.userId,
           and(
             inArray(tasks.boardId, boardIds),
-            or(
-              keyMatches(`${pattern}%`),
-              accentless(tasks.title, `%${pattern}%`),
-              accentless(tasks.descriptionText, `%${pattern}%`)
-            )
+            scope.status === undefined ? undefined : STATUS[scope.status],
+            containing(tx, text)
           ),
           SEARCH_LIMIT,
-          sql`${keyMatches(pattern)} desc`
+          sql`${keyMatches(likePattern(text))} desc`
         )
         const lower = text.toLowerCase()
         const folded = fold(text)
@@ -179,7 +280,7 @@ export function createViewStore(db: Db) {
                   .where(inArray(tasks.id, ids))
               ).map(row => [row.id, row])
         )
-        return found.map(task => {
+        const results = found.map(task => {
           const { description = '', previousKeys = [] } =
             fields.get(task.id ?? '') ?? {}
           const inTitle = !!task.title && fold(task.title).includes(folded)
@@ -190,6 +291,16 @@ export function createViewStore(db: Db) {
             match: matchOf(task, previousKeys, excerpt, lower, inTitle)
           }
         })
+        const byComment = await commentMatches(
+          tx,
+          results.filter(result => result.match === null),
+          text,
+          folded
+        )
+        return results.map(result => ({
+          ...result,
+          match: result.match ?? byComment.get(result.id ?? '') ?? null
+        }))
       })
     }
   }
@@ -238,7 +349,7 @@ export function openTasksOf(tx: Tx, userId: string, which: SQL | undefined) {
   )
 }
 
-async function tasksOf(
+export async function tasksOf(
   tx: Tx,
   userId: string,
   which: SQL | undefined,
