@@ -9,6 +9,12 @@ DECLARE
 BEGIN
   IF NEW.field = 'created' THEN
     PERFORM follow_task(NEW.task_id, NEW.actor_id);
+  ELSIF current_setting('app.importing', true) = 'on' THEN
+    -- An import notifies no one, one notification per imported task would
+    -- bury the rest.
+    IF assignee IS NOT NULL THEN
+      PERFORM follow_task(NEW.task_id, assignee);
+    END IF;
   ELSIF assignee IS NOT NULL THEN
     PERFORM follow_task(NEW.task_id, assignee);
     PERFORM notify_task(NEW.task_id, ARRAY[assignee], 'assigned', NEW.actor_id, NEW.id, NULL);

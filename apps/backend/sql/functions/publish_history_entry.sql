@@ -25,6 +25,8 @@ BEGIN
           JOIN project_members ON project_members.project_id = boards.project_id
             AND project_members.user_id = (NEW."to" #>> '{}')::uuid
           WHERE tasks.id = NEW.task_id
+            -- Imported tasks notify no one, in Tasks or elsewhere.
+            AND current_setting('app.importing', true) IS DISTINCT FROM 'on'
         ), '{}'));
     WHEN NEW.field = 'assignees' THEN
       PERFORM publish_task_event(NEW.task_id, 'unassigned',
