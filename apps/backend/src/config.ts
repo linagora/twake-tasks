@@ -11,6 +11,17 @@ const spaceIntegration = z.discriminatedUnion('SPACE_INTEGRATION', [
   })
 ])
 
+// Off where Twake Workplace has no contacts service: suggestions then come
+// from the people Tasks knows alone.
+const commonContacts = z.discriminatedUnion('COMMON_CONTACTS', [
+  z.object({ COMMON_CONTACTS: z.literal('false') }),
+  z.object({
+    COMMON_CONTACTS: z.literal('true'),
+    CONTACTS_SEARCH_URL: z.url({ protocol: /^https?$/ }),
+    CONTACTS_SEARCH_SECRET: z.string().min(1)
+  })
+])
+
 const commaSeparated = z
   .string()
   .default('')
@@ -161,6 +172,7 @@ const configSchema = z
     }
   )
   .and(spaceIntegration)
+  .and(commonContacts)
 
 export type Config = z.infer<typeof configSchema>
 
@@ -245,7 +257,11 @@ export function rateLimits(config: Config): RateLimits {
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  const result = configSchema.safeParse({ SPACE_INTEGRATION: 'false', ...env })
+  const result = configSchema.safeParse({
+    SPACE_INTEGRATION: 'false',
+    COMMON_CONTACTS: 'false',
+    ...env
+  })
   if (!result.success) {
     throw new Error(`Invalid configuration:\n${z.prettifyError(result.error)}`)
   }
