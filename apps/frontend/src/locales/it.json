@@ -709,6 +709,15 @@
     "emptyHint": "L’avanzamento appare quando la bacheca ha delle attività.",
     "loadFailed": "Impossibile caricare l’avanzamento."
   },
+  "hero": {
+    "numbers": "La bacheca in breve",
+    "open": "aperta |||| aperte",
+    "late": "in ritardo",
+    "done": "completato",
+    "nextDue": "Prossima scadenza",
+    "progress": "Avanzamento",
+    "progressText": "%{done} completato, %{started} in corso, %{late} in ritardo"
+  },
   "background": {
     "add": "Aggiungi copertina",
     "change": "Cambia copertina",

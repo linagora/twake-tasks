@@ -709,6 +709,15 @@
     "emptyHint": "Der Fortschritt erscheint, sobald das Board Aufgaben hat.",
     "loadFailed": "Der Fortschritt konnte nicht geladen werden."
   },
+  "hero": {
+    "numbers": "Das Board auf einen Blick",
+    "open": "offen",
+    "late": "überfällig",
+    "done": "erledigt",
+    "nextDue": "Nächste Fälligkeit",
+    "progress": "Fortschritt",
+    "progressText": "%{done} erledigt, %{started} in Arbeit, %{late} überfällig"
+  },
   "background": {
     "add": "Titelbild hinzufügen",
     "change": "Titelbild ändern",

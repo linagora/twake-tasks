@@ -1,11 +1,17 @@
 import { Share } from '@linagora/twake-icons'
-import { Alert, Button, Chip, Tooltip } from '@linagora/twake-mui'
+import { Alert, Button, Chip, Tooltip, Typography } from '@linagora/twake-mui'
 import { useRef, useState, type ReactElement } from 'react'
 import { useNavigate } from 'react-router'
 
 import type { Shelf } from '@/application/boards'
+import { BoardHero } from '@/ds/BoardHero'
+import {
+  CountUp,
+  HeroStat,
+  HeroStats,
+  ProgressSegments
+} from '@/ds/HeroNumbers'
 import { Icon } from '@/ds/Icon'
-import { PageHeader, UnavailableButton } from '@/ds/PageHeader'
 import {
   isAdmin,
   isArchivable,
@@ -24,7 +30,9 @@ import {
 import { useBoardBackground } from '@/ui/boards/Backgrounds'
 import { BoardMenu } from '@/ui/boards/BoardMenu'
 import { BoardTitle } from '@/ui/boards/BoardTitle'
-import { PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
+import { Crumbs, type Origin } from '@/ui/boards/Crumbs'
+import { localToday, shortDay } from '@/ui/boards/dueLabel'
+import { boardNumbers, type BoardNumbers } from '@/ui/boards/progress'
 import { criteriaCount } from '@/ui/boards/taskFilter'
 import { LayoutSwitch } from '@/ui/boards/Layouts'
 import { MembersDialog, MemberStack } from '@/ui/boards/MembersDialog'
@@ -91,7 +99,7 @@ export function BoardHeader({
   }
   useFilterShortcut(shareButton && filterable ? startFiltering : undefined)
 
-  const headerActions = (
+  const people = (
     <>
       {!isAdmin(board.role) && (
         <Tooltip
@@ -121,92 +129,92 @@ export function BoardHeader({
           else setListing(true)
         }}
       />
-      {!shareButton ? null : shareable ? (
-        <Button
-          variant="secondary"
-          startIcon={<Icon icon={Share} />}
-          onClick={() => {
-            setSharing(true)
-          }}
-        >
-          {t('sharing.share')}
-        </Button>
-      ) : (
+      {shareButton && (
+        // Where the board cannot be shared, it lists its members and says why.
         <Tooltip title={whyNot ?? ''} describeChild>
-          <UnavailableButton
+          <Button
             variant="secondary"
             startIcon={<Icon icon={Share} />}
-            aria-disabled="true"
-            disableRipple
+            aria-haspopup="dialog"
+            onClick={() => {
+              if (shareable) setSharing(true)
+              else setListing(true)
+            }}
           >
             {t('sharing.share')}
-          </UnavailableButton>
+          </Button>
         </Tooltip>
       )}
-      {filterable && (
-        <BoardFilterButton
-          count={activeCriteria}
-          open={filtering}
-          shortcut={shareButton}
-          onClick={() => {
-            if (filtering) setFiltering(false)
-            else startFiltering()
-          }}
-        />
-      )}
-      {/* After Share, as the list and grid switch of Twake Drive. */}
-      <LayoutSwitch board={board} />
-      <BoardMenu
-        board={board}
-        onOpenShelf={openShelf}
-        onRename={
-          renamable
-            ? () => {
-                setRenaming(true)
-              }
-            : undefined
-        }
-        onMove={
-          movable
-            ? () => {
-                setMoving(true)
-              }
-            : undefined
-        }
-      />
     </>
+  )
+
+  const numbers = boardNumbers(board, localToday())
+  const title = (
+    <BoardTitle
+      board={board}
+      renaming={renaming}
+      onRename={setRenaming}
+      bare={Boolean(origin)}
+    />
   )
 
   return (
     <>
-      {origin ? (
-        <PageCrumbs
-          origin={origin}
-          current={
-            <BoardTitle
-              board={board}
-              renaming={renaming}
-              onRename={setRenaming}
-              bare
+      <BoardHero
+        picture={picture}
+        title={
+          origin ? (
+            <Crumbs
+              label={t('page.breadcrumb')}
+              origin={origin}
+              current={title}
+              // A heading would take the name of the field that renames it.
+              heading={!renaming}
             />
-          }
-          // A heading would take the name of the field that renames it.
-          heading={!renaming}
-          actions={headerActions}
-          picture={picture}
-        />
-      ) : (
-        <PageHeader
-          title={
-            <BoardTitle
-              board={board}
-              renaming={renaming}
-              onRename={setRenaming}
+          ) : (
+            title
+          )
+        }
+        // From the tasks the board has loaded.
+        numbers={numbers.counted > 0 && <HeroNumbers numbers={numbers} />}
+        late={numbers.late > 0 && <LateCount late={numbers.late} />}
+        people={people}
+        filter={
+          filterable && (
+            <BoardFilterButton
+              count={activeCriteria}
+              open={filtering}
+              shortcut={shareButton}
+              onClick={() => {
+                if (filtering) setFiltering(false)
+                else startFiltering()
+              }}
             />
-          }
-          actions={headerActions}
-        />
-      )}
+          )
+        }
+        // After Share, as the list and grid switch of Twake Drive.
+        views={<LayoutSwitch board={board} />}
+        menu={
+          <BoardMenu
+            board={board}
+            onOpenShelf={openShelf}
+            onRename={
+              renamable
+                ? () => {
+                    setRenaming(true)
+                  }
+                : undefined
+            }
+            onMove={
+              movable
+                ? () => {
+                    setMoving(true)
+                  }
+                : undefined
+            }
+          />
+        }
+      />
       {filtering && filterable && (
         <BoardFilterBar
           board={board}
@@ -244,6 +252,66 @@ export function BoardHeader({
         />
       )}
     </>
+  )
+}
+
+function HeroNumbers({ numbers }: { numbers: BoardNumbers }): ReactElement {
+  const { t, lang } = useI18n()
+  const share = (count: number) => count / numbers.counted
+  const percent = new Intl.NumberFormat(lang, {
+    style: 'percent',
+    maximumFractionDigits: 0
+  })
+  return (
+    <>
+      <HeroStats label={t('hero.numbers')}>
+        <HeroStat
+          value={<CountUp value={numbers.open} />}
+          label={t('hero.open', { smart_count: numbers.open })}
+        />
+        <HeroStat
+          value={<CountUp value={numbers.late} />}
+          label={t('hero.late', { smart_count: numbers.late })}
+          tone={numbers.late > 0 ? 'error' : undefined}
+        />
+        <HeroStat
+          value={
+            <CountUp
+              value={Math.round(share(numbers.done) * 100)}
+              format={value => percent.format(value / 100)}
+            />
+          }
+          label={t('hero.done')}
+        />
+        {numbers.nextDue && (
+          <HeroStat
+            before
+            value={shortDay(numbers.nextDue, lang)}
+            label={t('hero.nextDue')}
+          />
+        )}
+      </HeroStats>
+      <ProgressSegments
+        label={t('hero.progress')}
+        text={t('hero.progressText', {
+          done: numbers.done,
+          started: numbers.started,
+          late: numbers.late
+        })}
+        done={share(numbers.done)}
+        started={share(numbers.started)}
+        late={share(numbers.late)}
+      />
+    </>
+  )
+}
+
+function LateCount({ late }: { late: number }): ReactElement {
+  const { t } = useI18n()
+  return (
+    <Typography variant="body2" color="error" noWrap>
+      <strong>{late}</strong> {t('hero.late', { smart_count: late })}
+    </Typography>
   )
 }
 

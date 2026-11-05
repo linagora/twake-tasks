@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   ButtonBase,
   styled,
   ToggleButtonGroup,
@@ -125,13 +124,6 @@ export function PageHeader({
     </Box>
   )
 }
-
-// Looks unavailable but stays focusable, so its tooltip can say why.
-export const UnavailableButton = styled(Button)({
-  opacity: 0.5,
-  cursor: 'default',
-  '& .MuiTouchRipple-root': { display: 'none' }
-})
 
 export const StackButton = styled(ButtonBase)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,

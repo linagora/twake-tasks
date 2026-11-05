@@ -19,7 +19,7 @@ async function openPicker() {
   return within(await screen.findByRole('dialog', { name: 'Board cover' }))
 }
 
-const banner = () => screen.getByTestId('board-banner')
+const heroCover = () => screen.getByTestId('board-hero-cover')
 
 describe('board backgrounds', () => {
   it('shows no picture until an admin picks one, shown behind the breadcrumb', async () => {
@@ -28,7 +28,7 @@ describe('board backgrounds', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const picker = await openPicker()
-    expect(screen.queryByTestId('board-banner')).toBeNull()
+    expect(screen.queryByTestId('board-hero-cover')).toBeNull()
     expect(picker.getByRole('button', { name: 'No cover' })).toHaveAttribute(
       'aria-pressed',
       'true'
@@ -57,7 +57,7 @@ describe('board backgrounds', () => {
       )
     })
     expect(boardsApi.setBackground).toHaveBeenCalledWith(board.id, 'dawn')
-    expect(banner()).toHaveStyle({
+    expect(heroCover()).toHaveStyle({
       backgroundImage: expect.stringContaining('url("/backgrounds/dawn.jpg")')
     })
   })
@@ -80,7 +80,7 @@ describe('board backgrounds', () => {
     expect(boardId).toBe(board.id)
     expect(sent?.type).toBe('image/jpeg')
     await waitFor(() => {
-      expect(banner()).toHaveStyle({
+      expect(heroCover()).toHaveStyle({
         backgroundImage: expect.stringContaining('data:image/jpeg')
       })
     })
@@ -110,7 +110,7 @@ describe('board backgrounds', () => {
     expect(getComputedStyle(icon).backgroundImage).not.toContain('url(')
     fireEvent.click(screen.getByRole('link', { name: 'drive space' }))
     const picker = await openPicker()
-    expect(screen.queryByTestId('board-banner')).toBeNull()
+    expect(screen.queryByTestId('board-hero-cover')).toBeNull()
     expect(picker.getByRole('button', { name: 'No cover' })).toHaveAttribute(
       'aria-pressed',
       'true'
@@ -127,24 +127,22 @@ describe('board backgrounds', () => {
       await screen.findByRole('button', { name: 'Board options' })
     )
     expect(await screen.findByRole('menu')).toBeVisible()
-    expect(screen.queryByTestId('board-banner')).toBeNull()
+    expect(screen.queryByTestId('board-hero-cover')).toBeNull()
     expect(screen.queryByRole('menuitem', { name: /cover/ })).toBeNull()
   })
 
-  it('draws the cover above the breadcrumb, never behind it', async () => {
+  it('fades the cover out to the left, the title on the page itself', async () => {
     const board = aBoard({ background: 'dawn' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
-    const cover = await screen.findByTestId('board-banner')
-    const breadcrumb = screen.getByRole('navigation', {
-      name: 'Where the page is'
-    })
-    expect(cover).not.toContainElement(breadcrumb)
-    expect(
-      cover.compareDocumentPosition(breadcrumb) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy()
+    const cover = await screen.findByTestId('board-hero-cover')
     expect(cover).toBeEmptyDOMElement()
+    expect(cover).not.toContainElement(
+      screen.getByRole('navigation', { name: 'Where the page is' })
+    )
+    expect(cover).toHaveStyle({
+      maskImage: 'linear-gradient(to right, transparent, black 75%)'
+    })
   })
 
   it.each(['list', 'calendar'] as const)(
@@ -157,7 +155,7 @@ describe('board backgrounds', () => {
       })
       renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
 
-      expect(await screen.findByTestId('board-banner')).toHaveStyle({
+      expect(await screen.findByTestId('board-hero-cover')).toHaveStyle({
         backgroundImage: expect.stringContaining('url("/backgrounds/dawn.jpg")')
       })
     }
@@ -178,10 +176,10 @@ describe('board backgrounds', () => {
 
     const color = (COLORS[1] ?? '').toUpperCase()
     await waitFor(() => {
-      expect(banner()).toHaveStyle({ backgroundColor: color })
+      expect(heroCover()).toHaveStyle({ backgroundColor: color })
     })
     expect(boardsApi.setBackgroundColor).toHaveBeenCalledWith(board.id, color)
-    expect(getComputedStyle(banner()).backgroundImage).not.toContain('url')
+    expect(getComputedStyle(heroCover()).backgroundImage).not.toContain('url')
     expect(picker.getByRole('button', { name: 'Dawn' })).toHaveAttribute(
       'aria-pressed',
       'false'
@@ -211,7 +209,7 @@ describe('board backgrounds', () => {
     fireEvent.click(custom.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => {
-      expect(banner()).toHaveStyle({ backgroundColor: '#ABCDEF' })
+      expect(heroCover()).toHaveStyle({ backgroundColor: '#ABCDEF' })
     })
     expect(boardsApi.setBackgroundColor).toHaveBeenCalledWith(
       board.id,

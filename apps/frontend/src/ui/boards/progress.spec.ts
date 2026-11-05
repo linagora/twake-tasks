@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { aBoard, aTask } from '@/testing/fakeBoardsApi'
 import {
+  boardNumbers,
   boardProgress,
   completionsByWeek,
   weekStart
@@ -48,6 +49,43 @@ describe('board progress', () => {
       { priority: 4, count: 0 },
       { priority: null, count: 3 }
     ])
+  })
+
+  it('sums up the board for its header: open, late, started, done and the next due date', () => {
+    const board = aBoard()
+    const [todo, started, done] = board.sections
+    const parent = aTask(todo ?? null, { dueDate: '2026-11-01' })
+    board.tasks = [
+      parent,
+      aTask(todo ?? null, { dueDate: '2026-11-12' }),
+      aTask(todo ?? null, { dueDate: '2026-11-09' }),
+      aTask(started ?? null, { dueDate: '2026-11-05' }),
+      aTask(started ?? null, { dueDate: '2026-11-04' }),
+      aTask(done ?? null, { dueDate: '2026-11-02' }),
+      aTask(null, { completedAt: '2026-11-01T10:00:00Z' }),
+      aTask(null, { canceledAt: '2026-11-01T10:00:00Z' }),
+      aTask(todo ?? null, { parentId: parent.id, dueDate: '2026-11-06' })
+    ]
+
+    expect(boardNumbers(board, TODAY)).toEqual({
+      open: 5,
+      late: 2,
+      started: 1,
+      done: 2,
+      counted: 7,
+      nextDue: '2026-11-05'
+    })
+  })
+
+  it('has no next due date when no open task is due from today on', () => {
+    const board = aBoard()
+    const [todo, , done] = board.sections
+    board.tasks = [
+      aTask(todo ?? null, { dueDate: '2026-11-01' }),
+      aTask(done ?? null, { dueDate: '2026-11-20' })
+    ]
+
+    expect(boardNumbers(board, TODAY).nextDue).toBeNull()
   })
 
   it('starts weeks on the locale first day', () => {

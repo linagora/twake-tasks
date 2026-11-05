@@ -709,6 +709,15 @@
     "emptyHint": "Tiến độ sẽ hiện khi bảng có công việc.",
     "loadFailed": "Không thể tải tiến độ."
   },
+  "hero": {
+    "numbers": "Tổng quan bảng",
+    "open": "đang mở",
+    "late": "trễ hạn",
+    "done": "hoàn thành",
+    "nextDue": "Hạn tiếp theo",
+    "progress": "Tiến độ",
+    "progressText": "%{done} hoàn thành, %{started} đang làm, %{late} trễ hạn"
+  },
   "background": {
     "add": "Thêm ảnh bìa",
     "change": "Đổi ảnh bìa",

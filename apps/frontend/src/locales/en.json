@@ -709,6 +709,15 @@
     "emptyHint": "Progress appears once the board has tasks.",
     "loadFailed": "The progress could not be loaded."
   },
+  "hero": {
+    "numbers": "The board at a glance",
+    "open": "open",
+    "late": "late",
+    "done": "done",
+    "nextDue": "Next due",
+    "progress": "Progress",
+    "progressText": "%{done} done, %{started} in progress, %{late} late"
+  },
   "background": {
     "add": "Add cover",
     "change": "Change cover",

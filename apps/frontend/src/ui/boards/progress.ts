@@ -100,6 +100,49 @@ export function boardProgress(board: Board, today: string): BoardProgress {
   }
 }
 
+export interface BoardNumbers {
+  open: number
+  late: number
+  /** Open, in a started section, and not late. */
+  started: number
+  done: number
+  /** The top-level tasks not canceled, which `done` is a share of. */
+  counted: number
+  /** The nearest due date of an open task, from today on. */
+  nextDue: string | null
+}
+
+/** The board at a glance, from its top-level tasks. */
+export function boardNumbers(board: Board, today: string): BoardNumbers {
+  const categoryOf = (task: Task) =>
+    board.sections.find(each => each.id === task.sectionId)?.category
+  const isCanceled = (task: Task) => {
+    const category = categoryOf(task)
+    return category ? category === 'canceled' : task.canceledAt !== null
+  }
+  const counted = board.tasks.filter(
+    task => task.parentId === null && !isCanceled(task)
+  )
+  const open = counted.filter(task => !isClosed(task, board.sections))
+  const isLate = (task: Task) => task.dueDate !== null && task.dueDate < today
+  const late = open.filter(isLate)
+  const started = open.filter(
+    task => !isLate(task) && categoryOf(task) === 'started'
+  )
+  const upcoming = open
+    .map(task => task.dueDate)
+    .filter((due): due is string => due !== null && due >= today)
+    .sort()
+  return {
+    open: open.length,
+    late: late.length,
+    started: started.length,
+    done: counted.length - open.length,
+    counted: counted.length,
+    nextDue: upcoming[0] ?? null
+  }
+}
+
 /** The day `day`'s week starts on, `firstDay` being 0 for Sunday. */
 export function weekStart(day: string, firstDay: number): string {
   const weekday = new Date(`${day}T00:00:00Z`).getUTCDay()
