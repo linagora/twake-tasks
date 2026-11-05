@@ -32,6 +32,20 @@ export interface NewBoard {
   name: string
   keyPrefix: string
   language: string
+  /** Without it, a project of its own. */
+  projectId?: string
+  copyOf?: BoardCopy
+}
+
+/**
+ * The board's sections and its project's labels, plus its open tasks with
+ * `tasks`. Assignees outside the new board's project are dropped.
+ */
+export interface BoardCopy {
+  boardId: string
+  tasks: boolean
+  assignees: boolean
+  dueDates: boolean
 }
 
 /** `suggestion` is the prefix asked for when it is free, else a free one close to it. */
@@ -418,6 +432,8 @@ export interface BoardsApi {
   /** Whether no other board of the organization uses `keyPrefix`. */
   checkKeyPrefix: (keyPrefix: string) => Promise<KeyPrefixCheck>
   setFavorite: (boardId: string, favorite: boolean) => Promise<void>
+  /** Offers the board to start new boards from. Admins only. */
+  setBoardTemplate: (boardId: string, on: boolean) => Promise<void>
   /** The signed-in person's own layout for the board. */
   setLayout: (boardId: string, layout: Layout) => Promise<void>
   /** The layout of everyone who has not picked their own. Admins only. */

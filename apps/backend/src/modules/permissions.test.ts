@@ -435,6 +435,8 @@ const EXAMPLES: Record<string, Example> = {
   'PATCH /boards/:boardId': () => ({ body: { name: 'Design 2' } }),
   'PUT /boards/:boardId/favorite': none,
   'DELETE /boards/:boardId/favorite': none,
+  'PUT /boards/:boardId/board-template': none,
+  'DELETE /boards/:boardId/board-template': none,
   'PUT /boards/:boardId/layout': () => ({ body: { layout: 'list' } }),
   'PUT /boards/:boardId/default-layout': () => ({ body: { layout: 'list' } }),
   'GET /search': () => ({ query: { q: 'logo' } }),

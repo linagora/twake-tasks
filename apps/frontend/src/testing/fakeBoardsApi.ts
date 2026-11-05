@@ -54,6 +54,7 @@ export function aBoard(overrides: Partial<Board> = {}): Board {
     project: aProject(),
     inbox: false,
     archived: false,
+    boardTemplate: false,
     version: 1,
     role: 'admin',
     layout: 'board',
@@ -134,6 +135,7 @@ function summaryOf(
     inbox: board.inbox,
     role: board.role,
     archived: board.archived,
+    boardTemplate: board.boardTemplate,
     favorite,
     openTasks: counted.filter(task => task.completedAt === null).length,
     doneTasks: counted.filter(task => task.completedAt !== null).length,
@@ -702,6 +704,13 @@ export function fakeBoardsApi(boards: Board[] = []) {
         else favorites.delete(boardId)
       })
     ),
+    setBoardTemplate: vi.fn<BoardsApi['setBoardTemplate']>((boardId, on) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        board.boardTemplate = on
+        board.version += 1
+      })
+    ),
     setLayout: vi.fn<BoardsApi['setLayout']>((boardId, layout) =>
       Promise.resolve().then(() => {
         find(boardId).layout = layout
@@ -740,15 +749,46 @@ export function fakeBoardsApi(boards: Board[] = []) {
         suggestion
       })
     }),
-    createBoard: vi.fn<BoardsApi['createBoard']>(({ name, keyPrefix }) => {
-      const taken = [...store.values()].some(
-        board => board.keyPrefix === keyPrefix
-      )
-      if (taken) return Promise.reject(new ApiError(409, 'key_prefix_taken'))
-      const board = aBoard({ name, keyPrefix })
-      store.set(board.id, board)
-      return Promise.resolve(structuredClone(board))
-    }),
+    createBoard: vi.fn<BoardsApi['createBoard']>(
+      ({ name, keyPrefix, projectId, copyOf }) => {
+        const boards = [...store.values()]
+        const taken = boards.some(board => board.keyPrefix === keyPrefix)
+        if (taken) return Promise.reject(new ApiError(409, 'key_prefix_taken'))
+        const project = boards.find(
+          board => board.project.id === projectId
+        )?.project
+        const board = aBoard({
+          name,
+          keyPrefix,
+          ...(project && { project })
+        })
+        if (copyOf) {
+          const source = find(copyOf.boardId)
+          const sectionIds = new Map(
+            source.sections.map(section => [section.id, nextId()])
+          )
+          board.sections = source.sections.map(section => ({
+            ...section,
+            id: sectionIds.get(section.id) ?? ''
+          }))
+          board.labels = structuredClone(source.labels)
+          board.tasks = copyOf.tasks
+            ? source.tasks
+                .filter(task => task.parentId === null && !task.completedAt)
+                .map((task, at) => ({
+                  ...structuredClone(task),
+                  id: nextId(),
+                  key: `${keyPrefix}-${String(at + 1)}`,
+                  sectionId: sectionIds.get(task.sectionId ?? '') ?? null,
+                  assignees: copyOf.assignees ? task.assignees : [],
+                  dueDate: copyOf.dueDates ? task.dueDate : null
+                }))
+            : []
+        }
+        store.set(board.id, board)
+        return Promise.resolve(structuredClone(board))
+      }
+    ),
     createTask: vi.fn<BoardsApi['createTask']>((boardId, input) =>
       Promise.resolve().then(() => {
         const board = find(boardId)

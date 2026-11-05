@@ -139,7 +139,12 @@ function BoardItem({
       }
       flag={fresh ? t('boards.newlyShared') : undefined}
       chip={
-        board.project.personal ? (
+        board.boardTemplate && !board.archived ? (
+          <BoardChip
+            label={t('boardTemplate.chip')}
+            hint={t('boardTemplate.hint')}
+          />
+        ) : board.project.personal ? (
           <BoardChip
             label={t('boards.defaultChip')}
             hint={t('boards.defaultHint')}

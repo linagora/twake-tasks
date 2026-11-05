@@ -445,6 +445,8 @@ export function httpBoardsApi(
       } satisfies Body<'layoutChoice'>),
     setFavorite: (boardId, favorite) =>
       call(favorite ? 'PUT' : 'DELETE', route`/boards/${boardId}/favorite`),
+    setBoardTemplate: (boardId, on) =>
+      call(on ? 'PUT' : 'DELETE', route`/boards/${boardId}/board-template`),
     createTask: (boardId, task) =>
       parsed(
         'created task',

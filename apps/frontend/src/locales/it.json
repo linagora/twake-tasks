@@ -133,7 +133,31 @@
     "keyPrefixTaken": "Un’altra bacheca usa già %{prefix}.",
     "keyPrefixProposed": "%{prefix} è già in uso, quindi la bacheca usa %{suggestion}.",
     "useKeyPrefix": "Usa %{prefix}",
-    "failed": "Impossibile creare la bacheca."
+    "failed": "Impossibile creare la bacheca.",
+    "startFrom": "Parti da",
+    "emptyBoard": "Bacheca vuota",
+    "fromTemplate": "Le sue sezioni, le sue etichette e %{smart_count} attività aperta. |||| Le sue sezioni, le sue etichette e %{smart_count} attività aperte."
+  },
+  "copyBoard": {
+    "action": "Copia bacheca",
+    "title": "Copia %{name}",
+    "defaultName": "%{name} (copia)",
+    "project": "Progetto",
+    "newProject": "Un nuovo progetto",
+    "projectHelp": "I membri e le etichette del progetto si applicano alla copia.",
+    "tasks": "Attività aperte e le loro sotto-attività",
+    "assignees": "Mantieni gli assegnatari",
+    "dueDates": "Mantieni le scadenze",
+    "copy": "Copia",
+    "failed": "Impossibile copiare la bacheca."
+  },
+  "boardTemplate": {
+    "use": "Usa come modello di bacheca",
+    "stop": "Non usare più come modello di bacheca",
+    "chip": "Modello di bacheca",
+    "hint": "Proposto in Nuova bacheca ai membri del suo progetto.",
+    "on": "I membri del suo progetto possono ora creare una bacheca da %{name}.",
+    "failed": "Impossibile modificare il modello di bacheca."
   },
   "labelDialog": {
     "createTitle": "Nuova etichetta",
@@ -331,6 +355,7 @@
     "loadFailed": "Impossibile caricare la cronologia.",
     "created": "%{actor} l’ha creata",
     "imported": "%{actor} l’ha importata da un file CSV",
+    "copied": "%{actor} l’ha creata (copiata da %{key})",
     "title": "%{actor} l’ha rinominata da %{from} a %{to}",
     "priority": "%{actor} ha impostato la priorità a P%{level}",
     "priorityCleared": "%{actor} ha rimosso la priorità",

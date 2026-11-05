@@ -133,7 +133,31 @@
     "keyPrefixTaken": "Một bảng khác đã dùng %{prefix}.",
     "keyPrefixProposed": "%{prefix} đã được dùng, nên bảng sẽ dùng %{suggestion}.",
     "useKeyPrefix": "Dùng %{prefix}",
-    "failed": "Không thể tạo bảng."
+    "failed": "Không thể tạo bảng.",
+    "startFrom": "Bắt đầu từ",
+    "emptyBoard": "Bảng trống",
+    "fromTemplate": "Các mục, các nhãn và %{smart_count} việc đang mở của bảng."
+  },
+  "copyBoard": {
+    "action": "Sao chép bảng",
+    "title": "Sao chép %{name}",
+    "defaultName": "%{name} (bản sao)",
+    "project": "Dự án",
+    "newProject": "Một dự án mới",
+    "projectHelp": "Thành viên và nhãn của dự án áp dụng cho bản sao.",
+    "tasks": "Việc đang mở và việc con của chúng",
+    "assignees": "Giữ người được giao",
+    "dueDates": "Giữ hạn chót",
+    "copy": "Sao chép",
+    "failed": "Không thể sao chép bảng."
+  },
+  "boardTemplate": {
+    "use": "Dùng làm mẫu bảng",
+    "stop": "Ngừng dùng làm mẫu bảng",
+    "chip": "Mẫu bảng",
+    "hint": "Được gợi ý trong Bảng mới cho thành viên dự án của bảng.",
+    "on": "Thành viên dự án của bảng giờ có thể tạo bảng từ %{name}.",
+    "failed": "Không thể thay đổi mẫu bảng."
   },
   "labelDialog": {
     "createTitle": "Nhãn mới",
@@ -331,6 +355,7 @@
     "loadFailed": "Không thể tải lịch sử.",
     "created": "%{actor} đã tạo",
     "imported": "%{actor} đã nhập từ tệp CSV",
+    "copied": "%{actor} đã tạo (sao chép từ %{key})",
     "title": "%{actor} đã đổi tên từ %{from} thành %{to}",
     "priority": "%{actor} đã đặt độ ưu tiên P%{level}",
     "priorityCleared": "%{actor} đã bỏ độ ưu tiên",

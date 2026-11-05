@@ -1,6 +1,6 @@
 import { Compass } from '@linagora/twake-icons'
 import { Typography } from '@linagora/twake-mui'
-import { useEffect, type ReactElement } from 'react'
+import { Fragment, useEffect, type ReactElement } from 'react'
 import { useParams } from 'react-router'
 
 import { ColumnsSkeleton } from '@/ds/Columns'
@@ -81,17 +81,16 @@ export function BoardScreen({
             <ColumnsSkeleton label={t('app.loading')} />
           )}
           {shown && !waiting && (
-            <>
+            <Fragment key={shown.id}>
               <BoardHeader
-                key={shown.id}
                 board={shown}
                 origin={back ? origin : undefined}
                 shareButton={!flush}
               />
-              <BoardSelection key={shown.id} board={shown}>
+              <BoardSelection board={shown}>
                 <BoardColumns board={shown} settled={!board.isFetching} />
               </BoardSelection>
-            </>
+            </Fragment>
           )}
         </main>
       </BoardStepsContext>

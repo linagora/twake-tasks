@@ -23,7 +23,15 @@ export const newBoard = z.object({
   name: boardName,
   keyPrefix,
   projectId: z.uuid().optional(),
-  language: z.string().max(35).optional()
+  language: z.string().max(35).optional(),
+  copyOf: z
+    .object({
+      boardId: z.uuid(),
+      tasks: z.boolean(),
+      assignees: z.boolean(),
+      dueDates: z.boolean()
+    })
+    .optional()
 })
 
 export const boardRename = z.object({ name: boardName })
@@ -52,6 +60,7 @@ export const boardResponse = z.object({
   role,
   layout: z.enum(LAYOUTS),
   defaultLayout: z.enum(LAYOUTS),
+  boardTemplate: z.boolean(),
   members: z.array(person),
   invited: z.array(z.string()),
   labels: z.array(label),
@@ -73,6 +82,7 @@ export const boardsResponse = z.object({
         .object({ name: z.string().nullable(), email: z.string() })
         .nullable(),
       archived: z.boolean(),
+      boardTemplate: z.boolean(),
       favorite: z.boolean(),
       openTasks: z.number(),
       doneTasks: z.number(),

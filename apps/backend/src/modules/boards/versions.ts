@@ -25,7 +25,11 @@ export async function bumpBoard(
 export async function bumpBoards(
   tx: Tx,
   where: SQL | undefined,
-  extra: { taskCounter?: SQL; archivedAt?: SQL | null } = {}
+  extra: {
+    taskCounter?: SQL
+    archivedAt?: SQL | null
+    boardTemplate?: boolean
+  } = {}
 ) {
   const bumped = await tx
     .update(boards)

@@ -40,6 +40,7 @@ import {
   projects,
   tasks
 } from './schema.ts'
+import { copyBoard, type CopyOptions } from './copy.ts'
 import { bumpBoard, bumpBoards } from './versions.ts'
 import { freeKeyPrefix, INBOX_KEY_PREFIX } from './keyPrefixes.ts'
 import { labelsOn } from './labels.ts'
@@ -126,6 +127,19 @@ export function createBoardStore(db: Db) {
       })
     },
 
+    setBoardTemplate(identity: Identity, boardId: string, on: boolean) {
+      return writeOrRefuse(db, identity, async tx => {
+        await checkRole(tx, identity, boardId, 'admin')
+        const [board] = await bumpBoards(
+          tx,
+          and(eq(boards.id, boardId), eq(boards.inbox, false)),
+          { boardTemplate: on }
+        )
+        if (!board) throw new Refused('forbidden')
+        return null
+      })
+    },
+
     listBoards(identity: Identity) {
       return inTenant(db, identity, async tx => {
         await ensureInbox(tx, identity)
@@ -160,6 +174,7 @@ export function createBoardStore(db: Db) {
                 'email', ${inviter.email}
               ) end`,
             archived: sql<boolean>`${boards.archivedAt} is not null`,
+            boardTemplate: boards.boardTemplate,
             favorite: sql<boolean>`${boardFavorites.userId} is not null`,
             openTasks: tx.$count(
               tasks,
@@ -279,10 +294,14 @@ export function createBoardStore(db: Db) {
         keyPrefix: string
         projectId?: string | undefined
         language?: string | undefined
+        copyOf?: CopyOptions | undefined
       }
     ): Promise<Result<NonNullable<Awaited<ReturnType<typeof loadBoard>>>>> {
       try {
         return await writeOrRefuse(db, identity, async tx => {
+          const source =
+            input.copyOf &&
+            (await copySource(tx, identity, input.copyOf.boardId))
           let projectId = input.projectId
           if (projectId === undefined) {
             projectId = await createProject(tx, identity, { name: input.name })
@@ -302,7 +321,9 @@ export function createBoardStore(db: Db) {
             })
             .returning()
           if (!board) throw new Error('board insert returned nothing')
-          await addDefaultSections(tx, board, input.language)
+          if (source && input.copyOf) {
+            await copyBoard(tx, identity, source, board, input.copyOf)
+          } else await addDefaultSections(tx, board, input.language)
           const loaded = await loadBoard(tx, board.id, identity.userId)
           if (!loaded) throw new Error('new board is not visible')
           return loaded
@@ -322,6 +343,15 @@ export function createBoardStore(db: Db) {
       })
     }
   }
+}
+
+// Whoever sees a board may copy it into a board of their own.
+async function copySource(tx: Tx, identity: Identity, boardId: string) {
+  const [source] = await tx.select().from(boards).where(eq(boards.id, boardId))
+  if (!source || !(await roleOn(tx, identity.userId, boardId))) {
+    throw new Refused('not_found')
+  }
+  return source
 }
 
 export async function addDefaultSections(
@@ -453,6 +483,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     project,
     inbox: board.inbox,
     archived: board.archivedAt !== null,
+    boardTemplate: board.boardTemplate,
     version: board.version,
     role,
     members,

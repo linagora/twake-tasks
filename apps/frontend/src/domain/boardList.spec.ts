@@ -29,6 +29,7 @@ function board(
     inbox: false,
     role: 'admin',
     archived: false,
+    boardTemplate: false,
     favorite: false,
     openTasks: 0,
     doneTasks: 0,

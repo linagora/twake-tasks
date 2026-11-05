@@ -48,12 +48,10 @@ export function describe(
   const added = entry.to !== null
   switch (entry.field) {
     case 'created':
-      return t(
-        entry.from === 'import' ? 'history.imported' : 'history.created',
-        {
-          actor
-        }
-      )
+      if (entry.from === 'import') return t('history.imported', { actor })
+      return typeof entry.from === 'string'
+        ? t('history.copied', { actor, key: entry.from })
+        : t('history.created', { actor })
     case 'title':
       return t('history.title', { actor, from: text(entry.from), to: value })
     case 'priority':
