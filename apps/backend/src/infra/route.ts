@@ -60,6 +60,7 @@ interface Route<I, P, Q, B, T, E extends string> {
   status?: number
   onRequest?: onRequestHookHandler
   config?: FastifyContextConfig
+  logSerializers?: Record<string, (value: never) => unknown>
   handler: (request: {
     identity: I
     params: P
@@ -117,6 +118,7 @@ export function registerRoutes<I, E extends string>(
       url: route.url,
       ...(route.onRequest && { onRequest: route.onRequest }),
       ...(route.config && { config: route.config }),
+      ...(route.logSerializers && { logSerializers: route.logSerializers }),
       ...(!open && { preHandler: deps.requireIdentity }),
       handler: async (request, reply) => {
         const identity = deps.identify(request)

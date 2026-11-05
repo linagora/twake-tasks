@@ -112,6 +112,7 @@ const server = await buildApp({
   })),
   searchAllowedOrigins: config.SEARCH_ALLOWED_ORIGINS,
   searchMinLength: config.SEARCH_MIN_LENGTH,
+  appUrl: config.APP_URL,
   isReady: async () =>
     accepting && (await probe`select 1`).length === 1 && (await schemaCurrent())
 })
