@@ -2,9 +2,8 @@ import { useSyncExternalStore } from 'react'
 
 export type ContrastChoice = 'high' | 'standard'
 
-// White initials read at 10.8:1 on the people, 8.6:1 on the boards
+// White initials read at 10.8:1 on the people
 export const HIGH_CONTRAST_AVATAR = '#3D3D42'
-export const HIGH_CONTRAST_BADGE = '#0047A3'
 
 const KEY = 'twake-tasks:contrast'
 const SYSTEM = ['(prefers-contrast: more)', '(forced-colors: active)']
