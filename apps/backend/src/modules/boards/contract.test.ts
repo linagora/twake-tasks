@@ -193,6 +193,10 @@ describe('the API contract', () => {
         templateId
       })
     )
+    contracted(
+      createdTaskResponse,
+      await api.as(alice).post(`${at}/duplicate`, { title: 'Copy of Brief' })
+    )
     expect(
       contracted(templatesResponse, await api.as(alice).get('/templates'))
         .templates

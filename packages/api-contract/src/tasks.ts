@@ -59,6 +59,8 @@ export const taskChanges = taskFields.partial().refine(nonEmpty)
 
 export const assignment = z.object({ userIds: z.array(z.uuid()).max(50) })
 
+export const duplicate = z.strictObject({ title: taskTitle })
+
 export const transferTarget = z.object({
   boardId: z.uuid(),
   sectionId: z.uuid().nullable()
