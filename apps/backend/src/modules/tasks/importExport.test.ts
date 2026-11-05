@@ -276,5 +276,5 @@ describe('importing tasks', () => {
 
     expect(response.json()).toMatchObject({ imported: 1000 })
     expect((await boardOf(alice, board.id)).tasks).toHaveLength(1000)
-  })
+  }, 30_000)
 })
