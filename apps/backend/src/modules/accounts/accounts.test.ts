@@ -84,6 +84,9 @@ async function aBoard(
 const filtersOf = async (user: TestUser) =>
   (await api.as(user).get('/filters')).json<{ filters: object[] }>().filters
 
+const feedOf = async (user: TestUser) =>
+  (await api.as(user).get('/calendar-feed')).json<{ feed: object | null }>()
+
 async function personalProjectsOf(user: TestUser) {
   return db.transaction(async tx => {
     await asTenant(tx, user)
@@ -286,6 +289,15 @@ describe.each([
     expect(await filtersOf(gone)).toEqual([])
   })
 
+  it('loses its calendar feed', async () => {
+    const gone = makeUser()
+    await api.as(gone).post('/calendar-feed', { scope: 'assigned' })
+
+    await deliver(routingKey, body(gone))
+
+    expect(await feedOf(gone)).toEqual({ feed: null })
+  })
+
   it('loses the invitation e-mails it sent and received', async () => {
     const gone = makeUser()
     const owner = aUser({ organizationId: gone.organizationId })
@@ -407,6 +419,9 @@ describe('a deleted organization', () => {
     await aBoardWithReminder(owner, colleague)
     await aManagedProject(db, [[colleague, 'admin']])
     await aBoardWithReminder(outsider, outsider)
+    for (const user of [colleague, outsider]) {
+      await api.as(user).post('/calendar-feed', { scope: 'assigned' })
+    }
     expect(await jobsOf(organizationId)).not.toEqual([])
 
     await deliver('domain.organization.deleted', {
@@ -420,6 +435,8 @@ describe('a deleted organization', () => {
     expect(await projectsOf(organizationId)).toEqual([])
     expect(await jobsOf(organizationId)).toEqual([])
     expect(await filtersOf(colleague)).toEqual([])
+    expect(await feedOf(colleague)).toEqual({ feed: null })
+    expect((await feedOf(outsider)).feed).not.toBeNull()
     expect(await projectsOf(outsider.organizationId)).not.toEqual([])
     expect(await jobsOf(outsider.organizationId)).not.toEqual([])
     expect(await filtersOf(outsider)).not.toEqual([])

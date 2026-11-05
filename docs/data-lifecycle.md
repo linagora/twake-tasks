@@ -3,7 +3,7 @@
 When a row goes, for every table in the database. A row ends in one of four ways:
 
 - Cascade: a foreign key deletes it with the row it belongs to.
-- Removal path: code deletes it when something ends, such as a person losing access to a project or an account being deleted. When a person's access, a person or an organization ends, the removal path calls the function for that end in [`lifecycle.ts`](../apps/backend/src/modules/boards/lifecycle.ts) rather than deleting on its own. The tables that the boards module cannot import are the exception: the account handlers in [`accounts.ts`](../apps/backend/src/modules/accounts/accounts.ts) delete a deleted person's jobs, saved filters, comment reactions and invitation emails, and a deleted organization's jobs and saved filters.
+- Removal path: code deletes it when something ends, such as a person losing access to a project or an account being deleted. When a person's access, a person or an organization ends, the removal path calls the function for that end in [`lifecycle.ts`](../apps/backend/src/modules/boards/lifecycle.ts) rather than deleting on its own. The tables that the boards module cannot import are the exception: the account handlers in [`accounts.ts`](../apps/backend/src/modules/accounts/accounts.ts) delete a deleted person's jobs, saved filters, calendar feed, comment reactions and invitation emails, and a deleted organization's jobs, saved filters and calendar feeds.
 - Retention: it is deleted once it is older than a fixed period.
 - Kept: it stays forever.
 
@@ -60,4 +60,5 @@ A test fails when a table is missing from this page, and the backend test suite 
 
 - `user_settings`: removed with the person, by email.
 - `notification_preferences`: removed with the person.
+- `calendar_feeds`: deleted by hand, or removed with the person or their organization. A new link replaces the row.
 - `oidc_revoked_sessions`: retention: until the session would have expired, pruned when the next session is revoked.
