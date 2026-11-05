@@ -5,21 +5,13 @@ import {
   Chip,
   nameToColor,
   Tooltip,
-  Typography
+  Typography,
+  type Theme
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
 import { HIGH_CONTRAST_AVATAR, useContrast } from '@/ds/contrast'
-import { ACTION, backdropOf, COVER_RADIUS, NO_COVER } from '@/ds/Pictures'
-
-// Twake Board's card, the preview at the top and the name under it.
-const PREVIEW = {
-  height: { xs: 120, sm: 144 },
-  borderRadius: COVER_RADIUS,
-  border: 1,
-  borderColor: 'divider',
-  transition: 'border-color 120ms'
-} as const
+import { ACTION, backdropOf, COVER_RADIUS } from '@/ds/Pictures'
 
 const CARD = {
   display: 'flex',
@@ -105,37 +97,47 @@ export function CardGrid({
   )
 }
 
-// `title` is a link that stretches over the whole card; `menu` sits above
-// that stretch so it keeps its own click.
+// `title` is a link that stretches over the whole card; the controls sit
+// above that stretch so they keep their own click.
 export function BoardCard({
   label,
   title,
+  icon,
+  subtitle,
   flag,
   chip,
+  done,
+  doneLabel,
   meta,
+  late,
   members,
   menu,
   star,
-  footerAction,
-  cover
+  starred,
+  footerAction
 }: {
   label: string
   title: ReactNode
+  icon: ReactNode
+  /** Where the board belongs. */
+  subtitle: string
   /** A short word next to the title, such as "New". */
   flag?: string | undefined
-  /** Where the board belongs, when that tells something: personal, a space. */
+  /** After `meta`, such as a template's. */
   chip?: ReactNode
+  /** The share of its tasks done, from 0 to 1. */
+  done: number
+  doneLabel: string
   meta: string
-  /** The people of the board, at the end of the name's row. */
+  /** How many tasks are late, in the error tint. */
+  late?: string | undefined
   members?: ReactNode
   /** At the top right, shown on hover or focus; touch screens always show it. */
   menu?: ReactNode
-  /** Left of the menu, shown when it is. */
+  /** After the name: always there when `starred`, else shown as the menu. */
   star?: ReactNode
-  /** On the last row, after the chip. */
+  starred: boolean
   footerAction?: ReactNode
-  /** The picture or color of the preview, null for none. */
-  cover: string | null
 }): ReactElement {
   const { high } = useContrast()
   return (
@@ -143,84 +145,96 @@ export function BoardCard({
       component="li"
       aria-label={label}
       sx={{
+        ...CARD,
         position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
         minWidth: 0,
-        '& a': { color: 'text.primary', textDecoration: 'none' },
-        '& a::after': { content: '""', position: 'absolute', inset: 0 },
-        '&:hover [data-testid="board-cover"]': { borderColor: 'primary.main' },
-        '&:has(a:focus-visible) [data-testid="board-cover"]': {
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
+        '&:hover': { borderColor: 'primary.main', boxShadow: 1 },
+        '&:has(a:focus-visible)': {
           outline: high ? 3 : 2,
           outlineColor: high ? 'text.primary' : 'primary.main',
           outlineOffset: 2
         },
+        '& a': { color: 'text.primary', textDecoration: 'none' },
+        '& a::after': { content: '""', position: 'absolute', inset: 0 },
         '& a:focus-visible': { outline: 'none' },
+        '& [data-above]': { position: 'relative', zIndex: 1 },
         '& [data-card-menu]': { opacity: 0, transition: 'opacity 120ms' },
-        // An open menu keeps the star beside it.
+        // An open menu keeps an unstarred star shown.
         '&:hover [data-card-menu], &:focus-within [data-card-menu], &:has([aria-expanded="true"]) [data-card-menu]':
           { opacity: 1 },
         '@media (hover: none)': { '& [data-card-menu]': { opacity: 1 } }
       }}
     >
-      <Box
-        data-testid="board-cover"
-        sx={{ ...PREVIEW, ...(cover ? backdropOf(cover) : NO_COVER) }}
-      />
-      {(star ?? menu) && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 1,
-            display: 'flex',
-            gap: 0.5,
-            // On a surface of the theme, readable on any cover.
-            '& .MuiIconButton-root': {
-              bgcolor: 'background.paper',
-              boxShadow: 1,
-              '&:hover': { bgcolor: 'background.paper' }
-            }
-          }}
-        >
-          {star && <Box data-card-menu="">{star}</Box>}
-          {menu && <Box data-card-menu="">{menu}</Box>}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+        {icon}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Tooltip title={label} placement="top-start">
+              <Typography
+                variant="body2"
+                component="h2"
+                noWrap
+                sx={{ minWidth: 0, fontWeight: 500 }}
+              >
+                {title}
+              </Typography>
+            </Tooltip>
+            {star && (
+              <Box
+                data-above=""
+                data-card-menu={starred ? undefined : ''}
+                sx={{ display: 'flex', '& .MuiIconButton-root': { p: 0.25 } }}
+              >
+                {star}
+              </Box>
+            )}
+            {flag && (
+              <Chip
+                size="small"
+                color="primary"
+                label={flag}
+                sx={{ flexShrink: 0, height: 20, fontWeight: 600 }}
+              />
+            )}
+          </Box>
+          <Typography
+            variant="caption"
+            component="p"
+            color="textSecondary"
+            noWrap
+          >
+            {subtitle}
+          </Typography>
         </Box>
-      )}
+        {menu && (
+          <Box data-above="" data-card-menu="" sx={{ flexShrink: 0 }}>
+            {menu}
+          </Box>
+        )}
+      </Box>
       <Box
+        role="progressbar"
+        aria-label={doneLabel}
+        aria-valuenow={Math.round(done * 100)}
+        aria-valuemin={0}
+        aria-valuemax={100}
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          pt: 1.5,
-          minWidth: 0
+          height: 4,
+          borderRadius: 4,
+          bgcolor: 'background.default',
+          overflow: 'hidden'
         }}
       >
-        <Tooltip title={label} placement="top-start">
-          <Typography
-            variant="body1"
-            component="h2"
-            noWrap
-            sx={{ flex: '0 1 auto', minWidth: 0, lineHeight: '24px' }}
-          >
-            {title}
-          </Typography>
-        </Tooltip>
-        {flag && (
-          <Chip
-            size="small"
-            color="primary"
-            label={flag}
-            sx={{ flexShrink: 0, height: 20, fontWeight: 600 }}
-          />
-        )}
-        {/* Above the stretched link, so the pointer reaches the tooltips. */}
         <Box
-          sx={{ ml: 'auto', flexShrink: 0, position: 'relative', zIndex: 1 }}
-        >
-          {members}
-        </Box>
+          sx={{
+            height: '100%',
+            width: `${String(done * 100)}%`,
+            borderRadius: 4,
+            bgcolor: 'primary.main'
+          }}
+        />
       </Box>
       <Box
         sx={{
@@ -228,14 +242,38 @@ export function BoardCard({
           alignItems: 'center',
           gap: 1,
           minHeight: 24,
-          '& > :not(:first-child)': { position: 'relative', zIndex: 1 }
+          mt: 'auto'
         }}
       >
-        <Typography variant="body2" color="textSecondary" noWrap>
+        <Typography
+          variant="caption"
+          color="textSecondary"
+          noWrap
+          sx={{ minWidth: 0, mr: 'auto' }}
+        >
           {meta}
         </Typography>
         {chip}
-        {footerAction}
+        {late && (
+          <Chip
+            size="small"
+            label={late}
+            sx={{
+              flexShrink: 0,
+              height: 20,
+              fontSize: 11,
+              color: 'error.main',
+              bgcolor: (theme: Theme) =>
+                theme.alpha(theme.vars.palette.error.main, 0.12)
+            }}
+          />
+        )}
+        {footerAction && <Box data-above="">{footerAction}</Box>}
+        {members && (
+          <Box data-above="" sx={{ flexShrink: 0 }}>
+            {members}
+          </Box>
+        )}
       </Box>
     </Box>
   )

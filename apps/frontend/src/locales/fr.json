@@ -113,11 +113,12 @@
     "personalProject": "Personnel",
     "inbox": "Boîte de réception",
     "defaultChip": "Par défaut",
-    "defaultHint": "Les nouvelles tâches sont créées ici par défaut. Ce tableau ne peut pas être partagé.",
     "spaceChip": "Espace",
     "spaceHint": "Lié à l’espace « %{name} ».",
     "openTasks": "%{smart_count} tâche ouverte |||| %{smart_count} tâches ouvertes",
     "noOpenTasks": "Aucune tâche ouverte",
+    "lateTasks": "%{smart_count} en retard",
+    "progress": "%{done} sur %{smart_count} tâche terminée |||| %{done} sur %{smart_count} tâches terminées",
     "newlyShared": "Nouveau",
     "sharedBy": "Partagé par %{name}"
   },

@@ -86,16 +86,29 @@ describe('board backgrounds', () => {
     })
   })
 
-  it('gives a space’s board without cover the grey of the theme, never a picture, and no banner', async () => {
-    const board = aBoard({ project: aProject({ managed: true }) })
+  it('draws the cover of a board as the icon of its card', async () => {
+    renderRoute('/', {
+      boardsApi: fakeBoardsApi([aBoard({ background: 'dawn' })])
+    })
+
+    const icon = await screen.findByTestId('board-icon')
+    expect(icon).toHaveStyle({
+      backgroundImage: expect.stringContaining('url("/backgrounds/dawn.jpg")')
+    })
+    expect(icon).toBeEmptyDOMElement()
+  })
+
+  it('gives a space’s board without cover its initials, never a picture, and no banner', async () => {
+    const board = aBoard({
+      name: 'drive space',
+      project: aProject({ managed: true })
+    })
     renderRoute('/', { boardsApi: fakeBoardsApi([board]) })
 
-    const cover = await screen.findByTestId('board-cover')
-    expect(cover).toHaveStyle({
-      backgroundColor: 'var(--twake-palette-background-default)'
-    })
-    expect(getComputedStyle(cover).backgroundImage).not.toContain('url(')
-    fireEvent.click(screen.getByRole('link', { name: 'Design' }))
+    const icon = await screen.findByTestId('board-icon')
+    expect(icon).toHaveTextContent(/^DS$/)
+    expect(getComputedStyle(icon).backgroundImage).not.toContain('url(')
+    fireEvent.click(screen.getByRole('link', { name: 'drive space' }))
     const picker = await openPicker()
     expect(screen.queryByTestId('board-banner')).toBeNull()
     expect(picker.getByRole('button', { name: 'No cover' })).toHaveAttribute(
@@ -271,15 +284,5 @@ describe('board backgrounds', () => {
 
     expect(await screen.findByRole('menu')).toBeVisible()
     expect(screen.queryByRole('menuitem', { name: 'Change cover' })).toBeNull()
-  })
-
-  it('writes the name under the cover of a card, never on it', async () => {
-    const board = aBoard({ name: 'Design', background: 'earlymorning' })
-    renderRoute('/', { boardsApi: fakeBoardsApi([board]) })
-
-    const card = within(await screen.findByRole('listitem', { name: 'Design' }))
-    expect(card.getByTestId('board-cover')).not.toContainElement(
-      card.getByRole('heading', { name: 'Design' })
-    )
   })
 })
