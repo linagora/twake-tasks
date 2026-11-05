@@ -283,7 +283,7 @@ describe('POST /auth/backchannel-logout', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.headers['cache-control']).toBe('no-store')
-    expect(store.revoke).toHaveBeenCalledWith('session-1', expect.any(Date))
+    expect(store.revoke).toHaveBeenCalledWith('session-1')
   })
 
   it.each([['logout_token=forged'], ['']])('refuses %j', async payload => {
