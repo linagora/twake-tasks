@@ -525,6 +525,7 @@
     "labelsTitle": "Étiqueter la nouvelle tâche",
     "dueDate": "Échéance",
     "dueDateOf": "Échéance : %{date}",
+    "dueDone": "OK",
     "create": "Créer",
     "failed": "La tâche n'a pas pu être créée.",
     "unfinished": "La tâche a été créée, mais certains de ses détails n'ont pas été enregistrés. Enregistrez à nouveau pour les ajouter.",

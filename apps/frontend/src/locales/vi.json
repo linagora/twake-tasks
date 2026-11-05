@@ -525,6 +525,7 @@
     "labelsTitle": "Gắn nhãn công việc mới",
     "dueDate": "Hạn chót",
     "dueDateOf": "Hạn chót: %{date}",
+    "dueDone": "Xong",
     "create": "Tạo",
     "failed": "Không thể tạo công việc.",
     "unfinished": "Công việc đã được tạo, nhưng một số chi tiết chưa được lưu. Hãy lưu lại để thêm chúng.",

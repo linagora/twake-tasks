@@ -168,7 +168,9 @@ describe('Reminders', () => {
 
     fireEvent.change(remindMe, { target: { value: '15' } })
 
-    expect(editor.queryByRole('alert')).toBeNull()
+    await waitFor(() => {
+      expect(editor.queryByRole('alert')).toBeNull()
+    })
   })
 
   it('offers no new reminder on an archived board', async () => {

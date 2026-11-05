@@ -1,56 +1,38 @@
 import { Pen } from '@linagora/twake-icons'
 import {
-  Box,
   Button,
-  Checkbox,
-  Chip,
   Divider,
-  FormControlLabel,
   IconButton,
   MenuItem,
   TextField,
   Typography
 } from '@linagora/twake-mui'
-import { Fragment, useId, useState, type ReactElement } from 'react'
+import { Fragment, useState, type ReactElement } from 'react'
 
 import { Row } from '@/ds/Columns'
 import { Icon } from '@/ds/Icon'
-import {
-  DayCalendar,
-  DayField,
-  EditorActions,
-  EditorPopover,
-  FieldRow,
-  QuickPicks,
-  TimeField
-} from '@/ds/Pickers'
-import {
-  deadlineBeforeDue,
-  type Duration,
-  type Recurrence,
-  type Task
-} from '@/domain/board'
+import { DayField, EditorActions, EditorPopover, FieldRow } from '@/ds/Pickers'
+import { deadlineBeforeDue, type Duration, type Task } from '@/domain/board'
 import {
   dueLabel,
   formatDay,
-  inDays,
   localZone,
-  recurrenceLabel,
-  untilNextMonday
+  recurrenceLabel
 } from '@/ui/boards/dueLabel'
+import {
+  dueChanges,
+  DueFields,
+  RepeatFields,
+  unitName,
+  type DueDraft
+} from '@/ui/boards/DueFields'
 import { useBoardChange } from '@/ui/queries/boards'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-interface Draft {
-  dueDate: string
-  dueTime: string
-  pinned: boolean
+interface Draft extends DueDraft {
   deadline: string
   amount: string
   unit: Duration['unit']
-  every: string
-  recurUnit: Recurrence['unit']
-  fromCompletion: boolean
 }
 
 function draftOf(task: Task): Draft {
@@ -64,23 +46,6 @@ function draftOf(task: Task): Draft {
     every: task.recurrence ? String(task.recurrence.every) : '',
     recurUnit: task.recurrence?.unit ?? 'weeks',
     fromCompletion: task.recurrence?.fromCompletion ?? false
-  }
-}
-
-const RECURRENCE_UNITS: Recurrence['unit'][] = [
-  'days',
-  'weeks',
-  'months',
-  'years'
-]
-
-// Both unit fields show "Unit"; MUI names the select and its listbox after
-// that label unless aria-labelledby is cleared.
-const unitName = (name: string) => {
-  const named = { 'aria-labelledby': undefined, 'aria-label': name }
-  return {
-    SelectDisplayProps: named,
-    MenuProps: { slotProps: { list: named } }
   }
 }
 
@@ -169,39 +134,21 @@ export function DatesEditor({
 }): ReactElement {
   const { t } = useI18n()
   const [draft, setDraft] = useState(() => draftOf(task))
-  const save = useBoardChange(boardId, (api, next: Draft) => {
-    const dueTime = next.dueDate && next.dueTime ? next.dueTime : null
-    return api.editTask(boardId, task.id, {
-      dueDate: next.dueDate || null,
-      dueTime,
-      dueZone: dueTime && next.pinned ? (task.dueZone ?? localZone()) : null,
+  const zone = task.dueZone ?? localZone()
+  const save = useBoardChange(boardId, (api, next: Draft) =>
+    api.editTask(boardId, task.id, {
+      ...dueChanges(next, zone),
       deadline: next.deadline || null,
       duration:
         Number(next.amount) > 0
           ? { amount: Number(next.amount), unit: next.unit }
-          : null,
-      recurrence:
-        next.dueDate && Number(next.every) > 0
-          ? {
-              every: Number(next.every),
-              unit: next.recurUnit,
-              fromCompletion: next.fromCompletion
-            }
           : null
     })
-  })
+  )
   const set = (changes: Partial<Draft>) => {
     setDraft(previous => ({ ...previous, ...changes }))
   }
   const deadlineTooEarly = deadlineBeforeDue(draft.dueDate, draft.deadline)
-  const repeatable = draft.dueDate !== '' && task.template === null
-  const dueId = useId()
-  const picks = [
-    { label: t('dates.today'), day: inDays(0) },
-    { label: t('dates.tomorrow'), day: inDays(1) },
-    { label: t('dates.nextWeek'), day: inDays(untilNextMonday()) },
-    { label: t('dates.noDate'), day: '' }
-  ]
 
   return (
     <EditorPopover
@@ -212,52 +159,7 @@ export function DatesEditor({
         save.mutate(draft, { onSuccess: onClose })
       }}
     >
-      <Typography variant="subtitle2" component="h3" id={dueId}>
-        {t('dates.dueDate')}
-      </Typography>
-      <QuickPicks>
-        {picks.map(pick => (
-          <Chip
-            key={pick.label}
-            size="small"
-            label={pick.label}
-            variant={draft.dueDate === pick.day ? 'filled' : 'outlined'}
-            onClick={() => {
-              set({ dueDate: pick.day })
-            }}
-          />
-        ))}
-      </QuickPicks>
-      <Box role="group" aria-labelledby={dueId}>
-        <DayCalendar
-          value={draft.dueDate}
-          onChange={dueDate => {
-            set({ dueDate })
-          }}
-        />
-      </Box>
-      <TimeField
-        label={t('dates.time')}
-        value={draft.dueTime}
-        disabled={!draft.dueDate}
-        onChange={dueTime => {
-          set({ dueTime })
-        }}
-      />
-      {draft.dueDate && draft.dueTime && (
-        <FormControlLabel
-          label={t('dates.pin', { zone: task.dueZone ?? localZone() })}
-          control={
-            <Checkbox
-              size="small"
-              checked={draft.pinned}
-              onChange={event => {
-                set({ pinned: event.target.checked })
-              }}
-            />
-          }
-        />
-      )}
+      <DueFields draft={draft} set={set} zone={zone} />
       <Divider />
       <DayField
         label={t('dates.deadline')}
@@ -292,54 +194,11 @@ export function DatesEditor({
           <MenuItem value="days">{t('dates.unitDays')}</MenuItem>
         </TextField>
       </FieldRow>
-      <FieldRow>
-        <TextField
-          type="number"
-          label={t('dates.repeatEvery')}
-          value={draft.every}
-          disabled={!repeatable}
-          onChange={event => {
-            set({ every: event.target.value })
-          }}
-          size="small"
-          slotProps={{ htmlInput: { min: 1, max: 1000 } }}
-        />
-        <TextField
-          select
-          label={t('dates.unit')}
-          value={draft.recurUnit}
-          disabled={!repeatable}
-          onChange={event => {
-            set({ recurUnit: event.target.value as Recurrence['unit'] })
-          }}
-          size="small"
-          slotProps={{ select: unitName(t('dates.repeatUnit')) }}
-        >
-          {RECURRENCE_UNITS.map(unit => (
-            <MenuItem key={unit} value={unit}>
-              {t(`dates.units.${unit}`)}
-            </MenuItem>
-          ))}
-        </TextField>
-      </FieldRow>
-      <FormControlLabel
-        label={t('dates.fromCompletion')}
-        disabled={!repeatable}
-        control={
-          <Checkbox
-            size="small"
-            checked={draft.fromCompletion}
-            onChange={event => {
-              set({ fromCompletion: event.target.checked })
-            }}
-          />
-        }
+      <RepeatFields
+        draft={draft}
+        set={set}
+        fromTemplate={task.template !== null}
       />
-      {task.template !== null && (
-        <Typography variant="caption" color="textSecondary">
-          {t('dates.templateNoRepeat')}
-        </Typography>
-      )}
       {save.isError && (
         <Typography role="alert" variant="caption" color="error">
           {t('dates.saveFailed')}

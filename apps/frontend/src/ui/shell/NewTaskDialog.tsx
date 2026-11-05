@@ -1,4 +1,5 @@
 import {
+  Bell,
   Bottom,
   CalendarToday,
   Copy,
@@ -17,6 +18,7 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  Divider,
   DropdownButton,
   FormControlLabel,
   IconButton,
@@ -28,6 +30,7 @@ import { useCallback, useId, useRef, useState, type ReactElement } from 'react'
 import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router'
 
+import type { NewReminder } from '@/application/boards'
 import {
   defaultSection,
   UnfinishedTask,
@@ -38,17 +41,30 @@ import { ClosableTitle } from '@/ds/ClosableTitle'
 import { LabelChip, PersonChip } from '@/ds/Columns'
 import { DiscardDialog } from '@/ds/DiscardDialog'
 import { Icon } from '@/ds/Icon'
-import { DayPopover } from '@/ds/Pickers'
+import { EditorActions, EditorPopover } from '@/ds/Pickers'
 import { RichTextEditor } from '@/ds/RichText'
 import { Inline, Properties, Property, PropertySelect } from '@/ds/SidePanel'
 import { Toast } from '@/ds/Toast'
 import { isShareable, type Priority, type Template } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { useBoardName, useProjectName } from '@/ui/boards/BoardsScreen'
-import { inDays, shortDay, untilNextMonday } from '@/ui/boards/dueLabel'
+import {
+  dueChanges,
+  DueFields,
+  NO_DUE,
+  RepeatFields,
+  type DueDraft
+} from '@/ui/boards/DueFields'
+import {
+  inDays,
+  localZone,
+  recurrenceLabel,
+  shortDay
+} from '@/ui/boards/dueLabel'
 import { LabelsMenu } from '@/ui/boards/LabelsMenu'
 import { PeopleMenu } from '@/ui/boards/PeopleMenu'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
+import { ReminderControls } from '@/ui/boards/Reminders'
 import { useNewTask, useNewTaskBoard } from '@/ui/queries/tasks'
 import { useTemplates } from '@/ui/queries/templates'
 import { PriorityChip } from '@/ui/boards/TaskFacts'
@@ -65,10 +81,9 @@ const PRIORITIES: Priority[] = [1, 2, 3, 4]
 
 type MenuName = 'members' | 'labels' | 'due'
 
-const EMPTY: Omit<NewTaskDraft, 'title' | 'description'> = {
+const EMPTY: Pick<NewTaskDraft, 'assigneeIds' | 'labelIds' | 'priority'> = {
   assigneeIds: [],
   labelIds: [],
-  dueDate: null,
   priority: null
 }
 
@@ -213,10 +228,13 @@ export function NewTaskDialog({
   // Remounts the description editor, which only reads its initial text.
   const [cleared, setCleared] = useState(0)
   const [details, setDetails] = useState(false)
-  const [facts, setFacts] = useState({
-    ...EMPTY,
-    dueDate: preset.dueDate ?? null
+  const [facts, setFacts] = useState(EMPTY)
+  const [dates, setDates] = useState<DueDraft>({
+    ...NO_DUE,
+    dueDate: preset.dueDate ?? ''
   })
+  const [reminders, setReminders] = useState<NewReminder[]>([])
+  const [reminderError, setReminderError] = useState<string | null>(null)
   // Who "me" is among the members is known once the board is loaded.
   const [assignMe, setAssignMe] = useState(preset.assignToMe ?? false)
   const [another, setAnother] = useCreateAnother()
@@ -257,6 +275,14 @@ export function NewTaskDialog({
   const change = (changes: Partial<typeof facts>) => {
     if (!create.isIdle && !create.isPending) create.reset()
     setFacts(previous => ({ ...previous, ...changes }))
+  }
+  const changeDates = (changes: Partial<DueDraft>) => {
+    if (!create.isIdle && !create.isPending) create.reset()
+    setDates(previous => ({ ...previous, ...changes }))
+    // A reminder before the due time has nothing to follow without a day.
+    if (changes.dueDate === '') {
+      setReminders(previous => previous.filter(each => 'at' in each))
+    }
   }
   const open = (name: MenuName) => (event: { currentTarget: HTMLElement }) => {
     setMenu({ name, anchor: event.currentTarget })
@@ -333,6 +359,11 @@ export function NewTaskDialog({
     }
   }
 
+  const due = dueChanges(
+    template ? { ...dates, every: '' } : dates,
+    localZone()
+  )
+
   const sections = board?.sections ?? []
   const section =
     sections.find(each => each.id === pickedSection) ?? defaultSection(sections)
@@ -365,6 +396,8 @@ export function NewTaskDialog({
         boardId: chosen.id,
         draft: {
           ...facts,
+          ...due,
+          reminders,
           title,
           description,
           ...(section && { sectionId: section.id }),
@@ -380,7 +413,7 @@ export function NewTaskDialog({
             board: boardName(chosen),
             elsewhere:
               (preset.dueDate !== undefined &&
-                facts.dueDate !== preset.dueDate) ||
+                dates.dueDate !== preset.dueDate) ||
               (preset.assignToMe === true && !assignedToMe)
           }
           onCreated(created, another)
@@ -410,13 +443,14 @@ export function NewTaskDialog({
     facts.assigneeIds.includes(each.userId)
   )
   const checkedLabels = labels.filter(each => facts.labelIds.includes(each.id))
-  const due = facts.dueDate ? shortDay(facts.dueDate, lang) : t('dates.noDate')
-  const dayPicks = [
-    { label: t('dates.today'), day: inDays(0) },
-    { label: t('dates.tomorrow'), day: inDays(1) },
-    { label: t('dates.nextWeek'), day: inDays(untilNextMonday()) },
-    { label: t('dates.noDate'), day: '' }
-  ]
+  const dueSaid = due.dueDate
+    ? [
+        due.dueTime
+          ? `${shortDay(due.dueDate, lang)}, ${due.dueTime}`
+          : shortDay(due.dueDate, lang),
+        ...(due.recurrence ? [recurrenceLabel(t, due.recurrence)] : [])
+      ].join(' · ')
+    : t('dates.noDate')
   const destination =
     chosen &&
     [
@@ -426,8 +460,8 @@ export function NewTaskDialog({
             section: section.name
           })
         : t('newTask.destinationBoard', { board: boardName(chosen) }),
-      ...(facts.dueDate === inDays(0) ? [t('newTask.dueToday')] : []),
-      ...(facts.dueDate === inDays(1) ? [t('newTask.dueTomorrow')] : []),
+      ...(dates.dueDate === inDays(0) ? [t('newTask.dueToday')] : []),
+      ...(dates.dueDate === inDays(1) ? [t('newTask.dueTomorrow')] : []),
       ...(assignedToMe ? [t('newTask.assignedToYou')] : [])
     ].join(' · ')
   const lastSaid =
@@ -673,12 +707,59 @@ export function NewTaskDialog({
                   >
                     <DropdownButton
                       textVariant="body2"
-                      aria-label={t('newTask.dueDateOf', { date: due })}
+                      aria-label={t('newTask.dueDateOf', { date: dueSaid })}
                       aria-haspopup="dialog"
                       onClick={open('due')}
                     >
-                      {due}
+                      {dueSaid}
                     </DropdownButton>
+                  </Property>
+                  <Property
+                    icon={<Icon icon={Bell} />}
+                    label={t('task.reminders')}
+                  >
+                    <ReminderControls
+                      reminders={reminders.map((each, index) => ({
+                        id: String(index),
+                        at: 'at' in each ? each.at : null,
+                        beforeMinutes:
+                          'beforeMinutes' in each ? each.beforeMinutes : null
+                      }))}
+                      due={dates.dueDate !== ''}
+                      addable
+                      onDelete={({ id }) => {
+                        setReminders(
+                          reminders.filter((_, index) => String(index) !== id)
+                        )
+                      }}
+                      onAdd={(reminder, added) => {
+                        if (
+                          'at' in reminder &&
+                          new Date(reminder.at) <= new Date()
+                        ) {
+                          setReminderError(t('reminders.past'))
+                          return
+                        }
+                        const known = reminders.some(each =>
+                          'at' in reminder
+                            ? 'at' in each && each.at === reminder.at
+                            : 'beforeMinutes' in each &&
+                              each.beforeMinutes === reminder.beforeMinutes
+                        )
+                        if (!known) {
+                          if (!create.isIdle && !create.isPending) {
+                            create.reset()
+                          }
+                          setReminders([...reminders, reminder])
+                        }
+                        added()
+                      }}
+                      adding={false}
+                      error={reminderError}
+                      onEdit={() => {
+                        setReminderError(null)
+                      }}
+                    />
                   </Property>
                   <Property
                     id={priorityLabelId}
@@ -799,17 +880,25 @@ export function NewTaskDialog({
         />
       )}
       {menu?.name === 'due' && (
-        <DayPopover
+        <EditorPopover
           label={t('newTask.dueDate')}
           anchor={menu.anchor}
           onClose={closeMenu}
-          value={facts.dueDate ?? ''}
-          onChange={day => {
-            change({ dueDate: day || null })
-            closeMenu()
-          }}
-          picks={dayPicks}
-        />
+          onSubmit={closeMenu}
+        >
+          <DueFields draft={dates} set={changeDates} zone={localZone()} />
+          <Divider />
+          <RepeatFields
+            draft={dates}
+            set={changeDates}
+            fromTemplate={template !== null}
+          />
+          <EditorActions>
+            <Button type="submit" size="small">
+              {t('newTask.dueDone')}
+            </Button>
+          </EditorActions>
+        </EditorPopover>
       )}
     </Dialog>
   )
