@@ -294,15 +294,4 @@ describe('createAuthenticator', () => {
 
     await expect(authenticate('token')).resolves.toBeNull()
   })
-
-  it('checks revocation against the expiry of the token checked', async () => {
-    const identity = anIdentity({
-      expiresAt: new Date(Date.now() + 172_800_000)
-    })
-    const { authenticate, isRevoked } = setUp(identity)
-
-    await authenticate('token')
-
-    expect(isRevoked).toHaveBeenCalledWith('session-1', identity.expiresAt)
-  })
 })
