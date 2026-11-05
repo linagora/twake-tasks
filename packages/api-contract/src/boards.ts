@@ -6,7 +6,7 @@ import { projectSummary } from './projects.ts'
 import { section } from './sections.ts'
 import { taskResponse } from './tasks.ts'
 
-export const LAYOUTS = ['board', 'list', 'calendar'] as const
+export const LAYOUTS = ['board', 'list', 'calendar', 'progress'] as const
 
 // No control or format characters (newlines, bidi overrides, invisibles),
 // except the joiner of emoji sequences.
@@ -66,6 +66,14 @@ export const boardResponse = z.object({
   labels: z.array(label),
   sections: z.array(section),
   tasks: z.array(taskResponse)
+})
+
+// Eight weeks, wherever the reader's week starts: today and the 55 days before.
+export const PROGRESS_DAYS = 56
+
+// The days of that span, in the reader's zone, on which tasks were completed.
+export const progressResponse = z.object({
+  days: z.array(z.object({ day: z.iso.date(), done: z.number() }))
 })
 
 export const boardsResponse = z.object({

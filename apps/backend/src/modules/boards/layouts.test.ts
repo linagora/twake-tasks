@@ -55,6 +55,18 @@ describe('board layouts', () => {
     expect((await layoutOf(owner, board.id)).layout).toBe('list')
   })
 
+  it('offers the progress layout, as a pick and as the default', async () => {
+    const owner = aUser()
+    const board = await aBoard(owner)
+
+    await api
+      .as(owner)
+      .put(`/boards/${board.id}/default-layout`, { layout: 'progress' })
+    expect(await layoutOf(owner, board.id)).toEqual(
+      expect.objectContaining({ layout: 'progress', defaultLayout: 'progress' })
+    )
+  })
+
   it('refuses unknown layouts and boards I cannot see', async () => {
     const owner = aUser()
     const board = await aBoard(owner)

@@ -23,6 +23,7 @@ import {
   notificationPreferences,
   notificationsResponse,
   peopleResponse,
+  progressResponse,
   projectsResponse,
   remindersResponse,
   searchResponse,
@@ -270,6 +271,10 @@ describe('the API contract', () => {
       contracted(linksResponse, await api.as(alice).get(`${at}/links`))
         .blockedBy
     ).toMatchObject([{ taskId: blockerId, task: { title: 'Kick-off' } }])
+    contracted(
+      progressResponse,
+      await api.as(alice).get(`${board}/progress?zone=Europe/Paris`)
+    )
     expect(
       contracted(historyResponse, await api.as(alice).get(`${at}/history`))
         .entries.length
