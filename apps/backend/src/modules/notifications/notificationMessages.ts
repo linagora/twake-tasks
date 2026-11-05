@@ -26,6 +26,9 @@ export interface NotificationMessages {
   archived: (actor: string, archived: boolean) => string
   trashed: (actor: string, trashed: boolean) => string
   repeats: (actor: string, repeating: boolean) => string
+  blockedBy: (actor: string, key: string, added: boolean) => string
+  blocks: (actor: string, key: string, added: boolean) => string
+  unblocked: (key: string) => string
   updated: (actor: string) => string
   reminder: (due: string | null) => string
   subjects: {
@@ -97,6 +100,15 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       repeating
         ? `${actor} set the task to repeat`
         : `${actor} stopped the task from repeating`,
+    blockedBy: (actor, key, added) =>
+      added
+        ? `${actor} added a dependency: blocked by ${key}`
+        : `${actor} removed a dependency: blocked by ${key}`,
+    blocks: (actor, key, added) =>
+      added
+        ? `${actor} added a dependency: blocks ${key}`
+        : `${actor} removed a dependency: blocks ${key}`,
+    unblocked: key => `${key} is done, the task is no longer blocked`,
     updated: actor => `${actor} updated the task`,
     reminder: due => (due ? `Reminder: due ${due}` : 'Reminder'),
     subjects: {
@@ -183,6 +195,15 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       repeating
         ? `${actor} a configuré la tâche pour se répéter`
         : `${actor} a arrêté la répétition de la tâche`,
+    blockedBy: (actor, key, added) =>
+      added
+        ? `${actor} a ajouté une dépendance : bloquée par ${key}`
+        : `${actor} a retiré une dépendance : bloquée par ${key}`,
+    blocks: (actor, key, added) =>
+      added
+        ? `${actor} a ajouté une dépendance : bloque ${key}`
+        : `${actor} a retiré une dépendance : bloque ${key}`,
+    unblocked: key => `${key} est terminée, la tâche n’est plus bloquée`,
     updated: actor => `${actor} a modifié la tâche`,
     reminder: due => (due ? `Rappel : échéance ${due}` : 'Rappel'),
     subjects: {
@@ -270,6 +291,16 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       repeating
         ? `${actor} hat die Aufgabe auf Wiederholung gestellt`
         : `${actor} hat die Wiederholung der Aufgabe beendet`,
+    blockedBy: (actor, key, added) =>
+      added
+        ? `${actor} hat eine Abhängigkeit hinzugefügt: blockiert durch ${key}`
+        : `${actor} hat eine Abhängigkeit entfernt: blockiert durch ${key}`,
+    blocks: (actor, key, added) =>
+      added
+        ? `${actor} hat eine Abhängigkeit hinzugefügt: blockiert ${key}`
+        : `${actor} hat eine Abhängigkeit entfernt: blockiert ${key}`,
+    unblocked: key =>
+      `${key} ist erledigt, die Aufgabe ist nicht mehr blockiert`,
     updated: actor => `${actor} hat die Aufgabe geändert`,
     reminder: due => (due ? `Erinnerung: fällig ${due}` : 'Erinnerung'),
     subjects: {
@@ -360,6 +391,15 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       repeating
         ? `${actor} ha impostato l’attività come ricorrente`
         : `${actor} ha interrotto la ricorrenza dell’attività`,
+    blockedBy: (actor, key, added) =>
+      added
+        ? `${actor} ha aggiunto una dipendenza: bloccata da ${key}`
+        : `${actor} ha rimosso una dipendenza: bloccata da ${key}`,
+    blocks: (actor, key, added) =>
+      added
+        ? `${actor} ha aggiunto una dipendenza: blocca ${key}`
+        : `${actor} ha rimosso una dipendenza: blocca ${key}`,
+    unblocked: key => `${key} è completata, l’attività non è più bloccata`,
     updated: actor => `${actor} ha modificato l’attività`,
     reminder: due => (due ? `Promemoria: scade ${due}` : 'Promemoria'),
     subjects: {
@@ -445,6 +485,15 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       repeating
         ? `${actor} configuró la tarea para repetirse`
         : `${actor} dejó de repetir la tarea`,
+    blockedBy: (actor, key, added) =>
+      added
+        ? `${actor} añadió una dependencia: bloqueada por ${key}`
+        : `${actor} quitó una dependencia: bloqueada por ${key}`,
+    blocks: (actor, key, added) =>
+      added
+        ? `${actor} añadió una dependencia: bloquea ${key}`
+        : `${actor} quitó una dependencia: bloquea ${key}`,
+    unblocked: key => `${key} está terminada, la tarea ya no está bloqueada`,
     updated: actor => `${actor} modificó la tarea`,
     reminder: due => (due ? `Recordatorio: vence ${due}` : 'Recordatorio'),
     subjects: {
@@ -527,6 +576,15 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       repeating
         ? `${actor} сделал(а) задачу повторяющейся`
         : `${actor} отключил(а) повторение задачи`,
+    blockedBy: (actor, key, added) =>
+      added
+        ? `${actor} добавил(а) зависимость: заблокирована задачей ${key}`
+        : `${actor} убрал(а) зависимость: заблокирована задачей ${key}`,
+    blocks: (actor, key, added) =>
+      added
+        ? `${actor} добавил(а) зависимость: блокирует ${key}`
+        : `${actor} убрал(а) зависимость: блокирует ${key}`,
+    unblocked: key => `${key} выполнена, задача больше не заблокирована`,
     updated: actor => `${actor} изменил(а) задачу`,
     reminder: due => (due ? `Напоминание: срок ${due}` : 'Напоминание'),
     subjects: {
@@ -616,6 +674,15 @@ export const NOTIFICATION_MESSAGES: Record<Language, NotificationMessages> = {
       repeating
         ? `${actor} đã đặt công việc lặp lại`
         : `${actor} đã tắt lặp lại của công việc`,
+    blockedBy: (actor, key, added) =>
+      added
+        ? `${actor} đã thêm phụ thuộc: bị chặn bởi ${key}`
+        : `${actor} đã bỏ phụ thuộc: bị chặn bởi ${key}`,
+    blocks: (actor, key, added) =>
+      added
+        ? `${actor} đã thêm phụ thuộc: chặn ${key}`
+        : `${actor} đã bỏ phụ thuộc: chặn ${key}`,
+    unblocked: key => `${key} đã xong, công việc không còn bị chặn`,
     updated: actor => `${actor} đã cập nhật công việc`,
     reminder: due => (due ? `Nhắc nhở: hạn ${due}` : 'Nhắc nhở'),
     subjects: {

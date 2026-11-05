@@ -118,6 +118,17 @@ export function describe(
         name
       })
     }
+    case 'blockedBy':
+    case 'blocks': {
+      const name = entry.name ?? t('history.someTask')
+      return added
+        ? t(`history.${entry.field}`, { actor, name })
+        : t(`history.${entry.field}Cleared`, { actor, name })
+    }
+    case 'unblocked':
+      return t('history.unblocked', {
+        name: entry.name ?? t('history.someTask')
+      })
     case 'archived':
       return t(added ? 'history.archived' : 'history.unarchived', { actor })
     case 'deleted':

@@ -24,6 +24,8 @@ export type Refusal =
   | 'key_prefix_taken'
   | 'same_board'
   | 'invalid_template'
+  | 'invalid_link'
+  | 'link_cycle'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Refusal }
 
 export async function under<K extends string, T>(

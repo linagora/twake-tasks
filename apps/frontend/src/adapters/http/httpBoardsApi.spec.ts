@@ -41,7 +41,8 @@ const TASK = {
   canceledAt: null,
   assignees: [ANA],
   labels: [{ id: 'l1', name: 'Brand', color: null }],
-  commentCount: 0
+  commentCount: 0,
+  blockers: [{ key: 'DES-2', title: 'Pick the fonts' }, null]
 }
 
 const BOARD = {

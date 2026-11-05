@@ -16,6 +16,9 @@ function logoBoard() {
   const at = '2026-10-05T09:00:00Z'
   const entry = { actor: alice, name: null, at }
   boardsApi.history.set(logo.id, [
+    { ...entry, field: 'unblocked', from: null, to: 'b1', name: 'DES-2' },
+    { ...entry, field: 'blockedBy', from: 'b1', to: null, name: 'DES-2' },
+    { ...entry, field: 'blocks', from: null, to: 'b3', name: null },
     {
       ...entry,
       field: 'board',
@@ -68,6 +71,9 @@ describe('History', () => {
         item => within(item).getByRole('paragraph').textContent.split(' · ')[0]
       )
     ).toEqual([
+      'DES-2 is done: it is no longer blocked',
+      'Alice removed a dependency: blocked by DES-2',
+      "Alice added a dependency: blocks a task you can't open",
       'Alice moved it from the board Ops to Design',
       'Alice added the label Urgent',
       'Alice added the label a deleted label',

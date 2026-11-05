@@ -302,6 +302,7 @@
     "noLabels": "Ninguna",
     "dates": "Fechas",
     "reminders": "Recordatorios",
+    "dependencies": "Dependencias",
     "subtasks": "Subtareas",
     "noDescription": "Sin descripción.",
     "changeFailed": "No se pudo guardar el cambio.",
@@ -383,7 +384,13 @@
     "unlabeled": "%{actor} quitó la etiqueta %{name}",
     "someone": "alguien que dejó el tablero",
     "someLabel": "una etiqueta eliminada",
-    "someSection": "una sección eliminada"
+    "someSection": "una sección eliminada",
+    "blockedBy": "%{actor} añadió una dependencia: bloqueada por %{name}",
+    "blockedByCleared": "%{actor} quitó una dependencia: bloqueada por %{name}",
+    "blocks": "%{actor} añadió una dependencia: bloquea %{name}",
+    "blocksCleared": "%{actor} quitó una dependencia: bloquea %{name}",
+    "unblocked": "%{name} está terminada: ya no está bloqueada",
+    "someTask": "una tarea que no puedes abrir"
   },
   "dates": {
     "templateNoRepeat": "Una tarea creada con una plantilla no se repite.",
@@ -471,6 +478,27 @@
     "failed": "No se pudo guardar el recordatorio.",
     "past": "Elige una hora futura.",
     "tooMany": "Tienes demasiados recordatorios pendientes. Elimina algunos antes de añadir otro."
+  },
+  "dependencies": {
+    "blockedBy": "Bloqueada por",
+    "blocks": "Bloquea",
+    "blockedByChoice": "Bloqueada por…",
+    "blocksChoice": "Bloquea…",
+    "none": "Ninguna",
+    "add": "Añadir dependencia",
+    "search": "Buscar por clave o título",
+    "typeToSearch": "Escribe una clave o un título.",
+    "noMatch": "Ninguna tarea abierta coincide.",
+    "remove": "Quitar el vínculo con %{key}",
+    "hidden": "Una tarea que no puedes abrir",
+    "failed": "No se pudo guardar la dependencia.",
+    "loadFailed": "No se pudieron cargar las dependencias.",
+    "cycle": "Esto haría que %{key} se bloquee a sí misma.",
+    "otherProject": "Elige una tarea de este proyecto.",
+    "dueBefore": "Vence antes que %{key}, que la bloquea.",
+    "blocked": "Bloqueada",
+    "blockedTip": "Bloqueada por %{tasks}",
+    "stillBlocked": "%{key} sigue bloqueada por %{blockers}."
   },
   "newTask": {
     "useTemplate": "Plantilla",

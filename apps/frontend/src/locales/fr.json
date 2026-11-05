@@ -302,6 +302,7 @@
     "noLabels": "Aucune",
     "dates": "Dates",
     "reminders": "Rappels",
+    "dependencies": "Dépendances",
     "subtasks": "Sous-tâches",
     "noDescription": "Aucune description.",
     "changeFailed": "La modification n'a pas pu être enregistrée.",
@@ -383,7 +384,13 @@
     "unlabeled": "%{actor} a retiré l'étiquette %{name}",
     "someone": "une personne qui a quitté le tableau",
     "someLabel": "une étiquette supprimée",
-    "someSection": "une section supprimée"
+    "someSection": "une section supprimée",
+    "blockedBy": "%{actor} a ajouté une dépendance : bloquée par %{name}",
+    "blockedByCleared": "%{actor} a retiré une dépendance : bloquée par %{name}",
+    "blocks": "%{actor} a ajouté une dépendance : bloque %{name}",
+    "blocksCleared": "%{actor} a retiré une dépendance : bloque %{name}",
+    "unblocked": "%{name} est terminée : elle n’est plus bloquée",
+    "someTask": "une tâche que vous ne pouvez pas ouvrir"
   },
   "dates": {
     "templateNoRepeat": "Une tâche créée à partir d’un modèle ne se répète pas.",
@@ -471,6 +478,27 @@
     "failed": "Le rappel n'a pas pu être enregistré.",
     "past": "Choisissez une heure dans le futur.",
     "tooMany": "Vous avez trop de rappels en attente. Supprimez-en avant d'en ajouter un autre."
+  },
+  "dependencies": {
+    "blockedBy": "Bloquée par",
+    "blocks": "Bloque",
+    "blockedByChoice": "Bloquée par…",
+    "blocksChoice": "Bloque…",
+    "none": "Aucune",
+    "add": "Ajouter une dépendance",
+    "search": "Rechercher par clé ou titre",
+    "typeToSearch": "Saisissez une clé ou un titre.",
+    "noMatch": "Aucune tâche ouverte ne correspond.",
+    "remove": "Retirer le lien vers %{key}",
+    "hidden": "Une tâche que vous ne pouvez pas ouvrir",
+    "failed": "La dépendance n’a pas pu être enregistrée.",
+    "loadFailed": "Les dépendances n’ont pas pu être chargées.",
+    "cycle": "%{key} se bloquerait elle-même.",
+    "otherProject": "Choisissez une tâche de ce projet.",
+    "dueBefore": "Échéance avant %{key}, qui la bloque.",
+    "blocked": "Bloquée",
+    "blockedTip": "Bloquée par %{tasks}",
+    "stillBlocked": "%{key} est encore bloquée par %{blockers}."
   },
   "newTask": {
     "useTemplate": "Modèle",

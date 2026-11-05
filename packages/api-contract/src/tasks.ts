@@ -151,7 +151,9 @@ export const taskResponse = z.object({
   canceledAt: instant.nullable(),
   assignees: z.array(person),
   labels: z.array(label),
-  commentCount: z.number()
+  commentCount: z.number(),
+  /** The tasks not done yet that block it, null for one the person cannot open. */
+  blockers: z.array(z.object({ key: z.string(), title: z.string() }).nullable())
 })
 
 export const createdTaskResponse = taskResponse.pick({

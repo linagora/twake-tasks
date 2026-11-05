@@ -17,6 +17,8 @@ flowchart LR
   tasks -->|tasks_record_change| task_history
   task_assignees -->|task_assignees_record_change| task_history
   task_labels -->|task_labels_record_change| task_history
+  task_links -->|task_links_record_change| task_history
+  task_history -->|task_history_unblock| task_history
   task_history -->|task_history_notify| notifications
   task_history -->|task_history_publish| outbox
   tasks -->|tasks_publish_change| outbox
@@ -29,6 +31,8 @@ flowchart LR
 
 - `tasks_record_change`, after insert or update on `tasks`: `record_task_change` writes one `task_history` row per changed field through `log_task_change`. Archive and delete are skipped while `app.cascading` is on.
 - `task_assignees_record_change` and `task_labels_record_change`, after insert or delete: `record_link_change` writes the `assignees` or `labels` history row. Labels are skipped while `app.following_labels` is on.
+- `task_links_record_change`, after insert or delete on `task_links`: `record_dependency_change` writes a `blockedBy` row on the blocked task and a `blocks` row on the blocking one. A link deleted with a purged task writes nothing.
+- `task_history_unblock`, after a `completion` row that completes or cancels a task: `record_unblocked` writes an `unblocked` row on each task it blocked that has no other open blocker left, which notifies that task's followers.
 - `task_history_notify`, after insert on `task_history`: `notify_history_entry` makes the creator and new assignees follow the task (`follow_task`) and writes `notifications` for the assignee, the unassigned person and the followers (`notify_task`).
 - `task_history_publish`, after insert on `task_history`: `publish_history_entry` queues a `com.twake.tasks.task.<action>.v1` event in `outbox` (`created`, `completed`, `reopened`, `assigned`, `unassigned`, `updated`) through `publish_task_event`.
 - `tasks_publish_change`, after update on `tasks`: `publish_task_change` queues the `moved`, `deleted` and `restored` events.
@@ -37,4 +41,4 @@ flowchart LR
 - `task_reminders_unschedule`, after delete on `task_reminders`: `unschedule_reminder` deletes the reminder's job.
 - `tasks_complete_subtasks`, after `completed_at` is set on `tasks`: `complete_subtasks` completes the open sub-tasks.
 
-The other functions are called from these or from TypeScript: `app_claim_invites` and `app_member_project_ids` (membership and row level security), `reminder_time`, and the value helpers `due_of`, `duration_of`, `recurrence_of`, `completion_of`, `followers_of` and `without_nulls`.
+The other functions are called from these or from TypeScript: `app_claim_invites` and `app_member_project_ids` (membership and row level security), `reminder_time`, and the value helpers `due_of`, `duration_of`, `recurrence_of`, `completion_of`, `followers_of`, `key_of` and `without_nulls`.

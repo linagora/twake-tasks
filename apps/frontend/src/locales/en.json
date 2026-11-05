@@ -302,6 +302,7 @@
     "noLabels": "None",
     "dates": "Dates",
     "reminders": "Reminders",
+    "dependencies": "Dependencies",
     "subtasks": "Sub-tasks",
     "noDescription": "No description.",
     "changeFailed": "The change could not be saved.",
@@ -383,7 +384,13 @@
     "unlabeled": "%{actor} removed the label %{name}",
     "someone": "someone who left the board",
     "someLabel": "a deleted label",
-    "someSection": "a deleted section"
+    "someSection": "a deleted section",
+    "blockedBy": "%{actor} added a dependency: blocked by %{name}",
+    "blockedByCleared": "%{actor} removed a dependency: blocked by %{name}",
+    "blocks": "%{actor} added a dependency: blocks %{name}",
+    "blocksCleared": "%{actor} removed a dependency: blocks %{name}",
+    "unblocked": "%{name} is done: it is no longer blocked",
+    "someTask": "a task you can't open"
   },
   "dates": {
     "templateNoRepeat": "A task made from a template doesn’t repeat.",
@@ -471,6 +478,27 @@
     "failed": "The reminder could not be saved.",
     "past": "Pick a time in the future.",
     "tooMany": "You have too many reminders waiting. Delete some before adding another."
+  },
+  "dependencies": {
+    "blockedBy": "Blocked by",
+    "blocks": "Blocks",
+    "blockedByChoice": "Blocked by…",
+    "blocksChoice": "Blocks…",
+    "none": "None",
+    "add": "Add dependency",
+    "search": "Search by key or title",
+    "typeToSearch": "Type a key or a title.",
+    "noMatch": "No open task matches.",
+    "remove": "Remove the link to %{key}",
+    "hidden": "A task you can't open",
+    "failed": "The dependency could not be saved.",
+    "loadFailed": "The dependencies could not be loaded.",
+    "cycle": "This would make %{key} block itself.",
+    "otherProject": "Pick a task of this project.",
+    "dueBefore": "Due before %{key}, which blocks it.",
+    "blocked": "Blocked",
+    "blockedTip": "Blocked by %{tasks}",
+    "stillBlocked": "%{key} is still blocked by %{blockers}."
   },
   "newTask": {
     "useTemplate": "Template",

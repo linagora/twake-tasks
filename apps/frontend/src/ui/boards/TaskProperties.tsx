@@ -27,6 +27,7 @@ import { displayName } from '@/domain/person'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
 import { useBoardName, useProjectName } from '@/ui/boards/BoardsScreen'
 import { Dates } from '@/ui/boards/Dates'
+import { Dependencies } from '@/ui/boards/Dependencies'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
 import { useBoardChange } from '@/ui/queries/boards'
@@ -168,6 +169,12 @@ export function TaskProperties({
         <Property icon={<Icon icon={CalendarToday} />} label={t('task.dates')}>
           <Dates task={task} boardId={boardId} editable={editable} />
         </Property>
+        <Dependencies
+          task={task}
+          boardId={boardId}
+          board={board}
+          editable={editable && !archived}
+        />
         <Property icon={<Icon icon={Bell} />} label={t('task.reminders')}>
           <Reminders task={task} boardId={boardId} archived={archived} />
         </Property>

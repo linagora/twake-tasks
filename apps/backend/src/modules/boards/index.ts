@@ -59,6 +59,7 @@ export {
   taskFollowers,
   taskHistory,
   taskLabels,
+  taskLinks,
   taskReminders,
   tasks,
   taskTemplateAssignees,

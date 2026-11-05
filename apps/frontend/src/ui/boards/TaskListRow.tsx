@@ -6,7 +6,12 @@ import { ListRow } from '@/ds/ListView'
 import { SortableListRow } from '@/ds/Sortable'
 import { isDone, type Section, type Task } from '@/domain/board'
 import { useKeySelect, usePickByClick } from '@/ui/boards/Selection'
-import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
+import {
+  Assignees,
+  BlockedChip,
+  DueChip,
+  PriorityChip
+} from '@/ui/boards/TaskFacts'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useNewTaskHighlight } from '@/ui/shell/NewTaskHighlight'
@@ -44,6 +49,7 @@ export function TaskListRow({
   const newTask = useNewTaskHighlight(task.key)
   const select = useKeySelect(task)
   const pickByClick = usePickByClick(task)
+  const done = isDone(task, sections)
 
   return (
     <Row
@@ -54,7 +60,8 @@ export function TaskListRow({
       highlighted={newTask.isNew}
       taskKey={task.key}
       select={select}
-      done={isDone(task, sections)}
+      done={done}
+      badge={!done && task.blockers.length > 0 && <BlockedChip task={task} />}
       title={
         <Link
           component="button"

@@ -1,6 +1,7 @@
 export * from './boards.ts'
 export * from './calendarFeed.ts'
 export * from './comments.ts'
+export * from './dependencies.ts'
 export * from './errors.ts'
 export * from './filters.ts'
 export * from './history.ts'

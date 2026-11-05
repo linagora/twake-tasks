@@ -728,3 +728,41 @@ export const taskFollowers = pgTable.withRLS(
     tenantPolicy(table.organizationId, visibleTask(table.taskId))
   ]
 )
+
+// The blocking task holds up the blocked one until it is done. Both are in
+// one tenant, and the link shows from either side.
+export const taskLinks = pgTable.withRLS(
+  'task_links',
+  {
+    blockingTaskId: uuid('blocking_task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    blockedTaskId: uuid('blocked_task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+    tenant: tenant()
+  },
+  table => [
+    primaryKey({ columns: [table.blockingTaskId, table.blockedTaskId] }),
+    index().on(table.blockedTaskId),
+    foreignKey({
+      columns: [table.tenant, table.blockingTaskId],
+      foreignColumns: [tasks.tenant, tasks.id]
+    }),
+    foreignKey({
+      columns: [table.tenant, table.blockedTaskId],
+      foreignColumns: [tasks.tenant, tasks.id]
+    }),
+    check(
+      'task_links_not_self',
+      sql`${table.blockingTaskId} <> ${table.blockedTaskId}`
+    ),
+    tenantPolicy(
+      table.organizationId,
+      sql`${visibleTask(table.blockingTaskId)} or ${visibleTask(table.blockedTaskId)}`,
+      sql`${visibleTask(table.blockingTaskId)} and ${visibleTask(table.blockedTaskId)}`
+    )
+  ]
+)

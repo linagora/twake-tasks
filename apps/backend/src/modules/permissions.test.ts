@@ -414,6 +414,33 @@ const EXAMPLES: Record<string, Example> = {
       )
     }
   }),
+  [`GET ${task}/links`]: none,
+  [`POST ${task}/links`]: async fixture => ({
+    body: {
+      kind: 'blockedBy',
+      taskId: (
+        await created<{ id: string }>(
+          api.as(admin).post(`/boards/${fixture.boardId}/tasks`, {
+            sectionId: null,
+            title: 'Kick-off'
+          }),
+          'blocking task'
+        )
+      ).id
+    }
+  }),
+  [`DELETE ${task}/links/:otherId`]: async fixture => {
+    const at = `/boards/${fixture.boardId}/tasks`
+    const blocker = await created<{ id: string }>(
+      api.as(admin).post(at, { sectionId: null, title: 'Kick-off' }),
+      'blocking task'
+    )
+    await api.as(admin).post(`${at}/${fixture.taskId}/links`, {
+      kind: 'blockedBy',
+      taskId: blocker.id
+    })
+    return { params: { otherId: blocker.id } }
+  },
   [`GET ${task}/follow`]: none,
   [`PUT ${task}/follow`]: none,
   [`DELETE ${task}/follow`]: none,

@@ -210,6 +210,14 @@ async function describe(
       return messages.trashed(actor, entry.to !== null)
     case 'recurrence':
       return messages.repeats(actor, entry.to !== null)
+    case 'blockedBy':
+    case 'blocks':
+      if (!entry.name) return messages.updated(actor)
+      return messages[entry.field](actor, plain(entry.name), entry.to !== null)
+    case 'unblocked':
+      return entry.name
+        ? messages.unblocked(plain(entry.name))
+        : messages.updated(actor)
     default:
       return messages.updated(actor)
   }

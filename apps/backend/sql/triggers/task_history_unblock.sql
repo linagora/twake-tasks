@@ -1,0 +1,1 @@
+CREATE OR REPLACE TRIGGER task_history_unblock AFTER INSERT ON public.task_history FOR EACH ROW WHEN (((new.field = 'completion'::text) AND (new."from" IS NULL) AND (new."to" IS NOT NULL))) EXECUTE FUNCTION record_unblocked();
