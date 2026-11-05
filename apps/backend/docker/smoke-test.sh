@@ -45,7 +45,8 @@ docker run -d --name "$RUN-oidc" --network "$RUN" --network-alias oidc \
 waitFor() {
   local what=$1
   shift
-  for _ in $(seq 1 60); do
+  # RabbitMQ can take over a minute to boot on a busy shared runner.
+  for _ in $(seq 1 180); do
     "$@" >/dev/null 2>&1 && return 0
     sleep 1
   done
