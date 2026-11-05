@@ -352,6 +352,7 @@ const EXAMPLES: Record<string, Example> = {
   },
   [`POST ${task}/archive`]: none,
   [`POST ${task}/restore`]: none,
+  [`POST ${task}/duplicate`]: () => ({ body: { title: 'Copy' } }),
   [`DELETE ${task}`]: none,
   [`POST ${task}/transfer/preview`]: async (_fixture, me) => ({
     body: { boardId: (await ownBoard(me)).id, sectionId: null }
