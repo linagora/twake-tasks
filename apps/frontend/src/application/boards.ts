@@ -10,6 +10,7 @@ import type {
   Role,
   Section,
   SectionCategory,
+  Suggestion,
   Task,
   Template
 } from '@/domain/board'
@@ -426,10 +427,11 @@ export interface BoardsApi {
   /** A user's board's members and pending invites. Admins only. */
   getSharing: (boardId: string) => Promise<Sharing>
   /**
-   * The people Tasks knows whose name or email holds the query, apart from
-   * the board's members and invites. Admins only, two characters at least.
+   * The admin's contacts and the people Tasks knows whose name or email
+   * holds the query, apart from the board's members and invites. Admins
+   * only, two characters at least.
    */
-  suggestPeople: (boardId: string, query: string) => Promise<Person[]>
+  suggestPeople: (boardId: string, query: string) => Promise<Suggestion[]>
   /** Resolves whether or not the email has an account. */
   invite: (boardId: string, email: string, role: Role) => Promise<void>
   cancelInvite: (boardId: string, inviteId: string) => Promise<void>

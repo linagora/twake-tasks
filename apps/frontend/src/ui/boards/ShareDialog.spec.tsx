@@ -180,6 +180,36 @@ describe('sharing a board', () => {
     expect(boardsApi.suggestPeople).toHaveBeenCalledWith(board.id, 'love')
   })
 
+  it('invites a contact who has no account yet by their email', async () => {
+    const board = aBoard({ name: 'Design' })
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.sharings.set(board.id, { members: [me], invites: [] })
+    boardsApi.directory.push({
+      userId: null,
+      email: 'grace@example.com',
+      name: 'Grace Hopper',
+      avatar: null
+    })
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    fireEvent.click(await screen.findByRole('button', { name: 'Share' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Share Design' })
+    )
+
+    type(dialog, 'grace')
+    fireEvent.click(await screen.findByRole('option', { name: /Grace Hopper/ }))
+    fireEvent.click(dialog.getByRole('button', { name: 'Share' }))
+
+    expect(
+      await dialog.findByRole('listitem', { name: 'grace@example.com' })
+    ).toBeVisible()
+    expect(boardsApi.invite).toHaveBeenCalledWith(
+      board.id,
+      'grace@example.com',
+      'editor'
+    )
+  })
+
   it('shows the person signed in first, with a role they cannot change here', async () => {
     const { dialog } = await openSharing([bob, me])
 

@@ -26,6 +26,7 @@ import type {
   Person,
   ProjectSummary,
   Section,
+  Suggestion,
   Task,
   Template
 } from '@/domain/board'
@@ -293,7 +294,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
   }
 
   const projects: Project[] = []
-  const directory: Person[] = []
+  const directory: Suggestion[] = []
 
   const hidden = new Map<string, { shelf: Shelf; task: Task; at: string }>()
   const hide = (shelf: Shelf) => (boardId: string, taskId: string) =>

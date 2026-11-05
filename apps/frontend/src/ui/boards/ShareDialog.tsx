@@ -193,7 +193,7 @@ export function ShareDialog({
             input={input}
             onInput={setInput}
             suggestions={(suggestions.data ?? []).map(person => ({
-              key: person.userId,
+              key: person.email,
               value: person.email.toLowerCase(),
               label: displayName(person),
               detail:
