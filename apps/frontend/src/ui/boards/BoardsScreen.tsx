@@ -10,7 +10,7 @@ import {
 } from '@linagora/twake-mui'
 import { Archive, Mosaic, Plus, Star, StarOutline } from '@linagora/twake-icons'
 import { useEffect, useId, useRef, useState, type ReactElement } from 'react'
-import { Link as RouterLink, useNavigate } from 'react-router'
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router'
 
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Icon } from '@/ds/Icon'
@@ -22,6 +22,7 @@ import {
   type ProjectSummary
 } from '@/domain/board'
 import { listBoards } from '@/domain/boardList'
+import type { LeftBoard } from '@/ui/boards/LeaveBoardDialog'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PeopleAvatars } from '@/ui/boards/MembersDialog'
 import {
@@ -344,6 +345,7 @@ export function BoardsScreen({
           )}
         </Toast>
       )}
+      <LeftNotice />
       {creating && (
         <NewBoardDialog
           onClose={() => {
@@ -355,5 +357,31 @@ export function BoardsScreen({
         />
       )}
     </main>
+  )
+}
+
+function LeftNotice(): ReactElement | null {
+  const { t } = useI18n()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const arrived = (location.state as LeftBoard | null)?.left
+  const [left, setLeft] = useState(arrived)
+  // Once: back, forward or a reload to this entry must not say it again
+  useEffect(() => {
+    if (arrived) void navigate(location, { replace: true, state: null })
+  }, [arrived, location, navigate])
+  if (!left) return null
+  return (
+    <Toast
+      open
+      autoHideDuration={6000}
+      onClose={(_, reason) => {
+        if (reason !== 'clickaway') setLeft(undefined)
+      }}
+    >
+      <Alert severity="info" role="status">
+        {t('leave.done', { name: left })}
+      </Alert>
+    </Toast>
   )
 }

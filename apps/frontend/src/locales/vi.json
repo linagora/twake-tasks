@@ -643,6 +643,16 @@
     "addContacts": "Thêm liên hệ",
     "invitationSent": "Đã gửi lời mời"
   },
+  "leave": {
+    "action": "Rời bảng",
+    "title": "Rời “%{name}”?",
+    "text": "Bạn sẽ không còn thấy bảng này, và các công việc của nó sẽ không còn được giao cho bạn.",
+    "textProject": "Bạn sẽ không còn thấy bảng này cùng %{smart_count} bảng khác của dự án “%{project}”, và các công việc của chúng sẽ không còn được giao cho bạn.",
+    "confirm": "Rời",
+    "cannotTitle": "Bạn không thể rời “%{name}”",
+    "failed": "Không thể rời bảng.",
+    "done": "Bạn đã rời “%{name}”"
+  },
   "moveBoard": {
     "action": "Chuyển sang dự án",
     "title": "Chuyển %{name}",

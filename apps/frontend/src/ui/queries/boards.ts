@@ -253,6 +253,28 @@ export function useSetBoardTemplate(): UseMutationResult<
   })
 }
 
+export function useLeaveBoard(
+  boardId: string
+): UseMutationResult<void, Error, string> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (userId: string) => api.removeMember(boardId, userId),
+    // The project's boards and tasks are gone from every screen. Refetched
+    // now, the board still open would turn not found before the page leaves it.
+    onSuccess: () => {
+      const left = keys.board(boardId)
+      void queryClient.invalidateQueries({
+        queryKey: left,
+        refetchType: 'none'
+      })
+      void queryClient.invalidateQueries({
+        predicate: query => left.some((part, at) => query.queryKey[at] !== part)
+      })
+    }
+  })
+}
+
 export function useSetFavorite(): UseMutationResult<
   void,
   Error,

@@ -643,6 +643,16 @@
     "addContacts": "Añadir contactos",
     "invitationSent": "Invitación enviada"
   },
+  "leave": {
+    "action": "Salir del tablero",
+    "title": "¿Salir de «%{name}»?",
+    "text": "Dejarás de verlo y sus tareas dejarán de estar asignadas a ti.",
+    "textProject": "Dejarás de verlo, igual que el otro tablero de su proyecto «%{project}», y sus tareas dejarán de estar asignadas a ti. |||| Dejarás de verlo, igual que los otros %{smart_count} tableros de su proyecto «%{project}», y sus tareas dejarán de estar asignadas a ti.",
+    "confirm": "Salir",
+    "cannotTitle": "No puedes salir de «%{name}»",
+    "failed": "No se pudo salir del tablero.",
+    "done": "Has salido de «%{name}»"
+  },
   "moveBoard": {
     "action": "Mover a un proyecto",
     "title": "Mover %{name}",

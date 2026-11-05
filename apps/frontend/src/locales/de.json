@@ -643,6 +643,16 @@
     "addContacts": "Kontakte hinzufügen",
     "invitationSent": "Einladung gesendet"
   },
+  "leave": {
+    "action": "Board verlassen",
+    "title": "„%{name}“ verlassen?",
+    "text": "Sie sehen es dann nicht mehr, und seine Aufgaben sind Ihnen nicht mehr zugewiesen.",
+    "textProject": "Sie sehen es dann nicht mehr, ebenso wenig das andere Board seines Projekts „%{project}“, und deren Aufgaben sind Ihnen nicht mehr zugewiesen. |||| Sie sehen es dann nicht mehr, ebenso wenig die %{smart_count} anderen Boards seines Projekts „%{project}“, und deren Aufgaben sind Ihnen nicht mehr zugewiesen.",
+    "confirm": "Verlassen",
+    "cannotTitle": "Sie können „%{name}“ nicht verlassen",
+    "failed": "Das Board konnte nicht verlassen werden.",
+    "done": "Sie haben „%{name}“ verlassen"
+  },
   "moveBoard": {
     "action": "In Projekt verschieben",
     "title": "%{name} verschieben",

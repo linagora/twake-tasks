@@ -643,6 +643,16 @@
     "addContacts": "Add contacts",
     "invitationSent": "Invitation sent"
   },
+  "leave": {
+    "action": "Leave board",
+    "title": "Leave “%{name}”?",
+    "text": "You will no longer see it, and its tasks will no longer be assigned to you.",
+    "textProject": "You will no longer see it, nor the other board of its project “%{project}”, and their tasks will no longer be assigned to you. |||| You will no longer see it, nor the %{smart_count} other boards of its project “%{project}”, and their tasks will no longer be assigned to you.",
+    "confirm": "Leave",
+    "cannotTitle": "You can’t leave “%{name}”",
+    "failed": "The board could not be left.",
+    "done": "You left “%{name}”"
+  },
   "moveBoard": {
     "action": "Move to project",
     "title": "Move %{name}",

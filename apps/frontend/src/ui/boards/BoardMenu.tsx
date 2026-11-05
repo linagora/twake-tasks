@@ -6,6 +6,7 @@ import {
   Download,
   Files,
   FolderMoveto,
+  Logout,
   Pen,
   Restore,
   Stack,
@@ -40,6 +41,7 @@ import {
 } from '@/domain/board'
 import { ExportDialog } from '@/ui/boards/ExportDialog'
 import { ImportDialog } from '@/ui/boards/ImportDialog'
+import { LeaveBoardDialog } from '@/ui/boards/LeaveBoardDialog'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import {
   useSetBoardArchived,
@@ -48,6 +50,7 @@ import {
 } from '@/ui/queries/boards'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useSession } from '@/ui/session/SessionGate'
 
 export function BoardMenu({
   board,
@@ -65,11 +68,12 @@ export function BoardMenu({
   // The editor and the dialog open once the menu is gone, which gives the focus
   // back to its button first: the editor would lose the focus and close at once
   const [next, setNext] = useState<
-    'rename' | 'archive' | 'export' | 'import' | 'copy' | null
+    'rename' | 'archive' | 'export' | 'import' | 'copy' | 'leave' | null
   >(null)
   const [confirming, setConfirming] = useState(false)
   const [csv, setCsv] = useState<'export' | 'import' | null>(null)
   const [copying, setCopying] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const [archivedNotice, setArchivedNotice] = useState(false)
   const [templateNotice, setTemplateNotice] = useState(false)
   const setLayout = useSetLayout(board.id)
@@ -79,6 +83,14 @@ export function BoardMenu({
   const renamable = isRenamable(board)
   const navigate = useNavigate()
   const embedded = useParams().projectId !== undefined
+  const { user } = useSession()
+  const me = user.email?.toLowerCase()
+  // A personal project is no one else's, and a space's members are the space's.
+  const self =
+    !embedded &&
+    !board.project.personal &&
+    !board.project.managed &&
+    board.members.find(member => member.email.toLowerCase() === me)
   const close = (): void => {
     setAnchor(null)
   }
@@ -120,6 +132,7 @@ export function BoardMenu({
               if (next === 'archive') setConfirming(true)
               if (next === 'export' || next === 'import') setCsv(next)
               if (next === 'copy') setCopying(true)
+              if (next === 'leave') setLeaving(true)
             }
           }
         }}
@@ -187,6 +200,11 @@ export function BoardMenu({
               } else setNext('archive')
             }
           )}
+        {self && <Divider />}
+        {self &&
+          item(Logout, t('leave.action'), () => {
+            setNext('leave')
+          })}
       </Menu>
       {csv === 'export' && (
         <ExportDialog
@@ -217,6 +235,15 @@ export function BoardMenu({
               relative: 'path',
               state: { created: true }
             })
+          }}
+        />
+      )}
+      {leaving && self && (
+        <LeaveBoardDialog
+          board={board}
+          self={self}
+          onClose={() => {
+            setLeaving(false)
           }}
         />
       )}
