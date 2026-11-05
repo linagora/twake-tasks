@@ -903,6 +903,8 @@
     "mineScope": "Les tâches ouvertes qui vous sont assignées, sur tous les tableaux.",
     "todayEmpty": "Rien à faire aujourd’hui",
     "upcomingEmpty": "Rien à faire dans les prochains jours",
+    "span": "Jours affichés",
+    "days": "%{smart_count} jour |||| %{smart_count} jours",
     "filterEmpty": "Aucune tâche ne correspond à ce filtre",
     "loadFailed": "Vos tâches n'ont pas pu être chargées.",
     "mineEmpty": "Rien ne vous est assigné"

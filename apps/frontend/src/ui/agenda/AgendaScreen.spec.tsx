@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
-import { localToday, localZone } from '@/ui/boards/dueLabel'
+import { formatDay, localToday, localZone } from '@/ui/boards/dueLabel'
 
 const day = (offset: number) => {
   const date = new Date(`${localToday()}T00:00:00Z`)
@@ -229,6 +229,41 @@ describe('AgendaScreen', () => {
 
     expect(await screen.findByText('Flyer')).toBeVisible()
     expect(boardsApi.agenda).toHaveBeenLastCalledWith(localZone(), 7)
+  })
+
+  it('shows Upcoming over 14 or 30 days, and keeps the choice', async () => {
+    const { design, boardsApi } = boards()
+    design.tasks.push(
+      aTask(null, { key: 'DES-4', title: 'Launch', dueDate: day(9) })
+    )
+    const { unmount } = renderRoute('/upcoming', { boardsApi })
+
+    const span = within(
+      await screen.findByRole('group', { name: 'Days shown' })
+    )
+    expect(span.getByRole('button', { name: '7 days' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    expect(await screen.findByText('Flyer')).toBeVisible()
+    expect(screen.queryByText('Launch')).not.toBeInTheDocument()
+
+    fireEvent.click(span.getByRole('button', { name: '14 days' }))
+    expect(
+      within(
+        await screen.findByRole('region', { name: formatDay(day(9), 'en') })
+      ).getByText('Launch')
+    ).toBeVisible()
+    expect(boardsApi.agenda).toHaveBeenLastCalledWith(localZone(), 14)
+    unmount()
+
+    renderRoute('/upcoming', { boardsApi })
+    expect(
+      within(
+        await screen.findByRole('group', { name: 'Days shown' })
+      ).getByRole('button', { name: '14 days' })
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(await screen.findByText('Launch')).toBeVisible()
   })
 
   it('lists the tasks assigned to me, undated ones last', async () => {

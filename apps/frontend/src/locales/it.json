@@ -903,6 +903,8 @@
     "mineScope": "Le attività aperte assegnate a te su qualsiasi bacheca.",
     "todayEmpty": "Niente in scadenza oggi",
     "upcomingEmpty": "Niente in scadenza nei prossimi giorni",
+    "span": "Giorni mostrati",
+    "days": "%{smart_count} giorno |||| %{smart_count} giorni",
     "filterEmpty": "Nessuna attività corrisponde a questo filtro",
     "loadFailed": "Impossibile caricare le tue attività.",
     "mineEmpty": "Nulla assegnato a te"

@@ -903,6 +903,8 @@
     "mineScope": "Las tareas abiertas asignadas a ti en cualquier tablero.",
     "todayEmpty": "Nada pendiente para hoy",
     "upcomingEmpty": "Nada pendiente en los próximos días",
+    "span": "Días mostrados",
+    "days": "%{smart_count} día |||| %{smart_count} días",
     "filterEmpty": "Ninguna tarea coincide con este filtro",
     "loadFailed": "No se pudieron cargar tus tareas.",
     "mineEmpty": "No tienes nada asignado"
