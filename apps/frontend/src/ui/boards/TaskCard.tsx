@@ -12,6 +12,7 @@ import {
   CheckList,
   CheckSquare,
   Comment,
+  Copy,
   Dots,
   FolderMoveto,
   Label as LabelIcon,
@@ -46,6 +47,7 @@ import { useKeySelect, usePickByClick } from '@/ui/boards/Selection'
 import { AssignPicker } from '@/ui/boards/AssignPicker'
 import { useCopyLink } from '@/ui/boards/CopyLink'
 import { DatesEditor } from '@/ui/boards/Dates'
+import { useDuplicate } from '@/ui/boards/DuplicateTask'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { Subtasks } from '@/ui/boards/Subtasks'
 import {
@@ -93,6 +95,7 @@ export function TaskCard({
   }
   const transferable = useTransferable(task, boardId)
   const link = useCopyLink(boardId, task.key, false)
+  const copy = useDuplicate(boardId, task)
   const remove = useRemoveTask(boardId, task)
   const panel = useTaskPanel(task.key)
   const newTask = useNewTaskHighlight(task.key)
@@ -280,6 +283,9 @@ export function TaskCard({
           </IconMenuItem>
         )}
         <Divider />
+        <IconMenuItem icon={Copy} onClick={choose(copy.duplicate)}>
+          {t('task.duplicate')}
+        </IconMenuItem>
         <IconMenuItem
           icon={LinkIcon}
           onClick={event => {
@@ -318,6 +324,7 @@ export function TaskCard({
         </IconMenuItem>
       </Menu>
       {link.notice}
+      {copy.notice}
       <Toast
         open={remove.isError}
         autoHideDuration={4000}

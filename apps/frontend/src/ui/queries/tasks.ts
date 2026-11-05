@@ -43,6 +43,24 @@ export function useCreateTask(
   })
 }
 
+/** Resolves once the board shows the copy. */
+export function useDuplicateTask(
+  boardId: string
+): UseMutationResult<
+  { key: string },
+  Error,
+  { taskId: string; title: string }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ taskId, title }) =>
+      api.duplicateTask(boardId, taskId, title),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
+  })
+}
+
 /**
  * Runs the changes in turn, and resolves with the tasks left unchanged.
  * Rejects only when none could be changed.

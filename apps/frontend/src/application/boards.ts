@@ -474,6 +474,16 @@ export interface BoardsApi {
     boardId: string,
     task: NewTask
   ) => Promise<Pick<Task, 'id' | 'key' | 'title' | 'sectionId'>>
+  /**
+   * Right after the task, with its fields, labels, assignees and sub-tasks,
+   * reopened unless the copy lands done; not its comments, history, reminders
+   * nor canceled sub-tasks.
+   */
+  duplicateTask: (
+    boardId: string,
+    taskId: string,
+    title: string
+  ) => Promise<Pick<Task, 'id' | 'key' | 'title' | 'sectionId'>>
   /** The templates of every project the person is in, by title. */
   listTemplates: () => Promise<Template[]>
   /**

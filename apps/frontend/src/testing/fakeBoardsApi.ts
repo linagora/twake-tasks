@@ -875,6 +875,30 @@ export function fakeBoardsApi(boards: Board[] = []) {
         }
       })
     ),
+    duplicateTask: vi.fn<BoardsApi['duplicateTask']>((boardId, taskId, title) =>
+      Promise.resolve().then(() => {
+        const board = find(boardId)
+        const original = findTask(boardId, taskId)
+        const copy = {
+          ...structuredClone(original),
+          id: nextId(),
+          key: `${board.keyPrefix}-${String(board.tasks.length + 1)}`,
+          title,
+          completedAt: null,
+          commentCount: 0,
+          blockers: [],
+          template: null
+        }
+        board.tasks.splice(board.tasks.indexOf(original) + 1, 0, copy)
+        board.version += 1
+        return {
+          id: copy.id,
+          key: copy.key,
+          title: copy.title,
+          sectionId: copy.sectionId
+        }
+      })
+    ),
     listTemplates: vi.fn<BoardsApi['listTemplates']>(() =>
       Promise.resolve().then(() =>
         structuredClone(

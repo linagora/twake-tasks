@@ -468,6 +468,14 @@ export function httpBoardsApi(
         route`/boards/${boardId}/tasks`,
         task satisfies Body<'newTask'>
       ),
+    duplicateTask: (boardId, taskId, title) =>
+      parsed(
+        'created task',
+        wire.createdTaskResponse,
+        'POST',
+        route`/boards/${boardId}/tasks/${taskId}/duplicate`,
+        { title } satisfies Body<'duplicate'>
+      ),
     listTemplates: async () =>
       (await parsed('templates', wire.templatesResponse, 'GET', '/templates'))
         .templates,
