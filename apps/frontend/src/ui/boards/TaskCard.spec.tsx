@@ -144,6 +144,7 @@ describe('TaskCard', () => {
           'Move to In progress',
           'Move to Done',
           'Move to another board',
+          'Duplicate',
           'Copy link',
           'Select',
           'Archive',

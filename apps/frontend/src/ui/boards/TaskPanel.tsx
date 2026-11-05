@@ -1,6 +1,7 @@
 import {
   Archive,
   CheckList,
+  Copy,
   Cross,
   Dots,
   FolderMoveto,
@@ -35,6 +36,7 @@ import { isAdmin, MAX_TASK_DEPTH, type Task } from '@/domain/board'
 import { useRemoveTask } from '@/ui/boards/Archive'
 import { Comments } from '@/ui/boards/Comments'
 import { CopyLinkButton } from '@/ui/boards/CopyLink'
+import { useDuplicate } from '@/ui/boards/DuplicateTask'
 import { History } from '@/ui/boards/History'
 import { FollowButton } from '@/ui/boards/Notifications'
 import { useBoard } from '@/ui/queries/boards'
@@ -278,6 +280,7 @@ function TaskMenu({
   const [moving, setMoving] = useState(false)
   const remove = useRemoveTask(boardId, task)
   const movable = useTransferable(task, boardId)
+  const copy = useDuplicate(boardId, task)
   const choose = (action: () => void) => () => {
     setAnchor(null)
     action()
@@ -308,6 +311,9 @@ function TaskMenu({
           setAnchor(null)
         }}
       >
+        <IconMenuItem icon={Copy} onClick={choose(copy.duplicate)}>
+          {t('task.duplicate')}
+        </IconMenuItem>
         {movable && (
           <IconMenuItem
             icon={FolderMoveto}
@@ -335,6 +341,7 @@ function TaskMenu({
           {t('archive.delete')}
         </IconMenuItem>
       </Menu>
+      {copy.notice}
       {moving && (
         <TransferDialog
           task={task}

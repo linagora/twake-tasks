@@ -6,6 +6,7 @@ import {
   bulkTransferPreview,
   completion,
   descriptionEdit,
+  duplicate,
   exportQuery,
   linkParams,
   newLink,
@@ -32,6 +33,7 @@ import { under, type Refusal } from '../kernel/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createBulkStore } from './bulk.ts'
 import { createDependencyStore } from './dependencies.ts'
+import { createDuplicateStore } from './duplicate.ts'
 import { historyOf } from './history.ts'
 import { createImportExportStore } from './importExport.ts'
 import { createReminderStore } from './reminders.ts'
@@ -60,6 +62,7 @@ export function registerTasks(
   const bulkStore = createBulkStore(deps.db)
   const importExportStore = createImportExportStore(deps.db)
   const dependencyStore = createDependencyStore(deps.db)
+  const duplicateStore = createDuplicateStore(deps.db)
   const routing = {
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,
@@ -271,6 +274,21 @@ export function registerTasks(
       status: 201,
       handler: ({ identity, params, body }) =>
         taskStore.createTask(identity, params.boardId, body)
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks/:taskId/duplicate',
+      access: editor,
+      params: taskParams,
+      body: duplicate,
+      status: 201,
+      handler: ({ identity, params, body }) =>
+        duplicateStore.duplicateTask(
+          identity,
+          params.boardId,
+          params.taskId,
+          body
+        )
     }),
     defineRoute({
       method: 'POST',

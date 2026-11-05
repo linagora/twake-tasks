@@ -84,6 +84,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `PUT /api/boards/:boardId/tasks/:taskId/assignees`
 - `POST /api/boards/:boardId/tasks/:taskId/complete`
 - `PUT /api/boards/:boardId/tasks/:taskId/description`
+- `POST /api/boards/:boardId/tasks/:taskId/duplicate`
 - `PUT /api/boards/:boardId/tasks/:taskId/labels`
 - `POST /api/boards/:boardId/tasks/:taskId/links`
 - `DELETE /api/boards/:boardId/tasks/:taskId/links/:otherId`
