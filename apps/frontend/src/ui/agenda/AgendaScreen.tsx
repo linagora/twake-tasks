@@ -25,6 +25,7 @@ import {
   LabelChip,
   Meta
 } from '@/ds/Columns'
+import { displayName } from '@/domain/person'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Highlight } from '@/ds/Highlight'
 import { Icon } from '@/ds/Icon'
@@ -38,7 +39,7 @@ import { FilterForm } from '@/ui/agenda/FiltersScreen'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useBoardName } from '@/ui/boards/BoardsScreen'
 import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
-import { formatDay } from '@/ui/boards/dueLabel'
+import { formatDay, localDay, localToday } from '@/ui/boards/dueLabel'
 import { LayoutToggle } from '@/ui/boards/Layouts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useAgenda, type AgendaView } from '@/ui/queries/agenda'
@@ -98,8 +99,11 @@ function AgendaRow({
   showDue: boolean
   highlight: string
 }): ReactElement {
+  const { t } = useI18n()
   const contextOf = useContextOf()
-  const panel = useAgendaTaskPanel(task)
+  const match = 'match' in task ? task.match : null
+  const comment = match?.field === 'comment' ? match : null
+  const panel = useAgendaTaskPanel(task, comment?.commentId)
 
   return (
     <TaskRow
@@ -121,8 +125,15 @@ function AgendaRow({
       }
       context={contextOf(task)}
       excerpt={
-        'excerpt' in task &&
-        task.excerpt && <Highlight text={task.excerpt} query={highlight} />
+        comment ? (
+          <>
+            {t('search.match.comment', { name: displayName(comment.author) })}{' '}
+            <Highlight text={comment.text} query={highlight} />
+          </>
+        ) : (
+          'excerpt' in task &&
+          task.excerpt && <Highlight text={task.excerpt} query={highlight} />
+        )
       }
       facts={
         <>
@@ -180,6 +191,7 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
   // The Edit button takes the focus back from the form that replaced it
   const [closed, setClosed] = useState(false)
   const filter = filters.data?.find(each => each.id === filterId)
+  const status = filter?.criteria.status ?? 'open'
   const boards = useFilterBoards()
   const boardsGone =
     boards.loaded &&
@@ -234,7 +246,11 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
         )
       }
       body={
-        layout === 'board' ? tasks => <ByStatus tasks={tasks} /> : undefined
+        layout === 'board'
+          ? tasks => <ByStatus tasks={tasks} status={status} />
+          : status === 'done'
+            ? tasks => <ByCompletion tasks={tasks} />
+            : undefined
       }
       empty={
         filter &&
@@ -257,12 +273,30 @@ function FilterView({ filterId }: { filterId: string }): ReactElement {
   )
 }
 
-function ByStatus({ tasks }: { tasks: AgendaTask[] }): ReactElement {
+// A done task shows as completed wherever its section is.
+const categoryOf = (task: AgendaTask) =>
+  task.completedAt === null ? (task.category ?? 'unstarted') : 'completed'
+
+const COLUMNS = {
+  open: OPEN_CATEGORIES,
+  done: ['completed'],
+  any: [...OPEN_CATEGORIES, 'completed']
+} as const
+
+function ByStatus({
+  tasks,
+  status = 'open'
+}: {
+  tasks: AgendaTask[]
+  status?: keyof typeof COLUMNS
+}): ReactElement {
   const { t } = useI18n()
-  const columns = OPEN_CATEGORIES.map(category => ({
-    category,
-    tasks: tasks.filter(task => (task.category ?? 'unstarted') === category)
-  })).filter(column => column.category !== 'backlog' || column.tasks.length > 0)
+  const columns = COLUMNS[status]
+    .map(category => ({
+      category,
+      tasks: tasks.filter(task => categoryOf(task) === category)
+    }))
+    .filter(column => column.category !== 'backlog' || column.tasks.length > 0)
   return (
     <Columns>
       {columns.map(column => (
@@ -479,6 +513,30 @@ function AgendaEmpty({
   )
 }
 
+/** Done tasks, the latest completed first, under the day of their completion. */
+function ByCompletion({ tasks }: { tasks: AgendaTask[] }): ReactElement {
+  const { t, lang } = useI18n()
+  const today = localToday()
+  const dayOf = (task: AgendaTask) =>
+    task.completedAt === null ? '' : localDay(new Date(task.completedAt))
+  const days = [...new Set(tasks.map(dayOf))]
+  return (
+    <>
+      {days.map(day => (
+        <Group
+          key={day}
+          label={
+            day === today
+              ? t('filters.completedToday')
+              : t('filters.completedOn', { day: formatDay(day, lang) })
+          }
+          tasks={tasks.filter(task => dayOf(task) === day)}
+        />
+      ))}
+    </>
+  )
+}
+
 function ByDay({
   today,
   tasks
@@ -487,16 +545,14 @@ function ByDay({
   tasks: AgendaTask[]
 }): ReactElement {
   const { t, lang } = useI18n()
-  const overdue = tasks.filter(
-    task => task.dueDate !== null && task.dueDate < today
-  )
+  // A done task is never late: a filter of any status lists it under its day.
+  const late = (task: AgendaTask) =>
+    task.completedAt === null && task.dueDate !== null && task.dueDate < today
+  const overdue = tasks.filter(late)
   const undated = tasks.filter(task => task.dueDate === null)
+  const onTime = tasks.filter(task => !late(task))
   const days = [
-    ...new Set(
-      tasks.flatMap(task =>
-        task.dueDate && task.dueDate >= today ? [task.dueDate] : []
-      )
-    )
+    ...new Set(onTime.flatMap(task => (task.dueDate ? [task.dueDate] : [])))
   ]
   return (
     <>
@@ -507,7 +563,7 @@ function ByDay({
         <Group
           key={day}
           label={day === today ? t('agenda.today') : formatDay(day, lang)}
-          tasks={tasks.filter(task => task.dueDate === day)}
+          tasks={onTime.filter(task => task.dueDate === day)}
           dated
         />
       ))}

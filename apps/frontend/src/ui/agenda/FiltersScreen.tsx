@@ -12,6 +12,7 @@ import {
   Button,
   IconButton,
   Link,
+  MenuItem,
   TextField,
   Typography
 } from '@linagora/twake-mui'
@@ -46,7 +47,7 @@ import {
   useSetFilterFavorite,
   useUpdateFilter
 } from '@/ui/queries/filters'
-import { useLabelNames } from '@/ui/queries/labels'
+import { useLabelNames, useSectionNames } from '@/ui/queries/labels'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
 import { DUES } from '@/ui/boards/taskFilter'
 import { focusOnMount } from '@/ui/focusOnMount'
@@ -54,6 +55,8 @@ import { useI18n } from '@/ui/i18n/useI18n'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 const PRIORITIES = ['1', '2', '3', '4'] as const
+const STATUSES = ['open', 'done', 'any'] as const
+const COMPLETED = ['any', 'today', 'week', 'month'] as const
 
 export function FiltersScreen(): ReactElement {
   const { t, lang } = useI18n()
@@ -91,16 +94,38 @@ export function FiltersScreen(): ReactElement {
     assignee,
     priority,
     label,
-    due
+    due,
+    section,
+    text,
+    status,
+    completed,
+    createdBy
   }: FilterCriteria) => {
     const parts = [
+      text && {
+        name: t('filters.text'),
+        value: t('filters.quoted', { text })
+      },
       board && {
         name: t('filters.board'),
         value: anyOf(lang, [...new Set(board.map(boards.labelOf))])
       },
+      section && { name: t('filters.section'), value: anyOf(lang, section) },
+      status && {
+        name: t('filters.status'),
+        value: t(`filters.statuses.${status}`)
+      },
+      completed && {
+        name: t('filters.completed'),
+        value: t(`filters.completedWithin.${completed}`)
+      },
       assignee && {
         name: t('filters.assignee'),
         value: anyOf(lang, assignee.map(assigneeName))
+      },
+      createdBy && {
+        name: t('filters.createdBy'),
+        value: anyOf(lang, createdBy.map(assigneeName))
       },
       priority && {
         name: t('filters.priority'),
@@ -337,16 +362,35 @@ export function FilterForm({
   const update = useUpdateFilter(filter?.id ?? '')
   const labelNames = useLabelNames()
   const filterBoards = useFilterBoards()
+  const sectionNames = useSectionNames()
   const initial = filter?.criteria ?? given ?? {}
   const [name, setName] = useState(filter?.name ?? '')
+  const [text, setText] = useState(initial.text ?? '')
   const [board, setBoard] = useState(initial.board ?? [])
+  const [section, setSection] = useState(initial.section ?? [])
+  const [status, setStatus] = useState(initial.status ?? 'open')
+  const [completed, setCompleted] = useState<(typeof COMPLETED)[number]>(
+    initial.completed ?? 'any'
+  )
   const [assignee, setAssignee] = useState(initial.assignee ?? [])
+  const [createdBy, setCreatedBy] = useState(initial.createdBy ?? [])
   const [priority, setPriority] = useState((initial.priority ?? []).map(String))
   const [label, setLabel] = useState(initial.label ?? [])
   const [due, setDue] = useState(initial.due ?? [])
   const save = filter ? update : create
   // A label no board has any more stays choosable, so saving keeps it.
   const labels = [...new Set([...(labelNames.data ?? []), ...label])]
+  // The sections of the boards picked, one per name whatever its case, as
+  // the criterion matches them; a section picked stays choosable.
+  const names = [
+    ...section,
+    ...(sectionNames.data ?? [])
+      .filter(each => board.length === 0 || board.includes(each.boardId))
+      .map(each => each.name)
+  ].map(name => ({ name, key: name.toLowerCase() }))
+  const sections = names
+    .filter(({ key }, index) => names.findIndex(o => o.key === key) === index)
+    .map(({ name }) => name)
   // Likewise a board out of reach, so it can be seen and unpicked.
   const boardOptions = [
     ...filterBoards.options,
@@ -358,8 +402,13 @@ export function FilterForm({
   ]
 
   const criteria: FilterCriteria = {
+    ...(text.trim() && { text: text.trim() }),
     ...(board.length > 0 && { board }),
+    ...(section.length > 0 && { section }),
+    ...(status !== 'open' && { status }),
+    ...(status === 'done' && completed !== 'any' && { completed }),
     ...(assignee.length > 0 && { assignee }),
+    ...(createdBy.length > 0 && { createdBy }),
     ...(priority.length > 0 && { priority: priority.map(Number) }),
     ...(label.length > 0 && { label }),
     ...(due.length > 0 && { due })
@@ -419,13 +468,53 @@ export function FilterForm({
         }}
         slotProps={{ htmlInput: { maxLength: 100 } }}
       />
+      <TextField
+        label={t('filters.text')}
+        value={text}
+        onChange={event => {
+          setText(event.target.value)
+        }}
+        slotProps={{ htmlInput: { maxLength: 200 } }}
+      />
       <AnyOf
         label={t('filters.board')}
         value={board}
         onChange={setBoard}
         options={boardOptions}
       />
+      <AnyOf
+        label={t('filters.section')}
+        value={section}
+        onChange={setSection}
+        options={sections.map(value => ({ value, name: value }))}
+      />
+      <OneOf
+        label={t('filters.status')}
+        value={status}
+        onChange={setStatus}
+        options={STATUSES.map(value => ({
+          value,
+          name: t(`filters.statuses.${value}`)
+        }))}
+      />
+      {status === 'done' && (
+        <OneOf
+          label={t('filters.completed')}
+          value={completed}
+          onChange={setCompleted}
+          options={COMPLETED.map(value => ({
+            value,
+            name: t(`filters.completedWithin.${value}`)
+          }))}
+        />
+      )}
       <AssigneeField value={assignee} onChange={setAssignee} />
+      <AssigneeField
+        label={t('filters.createdBy')}
+        value={createdBy}
+        onChange={setCreatedBy}
+        withNobody={false}
+      />
       <AnyOf
         label={t('filters.priority')}
         value={priority}
@@ -451,6 +540,38 @@ export function FilterForm({
         }))}
       />
     </FormPanel>
+  )
+}
+
+function OneOf<T extends string>({
+  label,
+  options,
+  value,
+  onChange
+}: {
+  label: string
+  options: { value: T; name: string }[]
+  value: T
+  onChange: (value: T) => void
+}): ReactElement {
+  return (
+    <TextField
+      select
+      label={label}
+      value={value}
+      onChange={event => {
+        const picked = options.find(
+          option => option.value === event.target.value
+        )
+        if (picked) onChange(picked.value)
+      }}
+    >
+      {options.map(option => (
+        <MenuItem key={option.value} value={option.value}>
+          {option.name}
+        </MenuItem>
+      ))}
+    </TextField>
   )
 }
 
