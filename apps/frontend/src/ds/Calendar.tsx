@@ -52,7 +52,8 @@ export function CalendarToolbar({
   todayLabel,
   onPrevious,
   onNext,
-  onToday
+  onToday,
+  actions
 }: {
   title: string
   previousLabel: string
@@ -61,13 +62,23 @@ export function CalendarToolbar({
   onPrevious: () => void
   onNext: () => void
   onToday: () => void
+  actions?: ReactNode
 }): ReactElement {
   const theme = useTheme()
   const compact = useMediaQuery(theme.breakpoints.down('md'))
   const { high } = useContrast()
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        columnGap: 2,
+        rowGap: 1,
+        mb: 2
+      }}
+    >
       {compact ? (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
           <IconButton aria-label={previousLabel} onClick={onPrevious}>
@@ -128,6 +139,8 @@ export function CalendarToolbar({
         sx={{
           flex: 1,
           minWidth: 0,
+          // A phone gives the title a line of its own, under the buttons
+          ...(compact && { order: 1, flexBasis: '100%' }),
           fontSize: compact ? 18 : 22,
           fontWeight: 400,
           textTransform: 'capitalize'
@@ -137,6 +150,7 @@ export function CalendarToolbar({
       >
         {title}
       </Typography>
+      {actions && <Box sx={{ ml: 'auto' }}>{actions}</Box>}
     </Box>
   )
 }
@@ -166,6 +180,16 @@ export function CalendarBody({
   )
 }
 
+const gridLines = {
+  display: 'grid',
+  gap: '1px',
+  bgcolor: 'divider',
+  border: 1,
+  borderColor: 'divider',
+  borderRadius: 2,
+  overflow: 'hidden'
+} as const
+
 // The weekday names repeat what each day's label already says.
 export function MonthGrid({
   weekdays,
@@ -176,16 +200,7 @@ export function MonthGrid({
 }): ReactElement {
   return (
     <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-        gap: '1px',
-        bgcolor: 'divider',
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 2,
-        overflow: 'hidden'
-      }}
+      sx={{ ...gridLines, gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}
     >
       {weekdays.map(weekday => (
         <Typography
@@ -198,6 +213,28 @@ export function MonthGrid({
           {weekday}
         </Typography>
       ))}
+      {children}
+    </Box>
+  )
+}
+
+// Seven columns, or on a phone one day under another, where titles wrap
+// rather than being cut.
+export function WeekGrid({ children }: { children: ReactNode }): ReactElement {
+  return (
+    <Box
+      sx={{
+        ...gridLines,
+        gridTemplateColumns: {
+          xs: 'minmax(0, 1fr)',
+          md: 'repeat(7, minmax(0, 1fr))'
+        },
+        '& .CalendarChip': { alignItems: 'flex-start', py: 0.5 },
+        '& .CalendarChip-mark': { mt: '0.125rem' },
+        '& .CalendarChip-title': { whiteSpace: 'normal' },
+        '& .CalendarChip-time': { display: 'block' }
+      }}
+    >
       {children}
     </Box>
   )
@@ -256,6 +293,7 @@ export function DayCell({
   outside,
   today,
   add,
+  weekday,
   ref,
   highlighted = false,
   children
@@ -265,6 +303,8 @@ export function DayCell({
   outside: boolean
   today: boolean
   add?: CalendarAdd | undefined
+  /** Named beside the number in a week, which has no row of weekdays. */
+  weekday?: string
   ref?: Ref<HTMLElement>
   /** A task is being dragged over it. */
   highlighted?: boolean
@@ -284,9 +324,9 @@ export function DayCell({
       }
       sx={theme => ({
         ...dayTone(outside),
-        minHeight: '7rem',
+        minHeight: weekday ? { xs: '3.5rem', md: '24rem' } : '7rem',
         minWidth: 0,
-        p: 0.5,
+        p: weekday ? 1 : 0.5,
         display: 'grid',
         gridAutoRows: 'min-content',
         alignContent: 'start',
@@ -308,7 +348,18 @@ export function DayCell({
           '& button': { pointerEvents: 'auto' }
         }}
       >
-        <DayNumber number={number} today={today} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          {weekday && (
+            <Typography
+              aria-hidden
+              variant="caption"
+              sx={{ fontWeight: 600, textTransform: 'capitalize' }}
+            >
+              {weekday}
+            </Typography>
+          )}
+          <DayNumber number={number} today={today} />
+        </Box>
         {add && <AddButton add={add} className="DayCell-add" />}
       </Box>
       {children}
@@ -382,12 +433,14 @@ export type ChipDrag = HTMLAttributes<HTMLElement> & {
 
 export function CalendarChip({
   done,
+  time,
   highlighted = false,
   onClick,
   drag,
   children
 }: {
   done: boolean
+  time?: string | null | undefined
   /** The task just created, standing out as a selected one. */
   highlighted?: boolean
   onClick: () => void
@@ -436,6 +489,7 @@ export function CalendarChip({
       <Box
         component="span"
         aria-hidden
+        className="CalendarChip-mark"
         sx={theme => ({
           flexShrink: 0,
           width: '0.75rem',
@@ -448,12 +502,28 @@ export function CalendarChip({
       />
       <Box
         component="span"
+        className="CalendarChip-title"
         sx={{
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap'
+          whiteSpace: 'nowrap',
+          textAlign: 'start'
         }}
       >
+        {time && (
+          <>
+            <Box
+              component="span"
+              className="CalendarChip-time"
+              sx={{
+                color: 'text.secondary',
+                fontVariantNumeric: 'tabular-nums'
+              }}
+            >
+              {time}
+            </Box>{' '}
+          </>
+        )}
         {children}
       </Box>
     </ButtonBase>

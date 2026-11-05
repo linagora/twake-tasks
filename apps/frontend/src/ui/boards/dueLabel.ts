@@ -142,16 +142,23 @@ export const recurrenceLabel = (
   )
 
 // A pinned time shows its zone when the reader is elsewhere.
+export function timeLabel(
+  task: Pick<Task, 'dueTime' | 'dueZone'>
+): string | null {
+  if (!task.dueTime) return null
+  const zone =
+    task.dueZone && task.dueZone !== localZone() ? ` ${task.dueZone}` : ''
+  return `${task.dueTime}${zone}`
+}
+
 export function dueLabel(
   task: Pick<Task, 'dueDate' | 'dueTime' | 'dueZone'>,
   lang: string
 ): string | null {
   if (!task.dueDate) return null
   const day = formatDay(task.dueDate, lang)
-  if (!task.dueTime) return day
-  const zone =
-    task.dueZone && task.dueZone !== localZone() ? ` ${task.dueZone}` : ''
-  return `${day}, ${task.dueTime}${zone}`
+  const time = timeLabel(task)
+  return time ? `${day}, ${time}` : day
 }
 
 const today = () => new Date(`${localToday()}T00:00:00Z`)
