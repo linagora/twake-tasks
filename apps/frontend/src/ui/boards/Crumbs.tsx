@@ -141,8 +141,8 @@ export function PageCrumbs({
   /** The breadcrumb is the page's title, with its actions beside it. */
   heading?: boolean
   actions?: ReactNode
-  /** The page's picture, behind the breadcrumb and its actions. */
-  picture?: string | undefined
+  /** The page's picture, above the breadcrumb and its actions. */
+  picture?: string | null | undefined
 }): ReactElement {
   const { t } = useI18n()
   return (

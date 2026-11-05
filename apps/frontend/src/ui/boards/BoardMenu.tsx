@@ -191,6 +191,7 @@ export function BoardMenu({
             setNext('rename')
           })}
         {isManageable(board) &&
+          !embedded &&
           item(
             Palette,
             t(hasOwnCover(board) ? 'background.change' : 'background.add'),

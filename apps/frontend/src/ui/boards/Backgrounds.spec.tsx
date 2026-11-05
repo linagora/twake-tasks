@@ -105,26 +105,46 @@ describe('board backgrounds', () => {
     })
   })
 
-  it('gives a board without cover a pale blue card, and a white inside', async () => {
+  it('gives a board without cover the grey of the theme, light or dark, and no banner', async () => {
     const board = aBoard()
     renderRoute('/', { boardsApi: fakeBoardsApi([board]) })
 
     expect(await screen.findByTestId('board-cover')).toHaveStyle({
-      backgroundColor: '#F6FBFF'
+      backgroundColor: 'var(--twake-palette-background-default)'
     })
     fireEvent.click(screen.getByRole('link', { name: 'Design' }))
     await screen.findByRole('button', { name: 'Board options' })
     expect(screen.queryByTestId('board-banner')).toBeNull()
   })
 
-  it('shows no cover in an embed, as in Twake Space', async () => {
+  it('shows no cover in an embed, nor offers one, as in Twake Space', async () => {
     const board = aBoard({ background: 'dawn' })
     renderRoute(`/embed/projects/${board.project.id}/boards/${board.id}`, {
       boardsApi: fakeBoardsApi([board])
     })
 
-    await screen.findByRole('button', { name: 'Board options' })
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Board options' })
+    )
+    expect(await screen.findByRole('menu')).toBeVisible()
     expect(screen.queryByTestId('board-banner')).toBeNull()
+    expect(screen.queryByRole('menuitem', { name: /cover/ })).toBeNull()
+  })
+
+  it('draws the cover above the breadcrumb, never behind it', async () => {
+    const board = aBoard({ background: 'dawn' })
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+
+    const cover = await screen.findByTestId('board-banner')
+    const breadcrumb = screen.getByRole('navigation', {
+      name: 'Where the page is'
+    })
+    expect(cover).not.toContainElement(breadcrumb)
+    expect(
+      cover.compareDocumentPosition(breadcrumb) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    expect(cover).toBeEmptyDOMElement()
   })
 
   it.each(['list', 'calendar'] as const)(
@@ -199,24 +219,6 @@ describe('board backgrounds', () => {
     )
   })
 
-  it.each([
-    ['a pale picture', { background: 'earlymorning' as const }],
-    ['a dark picture', { background: 'dawn' as const }],
-    ['a pale color', { backgroundColor: '#F5E6A3' }]
-  ])(
-    'writes the breadcrumb in white on %s, under a shade',
-    async (_name, cover) => {
-      const board = aBoard(cover)
-      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
-
-      const inside = await screen.findByTestId('board-banner')
-      expect(inside).toHaveAttribute('data-picture')
-      expect(getComputedStyle(inside).backgroundImage).toContain(
-        'linear-gradient'
-      )
-    }
-  )
-
   it('offers to add a cover to a board without one, to change it on others', async () => {
     const bare = aBoard({ name: 'Design' })
     const covered = aBoard({ name: 'Ops', background: 'dawn' })
@@ -284,18 +286,13 @@ describe('board backgrounds', () => {
     expect(screen.queryByRole('menuitem', { name: 'Change cover' })).toBeNull()
   })
 
-  it('shades every cover on the cards, as in Twake Space, but white', async () => {
-    const pale = aBoard({ name: 'Design', background: 'earlymorning' })
-    const white = aBoard({ name: 'Ops' })
-    renderRoute('/', { boardsApi: fakeBoardsApi([pale, white]) })
+  it('writes the name under the cover of a card, never on it', async () => {
+    const board = aBoard({ name: 'Design', background: 'earlymorning' })
+    renderRoute('/', { boardsApi: fakeBoardsApi([board]) })
 
-    const coverOf = async (name: string) =>
-      getComputedStyle(
-        within(await screen.findByRole('listitem', { name })).getByTestId(
-          'board-cover'
-        )
-      ).backgroundImage
-    expect(await coverOf('Design')).toContain('linear-gradient')
-    expect(await coverOf('Ops')).not.toContain('linear-gradient')
+    const card = within(await screen.findByRole('listitem', { name: 'Design' }))
+    expect(card.getByTestId('board-cover')).not.toContainElement(
+      card.getByRole('heading', { name: 'Design' })
+    )
   })
 })

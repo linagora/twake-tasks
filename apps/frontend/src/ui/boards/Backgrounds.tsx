@@ -1,5 +1,4 @@
 import { Palette, Upload } from '@linagora/twake-icons'
-import palette from '@linagora/twake-css/palette.json'
 import { Dialog, DialogContent, Typography } from '@linagora/twake-mui'
 import {
   skipToken,
@@ -32,11 +31,6 @@ const PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 export const backgroundSrc = (background: Background | 'space'): string =>
   `/backgrounds/${background}.${background === 'eclipse' ? 'svg' : 'jpg'}`
 
-const WHITE = '#FFFFFF'
-
-/** The card of a board without cover, in the boards list: pale blue. */
-export const BLANK_CARD = palette.Primary[50]
-
 const dataUrlOf = (blob: Blob) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -67,25 +61,19 @@ function useSentPicture(boardId: string, imageId: string | null) {
 
 /**
  * The board's picture, or its plain `#` color: the one picked, else a space's
- * for a space's board, else white.
+ * for a space's board, else none. None either where covers are not `shown`.
  */
-export function useBoardBackground(board: Shown): string {
+export function useBoardBackground(board: Shown, shown = true): string | null {
   const sent = useSentPicture(
     board.id,
-    board.background === 'custom' ? board.backgroundImage : null
+    shown && board.background === 'custom' ? board.backgroundImage : null
   )
-  if (board.background === 'custom') return sent ?? WHITE
+  if (!shown) return null
+  if (board.background === 'custom') return sent
   if (board.backgroundColor) return board.backgroundColor
   if (board.background) return backgroundSrc(board.background)
-  return board.project.managed ? backgroundSrc('space') : WHITE
+  return board.project.managed ? backgroundSrc('space') : null
 }
-
-/**
- * Whether the board has no cover: white, with dark text on it and no picture
- * behind its header. Any other cover takes white text under a shade.
- */
-export const isLightCover = (board: Shown): boolean =>
-  !board.backgroundColor && !board.background && !board.project.managed
 
 type Change =
   { background: Background | null } | { color: string } | { picture: File }
@@ -172,7 +160,7 @@ export function BackgroundDialog({
             label={t('background.color')}
             src={color}
             face={color ? undefined : <Icon icon={Palette} />}
-            dashed={!color}
+            action={!color}
             selected={color !== null}
             onClick={event => {
               setColorAnchor(event.currentTarget)
@@ -201,7 +189,7 @@ export function BackgroundDialog({
             label={t('background.import')}
             src={null}
             face={<Icon icon={Upload} />}
-            dashed
+            action
             selected={false}
             onClick={() => {
               input.current?.click()

@@ -8,7 +8,7 @@ import {
 import { createPortal } from 'react-dom'
 
 import { HEADER_ACTIONS, TITLE_FLEX } from '@/ds/PageHeader'
-import { BoardBanner, ON_PICTURE } from '@/ds/Pictures'
+import { BoardBanner } from '@/ds/Pictures'
 
 /**
  * The strip of the breadcrumb, at the top of the content: a page puts its
@@ -25,21 +25,30 @@ export const CRUMB_BAR = {
   px: { xs: 2, sm: 3 }
 } as const
 
+/** The strip of a page's breadcrumb, under its picture when it has one. */
+export const CRUMB_HOST = {
+  ...CRUMB_BAR,
+  flexWrap: 'wrap',
+  alignContent: 'center'
+} as const
+
 /** The strip the frame holds; null in an embed, where a page has none. */
 export const CrumbHostContext = createContext<HTMLElement | null>(null)
 
 /**
  * A page's breadcrumb, in the frame's strip, or in its own one in an embed,
- * on the page's picture if it has one.
+ * under the page's picture if it has one.
  */
 export function CrumbSlot({
   picture,
   children
 }: {
-  picture?: string | undefined
+  picture?: string | null | undefined
   children: ReactNode
 }): ReactElement {
   const host = useContext(CrumbHostContext)
+  // The picture comes and goes without remounting the breadcrumb, nor the
+  // dialogs its actions hold open.
   const content = (
     <>
       {picture && <BoardBanner src={picture} />}
@@ -49,17 +58,7 @@ export function CrumbSlot({
   return host ? (
     createPortal(content, host)
   ) : (
-    <Box
-      sx={{
-        ...CRUMB_BAR,
-        px: picture ? 2 : 0,
-        minHeight: 40,
-        ...ON_PICTURE,
-        ...(picture && { mb: 1 })
-      }}
-    >
-      {content}
-    </Box>
+    <Box sx={{ ...CRUMB_HOST, px: 0, minHeight: 40 }}>{content}</Box>
   )
 }
 
@@ -84,16 +83,8 @@ export function CrumbRow({
         py: actions ? 1 : 0
       }}
     >
-      <Box sx={{ flex: TITLE_FLEX, minWidth: 0 }}>
-        <Box data-on-picture="title" sx={{ minWidth: 0 }}>
-          {children}
-        </Box>
-      </Box>
-      {actions && (
-        <Box data-on-picture="actions" sx={HEADER_ACTIONS}>
-          {actions}
-        </Box>
-      )}
+      <Box sx={{ flex: TITLE_FLEX, minWidth: 0 }}>{children}</Box>
+      {actions && <Box sx={HEADER_ACTIONS}>{actions}</Box>}
     </Box>
   )
 }
