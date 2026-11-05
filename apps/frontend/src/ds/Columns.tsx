@@ -7,7 +7,6 @@ import {
   Skeleton,
   styled,
   Tooltip,
-  type Theme,
   Typography
 } from '@linagora/twake-mui'
 import {
@@ -23,21 +22,12 @@ import {
 import { useContrast } from '@/ds/contrast'
 import { Highlight } from '@/ds/Highlight'
 import { Icon } from '@/ds/Icon'
-import { backdropOf } from '@/ds/Pictures'
 
-export function Columns({
-  backdrop = null,
-  children
-}: {
-  /** A picture behind the columns, which then keep clear of its edges. */
-  backdrop?: string | null
-  children: ReactNode
-}): ReactElement {
+export function Columns({ children }: { children: ReactNode }): ReactElement {
   const { high } = useContrast()
   return (
     <Box
-      data-testid="columns"
-      sx={theme => ({
+      sx={{
         display: 'flex',
         alignItems: 'flex-start',
         gap: 2,
@@ -45,27 +35,13 @@ export function Columns({
         // Room for a focus ring at either end, which the scroll would cut.
         px: high ? 1 : 0.5,
         mx: high ? -1 : -0.5,
-        pb: 2,
-        ...(backdrop && {
-          ...backdropOf(backdrop),
-          // Columns and the new column button let the picture show through.
-          '--column-bg': veil(theme, 0.7),
-          p: 2,
-          mx: 0,
-          borderRadius: 3,
-          // Down to the bottom of the page, however short the columns, when
-          // the page is a flex column.
-          flex: '1 0 auto'
-        })
-      })}
+        pb: 2
+      }}
     >
       {children}
     </Box>
   )
 }
-
-const veil = (theme: Theme, opacity: number) =>
-  theme.alpha(theme.vars.palette.background.default, opacity)
 
 export function EmptyColumn({ label }: { label: string }): ReactElement {
   return (
@@ -166,7 +142,7 @@ export function Column({
         borderRadius: 2,
         bgcolor: highlighted
           ? theme.alpha(theme.vars.palette.primary.main, 0.08)
-          : `var(--column-bg, ${theme.vars.palette.background.default})`,
+          : 'background.default',
         transition: 'background-color 120ms',
         ...(drag === 'placeholder' && { opacity: 0.4 }),
         ...(drag === 'lifted' && { boxShadow: theme.vars.shadows[8] })
@@ -232,8 +208,7 @@ export const NewColumnButton = styled(ColumnAddButton)(({ theme }) => ({
   flex: '0 0 12rem',
   height: 48,
   border: `1px dashed ${theme.vars.palette.divider}`,
-  borderRadius: theme.spacing(1),
-  backgroundColor: 'var(--column-bg, transparent)'
+  borderRadius: theme.spacing(1)
 }))
 
 export interface CardProps {

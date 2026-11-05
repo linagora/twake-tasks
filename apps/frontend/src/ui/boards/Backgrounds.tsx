@@ -32,7 +32,6 @@ const PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 export const backgroundSrc = (background: Background | 'space'): string =>
   `/backgrounds/${background}.${background === 'eclipse' ? 'svg' : 'jpg'}`
 
-/** The cover of a board without one: white. */
 const WHITE = '#FFFFFF'
 
 /** The card of a board without cover, in the boards list: pale blue. */
@@ -82,9 +81,8 @@ export function useBoardBackground(board: Shown): string {
 }
 
 /**
- * Whether the board has no cover: white, on which what sits reads in black,
- * and inside it no picture behind its header; on any other, white under a
- * shade.
+ * Whether the board has no cover: white, with dark text on it and no picture
+ * behind its header. Any other cover takes white text under a shade.
  */
 export const isLightCover = (board: Shown): boolean =>
   !board.backgroundColor && !board.background && !board.project.managed
@@ -128,6 +126,9 @@ export function BackgroundDialog({
   const set = useSetBackground(board.id)
   const sent = useSentPicture(board.id, board.backgroundImage)
   const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null)
+  // The swatch the arrows are on, saved only once kept: one save per arrow
+  // would race and could leave an earlier color.
+  const [swatch, setSwatch] = useState<string | null>(null)
   // What was just clicked shows picked until the board says so.
   const pending = set.isPending ? set.variables : null
   const color = pending
@@ -234,10 +235,12 @@ export function BackgroundDialog({
               ? t(`colors.${swatch}`)
               : t('colors.custom', { hex: value.toUpperCase() })
           }}
-          value={color}
+          value={swatch ?? color}
           onClose={() => {
             setColorAnchor(null)
+            setSwatch(null)
           }}
+          onSelect={setSwatch}
           onChange={next => {
             set.mutate({ color: next.toUpperCase() })
           }}

@@ -47,31 +47,6 @@ import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
 type Shelf = 'active' | 'archived'
 
-export function useProjectName(): (project: ProjectSummary) => string {
-  const { t } = useI18n()
-  return project =>
-    project.personal ? t('boards.personalProject') : project.name
-}
-
-export type BoardName = (board: {
-  id: string
-  name: string
-  inbox?: boolean
-}) => string
-
-/**
- * The Inbox is stored as "Inbox" and shown in the person's language. Task rows
- * and history entries carry no inbox flag, so the Inbox is also matched by id.
- */
-export function useBoardName(): BoardName {
-  const { t } = useI18n()
-  const inboxId = useBoards().data?.find(board => board.inbox)?.id
-  return board =>
-    board.inbox === true || board.id === inboxId
-      ? t('boards.inbox')
-      : board.name
-}
-
 function FavoriteButton({
   board,
   name
@@ -115,6 +90,31 @@ function FavoriteButton({
       <Icon icon={board.favorite ? Star : StarOutline} />
     </IconButton>
   )
+}
+
+export function useProjectName(): (project: ProjectSummary) => string {
+  const { t } = useI18n()
+  return project =>
+    project.personal ? t('boards.personalProject') : project.name
+}
+
+export type BoardName = (board: {
+  id: string
+  name: string
+  inbox?: boolean
+}) => string
+
+/**
+ * The Inbox is stored as "Inbox" and shown in the person's language. Task rows
+ * and history entries carry no inbox flag, so the Inbox is also matched by id.
+ */
+export function useBoardName(): BoardName {
+  const { t } = useI18n()
+  const inboxId = useBoards().data?.find(board => board.inbox)?.id
+  return board =>
+    board.inbox === true || board.id === inboxId
+      ? t('boards.inbox')
+      : board.name
 }
 
 function BoardItem({

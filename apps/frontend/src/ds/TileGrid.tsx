@@ -9,7 +9,7 @@ import {
 import type { ReactElement, ReactNode } from 'react'
 
 import { useContrast } from '@/ds/contrast'
-import { backdropOf, shadedBackdropOf } from '@/ds/Pictures'
+import { backdropOf, shadedBackdropOf, TEXT_SHADE } from '@/ds/Pictures'
 
 const CARD_RADIUS = '20px'
 
@@ -64,7 +64,7 @@ export function BoardCard({
   members?: ReactNode
   /** At the top right, shown on hover or focus; touch screens always show it. */
   menu?: ReactNode
-  /** Left of the menu, shown as it. */
+  /** Left of the menu, shown when it is. */
   star?: ReactNode
   /** On the last row, before the people. */
   footerAction?: ReactNode
@@ -109,7 +109,11 @@ export function BoardCard({
           // on a white cover.
           ...(lightCover
             ? { ...backdropOf(cover), color: 'grey.900' }
-            : { ...shadedBackdropOf(cover), color: 'common.white' }),
+            : {
+                ...shadedBackdropOf(cover),
+                color: 'common.white',
+                textShadow: TEXT_SHADE
+              }),
           minHeight: 88,
           mt: -1.5,
           mx: -1.5,

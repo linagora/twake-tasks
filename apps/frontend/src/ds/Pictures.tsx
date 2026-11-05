@@ -107,7 +107,8 @@ export function PictureTile({
               ? 'common.white'
               : selected || dashed
                 ? 'primary.main'
-                : 'text.secondary'
+                : 'text.secondary',
+            ...(src && { textShadow: TEXT_SHADE })
           }}
         >
           {label}
@@ -126,6 +127,9 @@ export const backdropOf = (src: string) =>
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       } as const)
+
+// SHADE alone is too light for white text on a pale picture such as Eclipse.
+export const TEXT_SHADE = '0 1px 3px rgba(0, 0, 0, 0.45)'
 
 // The shade of a space's cover in Twake Space, from its title side.
 const SHADE =

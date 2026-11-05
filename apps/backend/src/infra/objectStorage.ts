@@ -77,7 +77,6 @@ export function s3Storage(options: {
   }
 }
 
-// Without S3_BUCKET, admins cannot send pictures of their own.
 export function createObjectStorage(
   config: Pick<
     Config,

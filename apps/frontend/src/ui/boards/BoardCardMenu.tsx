@@ -13,7 +13,14 @@ import { useId, useState, type ElementType, type ReactElement } from 'react'
 
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
-import { hasOwnCover, isAdmin, type BoardSummary } from '@/domain/board'
+import {
+  hasOwnCover,
+  isAdmin,
+  isArchivable,
+  isManageable,
+  isRenamable,
+  type BoardSummary
+} from '@/domain/board'
 import { BackgroundDialog } from '@/ui/boards/Backgrounds'
 import { ArchiveBoardDialog } from '@/ui/boards/ArchiveBoardDialog'
 import { useRenameBoard, useSetBoardArchived } from '@/ui/queries/boards'
@@ -80,7 +87,7 @@ export function BoardCardMenu({
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        {!board.archived &&
+        {isManageable(board) &&
           item(
             Palette,
             t(hasOwnCover(board) ? 'background.change' : 'background.add'),
@@ -88,12 +95,11 @@ export function BoardCardMenu({
               setNext('background')
             }
           )}
-        {!board.archived &&
-          !board.inbox &&
+        {isRenamable(board) &&
           item(Pen, t('board.rename'), () => {
             setNext('rename')
           })}
-        {!board.inbox &&
+        {isArchivable(board) &&
           item(
             board.archived ? Restore : Archive,
             t(

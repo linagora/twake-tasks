@@ -148,7 +148,8 @@ export function ColorPopover({
   colorName,
   value,
   onClose,
-  onChange
+  onChange,
+  onSelect = onChange
 }: {
   anchor: HTMLElement | null
   /** The name of the swatches' popover and radio group */
@@ -160,6 +161,8 @@ export function ColorPopover({
   value: string | null
   onClose: () => void
   onChange: (color: string) => void
+  /** A swatch the arrows move to, before Enter or a click keeps it. */
+  onSelect?: (color: string) => void
 }): ReactElement {
   const [custom, setCustom] = useState(false)
   const close = () => {
@@ -199,7 +202,7 @@ export function ColorPopover({
           customLabel={customLabel}
           colorName={colorName}
           value={value}
-          onSelect={onChange}
+          onSelect={onSelect}
           onPick={color => {
             onChange(color)
             close()

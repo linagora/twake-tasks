@@ -41,7 +41,7 @@ export function createBackgroundStore(
     })
 
   return {
-    /** A picture the frontend ships, or null for the default. Admins only. */
+    /** A picture the frontend ships, or null for the default. */
     setBackground: (
       identity: Identity,
       boardId: string,
@@ -53,7 +53,6 @@ export function createBackgroundStore(
         backgroundImage: null
       }),
 
-    /** A plain color instead of a picture. Admins only. */
     setBackgroundColor: (identity: Identity, boardId: string, color: string) =>
       replace(identity, boardId, {
         background: null,
@@ -61,7 +60,6 @@ export function createBackgroundStore(
         backgroundImage: null
       }),
 
-    /** Replaces the board's background with a picture of the admin's. */
     async setBackgroundImage(
       identity: Identity,
       boardId: string,
@@ -69,22 +67,32 @@ export function createBackgroundStore(
       content: Buffer
     ): Promise<Result<{ image: string }>> {
       if (!storage) return { ok: false, error: 'not_found' }
-      return writeOrRefuse(db, identity, async tx => {
-        await checkRole(tx, identity, boardId, 'admin')
-        await bumpBoard(tx, boardId)
-        const image = randomUUID()
-        // Stored before the board names it: a failed upload rolls it back.
-        await storage.put(keyOf(image), content, contentType)
-        await tx
-          .update(boards)
-          .set({
-            background: 'custom',
-            backgroundColor: null,
-            backgroundImage: image
-          })
-          .where(eq(boards.id, boardId))
-        return { image }
-      })
+      const image = randomUUID()
+      // Stored before the transaction, which would otherwise hold the board's
+      // row and a connection through the upload. A board that does not take
+      // it leaves no picture behind.
+      await storage.put(keyOf(image), content, contentType)
+      const drop = () => storage.remove(keyOf(image)).catch(() => undefined)
+      try {
+        const result = await writeOrRefuse(db, identity, async tx => {
+          await checkRole(tx, identity, boardId, 'admin')
+          await bumpBoard(tx, boardId)
+          await tx
+            .update(boards)
+            .set({
+              background: 'custom',
+              backgroundColor: null,
+              backgroundImage: image
+            })
+            .where(eq(boards.id, boardId))
+          return { image }
+        })
+        if (!result.ok) await drop()
+        return result
+      } catch (error) {
+        await drop()
+        throw error
+      }
     },
 
     /** The picture by the id the board gave, to anyone who sees the board. */
