@@ -58,7 +58,51 @@
     "delete": "Elimina",
     "deleteTitle": "Eliminare %{name}?",
     "deleteHint": "Le attività già create da questo modello restano come sono.",
-    "deleteFailed": "Impossibile eliminare il modello."
+    "deleteFailed": "Impossibile eliminare il modello.",
+    "schedule": {
+      "title": "Crea automaticamente",
+      "hint": "Ogni scadenza aggiunge l’attività da sola, nella prima sezione aperta della bacheca.",
+      "repeat": "Ripeti",
+      "kinds": {
+        "daily": "Ogni giorno",
+        "weekly": "Ogni settimana",
+        "monthly": "Ogni mese",
+        "yearly": "Ogni anno"
+      },
+      "every": "Ogni",
+      "units": {
+        "daily": "giorno |||| giorni",
+        "weekly": "settimana |||| settimane",
+        "monthly": "mese |||| mesi"
+      },
+      "weekdays": "Di",
+      "weekdaysRequired": "Scegli almeno un giorno.",
+      "noBoard": "Il progetto non ha bacheche aperte.",
+      "monthDay": "Giorno del mese",
+      "lastDay": "Ultimo giorno",
+      "month": "Mese",
+      "day": "Giorno",
+      "time": "Alle",
+      "board": "Sulla bacheca",
+      "workingDays": "Solo giorni lavorativi, dal lunedì al venerdì",
+      "endsOn": "Fino al",
+      "endsOnHint": "Lascia vuoto per continuare senza fine.",
+      "paused": "In pausa",
+      "pausedByAuthor": "In pausa: il suo autore non può più aggiungere attività al progetto. Salva per riprenderla a tuo nome.",
+      "pausedByBoard": "In pausa: la sua bacheca è stata archiviata o ha lasciato il progetto. Scegli una bacheca e salva per riprenderla.",
+      "next": "Prossima attività: %{date}",
+      "ended": "Terminata",
+      "summary": {
+        "daily": "Ogni giorno alle %{time} |||| Ogni %{smart_count} giorni alle %{time}",
+        "workingDaily": "Ogni giorno lavorativo alle %{time} |||| Ogni %{smart_count} giorni lavorativi alle %{time}",
+        "weekly": "Ogni settimana di %{days} alle %{time} |||| Ogni %{smart_count} settimane di %{days} alle %{time}",
+        "monthly": "Il giorno %{day} di ogni mese alle %{time} |||| Il giorno %{day} ogni %{smart_count} mesi alle %{time}",
+        "monthlyLast": "L’ultimo giorno di ogni mese alle %{time} |||| L’ultimo giorno ogni %{smart_count} mesi alle %{time}",
+        "yearly": "Ogni anno il %{date} alle %{time}",
+        "workingBefore": "%{summary}, o il giorno lavorativo prima",
+        "until": "%{summary}, fino al %{date}"
+      }
+    }
   },
   "app": {
     "name": "Twake Project",

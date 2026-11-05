@@ -58,7 +58,51 @@
     "delete": "Eliminar",
     "deleteTitle": "¿Eliminar %{name}?",
     "deleteHint": "Las tareas ya creadas con ella se quedan como están.",
-    "deleteFailed": "No se pudo eliminar la plantilla."
+    "deleteFailed": "No se pudo eliminar la plantilla.",
+    "schedule": {
+      "title": "Crear automáticamente",
+      "hint": "Cada fecha añade la tarea por sí sola, en la primera sección abierta del tablero.",
+      "repeat": "Repetir",
+      "kinds": {
+        "daily": "Cada día",
+        "weekly": "Cada semana",
+        "monthly": "Cada mes",
+        "yearly": "Cada año"
+      },
+      "every": "Cada",
+      "units": {
+        "daily": "día |||| días",
+        "weekly": "semana |||| semanas",
+        "monthly": "mes |||| meses"
+      },
+      "weekdays": "Los",
+      "weekdaysRequired": "Elija al menos un día.",
+      "noBoard": "El proyecto no tiene ningún tablero abierto.",
+      "monthDay": "Día del mes",
+      "lastDay": "Último día",
+      "month": "Mes",
+      "day": "Día",
+      "time": "A las",
+      "board": "En el tablero",
+      "workingDays": "Solo días laborables, de lunes a viernes",
+      "endsOn": "Hasta",
+      "endsOnHint": "Déjelo vacío para seguir sin fin.",
+      "paused": "En pausa",
+      "pausedByAuthor": "En pausa: su autor ya no puede añadir tareas al proyecto. Guarde para reanudarla en su nombre.",
+      "pausedByBoard": "En pausa: su tablero se archivó o salió del proyecto. Elija un tablero y guarde para reanudarla.",
+      "next": "Próxima tarea: %{date}",
+      "ended": "Terminada",
+      "summary": {
+        "daily": "Todos los días a las %{time} |||| Cada %{smart_count} días a las %{time}",
+        "workingDaily": "Todos los días laborables a las %{time} |||| Cada %{smart_count} días laborables a las %{time}",
+        "weekly": "Cada semana el %{days} a las %{time} |||| Cada %{smart_count} semanas el %{days} a las %{time}",
+        "monthly": "El día %{day} de cada mes a las %{time} |||| El día %{day} cada %{smart_count} meses a las %{time}",
+        "monthlyLast": "El último día de cada mes a las %{time} |||| El último día cada %{smart_count} meses a las %{time}",
+        "yearly": "Cada año el %{date} a las %{time}",
+        "workingBefore": "%{summary}, o el día laborable anterior",
+        "until": "%{summary}, hasta el %{date}"
+      }
+    }
   },
   "app": {
     "name": "Twake Project",

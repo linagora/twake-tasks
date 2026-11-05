@@ -1,4 +1,4 @@
-import { Plus } from '@linagora/twake-icons'
+import { Plus, Sync } from '@linagora/twake-icons'
 import { Box, ButtonBase, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
@@ -58,11 +58,14 @@ export function TemplateCard({
   label,
   title,
   facts,
+  schedule,
   menu
 }: {
   label: string
   title: ReactNode
   facts: string
+  /** `stopped` says why it makes no task now, like "Paused". */
+  schedule?: { summary: string; stopped: string | null } | null
   menu?: ReactNode
 }): ReactElement {
   return (
@@ -97,6 +100,26 @@ export function TemplateCard({
         >
           {facts}
         </Typography>
+        {schedule && (
+          <Typography
+            variant="caption"
+            component="p"
+            color={schedule.stopped ? 'warning.main' : 'textSecondary'}
+            sx={{
+              mt: 0.5,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 0.5
+            }}
+          >
+            <Icon icon={Sync} size={14} />
+            <span>
+              {schedule.stopped
+                ? `${schedule.stopped} · ${schedule.summary}`
+                : schedule.summary}
+            </span>
+          </Typography>
+        )}
       </Box>
       {menu}
     </Box>

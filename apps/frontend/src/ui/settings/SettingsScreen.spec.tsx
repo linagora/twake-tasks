@@ -227,6 +227,126 @@ describe('SettingsScreen', () => {
     ).toBe(null)
   })
 
+  it('creates a template on a schedule and sums the schedule up', async () => {
+    const { design, boardsApi } = aSetup()
+    renderRoute('/settings', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'New template' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'New template' })
+    )
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Task title' }), {
+      target: { value: 'Standup notes' }
+    })
+    fireEvent.click(dialog.getByLabelText('Create on a schedule'))
+    fireEvent.click(dialog.getByRole('button', { name: 'Monday' }))
+    fireEvent.click(dialog.getByRole('button', { name: 'Create template' }))
+    expect(await dialog.findByText('Pick at least one day.')).toBeVisible()
+    fireEvent.click(dialog.getByRole('button', { name: 'Friday' }))
+    fireEvent.click(dialog.getByRole('button', { name: 'Create template' }))
+
+    expect(
+      await screen.findByText('Every week on Friday at 09:00')
+    ).toBeVisible()
+    expect(boardsApi.createTemplate).toHaveBeenLastCalledWith(
+      design.project.id,
+      expect.objectContaining({
+        schedule: {
+          boardId: design.id,
+          rule: { kind: 'weekly', every: 1, weekdays: [5] },
+          time: '09:00',
+          zone: expect.any(String) as string,
+          workingDays: false,
+          endsOn: null,
+          paused: false
+        }
+      })
+    )
+  })
+
+  it('keeps the schedule out of an edit that leaves it as it is', async () => {
+    const { design, boardsApi } = aSetup()
+    await boardsApi.createTemplate(design.project.id, {
+      ...NO_DETAILS,
+      title: 'Monthly report',
+      schedule: {
+        boardId: design.id,
+        rule: { kind: 'monthly', every: 1, day: 25 },
+        time: '08:00',
+        zone: 'Europe/Paris',
+        workingDays: false,
+        endsOn: null,
+        paused: false
+      }
+    })
+    renderRoute('/settings', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Options for Monthly report' })
+    )
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Edit template' })
+    )
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Task title' }), {
+      target: { value: 'Month report' }
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('Month report')).toBeVisible()
+    expect(boardsApi.editTemplate.mock.lastCall?.[1]).not.toHaveProperty(
+      'schedule'
+    )
+  })
+
+  it('shows a schedule its author stopped, and resumes it on save', async () => {
+    const { design, boardsApi } = aSetup()
+    const template = await boardsApi.createTemplate(design.project.id, {
+      ...NO_DETAILS,
+      title: 'Monthly report',
+      schedule: {
+        boardId: design.id,
+        rule: { kind: 'daily', every: 1 },
+        time: '08:00',
+        zone: 'Europe/Paris',
+        workingDays: true,
+        endsOn: null,
+        paused: false
+      }
+    })
+    boardsApi.listTemplates.mockResolvedValue([
+      {
+        ...template,
+        schedule: template.schedule && {
+          ...template.schedule,
+          paused: true,
+          pausedBy: 'author',
+          nextRunAt: null
+        }
+      }
+    ])
+    renderRoute('/settings', { boardsApi })
+
+    expect(
+      await screen.findByText(/^Paused · Every working day at 08:00/)
+    ).toBeVisible()
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Options for Monthly report' })
+    )
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Edit template' })
+    )
+    expect(dialog.getByText(/its author can no longer add tasks/)).toBeVisible()
+    fireEvent.click(dialog.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => {
+      expect(boardsApi.editTemplate.mock.lastCall?.[1]).toMatchObject({
+        schedule: { boardId: design.id, paused: false }
+      })
+    })
+  })
+
   it('offers to try again when templates cannot load', async () => {
     const { boardsApi } = aSetup()
     // A refusal, which is not retried before the page shows it
