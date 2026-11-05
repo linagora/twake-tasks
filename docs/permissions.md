@@ -52,6 +52,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `DELETE /api/boards/:boardId/favorite`
 - `PUT /api/boards/:boardId/favorite`
 - `PUT /api/boards/:boardId/layout`
+- `GET /api/boards/:boardId/progress`
 - `GET /api/boards/:boardId/tasks/:taskId/comments`
 - `POST /api/boards/:boardId/tasks/:taskId/comments`
 - `DELETE /api/boards/:boardId/tasks/:taskId/comments/:commentId`
