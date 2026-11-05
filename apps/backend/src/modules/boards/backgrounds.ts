@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { inTenant, type Db } from '../../infra/db.ts'
 import type { ObjectStorage } from '../../infra/objectStorage.ts'
-import type { Handler } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
 import { writeOrRefuse, type Result } from '../kernel/index.ts'
 import { checkRole, roleOn } from './access.ts'
@@ -115,8 +114,9 @@ export function createBackgroundStore(
   }
 }
 
-export function deleteCover(storage: ObjectStorage | undefined): Handler {
-  return payload => {
+// A scheduler Handler, untyped as one: the scheduler's schema imports boards.
+export function deleteCover(storage: ObjectStorage | undefined) {
+  return (payload: unknown) => {
     const { imageId } = payload as { imageId: string }
     return Promise.resolve(storage && (() => storage.remove(keyOf(imageId))))
   }
