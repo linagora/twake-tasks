@@ -56,6 +56,13 @@ Optional. With `REDIS_URL`, the backend replicas share their rate limit counters
 
 Only in [space mode](modes.md#space-mode). The backend reads organizations, spaces, members and groups from its API, signing each request with HMAC SHA-256 as `LDAP_REST_SERVICE_ID`, with `LDAP_REST_SECRET`. It also publishes the space events the backend consumes.
 
+## Contacts search
+
+Only with `COMMON_CONTACTS=true`. The share dialog's suggestions call `POST /api/people/search` on the calendar side service's cluster internal contacts port, with `CONTACTS_SEARCH_SECRET` as a Bearer token and the admin's email as `user`. An answer later than a second, or an error, leaves the suggestions to the people Tasks knows.
+
+- A contact with no Tasks account is suggested by email, and picking them sends the project invite there.
+- A B2C admin is not suggested contacts on their own mail domain, which every B2C account shares, unless they already share a project.
+
 ## Frontend peers
 
 No frontend code imports `@mui/lab` or `cozy-intent`. They stay in the frontend's dependencies because `@linagora/twake-mui` requires both as peers, and neither peer is optional.

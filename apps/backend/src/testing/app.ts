@@ -5,6 +5,7 @@ import { inject } from 'vitest'
 import { buildApp } from '../app.ts'
 import { eq } from 'drizzle-orm'
 import { createChanges } from '../infra/changes.ts'
+import type { ContactSearch } from '../infra/contacts.ts'
 import { createDb, inTenant, type Db } from '../infra/db.ts'
 import type { Metrics } from '../infra/metrics.ts'
 import type { ObjectStorage } from '../infra/objectStorage.ts'
@@ -183,6 +184,7 @@ export async function startApp(
     metrics?: Metrics
     logger?: pino.Logger
     storage?: ObjectStorage | null
+    contacts?: ContactSearch
   } = {}
 ) {
   const { sql, db } = createDb(inject('databaseUrl'))
@@ -216,7 +218,8 @@ export async function startApp(
     isReady: () => Promise.resolve(true),
     limits: options.limits,
     metrics: options.metrics,
-    storage: storage ?? undefined
+    storage: storage ?? undefined,
+    contacts: options.contacts
   })
 
   function tokenOf(user: TestUser, claims: Partial<Identity> = {}) {

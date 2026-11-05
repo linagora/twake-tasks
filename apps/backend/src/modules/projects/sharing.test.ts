@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
+import type { Contact } from '../../infra/contacts.ts'
 import { createDb } from '../../infra/db.ts'
 import { userSettings } from '../settings/index.ts'
 import {
@@ -453,6 +454,95 @@ describe('sharing a board', () => {
 
       expect((await suggest(owner, boardId, '%%')).emails).toEqual([])
       expect((await suggest(owner, boardId, '__')).emails).toEqual([])
+    })
+  })
+
+  describe('suggestions from common contacts', () => {
+    const contactsOf = new Map<string, Contact[]>()
+    const searches: [string, string][] = []
+    let withContacts: Awaited<ReturnType<typeof startApp>>
+
+    beforeAll(async () => {
+      withContacts = await startApp({
+        contacts: {
+          search: (user, query) => {
+            searches.push([user, query])
+            return Promise.resolve(contactsOf.get(user) ?? [])
+          }
+        }
+      })
+    })
+
+    afterAll(async () => {
+      await withContacts.close()
+    })
+
+    const suggest = async (by: TestUser, boardId: string, q: string) =>
+      (
+        await withContacts
+          .as(by)
+          .get(`/boards/${boardId}/sharing/people?q=${encodeURIComponent(q)}`)
+      ).json<{ people: unknown[] }>().people
+
+    it('suggests the admin contacts first, with or without an account, then the people Tasks knows', async () => {
+      const owner = aUser()
+      const tag = owner.userId.slice(0, 8)
+      const organizationId = owner.organizationId
+      const colleague = aUser({ organizationId, name: `Ada ${tag}` })
+      const known = aUser({ organizationId, email: `bob-${tag}@example.com` })
+      const member = aUser({ organizationId })
+      for (const user of [colleague, known, member]) await boardIdsOf(user)
+      const boardId = await aBoardOf(owner)
+      await invite(owner, boardId, member.email, 'viewer')
+      await boardIdsOf(member)
+      await invite(owner, boardId, `eve-${tag}@example.com`, 'viewer')
+      contactsOf.set(owner.email, [
+        { email: `ann-${tag}@example.com`, name: `Ann ${tag}` },
+        { email: colleague.email, name: 'Ada in contacts' },
+        { email: member.email, name: null },
+        { email: `eve-${tag}@example.com`, name: null }
+      ])
+
+      expect(await suggest(owner, boardId, tag)).toEqual([
+        {
+          userId: null,
+          email: `ann-${tag}@example.com`,
+          name: `Ann ${tag}`,
+          avatar: null
+        },
+        {
+          userId: colleague.userId,
+          email: colleague.email,
+          name: `Ada ${tag}`,
+          avatar: null
+        },
+        { userId: known.userId, email: known.email, name: null, avatar: null }
+      ])
+      expect(searches).toContainEqual([owner.email, tag])
+    })
+
+    it('keeps a B2C admin to their contacts outside B2C and the people they share a project with', async () => {
+      const owner = aB2cUser()
+      const tag = owner.userId.slice(0, 8)
+      const partner = { ...aB2cUser(), email: `pal-${tag}@example.com` }
+      const stranger = { ...aB2cUser(), email: `who-${tag}@example.com` }
+      await boardIdsOf(stranger)
+      const shared = await aBoardOf(owner)
+      await invite(owner, shared, partner.email, 'viewer')
+      await boardIdsOf(partner)
+      const boardId = await aBoardOf(owner)
+      contactsOf.set(owner.email, [
+        { email: `friend-${tag}@elsewhere.test`, name: null },
+        { email: partner.email, name: 'Pal' },
+        { email: stranger.email, name: 'Who' },
+        { email: `nobody-${tag}@example.com`, name: null }
+      ])
+
+      expect(
+        (await suggest(owner, boardId, tag)).map(
+          person => (person as { email: string }).email
+        )
+      ).toEqual([`friend-${tag}@elsewhere.test`, partner.email])
     })
   })
 
