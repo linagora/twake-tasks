@@ -133,7 +133,31 @@
     "keyPrefixTaken": "Otro tablero ya usa %{prefix}.",
     "keyPrefixProposed": "%{prefix} ya está en uso, así que el tablero usa %{suggestion}.",
     "useKeyPrefix": "Usar %{prefix}",
-    "failed": "No se pudo crear el tablero."
+    "failed": "No se pudo crear el tablero.",
+    "startFrom": "Partir de",
+    "emptyBoard": "Tablero vacío",
+    "fromTemplate": "Sus secciones, sus etiquetas y %{smart_count} tarea abierta. |||| Sus secciones, sus etiquetas y %{smart_count} tareas abiertas."
+  },
+  "copyBoard": {
+    "action": "Copiar tablero",
+    "title": "Copiar %{name}",
+    "defaultName": "%{name} (copia)",
+    "project": "Proyecto",
+    "newProject": "Un proyecto nuevo",
+    "projectHelp": "Los miembros y las etiquetas del proyecto se aplican a la copia.",
+    "tasks": "Tareas abiertas y sus subtareas",
+    "assignees": "Mantener las personas asignadas",
+    "dueDates": "Mantener las fechas de vencimiento",
+    "copy": "Copiar",
+    "failed": "No se pudo copiar el tablero."
+  },
+  "boardTemplate": {
+    "use": "Usar como plantilla de tablero",
+    "stop": "Dejar de usar como plantilla de tablero",
+    "chip": "Plantilla de tablero",
+    "hint": "Se ofrece en Nuevo tablero a los miembros de su proyecto.",
+    "on": "Los miembros de su proyecto ya pueden crear un tablero a partir de %{name}.",
+    "failed": "No se pudo cambiar la plantilla de tablero."
   },
   "labelDialog": {
     "createTitle": "Nueva etiqueta",
@@ -331,6 +355,7 @@
     "loadFailed": "No se pudo cargar el historial.",
     "created": "%{actor} la creó",
     "imported": "%{actor} la importó de un archivo CSV",
+    "copied": "%{actor} la creó (copiada de %{key})",
     "title": "%{actor} la renombró de %{from} a %{to}",
     "priority": "%{actor} fijó la prioridad en P%{level}",
     "priorityCleared": "%{actor} quitó la prioridad",

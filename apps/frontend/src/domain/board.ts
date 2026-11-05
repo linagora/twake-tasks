@@ -26,6 +26,8 @@ export interface BoardSummary {
   inbox: boolean
   role: Role
   archived: boolean
+  /** Offered to start new boards from, by whoever sees it. */
+  boardTemplate: boolean
   favorite: boolean
   openTasks: number
   /** Top-level tasks completed, out of `totalTasks`, the ones not canceled. */
@@ -210,6 +212,7 @@ export interface Board {
   project: ProjectSummary
   inbox: boolean
   archived: boolean
+  boardTemplate: boolean
   version: number
   role: Role
   layout: Layout

@@ -51,6 +51,7 @@ const BOARD = {
   project: { id: 'p1', name: 'Design', personal: false, managed: false },
   inbox: false,
   archived: false,
+  boardTemplate: false,
   version: 3,
   role: 'admin',
   layout: 'list',

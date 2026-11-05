@@ -133,7 +133,31 @@
     "keyPrefixTaken": "Ein anderes Board verwendet bereits %{prefix}.",
     "keyPrefixProposed": "%{prefix} wird bereits verwendet, daher erhält das Board %{suggestion}.",
     "useKeyPrefix": "%{prefix} verwenden",
-    "failed": "Das Board konnte nicht erstellt werden."
+    "failed": "Das Board konnte nicht erstellt werden.",
+    "startFrom": "Ausgehend von",
+    "emptyBoard": "Leeres Board",
+    "fromTemplate": "Seine Abschnitte, seine Labels und %{smart_count} offene Aufgabe. |||| Seine Abschnitte, seine Labels und %{smart_count} offene Aufgaben."
+  },
+  "copyBoard": {
+    "action": "Board kopieren",
+    "title": "%{name} kopieren",
+    "defaultName": "%{name} (Kopie)",
+    "project": "Projekt",
+    "newProject": "Ein neues Projekt",
+    "projectHelp": "Die Mitglieder und Labels des Projekts gelten für die Kopie.",
+    "tasks": "Offene Aufgaben und ihre Unteraufgaben",
+    "assignees": "Zuständige behalten",
+    "dueDates": "Fälligkeitsdaten behalten",
+    "copy": "Kopieren",
+    "failed": "Das Board konnte nicht kopiert werden."
+  },
+  "boardTemplate": {
+    "use": "Als Board-Vorlage verwenden",
+    "stop": "Nicht mehr als Board-Vorlage verwenden",
+    "chip": "Board-Vorlage",
+    "hint": "Wird den Mitgliedern seines Projekts unter Neues Board angeboten.",
+    "on": "Die Mitglieder seines Projekts können jetzt ein Board aus %{name} erstellen.",
+    "failed": "Die Board-Vorlage konnte nicht geändert werden."
   },
   "labelDialog": {
     "createTitle": "Neues Label",
@@ -331,6 +355,7 @@
     "loadFailed": "Der Verlauf konnte nicht geladen werden.",
     "created": "%{actor} hat sie erstellt",
     "imported": "%{actor} hat sie aus einer CSV-Datei importiert",
+    "copied": "%{actor} hat sie erstellt (kopiert von %{key})",
     "title": "%{actor} hat sie von %{from} in %{to} umbenannt",
     "priority": "%{actor} hat die Priorität auf P%{level} gesetzt",
     "priorityCleared": "%{actor} hat die Priorität entfernt",

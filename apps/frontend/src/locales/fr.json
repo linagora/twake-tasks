@@ -133,7 +133,31 @@
     "keyPrefixTaken": "Un autre tableau utilise déjà %{prefix}.",
     "keyPrefixProposed": "%{prefix} est déjà utilisé, le tableau prend donc %{suggestion}.",
     "useKeyPrefix": "Utiliser %{prefix}",
-    "failed": "Le tableau n'a pas pu être créé."
+    "failed": "Le tableau n'a pas pu être créé.",
+    "startFrom": "Partir de",
+    "emptyBoard": "Tableau vide",
+    "fromTemplate": "Ses sections, ses étiquettes et %{smart_count} tâche ouverte. |||| Ses sections, ses étiquettes et %{smart_count} tâches ouvertes."
+  },
+  "copyBoard": {
+    "action": "Copier le tableau",
+    "title": "Copier %{name}",
+    "defaultName": "%{name} (copie)",
+    "project": "Projet",
+    "newProject": "Un nouveau projet",
+    "projectHelp": "Les membres et les étiquettes du projet s'appliquent à la copie.",
+    "tasks": "Tâches ouvertes et leurs sous-tâches",
+    "assignees": "Garder les personnes assignées",
+    "dueDates": "Garder les échéances",
+    "copy": "Copier",
+    "failed": "Le tableau n'a pas pu être copié."
+  },
+  "boardTemplate": {
+    "use": "Utiliser comme modèle de tableau",
+    "stop": "Ne plus utiliser comme modèle de tableau",
+    "chip": "Modèle de tableau",
+    "hint": "Proposé dans Nouveau tableau aux membres de son projet.",
+    "on": "Les membres de son projet peuvent maintenant créer un tableau à partir de %{name}.",
+    "failed": "Le modèle de tableau n'a pas pu être modifié."
   },
   "labelDialog": {
     "createTitle": "Nouvelle étiquette",
@@ -331,6 +355,7 @@
     "loadFailed": "L'historique n'a pas pu être chargé.",
     "created": "%{actor} l'a créée",
     "imported": "%{actor} l'a importée d'un fichier CSV",
+    "copied": "%{actor} l'a créée (copie de %{key})",
     "title": "%{actor} l'a renommée de %{from} en %{to}",
     "priority": "%{actor} a mis la priorité à P%{level}",
     "priorityCleared": "%{actor} a retiré la priorité",

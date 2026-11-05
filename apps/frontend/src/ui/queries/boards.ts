@@ -228,6 +228,19 @@ export function useSetBoardArchived(): UseMutationResult<
   })
 }
 
+export function useSetBoardTemplate(): UseMutationResult<
+  void,
+  Error,
+  { boardId: string; on: boolean }
+> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ boardId, on }) => api.setBoardTemplate(boardId, on),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.boards() })
+  })
+}
+
 export function useSetFavorite(): UseMutationResult<
   void,
   Error,

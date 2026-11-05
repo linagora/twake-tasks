@@ -1,8 +1,10 @@
 import {
   Archive,
   Check,
+  Copy,
   Dots,
   Download,
+  Files,
   FolderMoveto,
   Pen,
   Restore,
@@ -23,6 +25,7 @@ import {
   Typography
 } from '@linagora/twake-mui'
 import { useId, useState, type ElementType, type ReactElement } from 'react'
+import { useNavigate, useParams } from 'react-router'
 
 import type { Shelf } from '@/application/boards'
 import { Icon } from '@/ds/Icon'
@@ -37,7 +40,12 @@ import {
 } from '@/domain/board'
 import { ExportDialog } from '@/ui/boards/ExportDialog'
 import { ImportDialog } from '@/ui/boards/ImportDialog'
-import { useSetBoardArchived, useSetLayout } from '@/ui/queries/boards'
+import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
+import {
+  useSetBoardArchived,
+  useSetBoardTemplate,
+  useSetLayout
+} from '@/ui/queries/boards'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -57,14 +65,20 @@ export function BoardMenu({
   // The editor and the dialog open once the menu is gone, which gives the focus
   // back to its button first: the editor would lose the focus and close at once
   const [next, setNext] = useState<
-    'rename' | 'archive' | 'export' | 'import' | null
+    'rename' | 'archive' | 'export' | 'import' | 'copy' | null
   >(null)
   const [confirming, setConfirming] = useState(false)
   const [csv, setCsv] = useState<'export' | 'import' | null>(null)
+  const [copying, setCopying] = useState(false)
   const [archivedNotice, setArchivedNotice] = useState(false)
+  const [templateNotice, setTemplateNotice] = useState(false)
   const setLayout = useSetLayout(board.id)
   const archive = useSetBoardArchived()
+  const asTemplate = useSetBoardTemplate()
   const archivable = isArchivable(board)
+  const renamable = isRenamable(board)
+  const navigate = useNavigate()
+  const embedded = useParams().projectId !== undefined
   const close = (): void => {
     setAnchor(null)
   }
@@ -105,6 +119,7 @@ export function BoardMenu({
               if (next === 'rename') onRename?.()
               if (next === 'archive') setConfirming(true)
               if (next === 'export' || next === 'import') setCsv(next)
+              if (next === 'copy') setCopying(true)
             }
           }
         }}
@@ -130,8 +145,30 @@ export function BoardMenu({
           item(Upload, t('csv.import'), () => {
             setNext('import')
           })}
+        {renamable && <Divider />}
+        {renamable &&
+          item(Copy, t('copyBoard.action'), () => {
+            setNext('copy')
+          })}
+        {renamable &&
+          item(
+            Files,
+            t(board.boardTemplate ? 'boardTemplate.stop' : 'boardTemplate.use'),
+            () => {
+              const on = !board.boardTemplate
+              setTemplateNotice(false)
+              asTemplate.mutate(
+                { boardId: board.id, on },
+                {
+                  onSuccess: () => {
+                    setTemplateNotice(on)
+                  }
+                }
+              )
+            }
+          )}
         {archivable && <Divider />}
-        {isRenamable(board) &&
+        {renamable &&
           onRename &&
           item(Pen, t('board.rename'), () => {
             setNext('rename')
@@ -166,6 +203,46 @@ export function BoardMenu({
             setCsv(null)
           }}
         />
+      )}
+      {copying && (
+        <NewBoardDialog
+          copying={board}
+          embedded={embedded}
+          onClose={() => {
+            setCopying(false)
+          }}
+          onCreated={copy => {
+            setCopying(false)
+            void navigate(`../${copy.id}`, {
+              relative: 'path',
+              state: { created: true }
+            })
+          }}
+        />
+      )}
+      {templateNotice && board.boardTemplate && (
+        <Toast
+          open
+          autoHideDuration={6000}
+          onClose={(_, reason) => {
+            if (reason !== 'clickaway') setTemplateNotice(false)
+          }}
+        >
+          <Alert severity="info" role="status">
+            {t('boardTemplate.on', { name: board.name })}
+          </Alert>
+        </Toast>
+      )}
+      {asTemplate.isError && (
+        <Toast
+          open
+          autoHideDuration={6000}
+          onClose={(_, reason) => {
+            if (reason !== 'clickaway') asTemplate.reset()
+          }}
+        >
+          <Alert severity="error">{t('boardTemplate.failed')}</Alert>
+        </Toast>
       )}
       {confirming && (
         <ArchiveBoardDialog
