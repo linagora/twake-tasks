@@ -1,7 +1,7 @@
 {
   "id": "ea71ba9d-c957-4fdb-94a0-9cd9de9e58d1",
   "prevIds": [
-    "27eea4cd-7757-4a31-b4a0-285a013ea85f"
+    "250cb7c0-0160-44d3-a6e2-e293ead9283d"
   ],
   "version": "8",
   "dialect": "postgres",
@@ -75,6 +75,15 @@
         "auto"
       ],
       "name": "theme",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "assigned",
+        "mine"
+      ],
+      "name": "calendar_feed_scope",
       "entityType": "enums",
       "schema": "public"
     },
@@ -261,6 +270,12 @@
     {
       "isRlsEnabled": true,
       "name": "spaces",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "calendar_feeds",
       "entityType": "tables",
       "schema": "public"
     },
@@ -3281,6 +3296,84 @@
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token_hash",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "calendar_feed_scope",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'assigned'",
+      "generated": null,
+      "identity": null,
+      "name": "scope",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
       "default": "uuidv7()",
       "generated": null,
       "identity": null,
@@ -5585,6 +5678,16 @@
     },
     {
       "columns": [
+        "user_id"
+      ],
+      "nameExplicit": false,
+      "name": "calendar_feeds_pkey",
+      "schema": "public",
+      "table": "calendar_feeds",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
         "id"
       ],
       "nameExplicit": false,
@@ -5781,6 +5884,17 @@
       "name": "notification_preferences_unsubscribe_token_key",
       "schema": "public",
       "table": "notification_preferences",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "token_hash"
+      ],
+      "nullsNotDistinct": false,
+      "name": "calendar_feeds_token_hash_key",
+      "schema": "public",
+      "table": "calendar_feeds",
       "entityType": "uniques"
     },
     {
