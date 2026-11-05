@@ -616,29 +616,45 @@ export function FeedItem({
   avatar,
   label,
   actions,
+  highlighted = false,
   children
 }: {
   avatar: ReactNode
   label?: string
   /** Shown at the item's end while it is hovered or focused. */
   actions?: ReactNode
+  /** The item a link points at: tinted, and scrolled to once it is. */
+  highlighted?: boolean
   children: ReactNode
 }): ReactElement {
+  const item = useRef<HTMLLIElement>(null)
+  useEffect(() => {
+    if (highlighted) item.current?.scrollIntoView({ block: 'center' })
+  }, [highlighted])
   return (
     <Box
       component="li"
+      ref={item}
       aria-label={label}
-      sx={{
+      aria-current={highlighted || undefined}
+      sx={theme => ({
         display: 'flex',
         gap: 1.5,
         alignItems: 'flex-start',
+        ...(highlighted && {
+          mx: -1,
+          px: 1,
+          py: 0.5,
+          borderRadius: 2,
+          bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.08)
+        }),
         '& .feed-actions': { opacity: 0 },
         '&:hover .feed-actions, &:focus-within .feed-actions': {
           opacity: 1
         },
         // Nothing hovers on a touch screen.
         '@media (hover: none)': { '& .feed-actions': { opacity: 1 } }
-      }}
+      })}
     >
       <Box sx={{ pt: 0.25 }}>{avatar}</Box>
       <Box sx={{ minWidth: 0, flex: 1, '& p': { my: 0.5 } }}>{children}</Box>
