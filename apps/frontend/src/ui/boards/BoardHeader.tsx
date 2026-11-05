@@ -75,7 +75,16 @@ export function BoardHeader({
     setFiltering(true)
     requestAnimationFrame(() => filterText.current?.focus())
   }
-  useFilterShortcut(shareButton ? startFiltering : undefined)
+  // Progress counts the whole board, and its counts open the Kanban
+  // filtered: the bar opens to show that filter.
+  const filterable = board.layout !== 'progress'
+  const filtered = filterable && activeCriteria > 0
+  const [wasFiltered, setWasFiltered] = useState(filtered)
+  if (wasFiltered !== filtered) {
+    setWasFiltered(filtered)
+    if (filtered) setFiltering(true)
+  }
+  useFilterShortcut(shareButton && filterable ? startFiltering : undefined)
 
   const headerActions = (
     <>
@@ -129,15 +138,17 @@ export function BoardHeader({
           </UnavailableButton>
         </Tooltip>
       )}
-      <BoardFilterButton
-        count={activeCriteria}
-        open={filtering}
-        shortcut={shareButton}
-        onClick={() => {
-          if (filtering) setFiltering(false)
-          else startFiltering()
-        }}
-      />
+      {filterable && (
+        <BoardFilterButton
+          count={activeCriteria}
+          open={filtering}
+          shortcut={shareButton}
+          onClick={() => {
+            if (filtering) setFiltering(false)
+            else startFiltering()
+          }}
+        />
+      )}
       {/* After Share, as the list and grid switch of Twake Drive. */}
       <LayoutSwitch board={board} />
       <BoardMenu
@@ -190,7 +201,7 @@ export function BoardHeader({
           actions={headerActions}
         />
       )}
-      {filtering && (
+      {filtering && filterable && (
         <BoardFilterBar
           board={board}
           onClose={() => {
