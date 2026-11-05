@@ -10,6 +10,7 @@ What people can do in Twake Project, with the terms the rest of the docs use.
 - A board has sections, each of a type: backlog, unstarted, started, completed or canceled. Moving a task into a completed or canceled section marks it done or canceled, and moving it out reopens it.
 - A board shows as columns, a list, or a calendar of due dates. Each person picks their own layout for each board.
 - An archived board is read only.
+- Anyone on a board can export its tasks to a CSV file, archived ones too if they ask. Editors can import tasks from a CSV file, such as an export from Trello or Planner: the app guesses which column is what, and the import creates every row or none. Imported tasks notify no one.
 
 ## Tasks
 

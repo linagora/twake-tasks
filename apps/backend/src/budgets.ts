@@ -7,6 +7,8 @@ const reaction = `${task}/comments/:commentId/reactions/:emoji`
 const ROUTES: Record<string, readonly UserBudget[]> = {
   'POST /boards': ['boardCreates'],
   'POST /boards/:boardId/tasks': ['taskCreates'],
+  'POST /boards/:boardId/import': ['taskCreates', 'heavyReads'],
+  'GET /boards/:boardId/export': ['heavyReads'],
   [`POST ${task}/comments`]: ['comments'],
   [`PATCH ${task}/comments/:commentId`]: ['comments'],
   [`PUT ${reaction}`]: ['reactions'],

@@ -1,10 +1,12 @@
 import {
   assignment,
+  boardImport,
   boardParams,
   bulkChange,
   bulkTransferPreview,
   completion,
   descriptionEdit,
+  exportQuery,
   newReminder,
   newTask,
   reminderParams,
@@ -28,6 +30,7 @@ import { under, type Refusal } from '../kernel/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createBulkStore } from './bulk.ts'
 import { historyOf } from './history.ts'
+import { createImportExportStore } from './importExport.ts'
 import { createReminderStore } from './reminders.ts'
 import { createTaskStore } from './tasks.ts'
 import { createTransferStore } from './transfer.ts'
@@ -52,6 +55,7 @@ export function registerTasks(
   const archiveStore = createArchiveStore(deps.db)
   const transferStore = createTransferStore(deps.db)
   const bulkStore = createBulkStore(deps.db)
+  const importExportStore = createImportExportStore(deps.db)
   const routing = {
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,
@@ -118,6 +122,26 @@ export function registerTasks(
           archiveStore[change](identity, params.boardId, params.taskId)
       })
     ),
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/export',
+      access: viewer,
+      params: boardParams,
+      query: exportQuery,
+      handler: ({ identity, params, query }) =>
+        importExportStore.exportTasks(identity, params.boardId, query.archived)
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/import',
+      access: editor,
+      params: boardParams,
+      body: boardImport,
+      // A thousand rows with their descriptions.
+      bodyLimit: 8 * 1024 * 1024,
+      handler: ({ identity, params, body }) =>
+        importExportStore.importTasks(identity, params.boardId, body.rows)
+    }),
     defineRoute({
       method: 'POST',
       url: '/boards/:boardId/tasks/bulk',
