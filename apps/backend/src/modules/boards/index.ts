@@ -65,6 +65,7 @@ export {
   taskTemplateAssignees,
   taskTemplateLabels,
   taskTemplates,
+  templateSchedules,
   visibleProject
 } from './schema.ts'
 export { addDefaultSections } from './store.ts'
