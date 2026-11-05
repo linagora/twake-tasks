@@ -4,7 +4,9 @@ CREATE OR REPLACE FUNCTION public.record_task_change()
 AS $function$
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    PERFORM log_task_change(NEW.id, NEW.org_id, 'created', NULL, to_jsonb(NEW.title));
+    PERFORM log_task_change(NEW.id, NEW.org_id, 'created',
+      CASE WHEN current_setting('app.importing', true) = 'on' THEN '"import"'::jsonb END,
+      to_jsonb(NEW.title));
     RETURN NULL;
   END IF;
   IF NEW.title IS DISTINCT FROM OLD.title THEN

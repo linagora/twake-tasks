@@ -47,6 +47,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `GET /api/boards/:boardId`
 - `GET /api/boards/:boardId/archived`
 - `GET /api/boards/:boardId/events`
+- `GET /api/boards/:boardId/export`
 - `DELETE /api/boards/:boardId/favorite`
 - `PUT /api/boards/:boardId/favorite`
 - `PUT /api/boards/:boardId/layout`
@@ -69,6 +70,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 
 ## Editors of the board
 
+- `POST /api/boards/:boardId/import`
 - `POST /api/boards/:boardId/labels`
 - `DELETE /api/boards/:boardId/labels/:labelId`
 - `PATCH /api/boards/:boardId/labels/:labelId`

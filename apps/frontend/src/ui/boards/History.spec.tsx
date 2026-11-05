@@ -47,6 +47,7 @@ function logoBoard() {
     { ...entry, field: 'assignees', from: null, to: bob.userId },
     { ...entry, field: 'section', from: null, to: doing?.id },
     { ...entry, field: 'title', from: 'Draft', to: 'Logo' },
+    { ...entry, field: 'created', from: 'import', to: 'Draft' },
     { ...entry, field: 'created', from: null, to: 'Draft' }
   ])
   return { board, boardsApi }
@@ -80,6 +81,7 @@ describe('History', () => {
       'Alice assigned bob@example.com',
       'Alice moved it to In progress',
       'Alice renamed it from Draft to Logo',
+      'Alice imported it from a CSV file',
       'Alice created it'
     ])
   })

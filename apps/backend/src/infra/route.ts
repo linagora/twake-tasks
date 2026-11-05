@@ -57,6 +57,8 @@ interface Route<I, P, Q, B, T, E extends string> {
   params?: Schema<P>
   query?: Schema<Q>
   body?: Schema<B>
+  // In bytes, for a body larger than the server's default.
+  bodyLimit?: number
   status?: number
   onRequest?: onRequestHookHandler
   config?: FastifyContextConfig
@@ -119,6 +121,7 @@ export function registerRoutes<I, E extends string>(
       ...(route.onRequest && { onRequest: route.onRequest }),
       ...(route.config && { config: route.config }),
       ...(route.logSerializers && { logSerializers: route.logSerializers }),
+      ...(route.bodyLimit && { bodyLimit: route.bodyLimit }),
       ...(!open && { preHandler: deps.requireIdentity }),
       handler: async (request, reply) => {
         const identity = deps.identify(request)

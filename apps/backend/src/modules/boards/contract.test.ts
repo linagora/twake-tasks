@@ -9,10 +9,12 @@ import {
   createdTaskResponse,
   descriptionResponse,
   descriptionVersionResponse,
+  exportResponse,
   filtersResponse,
   followingResponse,
   hiddenTasksResponse,
   historyResponse,
+  importResponse,
   keyPrefixResponse,
   label,
   labelNamesResponse,
@@ -347,6 +349,20 @@ describe('the API contract', () => {
         ).tasks
       ).toHaveLength(1)
     }
+    expect(
+      contracted(
+        importResponse,
+        await api.as(alice).post(`${board}/import`, {
+          rows: [{ title: 'Imported', assignees: ['nobody@example.com'] }]
+        })
+      )
+    ).toMatchObject({ imported: 1, unknownAssignees: ['nobody@example.com'] })
+    expect(
+      contracted(
+        exportResponse,
+        await api.as(alice).get(`${board}/export?archived=true`)
+      ).tasks
+    ).toContainEqual(expect.objectContaining({ title: 'Old', archived: true }))
 
     contracted(projectsResponse, await api.as(alice).get('/projects'))
     contracted(settingsResponse, await api.as(alice).get('/settings'))

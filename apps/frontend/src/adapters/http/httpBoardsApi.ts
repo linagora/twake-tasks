@@ -358,6 +358,23 @@ export function httpBoardsApi(
           route`/boards/${boardId}/${shelf}`
         )
       ).tasks,
+    exportTasks: async (boardId, archived) =>
+      (
+        await parsed(
+          'export',
+          wire.exportResponse,
+          'GET',
+          `${route`/boards/${boardId}/export`}?archived=${String(archived)}`
+        )
+      ).tasks,
+    importTasks: (boardId, rows) =>
+      parsed(
+        'import',
+        wire.importResponse,
+        'POST',
+        route`/boards/${boardId}/import`,
+        { rows } satisfies Body<'boardImport'>
+      ),
     renameBoard: (boardId, name) =>
       call('PATCH', route`/boards/${boardId}`, {
         name

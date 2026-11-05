@@ -54,7 +54,7 @@ export async function refuseIfShelved(
   }
 }
 
-const MAX_DEPTH = 4
+export const MAX_DEPTH = 4
 
 async function depthOf(tx: Tx, taskId: string): Promise<number> {
   const [chain] = await tx.execute<{ depth: number }>(sql`

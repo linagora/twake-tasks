@@ -359,6 +359,10 @@ const EXAMPLES: Record<string, Example> = {
   [`POST ${task}/transfer`]: async (_fixture, me) => ({
     body: { boardId: (await ownBoard(me)).id, sectionId: null }
   }),
+  'GET /boards/:boardId/export': none,
+  'POST /boards/:boardId/import': () => ({
+    body: { rows: [{ title: 'New' }] }
+  }),
   'POST /boards/:boardId/tasks/bulk': fixture => ({
     body: {
       taskIds: [fixture.taskId],

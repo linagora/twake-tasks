@@ -4,6 +4,7 @@ import type {
   Label,
   Layout,
   Person,
+  Priority,
   ProjectSummary,
   Role,
   Section,
@@ -225,6 +226,41 @@ export interface HiddenTask extends Task {
   at: string
 }
 
+export interface ExportedTask extends Task {
+  archived: boolean
+  /** As plain text. */
+  description: string
+  createdAt: string
+  /** Null once they left the board. */
+  createdBy: Person | null
+}
+
+/**
+ * A task to create, its section, labels and assignees named as in the file.
+ * `parentKey` names another row's `key`, or a task of the board.
+ */
+export interface ImportRow {
+  key?: string
+  parentKey?: string
+  title: string
+  section?: string
+  description?: string
+  assignees?: string[]
+  labels?: string[]
+  priority?: Priority
+  dueDate?: string
+  dueTime?: string
+}
+
+export interface ImportResult {
+  imported: number
+  /** Rows of the request whose parent is missing, too deep or in a loop. */
+  skipped: { row: number; reason: 'parent' }[]
+  unknownAssignees: string[]
+  /** Sections only an admin may add: their tasks went where new tasks go. */
+  unplacedSections: string[]
+}
+
 /** The person's Twake Workplace settings; null where they never chose. */
 export interface UserSettings {
   language: string | null
@@ -311,6 +347,10 @@ export interface BoardsApi {
   /** Admins only. */
   emptyTrash: (boardId: string) => Promise<void>
   hiddenTasks: (boardId: string, shelf: Shelf) => Promise<HiddenTask[]>
+  /** The board's tasks in board order, each sub-task after its parent. */
+  exportTasks: (boardId: string, archived: boolean) => Promise<ExportedTask[]>
+  /** Creates every row the board can place, or none. Editors only. */
+  importTasks: (boardId: string, rows: ImportRow[]) => Promise<ImportResult>
   /** An archived board is read only. Admins only. */
   setBoardArchived: (boardId: string, archived: boolean) => Promise<void>
   renameBoard: (boardId: string, name: string) => Promise<void>

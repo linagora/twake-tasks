@@ -2,11 +2,13 @@ import {
   Archive,
   Check,
   Dots,
+  Download,
   FolderMoveto,
   Pen,
   Restore,
   Stack,
-  Trash
+  Trash,
+  Upload
 } from '@linagora/twake-icons'
 import {
   Alert,
@@ -28,10 +30,13 @@ import { IconMenuItem } from '@/ds/IconMenuItem'
 import { Toast } from '@/ds/Toast'
 import {
   isArchivable,
+  isEditable,
   isManageable,
   isRenamable,
   type Board
 } from '@/domain/board'
+import { ExportDialog } from '@/ui/boards/ExportDialog'
+import { ImportDialog } from '@/ui/boards/ImportDialog'
 import { useSetBoardArchived, useSetLayout } from '@/ui/queries/boards'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -51,8 +56,11 @@ export function BoardMenu({
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   // The editor and the dialog open once the menu is gone, which gives the focus
   // back to its button first: the editor would lose the focus and close at once
-  const [next, setNext] = useState<'rename' | 'archive' | null>(null)
+  const [next, setNext] = useState<
+    'rename' | 'archive' | 'export' | 'import' | null
+  >(null)
   const [confirming, setConfirming] = useState(false)
+  const [csv, setCsv] = useState<'export' | 'import' | null>(null)
   const [archivedNotice, setArchivedNotice] = useState(false)
   const setLayout = useSetLayout(board.id)
   const archive = useSetBoardArchived()
@@ -96,6 +104,7 @@ export function BoardMenu({
               setNext(null)
               if (next === 'rename') onRename?.()
               if (next === 'archive') setConfirming(true)
+              if (next === 'export' || next === 'import') setCsv(next)
             }
           }
         }}
@@ -113,6 +122,14 @@ export function BoardMenu({
         {item(Trash, t('archive.trash'), () => {
           onOpenShelf('trash')
         })}
+        <Divider />
+        {item(Download, t('csv.export'), () => {
+          setNext('export')
+        })}
+        {isEditable(board) &&
+          item(Upload, t('csv.import'), () => {
+            setNext('import')
+          })}
         {archivable && <Divider />}
         {isRenamable(board) &&
           onRename &&
@@ -134,6 +151,22 @@ export function BoardMenu({
             }
           )}
       </Menu>
+      {csv === 'export' && (
+        <ExportDialog
+          board={board}
+          onClose={() => {
+            setCsv(null)
+          }}
+        />
+      )}
+      {csv === 'import' && (
+        <ImportDialog
+          board={board}
+          onClose={() => {
+            setCsv(null)
+          }}
+        />
+      )}
       {confirming && (
         <ArchiveBoardDialog
           name={board.name}

@@ -11,7 +11,10 @@ import { useEffect, useState } from 'react'
 import {
   ApiError,
   type BoardsApi,
+  type ExportedTask,
   type HiddenTask,
+  type ImportResult,
+  type ImportRow,
   type KeyPrefixCheck,
   type NewBoard,
   type Project,
@@ -147,6 +150,28 @@ export function useBoardChange<T>(
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: T) => change(api, input),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
+  })
+}
+
+export function useExportTasks(
+  boardId: string
+): UseMutationResult<ExportedTask[], Error, boolean> {
+  const api = useBoardsApi()
+  return useMutation({
+    mutationFn: (withArchived: boolean) =>
+      api.exportTasks(boardId, withArchived)
+  })
+}
+
+export function useImportTasks(
+  boardId: string
+): UseMutationResult<ImportResult, Error, ImportRow[]> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (rows: ImportRow[]) => api.importTasks(boardId, rows),
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
   })

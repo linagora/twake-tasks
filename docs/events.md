@@ -81,7 +81,7 @@ Task events carry the CloudEvent fields `twakeorg` (absent for a B2C task), and 
   - `description`: always null to null. The text is not published.
   - `labels`: the id of the label added (`to`) or removed (`from`).
 - `com.twake.tasks.task.completed.v1` and `com.twake.tasks.task.reopened.v1`: no other field.
-- `com.twake.tasks.task.assigned.v1`: `assignee: { id }`, and `recipients: [{ uuid, email, reason: 'assigned' }]` when the assignee is a member of the task's project.
+- `com.twake.tasks.task.assigned.v1`: `assignee: { id }`, and `recipients: [{ uuid, email, reason: 'assigned' }]` when the assignee is a member of the task's project. A task assigned by a CSV import carries no recipients, so the import notifies no one.
 - `com.twake.tasks.task.unassigned.v1`: `assignee: { id }`.
 - `com.twake.tasks.task.moved.v1`, when a task changes section or board: `changes: { section: { from, to }, board?: { from, to } }`, with ids. A section is null for a task outside sections, and `board` is there only when the board changed.
 - `com.twake.tasks.task.deleted.v1` and `com.twake.tasks.task.restored.v1`, when a task goes to the trash and comes back from it: no other field. Archiving is not published.
