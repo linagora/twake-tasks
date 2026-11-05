@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Menu,
   Typography
 } from '@linagora/twake-mui'
 import { useId, useState, type ReactElement } from 'react'
@@ -23,6 +22,7 @@ import { useId, useState, type ReactElement } from 'react'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
+import { Menu } from '@/ds/Menu'
 import { PageHeader } from '@/ds/PageHeader'
 import { RowButton, TaskGroup, TaskRow } from '@/ds/TaskList'
 import type { Project } from '@/application/boards'

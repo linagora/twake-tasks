@@ -14,13 +14,14 @@ import {
   Trash,
   Upload
 } from '@linagora/twake-icons'
-import { Alert, Divider, IconButton, Menu } from '@linagora/twake-mui'
+import { Alert, Divider, IconButton } from '@linagora/twake-mui'
 import { useState, type ElementType, type ReactElement } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import type { Shelf } from '@/application/boards'
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
+import { Menu } from '@/ds/Menu'
 import { Toast } from '@/ds/Toast'
 import {
   hasOwnCover,

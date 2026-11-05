@@ -3,7 +3,6 @@ import {
   IconButton,
   Link,
   ListItemText,
-  Menu,
   MenuItem,
   Tooltip,
   Typography
@@ -14,6 +13,7 @@ import { Link as RouterLink, useParams } from 'react-router'
 import { ApiError, type LinkedTask, type LinkKind } from '@/application/boards'
 import { Row } from '@/ds/Columns'
 import { Icon } from '@/ds/Icon'
+import { Menu } from '@/ds/Menu'
 import { PickerEmpty, PickerPopover } from '@/ds/Picker'
 import { Property } from '@/ds/SidePanel'
 import {

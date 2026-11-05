@@ -4,13 +4,13 @@ import {
   Divider,
   ListItemIcon,
   ListItemText,
-  Menu,
   MenuItem
 } from '@linagora/twake-mui'
 import { useState, type ReactElement } from 'react'
 import { Link as RouterLink } from 'react-router'
 
 import { Icon } from '@/ds/Icon'
+import { Menu } from '@/ds/Menu'
 import type { Template } from '@/domain/board'
 import { useI18n } from '@/ui/i18n/useI18n'
 
