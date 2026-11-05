@@ -22,7 +22,6 @@ import type * as wire from '@twake-tasks/api-contract'
 import type { FastifyRequest } from 'fastify'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
-import type { ObjectStorage } from '../../infra/objectStorage.ts'
 import {
   defineRoute,
   registerRoutes,
@@ -101,14 +100,13 @@ export function registerBoards(
   deps: {
     db: Db
     requireIdentity: RequireIdentity
-    storage?: ObjectStorage | undefined
   }
 ): BoardRoute[] {
   const store = createBoardStore(deps.db)
   const sectionStore = createSectionStore(deps.db)
   const labelStore = createLabelStore(deps.db)
   const layoutStore = createLayoutStore(deps.db)
-  const backgroundStore = createBackgroundStore(deps.db, deps.storage)
+  const backgroundStore = createBackgroundStore(deps.db)
 
   // The picture comes as is, its type in the content type.
   app.addContentTypeParser(

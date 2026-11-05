@@ -1,18 +1,16 @@
-import { pino } from 'pino'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { createDb, inTenant } from '../../infra/db.ts'
-import { createScheduler } from '../../scheduler/scheduler.ts'
-import { aUser, startApp, type TestUser } from '../../testing/app.ts'
-import { memoryStorage } from '../../testing/memoryStorage.ts'
-import { COVER_DELETE_JOB, deleteCover } from './backgrounds.ts'
+import { aB2cUser, aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { MAX_BACKGROUND_BYTES } from './backgrounds.ts'
 import { eraseOrganization } from './lifecycle.ts'
+import { boardCovers } from './schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
-const storage = memoryStorage()
 const { sql, db } = createDb(inject('databaseUrl'))
 
 beforeAll(async () => {
-  api = await startApp({ storage })
+  api = await startApp()
 })
 
 afterAll(async () => {
@@ -20,17 +18,13 @@ afterAll(async () => {
   await sql.end()
 })
 
-const scheduler = createScheduler({
-  db,
-  logger: pino({ level: 'silent' }),
-  handlers: { [COVER_DELETE_JOB]: deleteCover(storage) }
-})
-
-async function runJobs() {
-  while ((await scheduler.runDue()) > 0);
-}
-
-const stored = (image: string) => storage.objects.has(`covers/${image}`)
+const storedFor = (owner: TestUser, boardId: string) =>
+  inTenant(db, owner, tx =>
+    tx
+      .select({ content: boardCovers.content })
+      .from(boardCovers)
+      .where(eq(boardCovers.boardId, boardId))
+  )
 
 interface Shown {
   background: string | null
@@ -300,78 +294,71 @@ describe('board backgrounds', () => {
     expect((await send(owner, board.id, Buffer.alloc(0))).statusCode).toBe(400)
   })
 
-  it('refuses a picture larger than a screen needs', async () => {
+  it('refuses a picture over the cap', async () => {
     const owner = aUser()
     const board = await aBoard(owner)
 
     const response = await send(
       owner,
       board.id,
-      Buffer.alloc(3 * 1024 * 1024, 1)
+      Buffer.alloc(MAX_BACKGROUND_BYTES + 1, 1)
     )
 
     expect(response.statusCode).toBe(413)
     expect((await shownOn(owner, board.id)).background).toBeNull()
   })
 
-  it('keeps the picture in object storage until the board drops it', async () => {
+  it('takes a picture at the cap', async () => {
     const owner = aUser()
     const board = await aBoard(owner)
-    const first = (await send(owner, board.id, PICTURE)).json<{
-      image: string
-    }>().image
-    expect(storage.objects.get(`covers/${first}`)).toEqual({
-      body: PICTURE,
-      contentType: 'image/jpeg'
-    })
+    const picture = Buffer.alloc(MAX_BACKGROUND_BYTES, 1)
 
-    const second = (await send(owner, board.id, PICTURE)).json<{
-      image: string
-    }>().image
-    await runJobs()
-    expect([stored(first), stored(second)]).toEqual([false, true])
+    const response = await send(owner, board.id, picture)
+
+    expect(response.statusCode).toBe(201)
+    const { image } = response.json<{ image: string }>()
+    expect(
+      (await api.as(owner).get(`/boards/${board.id}/background/${image}`))
+        .rawPayload
+    ).toEqual(picture)
+  })
+
+  it('keeps one picture per board, until the board drops it', async () => {
+    const owner = aUser()
+    const board = await aBoard(owner)
+    await send(owner, board.id, PICTURE)
+    const next = Buffer.from([0x89, 0x50, 0x4e, 0x47])
+    await send(owner, board.id, next, 'image/png')
+
+    expect(await storedFor(owner, board.id)).toEqual([{ content: next }])
 
     await api
       .as(owner)
       .put(`/boards/${board.id}/background`, { color: '#2D83FF' })
-    await runJobs()
-    expect(stored(second)).toBe(false)
+    expect(await storedFor(owner, board.id)).toEqual([])
+  })
+
+  it('takes a picture on a board without an organization', async () => {
+    const owner = aB2cUser()
+    const board = await aBoard(owner)
+
+    const { image } = (await send(owner, board.id, PICTURE)).json<{
+      image: string
+    }>()
+
+    expect(
+      (await api.as(owner).get(`/boards/${board.id}/background/${image}`))
+        .rawPayload
+    ).toEqual(PICTURE)
   })
 
   it('deletes the picture of a board that goes with its organization', async () => {
     const owner = aUser()
     const board = await aBoard(owner)
-    const { image } = (await send(owner, board.id, PICTURE)).json<{
-      image: string
-    }>()
+    await send(owner, board.id, PICTURE)
 
     await inTenant(db, owner, eraseOrganization)
-    await runJobs()
 
-    expect(stored(image)).toBe(false)
-  })
-
-  it('takes no picture without object storage', async () => {
-    const bare = await startApp({ storage: null })
-    try {
-      const owner = aUser()
-      const { id } = (
-        await bare.as(owner).post('/boards', { name: 'Ops', keyPrefix: 'OPS' })
-      ).json<{ id: string }>()
-
-      const response = await bare.inject({
-        method: 'PUT',
-        url: `/api/boards/${id}/background/image`,
-        headers: {
-          authorization: `Bearer ${bare.tokenOf(owner)}`,
-          'content-type': 'image/jpeg'
-        },
-        payload: PICTURE
-      })
-
-      expect(response.statusCode).toBe(404)
-    } finally {
-      await bare.close()
-    }
+    expect(await storedFor(owner, board.id)).toEqual([])
   })
 })

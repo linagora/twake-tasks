@@ -78,12 +78,6 @@ const configSchema = z
     SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),
     MAIL_FROM: z.string().min(1).default('Twake Project <tasks@twake.app>'),
     SMTP_TIMEOUT_SECONDS: seconds(60),
-    S3_ENDPOINT: z.url({ protocol: /^https?$/ }).optional(),
-    S3_REGION: z.string().min(1).default('us-east-1'),
-    S3_BUCKET: z.string().min(1).optional(),
-    S3_ACCESS_KEY_ID: z.string().min(1).optional(),
-    S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
-    S3_FORCE_PATH_STYLE: z.stringbool().default(false),
     JOBS_CONCURRENCY: z.coerce.number().int().min(1).default(1),
     JOBS_EMAIL_CONCURRENCY: z.coerce.number().int().min(1).default(2),
     JOBS_LEASE_SECONDS: seconds(600),
@@ -161,16 +155,6 @@ const configSchema = z
       'JOBS_LEASE_SECONDS must be at least 5 times SMTP_TIMEOUT_SECONDS, or a slow send outlives its lease and another replica sends the mail again',
     path: ['JOBS_LEASE_SECONDS']
   })
-  .refine(
-    env =>
-      !env.S3_BUCKET ||
-      (env.S3_ENDPOINT && env.S3_ACCESS_KEY_ID && env.S3_SECRET_ACCESS_KEY),
-    {
-      message:
-        'S3_BUCKET needs S3_ENDPOINT, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY',
-      path: ['S3_BUCKET']
-    }
-  )
   .and(spaceIntegration)
   .and(commonContacts)
 

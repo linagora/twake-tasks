@@ -41,7 +41,6 @@ export {
   todayIn,
   type Recurrence
 } from './recurrence.ts'
-export { COVER_DELETE_JOB, deleteCover } from './backgrounds.ts'
 export { registerBoards } from './routes.ts'
 export {
   boardFavorites,

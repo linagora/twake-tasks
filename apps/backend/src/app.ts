@@ -7,7 +7,6 @@ import type { ContactSearch } from './infra/contacts.ts'
 import type { Db } from './infra/db.ts'
 import { createServer } from './infra/http.ts'
 import type { Metrics } from './infra/metrics.ts'
-import type { ObjectStorage } from './infra/objectStorage.ts'
 import { registerRateLimit } from './infra/rateLimit.ts'
 import {
   limitUsers,
@@ -43,7 +42,6 @@ export async function buildApp(deps: {
   proxyHops?: number | undefined
   redis?: Redis | undefined
   metrics?: Metrics | undefined
-  storage?: ObjectStorage | undefined
   contacts?: ContactSearch | undefined
   // Without them, nothing is limited per user.
   limits?:
@@ -83,11 +81,7 @@ export async function buildApp(deps: {
         pendingInvites: deps.limits?.pendingInvites ?? 0,
         contacts: deps.contacts
       })
-      registerBoards(api, {
-        db: deps.db,
-        requireIdentity,
-        storage: deps.storage
-      })
+      registerBoards(api, { db: deps.db, requireIdentity })
       registerTasks(api, {
         db: deps.db,
         requireIdentity,
