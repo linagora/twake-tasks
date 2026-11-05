@@ -709,6 +709,15 @@
     "emptyHint": "El progreso aparece cuando el tablero tiene tareas.",
     "loadFailed": "No se pudo cargar el progreso."
   },
+  "hero": {
+    "numbers": "El tablero de un vistazo",
+    "open": "abierta |||| abiertas",
+    "late": "atrasada |||| atrasadas",
+    "done": "completado",
+    "nextDue": "Próximo vencimiento",
+    "progress": "Progreso",
+    "progressText": "%{done} completado, %{started} en curso, %{late} atrasadas"
+  },
   "background": {
     "add": "Añadir portada",
     "change": "Cambiar la portada",

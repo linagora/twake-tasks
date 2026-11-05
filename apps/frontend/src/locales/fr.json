@@ -709,6 +709,15 @@
     "emptyHint": "L’avancement apparaît dès que le tableau a des tâches.",
     "loadFailed": "Impossible de charger l’avancement."
   },
+  "hero": {
+    "numbers": "Le tableau en bref",
+    "open": "ouverte |||| ouvertes",
+    "late": "en retard",
+    "done": "terminé",
+    "nextDue": "Prochaine échéance",
+    "progress": "Avancement",
+    "progressText": "%{done} terminé, %{started} en cours, %{late} en retard"
+  },
   "background": {
     "add": "Ajouter une couverture",
     "change": "Changer la couverture",
