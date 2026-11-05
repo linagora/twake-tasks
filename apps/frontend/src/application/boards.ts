@@ -191,6 +191,14 @@ export interface HistoryEntry {
   at: string
 }
 
+export const PROGRESS_DAYS = 56
+
+export interface DayCount {
+  /** YYYY-MM-DD */
+  day: string
+  done: number
+}
+
 export type NewSection = Omit<Section, 'id'> & { afterId?: string }
 
 export interface SectionMove {
@@ -457,6 +465,11 @@ export interface BoardsApi {
   setLayout: (boardId: string, layout: Layout) => Promise<void>
   /** The layout of everyone who has not picked their own. Admins only. */
   setDefaultLayout: (boardId: string, layout: Layout) => Promise<void>
+  /**
+   * The days of the last `PROGRESS_DAYS` in `zone` on which the board's tasks
+   * were completed, each completion of a recurring task counted.
+   */
+  completions: (boardId: string, zone: string) => Promise<DayCount[]>
   createTask: (
     boardId: string,
     task: NewTask

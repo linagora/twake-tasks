@@ -100,6 +100,10 @@ describe('the fake boards API', () => {
         myTasks: [wire.tasksResponse, { tasks: await fake.myTasks() }],
         listBoards: [wire.boardsResponse, { boards: await fake.listBoards() }],
         getBoard: [wire.boardResponse, await fake.getBoard(board.id)],
+        completions: [
+          wire.progressResponse,
+          { days: await fake.completions(board.id, 'Europe/Paris') }
+        ],
         checkKeyPrefix: [
           wire.keyPrefixResponse,
           await fake.checkKeyPrefix('DES')

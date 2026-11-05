@@ -1,10 +1,13 @@
 import * as wire from '@twake-tasks/api-contract'
 import type { z } from 'zod'
 
-import { ApiError, type BoardsApi } from '@/application/boards'
+import { ApiError, PROGRESS_DAYS, type BoardsApi } from '@/application/boards'
 import { noReporting, type Reporting } from '@/application/reporting'
 
 export type Send = (request: Request) => Promise<Response>
+
+// tsc fails when the span the backend counts drifts from the one drawn.
+PROGRESS_DAYS satisfies typeof wire.PROGRESS_DAYS
 
 // What the backend's schema accepts, so tsc fails when a request drifts.
 type Body<K extends keyof typeof wire> = (typeof wire)[K] extends z.ZodType
@@ -443,6 +446,16 @@ export function httpBoardsApi(
       call('PUT', route`/boards/${boardId}/default-layout`, {
         layout
       } satisfies Body<'layoutChoice'>),
+    completions: async (boardId, zone) =>
+      (
+        await parsed(
+          'progress',
+          wire.progressResponse,
+          'GET',
+          route`/boards/${boardId}/progress` +
+            `?${new URLSearchParams({ zone } satisfies Body<'zoneQuery'>).toString()}`
+        )
+      ).days,
     setFavorite: (boardId, favorite) =>
       call(favorite ? 'PUT' : 'DELETE', route`/boards/${boardId}/favorite`),
     setBoardTemplate: (boardId, on) =>

@@ -203,7 +203,7 @@ export const takesBoards = (project: {
   personal: boolean
 }): boolean => project.role !== 'viewer' && !project.personal
 
-export const LAYOUTS = ['board', 'list', 'calendar'] as const
+export const LAYOUTS = ['board', 'list', 'calendar', 'progress'] as const
 
 export type Layout = (typeof LAYOUTS)[number]
 
