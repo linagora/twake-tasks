@@ -1,4 +1,4 @@
-import type { Shelf } from '@/application/boards'
+import type { SearchScope, Shelf } from '@/application/boards'
 
 export type AgendaView = 'today' | 'upcoming' | 'mine' | { filterId: string }
 
@@ -35,12 +35,14 @@ export const keys = {
   agendas,
   agenda: (view: AgendaView) => [...agendas(), view] as const,
   searches,
-  search: (text: string) => [...searches(), text] as const,
+  search: (text: string, scope: SearchScope) =>
+    [...searches(), text, scope] as const,
   keyPrefixes,
   keyPrefix: (keyPrefix: string) => [...keyPrefixes(), keyPrefix] as const,
   filters: () => ['filters'] as const,
   templates: () => ['templates'] as const,
   labels: () => ['labels'] as const,
+  sectionNames: () => ['sectionNames'] as const,
   people: () => ['people'] as const,
   projects: () => ['projects'] as const,
   notifications: () => ['notifications'] as const,

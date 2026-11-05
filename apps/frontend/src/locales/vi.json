@@ -628,8 +628,17 @@
     "match": {
       "key": "Mã:",
       "previousKey": "Trước đây",
-      "description": "Mô tả:"
-    }
+      "description": "Mô tả:",
+      "comment": "%{name} trong một bình luận:"
+    },
+    "scope": "Thu hẹp kết quả",
+    "status": "Trạng thái",
+    "statuses": {
+      "all": "Tất cả",
+      "open": "Đang mở",
+      "done": "Đã xong"
+    },
+    "anyBoard": "Tìm trong mọi bảng"
   },
   "picker": {
     "count": "%{smart_count} lựa chọn"
@@ -773,7 +782,26 @@
       "today": "Hôm nay",
       "week": "7 ngày tới",
       "none": "Không có ngày"
-    }
+    },
+    "text": "Chứa",
+    "quoted": "“%{text}”",
+    "section": "Mục",
+    "status": "Trạng thái",
+    "statuses": {
+      "open": "Đang mở",
+      "done": "Đã xong",
+      "any": "Đang mở hoặc đã xong"
+    },
+    "completed": "Hoàn thành",
+    "completedWithin": {
+      "any": "Bất kỳ lúc nào",
+      "today": "Hôm nay",
+      "week": "7 ngày qua",
+      "month": "30 ngày qua"
+    },
+    "createdBy": "Người tạo",
+    "completedToday": "Hoàn thành hôm nay",
+    "completedOn": "Hoàn thành ngày %{day}"
   },
   "boardFilter": {
     "button": "Lọc",
@@ -799,7 +827,7 @@
     "mineScope": "Công việc đang mở được giao cho bạn trên mọi bảng.",
     "todayEmpty": "Hôm nay không có việc đến hạn",
     "upcomingEmpty": "Không có việc đến hạn trong những ngày tới",
-    "filterEmpty": "Không có công việc đang mở nào khớp với bộ lọc này",
+    "filterEmpty": "Không có công việc nào khớp với bộ lọc này",
     "loadFailed": "Không thể tải công việc.",
     "mineEmpty": "Chưa có việc nào giao cho bạn"
   },

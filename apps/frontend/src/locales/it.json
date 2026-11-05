@@ -628,8 +628,17 @@
     "match": {
       "key": "Chiave:",
       "previousKey": "In precedenza",
-      "description": "Descrizione:"
-    }
+      "description": "Descrizione:",
+      "comment": "%{name} in un commento:"
+    },
+    "scope": "Restringi i risultati",
+    "status": "Stato",
+    "statuses": {
+      "all": "Tutte",
+      "open": "Aperte",
+      "done": "Completate"
+    },
+    "anyBoard": "Cerca in tutte le bacheche"
   },
   "picker": {
     "count": "%{smart_count} opzione |||| %{smart_count} opzioni"
@@ -773,7 +782,26 @@
       "today": "Oggi",
       "week": "Prossimi 7 giorni",
       "none": "Nessuna data"
-    }
+    },
+    "text": "Contiene",
+    "quoted": "«%{text}»",
+    "section": "Sezione",
+    "status": "Stato",
+    "statuses": {
+      "open": "Aperte",
+      "done": "Completate",
+      "any": "Aperte o completate"
+    },
+    "completed": "Completate",
+    "completedWithin": {
+      "any": "In qualsiasi momento",
+      "today": "Oggi",
+      "week": "Ultimi 7 giorni",
+      "month": "Ultimi 30 giorni"
+    },
+    "createdBy": "Create da",
+    "completedToday": "Completate oggi",
+    "completedOn": "Completate il %{day}"
   },
   "boardFilter": {
     "button": "Filtra",
@@ -799,7 +827,7 @@
     "mineScope": "Le attività aperte assegnate a te su qualsiasi bacheca.",
     "todayEmpty": "Niente in scadenza oggi",
     "upcomingEmpty": "Niente in scadenza nei prossimi giorni",
-    "filterEmpty": "Nessuna attività aperta corrisponde a questo filtro",
+    "filterEmpty": "Nessuna attività corrisponde a questo filtro",
     "loadFailed": "Impossibile caricare le tue attività.",
     "mineEmpty": "Nulla assegnato a te"
   },

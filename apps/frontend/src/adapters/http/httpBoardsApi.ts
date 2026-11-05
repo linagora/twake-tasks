@@ -276,13 +276,26 @@ export function httpBoardsApi(
             `?${new URLSearchParams({ zone } satisfies Body<'zoneQuery'>).toString()}`
         )
       ).tasks,
-    search: async text =>
+    sectionNames: async () =>
+      (
+        await parsed(
+          'section names',
+          wire.sectionNamesResponse,
+          'GET',
+          '/sections'
+        )
+      ).sections,
+    search: async (text, scope = {}) =>
       (
         await parsed(
           'search',
           wire.searchResponse,
           'GET',
-          `/search?${new URLSearchParams({ q: text } satisfies Body<'searchQuery'>).toString()}`
+          `/search?${new URLSearchParams({
+            q: text,
+            ...(scope.status && { status: scope.status }),
+            ...(scope.board && { board: scope.board })
+          } satisfies Body<'searchQuery'>).toString()}`
         )
       ).tasks,
     myTasks: async () =>

@@ -628,8 +628,17 @@
     "match": {
       "key": "Clé :",
       "previousKey": "Anciennement",
-      "description": "Description :"
-    }
+      "description": "Description :",
+      "comment": "%{name} en commentaire :"
+    },
+    "scope": "Affiner les résultats",
+    "status": "Statut",
+    "statuses": {
+      "all": "Toutes",
+      "open": "Ouvertes",
+      "done": "Terminées"
+    },
+    "anyBoard": "Chercher dans tous les tableaux"
   },
   "picker": {
     "count": "%{smart_count} option |||| %{smart_count} options"
@@ -773,7 +782,26 @@
       "today": "Aujourd’hui",
       "week": "7 prochains jours",
       "none": "Sans date"
-    }
+    },
+    "text": "Contient",
+    "quoted": "« %{text} »",
+    "section": "Section",
+    "status": "Statut",
+    "statuses": {
+      "open": "Ouvertes",
+      "done": "Terminées",
+      "any": "Ouvertes ou terminées"
+    },
+    "completed": "Terminées",
+    "completedWithin": {
+      "any": "N’importe quand",
+      "today": "Aujourd’hui",
+      "week": "7 derniers jours",
+      "month": "30 derniers jours"
+    },
+    "createdBy": "Créées par",
+    "completedToday": "Terminées aujourd’hui",
+    "completedOn": "Terminées le %{day}"
   },
   "boardFilter": {
     "button": "Filtrer",
@@ -799,7 +827,7 @@
     "mineScope": "Les tâches ouvertes qui vous sont assignées, sur tous les tableaux.",
     "todayEmpty": "Rien à faire aujourd’hui",
     "upcomingEmpty": "Rien à faire dans les prochains jours",
-    "filterEmpty": "Aucune tâche ouverte ne correspond à ce filtre",
+    "filterEmpty": "Aucune tâche ne correspond à ce filtre",
     "loadFailed": "Vos tâches n'ont pas pu être chargées.",
     "mineEmpty": "Rien ne vous est assigné"
   },

@@ -87,6 +87,10 @@ describe('the fake boards API', () => {
           wire.labelNamesResponse,
           { labels: await fake.labelNames() }
         ],
+        sectionNames: [
+          wire.sectionNamesResponse,
+          { sections: await fake.sectionNames() }
+        ],
         people: [wire.peopleResponse, { people: await fake.people() }],
         filteredTasks: [
           wire.tasksResponse,

@@ -175,9 +175,14 @@ export type AgendaTask = Task & {
 }
 
 /** Why a task answers a search: the field that matched, and its text. */
-export interface SearchMatch {
-  field: 'key' | 'previousKey' | 'title' | 'description'
-  text: string
+export type SearchMatch =
+  | { field: 'key' | 'previousKey' | 'title' | 'description'; text: string }
+  | { field: 'comment'; text: string; commentId: string; author: Person }
+
+/** Without a status, a search finds tasks whatever their state. */
+export interface SearchScope {
+  status?: 'open' | 'done' | undefined
+  board?: string | undefined
 }
 
 /** `excerpt` quotes the description around the match when the title does not match. */
@@ -199,6 +204,21 @@ export interface FilterCriteria {
   priority?: number[]
   label?: string[]
   due?: ('overdue' | 'today' | 'week' | 'none')[]
+  /** Section names, whatever their case. */
+  section?: string[]
+  /** Found in the title, key, description or comments, as search finds it. */
+  text?: string
+  /** Open when absent. */
+  status?: 'open' | 'done' | 'any'
+  /** Only with the done status: completed today, in the last 7 or 30 days. */
+  completed?: 'today' | 'week' | 'month'
+  /** `me` or a user id. */
+  createdBy?: string[]
+}
+
+export interface SectionName {
+  boardId: string
+  name: string
 }
 
 export interface SavedFilter {
@@ -380,14 +400,16 @@ export interface BoardsApi {
   setFilterFavorite: (filterId: string, favorite: boolean) => Promise<void>
   /** The label names on the person's boards, one per spelling regardless of case. */
   labelNames: () => Promise<string[]>
+  /** The sections of the person's active boards, in board order. */
+  sectionNames: () => Promise<SectionName[]>
   /** The other members of the person's boards, once each. */
   people: () => Promise<Person[]>
-  /** Open tasks matching a saved filter, across the person's boards. */
+  /** Tasks matching a saved filter, across the person's boards. */
   filteredTasks: (filterId: string, zone: string) => Promise<AgendaTask[]>
   /** Overdue tasks, then those due within `days` days of today in `zone`. */
   agenda: (zone: string, days: number) => Promise<Agenda>
-  /** Tasks whose key starts with, or whose title or description contains, `text`. */
-  search: (text: string) => Promise<SearchResult[]>
+  /** Tasks whose key starts with, or whose title, description or comments contain, `text`. */
+  search: (text: string, scope?: SearchScope) => Promise<SearchResult[]>
   /** Open tasks assigned to the signed-in person, dated ones first. */
   myTasks: () => Promise<AgendaTask[]>
   listBoards: () => Promise<BoardSummary[]>
