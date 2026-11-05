@@ -56,16 +56,19 @@ export function FilterBar({
   label,
   onEscape,
   children,
-  actions
+  actions,
+  role = 'search'
 }: {
   label: string
   onEscape: () => void
   children: ReactNode
   actions?: ReactNode
+  /** A group narrows results a search already found. */
+  role?: 'search' | 'group'
 }): ReactElement {
   return (
     <Box
-      role="search"
+      role={role}
       aria-label={label}
       onKeyDown={event => {
         // A menu is portalled: its Escape bubbles here from outside the bar.
@@ -138,7 +141,8 @@ export interface FilterOption<T> {
 
 /**
  * A criterion: its chip reads `shown` once something is picked, and opens a
- * menu that stays open to pick several values.
+ * menu that stays open to pick several values, or closes on the one value of a
+ * `single` criterion.
  */
 export function FilterChip<T extends string | number>({
   name,
@@ -146,7 +150,8 @@ export function FilterChip<T extends string | number>({
   removeLabel,
   options,
   value,
-  onChange
+  onChange,
+  single = false
 }: {
   name: string
   shown: string
@@ -154,10 +159,16 @@ export function FilterChip<T extends string | number>({
   options: FilterOption<T>[]
   value: T[]
   onChange: (value: T[]) => void
+  single?: boolean
 }): ReactElement {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const active = value.length > 0
   const toggle = (each: T) => {
+    if (single) {
+      setAnchor(null)
+      onChange(value.includes(each) ? [] : [each])
+      return
+    }
     const known = options.map(option => option.value)
     // In the options' order, so that the result does not depend on the clicks.
     // A value with no option, as a link's former member, stays picked.
@@ -216,7 +227,7 @@ export function FilterChip<T extends string | number>({
         {options.map(option => (
           <MenuItem
             key={option.value}
-            role="menuitemcheckbox"
+            role={single ? 'menuitemradio' : 'menuitemcheckbox'}
             aria-checked={value.includes(option.value)}
             onClick={() => {
               toggle(option.value)

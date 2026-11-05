@@ -14,9 +14,14 @@ import { useTaskPanel, type TaskPanelState } from '@/ui/boards/useTaskPanel'
  * can take the task off the list.
  */
 export function useAgendaTaskPanel(
-  task: Pick<AgendaTask, 'key' | 'boardId'>
+  task: Pick<AgendaTask, 'key' | 'boardId'>,
+  commentId?: string
 ): TaskPanelState {
-  const panel = useTaskPanel(task.key, useCachedBoard(task.boardId)?.tasks)
+  const panel = useTaskPanel(
+    task.key,
+    useCachedBoard(task.boardId)?.tasks,
+    commentId
+  )
   const refresh = useRefreshLists()
   const [params] = useSearchParams()
   return {

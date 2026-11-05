@@ -36,13 +36,18 @@ const noOne = (
 
 // Picking nothing matches anyone.
 export function AssigneeField({
+  label: given,
   value,
-  onChange
+  onChange,
+  withNobody = true
 }: {
+  label?: string
   value: string[]
   onChange: (value: string[]) => void
+  withNobody?: boolean
 }): ReactElement {
   const { t, lang } = useI18n()
+  const label = given ?? t('filters.assignee')
   const { user } = useSession()
   const people = usePeople()
   const nameOf = useAssigneeName()
@@ -65,7 +70,7 @@ export function AssigneeField({
       start: <PersonAvatar email={user.email ?? ''} name={user.name} />,
       alias: `${user.name ?? ''} ${user.email ?? ''}`
     },
-    { value: 'nobody', start: noOne },
+    ...(withNobody ? [{ value: 'nobody', start: noOne }] : []),
     ...(!people.isPending && !query
       ? value
           .filter(
@@ -122,7 +127,7 @@ export function AssigneeField({
       <TextField
         ref={field}
         select
-        label={t('filters.assignee')}
+        label={label}
         value={value}
         slotProps={{
           inputLabel: { shrink: true },
@@ -147,7 +152,7 @@ export function AssigneeField({
         {[]}
       </TextField>
       <PickerPopover
-        label={t('filters.assignee')}
+        label={label}
         anchor={anchor}
         onClose={() => {
           setAnchor(null)

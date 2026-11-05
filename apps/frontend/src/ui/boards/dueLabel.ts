@@ -21,7 +21,7 @@ export const localZone = (): string =>
   followedZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone
 
 // From parts, as the default pattern of a locale (even en-CA) varies by engine.
-function localDay(at: Date): string {
+export function localDay(at: Date): string {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat('en-US', {
       timeZone: localZone(),

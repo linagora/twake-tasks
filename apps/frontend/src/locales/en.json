@@ -628,8 +628,17 @@
     "match": {
       "key": "Key:",
       "previousKey": "Formerly",
-      "description": "Description:"
-    }
+      "description": "Description:",
+      "comment": "%{name} in a comment:"
+    },
+    "scope": "Narrow the results",
+    "status": "Status",
+    "statuses": {
+      "all": "All",
+      "open": "Open",
+      "done": "Done"
+    },
+    "anyBoard": "Search every board"
   },
   "picker": {
     "count": "%{smart_count} option |||| %{smart_count} options"
@@ -773,7 +782,26 @@
       "today": "Today",
       "week": "Next 7 days",
       "none": "No date"
-    }
+    },
+    "text": "Contains",
+    "quoted": "“%{text}”",
+    "section": "Section",
+    "status": "Status",
+    "statuses": {
+      "open": "Open",
+      "done": "Done",
+      "any": "Open or done"
+    },
+    "completed": "Completed",
+    "completedWithin": {
+      "any": "Any time",
+      "today": "Today",
+      "week": "Last 7 days",
+      "month": "Last 30 days"
+    },
+    "createdBy": "Created by",
+    "completedToday": "Completed today",
+    "completedOn": "Completed %{day}"
   },
   "boardFilter": {
     "button": "Filter",
@@ -799,7 +827,7 @@
     "mineScope": "Open tasks assigned to you on any board.",
     "todayEmpty": "Nothing due today",
     "upcomingEmpty": "Nothing due in the coming days",
-    "filterEmpty": "No open task matches this filter",
+    "filterEmpty": "No task matches this filter",
     "loadFailed": "Your tasks could not be loaded.",
     "mineEmpty": "Nothing assigned to you"
   },

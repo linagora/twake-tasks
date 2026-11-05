@@ -176,9 +176,7 @@ describe('FiltersScreen', () => {
     const { id } = await boardsApi.createFilter({ name: 'All', criteria: {} })
     renderRoute(`/filters/${id}`, { boardsApi })
 
-    expect(
-      await findEmptyState('No open task matches this filter')
-    ).toBeVisible()
+    expect(await findEmptyState('No task matches this filter')).toBeVisible()
     expect(screen.queryByText('You are all caught up.')).toBeNull()
   })
 
@@ -217,6 +215,129 @@ describe('FiltersScreen', () => {
     expect(
       screen.getByRole('listitem', { name: 'Everything' })
     ).toHaveTextContent('All tasks')
+  })
+
+  it('saves the words, sections, status and creator a filter looks for', async () => {
+    const support = aBoard({ name: 'Support', keyPrefix: 'SUP' })
+    support.sections = [
+      { id: 'triage', name: 'Triage', category: 'unstarted' },
+      { id: 'in-progress', name: 'in progress', category: 'started' }
+    ]
+    const boardsApi = fakeBoardsApi([
+      aBoard({ name: 'Design', keyPrefix: 'DES' }),
+      support
+    ])
+    renderRoute('/filters', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'New filter' }))
+    fireEvent.change(await screen.findByLabelText('Name'), {
+      target: { value: 'Shipped' }
+    })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Contains' }), {
+      target: { value: ' invoice ' }
+    })
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Section' }))
+    const sections = within(
+      await screen.findByRole('listbox', { name: 'Section' })
+    )
+    // One In progress whatever its case, the criterion matching both.
+    expect(
+      sections.getAllByRole('option').map(option => option.textContent)
+    ).toEqual(['To do', 'In progress', 'Done', 'Triage'])
+    fireEvent.click(sections.getByRole('option', { name: 'In progress' }))
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' })
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).toBeNull()
+    })
+
+    expect(screen.queryByRole('combobox', { name: 'Completed' })).toBeNull()
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Status' }))
+    fireEvent.click(
+      within(await screen.findByRole('listbox', { name: 'Status' })).getByRole(
+        'option',
+        { name: 'Done' }
+      )
+    )
+    fireEvent.mouseDown(
+      await screen.findByRole('combobox', { name: 'Completed' })
+    )
+    fireEvent.click(
+      within(
+        await screen.findByRole('listbox', { name: 'Completed' })
+      ).getByRole('option', { name: 'Last 7 days' })
+    )
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Created by' }))
+    const picker = within(
+      await screen.findByRole('dialog', { name: 'Created by' })
+    )
+    expect(
+      picker.queryByRole('menuitemcheckbox', { name: 'Nobody' })
+    ).toBeNull()
+    fireEvent.click(picker.getByRole('menuitemcheckbox', { name: 'Me' }))
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save filter' }))
+
+    expect(
+      await screen.findByRole('listitem', { name: 'Shipped' })
+    ).toHaveTextContent(
+      'Contains: “invoice” · Section: In progress · Status: Done · Completed: Last 7 days · Created by: Me'
+    )
+    expect(boardsApi.createFilter).toHaveBeenCalledWith({
+      name: 'Shipped',
+      criteria: {
+        text: 'invoice',
+        section: ['In progress'],
+        status: 'done',
+        completed: 'week',
+        createdBy: ['me']
+      }
+    })
+  })
+
+  it('lists done tasks under the day of their completion, the latest first', async () => {
+    const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    design.tasks = [
+      aTask(null, {
+        key: 'DES-1',
+        title: 'Logo',
+        completedAt: '2025-03-04T12:00:00Z'
+      }),
+      aTask(null, {
+        key: 'DES-2',
+        title: 'Poster',
+        completedAt: new Date().toISOString()
+      }),
+      aTask(null, { key: 'DES-3', title: 'Flyer' })
+    ]
+    const boardsApi = fakeBoardsApi([design])
+    const { id } = await boardsApi.createFilter({
+      name: 'Shipped',
+      criteria: { status: 'done' }
+    })
+    renderRoute(`/filters/${id}`, { boardsApi })
+
+    const today = within(
+      await screen.findByRole('region', { name: 'Completed today' })
+    )
+    expect(today.getByText('Poster')).toBeVisible()
+    const before = within(
+      screen.getByRole('region', { name: 'Completed Mar 4, 2025' })
+    )
+    expect(before.getByText('Logo')).toBeVisible()
+    expect(screen.queryByText('Flyer')).not.toBeInTheDocument()
+    expect(
+      screen.getAllByRole('region').map(region => region.ariaLabel)
+    ).toEqual(['Completed today', 'Completed Mar 4, 2025'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Kanban' }))
+    const done = within(screen.getByRole('region', { name: 'Done' }))
+    expect(done.getByText('Logo')).toBeVisible()
+    expect(done.getByText('Poster')).toBeVisible()
+    expect(screen.queryByRole('region', { name: 'To do' })).toBeNull()
   })
 
   it('filters on other people, found by name', async () => {

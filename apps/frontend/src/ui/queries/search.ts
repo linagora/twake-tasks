@@ -1,6 +1,6 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 
-import { type SearchResult } from '@/application/boards'
+import { type SearchResult, type SearchScope } from '@/application/boards'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { keys } from '@/ui/queries/keys'
 
@@ -9,11 +9,14 @@ export function searchMinLength(): number {
   return Number.isInteger(length) && length >= 1 ? length : 2
 }
 
-export function useSearch(text: string): UseQueryResult<SearchResult[]> {
+export function useSearch(
+  text: string,
+  scope: SearchScope = {}
+): UseQueryResult<SearchResult[]> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: keys.search(text),
-    queryFn: () => api.search(text),
+    queryKey: keys.search(text, scope),
+    queryFn: () => api.search(text, scope),
     enabled: text.trim().length >= searchMinLength()
   })
 }

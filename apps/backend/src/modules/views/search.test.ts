@@ -219,6 +219,93 @@ describe('search', () => {
     expect(await search(consumer, 'secret')).toEqual(['DIA-1'])
   })
 
+  it('finds a task by its comments, quoting the comment and its author', async () => {
+    const owner = aUser({ name: 'Olga' })
+    const design = await aBoardOf(owner, 'DES')
+    const poster = await design.add('Poster')
+    const flyer = await design.add('Flyer', 'Ask the supplier for a draft')
+    const comment = async (taskId: string, body: string) =>
+      (
+        await api
+          .as(owner)
+          .post(`/boards/${design.id}/tasks/${taskId}/comments`, { body })
+      ).json<{ id: string }>().id
+    const draft = await comment(poster.id, 'The **draft** is ready')
+    await comment(flyer.id, 'Second draft attached')
+
+    const found = (await api.as(owner).get('/search?q=draft')).json<{
+      tasks: { key: string; excerpt: string | null; match: unknown }[]
+    }>().tasks
+
+    expect(found.map(({ key, match }) => [key, match])).toEqual([
+      [
+        'DES-1',
+        {
+          field: 'comment',
+          text: 'The draft is ready',
+          commentId: draft,
+          author: {
+            userId: owner.userId,
+            email: owner.email,
+            name: 'Olga',
+            avatar: null
+          }
+        }
+      ],
+      ['DES-2', { field: 'description', text: 'Ask the supplier for a draft' }]
+    ])
+    expect(found[0]?.excerpt).toBeNull()
+  })
+
+  it('never finds a task by a comment on a board I cannot open', async () => {
+    const owner = aUser()
+    const stranger = aUser({ organizationId: owner.organizationId })
+    const consumer = aB2cUser()
+    for (const user of [owner, consumer]) {
+      const board = await aBoardOf(user, 'SEC')
+      const task = await board.add('Plan')
+      await api.as(user).post(`/boards/${board.id}/tasks/${task.id}/comments`, {
+        body: 'The vault code'
+      })
+    }
+
+    expect(await search(stranger, 'vault')).toEqual([])
+    expect(await search(aB2cUser(), 'vault')).toEqual([])
+    expect(await search(consumer, 'vault')).toEqual(['SEC-1'])
+  })
+
+  it('keeps to open or done tasks, and to one board, when asked', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    const home = await aBoardOf(owner, 'HOM')
+    await design.add('Invoice March')
+    const paid = await design.add('Invoice April')
+    await home.add('Invoice rent')
+    await api.as(owner).post(`/boards/${design.id}/tasks/${paid.id}/complete`, {
+      state: 'completed'
+    })
+    const scoped = async (query: Record<string, string>) =>
+      (
+        await api
+          .as(owner)
+          .get(
+            `/search?${new URLSearchParams({ q: 'invoice', ...query }).toString()}`
+          )
+      )
+        .json<{ tasks: { key: string }[] }>()
+        .tasks.map(task => task.key)
+        .sort()
+
+    expect(await scoped({})).toEqual(['DES-1', 'DES-2', 'HOM-1'])
+    expect(await scoped({ status: 'open' })).toEqual(['DES-1', 'HOM-1'])
+    expect(await scoped({ status: 'done' })).toEqual(['DES-2'])
+    expect(await scoped({ board: design.id })).toEqual(['DES-1', 'DES-2'])
+    expect(await scoped({ status: 'open', board: home.id })).toEqual(['HOM-1'])
+    expect(
+      (await api.as(owner).get('/search?q=invoice&status=late')).statusCode
+    ).toBe(400)
+  })
+
   it('finds nothing for a query shorter than two characters', async () => {
     const owner = aUser()
     await (await aBoardOf(owner, 'ONE')).add('a')

@@ -113,7 +113,12 @@ export const descriptionEdit = z.object({
   version: z.int().min(0)
 })
 
-export const searchQuery = z.object({ q: z.string().trim().max(200) })
+// Without a status, search finds tasks whatever their state.
+export const searchQuery = z.object({
+  q: z.string().trim().max(200),
+  status: z.enum(['open', 'done']).optional(),
+  board: z.uuid().optional()
+})
 
 export const agendaQuery = z.object({
   zone: z.string().max(64).refine(isTimeZone),
@@ -173,12 +178,20 @@ export const tasksResponse = z.object({ tasks: z.array(agendaTask) })
 
 export const agendaResponse = tasksResponse.extend({ today: z.iso.date() })
 
-// What a result answers the search by: its key, a former key, its title or
-// the part of its description around the text.
-export const searchMatch = z.object({
-  field: z.enum(['key', 'previousKey', 'title', 'description']),
-  text: z.string()
-})
+// What a result answers the search by: its key, a former key, its title, or
+// the part of its description or of one of its comments around the text.
+export const searchMatch = z.union([
+  z.object({
+    field: z.enum(['key', 'previousKey', 'title', 'description']),
+    text: z.string()
+  }),
+  z.object({
+    field: z.literal('comment'),
+    text: z.string(),
+    commentId: z.string(),
+    author: person
+  })
+])
 
 export const searchResponse = z.object({
   tasks: z.array(

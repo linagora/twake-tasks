@@ -226,11 +226,14 @@ export function fakeBoardsApi(boards: Board[] = []) {
   })
 
   const filters: SavedFilter[] = []
-  const openTasks = () =>
+  const openTasks = (status: SavedFilter['criteria']['status'] = 'open') =>
     [...store.values()].flatMap(board =>
       board.tasks
         .filter(
-          task => !board.archived && !task.completedAt && !task.canceledAt
+          task =>
+            !board.archived &&
+            !task.canceledAt &&
+            (status === 'any' || (status === 'done') === !!task.completedAt)
         )
         .map(task => agendaTask(board, task))
     )
@@ -530,6 +533,16 @@ export function fakeBoardsApi(boards: Board[] = []) {
         ].sort()
       )
     ),
+    sectionNames: vi.fn<BoardsApi['sectionNames']>(() =>
+      Promise.resolve(
+        [...store.values()].flatMap(board =>
+          board.sections.map(section => ({
+            boardId: board.id,
+            name: section.name
+          }))
+        )
+      )
+    ),
     people: vi.fn<BoardsApi['people']>(() =>
       Promise.resolve([
         ...new Map(
@@ -543,9 +556,9 @@ export function fakeBoardsApi(boards: Board[] = []) {
       Promise.resolve().then(() => {
         const filter = filters.find(candidate => candidate.id === filterId)
         if (!filter) throw new ApiError(404, 'not_found')
-        const { board, priority, label } = filter.criteria
+        const { board, priority, label, status } = filter.criteria
         const labels = label?.map(name => name.toLowerCase())
-        return openTasks().filter(
+        const found = openTasks(status).filter(
           task =>
             (board === undefined || board.includes(task.boardId)) &&
             (priority === undefined ||
@@ -555,16 +568,26 @@ export function fakeBoardsApi(boards: Board[] = []) {
                 labels.includes(each.name.toLowerCase())
               ))
         )
+        return status === 'done'
+          ? found.sort((a, b) =>
+              (b.completedAt ?? '').localeCompare(a.completedAt ?? '')
+            )
+          : found
       })
     ),
-    search: vi.fn<BoardsApi['search']>(text =>
+    search: vi.fn<BoardsApi['search']>((text, scope = {}) =>
       Promise.resolve(
         [...store.values()].flatMap(board =>
           board.tasks
             .filter(
               task =>
-                task.key.toLowerCase().startsWith(text.toLowerCase()) ||
-                task.title.toLowerCase().includes(text.toLowerCase())
+                (scope.board === undefined || scope.board === board.id) &&
+                (scope.status === undefined ||
+                  (scope.status === 'done'
+                    ? task.completedAt !== null
+                    : task.completedAt === null && task.canceledAt === null)) &&
+                (task.key.toLowerCase().startsWith(text.toLowerCase()) ||
+                  task.title.toLowerCase().includes(text.toLowerCase()))
             )
             .map(task => ({
               ...agendaTask(board, task),

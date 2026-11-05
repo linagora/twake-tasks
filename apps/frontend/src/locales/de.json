@@ -628,8 +628,17 @@
     "match": {
       "key": "Schlüssel:",
       "previousKey": "Früher",
-      "description": "Beschreibung:"
-    }
+      "description": "Beschreibung:",
+      "comment": "%{name} in einem Kommentar:"
+    },
+    "scope": "Ergebnisse eingrenzen",
+    "status": "Status",
+    "statuses": {
+      "all": "Alle",
+      "open": "Offen",
+      "done": "Erledigt"
+    },
+    "anyBoard": "In allen Boards suchen"
   },
   "picker": {
     "count": "%{smart_count} Option |||| %{smart_count} Optionen"
@@ -773,7 +782,26 @@
       "today": "Heute",
       "week": "Nächste 7 Tage",
       "none": "Kein Datum"
-    }
+    },
+    "text": "Enthält",
+    "quoted": "„%{text}“",
+    "section": "Abschnitt",
+    "status": "Status",
+    "statuses": {
+      "open": "Offen",
+      "done": "Erledigt",
+      "any": "Offen oder erledigt"
+    },
+    "completed": "Erledigt",
+    "completedWithin": {
+      "any": "Jederzeit",
+      "today": "Heute",
+      "week": "Letzte 7 Tage",
+      "month": "Letzte 30 Tage"
+    },
+    "createdBy": "Erstellt von",
+    "completedToday": "Heute erledigt",
+    "completedOn": "Erledigt am %{day}"
   },
   "boardFilter": {
     "button": "Filtern",
@@ -799,7 +827,7 @@
     "mineScope": "Offene Aufgaben, die Ihnen auf einem beliebigen Board zugewiesen sind.",
     "todayEmpty": "Heute nichts fällig",
     "upcomingEmpty": "In den nächsten Tagen nichts fällig",
-    "filterEmpty": "Keine offene Aufgabe entspricht diesem Filter",
+    "filterEmpty": "Keine Aufgabe entspricht diesem Filter",
     "loadFailed": "Ihre Aufgaben konnten nicht geladen werden.",
     "mineEmpty": "Ihnen ist nichts zugewiesen"
   },

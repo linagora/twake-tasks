@@ -1,6 +1,7 @@
 import { Pen, Trash } from '@linagora/twake-icons'
-import { Button, Link, Tooltip, Typography } from '@linagora/twake-mui'
+import { Button, Typography } from '@linagora/twake-mui'
 import { useMemo, useState, type ReactElement } from 'react'
+import { useSearchParams } from 'react-router'
 
 import { ApiError } from '@/application/boards'
 import { Highlight } from '@/ds/Highlight'
@@ -9,10 +10,9 @@ import { Feed, FeedAction, FeedItem } from '@/ds/SidePanel'
 import type { Person, Task } from '@/domain/board'
 import { displayName } from '@/domain/person'
 import { CommentReactions, ReactButton } from '@/ui/boards/CommentReactions'
-import { momentFormat } from '@/ui/boards/dueLabel'
 import { matchingPeople, suggestionOrder } from '@/ui/boards/people'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { CommentHistory } from '@/ui/boards/CommentHistory'
+import { CommentByline, CommentHistory } from '@/ui/boards/CommentHistory'
 import { DeleteCommentDialog } from '@/ui/boards/DeleteCommentDialog'
 import {
   useAddComment,
@@ -46,7 +46,7 @@ export function Comments({
   /** Whether everyone's comments may be deleted, not only one's own. */
   moderator: boolean
 }): ReactElement {
-  const { t, lang } = useI18n()
+  const { t } = useI18n()
   const { user } = useSession()
   const labels = useRichTextLabels()
   const drive = useDrivePicker()
@@ -69,10 +69,11 @@ export function Comments({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [historyId, setHistoryId] = useState<string | null>(null)
   const historyOf = comments.data?.find(comment => comment.id === historyId)
+  const [params] = useSearchParams()
+  const linked = params.get('task') === task.key ? params.get('comment') : null
   useUnsaved(
     body.trim() !== '' || (editing !== null && editing.body !== editing.initial)
   )
-  const format = momentFormat(lang)
   const sendable = !add.isPending && body !== '' && body.length <= MAX_COMMENT
   const mentionable = (query: string) => {
     const pinned = new Set(task.assignees.map(person => person.userId))
@@ -183,6 +184,7 @@ export function Comments({
           return (
             <FeedItem
               key={comment.id}
+              highlighted={comment.id === linked}
               avatar={
                 <PersonAvatar
                   email={comment.author.email}
@@ -232,39 +234,12 @@ export function Comments({
                   })}
             >
               <article aria-label={displayName(comment.author)}>
-                <Typography variant="body2" component="div">
-                  <strong>{displayName(comment.author)}</strong>
-                  <Typography
-                    component="span"
-                    variant="caption"
-                    color="textSecondary"
-                  >
-                    {` · ${format.format(new Date(comment.createdAt))}`}
-                    {comment.editedAt && (
-                      <>
-                        {' · '}
-                        <Tooltip
-                          title={format.format(new Date(comment.editedAt))}
-                          describeChild
-                        >
-                          <Link
-                            component="button"
-                            type="button"
-                            variant="caption"
-                            color="textSecondary"
-                            underline="hover"
-                            aria-haspopup="dialog"
-                            onClick={() => {
-                              setHistoryId(comment.id)
-                            }}
-                          >
-                            {t('task.edited')}
-                          </Link>
-                        </Tooltip>
-                      </>
-                    )}
-                  </Typography>
-                </Typography>
+                <CommentByline
+                  comment={comment}
+                  onHistory={() => {
+                    setHistoryId(comment.id)
+                  }}
+                />
                 {isEditing ? (
                   <form
                     className="u-mt-half"

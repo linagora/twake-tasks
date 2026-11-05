@@ -22,7 +22,12 @@ export interface TaskPanelState {
  * a sub-task also opens its ancestors among `tasks`, and closing it goes back
  * to its parent.
  */
-export function useTaskPanel(key: string, tasks: Task[] = []): TaskPanelState {
+export function useTaskPanel(
+  key: string,
+  tasks: Task[] = [],
+  /** `?comment=` holds it, so the panel scrolls to that comment. */
+  commentId?: string
+): TaskPanelState {
   const [params, setParams] = useSearchParams()
   const shown = params.get('task')
   const open = shown !== null && lineage(shown, tasks).includes(key)
@@ -32,17 +37,20 @@ export function useTaskPanel(key: string, tasks: Task[] = []): TaskPanelState {
       current => {
         const next = new URLSearchParams(current)
         next.set('task', key)
+        if (commentId) next.set('comment', commentId)
+        else next.delete('comment')
         return next
       },
       { replace: true }
     )
-  }, [key, setParams])
+  }, [key, commentId, setParams])
 
   const close = useCallback(() => {
     const parentKey = lineage(key, tasks)[1]
     setParams(
       current => {
         const next = new URLSearchParams(current)
+        next.delete('comment')
         if (parentKey) next.set('task', parentKey)
         else {
           next.delete('task')

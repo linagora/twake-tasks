@@ -11,6 +11,7 @@ import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 
 import type { BoardSummary } from '@/domain/board'
 import { listBoards } from '@/domain/boardList'
+import { displayName } from '@/domain/person'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { fold, Highlight } from '@/ds/Highlight'
 import { Icon } from '@/ds/Icon'
@@ -20,6 +21,7 @@ import { SearchBar } from '@/ds/SearchBar'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import { BoardChip } from '@/ds/TileGrid'
 import { Group } from '@/ui/agenda/AgendaScreen'
+import { ScopeBar, useSearchScope } from '@/ui/agenda/SearchScope'
 import { useBoardName, useProjectName } from '@/ui/boards/BoardsScreen'
 import { useBoards } from '@/ui/queries/boards'
 import { searchMinLength, useSearch } from '@/ui/queries/search'
@@ -97,7 +99,12 @@ function useLiveResults(query: string): {
     })),
     ...(tasks.data ?? []).map(task => ({
       id: task.id,
-      to: `/boards/${task.boardId}?${new URLSearchParams({ task: task.key }).toString()}`,
+      to: `/boards/${task.boardId}?${new URLSearchParams({
+        task: task.key,
+        ...(task.match?.field === 'comment' && {
+          comment: task.match.commentId
+        })
+      }).toString()}`,
       icon: <Icon icon={TaskIcon} size={24} color="currentColor" />,
       primary: <Highlight text={task.title} query={query} tone="primary" />,
       secondary: (
@@ -111,9 +118,14 @@ function useLiveResults(query: string): {
         </>
       ),
       detail: (task.match?.field === 'previousKey' ||
-        task.match?.field === 'description') && (
+        task.match?.field === 'description' ||
+        task.match?.field === 'comment') && (
         <>
-          {t(`search.match.${task.match.field}`)}{' '}
+          {task.match.field === 'comment'
+            ? t('search.match.comment', {
+                name: displayName(task.match.author)
+              })
+            : t(`search.match.${task.match.field}`)}{' '}
           <Highlight text={task.match.text} query={query} tone="primary" />
         </>
       )
@@ -307,12 +319,15 @@ export function SearchScreen(): ReactElement {
   const { t } = useI18n()
   const [params] = useSearchParams()
   const text = params.get('q')?.trim() ?? ''
-  const results = useSearch(text)
+  const [scope, setScope] = useSearchScope()
+  const scoped = scope.status !== undefined || scope.board !== undefined
+  const results = useSearch(text, scope)
   const boards = useBoards()
   const minLength = searchMinLength()
   useDocumentTitle(t('search.label'))
 
-  const foundBoards = useFoundBoards(text)
+  // The boards found are not tasks: a scope on tasks leaves them out.
+  const foundBoards = useFoundBoards(scoped ? '' : text)
   const found =
     results.data && !boards.isPending
       ? [
@@ -344,6 +359,9 @@ export function SearchScreen(): ReactElement {
         <p role="status" className="u-visuallyhidden">
           {found}
         </p>
+        {text.length >= minLength && (
+          <ScopeBar scope={scope} onChange={setScope} />
+        )}
         {text.length >= minLength && (
           <BoardResults key={text} text={text} found={foundBoards} />
         )}

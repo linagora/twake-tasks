@@ -628,8 +628,17 @@
     "match": {
       "key": "Clave:",
       "previousKey": "Antes",
-      "description": "Descripción:"
-    }
+      "description": "Descripción:",
+      "comment": "%{name} en un comentario:"
+    },
+    "scope": "Acotar los resultados",
+    "status": "Estado",
+    "statuses": {
+      "all": "Todas",
+      "open": "Abiertas",
+      "done": "Terminadas"
+    },
+    "anyBoard": "Buscar en todos los tableros"
   },
   "picker": {
     "count": "%{smart_count} opción |||| %{smart_count} opciones"
@@ -773,7 +782,26 @@
       "today": "Hoy",
       "week": "Próximos 7 días",
       "none": "Sin fecha"
-    }
+    },
+    "text": "Contiene",
+    "quoted": "«%{text}»",
+    "section": "Sección",
+    "status": "Estado",
+    "statuses": {
+      "open": "Abiertas",
+      "done": "Terminadas",
+      "any": "Abiertas o terminadas"
+    },
+    "completed": "Terminadas",
+    "completedWithin": {
+      "any": "Cuando sea",
+      "today": "Hoy",
+      "week": "Últimos 7 días",
+      "month": "Últimos 30 días"
+    },
+    "createdBy": "Creadas por",
+    "completedToday": "Terminadas hoy",
+    "completedOn": "Terminadas el %{day}"
   },
   "boardFilter": {
     "button": "Filtrar",
@@ -799,7 +827,7 @@
     "mineScope": "Las tareas abiertas asignadas a ti en cualquier tablero.",
     "todayEmpty": "Nada pendiente para hoy",
     "upcomingEmpty": "Nada pendiente en los próximos días",
-    "filterEmpty": "Ninguna tarea abierta coincide con este filtro",
+    "filterEmpty": "Ninguna tarea coincide con este filtro",
     "loadFailed": "No se pudieron cargar tus tareas.",
     "mineEmpty": "No tienes nada asignado"
   },

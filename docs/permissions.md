@@ -37,6 +37,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `GET /api/people`
 - `GET /api/projects`
 - `GET /api/search`
+- `GET /api/sections`
 - `GET /api/settings`
 - `GET /api/settings/notifications`
 - `PUT /api/settings/notifications`
