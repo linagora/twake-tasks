@@ -9,7 +9,7 @@
       "entry": ["src/migrate.ts"]
     },
     "e2e": {
-      "entry": ["oidc/server.ts"]
+      "entry": ["oidc/server.ts", "contacts/server.ts"]
     }
   }
 }

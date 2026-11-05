@@ -8,6 +8,7 @@ import {
   roleChange
 } from '@twake-tasks/api-contract'
 import type { FastifyRequest } from 'fastify'
+import type { ContactSearch } from '../../infra/contacts.ts'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
 import {
@@ -29,7 +30,12 @@ const sharing = { ...admin, refusedOnManaged: true } as const
 
 export function registerProjects(
   app: HttpServer,
-  deps: { db: Db; requireIdentity: RequireIdentity; pendingInvites: number }
+  deps: {
+    db: Db
+    requireIdentity: RequireIdentity
+    pendingInvites: number
+    contacts?: ContactSearch | undefined
+  }
 ): ProjectRoute[] {
   const sharingStore = createSharingStore(deps.db, deps.pendingInvites)
   const routing = {
@@ -71,10 +77,17 @@ export function registerProjects(
       access: sharing,
       params: boardParams,
       query: peopleQuery,
-      handler: ({ identity, params, query }) =>
+      // The route has checked the admin, so their contacts are searched here,
+      // outside the store's transaction.
+      handler: async ({ identity, params, query }) =>
         under(
           'people',
-          sharingStore.suggestPeople(identity, params.boardId, query.q)
+          sharingStore.suggestPeople(
+            identity,
+            params.boardId,
+            query.q,
+            await deps.contacts?.search(identity.email, query.q)
+          )
         )
     }),
     defineRoute({

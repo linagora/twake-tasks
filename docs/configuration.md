@@ -32,6 +32,11 @@ Space mode:
 - `LDAP_REST_URL`, `LDAP_REST_SECRET`: required when `SPACE_INTEGRATION=true`.
 - `LDAP_REST_SERVICE_ID` (`twake-tasks`): the service id the requests are signed as.
 
+Common contacts:
+
+- `COMMON_CONTACTS` (`false`): with `true`, the share dialog suggests the admin's contacts from the [contacts search](dependencies.md#contacts-search) first. See [ADR 058](https://github.com/linagora/twake-adr/blob/2df19710902a0e31332c662d001a9806c8463e7a/adrs/adr-058.md).
+- `CONTACTS_SEARCH_URL`, `CONTACTS_SEARCH_SECRET`: required when `COMMON_CONTACTS=true`. The URL of the calendar side service's contacts API port, such as `http://tcalendar-side-service:81`, and the Tasks entry of its `common.contact.api.secrets`.
+
 Email:
 
 - `SMTP_URL`: an `smtp://` or `smtps://` URL. Without it, nothing is emailed.

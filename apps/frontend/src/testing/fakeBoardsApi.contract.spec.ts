@@ -53,7 +53,10 @@ function aSeededFake() {
   board.tasks.push(task)
   const fake = fakeBoardsApi([board, target])
   fake.projects.push({ ...aProject(), role: 'admin' })
-  fake.directory.push({ ...alice, userId: 'bob', email: 'bob@example.com' })
+  fake.directory.push(
+    { ...alice, userId: 'bob', email: 'bob@example.com' },
+    { userId: null, email: 'bobby@example.com', name: null, avatar: null }
+  )
   fake.notifications.push(aNotification({ boardId: board.id }))
   return { fake, board, target, task }
 }
@@ -114,7 +117,7 @@ describe('the fake boards API', () => {
         ],
         getSharing: [wire.sharingResponse, await fake.getSharing(board.id)],
         suggestPeople: [
-          wire.peopleResponse,
+          wire.suggestionsResponse,
           { people: await fake.suggestPeople(board.id, 'bob') }
         ],
         getDescription: [

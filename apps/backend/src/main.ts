@@ -8,6 +8,7 @@ import { createRelay, measureOutbox } from './events/outbox.ts'
 import { parkedRetries, parkIn } from './events/parking.ts'
 import { createMessageHandler } from './events/router.ts'
 import { createChanges } from './infra/changes.ts'
+import { contactSearchClient } from './infra/contacts.ts'
 import {
   assertRowLevelSecurity,
   createDb,
@@ -100,6 +101,14 @@ const server = await buildApp({
   limits,
   metrics,
   storage,
+  contacts:
+    config.COMMON_CONTACTS === 'true'
+      ? contactSearchClient({
+          url: config.CONTACTS_SEARCH_URL,
+          secret: config.CONTACTS_SEARCH_SECRET,
+          logger
+        })
+      : undefined,
   db,
   boardChanges,
   ...(await connectIdentityProvider({

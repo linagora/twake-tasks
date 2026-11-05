@@ -7,7 +7,7 @@ import {
 import { useEffect, useState } from 'react'
 
 import { type Sharing } from '@/application/boards'
-import { type Person } from '@/domain/board'
+import { type Person, type Suggestion } from '@/domain/board'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { keys } from '@/ui/queries/keys'
 
@@ -33,7 +33,7 @@ const SUGGEST_DELAY_MS = 250
 export function usePeopleSuggestions(
   boardId: string,
   query: string
-): UseQueryResult<Person[]> {
+): UseQueryResult<Suggestion[]> {
   const api = useBoardsApi()
   const [settled, setSettled] = useState('')
   useEffect(() => {

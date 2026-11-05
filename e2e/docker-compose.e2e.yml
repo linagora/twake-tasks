@@ -33,11 +33,20 @@ services:
       # Like a real SSO, it lets only some hosts frame it: TwakeSpace on 3302 is not one
       FRAME_ANCESTORS: "'self' http://localhost:3300 http://localhost:3301"
 
+  contacts:
+    image: node:24-slim
+    working_dir: /contacts
+    command: ['node', 'server.ts']
+    volumes:
+      - ./e2e/contacts:/contacts:ro
+
   backend:
     ports: !reset []
     depends_on:
       oidc:
         condition: service_healthy
+      contacts:
+        condition: service_started
     volumes:
       - ./e2e/.certs:/certs:ro
     environment:
@@ -49,6 +58,9 @@ services:
       # No ldap-rest here: the nightly reconcile fails and retries, nothing else needs it.
       LDAP_REST_URL: http://ldap-rest.invalid
       LDAP_REST_SECRET: e2e
+      COMMON_CONTACTS: 'true'
+      CONTACTS_SEARCH_URL: http://contacts:8081
+      CONTACTS_SEARCH_SECRET: e2e-contacts-secret
 
   frontend:
     ports: !override

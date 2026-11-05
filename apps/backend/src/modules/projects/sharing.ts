@@ -13,6 +13,9 @@ import {
   or,
   sql
 } from 'drizzle-orm'
+import type { suggestedPerson } from '@twake-tasks/api-contract'
+import type { z } from 'zod'
+import type { Contact } from '../../infra/contacts.ts'
 import { inTenant, type Db, type Tx } from '../../infra/db.ts'
 import { schedule } from '../../scheduler/scheduler.ts'
 import type { Identity } from '../auth/index.ts'
@@ -74,6 +77,8 @@ async function sharingToChange(tx: Tx, identity: Identity, boardId: string) {
 }
 
 const SUGGESTIONS = 8
+
+type Suggestion = z.infer<typeof suggestedPerson>
 
 export const EMAILS_PER_ADDRESS_WINDOW_MS = 24 * 60 * 60 * 1000
 export const EMAILS_PER_INVITER_WINDOW_MS = 60 * 60 * 1000
@@ -259,10 +264,16 @@ export function createSharingStore(db: Db, pendingInvites = 0) {
       })
     },
 
-    // The people Tasks knows: everyone of the organization who opened Tasks
-    // or was added to a project, and in B2C those who share a project with
-    // the admin. Row level security draws that line.
-    suggestPeople(identity: Identity, boardId: string, query: string) {
+    // The admin's contacts first, then the people Tasks knows: everyone of
+    // the organization who opened Tasks or was added to a project, and in B2C
+    // those who share a project with the admin. Row level security draws that
+    // line.
+    suggestPeople(
+      identity: Identity,
+      boardId: string,
+      query: string,
+      contacts: Contact[] = []
+    ) {
       return writeOrRefuse(db, identity, async tx => {
         const project = await sharedProject(tx, identity, boardId)
         const pattern = `%${query.toLowerCase().replace(/[\\%_]/g, '\\$&')}%`
@@ -309,11 +320,68 @@ export function createSharingStore(db: Db, pendingInvites = 0) {
           )
           .orderBy(asc(projectMembers.userId))
           .as('people')
-        return tx
+        const known: Suggestion[] = await tx
           .select()
           .from(people)
           .orderBy(asc(people.email))
           .limit(SUGGESTIONS)
+        if (contacts.length === 0) return known
+        const taken = new Set(
+          [
+            ...(await tx
+              .select({ email: projectMembers.email })
+              .from(projectMembers)
+              .where(eq(projectMembers.projectId, project.id))),
+            ...(await invited)
+          ].map(row => row.email.toLowerCase())
+        )
+        const fresh = contacts.filter(contact => !taken.has(contact.email))
+        if (fresh.length === 0) return known
+        const email = sql<string>`lower(${projectMembers.email})`
+        const accounts = new Map(
+          (
+            await tx
+              .selectDistinctOn([email], {
+                userId: projectMembers.userId,
+                email,
+                name: memberLooks.name,
+                avatar: memberLooks.avatar
+              })
+              .from(projectMembers)
+              .leftJoin(userSettings, settingsOfMember)
+              .where(
+                and(
+                  eq(projectMembers.tenant, project.organizationId ?? ''),
+                  inArray(
+                    email,
+                    fresh.map(contact => contact.email)
+                  )
+                )
+              )
+          ).map(account => [account.email, account])
+        )
+        // B2C accounts share their mail domain, whose address book would
+        // list every one of them: only those the admin already works with,
+        // whom row level security lets through, are kept.
+        const domain = identity.email.toLowerCase().split('@')[1]
+        const others = fresh.flatMap((contact): Suggestion[] => {
+          const account = accounts.get(contact.email)
+          if (account) {
+            return [{ ...account, name: account.name ?? contact.name }]
+          }
+          if (
+            identity.organizationId === null &&
+            contact.email.split('@')[1] === domain
+          ) {
+            return []
+          }
+          return [{ userId: null, ...contact, avatar: null }]
+        })
+        const listed = new Set(others.map(person => person.email))
+        return [
+          ...others,
+          ...known.filter(person => !listed.has(person.email.toLowerCase()))
+        ].slice(0, SUGGESTIONS)
       })
     },
 

@@ -64,6 +64,9 @@ export interface Person {
   avatar?: string | null
 }
 
+/** Someone to share with: a contact with no Tasks account has no userId. */
+export type Suggestion = Omit<Person, 'userId'> & { userId: string | null }
+
 export interface Task {
   id: string
   key: string

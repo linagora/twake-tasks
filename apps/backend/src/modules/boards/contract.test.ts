@@ -31,6 +31,7 @@ import {
   sectionNamesResponse,
   settingsResponse,
   sharingResponse,
+  suggestionsResponse,
   tasksResponse,
   template,
   templatesResponse,
@@ -229,7 +230,7 @@ describe('the API contract', () => {
     await api.as(carol).get('/boards')
     expect(
       contracted(
-        peopleResponse,
+        suggestionsResponse,
         await api
           .as(alice)
           .get(`${board}/sharing/people?q=${carol.userId.slice(0, 8)}`)

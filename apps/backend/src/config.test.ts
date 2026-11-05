@@ -93,6 +93,30 @@ describe('the space integration setting', () => {
   })
 })
 
+describe('the common contacts setting', () => {
+  it('is off by default', () => {
+    expect(loadConfig(required)).toMatchObject({ COMMON_CONTACTS: 'false' })
+  })
+
+  it('needs the contacts search and its secret when on', () => {
+    expect(() =>
+      loadConfig({
+        ...required,
+        COMMON_CONTACTS: 'true',
+        CONTACTS_SEARCH_URL: 'http://tcalendar-side-service:81'
+      })
+    ).toThrow(/CONTACTS_SEARCH_SECRET/)
+    expect(
+      loadConfig({
+        ...required,
+        COMMON_CONTACTS: 'true',
+        CONTACTS_SEARCH_URL: 'http://tcalendar-side-service:81',
+        CONTACTS_SEARCH_SECRET: 'secret'
+      })
+    ).toMatchObject({ COMMON_CONTACTS: 'true' })
+  })
+})
+
 describe('the search settings', () => {
   it('open search to no other audience and no other origin by default', () => {
     expect(loadConfig(required)).toMatchObject({

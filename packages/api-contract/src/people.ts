@@ -12,3 +12,11 @@ export const person = z.object({
 })
 
 export const peopleResponse = z.object({ people: z.array(person) })
+
+// A contact who has no Tasks account yet has no userId: they are invited by
+// email.
+export const suggestedPerson = person.extend({ userId: z.string().nullable() })
+
+export const suggestionsResponse = z.object({
+  people: z.array(suggestedPerson)
+})

@@ -419,7 +419,7 @@ export function httpBoardsApi(
       (
         await parsed(
           'suggested people',
-          wire.peopleResponse,
+          wire.suggestionsResponse,
           'GET',
           route`/boards/${boardId}/sharing/people` +
             `?${new URLSearchParams({ q: query } satisfies Body<'peopleQuery'>).toString()}`
