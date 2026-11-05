@@ -178,6 +178,8 @@ export const boards = pgTable.withRLS(
     archivedAt: timestamptz('archived_at'),
     inbox: boolean().notNull().default(false),
     layout: boardLayout().notNull().default('board'),
+    // Offered to start new boards from, by whoever sees it.
+    boardTemplate: boolean('board_template').notNull().default(false),
     tenant: tenant()
   },
   table => [
