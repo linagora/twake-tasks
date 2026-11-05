@@ -63,6 +63,23 @@ const BOARD = {
 }
 
 describe('httpBoardsApi', () => {
+  it('gives the address of a new calendar feed, which holds its token', async () => {
+    const token = 'a'.repeat(64)
+    const send = backend(201, {
+      scope: 'assigned',
+      createdAt: '2026-11-04T10:00:00.000Z',
+      token
+    })
+
+    const feed = await httpBoardsApi(BASE, send).openCalendarFeed('assigned')
+
+    expect(feed).toEqual({
+      scope: 'assigned',
+      createdAt: '2026-11-04T10:00:00.000Z',
+      url: `${BASE}/api/calendar/${token}.ics`
+    })
+  })
+
   it('lists boards from /api/boards', async () => {
     const send = backend(200, { boards: [{ id: 'b1', name: 'Design' }] })
 

@@ -176,6 +176,40 @@ export function httpBoardsApi(
   return {
     settings: () =>
       parsed('settings', wire.settingsResponse, 'GET', '/settings'),
+    calendarFeed: async () =>
+      (
+        await parsed(
+          'calendar feed',
+          wire.calendarFeedResponse,
+          'GET',
+          '/calendar-feed'
+        )
+      ).feed,
+    openCalendarFeed: async scope => {
+      const { token, ...feed } = await parsed(
+        'calendar feed',
+        wire.newCalendarFeed,
+        'POST',
+        '/calendar-feed',
+        { scope } satisfies Body<'calendarFeedChanges'>
+      )
+      return {
+        ...feed,
+        url: new URL(route`/api/calendar/${token}.ics`, baseUrl).href
+      }
+    },
+    changeCalendarFeed: async scope => {
+      const { feed } = await parsed(
+        'calendar feed',
+        wire.calendarFeedResponse,
+        'PATCH',
+        '/calendar-feed',
+        { scope } satisfies Body<'calendarFeedChanges'>
+      )
+      if (!feed) throw new ApiError(404, 'not_found')
+      return feed
+    },
+    closeCalendarFeed: () => call('DELETE', '/calendar-feed'),
     notificationPreferences: () =>
       parsed(
         'notification settings',

@@ -211,7 +211,7 @@ export const assignedTo = (tx: Tx, userId: string) =>
 // A task is someone's when it is assigned to them, or when it sits unassigned
 // in one of their own projects. Unassigned tasks of a managed project belong
 // to nobody yet.
-const mine = (tx: Tx, userId: string) =>
+export const mine = (tx: Tx, userId: string) =>
   or(
     assignedTo(tx, userId),
     and(

@@ -32,6 +32,7 @@ import { useProjectName } from '@/ui/boards/BoardsScreen'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useProjects } from '@/ui/queries/boards'
 import { useDeleteTemplate, useTemplates } from '@/ui/queries/templates'
+import { CalendarFeedSettings } from '@/ui/settings/CalendarFeedSettings'
 import { NotificationSettings } from '@/ui/settings/NotificationSettings'
 import { TemplateDialog } from '@/ui/settings/TemplateDialog'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -47,6 +48,7 @@ export function SettingsScreen(): ReactElement {
         heading
       />
       <NotificationSettings />
+      <CalendarFeedSettings />
       <TemplateSettings />
     </main>
   )

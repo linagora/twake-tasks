@@ -690,6 +690,34 @@
       "never": "Never"
     }
   },
+  "calendarFeed": {
+    "title": "Calendar feed",
+    "hint": "See the due dates of your open tasks in Twake Calendar, Outlook, Thunderbird or your phone. Calendars refresh it about every hour.",
+    "subscribe": "Add to a calendar",
+    "close": "Close",
+    "loadFailed": "Couldn’t load your calendar feed.",
+    "failed": "Your calendar link could not be changed.",
+    "scope": "What to include",
+    "scopes": {
+      "assigned": "Tasks assigned to me",
+      "mine": "Also unassigned tasks of my projects"
+    },
+    "link": "Calendar link",
+    "privacy": "Anyone with the link can see the titles and dates of these tasks.",
+    "create": "Create link",
+    "active": "Active since %{date}. The link is shown once, when it is made: reset it to get a new one.",
+    "shownOnce": "Copy it now, it is shown only once. Anyone with the link can see the titles and dates of these tasks.",
+    "copy": "Copy link",
+    "copied": "Link copied",
+    "copyFailed": "The link could not be copied. Select it and copy it by hand.",
+    "openInApp": "Open in my calendar app",
+    "reset": "Reset link",
+    "resetTitle": "Reset the calendar link?",
+    "resetHint": "Calendars that use the current link stop updating. Add the new link to them again.",
+    "turnOff": "Turn off",
+    "turnOffTitle": "Turn off the calendar feed?",
+    "turnOffHint": "Calendars that use the link stop updating, and the link stops working."
+  },
   "unsubscribe": {
     "all": "all notification emails",
     "about": "emails about “%{kind}”",

@@ -48,5 +48,6 @@ export const keys = {
   unreadByProject: () => ['unreadByProject'] as const,
   settings: () => ['settings'] as const,
   notificationPreferences: () => ['notificationPreferences'] as const,
+  calendarFeed: () => ['calendarFeed'] as const,
   emojis: (lang: string) => ['emojis', lang] as const
 }

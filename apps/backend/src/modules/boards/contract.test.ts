@@ -2,6 +2,7 @@ import {
   agendaResponse,
   boardResponse,
   boardsResponse,
+  calendarFeedResponse,
   commentEditsResponse,
   commentsResponse,
   createdFilterResponse,
@@ -15,6 +16,7 @@ import {
   keyPrefixResponse,
   label,
   labelNamesResponse,
+  newCalendarFeed,
   notificationPreferences,
   notificationsResponse,
   peopleResponse,
@@ -66,7 +68,10 @@ function getRoutes(tree: string) {
 }
 
 // Server-sent events, not JSON.
-const NOT_JSON = new Set(['/api/boards/:boardId/events'])
+const NOT_JSON = new Set([
+  '/api/boards/:boardId/events',
+  '/api/calendar/:token.ics'
+])
 
 beforeAll(async () => {
   api = await startApp()
@@ -349,6 +354,15 @@ describe('the API contract', () => {
       notificationPreferences,
       await api.as(alice).get('/settings/notifications')
     )
+    contracted(
+      newCalendarFeed,
+      await api.as(alice).post('/calendar-feed', { scope: 'assigned' })
+    )
+    contracted(
+      calendarFeedResponse,
+      await api.as(alice).patch('/calendar-feed', { scope: 'mine' })
+    )
+    contracted(calendarFeedResponse, await api.as(alice).get('/calendar-feed'))
   })
 
   // Runs last: it checks what the tests above parsed.

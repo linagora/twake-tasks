@@ -1,4 +1,5 @@
 export * from './boards.ts'
+export * from './calendarFeed.ts'
 export * from './comments.ts'
 export * from './errors.ts'
 export * from './filters.ts'

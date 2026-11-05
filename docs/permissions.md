@@ -7,6 +7,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 ## Anyone, signed in or not
 
 - `POST /api/auth/backchannel-logout`
+- `GET /api/calendar/:token.ics`
 - `POST /api/settings/notifications/unsubscribe`
 
 ## Any signed-in person, on their own data
@@ -14,6 +15,10 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `GET /api/agenda`
 - `GET /api/boards`
 - `POST /api/boards`
+- `DELETE /api/calendar-feed`
+- `GET /api/calendar-feed`
+- `PATCH /api/calendar-feed`
+- `POST /api/calendar-feed`
 - `GET /api/filters`
 - `POST /api/filters`
 - `DELETE /api/filters/:filterId`

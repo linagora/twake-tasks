@@ -1,5 +1,7 @@
 import {
   agendaQuery,
+  calendarFeedChanges,
+  calendarFeedParams,
   filterChanges,
   filterParams,
   newFilter,
@@ -18,12 +20,16 @@ import {
 import type { Identity, RequireIdentity } from '../auth/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import { under, type Refusal } from '../kernel/index.ts'
+import { createCalendarFeeds } from './calendarFeeds.ts'
 import { createFilterStore } from './filters.ts'
 import { createViewStore } from './store.ts'
 
 type ViewRoute = DeclaredRoute<Identity, Refusal | 'invalid_request'>
 
 const self = { on: 'self' } as const
+
+// Calendars poll a feed every 15 minutes or more seldom.
+const FEED_FETCHES_PER_HOUR = 20
 
 export function registerViews(
   app: HttpServer,
@@ -32,11 +38,55 @@ export function registerViews(
     requireIdentity: RequireIdentity
     searchAllowedOrigins: readonly string[]
     searchMinLength: number
+    appUrl: string
   }
-): ViewRoute[] {
+): (ViewRoute | DeclaredRoute<null, 'not_found'>)[] {
   const store = createViewStore(deps.db)
   const filterStore = createFilterStore(deps.db)
+  const feeds = createCalendarFeeds(deps.db, deps.appUrl)
   const routes: ViewRoute[] = [
+    defineRoute({
+      method: 'GET',
+      url: '/calendar-feed',
+      access: self,
+      handler: async ({ identity }) => ({
+        ok: true,
+        value: { feed: await feeds.feedOf(identity) }
+      })
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/calendar-feed',
+      access: self,
+      body: calendarFeedChanges,
+      status: 201,
+      handler: async ({ identity, body }) => ({
+        ok: true,
+        value: await feeds.open(identity, body.scope)
+      })
+    }),
+    defineRoute({
+      method: 'PATCH',
+      url: '/calendar-feed',
+      access: self,
+      body: calendarFeedChanges,
+      handler: async ({ identity, body }) => {
+        const feed = await feeds.change(identity, body.scope)
+        return feed
+          ? { ok: true, value: { feed } }
+          : { ok: false, error: 'not_found' }
+      }
+    }),
+    defineRoute({
+      method: 'DELETE',
+      url: '/calendar-feed',
+      access: self,
+      status: 204,
+      handler: async ({ identity }) => {
+        await feeds.close(identity)
+        return { ok: true, value: undefined }
+      }
+    }),
     defineRoute({
       method: 'GET',
       url: '/filters',
@@ -161,5 +211,49 @@ export function registerViews(
     },
     routes
   )
-  return routes
+  const open: DeclaredRoute<null, 'not_found'>[] = [
+    defineRoute({
+      method: 'GET',
+      url: '/calendar/:token.ics',
+      // Calendars subscribe without a session: the token stands for it.
+      access: { on: 'public' },
+      params: calendarFeedParams,
+      config: {
+        rateLimit: {
+          max: FEED_FETCHES_PER_HOUR,
+          timeWindow: 60 * 60 * 1000,
+          keyGenerator: request =>
+            `calendar-feed:${(request.params as { token: string }).token}`
+        }
+      },
+      // The token is the link's only secret: whoever reads the logs must not
+      // be able to subscribe with it.
+      logSerializers: {
+        req: (request: FastifyRequest) => ({
+          method: request.method,
+          url: request.routeOptions.url,
+          remoteAddress: request.ip
+        })
+      },
+      handler: async ({ params, http: { reply } }) => {
+        const calendar = await feeds.calendar(params.token)
+        if (calendar === null) return { ok: false, error: 'not_found' }
+        await reply
+          .header('content-type', 'text/calendar; charset=utf-8')
+          .header('cache-control', 'no-store')
+          .send(calendar)
+        return { ok: true, value: undefined }
+      }
+    })
+  ]
+  registerRoutes(
+    app,
+    {
+      requireIdentity: deps.requireIdentity,
+      identify: () => null,
+      refusalStatus: { not_found: 404 }
+    },
+    open
+  )
+  return [...routes, ...open]
 }

@@ -179,6 +179,7 @@ export async function startApp(
     searchAllowedOrigins?: string[]
     limits?: Parameters<typeof buildApp>[0]['limits']
     metrics?: Metrics
+    logger?: pino.Logger
   } = {}
 ) {
   const { sql, db } = createDb(inject('databaseUrl'))
@@ -191,7 +192,7 @@ export async function startApp(
     pino({ level: 'silent' })
   )
   const app = await buildApp({
-    logger: pino({ level: 'silent' }),
+    logger: options.logger ?? pino({ level: 'silent' }),
     db,
     boardChanges,
     provider: {
@@ -206,6 +207,7 @@ export async function startApp(
       ),
     searchAllowedOrigins: options.searchAllowedOrigins ?? [],
     searchMinLength: 2,
+    appUrl: 'https://tasks.example.com',
     isReady: () => Promise.resolve(true),
     limits: options.limits,
     metrics: options.metrics

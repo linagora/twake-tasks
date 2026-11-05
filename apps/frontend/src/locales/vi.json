@@ -690,6 +690,34 @@
       "never": "Không bao giờ"
     }
   },
+  "calendarFeed": {
+    "title": "Nguồn lịch",
+    "hint": "Xem hạn của các công việc đang mở trong Twake Calendar, Outlook, Thunderbird hoặc trên điện thoại. Lịch cập nhật nguồn này khoảng mỗi giờ.",
+    "subscribe": "Thêm vào lịch",
+    "close": "Đóng",
+    "loadFailed": "Không thể tải nguồn lịch của bạn.",
+    "failed": "Không thể thay đổi liên kết lịch của bạn.",
+    "scope": "Nội dung",
+    "scopes": {
+      "assigned": "Công việc được giao cho tôi",
+      "mine": "Cả công việc chưa giao trong các dự án của tôi"
+    },
+    "link": "Liên kết lịch",
+    "privacy": "Bất kỳ ai có liên kết đều xem được tiêu đề và ngày của các công việc này.",
+    "create": "Tạo liên kết",
+    "active": "Hoạt động từ %{date}. Liên kết chỉ hiện một lần, khi được tạo: đặt lại để có liên kết mới.",
+    "shownOnce": "Hãy sao chép ngay, liên kết chỉ hiện một lần. Bất kỳ ai có liên kết đều xem được tiêu đề và ngày của các công việc này.",
+    "copy": "Sao chép liên kết",
+    "copied": "Đã sao chép liên kết",
+    "copyFailed": "Không thể sao chép liên kết. Hãy chọn và sao chép thủ công.",
+    "openInApp": "Mở trong ứng dụng lịch",
+    "reset": "Đặt lại liên kết",
+    "resetTitle": "Đặt lại liên kết lịch?",
+    "resetHint": "Các lịch dùng liên kết hiện tại sẽ ngừng cập nhật. Hãy thêm lại liên kết mới vào chúng.",
+    "turnOff": "Tắt",
+    "turnOffTitle": "Tắt nguồn lịch?",
+    "turnOffHint": "Các lịch dùng liên kết sẽ ngừng cập nhật, và liên kết sẽ ngừng hoạt động."
+  },
   "unsubscribe": {
     "all": "mọi email thông báo",
     "about": "email về “%{kind}”",

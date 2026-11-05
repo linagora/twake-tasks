@@ -36,6 +36,7 @@ export async function buildApp(deps: {
   authenticate: Authenticate
   searchAllowedOrigins: readonly string[]
   searchMinLength: number
+  appUrl: string
   isReady: () => Promise<boolean>
   proxyHops?: number | undefined
   redis?: Redis | undefined
@@ -103,7 +104,8 @@ export async function buildApp(deps: {
         db: deps.db,
         requireIdentity,
         searchAllowedOrigins: deps.searchAllowedOrigins,
-        searchMinLength: deps.searchMinLength
+        searchMinLength: deps.searchMinLength,
+        appUrl: deps.appUrl
       })
       registerNotifications(api, { db: deps.db, requireIdentity })
       registerSettings(api, { db: deps.db, requireIdentity })

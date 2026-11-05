@@ -690,6 +690,34 @@
       "never": "Mai"
     }
   },
+  "calendarFeed": {
+    "title": "Feed del calendario",
+    "hint": "Vedi le scadenze delle tue attività aperte in Twake Calendar, Outlook, Thunderbird o sul telefono. I calendari lo aggiornano circa ogni ora.",
+    "subscribe": "Aggiungi a un calendario",
+    "close": "Chiudi",
+    "loadFailed": "Impossibile caricare il feed del calendario.",
+    "failed": "Impossibile modificare il link del calendario.",
+    "scope": "Cosa includere",
+    "scopes": {
+      "assigned": "Le attività assegnate a me",
+      "mine": "Anche le attività non assegnate dei miei progetti"
+    },
+    "link": "Link del calendario",
+    "privacy": "Chiunque abbia il link può vedere i titoli e le date di queste attività.",
+    "create": "Crea link",
+    "active": "Attivo dal %{date}. Il link viene mostrato una sola volta, alla creazione: reimpostalo per averne uno nuovo.",
+    "shownOnce": "Copialo ora, viene mostrato una sola volta. Chiunque abbia il link può vedere i titoli e le date di queste attività.",
+    "copy": "Copia link",
+    "copied": "Link copiato",
+    "copyFailed": "Impossibile copiare il link. Selezionalo e copialo a mano.",
+    "openInApp": "Apri nella mia app di calendario",
+    "reset": "Reimposta link",
+    "resetTitle": "Reimpostare il link del calendario?",
+    "resetHint": "I calendari che usano il link attuale smettono di aggiornarsi. Aggiungi di nuovo il nuovo link.",
+    "turnOff": "Disattiva",
+    "turnOffTitle": "Disattivare il feed del calendario?",
+    "turnOffHint": "I calendari che usano il link smettono di aggiornarsi, e il link smette di funzionare."
+  },
   "unsubscribe": {
     "all": "tutte le email di notifica",
     "about": "le email su «%{kind}»",

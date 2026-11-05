@@ -1,4 +1,4 @@
-import { eq, inArray, or, sql } from 'drizzle-orm'
+import { and, eq, inArray, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { PlatformEvent } from '../../events/envelope.ts'
 import {
@@ -24,7 +24,11 @@ import { commentReactions } from '../collaboration/index.ts'
 import { inviteEmails } from '../projects/index.ts'
 import { notificationPreferences, userSettings } from '../settings/index.ts'
 import { spaces } from '../spaces/index.ts'
-import { eraseSavedFilters, savedFilters } from '../views/index.ts'
+import {
+  calendarFeeds,
+  eraseSavedFilters,
+  savedFilters
+} from '../views/index.ts'
 
 // An unreadable time must not drop a deletion, which then counts from now.
 const timestamp = z.iso
@@ -115,6 +119,17 @@ async function forget(
         inArray(inviteEmails.email, emails)
       )
     )
+  await tx
+    .delete(calendarFeeds)
+    .where(
+      or(
+        userId ? eq(calendarFeeds.userId, userId) : undefined,
+        and(
+          inArray(sql`lower(${calendarFeeds.email})`, emails),
+          sql`${calendarFeeds.organizationId} is not distinct from ${organizationId}`
+        )
+      )
+    )
   if (userId) {
     // Before forgetPerson ends the memberships that show B2C comments.
     await tx.delete(commentReactions).where(eq(commentReactions.userId, userId))
@@ -187,6 +202,9 @@ const onOrganizationDeleted: Handler<PlatformEvent> = async (event, tx) => {
     .for('update')
   await eraseOrganization(tx)
   await eraseSavedFilters(tx)
+  await tx
+    .delete(calendarFeeds)
+    .where(eq(calendarFeeds.organizationId, organizationId))
   await tx
     .delete(jobs)
     .where(sql`${jobs.payload}->>'organizationId' = ${organizationId}`)

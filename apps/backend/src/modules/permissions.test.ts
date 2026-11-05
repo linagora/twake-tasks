@@ -118,7 +118,8 @@ function declaredRoutes(): Declared[] {
       db,
       requireIdentity,
       searchAllowedOrigins: [],
-      searchMinLength: 2
+      searchMinLength: 2,
+      appUrl: 'https://tasks.example.com'
     }),
     ...registerLive(scratch, {
       db,
@@ -518,6 +519,23 @@ const EXAMPLES: Record<string, Example> = {
     if (!row) throw new Error('no preferences')
     return { query: { token: row.token, kind: 'changes' } }
   },
+  'GET /calendar-feed': none,
+  'POST /calendar-feed': () => ({ body: { scope: 'assigned' } }),
+  'PATCH /calendar-feed': async (_fixture, me) => {
+    await api.as(me).post('/calendar-feed', { scope: 'assigned' })
+    return { body: { scope: 'mine' } }
+  },
+  'DELETE /calendar-feed': none,
+  'GET /calendar/:token.ics': async (_fixture, me) => ({
+    params: {
+      token: (
+        await created<{ token: string }>(
+          api.as(me).post('/calendar-feed', { scope: 'assigned' }),
+          'calendar feed'
+        )
+      ).token
+    }
+  }),
   'GET /boards/:boardId/events': none,
   // The tests' identity provider refuses every logout token.
   'POST /auth/backchannel-logout': () => ({

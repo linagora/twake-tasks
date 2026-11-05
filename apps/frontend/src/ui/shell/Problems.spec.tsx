@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -60,8 +60,8 @@ describe('problem pages', () => {
     ])
     renderWithProviders(<RouterProvider router={router} />, { reporting })
 
-    await screen.findByRole('alert')
-
-    expect(reporting.reportCrash).toHaveBeenCalledWith(error, null)
+    await waitFor(() => {
+      expect(reporting.reportCrash).toHaveBeenCalledWith(error, null)
+    })
   })
 })
