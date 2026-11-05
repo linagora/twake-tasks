@@ -184,7 +184,16 @@ describe('the API contract', () => {
         description: '',
         priority: null,
         labelIds: [labelId],
-        assigneeIds: []
+        assigneeIds: [],
+        schedule: {
+          boardId,
+          rule: { kind: 'weekly', every: 1, weekdays: [1] },
+          time: '09:00',
+          zone: 'Europe/Paris',
+          workingDays: false,
+          endsOn: null,
+          paused: false
+        }
       })
     )
     contracted(

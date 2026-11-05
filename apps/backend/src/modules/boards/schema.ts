@@ -1,3 +1,4 @@
+import type { ScheduleRule } from '@twake-tasks/api-contract'
 import { sql, type SQL } from 'drizzle-orm'
 import {
   bigint,
@@ -292,6 +293,8 @@ export const tasks = pgTable.withRLS(
     templateId: uuid('template_id').references(() => taskTemplates.id, {
       onDelete: 'set null'
     }),
+    // The run of the template's schedule that made the task.
+    scheduledFor: timestamptz('scheduled_for'),
     position: sortKey().notNull(),
     createdBy: uuid('created_by').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
@@ -305,7 +308,11 @@ export const tasks = pgTable.withRLS(
     unique().on(table.tenant, table.id),
     unique().on(table.boardId, table.id),
     unique().on(table.boardId, table.number),
-    index().on(table.templateId),
+    // However many replicas run the schedule, each run makes one task.
+    uniqueIndex('tasks_one_per_scheduled_run').on(
+      table.templateId,
+      table.scheduledFor
+    ),
     // Tasks without a section share one order on the board, and sub-tasks one
     // order under their parent.
     unique()
@@ -489,6 +496,55 @@ export const taskTemplateLabels = pgTable.withRLS(
       columns: [table.tenant, table.labelId],
       foreignColumns: [labels.tenant, labels.id]
     }),
+    tenantPolicy(table.organizationId, visibleTemplate(table.templateId))
+  ]
+)
+
+export const schedulePause = pgEnum('schedule_pause', ['author', 'board'])
+
+// When a template makes its task by itself. `next_run_at` is the run its job
+// waits for, null while paused or once ended.
+export const templateSchedules = pgTable.withRLS(
+  'template_schedules',
+  {
+    templateId: uuid('template_id')
+      .primaryKey()
+      .references(() => taskTemplates.id, { onDelete: 'cascade' }),
+    organizationId: organizationId(),
+    boardId: uuid('board_id')
+      .notNull()
+      .references(() => boards.id, { onDelete: 'cascade' }),
+    rule: jsonb().$type<ScheduleRule>().notNull(),
+    time: time({ precision: 0 }).notNull(),
+    zone: text().notNull(),
+    workingDays: boolean('working_days').notNull(),
+    // Where "every N" periods count from: the day the rule was last set.
+    startsOn: date('starts_on', { mode: 'string' }).notNull(),
+    endsOn: date('ends_on', { mode: 'string' }),
+    paused: boolean().notNull().default(false),
+    // Why the job paused it, null when someone did.
+    pausedBy: schedulePause('paused_by'),
+    nextRunAt: timestamptz('next_run_at'),
+    tenant: tenant()
+  },
+  table => [
+    index().on(table.boardId),
+    foreignKey({
+      columns: [table.tenant, table.templateId],
+      foreignColumns: [taskTemplates.tenant, taskTemplates.id]
+    }),
+    foreignKey({
+      columns: [table.tenant, table.boardId],
+      foreignColumns: [boards.tenant, boards.id]
+    }),
+    check(
+      'template_schedules_paused_waits',
+      sql`not ${table.paused} or ${table.nextRunAt} is null`
+    ),
+    check(
+      'template_schedules_paused_by',
+      sql`${table.pausedBy} is null or ${table.paused}`
+    ),
     tenantPolicy(table.organizationId, visibleTemplate(table.templateId))
   ]
 )

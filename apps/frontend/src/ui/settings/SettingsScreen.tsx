@@ -37,6 +37,7 @@ import { useProjects } from '@/ui/queries/boards'
 import { useDeleteTemplate, useTemplates } from '@/ui/queries/templates'
 import { CalendarFeedSettings } from '@/ui/settings/CalendarFeedSettings'
 import { NotificationSettings } from '@/ui/settings/NotificationSettings'
+import { scheduleSummary } from '@/ui/settings/scheduleSummary'
 import { TemplateDialog } from '@/ui/settings/TemplateDialog'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
 
@@ -226,7 +227,7 @@ function TemplateItem({
   onEdit: () => void
   onDelete: () => void
 }): ReactElement {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const choose = (action: () => void) => () => {
     setAnchor(null)
@@ -254,6 +255,17 @@ function TemplateItem({
         )
       }
       facts={facts.length > 0 ? facts.join(' · ') : t('templates.titleOnly')}
+      schedule={
+        template.schedule && {
+          summary: scheduleSummary(t, lang, template.schedule),
+          stopped:
+            template.schedule.paused || template.schedule.pausedBy
+              ? t('templates.schedule.paused')
+              : template.schedule.nextRunAt === null
+                ? t('templates.schedule.ended')
+                : null
+        }
+      }
       menu={
         editable && (
           <>

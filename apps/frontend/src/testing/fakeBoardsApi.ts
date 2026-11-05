@@ -25,6 +25,8 @@ import type {
   Label,
   Person,
   ProjectSummary,
+  Schedule,
+  ScheduleSettings,
   Section,
   Suggestion,
   Task,
@@ -185,6 +187,22 @@ export function fakeBoardsApi(boards: Board[] = []) {
   const pastCompletions = new Map<string, DayCount[]>()
   const reminders = new Map<string, Reminder[]>()
   let templates: Template[] = []
+  // The next run is tomorrow at the schedule's time, as UTC.
+  const scheduleOf = (
+    fields: ScheduleSettings | null | undefined,
+    current: Schedule | null
+  ): Schedule | null =>
+    fields === undefined
+      ? current
+      : fields && {
+          ...structuredClone(fields),
+          pausedBy: null,
+          nextRunAt: fields.paused
+            ? null
+            : new Date(
+                `${new Date(Date.now() + 864e5).toISOString().slice(0, 10)}T${fields.time}:00Z`
+              ).toISOString()
+        }
   const templateOf = ({
     id,
     projectId
@@ -969,7 +987,12 @@ export function fakeBoardsApi(boards: Board[] = []) {
     ),
     createTemplate: vi.fn<BoardsApi['createTemplate']>((projectId, fields) =>
       Promise.resolve().then(() => {
-        const template = { id: nextId(), projectId, ...structuredClone(fields) }
+        const template = {
+          id: nextId(),
+          projectId,
+          ...structuredClone(fields),
+          schedule: scheduleOf(fields.schedule, null)
+        }
         templates.push(template)
         return structuredClone(template)
       })
@@ -977,7 +1000,9 @@ export function fakeBoardsApi(boards: Board[] = []) {
     editTemplate: vi.fn<BoardsApi['editTemplate']>((owner, fields) =>
       Promise.resolve().then(() => {
         const template = templateOf(owner)
-        Object.assign(template, structuredClone(fields))
+        Object.assign(template, structuredClone(fields), {
+          schedule: scheduleOf(fields.schedule, template.schedule)
+        })
         for (const board of store.values()) {
           for (const task of board.tasks) {
             if (task.template?.id === template.id) {

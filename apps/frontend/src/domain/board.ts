@@ -107,6 +107,35 @@ export interface Template {
   priority: Priority | null
   labelIds: string[]
   assigneeIds: string[]
+  schedule: Schedule | null
+}
+
+/** Weekdays run from 1, Monday, to 7, Sunday. */
+export type ScheduleRule =
+  | { kind: 'daily'; every: number }
+  | { kind: 'weekly'; every: number; weekdays: number[] }
+  | { kind: 'monthly'; every: number; day: number | 'last' }
+  | { kind: 'yearly'; month: number; day: number }
+
+/** When a template makes its task by itself, on `boardId`. */
+export interface ScheduleSettings {
+  boardId: string
+  rule: ScheduleRule
+  /** HH:mm, in `zone`. */
+  time: string
+  zone: string
+  workingDays: boolean
+  endsOn: string | null
+  paused: boolean
+}
+
+/**
+ * `pausedBy` is why it stopped by itself: its author can no longer add
+ * tasks, or its board is gone. Without a next run, an unpaused one ended.
+ */
+export interface Schedule extends ScheduleSettings {
+  pausedBy: 'author' | 'board' | null
+  nextRunAt: string | null
 }
 
 export interface Duration {

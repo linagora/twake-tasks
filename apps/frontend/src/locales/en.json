@@ -58,7 +58,51 @@
     "delete": "Delete",
     "deleteTitle": "Delete %{name}?",
     "deleteHint": "Tasks already made from it stay as they are.",
-    "deleteFailed": "Couldn’t delete the template."
+    "deleteFailed": "Couldn’t delete the template.",
+    "schedule": {
+      "title": "Create on a schedule",
+      "hint": "Each run adds the task by itself, in the board’s first open section.",
+      "repeat": "Repeat",
+      "kinds": {
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "yearly": "Yearly"
+      },
+      "every": "Every",
+      "units": {
+        "daily": "day |||| days",
+        "weekly": "week |||| weeks",
+        "monthly": "month |||| months"
+      },
+      "weekdays": "On",
+      "weekdaysRequired": "Pick at least one day.",
+      "noBoard": "The project has no open board.",
+      "monthDay": "Day of the month",
+      "lastDay": "Last day",
+      "month": "Month",
+      "day": "Day",
+      "time": "At",
+      "board": "On the board",
+      "workingDays": "Working days only, Monday to Friday",
+      "endsOn": "Until",
+      "endsOnHint": "Leave empty to keep going.",
+      "paused": "Paused",
+      "pausedByAuthor": "Paused: its author can no longer add tasks to the project. Save to resume it in your name.",
+      "pausedByBoard": "Paused: its board was archived or left the project. Pick a board and save to resume it.",
+      "next": "Next task: %{date}",
+      "ended": "Ended",
+      "summary": {
+        "daily": "Every day at %{time} |||| Every %{smart_count} days at %{time}",
+        "workingDaily": "Every working day at %{time} |||| Every %{smart_count} working days at %{time}",
+        "weekly": "Every week on %{days} at %{time} |||| Every %{smart_count} weeks on %{days} at %{time}",
+        "monthly": "On day %{day} of every month at %{time} |||| On day %{day} every %{smart_count} months at %{time}",
+        "monthlyLast": "On the last day of every month at %{time} |||| On the last day every %{smart_count} months at %{time}",
+        "yearly": "Every year on %{date} at %{time}",
+        "workingBefore": "%{summary}, or the working day before",
+        "until": "%{summary}, until %{date}"
+      }
+    }
   },
   "app": {
     "name": "Twake Project",

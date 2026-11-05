@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  Divider,
   IconButton,
   Stack,
   TextField,
@@ -33,6 +34,8 @@ import { useI18n } from '@/ui/i18n/useI18n'
 import { useBoards } from '@/ui/queries/boards'
 import { keys } from '@/ui/queries/keys'
 import { useSaveTemplate } from '@/ui/queries/templates'
+import { ScheduleFields } from '@/ui/settings/ScheduleFields'
+import { useScheduleDraft } from '@/ui/settings/useScheduleDraft'
 
 const PRIORITIES: Priority[] = [1, 2, 3, 4]
 
@@ -86,6 +89,11 @@ export function TemplateDialog({
     anchor: HTMLElement
   } | null>(null)
   const [asking, setAsking] = useState(false)
+  const scheduling = useScheduleDraft(
+    template?.schedule ?? null,
+    projectId,
+    save.reset
+  )
   const board = useProjectBoard(projectId)
   const members = board?.members ?? []
   const labels = board?.labels ?? []
@@ -96,7 +104,8 @@ export function TemplateDialog({
     description !== (template?.description ?? '') ||
     priority !== (template?.priority ?? null) ||
     labelIds.join() !== (template?.labelIds ?? []).join() ||
-    assigneeIds.join() !== (template?.assigneeIds ?? []).join()
+    assigneeIds.join() !== (template?.assigneeIds ?? []).join() ||
+    scheduling.changed
   const refused =
     save.error instanceof ApiError &&
     (save.error.code === 'invalid_label' ||
@@ -114,6 +123,8 @@ export function TemplateDialog({
       return
     }
     if (description.length > MAX_DESCRIPTION) return
+    const schedule = scheduling.take()
+    if (schedule === false) return
     save.mutate(
       {
         templateId: template?.id,
@@ -123,7 +134,8 @@ export function TemplateDialog({
           description,
           priority,
           labelIds,
-          assigneeIds
+          assigneeIds,
+          ...(schedule === undefined ? {} : { schedule })
         }
       },
       { onSuccess: onClose }
@@ -295,6 +307,8 @@ export function TemplateDialog({
             <Typography variant="caption" color="textSecondary">
               {t('templates.projectHint')}
             </Typography>
+            <Divider />
+            <ScheduleFields {...scheduling.fields} />
             {save.isError && (
               <Typography role="alert" variant="body2" color="error">
                 {t(refused ? 'templates.refused' : 'templates.saveFailed')}

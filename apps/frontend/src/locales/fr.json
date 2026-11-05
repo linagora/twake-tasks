@@ -58,7 +58,51 @@
     "delete": "Supprimer",
     "deleteTitle": "Supprimer %{name} ?",
     "deleteHint": "Les tâches déjà créées à partir de lui restent telles quelles.",
-    "deleteFailed": "Impossible de supprimer le modèle."
+    "deleteFailed": "Impossible de supprimer le modèle.",
+    "schedule": {
+      "title": "Création automatique",
+      "hint": "Chaque échéance ajoute la tâche toute seule, dans la première section ouverte du tableau.",
+      "repeat": "Répéter",
+      "kinds": {
+        "daily": "Chaque jour",
+        "weekly": "Chaque semaine",
+        "monthly": "Chaque mois",
+        "yearly": "Chaque année"
+      },
+      "every": "Tous les",
+      "units": {
+        "daily": "jour |||| jours",
+        "weekly": "semaine |||| semaines",
+        "monthly": "mois |||| mois"
+      },
+      "weekdays": "Les",
+      "weekdaysRequired": "Choisissez au moins un jour.",
+      "noBoard": "Le projet n’a aucun tableau ouvert.",
+      "monthDay": "Jour du mois",
+      "lastDay": "Dernier jour",
+      "month": "Mois",
+      "day": "Jour",
+      "time": "À",
+      "board": "Sur le tableau",
+      "workingDays": "Jours ouvrés uniquement, du lundi au vendredi",
+      "endsOn": "Jusqu’au",
+      "endsOnHint": "Laissez vide pour continuer sans fin.",
+      "paused": "En pause",
+      "pausedByAuthor": "En pause : son auteur ne peut plus ajouter de tâches au projet. Enregistrez pour la reprendre en votre nom.",
+      "pausedByBoard": "En pause : son tableau a été archivé ou a quitté le projet. Choisissez un tableau et enregistrez pour la reprendre.",
+      "next": "Prochaine tâche : %{date}",
+      "ended": "Terminée",
+      "summary": {
+        "daily": "Tous les jours à %{time} |||| Tous les %{smart_count} jours à %{time}",
+        "workingDaily": "Tous les jours ouvrés à %{time} |||| Tous les %{smart_count} jours ouvrés à %{time}",
+        "weekly": "Chaque semaine le %{days} à %{time} |||| Toutes les %{smart_count} semaines le %{days} à %{time}",
+        "monthly": "Le %{day} de chaque mois à %{time} |||| Le %{day} tous les %{smart_count} mois à %{time}",
+        "monthlyLast": "Le dernier jour de chaque mois à %{time} |||| Le dernier jour tous les %{smart_count} mois à %{time}",
+        "yearly": "Chaque année le %{date} à %{time}",
+        "workingBefore": "%{summary}, ou le jour ouvré d’avant",
+        "until": "%{summary}, jusqu’au %{date}"
+      }
+    }
   },
   "app": {
     "name": "Twake Project",

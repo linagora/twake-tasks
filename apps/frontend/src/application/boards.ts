@@ -8,6 +8,7 @@ import type {
   Priority,
   ProjectSummary,
   Role,
+  ScheduleSettings,
   Section,
   SectionCategory,
   Suggestion,
@@ -15,7 +16,10 @@ import type {
   Template
 } from '@/domain/board'
 
-export type TemplateFields = Omit<Template, 'id' | 'projectId'>
+/** Without `schedule`, an edit keeps the template's schedule as it is. */
+export type TemplateFields = Omit<Template, 'id' | 'projectId' | 'schedule'> & {
+  schedule?: ScheduleSettings | null
+}
 
 /**
  * The task and its sub-tasks lose their assignees who are not on the target

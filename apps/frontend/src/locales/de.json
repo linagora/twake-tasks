@@ -58,7 +58,51 @@
     "delete": "Löschen",
     "deleteTitle": "%{name} löschen?",
     "deleteHint": "Bereits daraus erstellte Aufgaben bleiben, wie sie sind.",
-    "deleteFailed": "Die Vorlage konnte nicht gelöscht werden."
+    "deleteFailed": "Die Vorlage konnte nicht gelöscht werden.",
+    "schedule": {
+      "title": "Automatisch erstellen",
+      "hint": "Jeder Termin legt die Aufgabe von selbst an, im ersten offenen Abschnitt des Boards.",
+      "repeat": "Wiederholen",
+      "kinds": {
+        "daily": "Täglich",
+        "weekly": "Wöchentlich",
+        "monthly": "Monatlich",
+        "yearly": "Jährlich"
+      },
+      "every": "Alle",
+      "units": {
+        "daily": "Tag |||| Tage",
+        "weekly": "Woche |||| Wochen",
+        "monthly": "Monat |||| Monate"
+      },
+      "weekdays": "Am",
+      "weekdaysRequired": "Wählen Sie mindestens einen Tag.",
+      "noBoard": "Das Projekt hat kein offenes Board.",
+      "monthDay": "Tag des Monats",
+      "lastDay": "Letzter Tag",
+      "month": "Monat",
+      "day": "Tag",
+      "time": "Um",
+      "board": "Auf dem Board",
+      "workingDays": "Nur Werktage, Montag bis Freitag",
+      "endsOn": "Bis",
+      "endsOnHint": "Leer lassen, um ohne Ende fortzufahren.",
+      "paused": "Pausiert",
+      "pausedByAuthor": "Pausiert: Die Person, die sie angelegt hat, kann dem Projekt keine Aufgaben mehr hinzufügen. Speichern Sie, um sie in Ihrem Namen fortzusetzen.",
+      "pausedByBoard": "Pausiert: Ihr Board wurde archiviert oder hat das Projekt verlassen. Wählen Sie ein Board und speichern Sie, um sie fortzusetzen.",
+      "next": "Nächste Aufgabe: %{date}",
+      "ended": "Beendet",
+      "summary": {
+        "daily": "Jeden Tag um %{time} |||| Alle %{smart_count} Tage um %{time}",
+        "workingDaily": "Jeden Werktag um %{time} |||| Alle %{smart_count} Werktage um %{time}",
+        "weekly": "Jede Woche am %{days} um %{time} |||| Alle %{smart_count} Wochen am %{days} um %{time}",
+        "monthly": "Am %{day}. jedes Monats um %{time} |||| Am %{day}. alle %{smart_count} Monate um %{time}",
+        "monthlyLast": "Am letzten Tag jedes Monats um %{time} |||| Am letzten Tag alle %{smart_count} Monate um %{time}",
+        "yearly": "Jedes Jahr am %{date} um %{time}",
+        "workingBefore": "%{summary}, oder am Werktag davor",
+        "until": "%{summary}, bis %{date}"
+      }
+    }
   },
   "app": {
     "name": "Twake Project",

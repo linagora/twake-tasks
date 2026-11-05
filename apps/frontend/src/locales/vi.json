@@ -58,7 +58,51 @@
     "delete": "Xóa",
     "deleteTitle": "Xóa %{name}?",
     "deleteHint": "Các công việc đã tạo từ mẫu này vẫn giữ nguyên.",
-    "deleteFailed": "Không thể xóa mẫu."
+    "deleteFailed": "Không thể xóa mẫu.",
+    "schedule": {
+      "title": "Tự động tạo theo lịch",
+      "hint": "Mỗi lần chạy tự thêm công việc vào mục mở đầu tiên của bảng.",
+      "repeat": "Lặp lại",
+      "kinds": {
+        "daily": "Hằng ngày",
+        "weekly": "Hằng tuần",
+        "monthly": "Hằng tháng",
+        "yearly": "Hằng năm"
+      },
+      "every": "Mỗi",
+      "units": {
+        "daily": "ngày",
+        "weekly": "tuần",
+        "monthly": "tháng"
+      },
+      "weekdays": "Vào",
+      "weekdaysRequired": "Hãy chọn ít nhất một ngày.",
+      "noBoard": "Dự án không có bảng nào đang mở.",
+      "monthDay": "Ngày trong tháng",
+      "lastDay": "Ngày cuối",
+      "month": "Tháng",
+      "day": "Ngày",
+      "time": "Lúc",
+      "board": "Trên bảng",
+      "workingDays": "Chỉ ngày làm việc, từ thứ Hai đến thứ Sáu",
+      "endsOn": "Đến ngày",
+      "endsOnHint": "Để trống để tiếp tục mãi.",
+      "paused": "Tạm dừng",
+      "pausedByAuthor": "Tạm dừng: người tạo không còn thêm được công việc vào dự án. Lưu để tiếp tục dưới tên bạn.",
+      "pausedByBoard": "Tạm dừng: bảng của nó đã được lưu trữ hoặc rời khỏi dự án. Chọn một bảng rồi lưu để tiếp tục.",
+      "next": "Công việc tiếp theo: %{date}",
+      "ended": "Đã kết thúc",
+      "summary": {
+        "daily": "Mỗi %{smart_count} ngày lúc %{time}",
+        "workingDaily": "Mỗi %{smart_count} ngày làm việc lúc %{time}",
+        "weekly": "Mỗi %{smart_count} tuần vào %{days} lúc %{time}",
+        "monthly": "Ngày %{day} mỗi %{smart_count} tháng lúc %{time}",
+        "monthlyLast": "Ngày cuối mỗi %{smart_count} tháng lúc %{time}",
+        "yearly": "Hằng năm vào %{date} lúc %{time}",
+        "workingBefore": "%{summary}, hoặc ngày làm việc trước đó",
+        "until": "%{summary}, đến %{date}"
+      }
+    }
   },
   "app": {
     "name": "Twake Project",
