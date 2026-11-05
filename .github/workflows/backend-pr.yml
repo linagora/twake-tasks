@@ -34,11 +34,7 @@ jobs:
           fi
           files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename')
           pattern='^(apps/backend/|packages/api-contract/|package\.json$|package-lock\.json$|tsconfig\.base\.json$|eslint\.config\.js$|knip\.json$|\.prettierrc$|\.nvmrc$|\.dockerignore$|\.github/workflows/(backend|reusable)-[^/]*\.yml$)'
-          if grep -qE "$pattern" <<< "$files"; then
-            echo backend=true >> "$GITHUB_OUTPUT"
-          else
-            echo backend=false >> "$GITHUB_OUTPUT"
-          fi
+          echo "backend=$(grep -qE "$pattern" <<< "$files" && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   check:
     needs: changes
