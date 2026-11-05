@@ -690,6 +690,34 @@
       "never": "Nie"
     }
   },
+  "calendarFeed": {
+    "title": "Kalender-Feed",
+    "hint": "Sehen Sie die Fälligkeiten Ihrer offenen Aufgaben in Twake Calendar, Outlook, Thunderbird oder auf Ihrem Telefon. Kalender aktualisieren ihn etwa stündlich.",
+    "subscribe": "Zu einem Kalender hinzufügen",
+    "close": "Schließen",
+    "loadFailed": "Ihr Kalender-Feed konnte nicht geladen werden.",
+    "failed": "Ihr Kalenderlink konnte nicht geändert werden.",
+    "scope": "Inhalt",
+    "scopes": {
+      "assigned": "Mir zugewiesene Aufgaben",
+      "mine": "Auch nicht zugewiesene Aufgaben meiner Projekte"
+    },
+    "link": "Kalenderlink",
+    "privacy": "Jeder mit dem Link sieht die Titel und Termine dieser Aufgaben.",
+    "create": "Link erstellen",
+    "active": "Aktiv seit %{date}. Der Link wird nur einmal angezeigt, beim Erstellen: Setzen Sie ihn zurück, um einen neuen zu erhalten.",
+    "shownOnce": "Kopieren Sie ihn jetzt, er wird nur einmal angezeigt. Jeder mit dem Link sieht die Titel und Termine dieser Aufgaben.",
+    "copy": "Link kopieren",
+    "copied": "Link kopiert",
+    "copyFailed": "Der Link konnte nicht kopiert werden. Markieren und kopieren Sie ihn von Hand.",
+    "openInApp": "In meiner Kalender-App öffnen",
+    "reset": "Link zurücksetzen",
+    "resetTitle": "Kalenderlink zurücksetzen?",
+    "resetHint": "Kalender mit dem aktuellen Link werden nicht mehr aktualisiert. Fügen Sie ihnen den neuen Link erneut hinzu.",
+    "turnOff": "Ausschalten",
+    "turnOffTitle": "Kalender-Feed ausschalten?",
+    "turnOffHint": "Kalender mit dem Link werden nicht mehr aktualisiert, und der Link funktioniert nicht mehr."
+  },
   "unsubscribe": {
     "all": "alle Benachrichtigungs-E-Mails",
     "about": "E-Mails zu „%{kind}“",

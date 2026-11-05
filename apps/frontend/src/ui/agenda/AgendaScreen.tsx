@@ -44,6 +44,7 @@ import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
 import { useAgenda, type AgendaView } from '@/ui/queries/agenda'
 import { useFilters } from '@/ui/queries/filters'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { CalendarFeedDialog } from '@/ui/settings/CalendarFeedSettings'
 import { NotFoundScreen } from '@/ui/shell/Problems'
 import { agendaPreset, useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 import { useDocumentTitle } from '@/ui/useDocumentTitle'
@@ -344,7 +345,12 @@ export function AgendaScreen(
   const { view } = props
   const agenda = useAgenda(view)
   const title = 'title' in props ? props.title : t(`agenda.${props.view}`)
-  const actions = 'actions' in props ? props.actions : undefined
+  const actions =
+    'actions' in props ? (
+      props.actions
+    ) : view === 'mine' ? (
+      <CalendarFeedButton />
+    ) : undefined
   const form = 'form' in props ? props.form : undefined
   const body = 'body' in props ? props.body : undefined
   const origin: Origin =
@@ -400,6 +406,31 @@ export function AgendaScreen(
           ))}
       </main>
     </OriginContext>
+  )
+}
+
+function CalendarFeedButton(): ReactElement {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button
+        variant="secondary"
+        startIcon={<Icon icon={Calendar} />}
+        onClick={() => {
+          setOpen(true)
+        }}
+      >
+        {t('calendarFeed.subscribe')}
+      </Button>
+      {open && (
+        <CalendarFeedDialog
+          onClose={() => {
+            setOpen(false)
+          }}
+        />
+      )}
+    </>
   )
 }
 

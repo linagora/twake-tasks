@@ -690,6 +690,34 @@
       "never": "Jamais"
     }
   },
+  "calendarFeed": {
+    "title": "Flux d’agenda",
+    "hint": "Retrouvez les échéances de vos tâches ouvertes dans Twake Calendar, Outlook, Thunderbird ou sur votre téléphone. Les agendas l’actualisent environ toutes les heures.",
+    "subscribe": "Ajouter à un agenda",
+    "close": "Fermer",
+    "loadFailed": "Impossible de charger votre flux d’agenda.",
+    "failed": "Votre lien d’agenda n’a pas pu être modifié.",
+    "scope": "Contenu",
+    "scopes": {
+      "assigned": "Les tâches qui me sont assignées",
+      "mine": "Aussi les tâches non assignées de mes projets"
+    },
+    "link": "Lien d’agenda",
+    "privacy": "Toute personne disposant du lien peut voir les titres et les dates de ces tâches.",
+    "create": "Créer le lien",
+    "active": "Actif depuis le %{date}. Le lien n’est affiché qu’une fois, à sa création : réinitialisez-le pour en obtenir un nouveau.",
+    "shownOnce": "Copiez-le maintenant, il n’est affiché qu’une fois. Toute personne disposant du lien peut voir les titres et les dates de ces tâches.",
+    "copy": "Copier le lien",
+    "copied": "Lien copié",
+    "copyFailed": "Le lien n’a pas pu être copié. Sélectionnez-le et copiez-le à la main.",
+    "openInApp": "Ouvrir dans mon application d’agenda",
+    "reset": "Réinitialiser le lien",
+    "resetTitle": "Réinitialiser le lien d’agenda ?",
+    "resetHint": "Les agendas qui utilisent le lien actuel ne sont plus mis à jour. Ajoutez-y à nouveau le nouveau lien.",
+    "turnOff": "Désactiver",
+    "turnOffTitle": "Désactiver le flux d’agenda ?",
+    "turnOffHint": "Les agendas qui utilisent le lien ne sont plus mis à jour, et le lien ne fonctionne plus."
+  },
   "unsubscribe": {
     "all": "tous les e-mails de notification",
     "about": "les e-mails « %{kind} »",

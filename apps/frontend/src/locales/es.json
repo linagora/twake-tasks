@@ -690,6 +690,34 @@
       "never": "Nunca"
     }
   },
+  "calendarFeed": {
+    "title": "Feed de calendario",
+    "hint": "Vea los vencimientos de sus tareas abiertas en Twake Calendar, Outlook, Thunderbird o su teléfono. Los calendarios lo actualizan más o menos cada hora.",
+    "subscribe": "Añadir a un calendario",
+    "close": "Cerrar",
+    "loadFailed": "No se pudo cargar su feed de calendario.",
+    "failed": "No se pudo cambiar su enlace de calendario.",
+    "scope": "Qué incluir",
+    "scopes": {
+      "assigned": "Las tareas asignadas a mí",
+      "mine": "También las tareas sin asignar de mis proyectos"
+    },
+    "link": "Enlace de calendario",
+    "privacy": "Cualquiera con el enlace puede ver los títulos y las fechas de estas tareas.",
+    "create": "Crear enlace",
+    "active": "Activo desde el %{date}. El enlace solo se muestra una vez, al crearlo: restablézcalo para obtener uno nuevo.",
+    "shownOnce": "Cópielo ahora, solo se muestra una vez. Cualquiera con el enlace puede ver los títulos y las fechas de estas tareas.",
+    "copy": "Copiar enlace",
+    "copied": "Enlace copiado",
+    "copyFailed": "No se pudo copiar el enlace. Selecciónelo y cópielo a mano.",
+    "openInApp": "Abrir en mi aplicación de calendario",
+    "reset": "Restablecer enlace",
+    "resetTitle": "¿Restablecer el enlace de calendario?",
+    "resetHint": "Los calendarios que usan el enlace actual dejan de actualizarse. Vuelva a añadirles el nuevo enlace.",
+    "turnOff": "Desactivar",
+    "turnOffTitle": "¿Desactivar el feed de calendario?",
+    "turnOffHint": "Los calendarios que usan el enlace dejan de actualizarse, y el enlace deja de funcionar."
+  },
   "unsubscribe": {
     "all": "todos los correos de notificación",
     "about": "los correos sobre «%{kind}»",
