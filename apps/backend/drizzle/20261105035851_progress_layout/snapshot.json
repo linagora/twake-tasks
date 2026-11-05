@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "d4ecfa2b-bcc3-4490-b078-13d5c32219e5",
+  "id": "9f92b2bf-9ed8-447b-8bcf-1f33764f3af7",
   "prevIds": [
-    "ca256ee7-0c63-4f63-a671-002157cfb4ef"
+    "0d85c0c7-ccce-40c5-9558-b018d1bc77c0"
   ],
   "ddl": [
     {
@@ -199,6 +199,12 @@
     {
       "isRlsEnabled": true,
       "name": "task_labels",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "task_links",
       "entityType": "tables",
       "schema": "public"
     },
@@ -2019,6 +2025,74 @@
       "entityType": "columns",
       "schema": "public",
       "table": "task_labels"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "blocking_task_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "blocked_task_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_links"
     },
     {
       "type": "uuid",
@@ -4132,6 +4206,27 @@
       "nameExplicit": false,
       "columns": [
         {
+          "value": "blocked_task_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "task_links_blocked_task_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
           "value": "task_id",
           "isExpression": false,
           "asc": true,
@@ -4956,6 +5051,78 @@
     {
       "nameExplicit": false,
       "columns": [
+        "blocking_task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_links_blocking_task_id_tasks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "blocked_task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_links_blocked_task_id_tasks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "blocking_task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_links_tenant_blocking_task_id_tasks_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "blocked_task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_links_tenant_blocked_task_id_tasks_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "task_id"
       ],
       "schemaTo": "public",
@@ -5445,6 +5612,17 @@
       "entityType": "pks",
       "schema": "public",
       "table": "task_labels"
+    },
+    {
+      "columns": [
+        "blocking_task_id",
+        "blocked_task_id"
+      ],
+      "nameExplicit": false,
+      "name": "task_links_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "task_links"
     },
     {
       "columns": [
@@ -5944,6 +6122,13 @@
       "table": "projects"
     },
     {
+      "value": "\"blocking_task_id\" <> \"blocked_task_id\"",
+      "name": "task_links_not_self",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
       "value": "(\"at\" is null) <> (\"before_minutes\" is null)\n        and (\"before_minutes\" is null) = (\"zone\" is null)\n        and \"before_minutes\" >= 0",
       "name": "task_reminders_at_or_before",
       "entityType": "checks",
@@ -6285,6 +6470,19 @@
       "entityType": "policies",
       "schema": "public",
       "table": "task_labels"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"task_links\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_links\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_links\".\"blocking_task_id\") or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_links\".\"blocked_task_id\"))",
+      "withCheck": "\"task_links\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_links\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_links\".\"blocking_task_id\") and exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_links\".\"blocked_task_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "task_links"
     },
     {
       "as": "PERMISSIVE",
