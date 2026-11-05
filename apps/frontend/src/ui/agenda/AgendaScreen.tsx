@@ -7,7 +7,7 @@ import {
   Plus,
   Profile
 } from '@linagora/twake-icons'
-import { Button, Link, Typography } from '@linagora/twake-mui'
+import { Button, Link, ToggleButton, Typography } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 import { useParams } from 'react-router'
 
@@ -29,6 +29,7 @@ import { displayName } from '@/domain/person'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Highlight } from '@/ds/Highlight'
 import { Icon } from '@/ds/Icon'
+import { ViewToggleGroup } from '@/ds/PageHeader'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import {
   AgendaTaskPanel,
@@ -42,7 +43,12 @@ import { OriginContext, PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
 import { formatDay, localDay, localToday } from '@/ui/boards/dueLabel'
 import { LayoutToggle } from '@/ui/boards/Layouts'
 import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
-import { useAgenda, type AgendaView } from '@/ui/queries/agenda'
+import {
+  UPCOMING_SPANS,
+  useAgenda,
+  type AgendaView,
+  type UpcomingSpan
+} from '@/ui/queries/agenda'
 import { useFilters } from '@/ui/queries/filters'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { CalendarFeedDialog } from '@/ui/settings/CalendarFeedSettings'
@@ -156,26 +162,36 @@ type FilterLayout = (typeof FILTER_LAYOUTS)[number]
 // section is to do.
 const OPEN_CATEGORIES = ['backlog', 'unstarted', 'started'] as const
 
-// Remembered on this device only: a saved filter has no stored layout.
-function useFilterLayout(filterId: string) {
-  const key = `filter-layout:${filterId}`
-  const [layout, setLayout] = useState<FilterLayout>(() => {
+// Remembered on this device only: the server stores neither a filter's layout
+// nor the Upcoming span.
+function useStoredChoice<T extends string | number>(
+  key: string,
+  choices: readonly [T, ...T[]]
+) {
+  const [choice, setChoice] = useState<T>(() => {
     try {
-      return localStorage.getItem(key) === 'board' ? 'board' : 'list'
+      const saved = localStorage.getItem(key)
+      return choices.find(each => String(each) === saved) ?? choices[0]
     } catch {
-      return 'list'
+      return choices[0]
     }
   })
-  const choose = (next: FilterLayout) => {
-    setLayout(next)
+  const choose = (next: T) => {
+    setChoice(next)
     try {
-      localStorage.setItem(key, next)
+      localStorage.setItem(key, String(next))
     } catch {
       // Private browsing: the choice lasts until the page closes.
     }
   }
-  return [layout, choose] as const
+  return [choice, choose] as const
 }
+
+const useFilterLayout = (filterId: string) =>
+  useStoredChoice<FilterLayout>(`filter-layout:${filterId}`, FILTER_LAYOUTS)
+
+const useUpcomingSpan = () =>
+  useStoredChoice<UpcomingSpan>('twake-tasks:upcoming-days', UPCOMING_SPANS)
 
 export function FilterScreen(): ReactElement {
   const { filterId = '' } = useParams()
@@ -377,13 +393,16 @@ export function AgendaScreen(
 ): ReactElement {
   const { t } = useI18n()
   const { view } = props
-  const agenda = useAgenda(view)
+  const [span, setSpan] = useUpcomingSpan()
+  const agenda = useAgenda(view, span)
   const title = 'title' in props ? props.title : t(`agenda.${props.view}`)
   const actions =
     'actions' in props ? (
       props.actions
     ) : view === 'mine' ? (
       <CalendarFeedButton />
+    ) : view === 'upcoming' ? (
+      <SpanToggle value={span} onChange={setSpan} />
     ) : undefined
   const form = 'form' in props ? props.form : undefined
   const body = 'body' in props ? props.body : undefined
@@ -440,6 +459,33 @@ export function AgendaScreen(
           ))}
       </main>
     </OriginContext>
+  )
+}
+
+function SpanToggle({
+  value,
+  onChange
+}: {
+  value: UpcomingSpan
+  onChange: (span: UpcomingSpan) => void
+}): ReactElement {
+  const { t } = useI18n()
+  return (
+    <ViewToggleGroup
+      exclusive
+      size="small"
+      value={value}
+      aria-label={t('agenda.span')}
+      onChange={(_event, span: UpcomingSpan | null) => {
+        if (span) onChange(span)
+      }}
+    >
+      {UPCOMING_SPANS.map(span => (
+        <ToggleButton key={span} value={span}>
+          {t('agenda.days', { smart_count: span })}
+        </ToggleButton>
+      ))}
+    </ViewToggleGroup>
   )
 }
 

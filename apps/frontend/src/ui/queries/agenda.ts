@@ -11,7 +11,8 @@ import { keys, type AgendaView } from '@/ui/queries/keys'
 
 export type { AgendaView }
 
-const AGENDA_DAYS = { today: 1, upcoming: 7 } as const
+export const UPCOMING_SPANS = [7, 14, 30] as const
+export type UpcomingSpan = (typeof UPCOMING_SPANS)[number]
 
 // The lists span many boards, while a change only refreshes its own board.
 export function useRefreshLists(): () => void {
@@ -22,10 +23,20 @@ export function useRefreshLists(): () => void {
   }
 }
 
-export function useAgenda(view: AgendaView): UseQueryResult<Agenda> {
+export function useAgenda(
+  view: AgendaView,
+  span: UpcomingSpan = UPCOMING_SPANS[0]
+): UseQueryResult<Agenda> {
   const api = useBoardsApi()
   return useQuery({
-    queryKey: keys.agenda(view),
+    queryKey:
+      view === 'upcoming' ? [...keys.agenda(view), span] : keys.agenda(view),
+    // A new span keeps the previous list on screen while it loads, but
+    // another view never shows the list of the one before.
+    placeholderData: (previous, query) =>
+      view === 'upcoming' && query?.queryKey[1] === 'upcoming'
+        ? previous
+        : undefined,
     queryFn: async () => {
       if (typeof view === 'object') {
         return {
@@ -35,7 +46,7 @@ export function useAgenda(view: AgendaView): UseQueryResult<Agenda> {
       }
       return view === 'mine'
         ? { today: localToday(), tasks: await api.myTasks() }
-        : api.agenda(localZone(), AGENDA_DAYS[view])
+        : api.agenda(localZone(), view === 'today' ? 1 : span)
     }
   })
 }

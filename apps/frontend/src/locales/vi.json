@@ -903,6 +903,8 @@
     "mineScope": "Công việc đang mở được giao cho bạn trên mọi bảng.",
     "todayEmpty": "Hôm nay không có việc đến hạn",
     "upcomingEmpty": "Không có việc đến hạn trong những ngày tới",
+    "span": "Số ngày hiển thị",
+    "days": "%{smart_count} ngày",
     "filterEmpty": "Không có công việc nào khớp với bộ lọc này",
     "loadFailed": "Không thể tải công việc.",
     "mineEmpty": "Chưa có việc nào giao cho bạn"

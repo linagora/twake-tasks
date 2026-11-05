@@ -903,6 +903,8 @@
     "mineScope": "Offene Aufgaben, die Ihnen auf einem beliebigen Board zugewiesen sind.",
     "todayEmpty": "Heute nichts fällig",
     "upcomingEmpty": "In den nächsten Tagen nichts fällig",
+    "span": "Angezeigte Tage",
+    "days": "%{smart_count} Tag |||| %{smart_count} Tage",
     "filterEmpty": "Keine Aufgabe entspricht diesem Filter",
     "loadFailed": "Ihre Aufgaben konnten nicht geladen werden.",
     "mineEmpty": "Ihnen ist nichts zugewiesen"
