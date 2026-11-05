@@ -315,8 +315,12 @@ export function CreateCard({
             variant="caption"
             component="span"
             color="textSecondary"
-            noWrap
-            sx={{ display: 'block' }}
+            sx={{
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              WebkitLineClamp: 3,
+              overflow: 'hidden'
+            }}
           >
             {text}
           </Typography>
