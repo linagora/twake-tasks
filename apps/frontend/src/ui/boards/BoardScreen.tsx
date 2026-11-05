@@ -3,6 +3,7 @@ import { Typography } from '@linagora/twake-mui'
 import { Fragment, useEffect, type ReactElement } from 'react'
 import { useParams } from 'react-router'
 
+import { BoardHeroSkeleton } from '@/ds/BoardHero'
 import { ColumnsSkeleton } from '@/ds/Columns'
 import { EmptyState } from '@/ds/EmptyState'
 import { BoardColumns } from '@/ui/boards/BoardColumns'
@@ -11,6 +12,7 @@ import { useBoardName } from '@/ui/boards/BoardsScreen'
 import { BoardSelection } from '@/ui/boards/BulkActions'
 import {
   BoardStepsContext,
+  Crumbs,
   OriginContext,
   PageCrumbs,
   useArchivesOrigin,
@@ -49,6 +51,7 @@ export function BoardScreen({
   // except in an embed (flush), which has no Archives page.
   const origin =
     (shown ?? listed)?.archived && !flush ? archivesOrigin : boardsOrigin
+  const loading = board.isPending || (waiting && !board.isError && !missing)
   useDocumentTitle(shown ? boardName(shown) : null)
   const shownId = shown?.id
   useEffect(() => {
@@ -65,10 +68,27 @@ export function BoardScreen({
               : 'u-ph-2 u-pt-half u-pb-2 u-flex u-flex-column u-mih-100'
           }
         >
-          {/* Once loaded, the board titles itself with its breadcrumb. */}
-          {back && !(shown && !waiting) && (
-            // The size of the board's own title, so that nothing moves once it loads.
-            <PageCrumbs origin={origin} current={name} heading={!missing} />
+          {loading ? (
+            <BoardHeroSkeleton
+              title={
+                back ? (
+                  <Crumbs
+                    label={t('page.breadcrumb')}
+                    origin={origin}
+                    current={name}
+                    heading
+                  />
+                ) : undefined
+              }
+              share={!flush}
+              numbers={listed?.totalTasks !== 0}
+            />
+          ) : (
+            // Once loaded, the board titles itself with its breadcrumb.
+            back &&
+            !(shown && !waiting) && (
+              <PageCrumbs origin={origin} current={name} heading={!missing} />
+            )
           )}
           {missing && (
             <EmptyState
@@ -83,9 +103,7 @@ export function BoardScreen({
               {t('board.loadFailed')}
             </Typography>
           )}
-          {(board.isPending || (waiting && !board.isError && !missing)) && (
-            <ColumnsSkeleton label={t('app.loading')} />
-          )}
+          {loading && <ColumnsSkeleton label={t('app.loading')} />}
           {shown && !waiting && (
             <Fragment key={shown.id}>
               <BoardHeader

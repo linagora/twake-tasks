@@ -67,7 +67,6 @@ export function EmptyColumn({ label }: { label: string }): ReactElement {
 export function ColumnsSkeleton({ label }: { label: string }): ReactElement {
   return (
     <Box role="progressbar" aria-label={label}>
-      <Skeleton variant="text" width={240} height={48} sx={{ mb: 2 }} />
       <Columns>
         {[3, 2, 1].map(cards => (
           <Box

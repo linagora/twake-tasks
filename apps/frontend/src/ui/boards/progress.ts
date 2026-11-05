@@ -37,18 +37,24 @@ const isClosed = (task: Task, sections: readonly Section[]): boolean => {
     : isDone(task, sections) || task.canceledAt !== null
 }
 
+const isLate = (task: Task, today: string): boolean =>
+  task.dueDate !== null && task.dueDate < today
+
+function topLevel(board: Board): { tasks: Task[]; open: Task[] } {
+  const tasks = board.tasks.filter(task => task.parentId === null)
+  return { tasks, open: tasks.filter(task => !isClosed(task, board.sections)) }
+}
+
 /** Due this week reads as the filter's: today and the six days after. */
 export function boardProgress(board: Board, today: string): BoardProgress {
-  const tasks = board.tasks.filter(task => task.parentId === null)
-  const open = tasks.filter(task => !isClosed(task, board.sections))
-  const overdue = (task: Task) => task.dueDate !== null && task.dueDate < today
+  const { tasks, open } = topLevel(board)
   const dueWeek = (task: Task) =>
     task.dueDate !== null &&
     task.dueDate >= today &&
     task.dueDate < addDays(today, 7)
   const loadOf = (some: Task[]): Load => ({
     open: some.length,
-    overdue: some.filter(overdue).length,
+    overdue: some.filter(task => isLate(task, today)).length,
     dueWeek: some.filter(dueWeek).length
   })
   const assignees = new Map<string, Person>()
@@ -120,14 +126,11 @@ export function boardNumbers(board: Board, today: string): BoardNumbers {
     const category = categoryOf(task)
     return category ? category === 'canceled' : task.canceledAt !== null
   }
-  const counted = board.tasks.filter(
-    task => task.parentId === null && !isCanceled(task)
-  )
-  const open = counted.filter(task => !isClosed(task, board.sections))
-  const isLate = (task: Task) => task.dueDate !== null && task.dueDate < today
-  const late = open.filter(isLate)
+  const { tasks, open } = topLevel(board)
+  const counted = tasks.filter(task => !isCanceled(task))
+  const late = open.filter(task => isLate(task, today))
   const started = open.filter(
-    task => !isLate(task) && categoryOf(task) === 'started'
+    task => !isLate(task, today) && categoryOf(task) === 'started'
   )
   const upcoming = open
     .map(task => task.dueDate)
