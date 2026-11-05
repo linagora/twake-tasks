@@ -21,7 +21,7 @@ import {
   useBoardFilter,
   useFilterShortcut
 } from '@/ui/boards/BoardFilter'
-import { isLightCover, useBoardBackground } from '@/ui/boards/Backgrounds'
+import { useBoardBackground } from '@/ui/boards/Backgrounds'
 import { BoardMenu } from '@/ui/boards/BoardMenu'
 import { BoardTitle } from '@/ui/boards/BoardTitle'
 import { PageCrumbs, type Origin } from '@/ui/boards/Crumbs'
@@ -55,9 +55,7 @@ export function BoardHeader({
   cover: boolean
 }): ReactElement {
   const { t } = useI18n()
-  const backdrop = useBoardBackground(board)
-  // A board without cover keeps the header of a page without picture.
-  const picture = cover && !isLightCover(board) ? backdrop : undefined
+  const picture = useBoardBackground(board, cover)
   const navigate = useNavigate()
   const openShelf = (shelf: Shelf): void => {
     void navigate(shelf)
@@ -207,7 +205,6 @@ export function BoardHeader({
             />
           }
           actions={headerActions}
-          picture={picture}
         />
       )}
       {filtering && filterable && (

@@ -1,17 +1,17 @@
-import {
-  Box,
-  Card,
-  CardActionArea,
-  Chip,
-  Tooltip,
-  Typography
-} from '@linagora/twake-mui'
+import { Box, ButtonBase, Chip, Tooltip, Typography } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
 import { useContrast } from '@/ds/contrast'
-import { backdropOf, shadedBackdropOf, TEXT_SHADE } from '@/ds/Pictures'
+import { ACTION, backdropOf, COVER_RADIUS, NO_COVER } from '@/ds/Pictures'
 
-const CARD_RADIUS = '20px'
+// Twake Board's card, the preview at the top and the name under it.
+const PREVIEW = {
+  height: { xs: 120, sm: 144 },
+  borderRadius: COVER_RADIUS,
+  border: 1,
+  borderColor: 'divider',
+  transition: 'border-color 120ms'
+} as const
 
 export function CardGrid({
   label,
@@ -27,7 +27,8 @@ export function CardGrid({
       sx={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-        gap: 2,
+        columnGap: 2,
+        rowGap: 3,
         m: 0,
         p: 0,
         listStyle: 'none'
@@ -50,8 +51,7 @@ export function BoardCard({
   menu,
   star,
   footerAction,
-  cover,
-  lightCover = false
+  cover
 }: {
   label: string
   title: ReactNode
@@ -60,39 +60,34 @@ export function BoardCard({
   /** Where the board belongs, when that tells something: personal, a space. */
   chip?: ReactNode
   meta: string
-  /** The people of the board, at the end of its last row. */
+  /** The people of the board, at the end of the name's row. */
   members?: ReactNode
   /** At the top right, shown on hover or focus; touch screens always show it. */
   menu?: ReactNode
   /** Left of the menu, shown when it is. */
   star?: ReactNode
-  /** On the last row, before the people. */
+  /** On the last row, after the chip. */
   footerAction?: ReactNode
-  /** The picture along the top, with the name on it. */
-  cover: string
-  /** A white `cover`, unshaded, on which the name is dark. */
-  lightCover?: boolean
+  /** The picture or color of the preview, null for none. */
+  cover: string | null
 }): ReactElement {
   const { high } = useContrast()
   return (
-    <Card
+    <Box
       component="li"
       aria-label={label}
       sx={{
-        minHeight: { sm: 144 },
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        gap: 1.5,
-        p: 1.5,
-        borderRadius: CARD_RADIUS,
-        '&:hover': { boxShadow: 3 },
+        minWidth: 0,
         '& a': { color: 'text.primary', textDecoration: 'none' },
         '& a::after': { content: '""', position: 'absolute', inset: 0 },
-        '&:focus-within': {
+        '&:hover [data-testid="board-cover"]': { borderColor: 'primary.main' },
+        '&:has(a:focus-visible) [data-testid="board-cover"]': {
           outline: high ? 3 : 2,
           outlineColor: high ? 'text.primary' : 'primary.main',
-          outlineOffset: high ? -3 : -2
+          outlineOffset: 2
         },
         '& a:focus-visible': { outline: 'none' },
         '& [data-card-menu]': { opacity: 0, transition: 'opacity 120ms' },
@@ -104,42 +99,44 @@ export function BoardCard({
     >
       <Box
         data-testid="board-cover"
+        sx={{ ...PREVIEW, ...(cover ? backdropOf(cover) : NO_COVER) }}
+      />
+      {(star ?? menu) && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 1,
+            display: 'flex',
+            gap: 0.5,
+            // On a surface of the theme, readable on any cover.
+            '& .MuiIconButton-root': {
+              bgcolor: 'background.paper',
+              boxShadow: 1,
+              '&:hover': { bgcolor: 'background.paper' }
+            }
+          }}
+        >
+          {star && <Box data-card-menu="">{star}</Box>}
+          {menu && <Box data-card-menu="">{menu}</Box>}
+        </Box>
+      )}
+      <Box
         sx={{
-          // As a space's cover in Twake Space: white under a shade, or black
-          // on a white cover.
-          ...(lightCover
-            ? { ...backdropOf(cover), color: 'grey.900' }
-            : {
-                ...shadedBackdropOf(cover),
-                color: 'common.white',
-                textShadow: TEXT_SHADE
-              }),
-          minHeight: 88,
-          mt: -1.5,
-          mx: -1.5,
-          p: 1.5,
           display: 'flex',
-          alignItems: 'flex-end',
-          gap: 1.5,
-          borderTopLeftRadius: CARD_RADIUS,
-          borderTopRightRadius: CARD_RADIUS,
-          '&& a': { color: 'inherit' }
+          alignItems: 'center',
+          gap: 1,
+          pt: 1.5,
+          minWidth: 0
         }}
       >
         <Tooltip title={label} placement="top-start">
           <Typography
-            variant="h6"
+            variant="body1"
             component="h2"
-            sx={{
-              flex: '1 1 auto',
-              minWidth: 0,
-              lineHeight: 1.3,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              overflowWrap: 'anywhere'
-            }}
+            noWrap
+            sx={{ flex: '0 1 auto', minWidth: 0, lineHeight: '24px' }}
           >
             {title}
           </Typography>
@@ -152,46 +149,29 @@ export function BoardCard({
             sx={{ flexShrink: 0, height: 20, fontWeight: 600 }}
           />
         )}
-      </Box>
-      {/* At the top right of the cover, so the name takes its whole width. */}
-      {(star ?? menu) && (
+        {/* Above the stretched link, so the pointer reaches the tooltips. */}
         <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 1,
-            display: 'flex',
-            gap: 0.5,
-            color: lightCover ? 'grey.900' : 'common.white',
-            // A favorite's star keeps its yellow.
-            '&& .MuiIconButton-root:not(.MuiIconButton-colorWarning)': {
-              color: 'inherit'
-            }
-          }}
+          sx={{ ml: 'auto', flexShrink: 0, position: 'relative', zIndex: 1 }}
         >
-          {star && <Box data-card-menu="">{star}</Box>}
-          {menu && <Box data-card-menu="">{menu}</Box>}
+          {members}
         </Box>
-      )}
-      <Typography variant="caption" color="textSecondary" noWrap>
-        {meta}
-      </Typography>
-      {/* Above the stretched link, so the pointer reaches the tooltips. */}
+      </Box>
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           gap: 1,
-          mt: 'auto',
-          '& > *': { position: 'relative', zIndex: 1 }
+          minHeight: 24,
+          '& > :not(:first-child)': { position: 'relative', zIndex: 1 }
         }}
       >
+        <Typography variant="body2" color="textSecondary" noWrap>
+          {meta}
+        </Typography>
         {chip}
-        <Box sx={{ ml: 'auto' }}>{footerAction}</Box>
-        <Box>{members}</Box>
+        {footerAction}
       </Box>
-    </Card>
+    </Box>
   )
 }
 
@@ -207,33 +187,52 @@ export function CreateCard({
   onClick: () => void
 }): ReactElement {
   return (
-    <Card
-      component="li"
-      sx={{ minHeight: { sm: 144 }, borderRadius: CARD_RADIUS }}
-    >
-      <CardActionArea
+    <Box component="li" sx={{ minWidth: 0 }}>
+      <ButtonBase
         onClick={onClick}
         sx={{
-          height: '100%',
+          width: '100%',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
-          gap: 1,
-          p: 1.5,
-          textAlign: 'center'
+          alignItems: 'stretch',
+          textAlign: 'left',
+          borderRadius: COVER_RADIUS,
+          '&:hover > [data-preview]': { borderColor: 'primary.main' }
         }}
       >
-        <Box component="span" sx={{ display: 'flex', color: 'primary.main' }}>
+        <Box
+          data-preview=""
+          sx={{
+            ...PREVIEW,
+            ...ACTION,
+            borderColor: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'primary.main'
+          }}
+        >
           {icon}
         </Box>
-        <Typography variant="h6" component="span" noWrap sx={{ maxWidth: 1 }}>
+        <Typography
+          variant="body1"
+          component="span"
+          noWrap
+          sx={{ pt: 1.5, lineHeight: '24px' }}
+        >
           {title}
         </Typography>
-        <Typography variant="body2" component="span" color="textSecondary">
+        <Typography
+          variant="body2"
+          component="span"
+          color="textSecondary"
+          noWrap
+          sx={{ lineHeight: '24px' }}
+        >
           {text}
         </Typography>
-      </CardActionArea>
-    </Card>
+      </ButtonBase>
+    </Box>
   )
 }
 

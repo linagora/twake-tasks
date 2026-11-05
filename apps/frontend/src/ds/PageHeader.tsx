@@ -9,8 +9,6 @@ import {
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
-import { BoardBanner, ON_PICTURE } from '@/ds/Pictures'
-
 // The toggle shown told by a line and a weight, not by its ground alone
 const markedInHighContrast = (theme: Theme) => ({
   'html[data-contrast="high"] && .MuiToggleButton-root.Mui-selected': {
@@ -103,40 +101,26 @@ export const HEADER_ACTIONS = {
 export function PageHeader({
   back,
   title,
-  actions,
-  picture
+  actions
 }: {
   back?: ReactNode
   title: ReactNode
   actions?: ReactNode
-  /** The page's picture, behind its title and actions. */
-  picture?: string | undefined
 }): ReactElement {
   return (
     <Box sx={{ mb: 3 }}>
       {back && <Box sx={{ mb: 1 }}>{back}</Box>}
       <Box
         sx={{
-          ...ON_PICTURE,
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           columnGap: 2,
-          rowGap: 1.5,
-          ...(picture && { p: 2 })
+          rowGap: 1.5
         }}
       >
-        {picture && <BoardBanner src={picture} />}
-        <Box sx={{ flex: TITLE_FLEX, minWidth: 0 }}>
-          <Box data-on-picture="title" sx={{ minWidth: 0 }}>
-            {title}
-          </Box>
-        </Box>
-        {actions && (
-          <Box data-on-picture="actions" sx={HEADER_ACTIONS}>
-            {actions}
-          </Box>
-        )}
+        <Box sx={{ flex: TITLE_FLEX, minWidth: 0 }}>{title}</Box>
+        {actions && <Box sx={HEADER_ACTIONS}>{actions}</Box>}
       </Box>
     </Box>
   )

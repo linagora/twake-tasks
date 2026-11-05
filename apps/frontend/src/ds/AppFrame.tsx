@@ -17,9 +17,8 @@ import {
 } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 
-import { CRUMB_BAR, CrumbHostContext } from '@/ds/CrumbBar'
+import { CRUMB_HOST, CrumbHostContext } from '@/ds/CrumbBar'
 import { Icon } from '@/ds/Icon'
-import { ON_PICTURE } from '@/ds/Pictures'
 import { PanelHostContext } from '@/ds/SidePanel'
 
 export const TOP_BAR_HEIGHT = 64
@@ -88,7 +87,7 @@ export function AppFrame({
           <FrameLayout withTopBar={false}>
             <Sidebar>{sidebar}</Sidebar>
             <FrameContent role={undefined} id="content" tabIndex={-1}>
-              <Box ref={setCrumbHost} sx={{ ...CRUMB_BAR, ...ON_PICTURE }} />
+              <Box ref={setCrumbHost} sx={CRUMB_HOST} />
               {/* Its own stacking context: the raised checkboxes and
                   buttons of the rows stay under an open task. */}
               <Box
