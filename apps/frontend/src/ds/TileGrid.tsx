@@ -13,6 +13,18 @@ const PREVIEW = {
   transition: 'border-color 120ms'
 } as const
 
+const CARD = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 1.5,
+  p: 1.75,
+  borderRadius: COVER_RADIUS,
+  border: 1,
+  transition: 'border-color 120ms, box-shadow 120ms'
+} as const
+
+const ICON = { width: 36, height: 36, borderRadius: '10px', flexShrink: 0 }
+
 export function CardGrid({
   label,
   children
@@ -26,9 +38,13 @@ export function CardGrid({
       aria-label={label}
       sx={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-        columnGap: 2,
-        rowGap: 3,
+        gridTemplateColumns: {
+          xs: '1fr',
+          sm: 'repeat(auto-fill, minmax(240px, 1fr))'
+        },
+        // Every row as tall as the tallest, the create card's too.
+        gridAutoRows: '1fr',
+        gap: 1.75,
         m: 0,
         p: 0,
         listStyle: 'none'
@@ -187,50 +203,53 @@ export function CreateCard({
   onClick: () => void
 }): ReactElement {
   return (
-    <Box component="li" sx={{ minWidth: 0 }}>
+    <Box component="li" sx={{ minWidth: 0, display: 'flex' }}>
       <ButtonBase
         onClick={onClick}
         sx={{
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
+          ...CARD,
+          ...ACTION,
+          flex: 1,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          gap: 1.25,
           textAlign: 'left',
-          borderRadius: COVER_RADIUS,
-          '&:hover > [data-preview]': { borderColor: 'primary.main' }
+          borderColor: 'transparent',
+          '&:hover': { borderColor: 'primary.main' }
         }}
       >
         <Box
-          data-preview=""
           sx={{
-            ...PREVIEW,
-            ...ACTION,
-            borderColor: 'transparent',
+            ...ICON,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'primary.main'
+            color: 'primary.main',
+            bgcolor: 'background.paper'
           }}
         >
           {icon}
         </Box>
-        <Typography
-          variant="body1"
-          component="span"
-          noWrap
-          sx={{ pt: 1.5, lineHeight: '24px' }}
-        >
-          {title}
-        </Typography>
-        <Typography
-          variant="body2"
-          component="span"
-          color="textSecondary"
-          noWrap
-          sx={{ lineHeight: '24px' }}
-        >
-          {text}
-        </Typography>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            variant="body2"
+            component="span"
+            noWrap
+            sx={{ display: 'block', fontWeight: 500 }}
+          >
+            {title}
+          </Typography>
+          <Typography
+            variant="caption"
+            component="span"
+            color="textSecondary"
+            noWrap
+            sx={{ display: 'block' }}
+          >
+            {text}
+          </Typography>
+        </Box>
       </ButtonBase>
     </Box>
   )
