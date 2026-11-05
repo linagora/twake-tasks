@@ -126,6 +126,7 @@ export function aNotification(
 function summaryOf(
   board: Board,
   favorite: boolean,
+  today: string,
   share: Pick<BoardSummary, 'sharedBy' | 'joinedAt'> = {
     sharedBy: null,
     joinedAt: '2026-01-01T00:00:00Z'
@@ -134,6 +135,7 @@ function summaryOf(
   const counted = board.tasks.filter(
     task => task.parentId === null && task.canceledAt === null
   )
+  const open = counted.filter(task => task.completedAt === null)
   return {
     id: board.id,
     name: board.name,
@@ -144,9 +146,12 @@ function summaryOf(
     archived: board.archived,
     boardTemplate: board.boardTemplate,
     favorite,
-    openTasks: counted.filter(task => task.completedAt === null).length,
-    doneTasks: counted.filter(task => task.completedAt !== null).length,
+    openTasks: open.length,
+    doneTasks: counted.length - open.length,
     totalTasks: counted.length,
+    lateTasks: open.filter(
+      task => task.dueDate !== null && task.dueDate < today
+    ).length,
     members: board.members.slice(0, 3),
     memberCount: board.members.length,
     background: board.background,
@@ -738,11 +743,18 @@ export function fakeBoardsApi(boards: Board[] = []) {
           )
       )
     ),
-    listBoards: vi.fn(() =>
+    listBoards: vi.fn<BoardsApi['listBoards']>(zone =>
       Promise.resolve(
         [...store.values()]
           .map(board =>
-            summaryOf(board, favorites.has(board.id), shares.get(board.id))
+            summaryOf(
+              board,
+              favorites.has(board.id),
+              new Intl.DateTimeFormat('en-CA', {
+                timeZone: zone ?? 'UTC'
+              }).format(new Date()),
+              shares.get(board.id)
+            )
           )
           .sort((a, b) => Number(b.favorite) - Number(a.favorite))
       )

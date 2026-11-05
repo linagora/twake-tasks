@@ -33,6 +33,8 @@ export interface BoardSummary {
   /** Top-level tasks completed, out of `totalTasks`, the ones not canceled. */
   doneTasks: number
   totalTasks: number
+  /** Open top-level tasks due before today. */
+  lateTasks: number
   /** When the person joined the board's project. */
   joinedAt: string
   /** Who invited the person: null on their own boards and a space's. */
@@ -231,7 +233,7 @@ export type Background = (typeof BACKGROUNDS)[number]
  */
 export type BoardBackground = Background | 'custom' | null
 
-/** Whether the board has a cover of its own, not a space's it shows by default. */
+/** Whether the board has a cover picked for it. */
 export const hasOwnCover = (
   board: Pick<BoardSummary, 'background' | 'backgroundColor'>
 ): boolean => board.background !== null || board.backgroundColor !== null

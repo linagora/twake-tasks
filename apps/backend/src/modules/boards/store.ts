@@ -5,6 +5,7 @@ import {
   eq,
   isNotNull,
   isNull,
+  lt,
   ne,
   notExists,
   sql
@@ -45,6 +46,7 @@ import { bumpBoard, bumpBoards } from './versions.ts'
 import { freeKeyPrefix, INBOX_KEY_PREFIX } from './keyPrefixes.ts'
 import { labelsOn } from './labels.ts'
 import { languageOf, type Language } from './mailLayout.ts'
+import { todayIn } from './recurrence.ts'
 
 const DEFAULT_SECTION_CATEGORIES = [
   'unstarted',
@@ -140,7 +142,9 @@ export function createBoardStore(db: Db) {
       })
     },
 
-    listBoards(identity: Identity) {
+    /** Late tasks are the open ones due before today in `zone`. */
+    listBoards(identity: Identity, zone: string | null = null) {
+      const today = todayIn(zone)
       return inTenant(db, identity, async tx => {
         await ensureInbox(tx, identity)
         await claimInvites(tx)
@@ -205,6 +209,17 @@ export function createBoardStore(db: Db) {
                 eq(tasks.boardId, boards.id),
                 isNull(tasks.parentId),
                 isNull(tasks.canceledAt),
+                shown
+              )
+            ),
+            lateTasks: tx.$count(
+              tasks,
+              and(
+                eq(tasks.boardId, boards.id),
+                isNull(tasks.parentId),
+                isNull(tasks.completedAt),
+                isNull(tasks.canceledAt),
+                lt(tasks.dueDate, today),
                 shown
               )
             )

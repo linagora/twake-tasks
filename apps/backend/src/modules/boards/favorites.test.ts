@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { shift, todayIn } from './index.ts'
 
 interface Summary {
   id: string
@@ -8,6 +9,7 @@ interface Summary {
   openTasks: number
   doneTasks: number
   totalTasks: number
+  lateTasks: number
   members: { email: string }[]
   memberCount: number
 }
@@ -156,6 +158,43 @@ describe('favorite boards', () => {
     )
 
     expect(listedDesign).toMatchObject({ doneTasks: 1, totalTasks: 3 })
+  })
+
+  it('counts the open top-level tasks due before today in the reader’s zone', async () => {
+    const alice = aUser()
+    const design = await aBoard(alice, 'Design', 'DES')
+    const zone = 'Pacific/Kiritimati'
+    const today = todayIn(zone)
+    const yesterday = shift(today, -1, 'days')
+    const add = async (title: string, dueDate: string, parentId?: string) => {
+      const { id } = (
+        await api
+          .as(alice)
+          .post(
+            `/boards/${design.id}/tasks`,
+            parentId ? { title, parentId } : { title, sectionId: null }
+          )
+      ).json<{ id: string }>()
+      await api.as(alice).patch(`/boards/${design.id}/tasks/${id}`, { dueDate })
+      return id
+    }
+    const logo = await add('Logo', yesterday)
+    await add('Sketch', yesterday, logo)
+    await add('Poster', shift(today, -9, 'days'))
+    await add('Flyer', today)
+    const banner = await add('Banner', yesterday)
+    await api.as(alice).post(`/boards/${design.id}/tasks/${banner}/complete`, {
+      state: 'completed'
+    })
+
+    const lateIn = async (where: string) =>
+      (await api.as(alice).get(`/boards?zone=${encodeURIComponent(where)}`))
+        .json<{ boards: Summary[] }>()
+        .boards.find(board => board.id === design.id)?.lateTasks
+
+    expect(await lateIn(zone)).toBe(2)
+    // A day or two behind Kiritimati, where the Logo is not late yet.
+    expect(await lateIn('Pacific/Pago_Pago')).toBe(1)
   })
 
   it('keeps favorites personal', async () => {

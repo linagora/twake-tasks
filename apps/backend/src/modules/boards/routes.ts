@@ -3,6 +3,7 @@ import {
   backgroundImageParams,
   boardParams,
   boardRename,
+  boardsQuery,
   keyPrefixParams,
   labelChanges,
   labeling,
@@ -144,9 +145,10 @@ export function registerBoards(
       method: 'GET',
       url: '/boards',
       access: self,
-      handler: async ({ identity }) => ({
+      query: boardsQuery,
+      handler: async ({ identity, query }) => ({
         ok: true,
-        value: { boards: await store.listBoards(identity) }
+        value: { boards: await store.listBoards(identity, query.zone ?? null) }
       })
     }),
     defineRoute({

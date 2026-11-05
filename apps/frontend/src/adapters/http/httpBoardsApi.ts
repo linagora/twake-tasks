@@ -303,8 +303,17 @@ export function httpBoardsApi(
       ).tasks,
     myTasks: async () =>
       (await parsed('my tasks', wire.tasksResponse, 'GET', '/my-tasks')).tasks,
-    listBoards: async () =>
-      (await parsed('boards', wire.boardsResponse, 'GET', '/boards')).boards,
+    listBoards: async zone =>
+      (
+        await parsed(
+          'boards',
+          wire.boardsResponse,
+          'GET',
+          zone
+            ? `/boards?${new URLSearchParams({ zone } satisfies Body<'boardsQuery'>).toString()}`
+            : '/boards'
+        )
+      ).boards,
     getBoard: boardId =>
       parsed('board', wire.boardResponse, 'GET', route`/boards/${boardId}`),
     watchBoard: (boardId, onVersion) =>
