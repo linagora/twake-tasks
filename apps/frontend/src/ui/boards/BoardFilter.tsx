@@ -64,7 +64,7 @@ export function useShownTasks(
   const { t } = useI18n()
   const { user } = useSession()
   const [filter] = useBoardFilter()
-  const filtered = criteriaCount(filter) > 0
+  const filtered = board.layout !== 'progress' && criteriaCount(filter) > 0
   const key = JSON.stringify(filter)
   const [added, setAdded] = useState({ key, ids: new Set<string>() })
   const kept = added.key === key ? added.ids : new Set<string>()

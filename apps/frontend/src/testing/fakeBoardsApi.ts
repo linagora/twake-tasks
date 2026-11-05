@@ -7,6 +7,7 @@ import {
   type CalendarFeed,
   type Comment,
   type CommentEdit,
+  type DayCount,
   type Description,
   type HistoryEntry,
   type LinkedTask,
@@ -169,6 +170,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
   const comments = new Map<string, Comment[]>()
   const commentEdits = new Map<string, CommentEdit[]>()
   const history = new Map<string, HistoryEntry[]>()
+  const pastCompletions = new Map<string, DayCount[]>()
   const reminders = new Map<string, Reminder[]>()
   let templates: Template[] = []
   const templateOf = ({
@@ -759,6 +761,26 @@ export function fakeBoardsApi(boards: Board[] = []) {
         board.version += 1
       })
     ),
+    // The completed tasks by the day of `completedAt`, with the earlier
+    // completions a spec adds, such as those of a recurring task.
+    completions: vi.fn<BoardsApi['completions']>(boardId =>
+      Promise.resolve().then(() => {
+        const days = new Map(
+          (pastCompletions.get(boardId) ?? []).map(each => [
+            each.day,
+            each.done
+          ])
+        )
+        for (const task of find(boardId).tasks) {
+          if (task.parentId !== null || !task.completedAt) continue
+          const day = task.completedAt.slice(0, 10)
+          days.set(day, (days.get(day) ?? 0) + 1)
+        }
+        return [...days]
+          .map(([day, done]) => ({ day, done }))
+          .sort((a, b) => a.day.localeCompare(b.day))
+      })
+    ),
     getBoard: vi.fn((boardId: string) =>
       Promise.resolve().then(() => structuredClone(find(boardId)))
     ),
@@ -1316,6 +1338,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
     notifications,
     comments,
     history,
+    pastCompletions,
     sharings,
     projects,
     directory

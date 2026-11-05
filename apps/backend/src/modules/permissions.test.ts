@@ -457,6 +457,7 @@ const EXAMPLES: Record<string, Example> = {
   'GET /my-tasks': none,
   'GET /agenda': () => ({ query: { zone: 'Europe/Paris', days: '7' } }),
   'GET /boards/:boardId': none,
+  'GET /boards/:boardId/progress': () => ({ query: { zone: 'Europe/Paris' } }),
   'GET /key-prefixes/:keyPrefix': () => ({ params: { keyPrefix: 'ABC' } }),
   'POST /boards': () => ({ body: { name: 'Plans', keyPrefix: aKeyPrefix() } }),
   'PATCH /boards/:boardId': () => ({ body: { name: 'Design 2' } }),

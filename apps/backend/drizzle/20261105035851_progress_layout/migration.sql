@@ -1,0 +1,1 @@
+ALTER TYPE "board_layout" ADD VALUE 'progress';

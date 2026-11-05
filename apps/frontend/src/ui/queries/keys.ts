@@ -20,6 +20,8 @@ export const keys = {
   peopleSuggestions: (boardId: string, term: string) =>
     [...sharing(boardId), 'people', term] as const,
   shelf: (boardId: string, shelf: Shelf) => [...board(boardId), shelf] as const,
+  completions: (boardId: string, zone: string) =>
+    [...board(boardId), 'completions', zone] as const,
   description: (boardId: string, taskId: string) =>
     [...task(boardId, taskId), 'description'] as const,
   history: (boardId: string, taskId: string) =>

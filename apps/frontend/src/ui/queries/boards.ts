@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import {
   ApiError,
   type BoardsApi,
+  type DayCount,
   type ExportedTask,
   type HiddenTask,
   type ImportResult,
@@ -22,6 +23,7 @@ import {
 } from '@/application/boards'
 import { type Board, type BoardSummary, type Layout } from '@/domain/board'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
+import { localZone } from '@/ui/boards/dueLabel'
 import { keys } from '@/ui/queries/keys'
 
 export const POLL_MS = 60_000
@@ -41,6 +43,16 @@ export function useHiddenTasks(
   return useQuery({
     queryKey: keys.shelf(boardId, shelf),
     queryFn: enabled ? () => api.hiddenTasks(boardId, shelf) : skipToken
+  })
+}
+
+// Under the board's key, so whatever reloads the board reloads it too.
+export function useCompletions(boardId: string): UseQueryResult<DayCount[]> {
+  const api = useBoardsApi()
+  const zone = localZone()
+  return useQuery({
+    queryKey: keys.completions(boardId, zone),
+    queryFn: () => api.completions(boardId, zone)
   })
 }
 

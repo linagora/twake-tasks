@@ -70,7 +70,8 @@ export function BoardSelection({
       ].map(task => task.id)
     })
   )
-  const selectable = isEditable(board) && board.layout !== 'calendar'
+  const selectable =
+    isEditable(board) && (board.layout === 'board' || board.layout === 'list')
   return (
     <SelectionContext.Provider value={selectable ? selection : null}>
       {children}

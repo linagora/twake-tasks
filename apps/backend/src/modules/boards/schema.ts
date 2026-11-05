@@ -50,7 +50,7 @@ export const recurrenceUnit = pgEnum('recurrence_unit', [
   'years'
 ])
 
-export const LAYOUTS = ['board', 'list', 'calendar'] as const
+export const LAYOUTS = ['board', 'list', 'calendar', 'progress'] as const
 
 export const boardLayout = pgEnum('board_layout', LAYOUTS)
 

@@ -32,6 +32,7 @@ import { NoMatch, useShownTasks } from '@/ui/boards/BoardFilter'
 import { CalendarTask } from '@/ui/boards/CalendarTask'
 import { CalendarLayout, ListLayout } from '@/ui/boards/Layouts'
 import { LinkedTask } from '@/ui/boards/LinkedTask'
+import { ProgressLayout } from '@/ui/boards/ProgressLayout'
 import { useBoardChange } from '@/ui/queries/boards'
 import { useMoveTask } from '@/ui/queries/tasks'
 import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
@@ -198,6 +199,7 @@ export function BoardColumns({
         </Typography>
       )}
       {shown.filtered && shown.tasks.length === 0 && <NoMatch />}
+      {board.layout === 'progress' && <ProgressLayout board={board} />}
       {board.layout === 'board' && !editable && (
         <Columns>
           {columns.map(column => (

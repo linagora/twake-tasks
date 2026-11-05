@@ -1,4 +1,4 @@
-import { CalendarToday, ListMin, MosaicMin } from '@linagora/twake-icons'
+import { CalendarToday, ListMin, MosaicMin, Stats } from '@linagora/twake-icons'
 import {
   ToggleButton,
   Tooltip,
@@ -33,13 +33,15 @@ import {
   DropTray
 } from '@/ui/boards/CalendarDrag'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
+import { weekStart } from '@/ui/boards/progress'
 import { useSetLayout } from '@/ui/queries/boards'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 const LAYOUT_ICONS = {
   board: MosaicMin,
   list: ListMin,
-  calendar: CalendarToday
+  calendar: CalendarToday,
+  progress: Stats
 } as const
 
 export function LayoutSwitch({ board }: { board: Board }): ReactElement {
@@ -152,12 +154,11 @@ export function ListLayout({
 
 // The weeks covering a month, from the locale's first day of the week.
 function monthGrid(month: string, firstDay: number): string[] {
-  const first = `${month}-01`
-  const weekday =
-    (new Date(`${first}T00:00:00Z`).getUTCDay() - firstDay + 7) % 7
-  const start = addDays(first, -weekday)
   const days: string[] = []
-  for (let day = start; day.slice(0, 7) <= month || days.length % 7 !== 0;) {
+  for (
+    let day = weekStart(`${month}-01`, firstDay);
+    day.slice(0, 7) <= month || days.length % 7 !== 0;
+  ) {
     days.push(day)
     day = addDays(day, 1)
   }

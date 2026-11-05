@@ -13,7 +13,8 @@ import {
   sectionDeletion,
   sectionMove,
   sectionParams,
-  taskParams
+  taskParams,
+  zoneQuery
 } from '@twake-tasks/api-contract'
 import type * as wire from '@twake-tasks/api-contract'
 import type { FastifyRequest } from 'fastify'
@@ -30,6 +31,7 @@ import type { Refusal } from '../kernel/index.ts'
 import { checkBoardAccess } from './access.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
+import { completionsOf } from './progress.ts'
 import type * as db from './schema.ts'
 import { createSectionStore } from './sections.ts'
 import { INBOX_KEY_PREFIX } from './keyPrefixes.ts'
@@ -137,6 +139,15 @@ export function registerBoards(
           ? { ok: true, value: board }
           : { ok: false, error: 'not_found' }
       }
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/progress',
+      access: viewer,
+      params: boardParams,
+      query: zoneQuery,
+      handler: ({ identity, params, query }) =>
+        completionsOf(deps.db, identity, params.boardId, query.zone)
     }),
     defineRoute({
       method: 'GET',
