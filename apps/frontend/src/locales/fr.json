@@ -23,12 +23,14 @@
     "columnInstructions": "Pour déplacer une section, appuyez sur Espace ou Entrée. Utilisez les flèches gauche et droite pour la déplacer, Espace ou Entrée pour la déposer, et Échap pour annuler."
   },
   "settings": {
-    "title": "Paramètres"
+    "title": "Paramètres",
+    "sections": "Sections des paramètres"
   },
   "templates": {
     "title": "Modèles",
-    "hint": "Démarrez une tâche à partir d’un modèle sur n’importe quel tableau de son projet. Les modèles d’un projet sont partagés avec tous ses membres.",
+    "hint": "Partagés avec les membres du projet.",
     "new": "Nouveau modèle",
+    "newIn": "Nouveau modèle dans %{name}",
     "editTitle": "Modifier le modèle",
     "close": "Fermer",
     "name": "Titre de la tâche",
@@ -803,12 +805,12 @@
   "notificationSettings": {
     "open": "Paramètres des notifications",
     "title": "Notifications",
-    "hint": "Choisissez ce dont vous êtes informé, dans l’application et par e-mail. Cela s’applique à tous les projets.",
+    "hint": "Pour tous vos projets.",
     "loadFailed": "Impossible de charger vos paramètres de notification.",
     "saved": "Enregistré",
     "saveFailed": "Vos paramètres n’ont pas pu être enregistrés.",
-    "inApp": "Dans l’application",
-    "byEmail": "Par e-mail",
+    "inApp": "App",
+    "byEmail": "E-mail",
     "inAppOf": "%{kind}, dans l’application",
     "byEmailOf": "%{kind}, par e-mail",
     "inAppFirst": "Activez-le d’abord dans l’application.",
@@ -829,7 +831,7 @@
   },
   "calendarFeed": {
     "title": "Flux d’agenda",
-    "hint": "Retrouvez les échéances de vos tâches ouvertes dans Twake Calendar, Outlook, Thunderbird ou sur votre téléphone. Les agendas l’actualisent environ toutes les heures.",
+    "hint": "Vos échéances dans Twake Calendar, Outlook ou votre téléphone.",
     "subscribe": "Ajouter à un agenda",
     "close": "Fermer",
     "loadFailed": "Impossible de charger votre flux d’agenda.",
@@ -842,7 +844,8 @@
     "link": "Lien d’agenda",
     "privacy": "Toute personne disposant du lien peut voir les titres et les dates de ces tâches.",
     "create": "Créer le lien",
-    "active": "Actif depuis le %{date}. Le lien n’est affiché qu’une fois, à sa création : réinitialisez-le pour en obtenir un nouveau.",
+    "on": "Actif",
+    "active": "Créé le %{date}. Affiché une seule fois : réinitialisez-le pour en obtenir un nouveau.",
     "shownOnce": "Copiez-le maintenant, il n’est affiché qu’une fois. Toute personne disposant du lien peut voir les titres et les dates de ces tâches.",
     "copy": "Copier le lien",
     "copied": "Lien copié",

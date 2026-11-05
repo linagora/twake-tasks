@@ -23,12 +23,14 @@
     "columnInstructions": "Um einen Abschnitt zu verschieben, drücken Sie die Leertaste oder Eingabe. Verschieben Sie ihn mit den Pfeiltasten links und rechts, legen Sie ihn mit Leertaste oder Eingabe ab und brechen Sie mit Escape ab."
   },
   "settings": {
-    "title": "Einstellungen"
+    "title": "Einstellungen",
+    "sections": "Bereiche der Einstellungen"
   },
   "templates": {
     "title": "Vorlagen",
-    "hint": "Starten Sie eine Aufgabe auf jedem Board ihres Projekts aus einer Vorlage. Die Vorlagen eines Projekts teilen alle seine Mitglieder.",
+    "hint": "Mit allen Mitgliedern des Projekts geteilt.",
     "new": "Neue Vorlage",
+    "newIn": "Neue Vorlage in %{name}",
     "editTitle": "Vorlage bearbeiten",
     "close": "Schließen",
     "name": "Aufgabentitel",
@@ -803,12 +805,12 @@
   "notificationSettings": {
     "open": "Benachrichtigungseinstellungen",
     "title": "Benachrichtigungen",
-    "hint": "Wähle, worüber du informiert wirst, in der App und per E-Mail. Das gilt in jedem Projekt.",
+    "hint": "Für alle deine Projekte.",
     "loadFailed": "Deine Benachrichtigungseinstellungen konnten nicht geladen werden.",
     "saved": "Gespeichert",
     "saveFailed": "Deine Einstellungen konnten nicht gespeichert werden.",
-    "inApp": "In der App",
-    "byEmail": "Per E-Mail",
+    "inApp": "App",
+    "byEmail": "E-Mail",
     "inAppOf": "%{kind}, in der App",
     "byEmailOf": "%{kind}, per E-Mail",
     "inAppFirst": "Zuerst in der App einschalten.",
@@ -829,7 +831,7 @@
   },
   "calendarFeed": {
     "title": "Kalender-Feed",
-    "hint": "Sehen Sie die Fälligkeiten Ihrer offenen Aufgaben in Twake Calendar, Outlook, Thunderbird oder auf Ihrem Telefon. Kalender aktualisieren ihn etwa stündlich.",
+    "hint": "Ihre Fälligkeiten in Twake Calendar, Outlook oder auf Ihrem Telefon.",
     "subscribe": "Zu einem Kalender hinzufügen",
     "close": "Schließen",
     "loadFailed": "Ihr Kalender-Feed konnte nicht geladen werden.",
@@ -842,7 +844,8 @@
     "link": "Kalenderlink",
     "privacy": "Jeder mit dem Link sieht die Titel und Termine dieser Aufgaben.",
     "create": "Link erstellen",
-    "active": "Aktiv seit %{date}. Der Link wird nur einmal angezeigt, beim Erstellen: Setzen Sie ihn zurück, um einen neuen zu erhalten.",
+    "on": "Aktiv",
+    "active": "Erstellt am %{date}. Nur einmal angezeigt: Setzen Sie ihn zurück, um einen neuen zu erhalten.",
     "shownOnce": "Kopieren Sie ihn jetzt, er wird nur einmal angezeigt. Jeder mit dem Link sieht die Titel und Termine dieser Aufgaben.",
     "copy": "Link kopieren",
     "copied": "Link kopiert",

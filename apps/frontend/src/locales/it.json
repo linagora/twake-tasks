@@ -23,12 +23,14 @@
     "columnInstructions": "Per spostare una sezione, premi Spazio o Invio. Usa le frecce sinistra e destra per spostarla, Spazio o Invio per rilasciarla ed Esc per annullare."
   },
   "settings": {
-    "title": "Impostazioni"
+    "title": "Impostazioni",
+    "sections": "Sezioni delle impostazioni"
   },
   "templates": {
     "title": "Modelli",
-    "hint": "Avvia un’attività da un modello su qualsiasi bacheca del suo progetto. I modelli di un progetto sono condivisi con tutti i suoi membri.",
+    "hint": "Condivisi con i membri del progetto.",
     "new": "Nuovo modello",
+    "newIn": "Nuovo modello in %{name}",
     "editTitle": "Modifica modello",
     "close": "Chiudi",
     "name": "Titolo dell’attività",
@@ -803,12 +805,12 @@
   "notificationSettings": {
     "open": "Impostazioni delle notifiche",
     "title": "Notifiche",
-    "hint": "Scegli di cosa essere avvisato, nell’app e per email. Vale in ogni progetto.",
+    "hint": "Per tutti i tuoi progetti.",
     "loadFailed": "Impossibile caricare le impostazioni delle notifiche.",
     "saved": "Salvato",
     "saveFailed": "Impossibile salvare le impostazioni.",
-    "inApp": "Nell’app",
-    "byEmail": "Per email",
+    "inApp": "App",
+    "byEmail": "Email",
     "inAppOf": "%{kind}, nell’app",
     "byEmailOf": "%{kind}, per email",
     "inAppFirst": "Attivalo prima nell’app.",
@@ -829,7 +831,7 @@
   },
   "calendarFeed": {
     "title": "Feed del calendario",
-    "hint": "Vedi le scadenze delle tue attività aperte in Twake Calendar, Outlook, Thunderbird o sul telefono. I calendari lo aggiornano circa ogni ora.",
+    "hint": "Le tue scadenze in Twake Calendar, Outlook o sul telefono.",
     "subscribe": "Aggiungi a un calendario",
     "close": "Chiudi",
     "loadFailed": "Impossibile caricare il feed del calendario.",
@@ -842,7 +844,8 @@
     "link": "Link del calendario",
     "privacy": "Chiunque abbia il link può vedere i titoli e le date di queste attività.",
     "create": "Crea link",
-    "active": "Attivo dal %{date}. Il link viene mostrato una sola volta, alla creazione: reimpostalo per averne uno nuovo.",
+    "on": "Attivo",
+    "active": "Creato il %{date}. Mostrato una sola volta: reimpostalo per averne uno nuovo.",
     "shownOnce": "Copialo ora, viene mostrato una sola volta. Chiunque abbia il link può vedere i titoli e le date di queste attività.",
     "copy": "Copia link",
     "copied": "Link copiato",

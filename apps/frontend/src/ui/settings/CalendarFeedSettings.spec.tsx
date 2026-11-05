@@ -39,7 +39,8 @@ describe('calendar feed settings', () => {
     renderRoute('/settings', { boardsApi })
     const settings = await section()
 
-    expect(await settings.findByText(/^Active since/)).toBeVisible()
+    expect(await settings.findByText(/^Created on/)).toBeVisible()
+    expect(settings.getByText('Active')).toBeVisible()
     expect(settings.queryByRole('textbox')).toBeNull()
 
     fireEvent.click(settings.getByRole('button', { name: 'Reset link' }))
@@ -70,6 +71,7 @@ describe('calendar feed settings', () => {
     expect(
       await settings.findByRole('button', { name: 'Create link' })
     ).toBeVisible()
+    expect(settings.queryByText('Active')).toBeNull()
     expect(boardsApi.closeCalendarFeed).toHaveBeenCalled()
   })
 

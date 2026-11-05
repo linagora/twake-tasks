@@ -16,9 +16,11 @@ describe('notification settings', () => {
       'Changes on tasks I follow, in the app',
       'Changes on tasks I follow, by email'
     ]) {
-      expect(await settings.findByRole('switch', { name })).toBeChecked()
+      expect(await settings.findByRole('button', { name })).toBePressed()
     }
-    expect(settings.getByRole('combobox')).toHaveTextContent('Right away')
+    expect(
+      settings.getByRole('combobox', { name: /^Email frequency/ })
+    ).toHaveTextContent('Right away')
   })
 
   it('turns off the email of a kind and says it is saved', async () => {
@@ -27,7 +29,7 @@ describe('notification settings', () => {
     const settings = await section()
 
     fireEvent.click(
-      await settings.findByRole('switch', {
+      await settings.findByRole('button', {
         name: 'Comments on tasks I follow, by email'
       })
     )
@@ -43,19 +45,28 @@ describe('notification settings', () => {
   it('turns off the email too when a kind is off in the app', async () => {
     renderRoute('/settings')
     const settings = await section()
+    const inApp = await settings.findByRole('button', {
+      name: 'My reminders, in the app'
+    })
 
-    fireEvent.click(
-      await settings.findByRole('switch', { name: 'My reminders, in the app' })
-    )
+    fireEvent.click(inApp)
 
-    const email = settings.getByRole('switch', {
+    const email = settings.getByRole('button', {
       name: 'My reminders, by email'
     })
     await waitFor(() => {
-      expect(email).not.toBeChecked()
+      expect(email).not.toBePressed()
     })
+    expect(inApp).not.toBePressed()
     expect(email).toBeDisabled()
     expect(settings.getByText('Turn on in the app first.')).toBeVisible()
+
+    fireEvent.click(inApp)
+
+    await waitFor(() => {
+      expect(email).toBePressed()
+    })
+    expect(email).toBeEnabled()
   })
 
   it('switches to one daily summary', async () => {
@@ -75,14 +86,14 @@ describe('notification settings', () => {
     })
   })
 
-  it('puts the switch back when saving fails', async () => {
+  it('puts the toggle back when saving fails', async () => {
     const boardsApi = fakeBoardsApi()
     boardsApi.keepNotificationPreferences.mockRejectedValueOnce(
       new Error('offline')
     )
     renderRoute('/settings', { boardsApi })
     const settings = await section()
-    const email = await settings.findByRole('switch', {
+    const email = await settings.findByRole('button', {
       name: 'Changes on tasks I follow, by email'
     })
 
@@ -91,6 +102,6 @@ describe('notification settings', () => {
     expect(
       await screen.findByText('Your settings could not be saved.')
     ).toBeVisible()
-    expect(email).toBeChecked()
+    expect(email).toBePressed()
   })
 })

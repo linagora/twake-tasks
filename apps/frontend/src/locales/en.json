@@ -23,12 +23,14 @@
     "columnInstructions": "To move a section, press space or enter. Use the left and right arrow keys to move it, space or enter to drop it, and escape to cancel."
   },
   "settings": {
-    "title": "Settings"
+    "title": "Settings",
+    "sections": "Settings sections"
   },
   "templates": {
     "title": "Templates",
-    "hint": "Start a task from a template on any board of its project. A project’s templates are shared with everyone in it.",
+    "hint": "Shared with everyone in the project.",
     "new": "New template",
+    "newIn": "New template in %{name}",
     "editTitle": "Edit template",
     "close": "Close",
     "name": "Task title",
@@ -803,12 +805,12 @@
   "notificationSettings": {
     "open": "Notification settings",
     "title": "Notifications",
-    "hint": "Choose what you hear about, in the app and by email. It applies in every project.",
+    "hint": "For all your projects.",
     "loadFailed": "Couldn’t load your notification settings.",
     "saved": "Saved",
     "saveFailed": "Your settings could not be saved.",
-    "inApp": "In the app",
-    "byEmail": "By email",
+    "inApp": "App",
+    "byEmail": "Email",
     "inAppOf": "%{kind}, in the app",
     "byEmailOf": "%{kind}, by email",
     "inAppFirst": "Turn on in the app first.",
@@ -829,7 +831,7 @@
   },
   "calendarFeed": {
     "title": "Calendar feed",
-    "hint": "See the due dates of your open tasks in Twake Calendar, Outlook, Thunderbird or your phone. Calendars refresh it about every hour.",
+    "hint": "Your due dates in Twake Calendar, Outlook or your phone.",
     "subscribe": "Add to a calendar",
     "close": "Close",
     "loadFailed": "Couldn’t load your calendar feed.",
@@ -842,7 +844,8 @@
     "link": "Calendar link",
     "privacy": "Anyone with the link can see the titles and dates of these tasks.",
     "create": "Create link",
-    "active": "Active since %{date}. The link is shown once, when it is made: reset it to get a new one.",
+    "on": "Active",
+    "active": "Created on %{date}. Shown only once: reset it to get a new one.",
     "shownOnce": "Copy it now, it is shown only once. Anyone with the link can see the titles and dates of these tasks.",
     "copy": "Copy link",
     "copied": "Link copied",
