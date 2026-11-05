@@ -24,6 +24,10 @@ import {
   purgeTask,
   REMINDER_JOB
 } from './modules/tasks/index.ts'
+import {
+  runSchedule,
+  TEMPLATE_SCHEDULE_JOB
+} from './modules/templates/index.ts'
 import { RETENTION_JOB, retention, type Retention } from './retention.ts'
 import type { Handler } from './scheduler/scheduler.ts'
 
@@ -46,6 +50,7 @@ export function jobHandlers(deps: {
     [NOTIFICATION_DIGEST_JOB]: emailDigest({ appUrl, budget, send }),
     [NOTIFICATION_DAILY_JOB]: emailDailySummary({ appUrl, send }),
     [PROJECT_INVITE_EMAIL_JOB]: emailInvite({ appUrl, send }),
+    [TEMPLATE_SCHEDULE_JOB]: runSchedule(),
     ...(deps.ldapRest && reconcileJobs(deps.ldapRest))
   }
 }
