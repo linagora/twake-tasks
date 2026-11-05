@@ -1,7 +1,15 @@
-import { Box, ButtonBase, Chip, Tooltip, Typography } from '@linagora/twake-mui'
+import {
+  Avatar,
+  Box,
+  ButtonBase,
+  Chip,
+  nameToColor,
+  Tooltip,
+  Typography
+} from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
-import { useContrast } from '@/ds/contrast'
+import { HIGH_CONTRAST_AVATAR, useContrast } from '@/ds/contrast'
 import { ACTION, backdropOf, COVER_RADIUS, NO_COVER } from '@/ds/Pictures'
 
 // Twake Board's card, the preview at the top and the name under it.
@@ -24,6 +32,48 @@ const CARD = {
 } as const
 
 const ICON = { width: 36, height: 36, borderRadius: '10px', flexShrink: 0 }
+
+/**
+ * A board's picture or color, or for a board without, its initials on a
+ * color of the Twake avatars picked from its name.
+ */
+export function BoardIcon({
+  name,
+  cover
+}: {
+  name: string
+  cover: string | null
+}): ReactElement {
+  const { high } = useContrast()
+  if (cover) {
+    return (
+      <Box
+        data-testid="board-icon"
+        aria-hidden
+        sx={{ ...ICON, ...backdropOf(cover) }}
+      />
+    )
+  }
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(word => Array.from(word)[0] ?? '')
+    .join('')
+    .toUpperCase()
+  return (
+    <Avatar
+      data-testid="board-icon"
+      aria-hidden
+      variant="rounded"
+      size={36}
+      color={high ? HIGH_CONTRAST_AVATAR : (nameToColor(name) ?? 'none')}
+      sx={{ ...ICON, fontSize: 13, fontWeight: 600 }}
+    >
+      {initials}
+    </Avatar>
+  )
+}
 
 export function CardGrid({
   label,
