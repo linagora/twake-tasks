@@ -23,12 +23,14 @@
     "columnInstructions": "Para mover una sección, pulsa Espacio o Intro. Usa las flechas izquierda y derecha para moverla, Espacio o Intro para soltarla y Escape para cancelar."
   },
   "settings": {
-    "title": "Ajustes"
+    "title": "Ajustes",
+    "sections": "Secciones de ajustes"
   },
   "templates": {
     "title": "Plantillas",
-    "hint": "Empieza una tarea desde una plantilla en cualquier tablero de su proyecto. Las plantillas de un proyecto se comparten con todos sus miembros.",
+    "hint": "Compartidas con los miembros del proyecto.",
     "new": "Nueva plantilla",
+    "newIn": "Nueva plantilla en %{name}",
     "editTitle": "Editar plantilla",
     "close": "Cerrar",
     "name": "Título de la tarea",
@@ -803,12 +805,12 @@
   "notificationSettings": {
     "open": "Ajustes de notificaciones",
     "title": "Notificaciones",
-    "hint": "Elige de qué te enteras, en la aplicación y por correo. Se aplica en todos los proyectos.",
+    "hint": "Para todos tus proyectos.",
     "loadFailed": "No se pudieron cargar tus ajustes de notificaciones.",
     "saved": "Guardado",
     "saveFailed": "No se pudieron guardar tus ajustes.",
-    "inApp": "En la aplicación",
-    "byEmail": "Por correo",
+    "inApp": "App",
+    "byEmail": "Correo",
     "inAppOf": "%{kind}, en la aplicación",
     "byEmailOf": "%{kind}, por correo",
     "inAppFirst": "Actívalo primero en la aplicación.",
@@ -829,7 +831,7 @@
   },
   "calendarFeed": {
     "title": "Feed de calendario",
-    "hint": "Vea los vencimientos de sus tareas abiertas en Twake Calendar, Outlook, Thunderbird o su teléfono. Los calendarios lo actualizan más o menos cada hora.",
+    "hint": "Sus vencimientos en Twake Calendar, Outlook o su teléfono.",
     "subscribe": "Añadir a un calendario",
     "close": "Cerrar",
     "loadFailed": "No se pudo cargar su feed de calendario.",
@@ -842,7 +844,8 @@
     "link": "Enlace de calendario",
     "privacy": "Cualquiera con el enlace puede ver los títulos y las fechas de estas tareas.",
     "create": "Crear enlace",
-    "active": "Activo desde el %{date}. El enlace solo se muestra una vez, al crearlo: restablézcalo para obtener uno nuevo.",
+    "on": "Activo",
+    "active": "Creado el %{date}. Solo se muestra una vez: restablézcalo para obtener uno nuevo.",
     "shownOnce": "Cópielo ahora, solo se muestra una vez. Cualquiera con el enlace puede ver los títulos y las fechas de estas tareas.",
     "copy": "Copiar enlace",
     "copied": "Enlace copiado",

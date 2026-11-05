@@ -1,20 +1,14 @@
 import {
+  Bell,
   Clock,
   Comment,
+  Email,
   History,
   People,
   Reply,
   WarningCircle
 } from '@linagora/twake-icons'
-import {
-  Box,
-  Button,
-  MenuItem,
-  Select,
-  Switch,
-  Typography,
-  useAlert
-} from '@linagora/twake-mui'
+import { Button, MenuItem, Select, useAlert } from '@linagora/twake-mui'
 import { useId, type ReactElement } from 'react'
 
 import type {
@@ -22,8 +16,8 @@ import type {
   NotificationPreferences
 } from '@/application/boards'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
-import { PageHeader } from '@/ds/PageHeader'
-import { SettingsRow, SettingsTable } from '@/ds/SettingsTable'
+import { SettingsCard, ToggleChip, ToggleChips } from '@/ds/SettingsCard'
+import { SettingsRow } from '@/ds/SettingsTable'
 import { useI18n } from '@/ui/i18n/useI18n'
 import {
   useKeepNotificationPreferences,
@@ -50,7 +44,6 @@ const without = (kinds: NotificationKind[], kind: NotificationKind) =>
 
 export function NotificationSettings(): ReactElement {
   const { t } = useI18n()
-  const headingId = useId()
   const frequencyId = useId()
   const preferences = useNotificationPreferences()
   const keep = useKeepNotificationPreferences()
@@ -75,19 +68,12 @@ export function NotificationSettings(): ReactElement {
   }
 
   return (
-    <Box component="section" id="notifications" aria-labelledby={headingId}>
-      <PageHeader
-        title={
-          <>
-            <Typography id={headingId} variant="h5" component="h2">
-              {t('notificationSettings.title')}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              {t('notificationSettings.hint')}
-            </Typography>
-          </>
-        }
-      />
+    <SettingsCard
+      id="notifications"
+      icon={Bell}
+      title={t('notificationSettings.title')}
+      hint={t('notificationSettings.hint')}
+    >
       {preferences.isError && (
         <EmptyState
           tone="error"
@@ -109,67 +95,55 @@ export function NotificationSettings(): ReactElement {
         <ListSkeleton label={t('app.loading')} rows={3} />
       )}
       {kept && (
-        <SettingsTable
-          headings={[
-            t('notificationSettings.inApp'),
-            t('notificationSettings.byEmail')
-          ]}
-        >
+        <>
           {KINDS.map(([kind, icon]) => {
             const label = t(`notificationSettings.kinds.${kind}`)
             const inApp = !kept.mutedInApp.includes(kind)
+            const byEmail = inApp && !kept.mutedEmail.includes(kind)
             return (
               <SettingsRow
                 key={kind}
                 icon={icon}
                 label={label}
                 hint={!inApp && t('notificationSettings.inAppFirst')}
-                paired
               >
-                <Switch
-                  checked={inApp}
-                  slotProps={{
-                    input: {
-                      'aria-label': t('notificationSettings.inAppOf', {
-                        kind: label
+                <ToggleChips>
+                  <ToggleChip
+                    label={t('notificationSettings.inApp')}
+                    name={t('notificationSettings.inAppOf', { kind: label })}
+                    pressed={inApp}
+                    onClick={() => {
+                      save({
+                        ...kept,
+                        mutedInApp: inApp
+                          ? [...kept.mutedInApp, kind]
+                          : without(kept.mutedInApp, kind),
+                        mutedEmail: inApp
+                          ? kept.mutedEmail
+                          : without(kept.mutedEmail, kind)
                       })
-                    }
-                  }}
-                  onChange={(_event, on) => {
-                    save({
-                      ...kept,
-                      mutedInApp: on
-                        ? without(kept.mutedInApp, kind)
-                        : [...kept.mutedInApp, kind],
-                      mutedEmail: on
-                        ? without(kept.mutedEmail, kind)
-                        : kept.mutedEmail
-                    })
-                  }}
-                />
-                <Switch
-                  checked={inApp && !kept.mutedEmail.includes(kind)}
-                  disabled={!inApp}
-                  slotProps={{
-                    input: {
-                      'aria-label': t('notificationSettings.byEmailOf', {
-                        kind: label
+                    }}
+                  />
+                  <ToggleChip
+                    label={t('notificationSettings.byEmail')}
+                    name={t('notificationSettings.byEmailOf', { kind: label })}
+                    pressed={byEmail}
+                    disabled={!inApp}
+                    onClick={() => {
+                      save({
+                        ...kept,
+                        mutedEmail: byEmail
+                          ? [...kept.mutedEmail, kind]
+                          : without(kept.mutedEmail, kind)
                       })
-                    }
-                  }}
-                  onChange={(_event, on) => {
-                    save({
-                      ...kept,
-                      mutedEmail: on
-                        ? without(kept.mutedEmail, kind)
-                        : [...kept.mutedEmail, kind]
-                    })
-                  }}
-                />
+                    }}
+                  />
+                </ToggleChips>
               </SettingsRow>
             )
           })}
           <SettingsRow
+            icon={Email}
             label={t('notificationSettings.frequency')}
             labelId={frequencyId}
             hint={t('notificationSettings.frequencyHint')}
@@ -177,7 +151,7 @@ export function NotificationSettings(): ReactElement {
             <Select
               size="small"
               value={kept.emailFrequency}
-              inputProps={{ 'aria-labelledby': frequencyId }}
+              labelId={frequencyId}
               onChange={event => {
                 if (isFrequency(event.target.value)) {
                   save({ ...kept, emailFrequency: event.target.value })
@@ -191,8 +165,8 @@ export function NotificationSettings(): ReactElement {
               ))}
             </Select>
           </SettingsRow>
-        </SettingsTable>
+        </>
       )}
-    </Box>
+    </SettingsCard>
   )
 }

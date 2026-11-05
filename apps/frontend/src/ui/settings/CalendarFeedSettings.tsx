@@ -2,11 +2,11 @@ import {
   Calendar,
   Copy,
   Link,
+  List,
   Refresh,
   WarningCircle
 } from '@linagora/twake-icons'
 import {
-  Box,
   Button,
   Dialog,
   DialogActions,
@@ -24,8 +24,8 @@ import type { CalendarFeedScope } from '@/application/boards'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Icon } from '@/ds/Icon'
-import { PageHeader } from '@/ds/PageHeader'
-import { SettingsActions, SettingsRow, SettingsTable } from '@/ds/SettingsTable'
+import { SettingsCard, StatusChip } from '@/ds/SettingsCard'
+import { SettingsActions, SettingsRow } from '@/ds/SettingsTable'
 import { momentFormat } from '@/ui/boards/dueLabel'
 import { useI18n } from '@/ui/i18n/useI18n'
 import {
@@ -42,24 +42,18 @@ const isScope = (value: string): value is CalendarFeedScope =>
 
 export function CalendarFeedSettings(): ReactElement {
   const { t } = useI18n()
-  const headingId = useId()
+  const feed = useCalendarFeed()
 
   return (
-    <Box component="section" id="calendar" aria-labelledby={headingId}>
-      <PageHeader
-        title={
-          <>
-            <Typography id={headingId} variant="h5" component="h2">
-              {t('calendarFeed.title')}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              {t('calendarFeed.hint')}
-            </Typography>
-          </>
-        }
-      />
+    <SettingsCard
+      id="calendar"
+      icon={Calendar}
+      title={t('calendarFeed.title')}
+      hint={t('calendarFeed.hint')}
+      aside={feed.data && <StatusChip label={t('calendarFeed.on')} />}
+    >
       <CalendarFeedControls />
-    </Box>
+    </SettingsCard>
   )
 }
 
@@ -135,9 +129,9 @@ function CalendarFeedControls(): ReactElement {
   }
 
   return (
-    <SettingsTable>
+    <>
       <SettingsRow
-        icon={Calendar}
+        icon={List}
         label={t('calendarFeed.scope')}
         labelId={scopeId}
       >
@@ -212,7 +206,7 @@ function CalendarFeedControls(): ReactElement {
           }}
         />
       )}
-    </SettingsTable>
+    </>
   )
 }
 

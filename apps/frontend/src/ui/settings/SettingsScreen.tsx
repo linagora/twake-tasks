@@ -1,4 +1,6 @@
 import {
+  Bell,
+  Calendar,
   Copy,
   Dots,
   Gear,
@@ -8,7 +10,6 @@ import {
   WarningCircle
 } from '@linagora/twake-icons'
 import {
-  Box,
   Button,
   Dialog,
   DialogActions,
@@ -23,8 +24,10 @@ import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { Menu } from '@/ds/Menu'
-import { PageHeader } from '@/ds/PageHeader'
-import { RowButton, TaskGroup, TaskRow } from '@/ds/TaskList'
+import { SettingsLayout } from '@/ds/SettingsLayout'
+import { SettingsCard } from '@/ds/SettingsCard'
+import { RowButton } from '@/ds/TaskList'
+import { CardGroup, NewCard, TemplateCard } from '@/ds/TemplateCards'
 import type { Project } from '@/application/boards'
 import { editsProject, type Template } from '@/domain/board'
 import { PageCrumbs } from '@/ui/boards/Crumbs'
@@ -47,27 +50,45 @@ export function SettingsScreen(): ReactElement {
         origin={{ icon: Gear, label: t('settings.title'), to: '/settings' }}
         heading
       />
-      <NotificationSettings />
-      <CalendarFeedSettings />
-      <TemplateSettings />
+      <SettingsLayout
+        label={t('settings.sections')}
+        sections={[
+          {
+            id: 'notifications',
+            icon: Bell,
+            label: t('notificationSettings.title')
+          },
+          { id: 'calendar', icon: Calendar, label: t('calendarFeed.title') },
+          { id: 'templates', icon: Copy, label: t('templates.title') }
+        ]}
+      >
+        <NotificationSettings />
+        <CalendarFeedSettings />
+        <TemplateSettings />
+      </SettingsLayout>
     </main>
   )
 }
 
 interface Group {
-  key: string
+  project: Project
   label: string
   templates: Template[]
   editable: boolean
 }
 
+/** The template to change, else a new one, in one of `projects`. */
+interface Editing {
+  template?: Template
+  projects: Project[]
+}
+
 function TemplateSettings(): ReactElement {
   const { t } = useI18n()
-  const headingId = useId()
   const templates = useTemplates()
   const projects = useProjects()
   const projectName = useProjectName()
-  const [editing, setEditing] = useState<Template | 'new' | null>(null)
+  const [editing, setEditing] = useState<Editing | null>(null)
   const [deleting, setDeleting] = useState<Template | null>(null)
   const editable = (projects.data ?? []).filter(editsProject)
   const groups = groupsOf(
@@ -76,33 +97,27 @@ function TemplateSettings(): ReactElement {
     projectName
   )
   const failed = templates.isError || projects.isError
+  const loading = templates.isPending || projects.isPending
 
   return (
-    <Box component="section" aria-labelledby={headingId}>
-      <PageHeader
-        title={
-          <>
-            <Typography id={headingId} variant="h5" component="h2">
-              {t('templates.title')}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              {t('templates.hint')}
-            </Typography>
-          </>
-        }
-        actions={
-          editable.length > 0 && (
-            <Button
-              startIcon={<Icon icon={Plus} />}
-              onClick={() => {
-                setEditing('new')
-              }}
-            >
-              {t('templates.new')}
-            </Button>
-          )
-        }
-      />
+    <SettingsCard
+      id="templates"
+      icon={Copy}
+      title={t('templates.title')}
+      hint={t('templates.hint')}
+      aside={
+        editable.length > 0 && (
+          <Button
+            startIcon={<Icon icon={Plus} />}
+            onClick={() => {
+              setEditing({ projects: editable })
+            }}
+          >
+            {t('templates.new')}
+          </Button>
+        )
+      }
+    >
       {failed && (
         <EmptyState
           tone="error"
@@ -121,10 +136,8 @@ function TemplateSettings(): ReactElement {
           }
         />
       )}
-      {!failed && (templates.isPending || projects.isPending) && (
-        <ListSkeleton label={t('app.loading')} rows={2} />
-      )}
-      {!failed && templates.data?.length === 0 && (
+      {!failed && loading && <ListSkeleton label={t('app.loading')} rows={2} />}
+      {!failed && !loading && groups.length === 0 && (
         <EmptyState
           icon={Copy}
           illustrated
@@ -134,31 +147,38 @@ function TemplateSettings(): ReactElement {
       )}
       {!failed &&
         groups.map(group => (
-          <TaskGroup
-            key={group.key}
+          <CardGroup
+            key={group.project.id}
             label={group.label}
             count={group.templates.length}
-            heading="h3"
           >
             {group.templates.map(template => (
-              <TemplateRow
+              <TemplateItem
                 key={template.id}
                 template={template}
                 editable={group.editable}
                 onEdit={() => {
-                  setEditing(template)
+                  setEditing({ template, projects: editable })
                 }}
                 onDelete={() => {
                   setDeleting(template)
                 }}
               />
             ))}
-          </TaskGroup>
+            {group.editable && (
+              <NewCard
+                label={t('templates.newIn', { name: group.label })}
+                onClick={() => {
+                  setEditing({ projects: [group.project] })
+                }}
+              />
+            )}
+          </CardGroup>
         ))}
       {editing && (
         <TemplateDialog
-          template={editing === 'new' ? undefined : editing}
-          projects={editable}
+          template={editing.template}
+          projects={editing.projects}
           projectName={projectName}
           onClose={() => {
             setEditing(null)
@@ -173,7 +193,7 @@ function TemplateSettings(): ReactElement {
           }}
         />
       )}
-    </Box>
+    </SettingsCard>
   )
 }
 
@@ -184,7 +204,7 @@ function groupsOf(
 ): Group[] {
   return projects
     .map(project => ({
-      key: project.id,
+      project,
       label: projectName(project),
       templates: templates.filter(
         template => template.projectId === project.id
@@ -195,7 +215,7 @@ function groupsOf(
     .sort((a, b) => a.label.localeCompare(b.label))
 }
 
-function TemplateRow({
+function TemplateItem({
   template,
   editable,
   onEdit,
@@ -224,9 +244,8 @@ function TemplateRow({
   ].filter(fact => fact !== false)
 
   return (
-    <TaskRow
+    <TemplateCard
       label={template.title}
-      leading={<Icon icon={Copy} size={16} />}
       title={
         editable ? (
           <RowButton onClick={onEdit}>{template.title}</RowButton>
@@ -234,8 +253,8 @@ function TemplateRow({
           template.title
         )
       }
-      context={facts.length > 0 ? facts.join(' · ') : t('templates.titleOnly')}
-      trailing={
+      facts={facts.length > 0 ? facts.join(' · ') : t('templates.titleOnly')}
+      menu={
         editable && (
           <>
             <IconButton

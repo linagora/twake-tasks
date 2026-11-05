@@ -84,6 +84,57 @@ describe('SettingsScreen', () => {
     ])
   })
 
+  it('creates a template from its project’s card, in that project', async () => {
+    const { design, boardsApi } = aSetup()
+    const ops = aBoard({ name: 'Ops', project: aProject({ name: 'Ops' }) })
+    boardsApi.projects.unshift({ ...ops.project, role: 'editor' })
+    await boardsApi.createTemplate(design.project.id, {
+      ...NO_DETAILS,
+      title: 'Monthly report'
+    })
+    renderRoute('/settings', { boardsApi })
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'New template in Design' })
+    )
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'New template' })
+    )
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Task title' }), {
+      target: { value: 'Weekly review' }
+    })
+    expect(dialog.queryByRole('combobox', { name: 'Available in' })).toBe(null)
+    fireEvent.click(dialog.getByRole('button', { name: 'Create template' }))
+
+    expect(
+      await within(
+        await screen.findByRole('region', { name: 'Design' })
+      ).findByText('Weekly review')
+    ).toBeVisible()
+  })
+
+  it('jumps to a section from the menu of sections', async () => {
+    renderRoute('/settings', aSetup())
+    const menu = within(
+      await screen.findByRole('navigation', { name: 'Settings sections' })
+    )
+
+    expect(menu.getByRole('link', { name: 'Notifications' })).toHaveAttribute(
+      'aria-current',
+      'true'
+    )
+    fireEvent.click(menu.getByRole('link', { name: 'Templates' }))
+
+    expect(menu.getByRole('link', { name: 'Templates' })).toHaveAttribute(
+      'aria-current',
+      'true'
+    )
+    expect(
+      menu.getByRole('link', { name: 'Notifications' })
+    ).not.toHaveAttribute('aria-current')
+    expect(screen.getByRole('region', { name: 'Templates' })).toHaveFocus()
+  })
+
   it('offers no new template to someone who edits no project', async () => {
     renderRoute('/settings', aSetup('viewer'))
 

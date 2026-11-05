@@ -23,12 +23,14 @@
     "columnInstructions": "Để di chuyển một mục, nhấn phím cách hoặc Enter. Dùng phím mũi tên trái và phải để di chuyển, phím cách hoặc Enter để thả, và Escape để hủy."
   },
   "settings": {
-    "title": "Cài đặt"
+    "title": "Cài đặt",
+    "sections": "Các mục cài đặt"
   },
   "templates": {
     "title": "Mẫu",
-    "hint": "Bắt đầu một công việc từ mẫu trên bất kỳ bảng nào của dự án chứa mẫu. Mẫu của dự án được chia sẻ với mọi thành viên.",
+    "hint": "Được chia sẻ với các thành viên dự án.",
     "new": "Mẫu mới",
+    "newIn": "Mẫu mới trong %{name}",
     "editTitle": "Sửa mẫu",
     "close": "Đóng",
     "name": "Tiêu đề công việc",
@@ -803,12 +805,12 @@
   "notificationSettings": {
     "open": "Cài đặt thông báo",
     "title": "Thông báo",
-    "hint": "Chọn những gì bạn được báo, trong ứng dụng và qua email. Áp dụng cho mọi dự án.",
+    "hint": "Cho mọi dự án của bạn.",
     "loadFailed": "Không thể tải cài đặt thông báo của bạn.",
     "saved": "Đã lưu",
     "saveFailed": "Không thể lưu cài đặt của bạn.",
-    "inApp": "Trong ứng dụng",
-    "byEmail": "Qua email",
+    "inApp": "Ứng dụng",
+    "byEmail": "Email",
     "inAppOf": "%{kind}, trong ứng dụng",
     "byEmailOf": "%{kind}, qua email",
     "inAppFirst": "Hãy bật trong ứng dụng trước.",
@@ -829,7 +831,7 @@
   },
   "calendarFeed": {
     "title": "Nguồn lịch",
-    "hint": "Xem hạn của các công việc đang mở trong Twake Calendar, Outlook, Thunderbird hoặc trên điện thoại. Lịch cập nhật nguồn này khoảng mỗi giờ.",
+    "hint": "Hạn công việc của bạn trong Twake Calendar, Outlook hoặc trên điện thoại.",
     "subscribe": "Thêm vào lịch",
     "close": "Đóng",
     "loadFailed": "Không thể tải nguồn lịch của bạn.",
@@ -842,7 +844,8 @@
     "link": "Liên kết lịch",
     "privacy": "Bất kỳ ai có liên kết đều xem được tiêu đề và ngày của các công việc này.",
     "create": "Tạo liên kết",
-    "active": "Hoạt động từ %{date}. Liên kết chỉ hiện một lần, khi được tạo: đặt lại để có liên kết mới.",
+    "on": "Đang hoạt động",
+    "active": "Tạo ngày %{date}. Chỉ hiện một lần: đặt lại để có liên kết mới.",
     "shownOnce": "Hãy sao chép ngay, liên kết chỉ hiện một lần. Bất kỳ ai có liên kết đều xem được tiêu đề và ngày của các công việc này.",
     "copy": "Sao chép liên kết",
     "copied": "Đã sao chép liên kết",

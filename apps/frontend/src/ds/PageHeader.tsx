@@ -97,34 +97,6 @@ export const HEADER_ACTIONS = {
   ml: 'auto'
 } as const
 
-export function PageHeader({
-  back,
-  title,
-  actions
-}: {
-  back?: ReactNode
-  title: ReactNode
-  actions?: ReactNode
-}): ReactElement {
-  return (
-    <Box sx={{ mb: 3 }}>
-      {back && <Box sx={{ mb: 1 }}>{back}</Box>}
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          columnGap: 2,
-          rowGap: 1.5
-        }}
-      >
-        <Box sx={{ flex: TITLE_FLEX, minWidth: 0 }}>{title}</Box>
-        {actions && <Box sx={HEADER_ACTIONS}>{actions}</Box>}
-      </Box>
-    </Box>
-  )
-}
-
 export const StackButton = styled(ButtonBase)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
   '&:focus-visible': {
