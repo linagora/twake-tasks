@@ -421,12 +421,10 @@ describe('sharing a board', () => {
       expect(screen.queryByRole('dialog')).toBeNull()
     })
     expect(boardsApi.moveToProject).toHaveBeenCalledWith(board.id, 'ops')
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Share' })).toHaveAttribute(
-        'aria-disabled',
-        'true'
-      )
-    })
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }))
+    expect(
+      await screen.findByRole('dialog', { name: 'People with access' })
+    ).toBeVisible()
   })
 
   it('speaks of the board alone when it is the only one of its project', async () => {
@@ -498,22 +496,27 @@ describe('sharing a board', () => {
       () => aBoard({ role: 'editor' }),
       'Only an admin can share this board.'
     ]
-  ])('explains why %s cannot be shared', async (_name, make, reason) => {
-    const board = make()
-    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
-    const button = await screen.findByRole('button', { name: 'Share' })
+  ])(
+    'explains why %s cannot be shared, and lists its members',
+    async (_name, make, reason) => {
+      const board = make()
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+      const button = await screen.findByRole('button', { name: 'Share' })
 
-    expect(button).toHaveAttribute('aria-disabled', 'true')
-    expect(button).not.toBeDisabled()
-    fireEvent.keyDown(document.body, { key: 'Tab' })
-    act(() => {
-      button.focus()
-    })
-    const tooltip = await screen.findByRole('tooltip')
-    expect(tooltip).toHaveTextContent(reason)
-    expect(button).toHaveAttribute('aria-describedby', tooltip.id)
+      expect(button).not.toHaveAttribute('aria-disabled')
+      fireEvent.keyDown(document.body, { key: 'Tab' })
+      act(() => {
+        button.focus()
+      })
+      const tooltip = await screen.findByRole('tooltip')
+      expect(tooltip).toHaveTextContent(reason)
+      expect(button).toHaveAttribute('aria-describedby', tooltip.id)
 
-    fireEvent.click(button)
-    expect(screen.queryByRole('dialog')).toBeNull()
-  })
+      fireEvent.click(button)
+      const people = within(
+        await screen.findByRole('dialog', { name: 'People with access' })
+      )
+      expect(people.getByText(reason)).toBeVisible()
+    }
+  )
 })

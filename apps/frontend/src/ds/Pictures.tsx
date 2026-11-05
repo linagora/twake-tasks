@@ -1,7 +1,7 @@
 import { Box, ButtonBase, Typography, type Theme } from '@linagora/twake-mui'
 import type { MouseEvent, ReactElement, ReactNode } from 'react'
 
-/** The radius of a board's cover, on its card and its page, as Twake Space's tiles. */
+/** The radius of a board's cover on its card, as Twake Space's tiles. */
 export const COVER_RADIUS = '12px'
 
 export function PictureGrid({
@@ -120,28 +120,3 @@ export const NO_COVER = {
 export const ACTION = {
   bgcolor: (theme: Theme) => theme.alpha(theme.vars.palette.primary.main, 0.12)
 } as const
-
-/**
- * A board's picture above its breadcrumb, from the left edge of its columns
- * to the right edge of its actions.
- */
-export function BoardBanner({ src }: { src: string }): ReactElement {
-  return (
-    <Box
-      data-testid="board-banner"
-      aria-hidden
-      sx={{
-        ...backdropOf(src),
-        // A line of its own in the breadcrumb's strip.
-        flexBasis: '100%',
-        height: { xs: 56, sm: 88 },
-        // The columns sit 2rem in, the breadcrumb's strip less.
-        mx: { xs: 2, sm: 1 },
-        mt: { xs: 1, sm: 1.5 },
-        borderRadius: COVER_RADIUS,
-        boxShadow: (theme: Theme) =>
-          `inset 0 0 0 1px ${theme.vars.palette.divider}`
-      }}
-    />
-  )
-}
