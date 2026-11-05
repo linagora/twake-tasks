@@ -26,6 +26,7 @@ import {
   remindersResponse,
   searchResponse,
   section,
+  sectionNamesResponse,
   settingsResponse,
   sharingResponse,
   tasksResponse,
@@ -297,6 +298,7 @@ describe('the API contract', () => {
     )
     contracted(filtersResponse, await api.as(alice).get('/filters'))
     contracted(labelNamesResponse, await api.as(alice).get('/labels'))
+    contracted(sectionNamesResponse, await api.as(alice).get('/sections'))
     for (const path of [
       `/filters/${filterId}/tasks?zone=Europe/Paris`,
       '/my-tasks'

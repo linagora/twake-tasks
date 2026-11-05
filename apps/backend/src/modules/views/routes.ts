@@ -103,6 +103,13 @@ export function registerViews(
     }),
     defineRoute({
       method: 'GET',
+      url: '/sections',
+      access: self,
+      handler: ({ identity }) =>
+        under('sections', filterStore.sectionNames(identity))
+    }),
+    defineRoute({
+      method: 'GET',
       url: '/people',
       access: self,
       handler: ({ identity }) => under('people', filterStore.people(identity))
@@ -197,7 +204,7 @@ export function registerViews(
           tasks:
             query.q.length < deps.searchMinLength
               ? []
-              : await store.search(identity, query.q)
+              : await store.search(identity, query.q, query)
         }
       })
     })

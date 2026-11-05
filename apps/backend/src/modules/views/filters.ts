@@ -19,10 +19,13 @@ import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
 import { userSettings } from '../settings/index.ts'
 import {
+  accessibleBoards,
+  boards,
   labels,
   memberLooks,
   projectMembers,
   projects,
+  sections,
   settingsOfMember,
   shift,
   taskAssignees,
@@ -31,9 +34,10 @@ import {
   todayIn
 } from '../boards/index.ts'
 import { savedFilters } from './schema.ts'
-import { assignedTo, openTasksOf } from './store.ts'
+import { assignedTo, containing, STATUS, tasksOf } from './store.ts'
 
 type Due = 'overdue' | 'today' | 'week' | 'none'
+type Completed = 'today' | 'week' | 'month'
 
 // Each criterion matches any of its values; a task must match every criterion.
 export interface Criteria {
@@ -43,7 +47,27 @@ export interface Criteria {
   priority?: number[] | undefined
   label?: string[] | undefined
   due?: Due[] | undefined
+  section?: string[] | undefined
+  text?: string | undefined
+  /** Open when absent, as filters were before they had a status. */
+  status?: 'open' | 'done' | 'any' | undefined
+  completed?: Completed | undefined
+  /** `me` or a user id. */
+  createdBy?: string[] | undefined
 }
+
+// Counted in days back from today, today included.
+const COMPLETED_DAYS: Record<Completed, number> = {
+  today: 0,
+  week: 6,
+  month: 29
+}
+
+const completedSince = (since: Completed, today: string, zone: string) =>
+  gte(
+    tasks.completedAt,
+    sql`(${shift(today, -COMPLETED_DAYS[since], 'days')}::date)::timestamp at time zone ${zone}`
+  )
 
 function dueIs(due: Due, today: string) {
   switch (due) {
@@ -61,9 +85,31 @@ function dueIs(due: Due, today: string) {
   }
 }
 
-function matching(tx: Tx, userId: string, criteria: Criteria, today: string) {
-  const { board, assignee, priority, label, due } = criteria
+function matching(
+  tx: Tx,
+  userId: string,
+  criteria: Criteria,
+  today: string,
+  zone: string
+) {
+  const {
+    board,
+    assignee,
+    priority,
+    label,
+    due,
+    section,
+    text,
+    status = 'open',
+    completed,
+    createdBy
+  } = criteria
   return and(
+    isNull(boards.archivedAt),
+    STATUS[status],
+    status === 'done' && completed
+      ? completedSince(completed, today, zone)
+      : undefined,
     board && inArray(tasks.boardId, board),
     assignee &&
       or(
@@ -95,7 +141,28 @@ function matching(tx: Tx, userId: string, criteria: Criteria, today: string) {
             )
           )
       ),
-    due && or(...due.map(each => dueIs(each, today)))
+    due && or(...due.map(each => dueIs(each, today))),
+    section &&
+      exists(
+        tx
+          .select({ one: sql`1` })
+          .from(sections)
+          .where(
+            and(
+              eq(sections.id, tasks.sectionId),
+              inArray(
+                sql`lower(${sections.name})`,
+                section.map(name => name.toLowerCase())
+              )
+            )
+          )
+      ),
+    text === undefined ? undefined : containing(tx, text),
+    createdBy &&
+      inArray(
+        tasks.createdBy,
+        createdBy.map(each => (each === 'me' ? userId : each))
+      )
   )
 }
 
@@ -162,6 +229,21 @@ export function createFilterStore(db: Db) {
             sql`${labels.name} collate "C" desc`
           )
         return rows.map(row => row.name)
+      })
+    },
+
+    sectionNames(identity: Identity) {
+      return writeOrRefuse(db, identity, tx => {
+        const accessible = accessibleBoards(tx, identity.userId)
+        return tx
+          .select({ boardId: sections.boardId, name: sections.name })
+          .from(sections)
+          .innerJoin(accessible, eq(accessible.boardId, sections.boardId))
+          .innerJoin(
+            boards,
+            and(eq(boards.id, sections.boardId), isNull(boards.archivedAt))
+          )
+          .orderBy(asc(sections.boardId), asc(sections.position))
       })
     },
 
@@ -232,15 +314,13 @@ export function createFilterStore(db: Db) {
           .from(savedFilters)
           .where(filterOf(identity, filterId))
         if (!filter) throw new Refused('not_found')
-        return openTasksOf(
+        const criteria = filter.criteria as Criteria
+        return tasksOf(
           tx,
           identity.userId,
-          matching(
-            tx,
-            identity.userId,
-            filter.criteria as Criteria,
-            todayIn(zone)
-          )
+          matching(tx, identity.userId, criteria, todayIn(zone), zone),
+          undefined,
+          criteria.status === 'done' ? desc(tasks.completedAt) : undefined
         )
       })
     }

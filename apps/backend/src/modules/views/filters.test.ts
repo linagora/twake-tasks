@@ -1,13 +1,17 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { eq, sql } from 'drizzle-orm'
+import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
+import { createDb, inTenant } from '../../infra/db.ts'
 import {
   aUser,
   startApp,
   withOwnPolicyLiftedFor,
   type TestUser
 } from '../../testing/app.ts'
-import { shift, todayIn } from '../boards/index.ts'
+import { shift, tasks, todayIn } from '../boards/index.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
+const database = createDb(inject('databaseUrl'))
+const { db } = database
 
 beforeAll(async () => {
   api = await startApp()
@@ -15,6 +19,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await api.close()
+  await database.sql.end()
 })
 
 const zone = 'Europe/Paris'
@@ -482,6 +487,184 @@ describe('saved filters', () => {
         { userId: bob.userId, email: bob.email, name: 'Bob', avatar: null }
       ]
     })
+  })
+
+  it('filters by the name of the section, whatever its case, on the boards picked', async () => {
+    const owner = aUser()
+    const create = async (keyPrefix: string) => {
+      const board = (
+        await api.as(owner).post('/boards', { name: keyPrefix, keyPrefix })
+      ).json<{ id: string }>()
+      const review = (
+        await api.as(owner).post(`/boards/${board.id}/sections`, {
+          name: keyPrefix === 'DES' ? 'Review' : 'REVIEW',
+          category: 'started'
+        })
+      ).json<{ id: string }>()
+      for (const sectionId of [review.id, null]) {
+        await api
+          .as(owner)
+          .post(`/boards/${board.id}/tasks`, { sectionId, title: 'Some' })
+      }
+      return board.id
+    }
+    const design = await create('DES')
+    await create('OPS')
+    const keys = async (criteria: object) => {
+      const { id } = (
+        await api.as(owner).post('/filters', { name: 'Review', criteria })
+      ).json<{ id: string }>()
+      return (await keysOf(owner, id)).sort()
+    }
+
+    expect(await keys({ section: ['review'] })).toEqual(['DES-1', 'OPS-1'])
+    expect(await keys({ section: ['Review'], board: [design] })).toEqual([
+      'DES-1'
+    ])
+  })
+
+  it('lists the section names of my active boards to filter by', async () => {
+    const owner = aUser()
+    const board = (
+      await api.as(owner).post('/boards', { name: 'DES', keyPrefix: 'DES' })
+    ).json<{ id: string; sections: { name: string }[] }>()
+    const archived = (
+      await api.as(owner).post('/boards', { name: 'OLD', keyPrefix: 'OLD' })
+    ).json<{ id: string }>()
+    await api.as(owner).post(`/boards/${archived.id}/archive`, {})
+    await aBoardOf(aUser(), 'OTH')
+
+    const { sections } = (await api.as(owner).get('/sections')).json<{
+      sections: { boardId: string; name: string }[]
+    }>()
+
+    expect(sections).toEqual(
+      board.sections.map(section => ({ boardId: board.id, name: section.name }))
+    )
+  })
+
+  it('filters by a text in the title, key, description or comments', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    await design.add('Invoice the client')
+    const described = await design.add('Pay')
+    await api
+      .as(owner)
+      .put(`/boards/${design.id}/tasks/${described.id}/description`, {
+        markdown: 'Check the **invoice** first',
+        version: 0
+      })
+    const commented = await design.add('Call')
+    await api
+      .as(owner)
+      .post(`/boards/${design.id}/tasks/${commented.id}/comments`, {
+        body: 'The invoice number is 42'
+      })
+    await design.add('Unrelated')
+    const keys = async (text: string) => {
+      const { id } = (
+        await api
+          .as(owner)
+          .post('/filters', { name: 'Text', criteria: { text } })
+      ).json<{ id: string }>()
+      return (await keysOf(owner, id)).sort()
+    }
+
+    expect(await keys('INVOICE')).toEqual(['DES-1', 'DES-2', 'DES-3'])
+    expect(await keys('des-4')).toEqual(['DES-4'])
+  })
+
+  it('lists done tasks, by completion time, those of a recent period only when asked', async () => {
+    const owner = aUser()
+    const design = await aBoardOf(owner, 'DES')
+    await design.add('Open')
+    const done = async (title: string, daysAgo: number) => {
+      const task = await design.add(title)
+      await api
+        .as(owner)
+        .post(`/boards/${design.id}/tasks/${task.id}/complete`, {
+          state: 'completed'
+        })
+      await inTenant(db, owner, tx =>
+        tx
+          .update(tasks)
+          .set({ completedAt: sql`now() - make_interval(days => ${daysAgo})` })
+          .where(eq(tasks.id, task.id))
+      )
+    }
+    await done('Last month', 40)
+    await done('Today', 0)
+    await done('Last week', 3)
+    const canceled = await design.add('Canceled')
+    await api
+      .as(owner)
+      .post(`/boards/${design.id}/tasks/${canceled.id}/complete`, {
+        state: 'canceled'
+      })
+    const keys = async (criteria: object) => {
+      const { id } = (
+        await api.as(owner).post('/filters', { name: 'Done', criteria })
+      ).json<{ id: string }>()
+      return keysOf(owner, id)
+    }
+
+    expect(await keys({})).toEqual(['DES-1'])
+    expect(await keys({ status: 'done' })).toEqual(['DES-3', 'DES-4', 'DES-2'])
+    expect(await keys({ status: 'done', completed: 'week' })).toEqual([
+      'DES-3',
+      'DES-4'
+    ])
+    expect(await keys({ status: 'done', completed: 'today' })).toEqual([
+      'DES-3'
+    ])
+    expect(await keys({ status: 'done', completed: 'month' })).toEqual([
+      'DES-3',
+      'DES-4'
+    ])
+    expect((await keys({ status: 'any' })).sort()).toEqual([
+      'DES-1',
+      'DES-2',
+      'DES-3',
+      'DES-4'
+    ])
+    expect(
+      (
+        await api.as(owner).post('/filters', {
+          name: 'Odd',
+          criteria: { completed: 'week' }
+        })
+      ).statusCode
+    ).toBe(400)
+  })
+
+  it('filters by who created the task', async () => {
+    const alice = aUser()
+    const bob = aUser({ organizationId: alice.organizationId })
+    const design = (
+      await api.as(alice).post('/boards', { name: 'DES', keyPrefix: 'DES' })
+    ).json<{ id: string }>()
+    await api.as(alice).post(`/boards/${design.id}/invites`, {
+      email: bob.email,
+      role: 'editor'
+    })
+    await api.as(bob).get('/boards')
+    for (const user of [alice, bob]) {
+      await api
+        .as(user)
+        .post(`/boards/${design.id}/tasks`, { sectionId: null, title: 'Some' })
+    }
+    const keys = async (user: TestUser, createdBy: string[]) => {
+      const { id } = (
+        await api
+          .as(user)
+          .post('/filters', { name: 'Mine', criteria: { createdBy } })
+      ).json<{ id: string }>()
+      return keysOf(user, id)
+    }
+
+    expect(await keys(alice, ['me'])).toEqual(['DES-1'])
+    expect(await keys(bob, ['me'])).toEqual(['DES-2'])
+    expect(await keys(alice, [bob.userId])).toEqual(['DES-2'])
   })
 
   it('names the parent of a sub-task', async () => {
