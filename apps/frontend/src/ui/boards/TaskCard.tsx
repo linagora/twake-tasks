@@ -1,11 +1,4 @@
-import {
-  Alert,
-  Button,
-  Divider,
-  IconButton,
-  Link,
-  Menu
-} from '@linagora/twake-mui'
+import { Alert, Button, Divider, IconButton, Link } from '@linagora/twake-mui'
 import {
   Archive,
   CalendarToday,
@@ -33,6 +26,7 @@ import {
 } from '@/ds/Columns'
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
+import { Menu } from '@/ds/Menu'
 import { SortableCard } from '@/ds/Sortable'
 import { Toast } from '@/ds/Toast'
 import {

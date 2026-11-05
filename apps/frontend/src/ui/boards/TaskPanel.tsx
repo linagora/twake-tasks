@@ -11,7 +11,6 @@ import {
 import {
   Button,
   IconButton,
-  Menu,
   Tab,
   Tabs,
   TextField,
@@ -30,6 +29,7 @@ import { ApiError } from '@/application/boards'
 import { DiscardDialog } from '@/ds/DiscardDialog'
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
+import { Menu } from '@/ds/Menu'
 import { RichText, RichTextEditor } from '@/ds/RichText'
 import { Grow, Inline, PanelSection, SidePanel } from '@/ds/SidePanel'
 import { isAdmin, MAX_TASK_DEPTH, type Task } from '@/domain/board'

@@ -10,7 +10,6 @@ import {
   Button,
   Chip,
   InputAdornment,
-  Menu,
   MenuItem,
   TextField,
   type Theme
@@ -18,6 +17,7 @@ import {
 import { useState, type ReactElement, type ReactNode, type Ref } from 'react'
 
 import { Icon } from '@/ds/Icon'
+import { Menu } from '@/ds/Menu'
 
 const tinted = (theme: Theme) => ({
   bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.08)

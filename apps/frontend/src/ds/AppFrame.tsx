@@ -8,18 +8,23 @@ import {
   Layout,
   List,
   ListSubheader,
-  NavItem,
   NavText,
   Sidebar,
   styled,
-  Typography,
-  type Theme
+  Typography
 } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 
 import { CRUMB_HOST, CrumbHostContext } from '@/ds/CrumbBar'
 import { Icon } from '@/ds/Icon'
+import {
+  MenuContext,
+  MenuDrawer,
+  useNarrowScreen,
+  type MenuControl
+} from '@/ds/PhoneShell'
 import { PanelHostContext } from '@/ds/SidePanel'
+import { FAB_ROOM } from '@/ds/Toast'
 
 export const TOP_BAR_HEIGHT = 64
 
@@ -27,10 +32,7 @@ export const TOP_BAR_HEIGHT = 64
 const FrameLayout = styled(Layout)(({ theme }) => ({
   flex: '1 1 auto',
   minHeight: 0,
-  [theme.breakpoints.down('lg')]: {
-    height: 'auto',
-    paddingBottom: 'var(--sidebarHeight)'
-  }
+  [theme.breakpoints.down('lg')]: { height: 'auto' }
 }))
 
 // Content is `height: 100%` plus a 16px margin on wide screens, which
@@ -52,24 +54,35 @@ const SKIP_LINK = {
   '&:focus': { position: 'fixed', top: 8, left: 8, zIndex: 2100 }
 } as const
 
+/** Below lg the sidebar is the `menu` drawer that `MenuButton` opens. */
 export function AppFrame({
   topBar,
   sidebar,
+  menu,
+  fab,
   skipLabel,
   children
 }: {
   topBar: ReactNode
   sidebar: ReactNode
+  menu: MenuControl
+  fab: ReactNode
   skipLabel: string
   children: ReactNode
 }): ReactElement {
   const [panelHost, setPanelHost] = useState<HTMLElement | null>(null)
   const [crumbHost, setCrumbHost] = useState<HTMLElement | null>(null)
+  const narrow = useNarrowScreen()
   return (
     <CrumbHostContext value={crumbHost}>
       <PanelHostContext value={panelHost}>
         <Box
-          sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}
+          sx={{
+            height: '100dvh',
+            display: 'flex',
+            flexDirection: 'column',
+            ...(narrow && { [FAB_ROOM]: '88px' })
+          }}
         >
           {/* Following #content would push a history entry through the router. */}
           <Button
@@ -83,9 +96,13 @@ export function AppFrame({
           >
             {skipLabel}
           </Button>
-          {topBar}
+          <MenuContext value={menu}>{topBar}</MenuContext>
           <FrameLayout withTopBar={false}>
-            <Sidebar>{sidebar}</Sidebar>
+            {narrow ? (
+              <MenuDrawer menu={menu}>{sidebar}</MenuDrawer>
+            ) : (
+              <Sidebar>{sidebar}</Sidebar>
+            )}
             <FrameContent role={undefined} id="content" tabIndex={-1}>
               <Box ref={setCrumbHost} sx={CRUMB_HOST} />
               {/* Its own stacking context: the raised checkboxes and
@@ -95,11 +112,13 @@ export function AppFrame({
                   flex: '1 1 auto',
                   minHeight: 0,
                   overflow: 'auto',
-                  isolation: 'isolate'
+                  isolation: 'isolate',
+                  pb: `var(${FAB_ROOM}, 0px)`
                 }}
               >
                 {children}
               </Box>
+              {narrow && fab}
               {/* An open task covers the content, and only it. */}
               <Box
                 ref={setPanelHost}
@@ -184,6 +203,10 @@ export function TopBarSearch({
       sx={{
         flex: '1 1 auto',
         minWidth: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        '& > :last-child': { flex: '1 1 auto', minWidth: 0 },
         '& input::-webkit-search-cancel-button': { display: 'none' }
       }}
     >
@@ -200,48 +223,21 @@ export function CountBadge({
   children: ReactNode
 }): ReactElement {
   if (count === 0) return <>{children}</>
-  // The nav icon carries a 12px right margin on wide screens, none on phones.
+  // Clear of the 12px right margin of the nav icon.
   return (
     <Badge
       color="error"
       badgeContent={count}
       max={99}
-      sx={(theme: Theme) => ({
-        '& .MuiBadge-badge': {
-          right: 12,
-          [theme.breakpoints.down('lg')]: { right: 0 }
-        }
-      })}
+      sx={{ '& .MuiBadge-badge': { right: 12 } }}
     >
       {children}
     </Badge>
   )
 }
 
-// twake-mui sizes a bottom bar entry to its label, so five of them overflow a
-// 360px screen; sharing the bar between them keeps the labels inside.
-export const BarNavItem = styled(NavItem)(({ theme }) => ({
-  [theme.breakpoints.down('lg')]: {
-    flex: '1 1 0',
-    minWidth: 0,
-    margin: 0,
-    '& a > div > span:not(.MuiBadge-root)': {
-      overflow: 'hidden',
-      textOverflow: 'ellipsis'
-    }
-  }
-}))
-
-// The phone bottom bar has room for five entries.
-export const WideScreenNavItem = styled(BarNavItem)(({ theme }) => ({
-  [theme.breakpoints.down('lg')]: { display: 'none' }
-}))
-
-// An action beside a sidebar entry, which the phone bottom bar has no room for.
-export const WideScreenAction = styled('span')(({ theme }) => ({
-  display: 'flex',
-  [theme.breakpoints.down('lg')]: { display: 'none' }
-}))
+// The buttons beside a sidebar entry, on one row.
+export const NavActions = styled('span')({ display: 'flex' })
 
 // NavText lays its text out as a flex item, which the text's own ellipsis
 // needs to be set on.
@@ -260,15 +256,13 @@ export const PlatformBarFrame = styled('div')({
   '& img[src*="project-text"]': { height: 26, transform: 'translateY(3px)' }
 })
 
-// The main action above the nav, as wide as its entries. The sidebar is a
-// bottom bar on phones, which has no room for it.
+// The main action above the nav, as wide as its entries.
 export const SidebarButton = styled(Button)(({ theme }) => ({
   // As the Create button of Twake Drive.
   margin: '16px 16px 0',
   borderRadius: 12,
   fontSize: theme.typography.pxToRem(14),
-  lineHeight: 1.4,
-  [theme.breakpoints.down('lg')]: { display: 'none' }
+  lineHeight: 1.4
 }))
 
 // Holds the router link of a sidebar entry, which draws as the entry itself.
@@ -291,13 +285,6 @@ export const SidebarEntry = styled('div')(({ theme }) => ({
     backgroundColor: theme.alpha(theme.vars.palette.primary.main, 0.12),
     boxShadow: `inset 4px 0 0 ${theme.vars.palette.primary.main}`,
     fontWeight: 600
-  },
-  // The bottom bar greys the entries that are not current, as twake-mui 10.0
-  // did; its NavLink now keeps them in the primary text colour.
-  [theme.breakpoints.down('lg')]: {
-    '& > a:not([aria-current="page"]) > div': {
-      color: theme.vars.palette.text.secondary
-    }
   }
 }))
 
@@ -337,7 +324,6 @@ export function AccountCard({
   )
 }
 
-// Phones get the bottom bar only; the section stays on wide screens.
 export function SidebarSection({
   label,
   children
@@ -353,14 +339,13 @@ export function SidebarSection({
           {label}
         </ListSubheader>
       }
-      sx={{ display: { xs: 'none', lg: 'block' }, py: 0 }}
+      sx={{ py: 0 }}
     >
       {children}
     </List>
   )
 }
 
-// Phones get the bottom bar only, as for SidebarSection.
 export function SidebarShelves({
   label,
   children
@@ -369,11 +354,11 @@ export function SidebarShelves({
   children: ReactNode
 }): ReactElement {
   return (
-    <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+    <>
       <Divider sx={{ mx: 2, my: 1 }} />
       <List aria-label={label} sx={{ py: 0 }}>
         {children}
       </List>
-    </Box>
+    </>
   )
 }

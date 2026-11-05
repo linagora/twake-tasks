@@ -1,14 +1,14 @@
 import { FeedbackButton, getFeedbackLabels } from '@linagora/twake-feedback'
-import { useColorScheme, useMediaQuery, useTheme } from '@linagora/twake-mui'
+import { useColorScheme } from '@linagora/twake-mui'
 import { useCallback, useEffect, type ReactElement } from 'react'
 
 import type { FeedbackWidget } from '@/application/reporting'
+import { useNarrowScreen } from '@/ds/PhoneShell'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useReporting } from '@/ui/reporting/ReportingProvider'
 
-// Height of the bottom bar the sidebar becomes below lg: twake-mui sets
-// --sidebarHeight to 52px on :root.
-const PHONE_BAR_HEIGHT = 52
+// Room for the floating button of phones (PhoneFab): 56px and its edge.
+const PHONE_FAB_ROOM = 72
 
 /**
  * The draggable feedback button, when feedback is on. Mounted by the shell
@@ -22,8 +22,7 @@ export function AppFeedback(): ReactElement | null {
 
 function Button({ feedback }: { feedback: FeedbackWidget }): ReactElement {
   const { lang } = useI18n()
-  const theme = useTheme()
-  const phone = useMediaQuery(theme.breakpoints.down('lg'))
+  const narrow = useNarrowScreen()
   const { colorScheme = 'system' } = useColorScheme()
 
   useEffect(() => {
@@ -40,7 +39,7 @@ function Button({ feedback }: { feedback: FeedbackWidget }): ReactElement {
     <FeedbackButton
       attach={attach}
       storageKey="twake-tasks"
-      bottomOffset={phone ? PHONE_BAR_HEIGHT : 0}
+      bottomOffset={narrow ? PHONE_FAB_ROOM : 0}
     />
   )
 }

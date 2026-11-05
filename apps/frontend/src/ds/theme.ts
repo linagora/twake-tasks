@@ -17,6 +17,26 @@ const forcedColors = {
   }
 }
 
+// A finger needs 44px: on a touch screen a smaller icon button or checkbox
+// takes taps around it too, and keeps its size on the page.
+const reach = 'min(0px, calc(50% - 22px))'
+const fingerTargets = {
+  '@media (pointer: coarse)': {
+    '.MuiIconButton-root, .MuiToggleButton-root, .MuiCheckbox-root': {
+      '&::after': {
+        content: '""',
+        position: 'absolute',
+        top: reach,
+        right: reach,
+        bottom: reach,
+        left: reach
+      }
+    }
+  }
+}
+
+const baseline = { ...forcedColors, ...fingerTargets }
+
 // The ring is set on ButtonBase alone: a function override on MenuItem, Tab
 // or ListItemButton would replace twake-mui's own instead of merging with it.
 const ringOnButtons: NonNullable<ThemeOptions['components']>['MuiButtonBase'] =
@@ -36,7 +56,7 @@ const ringOnButtons: NonNullable<ThemeOptions['components']>['MuiButtonBase'] =
   }
 
 const components: ThemeOptions['components'] = {
-  MuiCssBaseline: { styleOverrides: forcedColors },
+  MuiCssBaseline: { styleOverrides: baseline },
   MuiButtonBase: ringOnButtons,
   MuiButton: noFocusRipple,
   MuiIconButton: noFocusRipple,
@@ -119,7 +139,7 @@ export const highContrastTheme: ThemeOptions = {
     ...components,
     MuiCssBaseline: {
       styleOverrides: {
-        ...forcedColors,
+        ...baseline,
         // Over every ring the components draw, whatever their own colour and
         // width; one turned off stays off.
         ':focus-visible, .Mui-focusVisible': {

@@ -10,11 +10,17 @@ const SEVERITIES = [
   'error'
 ] as const
 
-// Phones keep the bottom bar uncovered. An alert's tint is see-through and a
+/** The bottom of a phone screen that is free of its home indicator. */
+export const PHONE_BOTTOM = 'env(safe-area-inset-bottom, 0px)'
+
+/** The room a phone screen keeps at its bottom for its floating button. */
+export const FAB_ROOM = '--fabRoom'
+
+// Above the floating button of phones. An alert's tint is see-through and a
 // toast sits over the page, so the tint is mixed into the paper instead.
 export const Toast = styled(Snackbar)(({ theme }) => ({
   [theme.breakpoints.down('lg')]: {
-    bottom: `calc(var(--sidebarHeight, 0px) + ${theme.spacing(1)})`
+    bottom: `calc(var(${FAB_ROOM}, 0px) + ${PHONE_BOTTOM} + ${theme.spacing(1)})`
   },
   '& .MuiAlert-standard': { boxShadow: theme.vars.shadows[6] },
   ...Object.fromEntries(

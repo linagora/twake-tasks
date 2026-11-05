@@ -5,7 +5,8 @@ export type Person = 'alice' | 'bob'
 export async function signIn(page: Page, person: Person, path = '/') {
   await page.goto(path)
   await page.getByRole('button', { name: `Sign in as ${person}` }).click()
-  await expect(page.getByRole('list', { name: 'Main menu' })).toBeVisible()
+  // The search, not the nav: phones keep the nav in a closed menu.
+  await expect(page.getByRole('combobox', { name: 'Search' })).toBeVisible()
 }
 
 /** A browser of its own, so each person has their own SSO session. */

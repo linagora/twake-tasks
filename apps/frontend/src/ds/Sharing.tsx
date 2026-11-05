@@ -16,7 +16,6 @@ import {
   ListItemAvatar,
   ListItemIcon,
   ListItemText,
-  Menu,
   MenuItem,
   Skeleton,
   Stack,
@@ -34,6 +33,7 @@ import {
 } from 'react'
 
 import { Icon } from '@/ds/Icon'
+import { Menu } from '@/ds/Menu'
 import { MenuHint } from '@/ds/MenuHint'
 import type { PersonSuggestion } from '@/ds/PeopleList'
 

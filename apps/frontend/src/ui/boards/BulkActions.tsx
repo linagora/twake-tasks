@@ -8,12 +8,12 @@ import {
   PersonAdd,
   Trash
 } from '@linagora/twake-icons'
-import { Menu } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 
 import type { BulkAction } from '@/application/boards'
 import { BULK_LIMIT, undoOf } from '@/application/bulkChange'
 import { IconMenuItem } from '@/ds/IconMenuItem'
+import { Menu } from '@/ds/Menu'
 import { popoverOrigins } from '@/ds/Picker'
 import { DayPopover } from '@/ds/Pickers'
 import { BarAction, SelectionBar } from '@/ds/SelectionBar'

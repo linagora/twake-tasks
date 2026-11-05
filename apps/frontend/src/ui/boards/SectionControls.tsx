@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Menu,
   TextField,
   Typography
 } from '@linagora/twake-mui'
@@ -24,6 +23,7 @@ import { ApiError } from '@/application/boards'
 import { NewColumnButton } from '@/ds/Columns'
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
+import { Menu } from '@/ds/Menu'
 import type { Board, Section } from '@/domain/board'
 import { useBoardChange } from '@/ui/queries/boards'
 import { selectOnMount } from '@/ui/focusOnMount'

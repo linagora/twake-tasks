@@ -6,13 +6,13 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Menu,
   TextField
 } from '@linagora/twake-mui'
 import { useId, useState, type ElementType, type ReactElement } from 'react'
 
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
+import { Menu } from '@/ds/Menu'
 import {
   hasOwnCover,
   isAdmin,
