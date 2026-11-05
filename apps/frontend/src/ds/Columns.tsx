@@ -43,6 +43,8 @@ export function Columns({ children }: { children: ReactNode }): ReactElement {
   )
 }
 
+const COLUMN_RADIUS = '12px'
+
 export function EmptyColumn({ label }: { label: string }): ReactElement {
   return (
     <Typography
@@ -76,7 +78,7 @@ export function ColumnsSkeleton({ label }: { label: string }): ReactElement {
               flexDirection: 'column',
               gap: 1,
               p: 1.5,
-              borderRadius: 2,
+              borderRadius: COLUMN_RADIUS,
               bgcolor: 'background.default'
             }}
           >
@@ -139,7 +141,7 @@ export function Column({
         flexDirection: 'column',
         gap: 1,
         p: 1.5,
-        borderRadius: 2,
+        borderRadius: COLUMN_RADIUS,
         bgcolor: highlighted
           ? theme.alpha(theme.vars.palette.primary.main, 0.08)
           : 'background.default',
@@ -253,7 +255,7 @@ export function Card({
         gap: 1,
         p: 1.5,
         overflowWrap: 'anywhere',
-        borderRadius: 2,
+        borderRadius: '10px',
         bgcolor: 'background.paper',
         border: 1,
         borderColor: 'divider',
