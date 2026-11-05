@@ -131,6 +131,23 @@ test('shares a board: the invitee works on it, and the owner sees it live', asyn
   ).toBeVisible()
 })
 
+test('suggests a contact who has no account and invites them by email', async ({
+  page
+}) => {
+  await signIn(page, 'alice')
+  const { name } = await newBoard(page)
+  await page.getByRole('button', { name: 'Share' }).click()
+  const share = page.getByRole('dialog', { name: `Share ${name}` })
+
+  await share.getByLabel('Email').fill('grace')
+  await page.getByRole('option', { name: /Grace Hopper/ }).click()
+  await share.getByRole('button', { name: 'Share' }).click()
+
+  await expect(
+    share.getByRole('listitem', { name: 'grace@acme.e2e.test' })
+  ).toBeVisible()
+})
+
 test('drags a card to another section and it stays there', async ({ page }) => {
   await signIn(page, 'alice')
   const { prefix } = await newBoard(page)
