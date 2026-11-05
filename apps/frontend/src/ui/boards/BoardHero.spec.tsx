@@ -130,11 +130,12 @@ describe('the board hero', () => {
   it('collapses into a bar while the page scrolls, and expands at the top', async () => {
     const board = launchBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
-    const hero = await screen.findByTestId('board-hero')
+    const numbers = await screen.findByRole('list', {
+      name: 'The board at a glance'
+    })
+    expect(numbers).toBeVisible()
+    const hero = screen.getByTestId('board-hero')
     expect(hero).toHaveAttribute('data-collapsed', 'false')
-    expect(
-      screen.getByRole('list', { name: 'The board at a glance' })
-    ).toBeVisible()
 
     act(() => {
       scrollTo(400)
@@ -157,5 +158,36 @@ describe('the board hero', () => {
     expect(
       screen.getByRole('list', { name: 'The board at a glance' })
     ).toBeVisible()
+  })
+
+  it('holds the place of the header and its numbers while the board loads', async () => {
+    const board = launchBoard()
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.getBoard.mockImplementation(() => new Promise(() => undefined))
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const hero = await screen.findByTestId('board-hero')
+    expect(
+      await within(hero).findByRole('heading', { name: 'Launch' })
+    ).toBeInTheDocument()
+    expect(within(hero).getByTestId('board-hero-numbers')).toBeInTheDocument()
+    expect(
+      screen.getByRole('progressbar', { name: 'Loading' })
+    ).not.toContainElement(hero)
+  })
+
+  it('keeps a gap under the header of an empty board in an embed', async () => {
+    const board = aBoard({ name: 'Launch' })
+    renderRoute(`/embed/projects/${board.project.id}/boards/${board.id}`, {
+      boardsApi: fakeBoardsApi([board])
+    })
+
+    const hero = (
+      await screen.findByRole('heading', { name: 'Launch' })
+    ).closest('[data-testid="board-hero"]')
+    expect(
+      screen.queryByRole('list', { name: 'The board at a glance' })
+    ).toBeNull()
+    expect(hero).toHaveStyle({ marginBottom: 'var(--twake-spacing)' })
   })
 })

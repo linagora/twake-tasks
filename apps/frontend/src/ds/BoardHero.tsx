@@ -1,4 +1,4 @@
-import { Box, keyframes } from '@linagora/twake-mui'
+import { Box, keyframes, Skeleton, Typography } from '@linagora/twake-mui'
 import {
   use,
   useEffect,
@@ -9,7 +9,7 @@ import {
   type RefObject
 } from 'react'
 
-import { CrumbSlot, ScrollHostContext } from '@/ds/CrumbBar'
+import { CrumbHostContext, CrumbSlot, ScrollHostContext } from '@/ds/CrumbBar'
 import { motion, MOTION_MS } from '@/ds/motion'
 import { HEADER_ACTIONS, TITLE_FLEX } from '@/ds/PageHeader'
 import { backdropOf } from '@/ds/Pictures'
@@ -142,6 +142,7 @@ export function BoardHero({
   const collapsed = useCollapsed(hero)
   const loaded = useLoaded(picture)
   const glass = picture !== null && !collapsed
+  const embedded = use(CrumbHostContext) === null
   return (
     <CrumbSlot>
       <Box
@@ -153,6 +154,8 @@ export function BoardHero({
           position: 'relative',
           flexBasis: '100%',
           minWidth: 0,
+          // The frame's page has room at its top, under the strip; an embed none.
+          ...(embedded && { mb: 1 }),
           // To the right edge of the content, where the picture ends.
           ...(picture && {
             flexBasis: { xs: 'calc(100% + 16px)', sm: 'calc(100% + 24px)' },
@@ -271,6 +274,7 @@ export function BoardHero({
           >
             <Box sx={{ minHeight: 0, overflow: 'hidden' }}>
               <Box
+                data-testid="board-hero-numbers"
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -285,5 +289,56 @@ export function BoardHero({
         )}
       </Box>
     </CrumbSlot>
+  )
+}
+
+const pill = (width: number, height = 40) => (
+  <Skeleton
+    variant="rounded"
+    width={width}
+    height={height}
+    sx={{ borderRadius: 100 }}
+  />
+)
+
+/**
+ * A board's header while the board loads, as tall as once loaded, so that the
+ * columns do not move.
+ */
+export function BoardHeroSkeleton({
+  title,
+  share,
+  numbers
+}: {
+  /** Omitted when not known yet, for a placeholder. */
+  title?: ReactNode
+  /** Whether a Share button will stand beside the members. */
+  share: boolean
+  /** Whether the board will show numbers: not when it has no tasks. */
+  numbers: boolean
+}): ReactElement {
+  return (
+    <BoardHero
+      picture={null}
+      title={title ?? <Skeleton width={240} sx={{ typography: 'h3' }} />}
+      numbers={
+        numbers && (
+          <>
+            <Typography variant="body2">
+              <Skeleton width={280} sx={{ maxWidth: '100%' }} />
+            </Typography>
+            <Skeleton
+              variant="rounded"
+              height={6}
+              sx={{ maxWidth: 420, borderRadius: 3 }}
+            />
+          </>
+        )
+      }
+      people={share ? pill(220) : pill(120, 32)}
+      filter={pill(320)}
+      views={null}
+      menu={null}
+    />
   )
 }

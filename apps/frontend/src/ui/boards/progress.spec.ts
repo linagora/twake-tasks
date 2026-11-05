@@ -77,6 +77,44 @@ describe('board progress', () => {
     })
   })
 
+  it('counts open and late tasks as the progress view does', () => {
+    const board = aBoard()
+    const [todo, started, done] = board.sections
+    const canceled = {
+      id: 'gone',
+      name: 'Dropped',
+      category: 'canceled' as const
+    }
+    board.sections = [...board.sections, canceled]
+    const parent = aTask(todo ?? null, { dueDate: '2026-11-01' })
+    board.tasks = [
+      parent,
+      aTask(todo ?? null, { dueDate: TODAY }),
+      aTask(started ?? null, { dueDate: '2026-11-04' }),
+      aTask(done ?? null, { dueDate: '2026-11-01' }),
+      aTask(canceled, { dueDate: '2026-11-01' }),
+      aTask(null, { dueDate: '2026-11-03' }),
+      aTask(null, {
+        completedAt: '2026-11-01T10:00:00Z',
+        dueDate: '2026-11-01'
+      }),
+      aTask(null, {
+        canceledAt: '2026-11-01T10:00:00Z',
+        dueDate: '2026-11-01'
+      }),
+      aTask(todo ?? null, { parentId: parent.id, dueDate: '2026-11-01' })
+    ]
+
+    const { open, overdue } = boardProgress(board, TODAY)
+    const numbers = boardNumbers(board, TODAY)
+
+    expect({ open, overdue }).toEqual({ open: 4, overdue: 3 })
+    expect({ open: numbers.open, overdue: numbers.late }).toEqual({
+      open,
+      overdue
+    })
+  })
+
   it('has no next due date when no open task is due from today on', () => {
     const board = aBoard()
     const [todo, , done] = board.sections
