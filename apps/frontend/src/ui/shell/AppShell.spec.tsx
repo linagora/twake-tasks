@@ -1,10 +1,11 @@
 import type { TwakeBarProps } from '@linagora/twake-bar'
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { aBoard, aNotification, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { fakeSession, fakeUser } from '@/testing/fakeSession'
+import { phoneScreen } from '@/testing/phoneScreen'
 import { renderRoute } from '@/testing/renderWithProviders'
 
 const createSdk = vi.hoisted(() => vi.fn(() => ({ status: 'ready' })))
@@ -562,6 +563,46 @@ describe('AppShell', () => {
       expect(
         screen.queryByRole('button', { name: 'Mark all as read' })
       ).toBeNull()
+    })
+  })
+
+  describe('on a phone', () => {
+    beforeEach(() => {
+      phoneScreen()
+    })
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('keeps the navigation in a menu opened beside the search, closed by the next page', async () => {
+      const { router } = renderRoute('/', { boardsApi: fakeBoardsApi() })
+
+      const header = within(await screen.findByRole('banner'))
+      expect(screen.queryByRole('complementary')).toBe(null)
+      fireEvent.click(header.getByRole('button', { name: 'Main menu' }))
+      const menu = within(
+        await screen.findByRole('dialog', { name: 'Main menu' })
+      )
+      expect(menu.getByRole('link', { name: 'Filters' })).toBeInTheDocument()
+      expect(menu.getByRole('link', { name: 'Archives' })).toBeInTheDocument()
+      fireEvent.click(menu.getByRole('link', { name: 'Settings' }))
+
+      expect(router.state.location.pathname).toBe('/settings')
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).toBe(null)
+      })
+    })
+
+    it('creates a task from the floating button, not from the header', async () => {
+      renderRoute('/', { boardsApi: fakeBoardsApi() })
+
+      const header = within(await screen.findByRole('banner'))
+      expect(header.queryByRole('button', { name: 'Create task' })).toBe(null)
+      fireEvent.click(screen.getByRole('button', { name: 'Create task' }))
+
+      expect(
+        await screen.findByRole('dialog', { name: 'Create a task' })
+      ).toBeInTheDocument()
     })
   })
 

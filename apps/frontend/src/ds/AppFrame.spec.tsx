@@ -16,6 +16,8 @@ describe('AppFrame', () => {
       <AppFrame
         topBar={<header>Top</header>}
         sidebar={<nav>Side</nav>}
+        menu={{ label: 'Menu', open: false, setOpen: () => undefined }}
+        fab={null}
         skipLabel="Skip to content"
       >
         <p>Body</p>

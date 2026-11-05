@@ -29,9 +29,7 @@ import {
   NavText,
   Popover,
   Tooltip,
-  Typography,
-  useMediaQuery,
-  useTheme
+  Typography
 } from '@linagora/twake-mui'
 import {
   useRef,
@@ -51,21 +49,20 @@ import {
 import {
   AccountCard,
   AppFrame,
-  BarNavItem,
   BrandMark,
   CountBadge,
+  NavActions,
   OneLineNavText,
   SidebarButton,
   SidebarSection,
   SidebarShelves,
   TopBar,
-  TopBarSearch,
-  WideScreenAction,
-  WideScreenNavItem
+  TopBarSearch
 } from '@/ds/AppFrame'
 import { useContrast } from '@/ds/contrast'
 import { HomeIcon } from '@/ds/HomeIcon'
 import { Icon } from '@/ds/Icon'
+import { MenuButton, PhoneFab } from '@/ds/PhoneShell'
 import { displayName } from '@/domain/person'
 import { SearchField } from '@/ui/agenda/SearchScreen'
 import { useBoardName } from '@/ui/boards/BoardsScreen'
@@ -89,7 +86,7 @@ const AGENDAS = ['today', 'upcoming', 'mine'] as const
 
 export function AppShell(): ReactElement {
   const { openNewTask } = useNewTaskParam()
-  const { pathname } = useLocation()
+  const { pathname, key } = useLocation()
   const agenda = AGENDAS.find(view => pathname === `/${view}`)
   const startNewTask = (): void => {
     openNewTask(agenda && agendaPreset(agenda))
@@ -101,6 +98,9 @@ export function AppShell(): ReactElement {
   const search = useRef<HTMLInputElement>(null)
   const { t } = useI18n()
   const lit = useLitEntry()
+  // The phone menu is open on the page it was opened on: the next one, or
+  // the same one followed again, closes it.
+  const [menuAt, setMenuAt] = useState<string | null>(null)
   // A new task goes in the board it is created from, else in the Inbox.
   const inBoardId = useMatch('/boards/:boardId/*')?.params.boardId
   useShortcuts({
@@ -113,10 +113,20 @@ export function AppShell(): ReactElement {
 
   return (
     <AppFrame
-      topBar={
-        <Header searchRef={search} onNewTask={startNewTask} onHelp={showHelp} />
+      topBar={<Header searchRef={search} onHelp={showHelp} />}
+      fab={
+        <PhoneFab label={t('newTask.open')} onClick={startNewTask}>
+          <Icon icon={Plus} size={20} />
+        </PhoneFab>
       }
       skipLabel={t('app.skipToContent')}
+      menu={{
+        label: t('app.mainMenu'),
+        open: menuAt === key,
+        setOpen: open => {
+          setMenuAt(open ? key : null)
+        }
+      }}
       sidebar={
         <>
           {/* Twake Drive's wording; screen readers still hear what it creates. */}
@@ -151,58 +161,29 @@ export function AppShell(): ReactElement {
 
 function Header({
   searchRef,
-  onNewTask,
   onHelp
 }: {
   searchRef: RefObject<HTMLInputElement | null>
-  onNewTask: () => void
   onHelp: () => void
 }): ReactElement {
   const { t } = useI18n()
   const { sdk } = useSession()
-  const theme = useTheme()
-  const phone = useMediaQuery(theme.breakpoints.down('lg'))
 
-  // Small, as Twake Drive's search in its bar.
+  // Small, as Twake Drive's search in its bar. Phones open the menu beside
+  // it, as Twake Space.
   const search = (
     <TopBarSearch>
+      <MenuButton />
       <SearchField inputRef={searchRef} size="small" />
     </TopBarSearch>
   )
-  // Wide screens have Create in the sidebar.
-  const newTaskButton = phone && (
-    <IconButton
-      color="primary"
-      aria-label={t('newTask.open')}
-      onClick={onNewTask}
-    >
-      <Icon icon={Plus} />
-    </IconButton>
-  )
 
-  // The platform bar holds the account; the phone bottom bar has no room for
-  // the filters, which the account menu offered.
+  // The platform bar holds the account.
   if (sdk) {
     return (
       <PlatformBar
         sdk={sdk}
-        slots={{
-          search: <div className="u-mh-2">{search}</div>,
-          right: (
-            <>
-              {phone && (
-                <IconButton
-                  component={RouterLink}
-                  to="/filters"
-                  aria-label={t('filters.title')}
-                >
-                  <Icon icon={Filter} />
-                </IconButton>
-              )}
-              {newTaskButton}
-            </>
-          )
-        }}
+        slots={{ search: <div className="u-mh-2">{search}</div> }}
       />
     )
   }
@@ -218,7 +199,6 @@ function Header({
         <BrandMark name={t('app.name')} />
       </Link>
       {search}
-      {newTaskButton}
       <AccountMenu onHelp={onHelp} />
     </TopBar>
   )
@@ -231,10 +211,6 @@ function AccountMenu({ onHelp }: { onHelp: () => void }): ReactElement {
   const { data: settings } = useSettings()
   const email = user.email ?? ''
   const name = displayName({ email, name: settings?.name ?? user.name ?? null })
-  const theme = useTheme()
-  // The menu focuses its first item on open, so an item hidden with CSS
-  // would keep the focus, and Escape, outside the menu.
-  const phone = useMediaQuery(theme.breakpoints.down('lg'))
   const { pathname } = useLocation()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const [openedOn, setOpenedOn] = useState(pathname)
@@ -289,22 +265,6 @@ function AccountMenu({ onHelp }: { onHelp: () => void }): ReactElement {
             if (event.key === '?') close()
           }}
         >
-          {phone && (
-            <MenuItem component={RouterLink} to="/filters" onClick={close}>
-              <ListItemIcon>
-                <Icon icon={Filter} />
-              </ListItemIcon>
-              <ListItemText>{t('filters.title')}</ListItemText>
-            </MenuItem>
-          )}
-          {phone && (
-            <MenuItem component={RouterLink} to="/settings" onClick={close}>
-              <ListItemIcon>
-                <Icon icon={Gear} />
-              </ListItemIcon>
-              <ListItemText>{t('settings.title')}</ListItemText>
-            </MenuItem>
-          )}
           <MenuItem
             aria-keyshortcuts="?"
             onClick={() => {
@@ -435,7 +395,7 @@ function AppNavLink({
   countLabel?: string
 }): ReactElement {
   return (
-    <BarNavItem>
+    <NavItem>
       <SidebarLink
         to={to}
         active={active}
@@ -446,7 +406,7 @@ function AppNavLink({
         </CountBadge>
         <NavText>{label}</NavText>
       </SidebarLink>
-    </BarNavItem>
+    </NavItem>
   )
 }
 
@@ -519,8 +479,8 @@ function FoldButton({
 }
 
 // Boards, then each active board under it, as the address books of Twake
-// Contacts; its arrow folds them away and its + makes a board. Phones keep
-// the bottom bar entry only, so there, or folded, Boards stays lit on a board.
+// Contacts; its arrow folds them away and its + makes a board. Folded, Boards
+// stays lit on a board.
 function BoardsNav({
   boardsLit,
   boardLit
@@ -530,11 +490,8 @@ function BoardsNav({
 }): ReactElement {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const theme = useTheme()
-  const phone = useMediaQuery(theme.breakpoints.down('lg'))
   const [creating, setCreating] = useState(false)
   const [folded, toggleFolded] = useFolded('sidebar-boards-folded', true)
-  const listed = !phone && !folded
   const boardName = useBoardName()
   const boards = (useBoards().data ?? [])
     .filter(board => !board.archived)
@@ -543,9 +500,9 @@ function BoardsNav({
 
   return (
     <>
-      <BarNavItem
+      <NavItem
         secondaryAction={
-          <WideScreenAction>
+          <NavActions>
             <FoldButton
               folded={folded}
               label={t(folded ? 'boards.unfold' : 'boards.fold')}
@@ -562,17 +519,17 @@ function BoardsNav({
                 <Icon icon={Plus} size={14} />
               </IconButton>
             </Tooltip>
-          </WideScreenAction>
+          </NavActions>
         }
       >
-        <SidebarLink to="/" active={boardsLit && !(listed && boardLit)}>
+        <SidebarLink to="/" active={boardsLit && !(!folded && boardLit)}>
           <NavIcon icon={HomeIcon} />
           <NavText>{t('boards.title')}</NavText>
         </SidebarLink>
-      </BarNavItem>
+      </NavItem>
       {!folded &&
         boards.map(board => (
-          <WideScreenNavItem key={board.id} variant="secondary">
+          <NavItem key={board.id} variant="secondary">
             <SidebarLink
               to={`/boards/${board.id}`}
               active={board.id === boardLit}
@@ -580,7 +537,7 @@ function BoardsNav({
               <NavIcon icon={Mosaic} />
               <OneLineNavText>{board.name}</OneLineNavText>
             </SidebarLink>
-          </WideScreenNavItem>
+          </NavItem>
         ))}
       {creating && (
         <NewBoardDialog
@@ -597,7 +554,6 @@ function BoardsNav({
   )
 }
 
-// The phone bottom bar has no room for Filters or its favorites.
 function FiltersNav(): ReactElement {
   const { t } = useI18n()
   const { pathname } = useLocation()
@@ -609,7 +565,7 @@ function FiltersNav(): ReactElement {
 
   return (
     <>
-      <WideScreenNavItem
+      <NavItem
         secondaryAction={
           favorites.length > 0 && (
             <FoldButton
@@ -627,9 +583,9 @@ function FiltersNav(): ReactElement {
           <NavIcon icon={Filter} />
           <NavText>{t('filters.title')}</NavText>
         </SidebarLink>
-      </WideScreenNavItem>
+      </NavItem>
       {listed.map(filter => (
-        <WideScreenNavItem key={filter.id} variant="secondary">
+        <NavItem key={filter.id} variant="secondary">
           <SidebarLink
             to={`/filters/${filter.id}`}
             active={filter.id === openId}
@@ -637,7 +593,7 @@ function FiltersNav(): ReactElement {
             <NavIcon icon={Filter} />
             <OneLineNavText>{filter.name}</OneLineNavText>
           </SidebarLink>
-        </WideScreenNavItem>
+        </NavItem>
       ))}
     </>
   )
