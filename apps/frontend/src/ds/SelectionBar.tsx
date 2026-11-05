@@ -19,7 +19,6 @@ import type {
 import { Icon } from '@/ds/Icon'
 import { PHONE_BOTTOM, Toast } from '@/ds/Toast'
 
-/** The attribute that marks the bar on the page. */
 export const SELECTION_BAR = 'data-selection-bar'
 
 const BAR_HEIGHT = '56px'

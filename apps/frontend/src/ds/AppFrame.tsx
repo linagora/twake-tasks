@@ -54,10 +54,7 @@ const SKIP_LINK = {
   '&:focus': { position: 'fixed', top: 8, left: 8, zIndex: 2100 }
 } as const
 
-/**
- * Below lg the sidebar is the `menu` drawer that `MenuButton` opens, and
- * `fab` floats over the content, under an open task.
- */
+/** Below lg the sidebar is the `menu` drawer that `MenuButton` opens. */
 export function AppFrame({
   topBar,
   sidebar,

@@ -39,7 +39,6 @@ export interface MenuControl {
 
 export const MenuContext = createContext<MenuControl | null>(null)
 
-/** Opens the navigation menu below lg; nothing on wide screens. */
 export function MenuButton(): ReactElement | null {
   const menu = use(MenuContext)
   const narrow = useNarrowScreen()
@@ -99,10 +98,8 @@ export function MenuDrawer({
 }
 
 /**
- * The page's main action below lg, floating at the bottom right of the
- * content, as Twake Space's. The content keeps room for it at its end. In the
- * stacking order of the page, so that an open task covers it; the selection
- * bar takes its place.
+ * The page's main action below lg, as Twake Space's. In the stacking order of
+ * the page, so that an open task covers it; the selection bar takes its place.
  */
 export function PhoneFab({
   label,
