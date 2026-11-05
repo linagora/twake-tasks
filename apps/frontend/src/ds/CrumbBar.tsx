@@ -29,11 +29,16 @@ export const CRUMB_BAR = {
 export const CRUMB_HOST = {
   ...CRUMB_BAR,
   flexWrap: 'wrap',
-  alignContent: 'center'
+  alignContent: 'center',
+  // A board's header sets its own height, which shrinks once collapsed.
+  '&:has(> [data-own-height])': { minHeight: 0 }
 } as const
 
 /** The strip the frame holds; null in an embed, where a page has none. */
 export const CrumbHostContext = createContext<HTMLElement | null>(null)
+
+/** The box the page scrolls in, under the strip; null in an embed. */
+export const ScrollHostContext = createContext<HTMLElement | null>(null)
 
 /**
  * A page's breadcrumb, in the frame's strip, or in its own one in an embed,

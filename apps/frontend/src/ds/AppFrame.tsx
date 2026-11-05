@@ -15,7 +15,7 @@ import {
 } from '@linagora/twake-mui'
 import { useState, type ReactElement, type ReactNode } from 'react'
 
-import { CRUMB_HOST, CrumbHostContext } from '@/ds/CrumbBar'
+import { CRUMB_HOST, CrumbHostContext, ScrollHostContext } from '@/ds/CrumbBar'
 import { Icon } from '@/ds/Icon'
 import {
   MenuContext,
@@ -72,6 +72,7 @@ export function AppFrame({
 }): ReactElement {
   const [panelHost, setPanelHost] = useState<HTMLElement | null>(null)
   const [crumbHost, setCrumbHost] = useState<HTMLElement | null>(null)
+  const [scrollHost, setScrollHost] = useState<HTMLElement | null>(null)
   const narrow = useNarrowScreen()
   return (
     <CrumbHostContext value={crumbHost}>
@@ -108,6 +109,7 @@ export function AppFrame({
               {/* Its own stacking context: the raised checkboxes and
                   buttons of the rows stay under an open task. */}
               <Box
+                ref={setScrollHost}
                 sx={{
                   flex: '1 1 auto',
                   minHeight: 0,
@@ -116,7 +118,9 @@ export function AppFrame({
                   pb: `var(${FAB_ROOM}, 0px)`
                 }}
               >
-                {children}
+                <ScrollHostContext value={scrollHost}>
+                  {children}
+                </ScrollHostContext>
               </Box>
               {narrow && fab}
               {/* An open task covers the content, and only it. */}
