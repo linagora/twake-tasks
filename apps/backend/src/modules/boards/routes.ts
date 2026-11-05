@@ -190,6 +190,22 @@ export function registerBoards(
     ),
     ...(
       [
+        ['PUT', true],
+        ['DELETE', false]
+      ] as const
+    ).map(([method, on]): BoardRoute =>
+      defineRoute({
+        method,
+        url: '/boards/:boardId/board-template',
+        access: admin,
+        params: boardParams,
+        status: 204,
+        handler: ({ identity, params }) =>
+          store.setBoardTemplate(identity, params.boardId, on)
+      })
+    ),
+    ...(
+      [
         ['/boards/:boardId/layout', 'setLayout', viewer],
         ['/boards/:boardId/default-layout', 'setDefaultLayout', admin]
       ] as const
