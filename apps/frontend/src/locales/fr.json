@@ -643,6 +643,16 @@
     "addContacts": "Ajouter des contacts",
     "invitationSent": "Invitation envoyée"
   },
+  "leave": {
+    "action": "Quitter le tableau",
+    "title": "Quitter « %{name} » ?",
+    "text": "Vous ne le verrez plus, et ses tâches ne vous seront plus assignées.",
+    "textProject": "Vous ne le verrez plus, ni l'autre tableau de son projet « %{project} », et leurs tâches ne vous seront plus assignées. |||| Vous ne le verrez plus, ni les %{smart_count} autres tableaux de son projet « %{project} », et leurs tâches ne vous seront plus assignées.",
+    "confirm": "Quitter",
+    "cannotTitle": "Vous ne pouvez pas quitter « %{name} »",
+    "failed": "Le tableau n'a pas pu être quitté.",
+    "done": "Vous avez quitté « %{name} »"
+  },
   "moveBoard": {
     "action": "Déplacer vers un projet",
     "title": "Déplacer %{name}",

@@ -528,6 +528,11 @@ export function fakeBoardsApi(boards: Board[] = []) {
       Promise.resolve().then(() => {
         const sharing = sharingOf(boardId)
         sharing.members = sharing.members.filter(each => each.userId !== userId)
+        if (userId !== me.userId) return
+        const { project } = find(boardId)
+        for (const board of [...store.values()]) {
+          if (board.project.id === project.id) store.delete(board.id)
+        }
       })
     ),
     listFilters: vi.fn<BoardsApi['listFilters']>(() =>

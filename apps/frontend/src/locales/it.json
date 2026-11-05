@@ -643,6 +643,16 @@
     "addContacts": "Aggiungi contatti",
     "invitationSent": "Invito inviato"
   },
+  "leave": {
+    "action": "Lascia la bacheca",
+    "title": "Lasciare “%{name}”?",
+    "text": "Non la vedrai più e le sue attività non ti saranno più assegnate.",
+    "textProject": "Non la vedrai più, né l’altra bacheca del suo progetto “%{project}”, e le loro attività non ti saranno più assegnate. |||| Non la vedrai più, né le altre %{smart_count} bacheche del suo progetto “%{project}”, e le loro attività non ti saranno più assegnate.",
+    "confirm": "Lascia",
+    "cannotTitle": "Non puoi lasciare “%{name}”",
+    "failed": "Impossibile lasciare la bacheca.",
+    "done": "Hai lasciato “%{name}”"
+  },
   "moveBoard": {
     "action": "Sposta nel progetto",
     "title": "Sposta %{name}",
