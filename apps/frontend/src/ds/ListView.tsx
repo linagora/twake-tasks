@@ -1,4 +1,4 @@
-import { Bottom, Right } from '@linagora/twake-icons'
+import { ArrowUp, Bottom, Right } from '@linagora/twake-icons'
 import { Box, ButtonBase, Paper, Typography } from '@linagora/twake-mui'
 import type { HTMLAttributes, ReactElement, ReactNode, Ref } from 'react'
 
@@ -25,33 +25,78 @@ export function ListView({ children }: { children: ReactNode }): ReactElement {
   return <Box sx={{ container: 'list / inline-size' }}>{children}</Box>
 }
 
+interface ListColumn {
+  label: string
+  sort?: { order: 'ascending' | 'descending' | 'none'; onSort: () => void }
+}
+
+// A narrow list keeps only the columns it sorts on, as a row of buttons.
 export function ListHeader({
   columns
 }: {
-  columns: [string, string, string, string, string]
+  columns: [ListColumn, ListColumn, ListColumn, ListColumn, ListColumn]
 }): ReactElement {
   return (
     <Box
-      aria-hidden
+      role="row"
       sx={{
         ...rowGrid,
-        display: 'none',
+        display: 'flex',
         [COLUMNS]: { ...columnGrid, display: 'grid' },
-        py: 1,
+        py: 0.5,
         mb: 1,
         borderBottom: 1,
         borderColor: 'divider'
       }}
     >
-      {columns.map((column, index) => (
-        <Typography
-          key={column}
-          variant="caption"
-          color="textSecondary"
-          sx={{ gridColumn: index === 0 ? 'span 2' : undefined }}
+      {columns.map(({ label, sort }, index) => (
+        <Box
+          key={label}
+          role="columnheader"
+          aria-sort={sort?.order}
+          sx={{
+            display: sort ? 'block' : 'none',
+            [COLUMNS]: {
+              display: 'block',
+              gridColumn: index === 0 ? 'span 2' : undefined
+            }
+          }}
         >
-          {column}
-        </Typography>
+          {sort ? (
+            <ButtonBase
+              onClick={sort.onSort}
+              sx={{
+                gap: 0.5,
+                mx: -0.5,
+                px: 0.5,
+                py: 0.5,
+                borderRadius: 1,
+                typography: 'caption',
+                color:
+                  sort.order === 'none' ? 'text.secondary' : 'text.primary',
+                fontWeight: sort.order === 'none' ? undefined : 600,
+                '&:hover': { bgcolor: 'action.hover', color: 'text.primary' }
+              }}
+            >
+              {label}
+              {sort.order !== 'none' && (
+                <Icon
+                  icon={ArrowUp}
+                  size={12}
+                  rotate={sort.order === 'descending' ? 180 : 0}
+                />
+              )}
+            </ButtonBase>
+          ) : (
+            <Typography
+              variant="caption"
+              color="textSecondary"
+              sx={{ display: 'block', py: 0.5 }}
+            >
+              {label}
+            </Typography>
+          )}
+        </Box>
       ))}
     </Box>
   )

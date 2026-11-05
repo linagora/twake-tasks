@@ -77,6 +77,116 @@ describe('board layouts', () => {
     expect(screen.getByRole('list', { name: 'To do' })).toBeVisible()
   })
 
+  describe('sorting the list', () => {
+    function sortableBoard() {
+      const board = aBoard({
+        name: 'Design',
+        keyPrefix: 'DES',
+        layout: 'list',
+        defaultLayout: 'list'
+      })
+      const [todo, doing] = board.sections
+      const today = localToday()
+      board.tasks = [
+        aTask(todo ?? null, { key: 'DES-1', title: 'logo', priority: 3 }),
+        aTask(todo ?? null, {
+          key: 'DES-2',
+          title: 'Brief',
+          dueDate: addDays(today, 5)
+        }),
+        aTask(todo ?? null, {
+          key: 'DES-3',
+          title: 'Icons',
+          dueDate: addDays(today, 1),
+          priority: 1
+        }),
+        aTask(doing ?? null, {
+          key: 'DES-4',
+          title: 'Palette',
+          dueDate: addDays(today, 2)
+        })
+      ]
+      return board
+    }
+    const rows = (section: string) =>
+      within(screen.getByRole('list', { name: section }))
+        .getAllByRole('listitem')
+        .map(row => row.getAttribute('aria-label')?.split(' ')[0])
+    const header = (name: string) => screen.getByRole('columnheader', { name })
+    const sortBy = (name: string) => {
+      fireEvent.click(within(header(name)).getByRole('button', { name }))
+    }
+
+    it('sorts each section by due date, then backwards, then as on the board', async () => {
+      const board = sortableBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+      await screen.findByRole('list', { name: 'To do' })
+      expect(header('Due')).toHaveAttribute('aria-sort', 'none')
+
+      sortBy('Due')
+      expect(header('Due')).toHaveAttribute('aria-sort', 'ascending')
+      expect(rows('To do')).toEqual(['DES-3', 'DES-2', 'DES-1'])
+      expect(rows('In progress')).toEqual(['DES-4'])
+
+      sortBy('Due')
+      expect(header('Due')).toHaveAttribute('aria-sort', 'descending')
+      expect(rows('To do')).toEqual(['DES-2', 'DES-3', 'DES-1'])
+
+      sortBy('Due')
+      expect(header('Due')).toHaveAttribute('aria-sort', 'none')
+      expect(rows('To do')).toEqual(['DES-1', 'DES-2', 'DES-3'])
+    })
+
+    it('sorts by title and by priority, tasks without one last', async () => {
+      const board = sortableBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+      await screen.findByRole('list', { name: 'To do' })
+
+      sortBy('Task')
+      expect(rows('To do')).toEqual(['DES-2', 'DES-3', 'DES-1'])
+
+      sortBy('Priority')
+      expect(header('Task')).toHaveAttribute('aria-sort', 'none')
+      expect(header('Priority')).toHaveAttribute('aria-sort', 'ascending')
+      expect(rows('To do')).toEqual(['DES-3', 'DES-1', 'DES-2'])
+      sortBy('Priority')
+      expect(rows('To do')).toEqual(['DES-1', 'DES-3', 'DES-2'])
+    })
+
+    it('keeps folded sections and the focus when the sort changes', async () => {
+      const board = sortableBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'In progress 1' })
+      )
+      const due = within(header('Due')).getByRole('button', { name: 'Due' })
+      due.focus()
+
+      sortBy('Due')
+      sortBy('Due')
+      sortBy('Due')
+      expect(due).toHaveFocus()
+      expect(screen.queryByRole('list', { name: 'In progress' })).toBeNull()
+    })
+
+    it('keeps the sort after a reload, with no row to drag', async () => {
+      const board = sortableBoard()
+      const boardsApi = fakeBoardsApi([board])
+      const first = renderRoute(`/boards/${board.id}`, { boardsApi })
+      await screen.findByRole('list', { name: 'To do' })
+      sortBy('Due')
+      first.unmount()
+
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      await screen.findByRole('list', { name: 'To do' })
+      expect(header('Due')).toHaveAttribute('aria-sort', 'ascending')
+      expect(rows('To do')).toEqual(['DES-3', 'DES-2', 'DES-1'])
+      for (const row of screen.getAllByRole('listitem')) {
+        expect(row).not.toHaveAttribute('aria-roledescription')
+      }
+    })
+  })
+
   it('opens a task from its row, which has no done checkbox', async () => {
     const board = designBoard({ layout: 'list', defaultLayout: 'list' })
     renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })

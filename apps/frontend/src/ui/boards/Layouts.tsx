@@ -34,6 +34,7 @@ import {
 } from '@/ui/boards/CalendarDrag'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
 import { weekStart } from '@/ui/boards/progress'
+import type { ListSort, SortKey } from '@/ui/boards/listSort'
 import { useSetLayout } from '@/ui/queries/boards'
 import { useI18n } from '@/ui/i18n/useI18n'
 
@@ -90,7 +91,9 @@ export function LayoutToggle<L extends Layout>({
 
 export function ListLayout({
   columns,
-  row
+  row,
+  sort,
+  onSort
 }: {
   columns: {
     key: string
@@ -100,12 +103,28 @@ export function ListLayout({
     count?: number | string
     footer: ReactNode
     /** Where its tasks are dropped, when the list can be reordered. */
-    dropId?: string
+    dropId?: string | undefined
   }[]
   row: (task: Task) => ReactElement
+  sort: ListSort
+  onSort: (key: SortKey) => void
 }): ReactElement {
   const { t } = useI18n()
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
+  const sortable = (label: string, key: SortKey) => ({
+    label,
+    sort: {
+      order:
+        sort?.key !== key
+          ? ('none' as const)
+          : sort.descending
+            ? ('descending' as const)
+            : ('ascending' as const),
+      onSort: () => {
+        onSort(key)
+      }
+    }
+  })
   const toggle = (key: string) => {
     setCollapsed(keys => {
       const next = new Set(keys)
@@ -118,11 +137,11 @@ export function ListLayout({
     <ListView>
       <ListHeader
         columns={[
-          t('layout.task'),
-          t('task.assignees'),
-          t('layout.due'),
-          t('task.priority'),
-          t('task.labels')
+          sortable(t('layout.task'), 'title'),
+          { label: t('task.assignees') },
+          sortable(t('layout.due'), 'due'),
+          sortable(t('task.priority'), 'priority'),
+          { label: t('task.labels') }
         ]}
       />
       {columns.map(column => {
