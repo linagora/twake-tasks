@@ -380,6 +380,82 @@ describe('board layouts', () => {
     ).toBeVisible()
   })
 
+  describe('the week', () => {
+    const periods = () => within(screen.getByRole('group', { name: 'Period' }))
+    const weekBoard = () => {
+      const board = designBoard({
+        layout: 'calendar',
+        defaultLayout: 'calendar'
+      })
+      const [todo] = board.sections
+      board.tasks.push(
+        aTask(todo ?? null, {
+          key: 'DES-3',
+          title: 'Kickoff',
+          dueDate: localToday(),
+          dueTime: '09:30'
+        })
+      )
+      return board
+    }
+    const days = () =>
+      screen
+        .getAllByRole('group')
+        .filter(group => /\d{4}/.test(group.getAttribute('aria-label') ?? ''))
+
+    it('shows the seven days of this week, each task with its time', async () => {
+      const board = weekBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+      await todayCell()
+
+      fireEvent.click(periods().getByRole('button', { name: 'Week' }))
+
+      expect(days()).toHaveLength(7)
+      const today = within(await todayCell())
+      expect(today.getByRole('button', { name: 'Logo' })).toBeVisible()
+      expect(today.getByRole('button', { name: '09:30 Kickoff' })).toBeVisible()
+      expect(
+        within(screen.getByRole('list', { name: 'No date' })).getByText(
+          'Palette'
+        )
+      ).toBeVisible()
+    })
+
+    it('goes to the next week and back to today', async () => {
+      const board = weekBoard()
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+      await todayCell()
+      fireEvent.click(periods().getByRole('button', { name: 'Week' }))
+      const later = formatDay(addDays(localToday(), 7), 'en')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Next week' }))
+      expect(screen.getByRole('group', { name: later })).toBeVisible()
+      expect(days()).toHaveLength(7)
+      fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+      expect(screen.queryByRole('group', { name: later })).toBeNull()
+      fireEvent.click(screen.getByRole('button', { name: 'Today' }))
+      expect(await todayCell()).toBeVisible()
+    })
+
+    it('keeps the week after a reload', async () => {
+      const board = weekBoard()
+      const boardsApi = fakeBoardsApi([board])
+      const first = renderRoute(`/boards/${board.id}`, { boardsApi })
+      await todayCell()
+      fireEvent.click(periods().getByRole('button', { name: 'Week' }))
+      first.unmount()
+
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      await todayCell()
+      expect(periods().getByRole('button', { name: 'Week' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+      )
+      expect(days()).toHaveLength(7)
+    })
+  })
+
   describe('rescheduling from the keyboard', () => {
     const calendarBoard = (role: 'admin' | 'viewer' = 'admin') =>
       designBoard({ layout: 'calendar', defaultLayout: 'calendar', role })
@@ -518,6 +594,37 @@ describe('board layouts', () => {
       ).toBeVisible()
       expect(
         within(await todayCell()).getByRole('button', { name: 'Logo' })
+      ).toBeVisible()
+    })
+
+    it('moves a task to another day of the week, keeping its time', async () => {
+      const board = calendarBoard()
+      Object.assign(board.tasks[0] ?? {}, { dueTime: '15:00' })
+      const boardsApi = fakeBoardsApi([board])
+      renderRoute(`/boards/${board.id}`, { boardsApi })
+      await todayCell()
+      fireEvent.click(
+        within(screen.getByRole('group', { name: 'Period' })).getByRole(
+          'button',
+          { name: 'Week' }
+        )
+      )
+      const later = addDays(localToday(), 1)
+
+      const chip = within(await todayCell()).getByRole('button', {
+        name: '15:00 Logo'
+      })
+      await press(chip, 'Space', 'ArrowRight', 'Space')
+
+      expect(boardsApi.editTask).toHaveBeenCalledWith(
+        board.id,
+        board.tasks[0]?.id,
+        { dueDate: later }
+      )
+      expect(
+        await within(cellOf(later)).findByRole('button', {
+          name: '15:00 Logo'
+        })
       ).toBeVisible()
     })
 
