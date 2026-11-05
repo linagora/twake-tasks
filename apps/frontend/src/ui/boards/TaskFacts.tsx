@@ -97,6 +97,8 @@ export function Assignees({ people }: { people: Person[] }): ReactElement {
       {hidden > 0 && (
         <Avatar
           size={24}
+          color="none"
+          data-count=""
           role="img"
           aria-label={t('board.moreAssignees', { smart_count: hidden })}
         >

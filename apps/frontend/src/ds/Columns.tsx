@@ -573,8 +573,6 @@ export function LabelChip({
   )
 }
 
-const AVATAR_BORDER = 2
-
 export function AvatarStack({
   size = 24,
   children
@@ -584,17 +582,25 @@ export function AvatarStack({
 }): ReactElement {
   return (
     <Box
-      sx={{
+      sx={theme => ({
         display: 'flex',
         ml: 'auto',
+        // A thin ring in the divider tint, not a solid one in a surface
+        // color, reads on any ground: a card, a cover, a frosted bar.
         '& > .MuiAvatar-root': {
-          border: AVATAR_BORDER,
-          borderColor: 'background.paper',
-          fontSize: 0.45 * (size - 2 * AVATAR_BORDER),
+          border: 0,
+          boxShadow: `0 0 0 1px ${theme.vars.palette.divider}`,
+          fontSize: 0.45 * size,
           letterSpacing: 0
         },
+        // Solid, so the avatar it overlaps does not show through the tint.
+        '& > [data-count]': {
+          color: 'text.secondary',
+          bgcolor: 'background.paper',
+          backgroundImage: `linear-gradient(${theme.vars.palette.action.selected}, ${theme.vars.palette.action.selected})`
+        },
         '& > * + *': { ml: -0.5 }
-      }}
+      })}
     >
       {children}
     </Box>

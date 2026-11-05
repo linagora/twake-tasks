@@ -137,6 +137,30 @@ describe('BoardsScreen', () => {
     expect(within(list).queryByText('Espace')).toBeNull()
   })
 
+  it('names a space under a board named as its project, and nothing else', async () => {
+    renderRoute('/', {
+      boardsApi: fakeBoardsApi([
+        aBoard({
+          name: 'Acme',
+          keyPrefix: 'ACM',
+          project: aProject({ name: 'Acme', managed: true })
+        }),
+        aBoard({
+          name: 'Marketing',
+          keyPrefix: 'MKT',
+          project: aProject({ name: 'Marketing' })
+        })
+      ]),
+      lang: 'fr'
+    })
+
+    const acme = await screen.findByRole('listitem', { name: 'Acme' })
+    expect(within(acme).getByText('Espace')).toBeVisible()
+    expect(within(acme).getAllByText('Acme')).toHaveLength(1)
+    const marketing = screen.getByRole('listitem', { name: 'Marketing' })
+    expect(within(marketing).getAllByText('Marketing')).toHaveLength(1)
+  })
+
   it('shows the members of each board, and its space', async () => {
     const person = (name: string) => ({
       userId: name,
@@ -222,16 +246,15 @@ describe('BoardsScreen', () => {
 
     // The key prefix shows on the tasks, not on the card.
     expect(designCard.queryByText(/DES/)).toBeNull()
-    expect(designCard.getByText('2 open tasks')).toBeVisible()
+    expect(designCard.getByText('2 open')).toBeVisible()
     expect(designCard.getByText('1 late')).toBeVisible()
     expect(
       designCard.getByRole('progressbar', { name: '1 of 3 tasks done' })
     ).toHaveAttribute('aria-valuenow', '33')
     expect(opsCard.getByText('No open tasks')).toBeVisible()
     expect(opsCard.queryByText(/late/)).toBeNull()
-    expect(
-      opsCard.getByRole('progressbar', { name: '0 of 0 tasks done' })
-    ).toHaveAttribute('aria-valuenow', '0')
+    // No tasks at all: no progress to show.
+    expect(opsCard.queryByRole('progressbar')).toBeNull()
   })
 
   it('puts a starred board first, after the create card, until it is unstarred', async () => {

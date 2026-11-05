@@ -26,8 +26,8 @@ describe('Column', () => {
 
 describe('AvatarStack', () => {
   it.each([
-    [24, '9px'],
-    [32, '12.6px']
+    [24, '10.8px'],
+    [32, '14.4px']
   ])('scales the initials of %ipx avatars to %s', async (size, fontSize) => {
     renderWithProviders(
       <AvatarStack size={size}>

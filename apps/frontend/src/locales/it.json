@@ -117,7 +117,7 @@
     "defaultChip": "Predefinito",
     "spaceChip": "Spazio",
     "spaceHint": "Collegata allo spazio “%{name}”.",
-    "openTasks": "%{smart_count} attività aperta |||| %{smart_count} attività aperte",
+    "openTasks": "%{smart_count} aperta |||| %{smart_count} aperte",
     "noOpenTasks": "Nessuna attività aperta",
     "lateTasks": "%{smart_count} in ritardo",
     "progress": "%{done} di %{smart_count} attività completata |||| %{done} di %{smart_count} attività completate",

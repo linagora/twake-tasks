@@ -12,15 +12,10 @@ import { Archive, Mosaic, Plus, Star, StarOutline } from '@linagora/twake-icons'
 import { useEffect, useId, useRef, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router'
 
+import { BoardIcon } from '@/ds/BoardIcon'
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Icon } from '@/ds/Icon'
-import {
-  BoardCard,
-  BoardChip,
-  BoardIcon,
-  CardGrid,
-  CreateCard
-} from '@/ds/TileGrid'
+import { BoardCard, BoardChip, CardGrid, CreateCard } from '@/ds/TileGrid'
 import { Toast } from '@/ds/Toast'
 import {
   isArchivable,
@@ -130,7 +125,15 @@ function BoardItem({
 }): ReactElement {
   const { t } = useI18n()
   const name = useBoardName()(board)
-  const projectName = useProjectName()
+  const projectName = useProjectName()(board.project)
+  // A project's first board takes the project's name.
+  const subtitle = board.inbox
+    ? t('boards.defaultChip')
+    : projectName !== name
+      ? projectName
+      : board.project.managed
+        ? t('boards.spaceChip')
+        : undefined
   return (
     <BoardCard
       icon={<BoardIcon name={name} cover={useBoardBackground(board)} />}
@@ -144,9 +147,7 @@ function BoardItem({
           {name}
         </Link>
       }
-      subtitle={
-        board.inbox ? t('boards.defaultChip') : projectName(board.project)
-      }
+      subtitle={subtitle}
       flag={fresh ? t('boards.newlyShared') : undefined}
       chip={
         board.boardTemplate &&
@@ -157,7 +158,7 @@ function BoardItem({
           />
         )
       }
-      done={board.totalTasks > 0 ? board.doneTasks / board.totalTasks : 0}
+      done={board.totalTasks > 0 ? board.doneTasks / board.totalTasks : null}
       doneLabel={t('boards.progress', {
         done: board.doneTasks,
         smart_count: board.totalTasks

@@ -117,7 +117,7 @@
     "defaultChip": "Standard",
     "spaceChip": "Space",
     "spaceHint": "Mit dem Space „%{name}“ verknüpft.",
-    "openTasks": "%{smart_count} offene Aufgabe |||| %{smart_count} offene Aufgaben",
+    "openTasks": "%{smart_count} offen",
     "noOpenTasks": "Keine offenen Aufgaben",
     "lateTasks": "%{smart_count} überfällig",
     "progress": "%{done} von %{smart_count} Aufgabe erledigt |||| %{done} von %{smart_count} Aufgaben erledigt",

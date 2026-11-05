@@ -117,7 +117,7 @@
     "defaultChip": "Default",
     "spaceChip": "Space",
     "spaceHint": "Linked to the space “%{name}”.",
-    "openTasks": "%{smart_count} open task |||| %{smart_count} open tasks",
+    "openTasks": "%{smart_count} open",
     "noOpenTasks": "No open tasks",
     "lateTasks": "%{smart_count} late",
     "progress": "%{done} of %{smart_count} task done |||| %{done} of %{smart_count} tasks done",
