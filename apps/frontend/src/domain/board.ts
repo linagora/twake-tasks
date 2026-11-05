@@ -207,10 +207,9 @@ export const takesBoards = (project: {
   personal: boolean
 }): boolean => project.role !== 'viewer' && !project.personal
 
-export const LAYOUTS = ['board', 'list', 'calendar', 'progress'] as const
 /**
- * The pictures shipped with the app, under `/backgrounds/`, offered: the
- * wallpapers of Twake Workplace's Home, in its order.
+ * The pictures shipped with the app, under `/backgrounds/`: the wallpapers of
+ * Twake Workplace's Home, in its order.
  */
 export const BACKGROUNDS = [
   'orbitalblue',
@@ -221,10 +220,7 @@ export const BACKGROUNDS = [
   'stripes'
 ] as const
 
-/** No longer offered, still shown on the boards that have them. */
-type RetiredBackground = 'ripple' | 'lagoon' | 'blossom'
-
-export type Background = (typeof BACKGROUNDS)[number] | RetiredBackground
+export type Background = (typeof BACKGROUNDS)[number]
 
 /**
  * A shipped picture, one an admin sent (`custom`, whose id is
@@ -236,6 +232,8 @@ export type BoardBackground = Background | 'custom' | null
 export const hasOwnCover = (
   board: Pick<BoardSummary, 'background' | 'backgroundColor'>
 ): boolean => board.background !== null || board.backgroundColor !== null
+
+export const LAYOUTS = ['board', 'list', 'calendar', 'progress'] as const
 
 export type Layout = (typeof LAYOUTS)[number]
 

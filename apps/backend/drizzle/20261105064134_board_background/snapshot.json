@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "77fd7aa3-0d33-4de6-b237-e420868350d0",
+  "id": "a8b9b227-ea79-4ac1-9374-fba6b2662ce2",
   "prevIds": [
-    "bf18cb73-5d4b-4375-8c80-88a8a29b6d7b"
+    "9f92b2bf-9ed8-447b-8bcf-1f33764f3af7"
   ],
   "ddl": [
     {
@@ -12,9 +12,6 @@
         "earlymorning",
         "dawn",
         "stellarburst",
-        "blossom",
-        "lagoon",
-        "ripple",
         "eclipse",
         "stripes",
         "custom"
@@ -27,7 +24,8 @@
       "values": [
         "board",
         "list",
-        "calendar"
+        "calendar",
+        "progress"
       ],
       "name": "board_layout",
       "entityType": "enums",
@@ -77,11 +75,30 @@
     },
     {
       "values": [
+        "instant",
+        "daily",
+        "never"
+      ],
+      "name": "email_frequency",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
         "light",
         "dark",
         "auto"
       ],
       "name": "theme",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "assigned",
+        "mine"
+      ],
+      "name": "calendar_feed_scope",
       "entityType": "enums",
       "schema": "public"
     },
@@ -112,12 +129,6 @@
     {
       "isRlsEnabled": false,
       "name": "oidc_revoked_sessions",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": true,
-      "name": "board_background_images",
       "entityType": "tables",
       "schema": "public"
     },
@@ -207,13 +218,43 @@
     },
     {
       "isRlsEnabled": true,
+      "name": "task_links",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
       "name": "task_reminders",
       "entityType": "tables",
       "schema": "public"
     },
     {
       "isRlsEnabled": true,
+      "name": "task_template_assignees",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "task_template_labels",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "task_templates",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
       "name": "tasks",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "comment_edits",
       "entityType": "tables",
       "schema": "public"
     },
@@ -237,6 +278,12 @@
     },
     {
       "isRlsEnabled": false,
+      "name": "notification_preferences",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
       "name": "user_settings",
       "entityType": "tables",
       "schema": "public"
@@ -244,6 +291,12 @@
     {
       "isRlsEnabled": true,
       "name": "spaces",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "calendar_feeds",
       "entityType": "tables",
       "schema": "public"
     },
@@ -552,87 +605,6 @@
       "name": "board_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "board_background_images"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "gen_random_uuid()",
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "board_background_images"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "org_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "board_background_images"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "content_type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "board_background_images"
-    },
-    {
-      "type": "bytea",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "content",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "board_background_images"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": {
-        "as": "coalesce(org_id, '')",
-        "type": "stored"
-      },
-      "identity": null,
-      "name": "tenant",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "board_background_images"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "board_id",
-      "entityType": "columns",
-      "schema": "public",
       "table": "board_favorites"
     },
     {
@@ -902,6 +874,19 @@
       "table": "boards"
     },
     {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "board_template",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
       "type": "board_background",
       "typeSchema": "public",
       "notNull": false,
@@ -923,6 +908,19 @@
       "generated": null,
       "identity": null,
       "name": "background_color",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "background_image",
       "entityType": "columns",
       "schema": "public",
       "table": "boards"
@@ -1056,6 +1054,19 @@
       "generated": null,
       "identity": null,
       "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comments"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "edited_at",
       "entityType": "columns",
       "schema": "public",
       "table": "comments"
@@ -2073,6 +2084,74 @@
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "blocking_task_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "blocked_task_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
       "default": "uuidv7()",
       "generated": null,
       "identity": null,
@@ -2187,6 +2266,236 @@
       "entityType": "columns",
       "schema": "public",
       "table": "task_reminders"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "template_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_template_assignees"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_template_assignees"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_template_assignees"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_template_assignees"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "template_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "label_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "type": "smallint",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "priority",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "task_templates"
     },
     {
       "type": "uuid",
@@ -2462,6 +2771,19 @@
       "table": "tasks"
     },
     {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "template_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
       "type": "text COLLATE \"C\"",
       "typeSchema": null,
       "notNull": true,
@@ -2567,6 +2889,87 @@
       "entityType": "columns",
       "schema": "public",
       "table": "tasks"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "uuidv7()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comment_edits"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "comment_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comment_edits"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comment_edits"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "body",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comment_edits"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "written_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comment_edits"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "coalesce(org_id, '')",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "tenant",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comment_edits"
     },
     {
       "type": "uuid",
@@ -2822,6 +3225,71 @@
       "table": "invite_emails"
     },
     {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_preferences"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 1,
+      "default": "'{}'",
+      "generated": null,
+      "identity": null,
+      "name": "muted_in_app",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_preferences"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 1,
+      "default": "'{}'",
+      "generated": null,
+      "identity": null,
+      "name": "muted_email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_preferences"
+    },
+    {
+      "type": "email_frequency",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'instant'",
+      "generated": null,
+      "identity": null,
+      "name": "email_frequency",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_preferences"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "unsubscribe_token",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_preferences"
+    },
+    {
       "type": "text",
       "typeSchema": null,
       "notNull": true,
@@ -2963,6 +3431,84 @@
       "entityType": "columns",
       "schema": "public",
       "table": "spaces"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "org_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token_hash",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "calendar_feed_scope",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'assigned'",
+      "generated": null,
+      "identity": null,
+      "name": "scope",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_feeds"
     },
     {
       "type": "uuid",
@@ -3713,6 +4259,27 @@
       "nameExplicit": false,
       "columns": [
         {
+          "value": "blocked_task_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "task_links_blocked_task_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
           "value": "task_id",
           "isExpression": false,
           "asc": true,
@@ -3729,6 +4296,118 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "task_reminders"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "task_template_assignees_user_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "task_template_assignees"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "label_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "task_template_labels_label_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "project_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "task_templates_project_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "template_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tasks_template_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "comment_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "written_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "comment_edits_comment_id_written_at_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "comment_edits"
     },
     {
       "nameExplicit": false,
@@ -3883,42 +4562,6 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "jobs"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "board_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "boards",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "board_background_images_board_id_boards_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "board_background_images"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "tenant",
-        "board_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "boards",
-      "columnsTo": [
-        "tenant",
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "NO ACTION",
-      "name": "board_background_images_tenant_board_id_boards_tenant_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "board_background_images"
     },
     {
       "nameExplicit": false,
@@ -4461,6 +5104,78 @@
     {
       "nameExplicit": false,
       "columns": [
+        "blocking_task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_links_blocking_task_id_tasks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "blocked_task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_links_blocked_task_id_tasks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "blocking_task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_links_tenant_blocking_task_id_tasks_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "blocked_task_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tasks",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_links_tenant_blocked_task_id_tasks_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "task_id"
       ],
       "schemaTo": "public",
@@ -4497,6 +5212,150 @@
     {
       "nameExplicit": false,
       "columns": [
+        "template_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "task_templates",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_template_assignees_template_id_task_templates_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_template_assignees"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "template_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "task_templates",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_template_assignees_DMHbvl2tapQ6_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_template_assignees"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "template_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "task_templates",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_template_labels_template_id_task_templates_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "label_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "labels",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_template_labels_label_id_labels_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "template_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "task_templates",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_template_labels_84YgSKRyLGEn_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "label_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "labels",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_template_labels_tenant_label_id_labels_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "project_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "projects",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "task_templates_project_id_projects_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "project_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "projects",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "task_templates_tenant_project_id_projects_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "board_id"
       ],
       "schemaTo": "public",
@@ -4507,6 +5366,23 @@
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "tasks_board_id_boards_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "template_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "task_templates",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "tasks_template_id_task_templates_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "tasks"
@@ -4567,6 +5443,42 @@
       "entityType": "fks",
       "schema": "public",
       "table": "tasks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "comment_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "comments",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "comment_edits_comment_id_comments_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "comment_edits"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "comment_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "comments",
+      "columnsTo": [
+        "tenant",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "comment_edits_tenant_comment_id_comments_tenant_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "comment_edits"
     },
     {
       "nameExplicit": false,
@@ -4756,6 +5668,39 @@
     },
     {
       "columns": [
+        "blocking_task_id",
+        "blocked_task_id"
+      ],
+      "nameExplicit": false,
+      "name": "task_links_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "columns": [
+        "template_id",
+        "user_id"
+      ],
+      "nameExplicit": false,
+      "name": "task_template_assignees_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "task_template_assignees"
+    },
+    {
+      "columns": [
+        "template_id",
+        "label_id"
+      ],
+      "nameExplicit": false,
+      "name": "task_template_labels_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "columns": [
         "comment_id",
         "user_id",
         "emoji"
@@ -4804,16 +5749,6 @@
       "name": "oidc_revoked_sessions_pkey",
       "schema": "public",
       "table": "oidc_revoked_sessions",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "board_id"
-      ],
-      "nameExplicit": false,
-      "name": "board_background_images_pkey",
-      "schema": "public",
-      "table": "board_background_images",
       "entityType": "pks"
     },
     {
@@ -4911,9 +5846,29 @@
         "id"
       ],
       "nameExplicit": false,
+      "name": "task_templates_pkey",
+      "schema": "public",
+      "table": "task_templates",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
       "name": "tasks_pkey",
       "schema": "public",
       "table": "tasks",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "comment_edits_pkey",
+      "schema": "public",
+      "table": "comment_edits",
       "entityType": "pks"
     },
     {
@@ -4938,6 +5893,16 @@
     },
     {
       "columns": [
+        "user_id"
+      ],
+      "nameExplicit": false,
+      "name": "notification_preferences_pkey",
+      "schema": "public",
+      "table": "notification_preferences",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
         "email"
       ],
       "nameExplicit": false,
@@ -4954,6 +5919,16 @@
       "name": "spaces_pkey",
       "schema": "public",
       "table": "spaces",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "user_id"
+      ],
+      "nameExplicit": false,
+      "name": "calendar_feeds_pkey",
+      "schema": "public",
+      "table": "calendar_feeds",
       "entityType": "pks"
     },
     {
@@ -5079,6 +6054,18 @@
         "id"
       ],
       "nullsNotDistinct": false,
+      "name": "task_templates_tenant_id_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant",
+        "id"
+      ],
+      "nullsNotDistinct": false,
       "name": "tasks_tenant_id_unique",
       "entityType": "uniques",
       "schema": "public",
@@ -5136,6 +6123,28 @@
     {
       "nameExplicit": false,
       "columns": [
+        "unsubscribe_token"
+      ],
+      "nullsNotDistinct": false,
+      "name": "notification_preferences_unsubscribe_token_key",
+      "schema": "public",
+      "table": "notification_preferences",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "token_hash"
+      ],
+      "nullsNotDistinct": false,
+      "name": "calendar_feeds_token_hash_key",
+      "schema": "public",
+      "table": "calendar_feeds",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "key"
       ],
       "nullsNotDistinct": false,
@@ -5166,11 +6175,25 @@
       "table": "projects"
     },
     {
+      "value": "\"blocking_task_id\" <> \"blocked_task_id\"",
+      "name": "task_links_not_self",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
       "value": "(\"at\" is null) <> (\"before_minutes\" is null)\n        and (\"before_minutes\" is null) = (\"zone\" is null)\n        and \"before_minutes\" >= 0",
       "name": "task_reminders_at_or_before",
       "entityType": "checks",
       "schema": "public",
       "table": "task_reminders"
+    },
+    {
+      "value": "\"priority\" between 1 and 4",
+      "name": "task_templates_priority",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "task_templates"
     },
     {
       "value": "\"parent_id\" is null or \"section_id\" is null",
@@ -5222,17 +6245,11 @@
       "table": "tasks"
     },
     {
-      "as": "PERMISSIVE",
-      "for": "ALL",
-      "roles": [
-        "public"
-      ],
-      "using": "\"board_background_images\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"board_background_images\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"board_background_images\".\"board_id\"))",
-      "withCheck": "\"board_background_images\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"board_background_images\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"board_background_images\".\"board_id\"))",
-      "name": "tenant",
-      "entityType": "policies",
+      "value": "\"template_id\" is null or \"recur_every\" is null",
+      "name": "tasks_template_not_recurring",
+      "entityType": "checks",
       "schema": "public",
-      "table": "board_background_images"
+      "table": "tasks"
     },
     {
       "as": "PERMISSIVE",
@@ -5513,6 +6530,19 @@
       "roles": [
         "public"
       ],
+      "using": "\"task_links\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_links\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_links\".\"blocking_task_id\") or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_links\".\"blocked_task_id\"))",
+      "withCheck": "\"task_links\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_links\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_links\".\"blocking_task_id\") and exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_links\".\"blocked_task_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "task_links"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
       "using": "\"task_reminders\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_reminders\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_reminders\".\"task_id\"))",
       "withCheck": "\"task_reminders\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_reminders\".\"org_id\" is not null or exists (select 1 from \"tasks\" where \"tasks\".\"id\" = \"task_reminders\".\"task_id\"))",
       "name": "tenant",
@@ -5539,12 +6569,64 @@
       "roles": [
         "public"
       ],
+      "using": "\"task_template_assignees\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_template_assignees\".\"org_id\" is not null or exists (select 1 from \"task_templates\" where \"task_templates\".\"id\" = \"task_template_assignees\".\"template_id\"))",
+      "withCheck": "\"task_template_assignees\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_template_assignees\".\"org_id\" is not null or exists (select 1 from \"task_templates\" where \"task_templates\".\"id\" = \"task_template_assignees\".\"template_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "task_template_assignees"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"task_template_labels\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_template_labels\".\"org_id\" is not null or exists (select 1 from \"task_templates\" where \"task_templates\".\"id\" = \"task_template_labels\".\"template_id\"))",
+      "withCheck": "\"task_template_labels\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_template_labels\".\"org_id\" is not null or exists (select 1 from \"task_templates\" where \"task_templates\".\"id\" = \"task_template_labels\".\"template_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "task_template_labels"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"task_templates\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_templates\".\"org_id\" is not null or exists (select 1 from \"projects\" where \"projects\".\"id\" = \"task_templates\".\"project_id\"))",
+      "withCheck": "\"task_templates\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"task_templates\".\"org_id\" is not null or exists (select 1 from \"projects\" where \"projects\".\"id\" = \"task_templates\".\"project_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "task_templates"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
       "using": "\"tasks\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"tasks\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"tasks\".\"board_id\"))",
       "withCheck": "\"tasks\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"tasks\".\"org_id\" is not null or exists (select 1 from \"boards\" where \"boards\".\"id\" = \"tasks\".\"board_id\"))",
       "name": "tenant",
       "entityType": "policies",
       "schema": "public",
       "table": "tasks"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "\"comment_edits\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"comment_edits\".\"org_id\" is not null or exists (select 1 from \"comments\" where \"comments\".\"id\" = \"comment_edits\".\"comment_id\"))",
+      "withCheck": "\"comment_edits\".\"org_id\" is not distinct from nullif(current_setting('app.org_id', true), '') and (\"comment_edits\".\"org_id\" is not null or exists (select 1 from \"comments\" where \"comments\".\"id\" = \"comment_edits\".\"comment_id\"))",
+      "name": "tenant",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "comment_edits"
     },
     {
       "as": "PERMISSIVE",

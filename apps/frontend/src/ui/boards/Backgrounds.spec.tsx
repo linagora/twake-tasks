@@ -200,7 +200,7 @@ describe('board backgrounds', () => {
   })
 
   it.each([
-    ['a pale picture', { background: 'blossom' as const }],
+    ['a pale picture', { background: 'earlymorning' as const }],
     ['a dark picture', { background: 'dawn' as const }],
     ['a pale color', { backgroundColor: '#F5E6A3' }]
   ])(
@@ -285,7 +285,7 @@ describe('board backgrounds', () => {
   })
 
   it('shades every cover on the cards, as in Twake Space, but white', async () => {
-    const pale = aBoard({ name: 'Design', background: 'blossom' })
+    const pale = aBoard({ name: 'Design', background: 'earlymorning' })
     const white = aBoard({ name: 'Ops' })
     renderRoute('/', { boardsApi: fakeBoardsApi([pale, white]) })
 

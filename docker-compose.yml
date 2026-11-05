@@ -36,6 +36,32 @@ services:
       interval: 5s
       retries: 10
 
+  minio:
+    image: minio/minio:RELEASE.2025-02-28T09-55-16Z
+    command: [server, /data, --console-address, ':9001']
+    ports:
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio-secret
+    volumes:
+      - minio:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      retries: 10
+
+  minio-bucket:
+    image: minio/minio:RELEASE.2025-02-28T09-55-16Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - mc alias set local http://minio:9000 minio minio-secret && mc mb --ignore-existing local/twake-tasks
+
   backend:
     profiles: [app]
     build:
@@ -46,6 +72,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      minio-bucket:
+        condition: service_completed_successfully
     ports:
       - '127.0.0.1:8080:8080'
     environment:
@@ -61,6 +89,11 @@ services:
       SPACE_INTEGRATION: ${SPACE_INTEGRATION:-false}
       LDAP_REST_URL: ${LDAP_REST_URL:-http://host.docker.internal:8081}
       LDAP_REST_SECRET: ${LDAP_REST_SECRET:-}
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: twake-tasks
+      S3_ACCESS_KEY_ID: minio
+      S3_SECRET_ACCESS_KEY: minio-secret
+      S3_FORCE_PATH_STYLE: 'true'
 
   frontend:
     profiles: [app]
@@ -81,3 +114,4 @@ services:
 
 volumes:
   postgres:
+  minio:

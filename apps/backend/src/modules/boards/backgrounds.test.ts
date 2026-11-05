@@ -1,15 +1,36 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { pino } from 'pino'
+import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
+import { createDb, inTenant } from '../../infra/db.ts'
+import { createScheduler } from '../../scheduler/scheduler.ts'
 import { aUser, startApp, type TestUser } from '../../testing/app.ts'
+import { memoryStorage } from '../../testing/memoryStorage.ts'
+import { COVER_DELETE_JOB, deleteCover } from './backgrounds.ts'
+import { eraseOrganization } from './lifecycle.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
+const storage = memoryStorage()
+const { sql, db } = createDb(inject('databaseUrl'))
 
 beforeAll(async () => {
-  api = await startApp()
+  api = await startApp({ storage })
 })
 
 afterAll(async () => {
   await api.close()
+  await sql.end()
 })
+
+const scheduler = createScheduler({
+  db,
+  logger: pino({ level: 'silent' }),
+  handlers: { [COVER_DELETE_JOB]: deleteCover(storage) }
+})
+
+async function runJobs() {
+  while ((await scheduler.runDue()) > 0);
+}
+
+const stored = (image: string) => storage.objects.has(`covers/${image}`)
 
 interface Shown {
   background: string | null
@@ -291,5 +312,66 @@ describe('board backgrounds', () => {
 
     expect(response.statusCode).toBe(413)
     expect((await shownOn(owner, board.id)).background).toBeNull()
+  })
+
+  it('keeps the picture in object storage until the board drops it', async () => {
+    const owner = aUser()
+    const board = await aBoard(owner)
+    const first = (await send(owner, board.id, PICTURE)).json<{
+      image: string
+    }>().image
+    expect(storage.objects.get(`covers/${first}`)).toEqual({
+      body: PICTURE,
+      contentType: 'image/jpeg'
+    })
+
+    const second = (await send(owner, board.id, PICTURE)).json<{
+      image: string
+    }>().image
+    await runJobs()
+    expect([stored(first), stored(second)]).toEqual([false, true])
+
+    await api
+      .as(owner)
+      .put(`/boards/${board.id}/background`, { color: '#2D83FF' })
+    await runJobs()
+    expect(stored(second)).toBe(false)
+  })
+
+  it('deletes the picture of a board that goes with its organization', async () => {
+    const owner = aUser()
+    const board = await aBoard(owner)
+    const { image } = (await send(owner, board.id, PICTURE)).json<{
+      image: string
+    }>()
+
+    await inTenant(db, owner, eraseOrganization)
+    await runJobs()
+
+    expect(stored(image)).toBe(false)
+  })
+
+  it('takes no picture without object storage', async () => {
+    const bare = await startApp({ storage: null })
+    try {
+      const owner = aUser()
+      const { id } = (
+        await bare.as(owner).post('/boards', { name: 'Ops', keyPrefix: 'OPS' })
+      ).json<{ id: string }>()
+
+      const response = await bare.inject({
+        method: 'PUT',
+        url: `/api/boards/${id}/background/image`,
+        headers: {
+          authorization: `Bearer ${bare.tokenOf(owner)}`,
+          'content-type': 'image/jpeg'
+        },
+        payload: PICTURE
+      })
+
+      expect(response.statusCode).toBe(404)
+    } finally {
+      await bare.close()
+    }
   })
 })

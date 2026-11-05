@@ -26,6 +26,7 @@
     "@sentry/node": "^11.4.0",
     "@twake-tasks/api-contract": "*",
     "amqplib": "^2.2.0",
+    "aws4fetch": "^1.0.20",
     "drizzle-orm": "1.0.0-rc.4",
     "fastify": "^5.12.5",
     "fractional-indexing": "^4.0.0",

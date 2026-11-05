@@ -23,12 +23,11 @@ A test fails when a table is missing from this page, and the backend test suite 
 - `project_members`: cascade with the project. Removed when the person leaves, is removed, or their account is deleted.
 - `project_invites`: cascade with the project. Removed when the invite is claimed or canceled.
 - `invite_emails`: cascade with the project. Removed with the person who sent or got them. Retention: one day, pruned when the next invitation email is sent, since it only rate limits them.
-- `boards`: cascade with the project.
+- `boards`: cascade with the project. A cover picture an admin sent is kept in object storage, and a `cover_delete` job deletes it once the board is deleted or takes another cover.
 - `sections`: cascade with the board, or deleted by hand.
 - `labels`: cascade with the project.
 - `board_favorites`: cascade with the board, or deleted by hand.
 - `board_layouts`: cascade with the board.
-- `board_background_images`: cascade with the board. Replaced by the next picture an admin sends, and removed when the board takes another cover.
 - `saved_filters`: deleted by hand, or removed with the person or their organization. No board cascades to them.
 - `spaces`: cascade with the project of the space.
 - `task_templates`: cascade with the project, or deleted by hand. The tasks made from a template keep existing without it, and leave it when they or their board move to another project.

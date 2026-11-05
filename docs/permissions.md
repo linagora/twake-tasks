@@ -100,10 +100,10 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 
 - `PATCH /api/boards/:boardId`
 - `POST /api/boards/:boardId/archive`
-- `DELETE /api/boards/:boardId/board-template`
-- `PUT /api/boards/:boardId/board-template`
 - `PUT /api/boards/:boardId/background`
 - `PUT /api/boards/:boardId/background/image`
+- `DELETE /api/boards/:boardId/board-template`
+- `PUT /api/boards/:boardId/board-template`
 - `PUT /api/boards/:boardId/default-layout`
 - `POST /api/boards/:boardId/invites`, refused on a managed project
 - `DELETE /api/boards/:boardId/invites/:inviteId`, refused on a managed project

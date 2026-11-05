@@ -53,9 +53,6 @@ export const BACKGROUNDS = [
   'earlymorning',
   'dawn',
   'stellarburst',
-  'blossom',
-  'lagoon',
-  'ripple',
   'eclipse',
   'stripes',
   'custom'

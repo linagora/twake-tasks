@@ -3,7 +3,6 @@ import {
   bigint,
   boolean,
   check,
-  customType,
   date,
   foreignKey,
   index,
@@ -61,17 +60,12 @@ export const BACKGROUNDS = [
   'earlymorning',
   'dawn',
   'stellarburst',
-  'blossom',
-  'lagoon',
-  'ripple',
   'eclipse',
   'stripes',
   'custom'
 ] as const
 
 export const boardBackground = pgEnum('board_background', BACKGROUNDS)
-
-const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' })
 
 export const projects = pgTable.withRLS(
   'projects',
@@ -203,6 +197,9 @@ export const boards = pgTable.withRLS(
     background: boardBackground(),
     // A plain color instead of a picture, with `background` null.
     backgroundColor: text('background_color'),
+    // The object storage key of the picture an admin sent, with `background`
+    // custom. A new one each time, which clients cache it by.
+    backgroundImage: uuid('background_image'),
     tenant: tenant()
   },
   table => [
@@ -603,29 +600,6 @@ export const boardFavorites = pgTable.withRLS(
     }),
     tenantPolicy(table.organizationId, visibleBoard(table.boardId)),
     ownRows(table.userId)
-  ]
-)
-
-// The picture an admin sent for a board's background, replaced by the next
-// one: a new id each time, which clients cache it by.
-export const boardBackgroundImages = pgTable.withRLS(
-  'board_background_images',
-  {
-    boardId: uuid('board_id')
-      .primaryKey()
-      .references(() => boards.id, { onDelete: 'cascade' }),
-    id: uuid().notNull().defaultRandom(),
-    organizationId: organizationId(),
-    contentType: text('content_type').notNull(),
-    content: bytea().notNull(),
-    tenant: tenant()
-  },
-  table => [
-    foreignKey({
-      columns: [table.tenant, table.boardId],
-      foreignColumns: [boards.tenant, boards.id]
-    }),
-    tenantPolicy(table.organizationId, visibleBoard(table.boardId))
   ]
 )
 
