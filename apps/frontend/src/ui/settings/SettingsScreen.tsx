@@ -1,4 +1,6 @@
 import {
+  Bell,
+  Calendar,
   Copy,
   Dots,
   Gear,
@@ -22,6 +24,7 @@ import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { Menu } from '@/ds/Menu'
+import { SettingsLayout } from '@/ds/SettingsLayout'
 import { SettingsCard } from '@/ds/SettingsCard'
 import { RowButton } from '@/ds/TaskList'
 import { CardGroup, NewCard, TemplateCard } from '@/ds/TemplateCards'
@@ -47,9 +50,22 @@ export function SettingsScreen(): ReactElement {
         origin={{ icon: Gear, label: t('settings.title'), to: '/settings' }}
         heading
       />
-      <NotificationSettings />
-      <CalendarFeedSettings />
-      <TemplateSettings />
+      <SettingsLayout
+        label={t('settings.sections')}
+        sections={[
+          {
+            id: 'notifications',
+            icon: Bell,
+            label: t('notificationSettings.title')
+          },
+          { id: 'calendar', icon: Calendar, label: t('calendarFeed.title') },
+          { id: 'templates', icon: Copy, label: t('templates.title') }
+        ]}
+      >
+        <NotificationSettings />
+        <CalendarFeedSettings />
+        <TemplateSettings />
+      </SettingsLayout>
     </main>
   )
 }

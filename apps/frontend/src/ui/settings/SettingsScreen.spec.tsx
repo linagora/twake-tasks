@@ -113,6 +113,28 @@ describe('SettingsScreen', () => {
     ).toBeVisible()
   })
 
+  it('jumps to a section from the menu of sections', async () => {
+    renderRoute('/settings', aSetup())
+    const menu = within(
+      await screen.findByRole('navigation', { name: 'Settings sections' })
+    )
+
+    expect(menu.getByRole('link', { name: 'Notifications' })).toHaveAttribute(
+      'aria-current',
+      'true'
+    )
+    fireEvent.click(menu.getByRole('link', { name: 'Templates' }))
+
+    expect(menu.getByRole('link', { name: 'Templates' })).toHaveAttribute(
+      'aria-current',
+      'true'
+    )
+    expect(
+      menu.getByRole('link', { name: 'Notifications' })
+    ).not.toHaveAttribute('aria-current')
+    expect(screen.getByRole('region', { name: 'Templates' })).toHaveFocus()
+  })
+
   it('offers no new template to someone who edits no project', async () => {
     renderRoute('/settings', aSetup('viewer'))
 
