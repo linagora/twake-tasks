@@ -3,7 +3,7 @@
   "dialect": "postgres",
   "id": "0ed4dbf9-9bac-41e5-ad11-3d6bd33f1497",
   "prevIds": [
-    "ea71ba9d-c957-4fdb-94a0-9cd9de9e58d1"
+    "ca256ee7-0c63-4f63-a671-002157cfb4ef"
   ],
   "ddl": [
     {
@@ -854,6 +854,19 @@
       "generated": null,
       "identity": null,
       "name": "layout",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "board_template",
       "entityType": "columns",
       "schema": "public",
       "table": "boards"

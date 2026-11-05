@@ -859,6 +859,19 @@
       "table": "boards"
     },
     {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "board_template",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "boards"
+    },
+    {
       "type": "text",
       "typeSchema": null,
       "notNull": true,
