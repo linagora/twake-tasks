@@ -91,11 +91,6 @@ export function ColorField({
   onChange: (color: string) => void
 }): ReactElement {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
-  const [custom, setCustom] = useState(false)
-  const close = () => {
-    setAnchor(null)
-    setCustom(false)
-  }
 
   return (
     <>
@@ -123,50 +118,101 @@ export function ColorField({
           <Icon icon={Palette} size={20} />
         )}
       </ButtonBase>
-      <Popover
-        open={anchor !== null}
-        anchorEl={anchor}
-        onClose={close}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{
-          paper: {
-            role: 'dialog',
-            'aria-label': custom ? customLabel : label,
-            sx: { p: 2, width: custom ? 246 : 'auto' }
-          }
+      <ColorPopover
+        anchor={anchor}
+        label={label}
+        customLabel={customLabel}
+        cancelLabel={cancelLabel}
+        saveLabel={saveLabel}
+        colorName={colorName}
+        value={value}
+        onClose={() => {
+          setAnchor(null)
         }}
-      >
-        {custom ? (
-          <CustomColor
-            color={value ?? FALLBACK_COLOR}
-            cancelLabel={cancelLabel}
-            saveLabel={saveLabel}
-            onCancel={() => {
-              setCustom(false)
-            }}
-            onSave={color => {
-              onChange(color)
-              close()
-            }}
-          />
-        ) : (
-          <Swatches
-            label={label}
-            customLabel={customLabel}
-            colorName={colorName}
-            value={value}
-            onSelect={onChange}
-            onPick={color => {
-              onChange(color)
-              close()
-            }}
-            onCustom={() => {
-              setCustom(true)
-            }}
-          />
-        )}
-      </Popover>
+        onChange={onChange}
+      />
     </>
+  )
+}
+
+/**
+ * twake-mui's swatches by `anchor`, then a picker of any color from the
+ * palette at their end; closes once a color is picked.
+ */
+export function ColorPopover({
+  anchor,
+  label,
+  customLabel,
+  cancelLabel,
+  saveLabel,
+  colorName,
+  value,
+  onClose,
+  onChange,
+  onSelect = onChange
+}: {
+  anchor: HTMLElement | null
+  /** The name of the swatches' popover and radio group */
+  label: string
+  customLabel: string
+  cancelLabel: string
+  saveLabel: string
+  colorName: (color: string) => string
+  value: string | null
+  onClose: () => void
+  onChange: (color: string) => void
+  /** A swatch the arrows move to, before Enter or a click keeps it. */
+  onSelect?: (color: string) => void
+}): ReactElement {
+  const [custom, setCustom] = useState(false)
+  const close = () => {
+    onClose()
+    setCustom(false)
+  }
+  return (
+    <Popover
+      open={anchor !== null}
+      anchorEl={anchor}
+      onClose={close}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      slotProps={{
+        paper: {
+          role: 'dialog',
+          'aria-label': custom ? customLabel : label,
+          sx: { p: 2, width: custom ? 246 : 'auto' }
+        }
+      }}
+    >
+      {custom ? (
+        <CustomColor
+          color={value ?? FALLBACK_COLOR}
+          cancelLabel={cancelLabel}
+          saveLabel={saveLabel}
+          onCancel={() => {
+            setCustom(false)
+          }}
+          onSave={color => {
+            onChange(color)
+            close()
+          }}
+        />
+      ) : (
+        <Swatches
+          label={label}
+          customLabel={customLabel}
+          colorName={colorName}
+          value={value}
+          onSelect={onSelect}
+          onPick={color => {
+            onChange(color)
+            close()
+          }}
+          onCustom={() => {
+            setCustom(true)
+          }}
+        />
+      )}
+    </Popover>
   )
 }
 

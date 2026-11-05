@@ -54,6 +54,19 @@ export const LAYOUTS = ['board', 'list', 'calendar', 'progress'] as const
 
 export const boardLayout = pgEnum('board_layout', LAYOUTS)
 
+// The pictures the frontend ships, then the one an admin sent.
+export const BACKGROUNDS = [
+  'orbitalblue',
+  'earlymorning',
+  'dawn',
+  'stellarburst',
+  'eclipse',
+  'stripes',
+  'custom'
+] as const
+
+export const boardBackground = pgEnum('board_background', BACKGROUNDS)
+
 export const projects = pgTable.withRLS(
   'projects',
   {
@@ -180,6 +193,13 @@ export const boards = pgTable.withRLS(
     layout: boardLayout().notNull().default('board'),
     // Offered to start new boards from, by whoever sees it.
     boardTemplate: boolean('board_template').notNull().default(false),
+    // Null for the default: white, or a space's picture on a space's board.
+    background: boardBackground(),
+    // A plain color instead of a picture, with `background` null.
+    backgroundColor: text('background_color'),
+    // The object storage key of the picture an admin sent, with `background`
+    // custom. A new one each time, which clients cache it by.
+    backgroundImage: uuid('background_image'),
     tenant: tenant()
   },
   table => [

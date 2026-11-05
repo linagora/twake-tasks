@@ -47,6 +47,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 
 - `GET /api/boards/:boardId`
 - `GET /api/boards/:boardId/archived`
+- `GET /api/boards/:boardId/background/:imageId`
 - `GET /api/boards/:boardId/events`
 - `GET /api/boards/:boardId/export`
 - `DELETE /api/boards/:boardId/favorite`
@@ -99,6 +100,8 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 
 - `PATCH /api/boards/:boardId`
 - `POST /api/boards/:boardId/archive`
+- `PUT /api/boards/:boardId/background`
+- `PUT /api/boards/:boardId/background/image`
 - `DELETE /api/boards/:boardId/board-template`
 - `PUT /api/boards/:boardId/board-template`
 - `PUT /api/boards/:boardId/default-layout`

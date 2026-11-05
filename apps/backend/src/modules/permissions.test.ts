@@ -54,6 +54,8 @@ interface Request {
   params?: Record<string, string>
   query?: Record<string, string>
   body?: object
+  // For a body sent as is, such as a picture.
+  contentType?: string
   // The status a permitted caller gets when the example is refused by design.
   answer?: number
 }
@@ -170,7 +172,10 @@ async function send(
   return api.inject({
     method,
     url: `/api${url}`,
-    headers: { authorization: `Bearer ${api.tokenOf(user)}` },
+    headers: {
+      authorization: `Bearer ${api.tokenOf(user)}`,
+      ...(request.contentType && { 'content-type': request.contentType })
+    },
     ...(request.query && { query: request.query }),
     ...(request.body && { payload: request.body })
   })
@@ -468,6 +473,16 @@ const EXAMPLES: Record<string, Example> = {
   'DELETE /boards/:boardId/board-template': none,
   'PUT /boards/:boardId/layout': () => ({ body: { layout: 'list' } }),
   'PUT /boards/:boardId/default-layout': () => ({ body: { layout: 'list' } }),
+  'PUT /boards/:boardId/background': () => ({ body: { background: 'dawn' } }),
+  'PUT /boards/:boardId/background/image': () => ({
+    body: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+    contentType: 'image/png'
+  }),
+  // No board has this picture: those who see the board learn only that.
+  'GET /boards/:boardId/background/:imageId': () => ({
+    params: { imageId: randomUUID() },
+    answer: 404
+  }),
   'GET /search': () => ({ query: { q: 'logo' } }),
   'POST /boards/:boardId/tasks': () => ({
     body: { sectionId: null, title: 'Brief' }

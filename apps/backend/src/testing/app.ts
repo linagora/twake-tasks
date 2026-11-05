@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm'
 import { createChanges } from '../infra/changes.ts'
 import { createDb, inTenant, type Db } from '../infra/db.ts'
 import type { Metrics } from '../infra/metrics.ts'
+import type { ObjectStorage } from '../infra/objectStorage.ts'
 import type { Identity } from '../modules/auth/index.ts'
 import { anIdentity } from '../modules/auth/testing.ts'
 import {
@@ -17,6 +18,7 @@ import {
   type Role
 } from '../modules/boards/index.ts'
 import { listenForBoardChanges, type Broker } from '../modules/live/index.ts'
+import { memoryStorage } from './memoryStorage.ts'
 
 export interface TestUser {
   userId: string
@@ -180,9 +182,12 @@ export async function startApp(
     limits?: Parameters<typeof buildApp>[0]['limits']
     metrics?: Metrics
     logger?: pino.Logger
+    storage?: ObjectStorage | null
   } = {}
 ) {
   const { sql, db } = createDb(inject('databaseUrl'))
+  const storage =
+    options.storage === undefined ? memoryStorage() : options.storage
   const broker = inMemoryBroker()
   const boardChanges = createChanges()
   await listenForBoardChanges(
@@ -210,7 +215,8 @@ export async function startApp(
     appUrl: 'https://tasks.example.com',
     isReady: () => Promise.resolve(true),
     limits: options.limits,
-    metrics: options.metrics
+    metrics: options.metrics,
+    storage: storage ?? undefined
   })
 
   function tokenOf(user: TestUser, claims: Partial<Identity> = {}) {
@@ -246,6 +252,7 @@ export async function startApp(
   return {
     as,
     tokenOf,
+    storage,
     inject: app.inject.bind(app),
     hasRoute: app.hasRoute.bind(app),
     printRoutes: app.printRoutes.bind(app),

@@ -151,6 +151,16 @@ describe('the migration setting', () => {
       loadConfig({ ...required, DATABASE_MIGRATION_URL: 'mysql://owner@db' })
     ).toThrow(/DATABASE_MIGRATION_URL/)
   })
+
+  it('refuses a bucket without its endpoint and keys', () => {
+    expect(() =>
+      loadConfig({
+        ...required,
+        S3_BUCKET: 'covers',
+        S3_ENDPOINT: 'https://s3.example.com'
+      })
+    ).toThrow(/S3_BUCKET needs/)
+  })
 })
 
 describe('the server settings', () => {

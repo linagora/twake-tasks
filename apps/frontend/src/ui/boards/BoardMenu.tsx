@@ -7,25 +7,15 @@ import {
   Files,
   FolderMoveto,
   Logout,
+  Palette,
   Pen,
   Restore,
   Stack,
   Trash,
   Upload
 } from '@linagora/twake-icons'
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  IconButton,
-  Menu,
-  Typography
-} from '@linagora/twake-mui'
-import { useId, useState, type ElementType, type ReactElement } from 'react'
+import { Alert, Divider, IconButton, Menu } from '@linagora/twake-mui'
+import { useState, type ElementType, type ReactElement } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import type { Shelf } from '@/application/boards'
@@ -33,12 +23,18 @@ import { Icon } from '@/ds/Icon'
 import { IconMenuItem } from '@/ds/IconMenuItem'
 import { Toast } from '@/ds/Toast'
 import {
+  hasOwnCover,
   isArchivable,
   isEditable,
   isManageable,
   isRenamable,
   type Board
 } from '@/domain/board'
+import {
+  ArchiveBoardDialog,
+  BoardArchivedNotice
+} from '@/ui/boards/ArchiveBoardDialog'
+import { BackgroundDialog } from '@/ui/boards/Backgrounds'
 import { ExportDialog } from '@/ui/boards/ExportDialog'
 import { ImportDialog } from '@/ui/boards/ImportDialog'
 import { LeaveBoardDialog } from '@/ui/boards/LeaveBoardDialog'
@@ -48,7 +44,6 @@ import {
   useSetBoardTemplate,
   useSetLayout
 } from '@/ui/queries/boards'
-import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSession } from '@/ui/session/SessionGate'
 
@@ -68,12 +63,20 @@ export function BoardMenu({
   // The editor and the dialog open once the menu is gone, which gives the focus
   // back to its button first: the editor would lose the focus and close at once
   const [next, setNext] = useState<
-    'rename' | 'archive' | 'export' | 'import' | 'copy' | 'leave' | null
+    | 'rename'
+    | 'archive'
+    | 'export'
+    | 'import'
+    | 'copy'
+    | 'leave'
+    | 'background'
+    | null
   >(null)
   const [confirming, setConfirming] = useState(false)
   const [csv, setCsv] = useState<'export' | 'import' | null>(null)
   const [copying, setCopying] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const [choosing, setChoosing] = useState(false)
   const [archivedNotice, setArchivedNotice] = useState(false)
   const [templateNotice, setTemplateNotice] = useState(false)
   const setLayout = useSetLayout(board.id)
@@ -133,6 +136,7 @@ export function BoardMenu({
               if (next === 'export' || next === 'import') setCsv(next)
               if (next === 'copy') setCopying(true)
               if (next === 'leave') setLeaving(true)
+              if (next === 'background') setChoosing(true)
             }
           }
         }}
@@ -186,6 +190,14 @@ export function BoardMenu({
           item(Pen, t('board.rename'), () => {
             setNext('rename')
           })}
+        {isManageable(board) &&
+          item(
+            Palette,
+            t(hasOwnCover(board) ? 'background.change' : 'background.add'),
+            () => {
+              setNext('background')
+            }
+          )}
         {onMove && item(FolderMoveto, t('moveBoard.action'), onMove)}
         {archivable &&
           item(
@@ -271,6 +283,14 @@ export function BoardMenu({
           <Alert severity="error">{t('boardTemplate.failed')}</Alert>
         </Toast>
       )}
+      {choosing && (
+        <BackgroundDialog
+          board={board}
+          onClose={() => {
+            setChoosing(false)
+          }}
+        />
+      )}
       {confirming && (
         <ArchiveBoardDialog
           name={board.name}
@@ -313,83 +333,5 @@ export function BoardMenu({
         )
       )}
     </>
-  )
-}
-
-function ArchiveBoardDialog({
-  name,
-  onCancel,
-  onArchive
-}: {
-  name: string
-  onCancel: () => void
-  onArchive: () => void
-}): ReactElement {
-  const { t } = useI18n()
-  const titleId = useId()
-  return (
-    <Dialog open onClose={onCancel} aria-labelledby={titleId} size="small">
-      <DialogTitle id={titleId}>
-        {t('archive.confirmBoardTitle', { name })}
-      </DialogTitle>
-      <DialogContent>
-        <Typography>{t('archive.confirmBoardText')}</Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button variant="text" ref={focusOnMount} onClick={onCancel}>
-          {t('archive.cancel')}
-        </Button>
-        <Button onClick={onArchive}>{t('archive.archiveBoard')}</Button>
-      </DialogActions>
-    </Dialog>
-  )
-}
-
-function BoardArchivedNotice({
-  board,
-  undo,
-  onClose
-}: {
-  board: Board
-  undo: ReturnType<typeof useSetBoardArchived>
-  onClose: () => void
-}): ReactElement {
-  const { t } = useI18n()
-  const labelId = useId()
-  return (
-    <Toast
-      open
-      autoHideDuration={undo.isError ? null : 6000}
-      onClose={(_, reason) => {
-        if (reason !== 'clickaway') onClose()
-      }}
-    >
-      <Alert
-        severity={undo.isError ? 'error' : 'info'}
-        role={undo.isError ? 'alert' : 'status'}
-        aria-labelledby={labelId}
-        action={
-          <Button
-            variant="text"
-            size="small"
-            disabled={undo.isPending}
-            onClick={() => {
-              undo.mutate(
-                { boardId: board.id, archived: false },
-                { onSuccess: onClose }
-              )
-            }}
-          >
-            {t('archive.undo')}
-          </Button>
-        }
-      >
-        <span id={labelId}>
-          {undo.isError
-            ? t('archive.failed')
-            : t('archive.boardArchivedToast', { name: board.name })}
-        </span>
-      </Alert>
-    </Toast>
   )
 }

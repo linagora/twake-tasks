@@ -107,11 +107,9 @@
     "emptyArchivedHint": "Архивные доски хранятся здесь только для чтения.",
     "loadFailed": "Не удалось загрузить доски.",
     "projectNotFound": "Этот проект не существует, или у вас нет к нему доступа.",
+    "menu": "Параметры доски %{name}",
     "star": "Добавить %{name} в избранное",
     "unstar": "Убрать %{name} из избранного",
-    "personal": "Личная доска",
-    "space": "Доска пространства",
-    "projectBoard": "Доска проекта",
     "personalProject": "Личное",
     "inbox": "Входящие",
     "defaultChip": "По умолчанию",
@@ -251,6 +249,7 @@
     "addFailed": "Не удалось добавить задачу.",
     "rename": "Переименовать доску",
     "renameName": "Название доски",
+    "renameSave": "Переименовать",
     "renameFailed": "Не удалось переименовать доску."
   },
   "task": {
@@ -708,6 +707,30 @@
     "empty": "Задач пока нет",
     "emptyHint": "Прогресс появится, когда на доске будут задачи.",
     "loadFailed": "Не удалось загрузить прогресс."
+  },
+  "background": {
+    "add": "Добавить обложку",
+    "change": "Изменить обложку",
+    "title": "Обложка доски",
+    "choices": "Обложки",
+    "color": "Цвет",
+    "customColor": "Свой цвет",
+    "none": "Без обложки",
+    "space": "Space",
+    "names": {
+      "orbitalblue": "Orbital Blue",
+      "earlymorning": "Early Morning",
+      "dawn": "Dawn",
+      "stellarburst": "Stellar Burst",
+      "eclipse": "Eclipse",
+      "stripes": "Stripes"
+    },
+    "mine": "Моё изображение",
+    "import": "С моего компьютера",
+    "failed": "Не удалось изменить обложку.",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "close": "Закрыть"
   },
   "search": {
     "label": "Поиск",

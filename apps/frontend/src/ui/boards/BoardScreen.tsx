@@ -58,7 +58,13 @@ export function BoardScreen({
   return (
     <OriginContext value={origin}>
       <BoardStepsContext value={[{ to: '.', label: name, relative: true }]}>
-        <main className={flush ? undefined : 'u-ph-2 u-pt-half u-pb-2'}>
+        <main
+          className={
+            flush
+              ? undefined
+              : 'u-ph-2 u-pt-half u-pb-2 u-flex u-flex-column u-mih-100'
+          }
+        >
           {/* Once loaded, the board titles itself with its breadcrumb. */}
           {back && !(shown && !waiting) && (
             // The size of the board's own title, so that nothing moves once it loads.
@@ -86,6 +92,7 @@ export function BoardScreen({
                 board={shown}
                 origin={back ? origin : undefined}
                 shareButton={!flush}
+                cover={!flush}
               />
               <BoardSelection board={shown}>
                 <BoardColumns board={shown} settled={!board.isFetching} />

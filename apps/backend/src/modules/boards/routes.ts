@@ -1,4 +1,6 @@
 import {
+  backgroundChoice,
+  backgroundImageParams,
   boardParams,
   boardRename,
   keyPrefixParams,
@@ -20,6 +22,7 @@ import type * as wire from '@twake-tasks/api-contract'
 import type { FastifyRequest } from 'fastify'
 import type { Db } from '../../infra/db.ts'
 import type { HttpServer } from '../../infra/http.ts'
+import type { ObjectStorage } from '../../infra/objectStorage.ts'
 import {
   defineRoute,
   registerRoutes,
@@ -29,6 +32,11 @@ import type { Identity, RequireIdentity } from '../auth/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import type { Refusal } from '../kernel/index.ts'
 import { checkBoardAccess } from './access.ts'
+import {
+  BACKGROUND_TYPES,
+  createBackgroundStore,
+  MAX_BACKGROUND_BYTES
+} from './backgrounds.ts'
 import { createLabelStore } from './labels.ts'
 import { createLayoutStore } from './layouts.ts'
 import { completionsOf } from './progress.ts'
@@ -69,6 +77,7 @@ export type ContractMatchesBackend = [
     >
   >,
   Assert<Same<Values<typeof wire.LAYOUTS>, Values<typeof db.LAYOUTS>>>,
+  Assert<Same<Values<typeof wire.BACKGROUNDS>, Values<typeof db.BACKGROUNDS>>>,
   Assert<
     Same<
       Exclude<
@@ -89,12 +98,26 @@ const admin = { on: 'board', role: 'admin' } as const
 
 export function registerBoards(
   app: HttpServer,
-  deps: { db: Db; requireIdentity: RequireIdentity }
+  deps: {
+    db: Db
+    requireIdentity: RequireIdentity
+    storage?: ObjectStorage | undefined
+  }
 ): BoardRoute[] {
   const store = createBoardStore(deps.db)
   const sectionStore = createSectionStore(deps.db)
   const labelStore = createLabelStore(deps.db)
   const layoutStore = createLayoutStore(deps.db)
+  const backgroundStore = createBackgroundStore(deps.db, deps.storage)
+
+  // The picture comes as is, its type in the content type.
+  app.addContentTypeParser(
+    BACKGROUND_TYPES,
+    { parseAs: 'buffer', bodyLimit: MAX_BACKGROUND_BYTES },
+    (_request, body, done) => {
+      done(null, body)
+    }
+  )
   const routing = {
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,
@@ -330,6 +353,70 @@ export function registerBoards(
           params.sectionId,
           body?.tasksTo
         )
+    }),
+    defineRoute({
+      method: 'PUT',
+      url: '/boards/:boardId/background',
+      access: admin,
+      params: boardParams,
+      body: backgroundChoice,
+      status: 204,
+      handler: ({ identity, params, body }) =>
+        'color' in body
+          ? backgroundStore.setBackgroundColor(
+              identity,
+              params.boardId,
+              body.color
+            )
+          : backgroundStore.setBackground(
+              identity,
+              params.boardId,
+              body.background
+            )
+    }),
+    defineRoute({
+      method: 'PUT',
+      url: '/boards/:boardId/background/image',
+      access: admin,
+      params: boardParams,
+      status: 201,
+      handler: async ({ identity, params, http: { request } }) => {
+        const contentType = request.headers['content-type'] ?? ''
+        if (
+          !BACKGROUND_TYPES.includes(contentType) ||
+          !Buffer.isBuffer(request.body) ||
+          request.body.length === 0
+        ) {
+          return { ok: false, error: 'invalid_request' }
+        }
+        return backgroundStore.setBackgroundImage(
+          identity,
+          params.boardId,
+          contentType,
+          request.body
+        )
+      }
+    }),
+    // Each picture has its own id, so it never changes once fetched.
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/background/:imageId',
+      access: viewer,
+      params: backgroundImageParams,
+      handler: async ({ identity, params, http: { reply } }) => {
+        const image = await backgroundStore.backgroundImage(
+          identity,
+          params.boardId,
+          params.imageId
+        )
+        if (!image) return { ok: false, error: 'not_found' }
+        await reply
+          .header('cache-control', 'private, max-age=31536000, immutable')
+          .header('x-content-type-options', 'nosniff')
+          .type(image.contentType)
+          .send(image.body)
+        return { ok: true, value: null }
+      }
     })
   ]
   registerRoutes(app, routing, routes)

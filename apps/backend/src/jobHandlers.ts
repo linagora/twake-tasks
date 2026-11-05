@@ -1,6 +1,8 @@
 import type { Budget } from './config.ts'
 import type { LdapRest } from './infra/ldapRest.ts'
 import type { Mail } from './infra/mail.ts'
+import type { ObjectStorage } from './infra/objectStorage.ts'
+import { COVER_DELETE_JOB, deleteCover } from './modules/boards/index.ts'
 import {
   emailDailySummary,
   emailDigest,
@@ -32,6 +34,7 @@ export function jobHandlers(deps: {
   appUrl: string
   budget: Budget
   send: (mail: Mail) => Promise<void>
+  storage?: ObjectStorage | undefined
   retention: Retention
   ldapRest?: LdapRest | undefined
 }): Record<string, Handler> {
@@ -40,6 +43,7 @@ export function jobHandlers(deps: {
     [RETENTION_JOB]: retention(deps.retention),
     [REMINDER_JOB]: deliverReminder,
     [PURGE_JOB]: purgeTask,
+    [COVER_DELETE_JOB]: deleteCover(deps.storage),
     // Purges a space deleted while the integration was on.
     [PURGE_SPACE_JOB]: purgeSpace,
     [NOTIFICATION_EMAIL_JOB]: emailNotification({ appUrl, budget, send }),

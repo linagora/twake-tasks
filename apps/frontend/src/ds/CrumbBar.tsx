@@ -8,6 +8,7 @@ import {
 import { createPortal } from 'react-dom'
 
 import { HEADER_ACTIONS, TITLE_FLEX } from '@/ds/PageHeader'
+import { BoardBanner, ON_PICTURE } from '@/ds/Pictures'
 
 /**
  * The strip of the breadcrumb, at the top of the content: a page puts its
@@ -27,13 +28,38 @@ export const CRUMB_BAR = {
 /** The strip the frame holds; null in an embed, where a page has none. */
 export const CrumbHostContext = createContext<HTMLElement | null>(null)
 
-/** A page's breadcrumb, in the frame's strip, or in its own one in an embed. */
-export function CrumbSlot({ children }: { children: ReactNode }): ReactElement {
+/**
+ * A page's breadcrumb, in the frame's strip, or in its own one in an embed,
+ * on the page's picture if it has one.
+ */
+export function CrumbSlot({
+  picture,
+  children
+}: {
+  picture?: string | undefined
+  children: ReactNode
+}): ReactElement {
   const host = useContext(CrumbHostContext)
+  const content = (
+    <>
+      {picture && <BoardBanner src={picture} />}
+      {children}
+    </>
+  )
   return host ? (
-    createPortal(children, host)
+    createPortal(content, host)
   ) : (
-    <Box sx={{ ...CRUMB_BAR, px: 0, minHeight: 40 }}>{children}</Box>
+    <Box
+      sx={{
+        ...CRUMB_BAR,
+        px: picture ? 2 : 0,
+        minHeight: 40,
+        ...ON_PICTURE,
+        ...(picture && { mb: 1 })
+      }}
+    >
+      {content}
+    </Box>
   )
 }
 
@@ -58,8 +84,16 @@ export function CrumbRow({
         py: actions ? 1 : 0
       }}
     >
-      <Box sx={{ flex: TITLE_FLEX, minWidth: 0 }}>{children}</Box>
-      {actions && <Box sx={HEADER_ACTIONS}>{actions}</Box>}
+      <Box sx={{ flex: TITLE_FLEX, minWidth: 0 }}>
+        <Box data-on-picture="title" sx={{ minWidth: 0 }}>
+          {children}
+        </Box>
+      </Box>
+      {actions && (
+        <Box data-on-picture="actions" sx={HEADER_ACTIONS}>
+          {actions}
+        </Box>
+      )}
     </Box>
   )
 }

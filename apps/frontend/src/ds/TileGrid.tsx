@@ -1,16 +1,15 @@
 import {
-  Avatar,
   Box,
   Card,
   CardActionArea,
   Chip,
-  nameToColor,
   Tooltip,
   Typography
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
-import { HIGH_CONTRAST_BADGE, useContrast } from '@/ds/contrast'
+import { useContrast } from '@/ds/contrast'
+import { backdropOf, shadedBackdropOf, TEXT_SHADE } from '@/ds/Pictures'
 
 const CARD_RADIUS = '20px'
 
@@ -39,23 +38,22 @@ export function CardGrid({
   )
 }
 
-// `title` is a link that stretches over the whole card; `action` sits above
+// `title` is a link that stretches over the whole card; `menu` sits above
 // that stretch so it keeps its own click.
 export function BoardCard({
   label,
-  badge,
-  badgeLabel,
   title,
   flag,
   chip,
   meta,
   members,
-  action,
-  footerAction
+  menu,
+  star,
+  footerAction,
+  cover,
+  lightCover = false
 }: {
   label: string
-  badge: string
-  badgeLabel: string
   title: ReactNode
   /** A short word next to the title, such as "New". */
   flag?: string | undefined
@@ -64,9 +62,16 @@ export function BoardCard({
   meta: string
   /** The people of the board, at the end of its last row. */
   members?: ReactNode
-  action?: ReactNode
+  /** At the top right, shown on hover or focus; touch screens always show it. */
+  menu?: ReactNode
+  /** Left of the menu, shown when it is. */
+  star?: ReactNode
   /** On the last row, before the people. */
   footerAction?: ReactNode
+  /** The picture along the top, with the name on it. */
+  cover: string
+  /** A white `cover`, unshaded, on which the name is dark. */
+  lightCover?: boolean
 }): ReactElement {
   const { high } = useContrast()
   return (
@@ -89,20 +94,38 @@ export function BoardCard({
           outlineColor: high ? 'text.primary' : 'primary.main',
           outlineOffset: high ? -3 : -2
         },
-        '& a:focus-visible': { outline: 'none' }
+        '& a:focus-visible': { outline: 'none' },
+        '& [data-card-menu]': { opacity: 0, transition: 'opacity 120ms' },
+        // An open menu keeps the star beside it.
+        '&:hover [data-card-menu], &:focus-within [data-card-menu], &:has([aria-expanded="true"]) [data-card-menu]':
+          { opacity: 1 },
+        '@media (hover: none)': { '& [data-card-menu]': { opacity: 1 } }
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar
-          variant="rounded"
-          size={40}
-          color={high ? HIGH_CONTRAST_BADGE : (nameToColor(label) ?? 'sunrise')}
-          role="img"
-          aria-label={badgeLabel}
-          sx={{ borderRadius: 2, fontWeight: 600 }}
-        >
-          {badge}
-        </Avatar>
+      <Box
+        data-testid="board-cover"
+        sx={{
+          // As a space's cover in Twake Space: white under a shade, or black
+          // on a white cover.
+          ...(lightCover
+            ? { ...backdropOf(cover), color: 'grey.900' }
+            : {
+                ...shadedBackdropOf(cover),
+                color: 'common.white',
+                textShadow: TEXT_SHADE
+              }),
+          minHeight: 88,
+          mt: -1.5,
+          mx: -1.5,
+          p: 1.5,
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 1.5,
+          borderTopLeftRadius: CARD_RADIUS,
+          borderTopRightRadius: CARD_RADIUS,
+          '&& a': { color: 'inherit' }
+        }}
+      >
         <Tooltip title={label} placement="top-start">
           <Typography
             variant="h6"
@@ -129,10 +152,28 @@ export function BoardCard({
             sx={{ flexShrink: 0, height: 20, fontWeight: 600 }}
           />
         )}
-        {action && (
-          <Box sx={{ position: 'relative', zIndex: 1, m: -0.5 }}>{action}</Box>
-        )}
       </Box>
+      {/* At the top right of the cover, so the name takes its whole width. */}
+      {(star ?? menu) && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 1,
+            display: 'flex',
+            gap: 0.5,
+            color: lightCover ? 'grey.900' : 'common.white',
+            // A favorite's star keeps its yellow.
+            '&& .MuiIconButton-root:not(.MuiIconButton-colorWarning)': {
+              color: 'inherit'
+            }
+          }}
+        >
+          {star && <Box data-card-menu="">{star}</Box>}
+          {menu && <Box data-card-menu="">{menu}</Box>}
+        </Box>
+      )}
       <Typography variant="caption" color="textSecondary" noWrap>
         {meta}
       </Typography>

@@ -39,6 +39,14 @@ Email:
 - `SMTP_TIMEOUT_SECONDS` (`60`): how long a mail waits on the SMTP server to connect, greet or answer before the send fails and its job is retried. The backend refuses to start unless `JOBS_LEASE_SECONDS` is at least 5 times this value.
 - `RATE_LIMIT_NOTIFICATION_EMAILS` (`10` in `600`): notification emails one person gets in a window. Past that, their notifications stay in the app, and one digest email, sent once the window ends, says how many more there are. Reminders are always emailed and not counted. `0` turns it off.
 
+Object storage, for the cover pictures admins send. Any S3-compatible service works (OVH, MinIO). Without `S3_BUCKET`, boards take the shipped covers and plain colors only:
+
+- `S3_BUCKET`: the bucket, which must exist. The backend refuses to start when it is set without the three below.
+- `S3_ENDPOINT`: the service URL, such as `https://s3.gra.io.cloud.ovh.net`.
+- `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`.
+- `S3_REGION` (`us-east-1`): the region the requests are signed for, such as `gra`.
+- `S3_FORCE_PATH_STYLE` (`false`): `true` puts the bucket in the path rather than the host name, as MinIO needs.
+
 Jobs (reminders, emails, purges), run by every replica:
 
 - `JOBS_CONCURRENCY` (`1`): jobs of each kind each replica runs at once. Each kind drains on its own, so a backlog of one kind never holds up another. A running job holds a database connection, so keep the total over every kind well under `DATABASE_POOL_MAX`.

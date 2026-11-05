@@ -22,6 +22,10 @@ export const keys = {
   shelf: (boardId: string, shelf: Shelf) => [...board(boardId), shelf] as const,
   completions: (boardId: string, zone: string) =>
     [...board(boardId), 'completions', zone] as const,
+  // Outside `boards()`: a picture never changes under its id, so a change of
+  // the board must not fetch it again.
+  backgroundImage: (boardId: string, imageId: string | null) =>
+    ['backgroundImage', boardId, imageId] as const,
   description: (boardId: string, taskId: string) =>
     [...task(boardId, taskId), 'description'] as const,
   history: (boardId: string, taskId: string) =>

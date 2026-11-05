@@ -132,7 +132,8 @@ export function PageCrumbs({
   steps,
   current,
   heading = false,
-  actions
+  actions,
+  picture
 }: {
   origin: Origin
   steps?: Crumb[] | undefined
@@ -140,10 +141,12 @@ export function PageCrumbs({
   /** The breadcrumb is the page's title, with its actions beside it. */
   heading?: boolean
   actions?: ReactNode
+  /** The page's picture, behind the breadcrumb and its actions. */
+  picture?: string | undefined
 }): ReactElement {
   const { t } = useI18n()
   return (
-    <CrumbSlot>
+    <CrumbSlot picture={picture}>
       <CrumbRow actions={actions}>
         <Crumbs
           label={t('page.breadcrumb')}

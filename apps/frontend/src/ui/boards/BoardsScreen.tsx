@@ -23,6 +23,12 @@ import {
 } from '@/domain/board'
 import { listBoards } from '@/domain/boardList'
 import type { LeftBoard } from '@/ui/boards/LeaveBoardDialog'
+import {
+  BLANK_CARD,
+  isLightCover,
+  useBoardBackground
+} from '@/ui/boards/Backgrounds'
+import { BoardCardMenu } from '@/ui/boards/BoardCardMenu'
 import { NewBoardDialog } from '@/ui/boards/NewBoardDialog'
 import { PeopleAvatars } from '@/ui/boards/MembersDialog'
 import {
@@ -122,17 +128,13 @@ function BoardItem({
 }): ReactElement {
   const { t } = useI18n()
   const name = useBoardName()(board)
+  const background = useBoardBackground(board)
   return (
     <BoardCard
+      // A board without cover is pale blue here, and stays white inside.
+      cover={isLightCover(board) ? BLANK_CARD : background}
+      lightCover={isLightCover(board)}
       label={name}
-      badge={(Array.from(name)[0] ?? '').toUpperCase()}
-      badgeLabel={t(
-        board.project.personal
-          ? 'boards.personal'
-          : board.project.managed
-            ? 'boards.space'
-            : 'boards.projectBoard'
-      )}
       title={
         <Link component={RouterLink} to={`/boards/${board.id}`}>
           {name}
@@ -174,7 +176,8 @@ function BoardItem({
           </Button>
         )
       }
-      action={<FavoriteButton board={board} name={name} />}
+      star={<FavoriteButton board={board} name={name} />}
+      menu={<BoardCardMenu board={board} />}
     />
   )
 }
