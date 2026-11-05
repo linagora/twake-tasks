@@ -17,7 +17,10 @@ import type {
 } from 'react'
 
 import { Icon } from '@/ds/Icon'
-import { Toast } from '@/ds/Toast'
+import { PHONE_BOTTOM, Toast } from '@/ds/Toast'
+
+/** The attribute that marks the bar on the page. */
+export const SELECTION_BAR = 'data-selection-bar'
 
 const BAR_HEIGHT = '56px'
 // Phones fit the actions on a row of their own, under the count.
@@ -29,17 +32,14 @@ export const ToastAboveBar = styled(Toast)(({ theme }) => ({
     bottom: `calc(${theme.spacing(3)} + ${BAR_HEIGHT})`
   },
   [theme.breakpoints.down('lg')]: {
-    bottom: `calc(var(--sidebarHeight, 0px) + ${theme.spacing(1)} + ${BAR_HEIGHT})`
+    bottom: `calc(${PHONE_BOTTOM} + ${theme.spacing(1)} + ${BAR_HEIGHT})`
   },
   [theme.breakpoints.down('sm')]: {
-    bottom: `calc(var(--sidebarHeight, 0px) + ${theme.spacing(1)} + ${PHONE_BAR_HEIGHT})`
+    bottom: `calc(${PHONE_BOTTOM} + ${theme.spacing(1)} + ${PHONE_BAR_HEIGHT})`
   }
 }))
 
-/**
- * Pinned at the bottom of the page while tasks are picked, over the phone's
- * bottom bar as a toast is.
- */
+/** Pinned at the bottom of the page while tasks are picked, as a toast is. */
 export function SelectionBar({
   label,
   count,
@@ -57,6 +57,7 @@ export function SelectionBar({
     <Paper
       role="toolbar"
       aria-label={label}
+      {...{ [SELECTION_BAR]: '' }}
       elevation={6}
       sx={theme => ({
         position: 'fixed',
@@ -65,7 +66,7 @@ export function SelectionBar({
         transform: 'translateX(-50%)',
         bottom: theme.spacing(3),
         [theme.breakpoints.down('lg')]: {
-          bottom: `calc(var(--sidebarHeight, 0px) + ${theme.spacing(1)})`
+          bottom: `calc(${PHONE_BOTTOM} + ${theme.spacing(1)})`
         },
         maxWidth: `calc(100vw - ${theme.spacing(2)})`,
         display: 'flex',
