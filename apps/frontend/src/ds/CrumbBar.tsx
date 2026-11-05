@@ -7,6 +7,8 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 
+import { HEADER_ACTIONS, TITLE_FLEX } from '@/ds/PageHeader'
+
 /**
  * The strip of the breadcrumb, at the top of the content: a page puts its
  * breadcrumb there, and an open task its header, at the same height and
@@ -56,19 +58,8 @@ export function CrumbRow({
         py: actions ? 1 : 0
       }}
     >
-      <Box sx={{ flex: '1 1 16rem', minWidth: 0 }}>{children}</Box>
-      {actions && (
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: 1
-          }}
-        >
-          {actions}
-        </Box>
-      )}
+      <Box sx={{ flex: TITLE_FLEX, minWidth: 0 }}>{children}</Box>
+      {actions && <Box sx={HEADER_ACTIONS}>{actions}</Box>}
     </Box>
   )
 }

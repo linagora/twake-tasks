@@ -85,6 +85,19 @@ export const PageTitle = styled(Typography)({
   fontWeight: 700
 }) as typeof Typography
 
+// A short title keeps its actions beside it on a phone, where 16rem would
+// leave them no room.
+export const TITLE_FLEX = { xs: '1 1 auto', sm: '1 1 16rem' }
+
+export const HEADER_ACTIONS = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: 1,
+  ml: 'auto'
+} as const
+
 export function PageHeader({
   back,
   title,
@@ -106,19 +119,8 @@ export function PageHeader({
           rowGap: 1.5
         }}
       >
-        <Box sx={{ flex: '1 1 16rem', minWidth: 0 }}>{title}</Box>
-        {actions && (
-          <Box
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              gap: 1
-            }}
-          >
-            {actions}
-          </Box>
-        )}
+        <Box sx={{ flex: TITLE_FLEX, minWidth: 0 }}>{title}</Box>
+        {actions && <Box sx={HEADER_ACTIONS}>{actions}</Box>}
       </Box>
     </Box>
   )
