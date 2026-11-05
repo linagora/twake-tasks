@@ -15,7 +15,7 @@ describe('the S3 storage, on MinIO', () => {
 
   beforeAll(async () => {
     container = await new GenericContainer(
-      'minio/minio:RELEASE.2025-02-28T09-55-16Z'
+      'pgsty/minio:RELEASE.2026-08-04T00-00-00Z'
     )
       .withCommand(['server', '/data'])
       .withEnvironment({
