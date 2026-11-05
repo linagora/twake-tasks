@@ -64,6 +64,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `GET /api/boards/:boardId/tasks/:taskId/follow`
 - `PUT /api/boards/:boardId/tasks/:taskId/follow`
 - `GET /api/boards/:boardId/tasks/:taskId/history`
+- `GET /api/boards/:boardId/tasks/:taskId/links`
 - `GET /api/boards/:boardId/tasks/:taskId/reminders`
 - `POST /api/boards/:boardId/tasks/:taskId/reminders`
 - `DELETE /api/boards/:boardId/tasks/:taskId/reminders/:reminderId`
@@ -83,6 +84,8 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `POST /api/boards/:boardId/tasks/:taskId/complete`
 - `PUT /api/boards/:boardId/tasks/:taskId/description`
 - `PUT /api/boards/:boardId/tasks/:taskId/labels`
+- `POST /api/boards/:boardId/tasks/:taskId/links`
+- `DELETE /api/boards/:boardId/tasks/:taskId/links/:otherId`
 - `POST /api/boards/:boardId/tasks/:taskId/move`
 - `POST /api/boards/:boardId/tasks/:taskId/restore`
 - `POST /api/boards/:boardId/tasks/:taskId/transfer`

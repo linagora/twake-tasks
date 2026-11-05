@@ -584,6 +584,23 @@ export function httpBoardsApi(
         'DELETE',
         route`/boards/${boardId}/tasks/${taskId}/reminders/${reminderId}`
       ),
+    listLinks: (boardId, taskId) =>
+      parsed(
+        'links',
+        wire.linksResponse,
+        'GET',
+        route`/boards/${boardId}/tasks/${taskId}/links`
+      ),
+    addLink: (boardId, taskId, kind, otherId) =>
+      call('POST', route`/boards/${boardId}/tasks/${taskId}/links`, {
+        kind,
+        taskId: otherId
+      } satisfies Body<'newLink'>),
+    removeLink: (boardId, taskId, otherId) =>
+      call(
+        'DELETE',
+        route`/boards/${boardId}/tasks/${taskId}/links/${otherId}`
+      ),
     following: async (boardId, taskId) =>
       (
         await parsed(

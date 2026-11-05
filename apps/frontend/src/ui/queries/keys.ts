@@ -30,6 +30,8 @@ export const keys = {
     [...task(boardId, taskId), 'comments', commentId, 'edits'] as const,
   reminders: (boardId: string, taskId: string) =>
     [...task(boardId, taskId), 'reminders'] as const,
+  links: (boardId: string, taskId: string) =>
+    [...task(boardId, taskId), 'links'] as const,
   following: (boardId: string, taskId: string) =>
     [...task(boardId, taskId), 'following'] as const,
   agendas,

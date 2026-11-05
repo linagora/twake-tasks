@@ -48,7 +48,12 @@ import { useCopyLink } from '@/ui/boards/CopyLink'
 import { DatesEditor } from '@/ui/boards/Dates'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { Subtasks } from '@/ui/boards/Subtasks'
-import { Assignees, DueChip, PriorityChip } from '@/ui/boards/TaskFacts'
+import {
+  Assignees,
+  BlockedChip,
+  DueChip,
+  PriorityChip
+} from '@/ui/boards/TaskFacts'
 import { TransferDialog, useTransferable } from '@/ui/boards/TransferTask'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -98,7 +103,9 @@ export function TaskCard({
   const [showSubtasks, setShowSubtasks] = useState(false)
   const children = tasks.filter(each => each.parentId === task.id)
   const done = children.filter(each => each.completedAt !== null).length
+  const blocked = task.blockers.length > 0 && !taskDone
   const facts =
+    blocked ||
     task.priority !== null ||
     task.dueDate !== null ||
     children.length > 0 ||
@@ -134,6 +141,7 @@ export function TaskCard({
       </CardTitle>
       {(facts || task.assignees.length > 0) && (
         <Meta>
+          {blocked && <BlockedChip task={task} />}
           {task.priority !== null && <PriorityChip priority={task.priority} />}
           <DueChip task={task} />
           {children.length > 0 && (

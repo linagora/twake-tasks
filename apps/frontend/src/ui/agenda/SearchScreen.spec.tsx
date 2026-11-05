@@ -68,6 +68,7 @@ describe('SearchScreen', () => {
         category: null,
         boardId: design.id,
         boardName: design.name,
+        projectId: design.project.id,
         parentTitle: null,
         excerpt: null,
         match: {
@@ -172,6 +173,7 @@ describe('SearchScreen', () => {
         category: null,
         boardId: design.id,
         boardName: design.name,
+        projectId: design.project.id,
         parentTitle: null,
         excerpt: '…for the spring fair in Lyon',
         match: { field: 'description', text: '…for the spring fair in Lyon' }
@@ -412,6 +414,7 @@ describe('live search results', () => {
         category: null,
         boardId: design.id,
         boardName: design.name,
+        projectId: design.project.id,
         parentTitle: null,
         excerpt: '…for the spring fair in Lyon',
         match: { field: 'description', text: '…for the spring fair in Lyon' }
@@ -436,6 +439,7 @@ describe('live search results', () => {
         category: null,
         boardId: design.id,
         boardName: design.name,
+        projectId: design.project.id,
         parentTitle: null,
         excerpt: null,
         match: {

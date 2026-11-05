@@ -1,5 +1,5 @@
-import { Avatar } from '@linagora/twake-mui'
-import { CalendarToday, Flag, Warning } from '@linagora/twake-icons'
+import { Avatar, Tooltip } from '@linagora/twake-mui'
+import { CalendarToday, Flag, Lock, Warning } from '@linagora/twake-icons'
 import type { ReactElement } from 'react'
 
 import { AvatarStack, MetaChip } from '@/ds/Columns'
@@ -56,6 +56,26 @@ export function DueChip({ task }: { task: Task }): ReactElement | null {
     >
       {spelled ? t('board.overdue', { date: day }) : day}
     </MetaChip>
+  )
+}
+
+export function BlockedChip({ task }: { task: Task }): ReactElement {
+  const { t } = useI18n()
+  const tip = t('dependencies.blockedTip', {
+    tasks: task.blockers
+      .map(blocker =>
+        blocker ? `${blocker.key} ${blocker.title}` : t('dependencies.hidden')
+      )
+      .join(', ')
+  })
+  return (
+    <Tooltip title={tip}>
+      <span>
+        <MetaChip icon={<Icon icon={Lock} />} tone="error" label={tip}>
+          {t('dependencies.blocked')}
+        </MetaChip>
+      </span>
+    </Tooltip>
   )
 }
 

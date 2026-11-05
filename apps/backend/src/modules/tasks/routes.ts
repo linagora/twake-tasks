@@ -7,6 +7,8 @@ import {
   completion,
   descriptionEdit,
   exportQuery,
+  linkParams,
+  newLink,
   newReminder,
   newTask,
   reminderParams,
@@ -29,6 +31,7 @@ import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import { under, type Refusal } from '../kernel/index.ts'
 import { createArchiveStore } from './archive.ts'
 import { createBulkStore } from './bulk.ts'
+import { createDependencyStore } from './dependencies.ts'
 import { historyOf } from './history.ts'
 import { createImportExportStore } from './importExport.ts'
 import { createReminderStore } from './reminders.ts'
@@ -56,6 +59,7 @@ export function registerTasks(
   const transferStore = createTransferStore(deps.db)
   const bulkStore = createBulkStore(deps.db)
   const importExportStore = createImportExportStore(deps.db)
+  const dependencyStore = createDependencyStore(deps.db)
   const routing = {
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,
@@ -223,6 +227,39 @@ export function registerTasks(
           params.boardId,
           params.taskId,
           params.reminderId
+        )
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/tasks/:taskId/links',
+      access: viewer,
+      params: taskParams,
+      handler: ({ identity, params }) =>
+        dependencyStore.listLinks(identity, params.boardId, params.taskId)
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/boards/:boardId/tasks/:taskId/links',
+      // On the linked task's board, opening it is enough.
+      access: editor,
+      params: taskParams,
+      body: newLink,
+      status: 204,
+      handler: ({ identity, params, body }) =>
+        dependencyStore.addLink(identity, params.boardId, params.taskId, body)
+    }),
+    defineRoute({
+      method: 'DELETE',
+      url: '/boards/:boardId/tasks/:taskId/links/:otherId',
+      access: editor,
+      params: linkParams,
+      status: 204,
+      handler: ({ identity, params }) =>
+        dependencyStore.removeLink(
+          identity,
+          params.boardId,
+          params.taskId,
+          params.otherId
         )
     }),
     defineRoute({

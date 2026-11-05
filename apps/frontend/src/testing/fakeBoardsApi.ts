@@ -9,6 +9,7 @@ import {
   type CommentEdit,
   type Description,
   type HistoryEntry,
+  type LinkedTask,
   type Notification,
   type NotificationPreferences,
   type Reminder,
@@ -92,6 +93,7 @@ export function aTask(section: Section | null, overrides: Partial<Task> = {}) {
     assignees: [],
     labels: [],
     commentCount: 0,
+    blockers: [],
     ...overrides
   } satisfies Task
 }
@@ -180,6 +182,40 @@ export function fakeBoardsApi(boards: Board[] = []) {
     return template
   }
   const followed = new Set<string>()
+  const links: { blocking: string; blocked: string }[] = []
+  const linkedTask = (taskId: string): LinkedTask => {
+    for (const board of store.values()) {
+      const task = board.tasks.find(each => each.id === taskId)
+      if (task) {
+        return {
+          taskId,
+          task: {
+            key: task.key,
+            title: task.title,
+            boardId: board.id,
+            boardName: board.name,
+            section:
+              board.sections.find(section => section.id === task.sectionId)
+                ?.name ?? null,
+            dueDate: task.dueDate,
+            done: !!task.completedAt || !!task.canceledAt
+          }
+        }
+      }
+    }
+    return { taskId, task: null }
+  }
+  const refreshBlockers = (taskId: string) => {
+    for (const board of store.values()) {
+      const blocked = board.tasks.find(each => each.id === taskId)
+      if (!blocked) continue
+      blocked.blockers = links
+        .filter(link => link.blocked === taskId)
+        .map(link => linkedTask(link.blocking).task)
+        .filter(task => !task?.done)
+        .map(task => task && { key: task.key, title: task.title })
+    }
+  }
   const notifications: Notification[] = []
   let preferences: NotificationPreferences = {
     mutedInApp: [],
@@ -941,6 +977,53 @@ export function fakeBoardsApi(boards: Board[] = []) {
             )
           )
         })
+    ),
+    listLinks: vi.fn<BoardsApi['listLinks']>((boardId, taskId) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        return {
+          blockedBy: links
+            .filter(link => link.blocked === taskId)
+            .map(link => linkedTask(link.blocking)),
+          blocks: links
+            .filter(link => link.blocking === taskId)
+            .map(link => linkedTask(link.blocked))
+        }
+      })
+    ),
+    addLink: vi.fn<BoardsApi['addLink']>((boardId, taskId, kind, otherId) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        if (otherId === taskId) throw new ApiError(400, 'invalid_link')
+        const [blocking, blocked] =
+          kind === 'blockedBy' ? [otherId, taskId] : [taskId, otherId]
+        const waits = (from: string, to: string): boolean =>
+          from === to ||
+          links.some(link => link.blocking === from && waits(link.blocked, to))
+        if (waits(blocked, blocking)) throw new ApiError(409, 'link_cycle')
+        if (
+          !links.some(
+            link => link.blocking === blocking && link.blocked === blocked
+          )
+        ) {
+          links.push({ blocking, blocked })
+        }
+        refreshBlockers(blocked)
+      })
+    ),
+    removeLink: vi.fn<BoardsApi['removeLink']>((boardId, taskId, otherId) =>
+      Promise.resolve().then(() => {
+        findTask(boardId, taskId)
+        const index = links.findIndex(
+          link =>
+            (link.blocking === taskId && link.blocked === otherId) ||
+            (link.blocking === otherId && link.blocked === taskId)
+        )
+        if (index < 0) throw new ApiError(404, 'not_found')
+        links.splice(index, 1)
+        refreshBlockers(taskId)
+        refreshBlockers(otherId)
+      })
     ),
     following: vi.fn<BoardsApi['following']>((boardId, taskId) =>
       Promise.resolve().then(() => {

@@ -302,6 +302,7 @@
     "noLabels": "Không có",
     "dates": "Ngày",
     "reminders": "Lời nhắc",
+    "dependencies": "Phụ thuộc",
     "subtasks": "Công việc con",
     "noDescription": "Chưa có mô tả.",
     "changeFailed": "Không thể lưu thay đổi.",
@@ -383,7 +384,13 @@
     "unlabeled": "%{actor} đã bỏ nhãn %{name}",
     "someone": "người đã rời bảng",
     "someLabel": "nhãn đã xóa",
-    "someSection": "mục đã xóa"
+    "someSection": "mục đã xóa",
+    "blockedBy": "%{actor} đã thêm phụ thuộc: bị chặn bởi %{name}",
+    "blockedByCleared": "%{actor} đã bỏ phụ thuộc: bị chặn bởi %{name}",
+    "blocks": "%{actor} đã thêm phụ thuộc: chặn %{name}",
+    "blocksCleared": "%{actor} đã bỏ phụ thuộc: chặn %{name}",
+    "unblocked": "%{name} đã xong: công việc không còn bị chặn",
+    "someTask": "một công việc bạn không mở được"
   },
   "dates": {
     "templateNoRepeat": "Công việc tạo từ mẫu không lặp lại.",
@@ -471,6 +478,27 @@
     "failed": "Không thể lưu lời nhắc.",
     "past": "Hãy chọn một thời điểm trong tương lai.",
     "tooMany": "Bạn có quá nhiều lời nhắc đang chờ. Hãy xóa bớt trước khi thêm lời nhắc mới."
+  },
+  "dependencies": {
+    "blockedBy": "Bị chặn bởi",
+    "blocks": "Chặn",
+    "blockedByChoice": "Bị chặn bởi…",
+    "blocksChoice": "Chặn…",
+    "none": "Không có",
+    "add": "Thêm phụ thuộc",
+    "search": "Tìm theo mã hoặc tiêu đề",
+    "typeToSearch": "Nhập mã hoặc tiêu đề.",
+    "noMatch": "Không có công việc đang mở nào khớp.",
+    "remove": "Bỏ liên kết với %{key}",
+    "hidden": "Một công việc bạn không mở được",
+    "failed": "Không lưu được phụ thuộc.",
+    "loadFailed": "Không tải được các phụ thuộc.",
+    "cycle": "Như vậy %{key} sẽ tự chặn chính nó.",
+    "otherProject": "Hãy chọn một công việc của dự án này.",
+    "dueBefore": "Hạn trước %{key}, công việc đang chặn nó.",
+    "blocked": "Bị chặn",
+    "blockedTip": "Bị chặn bởi %{tasks}",
+    "stillBlocked": "%{key} vẫn bị chặn bởi %{blockers}."
   },
   "newTask": {
     "useTemplate": "Mẫu",

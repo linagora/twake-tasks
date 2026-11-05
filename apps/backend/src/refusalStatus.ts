@@ -25,5 +25,7 @@ export const REFUSAL_STATUS: Record<Refusal | 'invalid_request', number> = {
   last_admin: 409,
   key_prefix_taken: 409,
   same_board: 400,
-  invalid_template: 400
+  invalid_template: 400,
+  invalid_link: 400,
+  link_cycle: 409
 }

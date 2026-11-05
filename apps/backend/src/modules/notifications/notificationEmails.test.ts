@@ -202,6 +202,35 @@ describe('notification emails', () => {
     expect(mail?.text.split('\n')[0]).toBe(`Alice Martin ${line}`)
   })
 
+  it('tells a follower the task is no longer blocked', async () => {
+    const { alice, bob, board, task } = await aTask()
+    const blocker = (
+      await api
+        .as(alice)
+        .post(`/boards/${board.id}/tasks`, { sectionId: null, title: 'Brief' })
+    ).json<{ id: string; key: string }>()
+    const path = `/boards/${board.id}/tasks/${task.id}`
+    await api
+      .as(alice)
+      .post(`${path}/links`, { kind: 'blockedBy', taskId: blocker.id })
+    await api.as(bob).put(`${path}/follow`, {})
+    const mailbox = aMailbox()
+
+    await api
+      .as(alice)
+      .post(`/boards/${board.id}/tasks/${blocker.id}/complete`, {
+        state: 'completed'
+      })
+    await mailbox.deliver()
+
+    const [mail] = mailbox.sent.filter(
+      each => each.to === bob.email && each.text.includes(board.id)
+    )
+    expect(mail?.text.split('\n')[0]).toBe(
+      `${blocker.key} is done, the task is no longer blocked`
+    )
+  })
+
   it('announces a due date that has a time', async () => {
     const { alice, bob, board, task } = await aTask()
     await api.as(bob).post(`/boards/${board.id}/tasks/${task.id}/comments`, {

@@ -81,6 +81,8 @@ export interface Task {
   assignees: Person[]
   labels: Label[]
   commentCount: number
+  /** The open tasks blocking it, null for one the person cannot open. */
+  blockers: ({ key: string; title: string } | null)[]
 }
 
 /**

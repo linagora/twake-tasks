@@ -18,6 +18,7 @@ import {
   keyPrefixResponse,
   label,
   labelNamesResponse,
+  linksResponse,
   newCalendarFeed,
   notificationPreferences,
   notificationsResponse,
@@ -261,6 +262,14 @@ describe('the API contract', () => {
         .reminders
     ).toHaveLength(2)
     contracted(followingResponse, await api.as(alice).get(`${at}/follow`))
+    const blockerId = await newTask('Kick-off')
+    await api
+      .as(alice)
+      .post(`${at}/links`, { kind: 'blockedBy', taskId: blockerId })
+    expect(
+      contracted(linksResponse, await api.as(alice).get(`${at}/links`))
+        .blockedBy
+    ).toMatchObject([{ taskId: blockerId, task: { title: 'Kick-off' } }])
     expect(
       contracted(historyResponse, await api.as(alice).get(`${at}/history`))
         .entries.length

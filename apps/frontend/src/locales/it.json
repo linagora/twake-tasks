@@ -302,6 +302,7 @@
     "noLabels": "Nessuna",
     "dates": "Date",
     "reminders": "Promemoria",
+    "dependencies": "Dipendenze",
     "subtasks": "Sotto-attività",
     "noDescription": "Nessuna descrizione.",
     "changeFailed": "Impossibile salvare la modifica.",
@@ -383,7 +384,13 @@
     "unlabeled": "%{actor} ha rimosso l’etichetta %{name}",
     "someone": "una persona che ha lasciato la bacheca",
     "someLabel": "un’etichetta eliminata",
-    "someSection": "una sezione eliminata"
+    "someSection": "una sezione eliminata",
+    "blockedBy": "%{actor} ha aggiunto una dipendenza: bloccata da %{name}",
+    "blockedByCleared": "%{actor} ha rimosso una dipendenza: bloccata da %{name}",
+    "blocks": "%{actor} ha aggiunto una dipendenza: blocca %{name}",
+    "blocksCleared": "%{actor} ha rimosso una dipendenza: blocca %{name}",
+    "unblocked": "%{name} è completata: non è più bloccata",
+    "someTask": "un’attività che non puoi aprire"
   },
   "dates": {
     "templateNoRepeat": "Un’attività creata da un modello non si ripete.",
@@ -471,6 +478,27 @@
     "failed": "Impossibile salvare il promemoria.",
     "past": "Scegli un orario futuro.",
     "tooMany": "Hai troppi promemoria in attesa. Eliminane alcuni prima di aggiungerne un altro."
+  },
+  "dependencies": {
+    "blockedBy": "Bloccata da",
+    "blocks": "Blocca",
+    "blockedByChoice": "Bloccata da…",
+    "blocksChoice": "Blocca…",
+    "none": "Nessuna",
+    "add": "Aggiungi dipendenza",
+    "search": "Cerca per chiave o titolo",
+    "typeToSearch": "Scrivi una chiave o un titolo.",
+    "noMatch": "Nessuna attività aperta corrisponde.",
+    "remove": "Rimuovi il collegamento a %{key}",
+    "hidden": "Un’attività che non puoi aprire",
+    "failed": "Impossibile salvare la dipendenza.",
+    "loadFailed": "Impossibile caricare le dipendenze.",
+    "cycle": "Così %{key} bloccherebbe se stessa.",
+    "otherProject": "Scegli un’attività di questo progetto.",
+    "dueBefore": "Scade prima di %{key}, che la blocca.",
+    "blocked": "Bloccata",
+    "blockedTip": "Bloccata da %{tasks}",
+    "stillBlocked": "%{key} è ancora bloccata da %{blockers}."
   },
   "newTask": {
     "useTemplate": "Modello",

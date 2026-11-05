@@ -41,6 +41,7 @@ A test fails when a table is missing from this page, and the backend test suite 
 - `task_followers`: cascade with the task, or deleted by hand. Removed when the person loses access to the task, or with the person.
 - `task_reminders`: cascade with the task, or deleted by hand. Removed when the person loses access to the task, or with the person.
 - `task_labels`: cascade with the task or the label, or deleted by hand. Removed when the task or its board moves to a project without the label.
+- `task_links`: one task blocking another. Cascade with either task, or deleted by hand. Kept while either task is archived or trashed, and hidden until it is restored.
 - `comments`: cascade with the task. Kept after their author's account is deleted, with the author's name as it was.
 - `comment_reactions`: cascade with the comment, or deleted by hand. Removed with the person.
 - `comment_edits`: the earlier bodies of an edited comment. Cascade with the comment, and kept as long as it is.

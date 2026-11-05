@@ -127,6 +127,7 @@ export function ListRow({
   label,
   taskKey,
   title,
+  badge,
   done,
   people,
   due,
@@ -143,6 +144,8 @@ export function ListRow({
   label: string
   taskKey: string
   title: ReactNode
+  /** A state shown after the title, above the row's click area. */
+  badge?: ReactNode
   done: boolean
   people: ReactNode
   due: ReactNode
@@ -200,15 +203,22 @@ export function ListRow({
       })}
     >
       <SelectableKey taskKey={taskKey} select={select} />
-      <Box
-        className="ListRow-title u-ellipsis"
-        sx={{
-          minWidth: 0,
-          color: done ? 'text.secondary' : 'text.primary',
-          textDecoration: done ? 'line-through' : 'none'
-        }}
-      >
-        {title}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Box
+          className="ListRow-title u-ellipsis"
+          sx={{
+            minWidth: 0,
+            color: done ? 'text.secondary' : 'text.primary',
+            textDecoration: done ? 'line-through' : 'none'
+          }}
+        >
+          {title}
+        </Box>
+        {badge && (
+          <Box sx={{ position: 'relative', flex: 'none', display: 'flex' }}>
+            {badge}
+          </Box>
+        )}
       </Box>
       <Box
         sx={{

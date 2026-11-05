@@ -302,6 +302,7 @@
     "noLabels": "Keine",
     "dates": "Termine",
     "reminders": "Erinnerungen",
+    "dependencies": "Abhängigkeiten",
     "subtasks": "Unteraufgaben",
     "noDescription": "Keine Beschreibung.",
     "changeFailed": "Die Änderung konnte nicht gespeichert werden.",
@@ -383,7 +384,13 @@
     "unlabeled": "%{actor} hat das Label %{name} entfernt",
     "someone": "eine Person, die das Board verlassen hat",
     "someLabel": "ein gelöschtes Label",
-    "someSection": "einem gelöschten Abschnitt"
+    "someSection": "einem gelöschten Abschnitt",
+    "blockedBy": "%{actor} hat eine Abhängigkeit hinzugefügt: blockiert durch %{name}",
+    "blockedByCleared": "%{actor} hat eine Abhängigkeit entfernt: blockiert durch %{name}",
+    "blocks": "%{actor} hat eine Abhängigkeit hinzugefügt: blockiert %{name}",
+    "blocksCleared": "%{actor} hat eine Abhängigkeit entfernt: blockiert %{name}",
+    "unblocked": "%{name} ist erledigt: sie ist nicht mehr blockiert",
+    "someTask": "eine Aufgabe, die Sie nicht öffnen können"
   },
   "dates": {
     "templateNoRepeat": "Eine aus einer Vorlage erstellte Aufgabe wiederholt sich nicht.",
@@ -471,6 +478,27 @@
     "failed": "Die Erinnerung konnte nicht gespeichert werden.",
     "past": "Wählen Sie einen Zeitpunkt in der Zukunft.",
     "tooMany": "Sie haben zu viele ausstehende Erinnerungen. Löschen Sie einige, bevor Sie eine neue hinzufügen."
+  },
+  "dependencies": {
+    "blockedBy": "Blockiert durch",
+    "blocks": "Blockiert",
+    "blockedByChoice": "Blockiert durch…",
+    "blocksChoice": "Blockiert…",
+    "none": "Keine",
+    "add": "Abhängigkeit hinzufügen",
+    "search": "Nach Schlüssel oder Titel suchen",
+    "typeToSearch": "Geben Sie einen Schlüssel oder Titel ein.",
+    "noMatch": "Keine offene Aufgabe passt.",
+    "remove": "Verknüpfung mit %{key} entfernen",
+    "hidden": "Eine Aufgabe, die Sie nicht öffnen können",
+    "failed": "Die Abhängigkeit konnte nicht gespeichert werden.",
+    "loadFailed": "Die Abhängigkeiten konnten nicht geladen werden.",
+    "cycle": "Damit würde %{key} sich selbst blockieren.",
+    "otherProject": "Wählen Sie eine Aufgabe dieses Projekts.",
+    "dueBefore": "Fällig vor %{key}, das sie blockiert.",
+    "blocked": "Blockiert",
+    "blockedTip": "Blockiert durch %{tasks}",
+    "stillBlocked": "%{key} ist noch blockiert durch %{blockers}."
   },
   "newTask": {
     "useTemplate": "Vorlage",

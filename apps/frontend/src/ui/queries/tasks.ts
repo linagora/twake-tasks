@@ -1,3 +1,4 @@
+import { useAlert } from '@linagora/twake-mui'
 import {
   skipToken,
   useMutation,
@@ -26,6 +27,7 @@ import {
   type StartedTask
 } from '@/application/newTask'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
+import { useI18n } from '@/ui/i18n/useI18n'
 import { useBoards } from '@/ui/queries/boards'
 import { keys } from '@/ui/queries/keys'
 
@@ -150,6 +152,8 @@ export function useMoveTask(
 ): UseMutationResult<void, Error, { taskId: string; move: TaskMove }> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
+  const { showAlert } = useAlert()
+  const { t } = useI18n()
   return useMutation({
     mutationFn: ({ taskId, move }) => api.moveTask(boardId, taskId, move),
     onMutate: async ({ taskId, move }) => {
@@ -162,6 +166,31 @@ export function useMoveTask(
         })
       }
       return { shown }
+    },
+    // Done while blocked is allowed, and said.
+    onSuccess: (_result, { taskId, move }, context) => {
+      const task = context.shown?.tasks.find(each => each.id === taskId)
+      const into = context.shown?.sections.find(
+        section => section.id === move.sectionId
+      )
+      if (
+        !task ||
+        task.blockers.length === 0 ||
+        into?.category !== 'completed' ||
+        task.sectionId === move.sectionId
+      ) {
+        return
+      }
+      showAlert({
+        message: t('dependencies.stillBlocked', {
+          key: task.key,
+          blockers: task.blockers
+            .map(blocker => blocker?.key ?? t('dependencies.hidden'))
+            .join(', ')
+        }),
+        severity: 'warning',
+        duration: 8000
+      })
     },
     onError: (_error, _input, context) => {
       if (context?.shown) {

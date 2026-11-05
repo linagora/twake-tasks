@@ -158,6 +158,24 @@ export interface Reminder {
 export type NewReminder =
   { at: string } | { beforeMinutes: number; zone: string }
 
+export type LinkKind = 'blockedBy' | 'blocks'
+
+/** `task` is null for a task on a board the person cannot open. */
+export interface LinkedTask {
+  taskId: string
+  task: {
+    key: string
+    title: string
+    boardId: string
+    boardName: string
+    section: string | null
+    dueDate: string | null
+    done: boolean
+  } | null
+}
+
+export type Links = Record<LinkKind, LinkedTask[]>
+
 /**
  * `from` and `to` are ids for `section`, `assignees` and `labels`, and
  * `{ id, name }` for `board`. `name` is the section or label's name when the
@@ -201,6 +219,7 @@ export interface SearchScope {
 
 /** `excerpt` quotes the description around the match when the title does not match. */
 export type SearchResult = AgendaTask & {
+  projectId: string
   excerpt: string | null
   match: SearchMatch | null
 }
@@ -526,6 +545,23 @@ export interface BoardsApi {
     boardId: string,
     taskId: string,
     reminderId: string
+  ) => Promise<void>
+  listLinks: (boardId: string, taskId: string) => Promise<Links>
+  /**
+   * Rejects with `invalid_link` for the task itself, one of its sub-tasks, or
+   * a task of another project without an organization, and with `link_cycle`
+   * when the other task already waits on this one.
+   */
+  addLink: (
+    boardId: string,
+    taskId: string,
+    kind: LinkKind,
+    otherId: string
+  ) => Promise<void>
+  removeLink: (
+    boardId: string,
+    taskId: string,
+    otherId: string
   ) => Promise<void>
   following: (boardId: string, taskId: string) => Promise<boolean>
   setFollowing: (

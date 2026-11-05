@@ -31,6 +31,9 @@ AS $function$
         ) DESC
         LIMIT 1
       )
+      WHEN 'blockedBy' THEN key_of((coalesce(new, old) #>> '{}')::uuid)
+      WHEN 'blocks' THEN key_of((coalesce(new, old) #>> '{}')::uuid)
+      WHEN 'unblocked' THEN key_of((new #>> '{}')::uuid)
     END
   )
 $function$;
