@@ -27,11 +27,12 @@ import {
   RemovalNotices,
   type Removal
 } from '@/ui/boards/Archive'
+import { BoardCalendar } from '@/ui/boards/BoardCalendar'
 import { BoardDrag, columnSortId } from '@/ui/boards/BoardDrag'
 import { NoMatch, useShownTasks } from '@/ui/boards/BoardFilter'
-import { CalendarTask } from '@/ui/boards/CalendarTask'
-import { CalendarLayout, ListLayout } from '@/ui/boards/Layouts'
+import { ListLayout } from '@/ui/boards/Layouts'
 import { LinkedTask } from '@/ui/boards/LinkedTask'
+import { sortTasks, useListSort } from '@/ui/boards/listSort'
 import { ProgressLayout } from '@/ui/boards/ProgressLayout'
 import { useBoardChange } from '@/ui/queries/boards'
 import { useMoveTask } from '@/ui/queries/tasks'
@@ -39,9 +40,7 @@ import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { TaskCard } from '@/ui/boards/TaskCard'
 import { TaskListRow } from '@/ui/boards/TaskListRow'
 import { useCompletedFold } from '@/ui/boards/useCompletedFold'
-import { useReschedule } from '@/ui/boards/useReschedule'
 import { useI18n } from '@/ui/i18n/useI18n'
-import { useNewTaskParam } from '@/ui/shell/useNewTaskParam'
 
 export function BoardColumns({
   board,
@@ -50,9 +49,8 @@ export function BoardColumns({
   board: Board
   settled: boolean
 }): ReactElement {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const move = useMoveTask(board.id)
-  const reschedule = useReschedule(board.id)
   const moveSection = useBoardChange(
     board.id,
     (api, { sectionId, to }: { sectionId: string; to: SectionMove }) =>
@@ -70,7 +68,6 @@ export function BoardColumns({
     void navigate(shelf)
   }
   const [removal, setRemoval] = useState<Removal | null>(null)
-  const { openNewTask } = useNewTaskParam()
   const [adding, setAdding] = useState<string | null>(null)
   const stopAdding = (key: string): void => {
     setAdding(current => (current === key ? null : current))
@@ -142,6 +139,8 @@ export function BoardColumns({
       sections={board.sections}
     />
   )
+  const listSort = useListSort(board.id)
+  const sorted = (tasks: Task[]) => sortTasks(tasks, listSort.sort, lang)
   const completedFold = useCompletedFold(board.id)
   const fold = (column: (typeof columns)[number], list = false) => {
     const tasks = tasksIn(column, true)
@@ -153,7 +152,9 @@ export function BoardColumns({
           onToggle={completedFold.toggle}
           list={list}
         >
-          {tasks.map(task => (list ? listRow(task) : card(task)))}
+          {list
+            ? sorted(tasks).map(task => listRow(task))
+            : tasks.map(task => card(task))}
         </CompletedFold>
       )
     )
@@ -331,11 +332,13 @@ export function BoardColumns({
           columns={columns.map(column => ({
             key: columnKey(column),
             name: column.name,
-            tasks: tasksIn(column),
+            tasks: sorted(tasksIn(column)),
             count: shown.count(tasksIn(column).length, column.id),
             footer: listFooter(column)
           }))}
           row={listRow}
+          sort={listSort.sort}
+          onSort={listSort.sortBy}
         />
       )}
       {board.layout === 'list' && editable && (
@@ -354,40 +357,26 @@ export function BoardColumns({
               columns={columns.map(column => ({
                 key: columnKey(column),
                 name: column.name,
-                tasks: idsOf(laneKey(column)).flatMap(id => {
-                  const task = byId.get(id)
-                  return task ? [task] : []
-                }),
+                tasks: sorted(
+                  idsOf(laneKey(column)).flatMap(id => {
+                    const task = byId.get(id)
+                    return task ? [task] : []
+                  })
+                ),
                 count: shown.count(idsOf(laneKey(column)).length, column.id),
                 footer: listFooter(column),
-                dropId: laneKey(column)
+                // A sorted list shows no board order to drag tasks within.
+                dropId: listSort.sort ? undefined : laneKey(column)
               }))}
-              row={task => listRow(task, true)}
+              row={task => listRow(task, !listSort.sort)}
+              sort={listSort.sort}
+              onSort={listSort.sortBy}
             />
           )}
         </BoardDrag>
       )}
       {board.layout === 'calendar' && (
-        <CalendarLayout
-          tasks={shown.tasks}
-          item={task => (
-            <CalendarTask key={task.id} task={task} draggable={editable} />
-          )}
-          onAdd={
-            editable
-              ? dueDate => {
-                  openNewTask({ dueDate: dueDate ?? undefined })
-                }
-              : undefined
-          }
-          onMove={
-            editable
-              ? (task, day) => {
-                  reschedule.mutate({ task, day })
-                }
-              : undefined
-          }
-        />
+        <BoardCalendar board={board} tasks={shown.tasks} />
       )}
       <LinkedTask board={board} editable={editable} settled={settled} />
       {removal && (
