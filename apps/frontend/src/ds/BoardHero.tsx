@@ -223,7 +223,11 @@ export function BoardHero({
                 })}
               />
             )}
-            <Box sx={{ minWidth: 0 }}>{title}</Box>
+            <Box
+              sx={{ flex: collapsed ? '0 1 auto' : '1 1 auto', minWidth: 0 }}
+            >
+              {title}
+            </Box>
             {collapsed && late && (
               <Box
                 sx={{
