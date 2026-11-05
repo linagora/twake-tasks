@@ -1,17 +1,16 @@
 import {
-  Avatar,
   Box,
   ButtonBase,
   Chip,
-  nameToColor,
   Tooltip,
   Typography,
   type Theme
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
 
-import { HIGH_CONTRAST_AVATAR, useContrast } from '@/ds/contrast'
-import { ACTION, backdropOf, COVER_RADIUS } from '@/ds/Pictures'
+import { ICON } from '@/ds/BoardIcon'
+import { useContrast } from '@/ds/contrast'
+import { ACTION, COVER_RADIUS } from '@/ds/Pictures'
 
 const CARD = {
   display: 'flex',
@@ -22,50 +21,6 @@ const CARD = {
   border: 1,
   transition: 'border-color 120ms, box-shadow 120ms'
 } as const
-
-const ICON = { width: 36, height: 36, borderRadius: '10px', flexShrink: 0 }
-
-/**
- * A board's picture or color, or for a board without, its initials on a
- * color of the Twake avatars picked from its name.
- */
-export function BoardIcon({
-  name,
-  cover
-}: {
-  name: string
-  cover: string | null
-}): ReactElement {
-  const { high } = useContrast()
-  if (cover) {
-    return (
-      <Box
-        data-testid="board-icon"
-        aria-hidden
-        sx={{ ...ICON, ...backdropOf(cover) }}
-      />
-    )
-  }
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map(word => Array.from(word)[0] ?? '')
-    .join('')
-    .toUpperCase()
-  return (
-    <Avatar
-      data-testid="board-icon"
-      aria-hidden
-      variant="rounded"
-      size={36}
-      color={high ? HIGH_CONTRAST_AVATAR : (nameToColor(name) ?? 'none')}
-      sx={{ ...ICON, fontSize: 13, fontWeight: 600 }}
-    >
-      {initials}
-    </Avatar>
-  )
-}
 
 export function CardGrid({
   label,
@@ -119,14 +74,14 @@ export function BoardCard({
   label: string
   title: ReactNode
   icon: ReactNode
-  /** Where the board belongs. */
-  subtitle: string
+  /** Where the board belongs; the line stays, empty, without it. */
+  subtitle?: string | undefined
   /** A short word next to the title, such as "New". */
   flag?: string | undefined
   /** After `meta`, such as a template's. */
   chip?: ReactNode
-  /** The share of its tasks done, from 0 to 1. */
-  done: number
+  /** The share of its tasks done, from 0 to 1; null without tasks. */
+  done: number | null
   doneLabel: string
   meta: string
   /** How many tasks are late, in the error tint. */
@@ -170,7 +125,19 @@ export function BoardCard({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
         {icon}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              // The hidden controls lie over the name's end, so the name
+              // keeps the row; only what always shows takes its room.
+              pr: star && starred ? 3 : 0,
+              '@media (hover: none)': {
+                pr: menu && star ? 6.5 : menu || star ? 3 : 0
+              }
+            }}
+          >
             <Tooltip title={label} placement="top-start">
               <Typography
                 variant="body2"
@@ -181,15 +148,6 @@ export function BoardCard({
                 {title}
               </Typography>
             </Tooltip>
-            {star && (
-              <Box
-                data-above=""
-                data-card-menu={starred ? undefined : ''}
-                sx={{ display: 'flex', '& .MuiIconButton-root': { p: 0.25 } }}
-              >
-                {star}
-              </Box>
-            )}
             {flag && (
               <Chip
                 size="small"
@@ -198,44 +156,68 @@ export function BoardCard({
                 sx={{ flexShrink: 0, height: 20, fontWeight: 600 }}
               />
             )}
+            <Box
+              sx={{
+                position: 'absolute',
+                zIndex: 1,
+                top: (theme: Theme) => theme.spacing(1.75),
+                right: (theme: Theme) => theme.spacing(1.75),
+                height: 20,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                '& .MuiIconButton-root': { p: 0.25 },
+                '& > [data-card-menu]': { bgcolor: 'background.paper' }
+              }}
+            >
+              {menu && <Box data-card-menu="">{menu}</Box>}
+              {star && (
+                <Box
+                  data-card-menu={starred ? undefined : ''}
+                  sx={{ display: 'flex' }}
+                >
+                  {star}
+                </Box>
+              )}
+            </Box>
           </Box>
           <Typography
             variant="caption"
             component="p"
             color="textSecondary"
             noWrap
+            sx={{ minHeight: '1lh' }}
           >
             {subtitle}
           </Typography>
         </Box>
-        {menu && (
-          <Box data-above="" data-card-menu="" sx={{ flexShrink: 0 }}>
-            {menu}
-          </Box>
-        )}
       </Box>
-      <Box
-        role="progressbar"
-        aria-label={doneLabel}
-        aria-valuenow={Math.round(done * 100)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        sx={{
-          height: 4,
-          borderRadius: 4,
-          bgcolor: 'background.default',
-          overflow: 'hidden'
-        }}
-      >
+      {done === null ? (
+        <Box sx={{ height: 4 }} />
+      ) : (
         <Box
+          role="progressbar"
+          aria-label={doneLabel}
+          aria-valuenow={Math.round(done * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
           sx={{
-            height: '100%',
-            width: `${String(done * 100)}%`,
+            height: 4,
             borderRadius: 4,
-            bgcolor: 'primary.main'
+            bgcolor: 'background.default',
+            overflow: 'hidden'
           }}
-        />
-      </Box>
+        >
+          <Box
+            sx={{
+              height: '100%',
+              width: `${String(done * 100)}%`,
+              borderRadius: 4,
+              bgcolor: 'primary.main'
+            }}
+          />
+        </Box>
+      )}
       <Box
         sx={{
           display: 'flex',
@@ -298,6 +280,7 @@ export function CreateCard({
           ...CARD,
           ...ACTION,
           flex: 1,
+          minWidth: 0,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'flex-start',
@@ -319,7 +302,7 @@ export function CreateCard({
         >
           {icon}
         </Box>
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
             variant="body2"
             component="span"

@@ -43,7 +43,7 @@ export function PeopleAvatars({
   const hidden = members.slice(SHOWN)
   const rest = total - shown.length
   const count = (
-    <Avatar size={size} color="none" border innerBorder aria-hidden>
+    <Avatar size={size} color="none" aria-hidden data-count="">
       {`+${String(Math.min(rest, MAX_COUNT))}`}
     </Avatar>
   )

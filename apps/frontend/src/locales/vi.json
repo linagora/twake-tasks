@@ -117,7 +117,7 @@
     "defaultChip": "Mặc định",
     "spaceChip": "Không gian",
     "spaceHint": "Liên kết với không gian “%{name}”.",
-    "openTasks": "%{smart_count} việc đang mở",
+    "openTasks": "%{smart_count} đang mở",
     "noOpenTasks": "Không có việc đang mở",
     "lateTasks": "%{smart_count} việc trễ hạn",
     "progress": "Đã xong %{done}/%{smart_count} việc",

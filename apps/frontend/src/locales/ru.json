@@ -117,7 +117,7 @@
     "defaultChip": "По умолчанию",
     "spaceChip": "Пространство",
     "spaceHint": "Связана с пространством «%{name}».",
-    "openTasks": "%{smart_count} открытая задача |||| %{smart_count} открытые задачи |||| %{smart_count} открытых задач",
+    "openTasks": "%{smart_count} открытая |||| %{smart_count} открытые |||| %{smart_count} открытых",
     "noOpenTasks": "Нет открытых задач",
     "lateTasks": "%{smart_count} просрочена |||| %{smart_count} просрочены |||| %{smart_count} просрочено",
     "progress": "Выполнено %{done} из %{smart_count} задачи |||| Выполнено %{done} из %{smart_count} задач |||| Выполнено %{done} из %{smart_count} задач",
