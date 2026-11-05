@@ -377,6 +377,7 @@ const EXAMPLES: Record<string, Example> = {
   }),
   'GET /filters': none,
   'GET /labels': none,
+  'GET /sections': none,
   'GET /people': none,
   'POST /filters': () => ({ body: { name: 'Mine', criteria: {} } }),
   'PATCH /filters/:filterId': async (_fixture, me) => ({
