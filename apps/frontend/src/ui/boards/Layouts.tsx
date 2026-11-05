@@ -18,7 +18,8 @@ import {
   DayAgenda,
   DayButton,
   DayCell,
-  MonthGrid
+  MonthGrid,
+  WeekGrid
 } from '@/ds/Calendar'
 import { Icon } from '@/ds/Icon'
 import { ListHeader, ListSection, ListView } from '@/ds/ListView'
@@ -34,6 +35,7 @@ import {
 } from '@/ui/boards/CalendarDrag'
 import { formatDay, localToday } from '@/ui/boards/dueLabel'
 import { weekStart } from '@/ui/boards/progress'
+import type { CalendarPeriod } from '@/ui/boards/calendarPeriod'
 import type { ListSort, SortKey } from '@/ui/boards/listSort'
 import { useSetLayout } from '@/ui/queries/boards'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -190,20 +192,27 @@ const shiftMonth = (month: string, amount: number) => {
   return date.toISOString().slice(0, 7)
 }
 
-// Phones get a grid of day buttons with the picked day's tasks below it,
-// since seven columns leave no room for titles.
+const PERIODS = ['month', 'week'] as const
+
+// In a month, phones get a grid of day buttons with the picked day's tasks
+// below it, since seven columns leave no room for titles.
 /**
  * With `onAdd`, each day and the tray of tasks without a date add one. With
  * `onMove`, a task dropped on a day or on the tray gets that day, or none.
+ * `item` shows a task, with its time where the day has room for it.
  */
 export function CalendarLayout({
   tasks,
   item,
+  period,
+  onPeriod,
   onAdd,
   onMove
 }: {
   tasks: Task[]
-  item: (task: Task) => ReactElement
+  item: (task: Task, showTime: boolean) => ReactElement
+  period: CalendarPeriod
+  onPeriod: (period: CalendarPeriod) => void
   onAdd?: ((dueDate: string | null) => void) | undefined
   onMove?: ((task: Task, day: string | null) => void) | undefined
 }): ReactElement {
@@ -211,11 +220,24 @@ export function CalendarLayout({
   const theme = useTheme()
   const compact = useMediaQuery(theme.breakpoints.down('md'))
   const today = localToday()
-  const [month, setMonth] = useState(() => today.slice(0, 7))
+  const firstDay = dayjs().locale(lang).localeData().firstDayOfWeek()
+  // One day the month and the week are both taken from, so switching period
+  // stays where the reader was.
+  const [shown, setShown] = useState(today)
+  const month = shown.slice(0, 7)
+  const week = weekStart(shown, firstDay)
   const [picked, setPicked] = useState(today)
   const [trayOpen, setTrayOpen] = useState<boolean | null>(null)
   const undated = tasks.filter(task => task.dueDate === null)
-  const dueOn = (day: string) => tasks.filter(task => task.dueDate === day)
+  // Tasks without a time come first, as a whole day's do in a calendar.
+  const dueOn = (day: string) =>
+    tasks
+      .filter(task => task.dueDate === day)
+      .sort((a, b) => (a.dueTime ?? '').localeCompare(b.dueTime ?? ''))
+  const show = (day: string) => {
+    setShown(day)
+    setPicked(day)
+  }
   const dayLabel = (day: string) =>
     day === today
       ? t('layout.todayDate', { date: formatDay(day, lang) })
@@ -227,19 +249,38 @@ export function CalendarLayout({
         onAdd(day)
       }
     }
-  const title = new Intl.DateTimeFormat(lang, {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC'
-  }).format(new Date(`${month}-01T00:00:00Z`))
-  const weekdayName = new Intl.DateTimeFormat(lang, {
-    weekday: compact ? 'narrow' : 'short',
-    timeZone: 'UTC'
-  })
-  const firstDay = dayjs().locale(lang).localeData().firstDayOfWeek()
+  const weekDays = Array.from({ length: 7 }, (_, index) => addDays(week, index))
+  const title =
+    period === 'week'
+      ? new Intl.DateTimeFormat(lang, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          timeZone: 'UTC'
+        }).formatRange(
+          new Date(`${week}T00:00:00Z`),
+          new Date(`${addDays(week, 6)}T00:00:00Z`)
+        )
+      : new Intl.DateTimeFormat(lang, {
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC'
+        }).format(new Date(`${month}-01T00:00:00Z`))
+  const weekdayFormat = (weekday: 'short' | 'narrow') => {
+    const format = new Intl.DateTimeFormat(lang, { weekday, timeZone: 'UTC' })
+    return (day: string) => format.format(new Date(`${day}T00:00:00Z`))
+  }
+  const weekdayName = weekdayFormat('short')
   const weekdays = monthGrid('2024-01', firstDay)
     .slice(0, 7)
-    .map(day => weekdayName.format(new Date(`${day}T00:00:00Z`)))
+    .map(compact ? weekdayFormat('narrow') : weekdayName)
+  const step = (amount: number) => {
+    setShown(
+      period === 'week'
+        ? addDays(shown, 7 * amount)
+        : `${shiftMonth(month, amount)}-01`
+    )
+  }
   const Tray = onMove ? DropTray : CalendarTray
   const Cell = onMove ? DropDayCell : DayCell
   const Button = onMove ? DropDayButton : DayButton
@@ -248,19 +289,39 @@ export function CalendarLayout({
     <>
       <CalendarToolbar
         title={title}
-        previousLabel={t('layout.previousMonth')}
-        nextLabel={t('layout.nextMonth')}
+        previousLabel={t(
+          period === 'week' ? 'layout.previousWeek' : 'layout.previousMonth'
+        )}
+        nextLabel={t(
+          period === 'week' ? 'layout.nextWeek' : 'layout.nextMonth'
+        )}
         todayLabel={t('layout.today')}
         onPrevious={() => {
-          setMonth(shiftMonth(month, -1))
+          step(-1)
         }}
         onNext={() => {
-          setMonth(shiftMonth(month, 1))
+          step(1)
         }}
         onToday={() => {
-          setMonth(today.slice(0, 7))
-          setPicked(today)
+          show(today)
         }}
+        actions={
+          <ViewToggleGroup
+            exclusive
+            size="small"
+            value={period}
+            aria-label={t('layout.period')}
+            onChange={(_event, next: CalendarPeriod | null) => {
+              if (next) onPeriod(next)
+            }}
+          >
+            {PERIODS.map(each => (
+              <ToggleButton key={each} value={each}>
+                {t(`layout.${each}`)}
+              </ToggleButton>
+            ))}
+          </ViewToggleGroup>
+        }
       />
       <CalendarBody
         aside={
@@ -281,63 +342,77 @@ export function CalendarLayout({
                 }
               }
             >
-              {undated.map(item)}
+              {undated.map(task => item(task, false))}
             </Tray>
           )
         }
       >
-        <MonthGrid weekdays={weekdays}>
-          {monthGrid(month, firstDay).map(day =>
-            compact ? (
-              <Button
-                key={day}
-                day={day}
-                label={dayLabel(day)}
-                number={Number(day.slice(8))}
-                outside={!day.startsWith(month)}
-                today={day === today}
-                selected={day === picked}
-                marks={dueOn(day).length}
-                onSelect={() => {
-                  setPicked(day)
-                }}
-              />
-            ) : (
+        {period === 'week' ? (
+          <WeekGrid>
+            {weekDays.map(day => (
               <Cell
                 key={day}
                 day={day}
                 label={dayLabel(day)}
                 number={Number(day.slice(8))}
-                outside={!day.startsWith(month)}
+                outside={false}
                 today={day === today}
                 add={addOn(day)}
+                weekday={weekdayName(day)}
               >
-                <ChipList>{dueOn(day).map(item)}</ChipList>
+                <ChipList>{dueOn(day).map(task => item(task, true))}</ChipList>
               </Cell>
-            )
-          )}
-        </MonthGrid>
-        {compact && (
+            ))}
+          </WeekGrid>
+        ) : (
+          <MonthGrid weekdays={weekdays}>
+            {monthGrid(month, firstDay).map(day =>
+              compact ? (
+                <Button
+                  key={day}
+                  day={day}
+                  label={dayLabel(day)}
+                  number={Number(day.slice(8))}
+                  outside={!day.startsWith(month)}
+                  today={day === today}
+                  selected={day === picked}
+                  marks={dueOn(day).length}
+                  onSelect={() => {
+                    setPicked(day)
+                  }}
+                />
+              ) : (
+                <Cell
+                  key={day}
+                  day={day}
+                  label={dayLabel(day)}
+                  number={Number(day.slice(8))}
+                  outside={!day.startsWith(month)}
+                  today={day === today}
+                  add={addOn(day)}
+                >
+                  <ChipList>
+                    {dueOn(day).map(task => item(task, false))}
+                  </ChipList>
+                </Cell>
+              )
+            )}
+          </MonthGrid>
+        )}
+        {compact && period === 'month' && (
           <DayAgenda
             label={formatDay(picked, lang)}
             empty={t('layout.nothingDue')}
             add={addOn(picked)}
           >
-            {dueOn(picked).map(item)}
+            {dueOn(picked).map(task => item(task, true))}
           </DayAgenda>
         )}
       </CalendarBody>
     </>
   )
   return onMove ? (
-    <CalendarDrag
-      tasks={tasks}
-      onMove={onMove}
-      onShow={day => {
-        setMonth(day.slice(0, 7))
-        setPicked(day)
-      }}
-    >
+    <CalendarDrag tasks={tasks} onMove={onMove} onShow={show}>
       {calendar}
     </CalendarDrag>
   ) : (
