@@ -23,7 +23,7 @@ const tinted = (theme: Theme) => ({
   bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.08)
 })
 
-/** Tinted while a filter narrows the page. */
+/** Tinted while a filter narrows the page. Its icon alone on a phone. */
 export function FilterButton({
   active,
   expanded,
@@ -35,18 +35,30 @@ export function FilterButton({
   expanded: boolean
   shortcut?: string | undefined
   onClick: () => void
-  children: ReactNode
+  children: string
 }): ReactElement {
   return (
     <Button
       variant="secondary"
       startIcon={<Icon icon={Filter} />}
+      aria-label={children}
       aria-expanded={expanded}
       aria-keyshortcuts={shortcut}
       onClick={onClick}
-      sx={active ? tinted : undefined}
+      sx={[
+        theme => ({
+          [theme.breakpoints.down('sm')]: {
+            minWidth: 40,
+            px: 1.25,
+            '& .MuiButton-startIcon': { m: 0 }
+          }
+        }),
+        active && tinted
+      ]}
     >
-      {children}
+      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+        {children}
+      </Box>
     </Button>
   )
 }
