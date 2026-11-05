@@ -12,6 +12,7 @@ import {
   ProgressSegments
 } from '@/ds/HeroNumbers'
 import { Icon } from '@/ds/Icon'
+import { PhoneIconButton } from '@/ds/PageHeader'
 import {
   isAdmin,
   isArchivable,
@@ -129,23 +130,22 @@ export function BoardHeader({
           else setListing(true)
         }}
       />
-      {shareButton && (
-        // Where the board cannot be shared, it lists its members and says why.
-        <Tooltip title={whyNot ?? ''} describeChild>
-          <Button
-            variant="secondary"
-            startIcon={<Icon icon={Share} />}
-            aria-haspopup="dialog"
-            onClick={() => {
-              if (shareable) setSharing(true)
-              else setListing(true)
-            }}
-          >
-            {t('sharing.share')}
-          </Button>
-        </Tooltip>
-      )}
     </>
+  )
+  const share = shareButton && (
+    // Where the board cannot be shared, it lists its members and says why.
+    <Tooltip title={whyNot ?? ''} describeChild>
+      <PhoneIconButton
+        startIcon={<Icon icon={Share} />}
+        aria-haspopup="dialog"
+        onClick={() => {
+          if (shareable) setSharing(true)
+          else setListing(true)
+        }}
+      >
+        {t('sharing.share')}
+      </PhoneIconButton>
+    </Tooltip>
   )
 
   const numbers = boardNumbers(board, localToday())
@@ -179,18 +179,19 @@ export function BoardHeader({
         numbers={numbers.counted > 0 && <HeroNumbers numbers={numbers} />}
         late={numbers.late > 0 && <LateCount late={numbers.late} />}
         people={people}
+        share={share}
         filter={
-          filterable && (
-            <BoardFilterButton
-              count={activeCriteria}
-              open={filtering}
-              shortcut={shareButton}
-              onClick={() => {
-                if (filtering) setFiltering(false)
-                else startFiltering()
-              }}
-            />
-          )
+          // Kept, disabled, where it cannot filter: the buttons hold their place.
+          <BoardFilterButton
+            count={filterable ? activeCriteria : 0}
+            open={filtering && filterable}
+            shortcut={shareButton && filterable}
+            disabled={!filterable}
+            onClick={() => {
+              if (filtering) setFiltering(false)
+              else startFiltering()
+            }}
+          />
         }
         // After Share, as the list and grid switch of Twake Drive.
         views={<LayoutSwitch board={board} />}

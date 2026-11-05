@@ -123,6 +123,7 @@ export function BoardHero({
   numbers,
   late,
   people,
+  share,
   filter,
   views,
   menu
@@ -134,6 +135,7 @@ export function BoardHero({
   /** Beside the title once collapsed. */
   late?: ReactNode
   people: ReactNode
+  share: ReactNode
   filter: ReactNode
   views: ReactNode
   menu: ReactNode
@@ -255,6 +257,7 @@ export function BoardHero({
               <Pill glass={glass}>{people}</Pill>
             </PhoneHidden>
             <Pill glass={glass}>
+              <PhoneHidden hidden={collapsed}>{share}</PhoneHidden>
               {filter}
               <PhoneHidden hidden={collapsed}>{views}</PhoneHidden>
               {menu}
@@ -292,12 +295,11 @@ export function BoardHero({
   )
 }
 
-const pill = (width: number, height = 40) => (
+const pill = (width: number | { xs: number; sm: number }, height = 40) => (
   <Skeleton
     variant="rounded"
-    width={width}
     height={height}
-    sx={{ borderRadius: 100 }}
+    sx={{ width, borderRadius: 100 }}
   />
 )
 
@@ -312,7 +314,7 @@ export function BoardHeroSkeleton({
 }: {
   /** Omitted when not known yet, for a placeholder. */
   title?: ReactNode
-  /** Whether a Share button will stand beside the members. */
+  /** Whether a Share button will lead the buttons. */
   share: boolean
   /** Whether the board will show numbers: not when it has no tasks. */
   numbers: boolean
@@ -335,8 +337,9 @@ export function BoardHeroSkeleton({
           </>
         )
       }
-      people={share ? pill(220) : pill(120, 32)}
-      filter={pill(320)}
+      people={pill(120, 32)}
+      share={share && pill({ xs: 40, sm: 118 })}
+      filter={pill({ xs: 264, sm: 320 })}
       views={null}
       menu={null}
     />

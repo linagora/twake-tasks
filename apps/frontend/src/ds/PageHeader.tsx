@@ -1,9 +1,11 @@
 import {
   Box,
+  Button,
   ButtonBase,
   styled,
   ToggleButtonGroup,
   Typography,
+  type ButtonProps,
   type Theme
 } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode } from 'react'
@@ -77,6 +79,37 @@ export function ToggleLabel({
     >
       {children}
     </Box>
+  )
+}
+
+const iconAloneOnPhone = (theme: Theme) => ({
+  [theme.breakpoints.down('sm')]: {
+    minWidth: 40,
+    px: 1.25,
+    '& .MuiButton-startIcon': { m: 0 }
+  }
+})
+
+/** Its start icon alone on a phone; its label stays in its `aria-label`. */
+export function PhoneIconButton({
+  children,
+  sx,
+  ...props
+}: Omit<ButtonProps, 'children' | 'variant' | 'sx'> & {
+  children: string
+  sx?: Extract<ButtonProps['sx'], (theme: Theme) => unknown> | undefined
+}): ReactElement {
+  return (
+    <Button
+      variant="secondary"
+      aria-label={children}
+      {...props}
+      sx={[iconAloneOnPhone, sx ?? false]}
+    >
+      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+        {children}
+      </Box>
+    </Button>
   )
 }
 

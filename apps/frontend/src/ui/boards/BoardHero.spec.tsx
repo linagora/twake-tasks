@@ -160,6 +160,33 @@ describe('the board hero', () => {
     ).toBeVisible()
   })
 
+  it('keeps the same buttons in every layout, Share first', async () => {
+    const board = launchBoard()
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    const layouts = within(await screen.findByRole('group', { name: 'Layout' }))
+    const hero = screen.getByTestId('board-hero')
+    const buttons = () =>
+      within(hero)
+        .getAllByRole('button')
+        .map(button => button.getAttribute('aria-label') ?? button.textContent)
+
+    const kanban = buttons()
+    const share = kanban.indexOf('Share')
+    expect(kanban.slice(share, share + 2)).toEqual(['Share', 'Filter'])
+    for (const layout of ['List', 'Calendar', 'Progress']) {
+      fireEvent.click(layouts.getByRole('button', { name: layout }))
+      await waitFor(() => {
+        expect(layouts.getByRole('button', { name: layout })).toHaveAttribute(
+          'aria-pressed',
+          'true'
+        )
+      })
+      expect(buttons()).toEqual(kanban)
+    }
+    expect(within(hero).getByRole('button', { name: 'Filter' })).toBeDisabled()
+  })
+
   it('holds the place of the header and its numbers while the board loads', async () => {
     const board = launchBoard()
     const boardsApi = fakeBoardsApi([board])

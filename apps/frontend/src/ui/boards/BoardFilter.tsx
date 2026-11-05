@@ -151,11 +151,13 @@ export function BoardFilterButton({
   count,
   open,
   shortcut,
+  disabled,
   onClick
 }: {
   count: number
   open: boolean
   shortcut: boolean
+  disabled: boolean
   onClick: () => void
 }): ReactElement {
   const { t } = useI18n()
@@ -164,6 +166,7 @@ export function BoardFilterButton({
       active={count > 0}
       expanded={open}
       shortcut={shortcut ? 'f' : undefined}
+      disabled={disabled}
       onClick={onClick}
     >
       {count > 0

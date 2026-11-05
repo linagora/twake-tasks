@@ -61,7 +61,7 @@ describe('the progress layout', () => {
     expect(
       screen.getByRole('button', { name: /^No assignee: 3\./ })
     ).toBeVisible()
-    expect(screen.queryByRole('button', { name: /^Filter/ })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Filter' })).toBeDisabled()
 
     fireEvent.click(await tile(/^Overdue: 3\./))
 
