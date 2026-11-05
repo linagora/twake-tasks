@@ -13,6 +13,10 @@ const draft = (changes: Partial<NewTaskDraft> = {}): NewTaskDraft => ({
   assigneeIds: [],
   labelIds: [],
   dueDate: null,
+  dueTime: null,
+  dueZone: null,
+  recurrence: null,
+  reminders: [],
   priority: null,
   ...changes
 })
@@ -89,6 +93,76 @@ describe('createTask', () => {
     expect(api.getBoard).not.toHaveBeenCalled()
   })
 
+  it('creates the task with its due time, repeat and reminders', async () => {
+    const { design, api } = boards()
+    const at = '2030-01-02T09:00:00.000Z'
+
+    await createTask(
+      api,
+      design.id,
+      draft({
+        dueDate: '2030-01-03',
+        dueTime: '15:00',
+        dueZone: 'Europe/Paris',
+        recurrence: { every: 1, unit: 'weeks', fromCompletion: false },
+        reminders: [{ beforeMinutes: 60, zone: 'Europe/Paris' }, { at }]
+      })
+    )
+
+    const [task] = design.tasks
+    expect(task).toMatchObject({
+      dueDate: '2030-01-03',
+      dueTime: '15:00',
+      dueZone: 'Europe/Paris',
+      recurrence: { every: 1, unit: 'weeks', fromCompletion: false }
+    })
+    expect(await api.listReminders(design.id, task?.id ?? '')).toMatchObject([
+      { beforeMinutes: 60, at: null },
+      { beforeMinutes: null, at }
+    ])
+  })
+
+  it('adds only the reminders still missing when finishing a task', async () => {
+    const { design, api } = boards()
+    const at = '2030-01-02T09:00:00.000Z'
+    const started = await api.createTask(design.id, {
+      title: 'Logo',
+      sectionId: null
+    })
+    await api.editTask(design.id, started.id, { dueDate: '2030-01-03' })
+    await api.addReminder(design.id, started.id, { at })
+
+    await createTask(
+      api,
+      design.id,
+      draft({
+        dueDate: '2030-01-03',
+        reminders: [{ at }, { beforeMinutes: 15, zone: 'UTC' }]
+      }),
+      started
+    )
+
+    expect(await api.listReminders(design.id, started.id)).toMatchObject([
+      { at },
+      { beforeMinutes: 15 }
+    ])
+  })
+
+  it('removes the reminders taken out of the draft when finishing a task', async () => {
+    const { design, api } = boards()
+    const started = await api.createTask(design.id, {
+      title: 'Logo',
+      sectionId: null
+    })
+    await api.addReminder(design.id, started.id, {
+      at: '2030-01-02T09:00:00.000Z'
+    })
+
+    await createTask(api, design.id, draft(), started)
+
+    expect(await api.listReminders(design.id, started.id)).toEqual([])
+  })
+
   it('leaves out what the draft does not hold', async () => {
     const { design, api } = boards()
 
@@ -98,6 +172,7 @@ describe('createTask', () => {
     expect(api.setDescription).not.toHaveBeenCalled()
     expect(api.setLabels).not.toHaveBeenCalled()
     expect(api.setAssignees).not.toHaveBeenCalled()
+    expect(api.addReminder).not.toHaveBeenCalled()
   })
 })
 

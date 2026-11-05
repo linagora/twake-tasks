@@ -1,8 +1,14 @@
-import type { BoardsApi, TaskChanges } from '@/application/boards'
+import type {
+  BoardsApi,
+  NewReminder,
+  Reminder,
+  TaskChanges
+} from '@/application/boards'
 import {
   isEditable,
   type BoardSummary,
   type Priority,
+  type Recurrence,
   type Section
 } from '@/domain/board'
 
@@ -13,6 +19,10 @@ export interface NewTaskDraft {
   assigneeIds: string[]
   labelIds: string[]
   dueDate: string | null
+  dueTime: string | null
+  dueZone: string | null
+  recurrence: Recurrence | null
+  reminders: NewReminder[]
   priority: Priority | null
   /** Left out, the task lands in the board's default section. */
   sectionId?: string
@@ -97,14 +107,36 @@ async function addDetails(
     ? {
         title: draft.title.trim(),
         priority: draft.priority,
-        dueDate: draft.dueDate
+        dueDate: draft.dueDate,
+        dueTime: draft.dueTime,
+        dueZone: draft.dueZone,
+        recurrence: draft.recurrence
       }
     : {
         ...(draft.priority && { priority: draft.priority }),
-        ...(draft.dueDate && { dueDate: draft.dueDate })
+        ...(draft.dueDate && { dueDate: draft.dueDate }),
+        ...(draft.dueTime && { dueTime: draft.dueTime }),
+        ...(draft.dueZone && { dueZone: draft.dueZone }),
+        ...(draft.recurrence && { recurrence: draft.recurrence })
       }
   if (Object.keys(changes).length > 0) {
     await api.editTask(boardId, taskId, changes)
+  }
+  // After the due date is saved: a reminder before it needs one.
+  const added = finishing ? await api.listReminders(boardId, taskId) : []
+  const same = (each: Reminder, reminder: NewReminder) =>
+    'at' in reminder
+      ? each.at === reminder.at
+      : each.beforeMinutes === reminder.beforeMinutes
+  for (const each of added) {
+    if (!draft.reminders.some(reminder => same(each, reminder))) {
+      await api.deleteReminder(boardId, taskId, each.id)
+    }
+  }
+  for (const reminder of draft.reminders) {
+    if (!added.some(each => same(each, reminder))) {
+      await api.addReminder(boardId, taskId, reminder)
+    }
   }
   const saved = finishing
     ? await api.getDescription(boardId, taskId)

@@ -525,6 +525,7 @@
     "labelsTitle": "Neue Aufgabe labeln",
     "dueDate": "Fälligkeit",
     "dueDateOf": "Fälligkeit: %{date}",
+    "dueDone": "Fertig",
     "create": "Erstellen",
     "failed": "Die Aufgabe konnte nicht erstellt werden.",
     "unfinished": "Die Aufgabe wurde erstellt, aber einige Details wurden nicht gespeichert. Speichern Sie erneut, um sie hinzuzufügen.",

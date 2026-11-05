@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { inDays, localToday } from '@/ui/boards/dueLabel'
+import { inDays, localToday, localZone } from '@/ui/boards/dueLabel'
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { typeRichText } from '@/testing/richText'
@@ -187,13 +187,12 @@ describe('NewTaskDialog', () => {
     fireEvent.click(
       await dialog.findByRole('button', { name: 'Due date: No date' })
     )
-    fireEvent.click(
-      within(await screen.findByRole('dialog', { name: 'Due date' })).getByRole(
-        'button',
-        { name: 'Today' }
-      )
+    const due = within(await screen.findByRole('dialog', { name: 'Due date' }))
+    fireEvent.click(due.getByRole('button', { name: 'Today' }))
+    fireEvent.click(due.getByRole('button', { name: 'Done' }))
+    fireEvent.mouseDown(
+      await dialog.findByRole('combobox', { name: 'Priority' })
     )
-    fireEvent.mouseDown(dialog.getByRole('combobox', { name: 'Priority' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Priority 1' }))
     fireEvent.click(create())
 
@@ -213,6 +212,112 @@ describe('NewTaskDialog', () => {
       design.id,
       design.tasks[0]?.id,
       { markdown: 'Three variants', version: 0 }
+    )
+  })
+
+  it('creates the task with a due time, a repeat and a reminder', async () => {
+    const { dialog, title, create, design, boardsApi } = await openNewTask()
+    fireEvent.change(title(), { target: { value: 'Standup' } })
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+
+    fireEvent.click(
+      await dialog.findByRole('button', { name: 'Due date: No date' })
+    )
+    const due = within(await screen.findByRole('dialog', { name: 'Due date' }))
+    const time = () =>
+      within(due.getByRole('group', { name: 'Time' })).getByDisplayValue('')
+    expect(time()).toBeDisabled()
+    expect(due.getByRole('spinbutton', { name: 'Repeat every' })).toBeDisabled()
+    fireEvent.click(due.getByRole('button', { name: 'Tomorrow' }))
+    fireEvent.change(time(), { target: { value: '15:00' } })
+    fireEvent.change(due.getByRole('spinbutton', { name: 'Repeat every' }), {
+      target: { value: '1' }
+    })
+    fireEvent.click(due.getByRole('button', { name: 'Done' }))
+    expect(
+      await dialog.findByRole('button', {
+        name: /^Due date: .*, 15:00 · Every week$/
+      })
+    ).toBeVisible()
+
+    fireEvent.click(dialog.getByRole('button', { name: 'Add reminder' }))
+    const reminder = within(
+      await screen.findByRole('dialog', { name: 'Add reminder' })
+    )
+    fireEvent.change(reminder.getByRole('combobox', { name: 'Remind me' }), {
+      target: { value: '60' }
+    })
+    fireEvent.click(reminder.getByRole('button', { name: 'Save reminder' }))
+    expect(await dialog.findByText('1 hour before')).toBeVisible()
+    fireEvent.click(create())
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBe(null)
+    })
+    expect(design.tasks).toMatchObject([
+      {
+        title: 'Standup',
+        dueDate: inDays(1),
+        dueTime: '15:00',
+        dueZone: null,
+        recurrence: { every: 1, unit: 'weeks', fromCompletion: false }
+      }
+    ])
+    expect(boardsApi.addReminder).toHaveBeenCalledWith(
+      design.id,
+      design.tasks[0]?.id,
+      { beforeMinutes: 60, zone: localZone() }
+    )
+  })
+
+  it('drops the reminders before the due date when the date is cleared', async () => {
+    const { dialog } = await openNewTask()
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    fireEvent.click(
+      await dialog.findByRole('button', { name: 'Due date: No date' })
+    )
+    fireEvent.click(
+      within(await screen.findByRole('dialog', { name: 'Due date' })).getByRole(
+        'button',
+        { name: 'Today' }
+      )
+    )
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'Due date' }), {
+      key: 'Escape'
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Add reminder' }))
+    fireEvent.click(
+      within(
+        await screen.findByRole('dialog', { name: 'Add reminder' })
+      ).getByRole('button', { name: 'Save reminder' })
+    )
+    expect(await dialog.findByText('At the due time')).toBeVisible()
+
+    fireEvent.click(dialog.getByRole('button', { name: /^Due date: / }))
+    fireEvent.click(
+      within(await screen.findByRole('dialog', { name: 'Due date' })).getByRole(
+        'button',
+        { name: 'No date' }
+      )
+    )
+
+    expect(dialog.queryByText('At the due time')).toBe(null)
+  })
+
+  it('refuses a reminder at a time already past', async () => {
+    const { dialog } = await openNewTask()
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    fireEvent.click(await dialog.findByRole('button', { name: 'Add reminder' }))
+    const reminder = within(
+      await screen.findByRole('dialog', { name: 'Add reminder' })
+    )
+    fireEvent.change(reminder.getByDisplayValue(''), {
+      target: { value: '01/02/2020 08:00' }
+    })
+    fireEvent.click(reminder.getByRole('button', { name: 'Save reminder' }))
+
+    expect(await reminder.findByRole('alert')).toHaveTextContent(
+      'Pick a time in the future.'
     )
   })
 
@@ -609,6 +714,39 @@ describe('NewTaskDialog with templates', () => {
     ])
   })
 
+  it('does not repeat a task made from a template', async () => {
+    const { dialog, create, design, pick } = await openWithTemplates()
+    fireEvent.click(dialog.getByRole('button', { name: 'Add details' }))
+    fireEvent.click(
+      await dialog.findByRole('button', { name: 'Due date: No date' })
+    )
+    const due = within(await screen.findByRole('dialog', { name: 'Due date' }))
+    fireEvent.click(due.getByRole('button', { name: 'Today' }))
+    fireEvent.change(due.getByRole('spinbutton', { name: 'Repeat every' }), {
+      target: { value: '1' }
+    })
+    fireEvent.click(due.getByRole('button', { name: 'Done' }))
+
+    await pick(/Monthly report/)
+    fireEvent.click(dialog.getByRole('button', { name: /^Due date: / }))
+    expect(
+      within(await screen.findByRole('dialog', { name: 'Due date' })).getByText(
+        'A task made from a template doesn’t repeat.'
+      )
+    ).toBeVisible()
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'Due date' }), {
+      key: 'Escape'
+    })
+    fireEvent.click(create())
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBe(null)
+    })
+    expect(design.tasks).toMatchObject([
+      { dueDate: localToday(), recurrence: null }
+    ])
+  })
+
   it('keeps a title already typed', async () => {
     const { title, pick } = await openWithTemplates()
     fireEvent.change(title(), { target: { value: 'Sprint 12 review' } })
@@ -807,11 +945,14 @@ describe('NewTaskDialog opened from an agenda', () => {
       fireEvent.click(
         await dialog.findByRole('button', { name: /^Due date: / })
       )
-      fireEvent.click(
-        within(
-          await screen.findByRole('dialog', { name: 'Due date' })
-        ).getByRole('button', { name: 'No date' })
+      const due = within(
+        await screen.findByRole('dialog', { name: 'Due date' })
       )
+      fireEvent.click(due.getByRole('button', { name: 'No date' }))
+      fireEvent.click(due.getByRole('button', { name: 'Done' }))
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog', { name: 'Due date' })).toBe(null)
+      })
       fireEvent.change(title(), { target: { value: 'Later' } })
       fireEvent.click(create())
       const name = '“Later” created in Inbox'

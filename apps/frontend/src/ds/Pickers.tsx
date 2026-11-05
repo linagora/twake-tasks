@@ -205,6 +205,8 @@ export function EditorPopover({
         component="form"
         onSubmit={event => {
           event.preventDefault()
+          // React bubbles it out of the portal, into a form around the anchor.
+          event.stopPropagation()
           onSubmit()
         }}
         sx={{

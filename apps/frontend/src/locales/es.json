@@ -525,6 +525,7 @@
     "labelsTitle": "Etiquetar la nueva tarea",
     "dueDate": "Vencimiento",
     "dueDateOf": "Vencimiento: %{date}",
+    "dueDone": "Listo",
     "create": "Crear",
     "failed": "No se pudo crear la tarea.",
     "unfinished": "La tarea se creó, pero algunos de sus detalles no se guardaron. Guarde de nuevo para añadirlos.",
