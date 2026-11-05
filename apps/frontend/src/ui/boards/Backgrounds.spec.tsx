@@ -86,35 +86,22 @@ describe('board backgrounds', () => {
     })
   })
 
-  it('takes a space’s picture by default on a space’s board, and its card', async () => {
+  it('gives a space’s board without cover the grey of the theme, never a picture, and no banner', async () => {
     const board = aBoard({ project: aProject({ managed: true }) })
-    const boardsApi = fakeBoardsApi([board])
-    renderRoute('/', { boardsApi })
+    renderRoute('/', { boardsApi: fakeBoardsApi([board]) })
 
-    expect(await screen.findByTestId('board-cover')).toHaveStyle({
-      backgroundImage: expect.stringContaining('url("/backgrounds/space.jpg")')
+    const cover = await screen.findByTestId('board-cover')
+    expect(cover).toHaveStyle({
+      backgroundColor: 'var(--twake-palette-background-default)'
     })
+    expect(getComputedStyle(cover).backgroundImage).not.toContain('url(')
     fireEvent.click(screen.getByRole('link', { name: 'Design' }))
     const picker = await openPicker()
-    expect(picker.getByRole('button', { name: 'Space' })).toHaveAttribute(
+    expect(screen.queryByTestId('board-banner')).toBeNull()
+    expect(picker.getByRole('button', { name: 'No cover' })).toHaveAttribute(
       'aria-pressed',
       'true'
     )
-    expect(banner()).toHaveStyle({
-      backgroundImage: expect.stringContaining('url("/backgrounds/space.jpg")')
-    })
-  })
-
-  it('gives a board without cover the grey of the theme, light or dark, and no banner', async () => {
-    const board = aBoard()
-    renderRoute('/', { boardsApi: fakeBoardsApi([board]) })
-
-    expect(await screen.findByTestId('board-cover')).toHaveStyle({
-      backgroundColor: 'var(--twake-palette-background-default)'
-    })
-    fireEvent.click(screen.getByRole('link', { name: 'Design' }))
-    await screen.findByRole('button', { name: 'Board options' })
-    expect(screen.queryByTestId('board-banner')).toBeNull()
   })
 
   it('shows no cover in an embed, nor offers one, as in Twake Space', async () => {

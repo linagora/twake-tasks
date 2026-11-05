@@ -21,14 +21,13 @@ import { keys } from '@/ui/queries/keys'
 
 type Shown = Pick<
   BoardSummary,
-  'id' | 'background' | 'backgroundImage' | 'backgroundColor' | 'project'
+  'id' | 'background' | 'backgroundImage' | 'backgroundColor'
 >
 
 const PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
-// `space` stands behind a space's board without a cover of its own. Eclipse
-// comes from the Home as a drawing.
-export const backgroundSrc = (background: Background | 'space'): string =>
+// Eclipse comes from the Home as a drawing.
+const backgroundSrc = (background: Background): string =>
   `/backgrounds/${background}.${background === 'eclipse' ? 'svg' : 'jpg'}`
 
 const dataUrlOf = (blob: Blob) =>
@@ -59,10 +58,7 @@ function useSentPicture(boardId: string, imageId: string | null) {
   )
 }
 
-/**
- * The board's picture, or its plain `#` color: the one picked, else a space's
- * for a space's board, else none. None either where covers are not `shown`.
- */
+/** The picture or `#` color picked for the board, null where covers are not `shown`. */
 export function useBoardBackground(board: Shown, shown = true): string | null {
   const sent = useSentPicture(
     board.id,
@@ -71,8 +67,7 @@ export function useBoardBackground(board: Shown, shown = true): string | null {
   if (!shown) return null
   if (board.background === 'custom') return sent
   if (board.backgroundColor) return board.backgroundColor
-  if (board.background) return backgroundSrc(board.background)
-  return board.project.managed ? backgroundSrc('space') : null
+  return board.background ? backgroundSrc(board.background) : null
 }
 
 type Change =
@@ -145,12 +140,8 @@ export function BackgroundDialog({
       <DialogContent className="u-pb-1-half">
         <PictureGrid label={t('background.choices')}>
           <PictureTile
-            label={
-              board.project.managed
-                ? t('background.space')
-                : t('background.none')
-            }
-            src={board.project.managed ? backgroundSrc('space') : null}
+            label={t('background.none')}
+            src={null}
             selected={picked === null}
             onClick={() => {
               set.mutate({ background: null })
