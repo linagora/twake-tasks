@@ -36,7 +36,107 @@ describe('SearchScreen', () => {
       results.getByRole('button', { name: /New logo/ })
     ).toBeInTheDocument()
     expect(screen.queryByText('Poster')).not.toBeInTheDocument()
-    expect(boardsApi.search).toHaveBeenCalledWith('logo')
+    expect(boardsApi.search).toHaveBeenCalledWith('logo', {})
+  })
+
+  it('quotes a matching comment with its author, and opens the task on it', async () => {
+    const { design, boardsApi } = boards()
+    const poster = design.tasks[1]
+    if (!poster) throw new Error('no poster')
+    const olga = { userId: 'olga', email: 'olga@example.com', name: 'Olga' }
+    boardsApi.comments.set(poster.id, [
+      {
+        id: 'c1',
+        author: olga,
+        body: 'Print it on recycled paper',
+        createdAt: '2026-10-05T09:00:00Z',
+        editedAt: null,
+        reactions: []
+      },
+      {
+        id: 'c2',
+        author: olga,
+        body: 'Done',
+        createdAt: '2026-10-06T09:00:00Z',
+        editedAt: null,
+        reactions: []
+      }
+    ])
+    boardsApi.search.mockResolvedValue([
+      {
+        ...poster,
+        category: null,
+        boardId: design.id,
+        boardName: design.name,
+        parentTitle: null,
+        excerpt: null,
+        match: {
+          field: 'comment',
+          text: 'Print it on recycled paper',
+          commentId: 'c1',
+          author: olga
+        }
+      }
+    ])
+    renderRoute('/search?q=recycled', { boardsApi })
+
+    const row = await screen.findByRole('listitem', { name: /Poster/ })
+    expect(row).toHaveTextContent(
+      'Olga in a comment: Print it on recycled paper'
+    )
+    expect(
+      [...row.querySelectorAll('mark')].map(mark => mark.textContent)
+    ).toEqual(['recycled'])
+
+    fireEvent.click(within(row).getByRole('button', { name: /Poster/ }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: /^DES-2 Poster/ })
+    )
+    const linked = await panel.findByRole('listitem', { current: true })
+    expect(linked).toHaveTextContent('Print it on recycled paper')
+    expect(panel.getAllByRole('listitem', { current: false })).not.toHaveLength(
+      0
+    )
+  })
+
+  it('narrows the results to done tasks of one board, and keeps it on reload', async () => {
+    const { design, boardsApi } = boards()
+    const { unmount } = renderRoute('/search?q=design', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Done' }))
+    await waitFor(() => {
+      expect(boardsApi.search).toHaveBeenLastCalledWith('design', {
+        status: 'done'
+      })
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Board/ }))
+    fireEvent.click(
+      await screen.findByRole('menuitemradio', { name: 'Design' })
+    )
+
+    await waitFor(() => {
+      expect(boardsApi.search).toHaveBeenLastCalledWith('design', {
+        status: 'done',
+        board: design.id
+      })
+    })
+    expect(
+      screen.queryByRole('region', { name: /Boards/ })
+    ).not.toBeInTheDocument()
+    unmount()
+
+    renderRoute(`/search?q=design&status=done&board=${design.id}`, {
+      boardsApi
+    })
+    expect(await screen.findByRole('button', { name: 'Done' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    expect(
+      await within(
+        screen.getByRole('group', { name: 'Narrow the results' })
+      ).findByText('Design')
+    ).toBeVisible()
   })
 
   it('opens a result whose breadcrumb goes back to the same search', async () => {
@@ -324,6 +424,39 @@ describe('live search results', () => {
 
     expect(option).toHaveTextContent(
       'PosterDES-2 · DesignDescription: …for the spring fair in Lyon'
+    )
+  })
+
+  it('says which comment a task answers by, and links to it', async () => {
+    const { design, boardsApi } = boards()
+    const olga = { userId: 'olga', email: 'olga@example.com', name: 'Olga' }
+    boardsApi.search.mockResolvedValue([
+      {
+        ...aTask(null, { key: 'DES-2', title: 'Poster' }),
+        category: null,
+        boardId: design.id,
+        boardName: design.name,
+        parentTitle: null,
+        excerpt: null,
+        match: {
+          field: 'comment',
+          text: 'Print it on recycled paper',
+          commentId: 'c1',
+          author: olga
+        }
+      }
+    ])
+    renderRoute('/', { boardsApi })
+
+    await type('recycled')
+    const option = await screen.findByRole('option', { name: /Poster/ })
+
+    expect(option).toHaveTextContent(
+      'PosterDES-2 · DesignOlga in a comment: Print it on recycled paper'
+    )
+    expect(option.closest('a') ?? option.querySelector('a')).toHaveAttribute(
+      'href',
+      `/boards/${design.id}?task=DES-2&comment=c1`
     )
   })
 
