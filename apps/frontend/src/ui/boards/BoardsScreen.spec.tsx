@@ -102,7 +102,7 @@ describe('BoardsScreen', () => {
     expect(router.state.location.pathname).toBe(`/boards/${old.id}`)
   })
 
-  it('lists every board together, the personal ones first, marking those of a space', async () => {
+  it('lists every board together, the personal ones first, each saying where it belongs', async () => {
     const personal = aProject({ name: 'Personal', personal: true })
     const acme = aProject({ name: 'Acme', managed: true })
     const marketing = aProject({ name: 'Marketing' })
@@ -110,37 +110,31 @@ describe('BoardsScreen', () => {
       boardsApi: fakeBoardsApi([
         aBoard({ name: 'Ops', keyPrefix: 'OPS', project: acme }),
         aBoard({ name: 'Launch', keyPrefix: 'LAU', project: marketing }),
+        aBoard({ name: 'Notes', keyPrefix: 'NOT', project: personal }),
         aBoard({
           name: 'Inbox',
           keyPrefix: 'INB',
           inbox: true,
           project: personal
         })
-      ])
+      ]),
+      lang: 'fr'
     })
 
-    const list = await screen.findByRole('list', { name: 'Boards' })
-    expect(boardNames(list)).toEqual(['Inbox', 'Launch', 'Ops'])
-    fireEvent.mouseOver(
-      within(screen.getByRole('listitem', { name: 'Inbox' })).getByText(
-        'Default'
-      )
-    )
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      'New tasks are created here by default. This board can’t be shared.'
-    )
-    // Only a personal board or one of a space says where it belongs.
-    expect(
-      screen.getByRole('listitem', { name: 'Launch' })
-    ).not.toHaveTextContent('Marketing')
-    fireEvent.mouseOver(
-      within(screen.getByRole('listitem', { name: 'Ops' })).getByText('Space')
-    )
-    expect(
-      await screen.findByRole('tooltip', {
-        name: 'Linked to the space “Acme”.'
-      })
-    ).toBeVisible()
+    const list = await screen.findByRole('list', { name: 'Tableaux' })
+    expect(boardNames(list)).toEqual([
+      'Boîte de réception',
+      'Notes',
+      'Launch',
+      'Ops'
+    ])
+    const card = (name: string) =>
+      within(screen.getByRole('listitem', { name }))
+    expect(card('Boîte de réception').getByText('Par défaut')).toBeVisible()
+    expect(card('Notes').getByText('Personnel')).toBeVisible()
+    expect(card('Launch').getByText('Marketing')).toBeVisible()
+    expect(card('Ops').getByText('Acme')).toBeVisible()
+    expect(within(list).queryByText('Espace')).toBeNull()
   })
 
   it('shows the members of each board, and its space', async () => {
@@ -168,13 +162,13 @@ describe('BoardsScreen', () => {
 
     const ops = within(await screen.findByRole('listitem', { name: 'Ops' }))
     const launch = within(screen.getByRole('listitem', { name: 'Launch' }))
-    expect(ops.getByText('Space')).toBeVisible()
+    expect(ops.getByText('Acme')).toBeVisible()
     // Three people, then the others counted, as in Twake Drive's list.
     const opsPeople = ops.getByRole('img', { name: '5 members' })
     expect(opsPeople).toHaveTextContent(/\+2$/)
     fireEvent.mouseOver(opsPeople)
     expect(await screen.findByRole('tooltip')).toHaveTextContent('5 members')
-    expect(launch.queryByText('Marketing')).toBeNull()
+    expect(launch.getByText('Marketing')).toBeVisible()
     expect(launch.getByRole('img', { name: '1 member' })).toBeVisible()
   })
 
@@ -202,14 +196,15 @@ describe('BoardsScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows the kind and the open tasks of each board', async () => {
+  it('shows the open tasks, the progress and the late tasks of each board', async () => {
     const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
     design.tasks = [
-      aTask(null, { key: 'DES-1', title: 'Logo' }),
-      aTask(null, { key: 'DES-2', title: 'Poster' }),
+      aTask(null, { key: 'DES-1', title: 'Logo', dueDate: '2020-01-01' }),
+      aTask(null, { key: 'DES-2', title: 'Poster', dueDate: '2999-01-01' }),
       aTask(null, {
         key: 'DES-3',
         title: 'Flyer',
+        dueDate: '2020-01-01',
         completedAt: '2026-10-01T00:00:00Z'
       })
     ]
@@ -218,28 +213,25 @@ describe('BoardsScreen', () => {
       keyPrefix: 'OPS',
       project: aProject({ managed: true })
     })
-    const inbox = aBoard({
-      name: 'Inbox',
-      keyPrefix: 'ME',
-      inbox: true,
-      project: aProject({ personal: true })
-    })
-    renderRoute('/', { boardsApi: fakeBoardsApi([design, ops, inbox]) })
+    renderRoute('/', { boardsApi: fakeBoardsApi([design, ops]) })
 
     const designCard = within(
       await screen.findByRole('listitem', { name: 'Design' })
     )
     const opsCard = within(screen.getByRole('listitem', { name: 'Ops' }))
-    const inboxCard = within(screen.getByRole('listitem', { name: 'Inbox' }))
 
     // The key prefix shows on the tasks, not on the card.
     expect(designCard.queryByText(/DES/)).toBeNull()
     expect(designCard.getByText('2 open tasks')).toBeVisible()
+    expect(designCard.getByText('1 late')).toBeVisible()
+    expect(
+      designCard.getByRole('progressbar', { name: '1 of 3 tasks done' })
+    ).toHaveAttribute('aria-valuenow', '33')
     expect(opsCard.getByText('No open tasks')).toBeVisible()
-    // The kind shows as a chip, the name on the cover in place of a badge.
-    expect(opsCard.getByText('Space')).toBeVisible()
-    expect(inboxCard.getByText('Default')).toBeVisible()
-    expect(designCard.queryByRole('img', { name: 'Project board' })).toBeNull()
+    expect(opsCard.queryByText(/late/)).toBeNull()
+    expect(
+      opsCard.getByRole('progressbar', { name: '0 of 0 tasks done' })
+    ).toHaveAttribute('aria-valuenow', '0')
   })
 
   it('puts a starred board first, after the create card, until it is unstarred', async () => {

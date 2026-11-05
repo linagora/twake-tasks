@@ -75,7 +75,7 @@ export function useBoards({
   const api = useBoardsApi()
   return useQuery({
     queryKey: keys.boards(),
-    queryFn: () => api.listBoards(),
+    queryFn: () => api.listBoards(localZone()),
     refetchInterval: poll ? POLL_MS : false
   })
 }

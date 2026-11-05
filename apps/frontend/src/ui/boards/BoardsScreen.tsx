@@ -14,7 +14,13 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router'
 
 import { EmptyState, ListSkeleton } from '@/ds/EmptyState'
 import { Icon } from '@/ds/Icon'
-import { BoardCard, BoardChip, CardGrid, CreateCard } from '@/ds/TileGrid'
+import {
+  BoardCard,
+  BoardChip,
+  BoardIcon,
+  CardGrid,
+  CreateCard
+} from '@/ds/TileGrid'
 import { Toast } from '@/ds/Toast'
 import {
   isArchivable,
@@ -83,7 +89,7 @@ function FavoriteButton({
         )
       }}
     >
-      <Icon icon={board.favorite ? Star : StarOutline} />
+      <Icon icon={board.favorite ? Star : StarOutline} size={16} />
     </IconButton>
   )
 }
@@ -124,9 +130,10 @@ function BoardItem({
 }): ReactElement {
   const { t } = useI18n()
   const name = useBoardName()(board)
+  const projectName = useProjectName()
   return (
     <BoardCard
-      cover={useBoardBackground(board)}
+      icon={<BoardIcon name={name} cover={useBoardBackground(board)} />}
       label={name}
       title={
         <Link
@@ -137,24 +144,28 @@ function BoardItem({
           {name}
         </Link>
       }
+      subtitle={
+        board.inbox ? t('boards.defaultChip') : projectName(board.project)
+      }
       flag={fresh ? t('boards.newlyShared') : undefined}
       chip={
-        board.boardTemplate && !board.archived ? (
+        board.boardTemplate &&
+        !board.archived && (
           <BoardChip
             label={t('boardTemplate.chip')}
             hint={t('boardTemplate.hint')}
           />
-        ) : board.project.personal ? (
-          <BoardChip
-            label={t('boards.defaultChip')}
-            hint={t('boards.defaultHint')}
-          />
-        ) : board.project.managed ? (
-          <BoardChip
-            label={t('boards.spaceChip')}
-            hint={t('boards.spaceHint', { name: board.project.name })}
-          />
-        ) : undefined
+        )
+      }
+      done={board.totalTasks > 0 ? board.doneTasks / board.totalTasks : 0}
+      doneLabel={t('boards.progress', {
+        done: board.doneTasks,
+        smart_count: board.totalTasks
+      })}
+      late={
+        board.lateTasks > 0 && !board.archived
+          ? t('boards.lateTasks', { smart_count: board.lateTasks })
+          : undefined
       }
       meta={
         fresh && board.sharedBy
@@ -174,6 +185,7 @@ function BoardItem({
         )
       }
       star={<FavoriteButton board={board} name={name} />}
+      starred={board.favorite}
       menu={<BoardCardMenu board={board} />}
     />
   )
@@ -189,7 +201,7 @@ function BoardMembers({ board }: { board: BoardSummary }): ReactElement | null {
         <PeopleAvatars
           members={board.members}
           total={board.memberCount}
-          size={24}
+          size={20}
           named={false}
         />
       </div>
@@ -279,7 +291,7 @@ export function BoardsScreen({
         <CardGrid label={origin.label}>
           {!archives && (
             <CreateCard
-              icon={<Icon icon={Plus} size={24} />}
+              icon={<Icon icon={Plus} size={20} />}
               title={t('boards.createCard')}
               text={t('boards.createHint')}
               onClick={startCreating}

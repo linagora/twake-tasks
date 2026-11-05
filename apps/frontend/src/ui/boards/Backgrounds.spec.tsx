@@ -86,35 +86,35 @@ describe('board backgrounds', () => {
     })
   })
 
-  it('takes a space’s picture by default on a space’s board, and its card', async () => {
-    const board = aBoard({ project: aProject({ managed: true }) })
-    const boardsApi = fakeBoardsApi([board])
-    renderRoute('/', { boardsApi })
-
-    expect(await screen.findByTestId('board-cover')).toHaveStyle({
-      backgroundImage: expect.stringContaining('url("/backgrounds/space.jpg")')
+  it('draws the cover of a board as the icon of its card', async () => {
+    renderRoute('/', {
+      boardsApi: fakeBoardsApi([aBoard({ background: 'dawn' })])
     })
-    fireEvent.click(screen.getByRole('link', { name: 'Design' }))
+
+    const icon = await screen.findByTestId('board-icon')
+    expect(icon).toHaveStyle({
+      backgroundImage: expect.stringContaining('url("/backgrounds/dawn.jpg")')
+    })
+    expect(icon).toBeEmptyDOMElement()
+  })
+
+  it('gives a space’s board without cover its initials, never a picture, and no banner', async () => {
+    const board = aBoard({
+      name: 'drive space',
+      project: aProject({ managed: true })
+    })
+    renderRoute('/', { boardsApi: fakeBoardsApi([board]) })
+
+    const icon = await screen.findByTestId('board-icon')
+    expect(icon).toHaveTextContent(/^DS$/)
+    expect(getComputedStyle(icon).backgroundImage).not.toContain('url(')
+    fireEvent.click(screen.getByRole('link', { name: 'drive space' }))
     const picker = await openPicker()
-    expect(picker.getByRole('button', { name: 'Space' })).toHaveAttribute(
+    expect(screen.queryByTestId('board-banner')).toBeNull()
+    expect(picker.getByRole('button', { name: 'No cover' })).toHaveAttribute(
       'aria-pressed',
       'true'
     )
-    expect(banner()).toHaveStyle({
-      backgroundImage: expect.stringContaining('url("/backgrounds/space.jpg")')
-    })
-  })
-
-  it('gives a board without cover the grey of the theme, light or dark, and no banner', async () => {
-    const board = aBoard()
-    renderRoute('/', { boardsApi: fakeBoardsApi([board]) })
-
-    expect(await screen.findByTestId('board-cover')).toHaveStyle({
-      backgroundColor: 'var(--twake-palette-background-default)'
-    })
-    fireEvent.click(screen.getByRole('link', { name: 'Design' }))
-    await screen.findByRole('button', { name: 'Board options' })
-    expect(screen.queryByTestId('board-banner')).toBeNull()
   })
 
   it('shows no cover in an embed, nor offers one, as in Twake Space', async () => {
@@ -284,15 +284,5 @@ describe('board backgrounds', () => {
 
     expect(await screen.findByRole('menu')).toBeVisible()
     expect(screen.queryByRole('menuitem', { name: 'Change cover' })).toBeNull()
-  })
-
-  it('writes the name under the cover of a card, never on it', async () => {
-    const board = aBoard({ name: 'Design', background: 'earlymorning' })
-    renderRoute('/', { boardsApi: fakeBoardsApi([board]) })
-
-    const card = within(await screen.findByRole('listitem', { name: 'Design' }))
-    expect(card.getByTestId('board-cover')).not.toContainElement(
-      card.getByRole('heading', { name: 'Design' })
-    )
   })
 })

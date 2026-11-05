@@ -54,6 +54,9 @@ export const zoneQuery = z.object({
   zone: z.string().max(64).refine(isTimeZone)
 })
 
+// A page loaded before the list asked for a zone counts late tasks in UTC.
+export const boardsQuery = zoneQuery.partial()
+
 export const filtersResponse = z.object({
   filters: z.array(
     z.object({

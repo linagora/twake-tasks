@@ -130,6 +130,7 @@ export const boardsResponse = z.object({
       openTasks: z.number(),
       doneTasks: z.number(),
       totalTasks: z.number(),
+      lateTasks: z.number(),
       members: z.array(person),
       memberCount: z.number(),
       ...cover

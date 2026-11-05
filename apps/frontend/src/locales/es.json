@@ -113,11 +113,12 @@
     "personalProject": "Personal",
     "inbox": "Bandeja de entrada",
     "defaultChip": "Predeterminado",
-    "defaultHint": "Las tareas nuevas se crean aquí por defecto. Este tablero no se puede compartir.",
     "spaceChip": "Espacio",
     "spaceHint": "Vinculado al espacio «%{name}».",
     "openTasks": "%{smart_count} tarea abierta |||| %{smart_count} tareas abiertas",
     "noOpenTasks": "No hay tareas abiertas",
+    "lateTasks": "%{smart_count} atrasada |||| %{smart_count} atrasadas",
+    "progress": "%{done} de %{smart_count} tarea hecha |||| %{done} de %{smart_count} tareas hechas",
     "newlyShared": "Nuevo",
     "sharedBy": "Compartido por %{name}"
   },
@@ -716,7 +717,6 @@
     "color": "Color",
     "customColor": "Color personalizado",
     "none": "Sin portada",
-    "space": "Space",
     "names": {
       "orbitalblue": "Orbital Blue",
       "earlymorning": "Early Morning",

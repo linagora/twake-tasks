@@ -456,7 +456,8 @@ export interface BoardsApi {
   search: (text: string, scope?: SearchScope) => Promise<SearchResult[]>
   /** Open tasks assigned to the signed-in person, dated ones first. */
   myTasks: () => Promise<AgendaTask[]>
-  listBoards: () => Promise<BoardSummary[]>
+  /** Late tasks are counted from today in `zone`, UTC without one. */
+  listBoards: (zone?: string) => Promise<BoardSummary[]>
   getBoard: (boardId: string) => Promise<Board>
   createBoard: (board: NewBoard) => Promise<Board>
   /** Whether no other board of the organization uses `keyPrefix`. */

@@ -113,11 +113,12 @@
     "personalProject": "Personale",
     "inbox": "In arrivo",
     "defaultChip": "Predefinito",
-    "defaultHint": "Le nuove attività vengono create qui per impostazione predefinita. Questa bacheca non può essere condivisa.",
     "spaceChip": "Spazio",
     "spaceHint": "Collegata allo spazio “%{name}”.",
     "openTasks": "%{smart_count} attività aperta |||| %{smart_count} attività aperte",
     "noOpenTasks": "Nessuna attività aperta",
+    "lateTasks": "%{smart_count} in ritardo",
+    "progress": "%{done} di %{smart_count} attività completata |||| %{done} di %{smart_count} attività completate",
     "newlyShared": "Nuovo",
     "sharedBy": "Condiviso da %{name}"
   },
@@ -716,7 +717,6 @@
     "color": "Colore",
     "customColor": "Colore personalizzato",
     "none": "Nessuna copertina",
-    "space": "Space",
     "names": {
       "orbitalblue": "Orbital Blue",
       "earlymorning": "Early Morning",
