@@ -7,7 +7,6 @@ import {
 } from '@linagora/twake-icons'
 import {
   Box,
-  Button,
   Chip,
   InputAdornment,
   MenuItem,
@@ -18,6 +17,7 @@ import { useState, type ReactElement, type ReactNode, type Ref } from 'react'
 
 import { Icon } from '@/ds/Icon'
 import { Menu } from '@/ds/Menu'
+import { PhoneIconButton } from '@/ds/PageHeader'
 
 const tinted = (theme: Theme) => ({
   bgcolor: theme.alpha(theme.vars.palette.primary.main, 0.08)
@@ -28,38 +28,28 @@ export function FilterButton({
   active,
   expanded,
   shortcut,
+  disabled,
   onClick,
   children
 }: {
   active: boolean
   expanded: boolean
   shortcut?: string | undefined
+  disabled?: boolean
   onClick: () => void
   children: string
 }): ReactElement {
   return (
-    <Button
-      variant="secondary"
+    <PhoneIconButton
       startIcon={<Icon icon={Filter} />}
-      aria-label={children}
       aria-expanded={expanded}
       aria-keyshortcuts={shortcut}
+      disabled={disabled}
       onClick={onClick}
-      sx={[
-        theme => ({
-          [theme.breakpoints.down('sm')]: {
-            minWidth: 40,
-            px: 1.25,
-            '& .MuiButton-startIcon': { m: 0 }
-          }
-        }),
-        active && tinted
-      ]}
+      sx={active ? tinted : undefined}
     >
-      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-        {children}
-      </Box>
-    </Button>
+      {children}
+    </PhoneIconButton>
   )
 }
 
