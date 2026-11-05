@@ -591,6 +591,10 @@ describe('AppShell', () => {
       await waitFor(() => {
         expect(screen.queryByRole('dialog')).toBe(null)
       })
+
+      await act(() => router.navigate(-1))
+      expect(router.state.location.pathname).toBe('/')
+      expect(screen.queryByRole('dialog')).toBe(null)
     })
 
     it('creates a task from the floating button, not from the header', async () => {

@@ -99,8 +99,10 @@ export function AppShell(): ReactElement {
   const { t } = useI18n()
   const lit = useLitEntry()
   // The phone menu is open on the page it was opened on: the next one, or
-  // the same one followed again, closes it.
+  // the same one followed again, closes it. Forgotten on leaving, so that Back
+  // to that page does not open it again.
   const [menuAt, setMenuAt] = useState<string | null>(null)
+  if (menuAt !== null && menuAt !== key) setMenuAt(null)
   // A new task goes in the board it is created from, else in the Inbox.
   const inBoardId = useMatch('/boards/:boardId/*')?.params.boardId
   useShortcuts({
@@ -522,7 +524,7 @@ function BoardsNav({
           </NavActions>
         }
       >
-        <SidebarLink to="/" active={boardsLit && !(!folded && boardLit)}>
+        <SidebarLink to="/" active={boardsLit && (folded || !boardLit)}>
           <NavIcon icon={HomeIcon} />
           <NavText>{t('boards.title')}</NavText>
         </SidebarLink>
