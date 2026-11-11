@@ -461,12 +461,14 @@ describe('the history of the embedded view', () => {
     if (contentWindow === null) throw new Error('The frame has no window')
     space = contentWindow
     post = vi.spyOn(space, 'postMessage')
+    window.TWAKE_SPACE_ORIGIN = SPACE
   })
 
   afterEach(() => {
     disconnectTwakeSpace()
     frame.remove()
     window.history.replaceState(null, '', '/')
+    delete window.TWAKE_SPACE_ORIGIN
   })
 
   it('only says it is ready, to any origin, until TwakeSpace greets the frame', async () => {
@@ -481,6 +483,21 @@ describe('the history of the embedded view', () => {
       expect(target).toBe('*')
     }
     expect(getTwakeSpace()?.hostOrigin()).toBeNull()
+  })
+
+  it('answers the TwakeSpace of TWAKE_SPACE_ORIGIN, and no other page', async () => {
+    renderEmbed(`/embed/projects/${roadmap.id}/boards/${board.id}`, {
+      greeted: false
+    })
+    await screen.findByRole('heading', { name: 'Roadmap' })
+
+    greet('https://other.example.com')
+    expect(getTwakeSpace()?.hostOrigin()).toBeNull()
+    greet()
+    expect(getTwakeSpace()?.hostOrigin()).toBe(SPACE)
+
+    delete window.TWAKE_SPACE_ORIGIN
+    expect(connectTwakeSpace(space)).toBeNull()
   })
 
   it('reports the first path as a replace, to the origin that greeted', async () => {

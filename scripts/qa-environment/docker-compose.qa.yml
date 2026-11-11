@@ -87,4 +87,5 @@ services:
       SSO_SCOPE: openid email profile
       SSO_REDIRECT_URI: http://localhost:${QA_APP_PORT:?}/auth/callback
       SSO_POST_LOGOUT_REDIRECT: http://localhost:${QA_APP_PORT:?}/
+      TWAKE_SPACE_ORIGIN: http://localhost:${QA_SPACE_PORT:?}
       CSP_FRAME_ANCESTORS: http://localhost:${QA_SPACE_PORT:?}
