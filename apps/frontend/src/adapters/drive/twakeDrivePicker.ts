@@ -36,38 +36,9 @@ const intentsOf = (sdk: Sdk): Intents =>
       })
   })
 
-/**
- * Inside Twake Space the dialog shows on its overlay, so the picker posts to
- * that window. cozy-interapp listens on the app's window only: pass the
- * messages of the frames in `container` on to it, until the returned function
- * is called.
- */
-export function relayIntentMessages(container: HTMLElement): () => void {
-  const host = container.ownerDocument.defaultView
-  if (host === null || host === window) return () => undefined
-  const relay = (event: MessageEvent<unknown>) => {
-    const fromPicker = Array.from(container.querySelectorAll('iframe')).some(
-      frame => frame.contentWindow === event.source
-    )
-    if (!fromPicker) return
-    window.dispatchEvent(
-      new MessageEvent('message', {
-        data: event.data,
-        origin: event.origin,
-        source: event.source
-      })
-    )
-  }
-  host.addEventListener('message', relay)
-  return () => {
-    host.removeEventListener('message', relay)
-  }
-}
-
 /** The PICK io.cozy.files intent of Twake Drive, asking for sharing links. */
 export function twakeDrivePicker(sdk: Sdk, idToken: string): DrivePicker {
   let started: StartedCozyIntent | null = null
-  let unrelay: () => void = () => undefined
   // Each pick and each stop starts a new run: a stopped run gives up
   let run = 0
 
@@ -102,13 +73,10 @@ export function twakeDrivePicker(sdk: Sdk, idToken: string): DrivePicker {
         }
       })
       started = mine
-      const stopRelay = relayIntentMessages(container)
-      unrelay = stopRelay
       let result: unknown
       try {
         result = await mine
       } finally {
-        stopRelay()
         if (started === mine) started = null
       }
       if (!Array.isArray(result)) return []
@@ -119,7 +87,6 @@ export function twakeDrivePicker(sdk: Sdk, idToken: string): DrivePicker {
     },
     stop() {
       run += 1
-      unrelay()
       started?.stop()
       started = null
     }
