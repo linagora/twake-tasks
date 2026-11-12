@@ -16,5 +16,7 @@ declare global {
     DRIVE_PICKER_ENABLED?: string
     /** The backend's SEARCH_MIN_LENGTH. */
     SEARCH_MIN_LENGTH?: string
+    /** The TwakeSpace of this deployment, the one the embedded view talks to. */
+    TWAKE_SPACE_ORIGIN?: string
   }
 }

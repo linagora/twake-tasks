@@ -71,5 +71,7 @@ services:
       SSO_SCOPE: openid email profile
       SSO_REDIRECT_URI: http://localhost:3300/auth/callback
       SSO_POST_LOGOUT_REDIRECT: http://localhost:3300/
-      # The pages the suite plays TwakeSpace on
+      # The pages the suite plays TwakeSpace on: the first is the TwakeSpace
+      # the embedded view answers, the second frames it but is not it
+      TWAKE_SPACE_ORIGIN: http://localhost:3301
       CSP_FRAME_ANCESTORS: http://localhost:3301 http://localhost:3302
