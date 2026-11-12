@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   isDrivePickerEnabled,
-  relayIntentMessages,
   twakeDrivePicker
 } from '@/adapters/drive/twakeDrivePicker'
 import type { DrivePickOptions } from '@/application/drivePicker'
@@ -265,54 +264,5 @@ describe('isDrivePickerEnabled', () => {
         value === undefined ? {} : { DRIVE_PICKER_ENABLED: value }
       )
     ).toBe(enabled)
-  })
-})
-
-describe('relayIntentMessages', () => {
-  it('passes the messages of the picker, posted to the Twake Space overlay, on to the app until stopped', () => {
-    const overlay = document.createElement('iframe')
-    document.body.append(overlay)
-    const host = overlay.contentWindow
-    if (!host) throw new Error('no window')
-    const container = host.document.createElement('div')
-    host.document.body.append(container)
-    const frame = host.document.createElement('iframe')
-    container.append(frame)
-    const service = frame.contentWindow
-    if (!service) throw new Error('no window')
-    const heard: unknown[] = []
-    const listen = (event: MessageEvent<{ type: unknown }>) => {
-      heard.push([event.data.type, event.origin, event.source === service])
-    }
-    window.addEventListener('message', listen)
-    const post = (type: string, source: Window) => {
-      host.dispatchEvent(
-        new MessageEvent('message', {
-          data: { type },
-          origin: 'https://alice-drive.test',
-          source
-        })
-      )
-    }
-
-    const stop = relayIntentMessages(container)
-    post('intent-1:ready', service)
-    post('intent-1:done', host)
-    stop()
-    post('intent-1:done', service)
-
-    expect(heard).toEqual([
-      ['intent-1:ready', 'https://alice-drive.test', true]
-    ])
-    window.removeEventListener('message', listen)
-    overlay.remove()
-  })
-
-  it('does nothing for a container in the window of the app', () => {
-    const add = vi.spyOn(window, 'addEventListener')
-
-    relayIntentMessages(document.createElement('div'))()
-
-    expect(add).not.toHaveBeenCalled()
   })
 })
