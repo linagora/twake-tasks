@@ -18,20 +18,72 @@ const TOKEN_TTL_S = 3600
 const FRAME_ANCESTORS = process.env.FRAME_ANCESTORS ?? "'self'"
 const BACKCHANNEL_LOGOUT_URI = 'http://backend:8080/api/auth/backchannel-logout'
 
-const PEOPLE = {
-  alice: {
-    uuid: '0a11ce00-0000-4000-8000-000000000001',
-    name: 'Alice Martin',
-    org_role: 'admin'
-  },
-  bob: {
-    uuid: '0b0b0000-0000-4000-8000-000000000002',
-    name: 'Bob Durand',
-    org_role: 'member'
-  }
-} as const
-type Username = keyof typeof PEOPLE
+interface Person {
+  uuid: string
+  name: string
+  // null: a person of no organization, a B2C account
+  org: string | null
+  org_role: 'admin' | 'member'
+}
+
 const ORG = 'acme.e2e.test'
+
+// The uuid of an extra person, derived from their username so that whoever
+// seeds data for them (scripts/qa-environment/start.sh) can compute it too.
+function uuidOf(username: string) {
+  const h = createHash('sha256').update(username).digest('hex')
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`
+}
+
+// EXTRA_PEOPLE adds space separated people (the QA environment's QA_USERS and
+// QA_PERF_USERS): `carol` is a member of ORG, `erin@globex.test` of another
+// organization, `frank@` of none.
+function extraPeople(spec: string): [string, Person][] {
+  return spec
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(entry => {
+      const [username = '', org] = entry.split('@')
+      return [
+        username,
+        {
+          uuid: uuidOf(username),
+          name: username.charAt(0).toUpperCase() + username.slice(1),
+          org: org === undefined ? ORG : org || null,
+          org_role: 'member'
+        }
+      ]
+    })
+}
+
+const PEOPLE = new Map<string, Person>([
+  [
+    'alice',
+    {
+      uuid: '0a11ce00-0000-4000-8000-000000000001',
+      name: 'Alice Martin',
+      org: ORG,
+      org_role: 'admin'
+    }
+  ],
+  [
+    'bob',
+    {
+      uuid: '0b0b0000-0000-4000-8000-000000000002',
+      name: 'Bob Durand',
+      org: ORG,
+      org_role: 'member'
+    }
+  ],
+  ...extraPeople(process.env.EXTRA_PEOPLE ?? '')
+])
+type Username = string
+
+function personOf(username: Username) {
+  const person = PEOPLE.get(username)
+  if (!person) throw new Error(`unknown person ${username}`)
+  return person
+}
 
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   modulusLength: 2048
@@ -62,18 +114,18 @@ function jwt(claims: Record<string, unknown>) {
   return `${header}.${body}.${b64url(signature)}`
 }
 
-const emailOf = (username: Username) => `${username}@${ORG}`
+const emailOf = (username: Username) =>
+  `${username}@${personOf(username).org ?? 'b2c.e2e.test'}`
 
 function userinfo(grant: Grant) {
-  const person = PEOPLE[grant.username]
+  const person = personOf(grant.username)
   return {
     sub: emailOf(grant.username),
     sid: grant.sid,
     uuid: person.uuid,
     email: emailOf(grant.username),
     name: person.name,
-    org_id: ORG,
-    org_role: person.org_role
+    ...(person.org ? { org_id: person.org, org_role: person.org_role } : {})
   }
 }
 
@@ -181,7 +233,7 @@ const escape = (text: string) =>
   )
 
 function loginPage(query: URLSearchParams) {
-  const buttons = Object.keys(PEOPLE)
+  const buttons = [...PEOPLE.keys()]
     .map(
       username =>
         `<button name="username" value="${username}">Sign in as ${username}</button>`
@@ -265,7 +317,7 @@ const server = createServer(
           const query =
             req.method === 'POST' ? await readForm(req) : url.searchParams
           const username = query.get('username')
-          if (username && username in PEOPLE) {
+          if (username && PEOPLE.has(username)) {
             const sid = randomUUID()
             sessions.set(sid, username as Username)
             query.delete('username')
