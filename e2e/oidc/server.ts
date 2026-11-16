@@ -319,9 +319,9 @@ const server = createServer(
           const username = query.get('username')
           if (username && PEOPLE.has(username)) {
             const sid = randomUUID()
-            sessions.set(sid, username as Username)
+            sessions.set(sid, username)
             query.delete('username')
-            issueCode(res, query, sid, username as Username)
+            issueCode(res, query, sid, username)
             return
           }
           const session = cookieSession(req.headers.cookie)
