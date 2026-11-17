@@ -56,16 +56,6 @@ async function openBlockers(tx: Tx, ids: string[]) {
   return byTask
 }
 
-function idsByTask(pairs: [taskId: string, id: string][]) {
-  const byTask = new Map<string, Set<string>>()
-  for (const [taskId, id] of pairs) {
-    const ids = byTask.get(taskId)
-    if (ids) ids.add(id)
-    else byTask.set(taskId, new Set([id]))
-  }
-  return byTask
-}
-
 interface TaskOnBoard {
   task: typeof tasks.$inferSelect
   board: typeof boards.$inferSelect
@@ -116,15 +106,15 @@ export async function describeTasksOf(tx: Tx, rows: TaskOnBoard[]) {
           .from(taskTemplates)
           .where(inArray(taskTemplates.id, templateIds))
   const templatesById = new Map(templates.map(t => [t.id, t]))
-  const assigned = idsByTask(assignments.map(a => [a.taskId, a.userId]))
-  const labeledWith = idsByTask(labeled.map(l => [l.taskId, l.labelId]))
+  const assigned = Map.groupBy(assignments, a => a.taskId)
+  const labeledWith = Map.groupBy(labeled, l => l.taskId)
   const commentCounts = new Map(commented.map(c => [c.taskId, c.count]))
   const blockers = await openBlockers(tx, ids)
   return rows.map(({ task, board, members, labels }) => {
     const template =
       task.templateId === null ? undefined : templatesById.get(task.templateId)
-    const assigneeIds = assigned.get(task.id)
-    const labelIds = labeledWith.get(task.id)
+    const assigneeIds = new Set(assigned.get(task.id)?.map(a => a.userId))
+    const labelIds = new Set(labeledWith.get(task.id)?.map(l => l.labelId))
     return {
       id: task.id,
       key: `${board.keyPrefix}-${String(task.number)}`,
@@ -148,10 +138,8 @@ export async function describeTasksOf(tx: Tx, rows: TaskOnBoard[]) {
       completedAt: task.completedAt,
       canceledAt: task.canceledAt,
       // Someone who left the board stays assigned, but is not shown.
-      assignees: assigneeIds
-        ? members.filter(member => assigneeIds.has(member.userId))
-        : [],
-      labels: labelIds ? labels.filter(label => labelIds.has(label.id)) : [],
+      assignees: members.filter(member => assigneeIds.has(member.userId)),
+      labels: labels.filter(label => labelIds.has(label.id)),
       commentCount: commentCounts.get(task.id) ?? 0,
       blockers: blockers.get(task.id) ?? []
     }
