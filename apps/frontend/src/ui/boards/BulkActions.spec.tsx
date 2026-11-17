@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 
 import type { Board } from '@/domain/board'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
@@ -69,6 +69,37 @@ describe('changing several tasks at once', () => {
     await waitFor(() => {
       expect(screen.queryByRole('toolbar')).toBeNull()
     })
+  })
+
+  it('lets the tasks go on Escape from a focused task checkbox', async () => {
+    threeTasks()
+    await pick('DES-1')
+    const box = screen.getByRole('checkbox', { name: 'Select DES-1' })
+    box.focus()
+
+    fireEvent.keyDown(box, { key: 'Escape' })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('toolbar')).toBeNull()
+    })
+  })
+
+  it('keeps the tasks picked on Escape in a field inside a shadow root', async () => {
+    threeTasks()
+    await pick('DES-1')
+    const host = document.body.appendChild(document.createElement('div'))
+    const field = host
+      .attachShadow({ mode: 'open' })
+      .appendChild(document.createElement('textarea'))
+    onTestFinished(() => {
+      host.remove()
+    })
+
+    fireEvent.keyDown(field, { key: 'Escape', composed: true })
+
+    expect(
+      screen.getByRole('toolbar', { name: 'Selected tasks' })
+    ).toBeVisible()
   })
 
   it('keeps the tasks it could not change picked, and says how many', async () => {

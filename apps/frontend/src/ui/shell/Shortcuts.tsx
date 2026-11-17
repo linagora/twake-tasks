@@ -39,13 +39,27 @@ export function shortcutsOn(): boolean {
   }
 }
 
+const NOT_TYPED = [
+  'button',
+  'checkbox',
+  'color',
+  'file',
+  'image',
+  'radio',
+  'range',
+  'reset',
+  'submit'
+]
+
 export function typing(event: Event): boolean {
   // A field in a shadow root (the feedback form) is retargeted to its host.
   const target = event.composedPath()[0] ?? event.target
+  if (target instanceof HTMLInputElement)
+    return !NOT_TYPED.includes(target.type)
   return (
     target instanceof HTMLElement &&
     (target.isContentEditable ||
-      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+      ['TEXTAREA', 'SELECT'].includes(target.tagName))
   )
 }
 

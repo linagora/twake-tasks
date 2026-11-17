@@ -10,6 +10,7 @@ import {
 import type { KeySelect } from '@/ds/Columns'
 import type { Task } from '@/domain/board'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { typing } from '@/ui/shell/Shortcuts'
 
 export interface Selection {
   /** The picked tasks still on the board, in board order. */
@@ -40,7 +41,7 @@ export function useBoardSelection(lanes: string[][]): Selection {
   useEffect(() => {
     if (!picking) return
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !event.defaultPrevented) {
+      if (event.key === 'Escape' && !event.defaultPrevented && !typing(event)) {
         anchor.current = null
         setPicked(new Set())
       }
