@@ -39,10 +39,15 @@ export function shortcutsOn(): boolean {
   }
 }
 
-export const typing = (target: EventTarget | null) =>
-  target instanceof HTMLElement &&
-  (target.isContentEditable ||
-    ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+export function typing(event: Event): boolean {
+  // A field in a shadow root (the feedback form) is retargeted to its host.
+  const target = event.composedPath()[0] ?? event.target
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable ||
+      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+  )
+}
 
 export function useShortcuts(actions: {
   newTask: () => void
@@ -54,7 +59,7 @@ export function useShortcuts(actions: {
 
   const onKey = useEffectEvent((event: KeyboardEvent) => {
     if (event.ctrlKey || event.metaKey || event.altKey) return
-    if (typing(event.target) || !shortcutsOn()) return
+    if (typing(event) || !shortcutsOn()) return
     if (going.current) {
       going.current = false
       if (event.key in GO) {

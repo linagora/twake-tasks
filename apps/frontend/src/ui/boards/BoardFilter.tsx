@@ -135,7 +135,7 @@ export function useFilterShortcut(onFilter: (() => void) | undefined): void {
       event.altKey
     )
       return
-    if (!onFilter || typing(event.target) || !shortcutsOn()) return
+    if (!onFilter || typing(event) || !shortcutsOn()) return
     event.preventDefault()
     onFilter()
   })

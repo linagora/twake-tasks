@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 
 import { aBoard, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
@@ -48,6 +48,21 @@ describe('keyboard shortcuts', () => {
     const field = screen.getByLabelText('Search')
 
     press('q', field)
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('leaves keys alone while typing in a field inside a shadow root', async () => {
+    await home()
+    const host = document.body.appendChild(document.createElement('div'))
+    const field = host
+      .attachShadow({ mode: 'open' })
+      .appendChild(document.createElement('textarea'))
+    onTestFinished(() => {
+      host.remove()
+    })
+
+    fireEvent.keyDown(field, { key: 'q', composed: true })
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
