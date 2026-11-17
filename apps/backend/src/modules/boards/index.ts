@@ -8,14 +8,15 @@ export {
   memberLooks,
   memberNames,
   membersOf,
+  membersOfProjects,
   roleIn,
   roleOn,
   settingsOfMember,
   type Role
 } from './access.ts'
-export { describeTasks, shown } from './describe.ts'
+export { describeTasks, describeTasksOf, shown } from './describe.ts'
 export { freeKeyPrefix } from './keyPrefixes.ts'
-export { labelsOn } from './labels.ts'
+export { labelsOn, labelsOnProjects } from './labels.ts'
 export {
   endAccess,
   endAccessOutside,

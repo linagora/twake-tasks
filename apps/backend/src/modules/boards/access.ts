@@ -116,6 +116,30 @@ export function membersOf(
     .orderBy(asc(projectMembers.email))
 }
 
+export async function membersOfProjects(
+  tx: Tx,
+  projectIds: string[]
+): Promise<Map<string, Member[]>> {
+  const rows = await tx
+    .select({
+      projectId: projectMembers.projectId,
+      userId: projectMembers.userId,
+      email: projectMembers.email,
+      ...memberLooks
+    })
+    .from(projectMembers)
+    .leftJoin(userSettings, settingsOfMember)
+    .where(inArray(projectMembers.projectId, projectIds))
+    .orderBy(asc(projectMembers.email))
+  const byProject = new Map<string, Member[]>()
+  for (const { projectId, ...member } of rows) {
+    const members = byProject.get(projectId)
+    if (members) members.push(member)
+    else byProject.set(projectId, [member])
+  }
+  return byProject
+}
+
 // The emails invited to the project, not members until they sign in.
 export async function invitedTo(tx: Tx, projectId: string): Promise<string[]> {
   const rows = await tx

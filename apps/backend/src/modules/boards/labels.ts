@@ -1,4 +1,4 @@
-import { and, asc, eq, ne, notInArray } from 'drizzle-orm'
+import { and, asc, eq, inArray, ne, notInArray } from 'drizzle-orm'
 import { isUniqueViolation, type Db, type Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse, type Result } from '../kernel/index.ts'
@@ -15,6 +15,21 @@ export function labelsOn(tx: Tx, board: { projectId: string }) {
     .from(labels)
     .where(eq(labels.projectId, board.projectId))
     .orderBy(asc(labels.name))
+}
+
+export async function labelsOnProjects(tx: Tx, projectIds: string[]) {
+  const rows = await tx
+    .select({ projectId: labels.projectId, ...shape })
+    .from(labels)
+    .where(inArray(labels.projectId, projectIds))
+    .orderBy(asc(labels.name))
+  const byProject = new Map<string, Omit<(typeof rows)[number], 'projectId'>[]>()
+  for (const { projectId, ...label } of rows) {
+    const onProject = byProject.get(projectId)
+    if (onProject) onProject.push(label)
+    else byProject.set(projectId, [label])
+  }
+  return byProject
 }
 
 export function createLabelStore(db: Db) {
