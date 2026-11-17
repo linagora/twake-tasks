@@ -1,0 +1,201 @@
+# The chaos stack of Twake Tasks: 1 backend, 1 frontend, 3 PostgreSQL (Patroni: one primary, 2 streaming replicas in its
+# synchronous quorum, automatic failover; each node also an etcd member, the consensus Patroni elects the primary with),
+# 3 RabbitMQ (a cluster, quorum queues, autoheal), a load balancer in front of both (the backend takes one URL of
+# each), the mock SSO of the QA environment, Mailpit, the Twake Space stand-in of the QA environment. Each container has
+# a memory limit (the whole: ~5.5 GB). Every
+# node of a replicated component is its own service (pg1..3, rabbitmq1..3): twake-chaos pauses, stops and restarts
+# them one by one (topology.yaml).
+# Published on 127.0.0.1 only: the web app and its API (the frontend), the backend's probes, the SSO, Twake Space,
+# Mailpit's API.
+# The backend, the frontend, the SSO and Twake Space are configured as scripts/qa-environment/docker-compose.qa.yml
+# does (space mode, the mock SSO, Mailpit), with the ports of this stack.
+
+x-postgres: &postgres
+  image: ${POSTGRES_IMAGE:?}
+  mem_limit: 768m
+  shm_size: 128m
+  restart: on-failure
+  environment: &pg-env
+    PEERS: pg1 pg2 pg3
+    PATRONI_SUPERUSER_PASSWORD: ${CHAOS_PG_SUPERUSER_PASSWORD:?}
+    PATRONI_REWIND_PASSWORD: ${CHAOS_PG_SUPERUSER_PASSWORD:?}
+    PATRONI_REPLICATION_PASSWORD: ${CHAOS_PG_REPLICATION_PASSWORD:?}
+  healthcheck:
+    # PostgreSQL running under Patroni (primary or replica) and the node's etcd member healthy
+    test: ["CMD-SHELL", "curl -sf -o /dev/null http://localhost:8008/health && etcdctl --endpoints=http://localhost:2379 endpoint health >/dev/null 2>&1"]
+    interval: 3s
+    timeout: 5s
+    retries: 100
+    start_period: 20s
+
+x-rabbitmq: &rabbitmq
+  image: rabbitmq:4.1-management  # the repository's docker-compose.yml
+  mem_limit: 512m
+  environment:
+    RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -setcookie twake-chaos-cookie
+    RABBITMQ_CTL_ERL_ARGS: -setcookie twake-chaos-cookie
+  volumes:
+    - ./conf/rabbitmq/20-chaos.conf:/etc/rabbitmq/conf.d/20-chaos.conf:ro
+  healthcheck:
+    test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+    interval: 5s
+    timeout: 20s
+    retries: 60
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:?}
+    hostname: backend
+    mem_limit: 1g
+    environment:
+      NODE_OPTIONS: --max-old-space-size=640
+      # The primary, whichever node it is, through the load balancer (conf/haproxy/haproxy.cfg: Patroni's /primary,
+      # the sessions of a node that is no longer the primary cut). Not the multi-host URL postgres.js takes
+      # (pg1,pg2,pg3?target_session_attrs=primary): tried, it follows a primary that crashes, not one that hangs (its
+      # pooled connections wait on the hung node as long as it hangs: no request answered after the failover).
+      DATABASE_URL: postgres://twake_tasks:twake_tasks@postgres/twake_tasks
+      DATABASE_MIGRATION_URL: postgres://twake_tasks_owner:twake_tasks_owner@postgres/twake_tasks
+      # the 3 nodes behind the load balancer (conf/haproxy/haproxy.cfg): the backend takes one URL
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      APP_URL: http://localhost:${CHAOS_APP_PORT:?}
+      OIDC_ISSUER: https://oidc:8443
+      OIDC_CLIENT_SECRET: e2e-backend-secret
+      NODE_EXTRA_CA_CERTS: /certs/oidc.crt
+      SPACE_INTEGRATION: "true"
+      # No ldap-rest, as in the QA environment: the nightly reconcile fails and retries, nothing else needs it
+      LDAP_REST_URL: http://ldap-rest.invalid
+      LDAP_REST_SECRET: qa
+      SMTP_URL: smtp://mailpit:1025
+    volumes:
+      - ${CHAOS_RUN:?}/certs:/certs:ro
+    ports:
+      - "127.0.0.1:${CHAOS_API_PORT:?}:8080"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8080/health/ready', { signal: AbortSignal.timeout(4000) }).then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 3s
+      timeout: 5s
+      retries: 100
+      start_period: 10s
+    depends_on:
+      oidc: {condition: service_healthy}
+      lb: {condition: service_started}
+
+  frontend:
+    image: ${FRONTEND_IMAGE:?}
+    hostname: frontend
+    mem_limit: 128m
+    read_only: true
+    tmpfs: [/tmp]
+    environment:
+      API_UPSTREAM: http://backend:8080
+      SSO_BASE_URL: https://oidc:8443
+      SSO_CLIENT_ID: twaketasks
+      SSO_SCOPE: openid email profile
+      SSO_REDIRECT_URI: http://localhost:${CHAOS_APP_PORT:?}/auth/callback
+      SSO_POST_LOGOUT_REDIRECT: http://localhost:${CHAOS_APP_PORT:?}/
+      CSP_FRAME_ANCESTORS: http://localhost:${CHAOS_SPACE_PORT:?}
+    ports:
+      - "127.0.0.1:${CHAOS_APP_PORT:?}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    depends_on: [backend]
+
+  pg1:
+    <<: *postgres
+    hostname: pg1
+    environment: {<<: *pg-env, NODE: pg1}
+    volumes:
+      - ${CHAOS_REPO_DIR:?}/postgres-init.sql:/postgres-init.sql:ro
+      - pg1-data:/var/lib/postgresql
+  pg2:
+    <<: *postgres
+    hostname: pg2
+    environment: {<<: *pg-env, NODE: pg2}
+    volumes:
+      - ${CHAOS_REPO_DIR:?}/postgres-init.sql:/postgres-init.sql:ro
+      - pg2-data:/var/lib/postgresql
+  pg3:
+    <<: *postgres
+    hostname: pg3
+    environment: {<<: *pg-env, NODE: pg3}
+    volumes:
+      - ${CHAOS_REPO_DIR:?}/postgres-init.sql:/postgres-init.sql:ro
+      - pg3-data:/var/lib/postgresql
+
+  rabbitmq1:
+    <<: *rabbitmq
+    hostname: rabbitmq1
+  rabbitmq2:
+    <<: *rabbitmq
+    hostname: rabbitmq2
+  rabbitmq3:
+    <<: *rabbitmq
+    hostname: rabbitmq3
+
+  # The one address of the PostgreSQL primary and of the RabbitMQ cluster (conf/haproxy/haproxy.cfg): not a node of
+  # either, never faulted
+  lb:
+    image: haproxy:3.0
+    hostname: lb
+    mem_limit: 64m
+    volumes:
+      - ./conf/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      default:
+        aliases: [postgres, rabbitmq]
+
+  # The mock SSO of the end to end suite (e2e/oidc/server.ts), as the QA environment runs it: accounts sign in by a
+  # button, no password; EXTRA_PEOPLE: the QA environment's accounts. Its tokens live in its memory.
+  oidc:
+    image: node:24-slim
+    hostname: oidc
+    mem_limit: 192m
+    working_dir: /oidc
+    command: ["node", "server.ts"]
+    volumes:
+      - ${CHAOS_REPO_DIR:?}/e2e/oidc:/oidc:ro
+      - ${CHAOS_RUN:?}/certs:/certs:ro
+    environment:
+      NODE_EXTRA_CA_CERTS: /certs/oidc.crt
+      EXTRA_PEOPLE: ${CHAOS_USERS:?}
+      FRAME_ANCESTORS: "'self' http://localhost:${CHAOS_APP_PORT:?} http://localhost:${CHAOS_SPACE_PORT:?}"
+    ports:
+      - "127.0.0.1:${CHAOS_SSO_PORT:?}:8443"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('https://localhost:8443/.well-known/openid-configuration').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    hostname: mailpit
+    mem_limit: 128m
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    ports:
+      - "127.0.0.1:${CHAOS_MAIL_PORT:?}:8025"
+
+  # The stand-in for Twake Space of the QA environment (scripts/qa-environment/twakespace): frames the embedded pages
+  twakespace:
+    image: node:24-slim
+    hostname: twakespace
+    mem_limit: 128m
+    working_dir: /twakespace
+    command: ["node", "server.ts"]
+    volumes:
+      - ${CHAOS_REPO_DIR:?}/scripts/qa-environment/twakespace:/twakespace:ro
+      - ${CHAOS_RUN:?}/space.json:/space.json:ro
+    environment:
+      APP_ORIGIN: http://localhost:${CHAOS_APP_PORT:?}
+    ports:
+      - "127.0.0.1:${CHAOS_SPACE_PORT:?}:8080"
+
+volumes:
+  pg1-data:
+  pg2-data:
+  pg3-data:

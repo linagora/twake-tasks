@@ -1,0 +1,25 @@
+# What twake-chaos acts on: each component of claims.yaml and the compose services that are its nodes, the application.
+# `healthy`: a command (run on the host, common.sh sourced) that succeeds once the component has recovered by itself
+# (its cluster whole again), before the next scenario starts.
+project: ttasks-chaos
+app:
+  # the backend (NestJS on Fastify) and the frontend (nginx: the web app, /api proxied to the backend)
+  services: [backend, frontend]
+  # ready: listening, reaching the database (its own connection), every migration of its image applied
+  healthcheck: "curl -sf -o /dev/null --max-time 5 http://127.0.0.1:$CHAOS_API_PORT/health/ready && curl -sf -o /dev/null --max-time 5 http://127.0.0.1:$CHAOS_APP_PORT/healthz"
+components:
+  postgresql:
+    services: [pg1, pg2, pg3]
+    # a leader and 2 replicas streaming with no lag in its synchronous quorum, the 3 etcd members healthy, the load
+    # balancer on that leader (common.sh); after a failover the leader may be another node, whole as well
+    healthy: "pg_healthy"
+  rabbitMQ:
+    services: [rabbitmq1, rabbitmq2, rabbitmq3]
+    # the 3 nodes running, no partition, every quorum queue with its 3 members online, the 3 in the load balancer (common.sh)
+    healthy: "rabbitmq_healthy"
+  smtp:
+    services: [mailpit]
+    healthy: "curl -sf -o /dev/null --max-time 5 http://127.0.0.1:$CHAOS_MAIL_PORT/readyz"
+# not claimed, part of the stack: never faulted. lb: the one address of the PostgreSQL primary and of the RabbitMQ
+# cluster (the backend takes one URL of each); oidc: the mock SSO; twakespace: the Twake Space stand-in.
+support: [lb, oidc, twakespace]

@@ -1,0 +1,53 @@
+# What Twake Tasks claims when one of the services its backend relies on fails. twake-chaos checks each claim on the
+# chaos stack (compose.yaml) and records what does not hold.
+#
+#   faultTolerance     nodes of the component that can be lost with no impact at all (absent: a single node, none)
+#   downImpact         what stops working while the whole component is down; every other feature keeps working
+#   accidentRecovery   live: once the component is back, everything works again without restarting the backend
+#   requiredOnStartup  true: the backend may refuse to start without it; false: it starts, degraded as downImpact says
+#   failFast           true: while it is down, what downImpact names fails fast with a clear error (no request hanging)
+#
+# The repository documents no resilience claim (docs/: architecture, dependencies, configuration, deployment, events,
+# operations), so these are written from its documentation and from the backend's code at this commit (apps/backend/src):
+# each entry says where it comes from. The maintainers may replace this file: it is then theirs.
+#
+# Not claimed, part of the stack: the mock SSO (e2e/oidc/server.ts, the QA environment's: its tokens live in its memory,
+# a restarted mock forgets them, which is the mock's, not the product's) and the Twake Space stand-in (it only frames the
+# embedded pages in a browser: the backend never calls it). See topology.yaml `support`.
+components:
+  # docs/architecture.md: everything (boards, tasks, comments, notifications, the jobs table, the outbox) is in
+  # PostgreSQL; every API route reads it in a transaction (infra/db.ts, inTenant), /health/ready answers only while it
+  # is reached (docs/deployment.md). requiredOnStartup: main.ts checks the role (assertRowLevelSecurity) and migrates
+  # (MIGRATE_ON_START, the default) before it listens. failFast: infra/http.ts answers 503 `unavailable` on a connection
+  # error (isTransient). accidentRecovery: postgres.js reconnects its pool on the next query; jobs and events retry
+  # until it passes (docs/events.md: "A transient failure, such as the database being down, retries until it passes").
+  # faultTolerance: the backend takes one DATABASE_URL (docs/configuration.md) and keeps no state of its own about the
+  # server: behind the address of the primary (the stack: Patroni, quorum commit ANY 1 of 2 replicas, HAProxy on
+  # Patroni's /primary cutting the sessions of a former primary) its pool reconnects to the promoted replica, with no
+  # acknowledged transaction lost. A failover takes the 15 s of Patroni's leader key (a stopped primary: a few seconds),
+  # during which requests answer 503.
+  postgresql:
+    faultTolerance: 1
+    downImpact: "No Service"
+    failFast: true
+    accidentRecovery: live
+    requiredOnStartup: true
+  # docs/dependencies.md (RabbitMQ: "Required in every mode. The backend connects at start"), docs/events.md, main.ts
+  # (connectLive, startPublisher, startConsumer awaited before the backend is ready). The API does not wait on it:
+  # outgoing events go through the outbox (written in the transaction, relayed later, docs/architecture.md), incoming
+  # ones are consumed from the quorum queue `twake-tasks`, live updates are best effort (docs/events.md#live-updates).
+  # accidentRecovery: @linagora/rabbitmq-client reconnects with a backoff and subscribes again; the outbox relay retries
+  # on its next run (every 500 ms). faultTolerance: quorum queues (the client's default; the dead letter queue by the
+  # broker's default_queue_type) replicated on the 3 nodes; the backend takes one RABBITMQ_URL, a load balancer in front.
+  rabbitMQ:
+    faultTolerance: 1
+    downImpact: "No live board updates (an open board shows other people's changes once reloaded); the platform's events (spaces created or changed, their members, account and organization deletions, settings) are not applied and the activity events not published until RabbitMQ is back; the API keeps working"
+    accidentRecovery: live
+    requiredOnStartup: true
+  # docs/dependencies.md (SMTP: optional), docs/configuration.md (Email: SMTP_TIMEOUT_SECONDS, "the send fails and its job
+  # is retried"), scheduler/scheduler.ts (a failed job is retried 30 s x attempt² later, dropped after its 10th attempt,
+  # ~2.4 h), infra/mail.ts (the transport connects per send: not at start). In-app notifications do not depend on it.
+  smtp:
+    downImpact: "No email sent (notifications, digests, reminders, project invitations): each is retried, and sent once SMTP is back; in-app notifications keep working"
+    accidentRecovery: live
+    requiredOnStartup: false

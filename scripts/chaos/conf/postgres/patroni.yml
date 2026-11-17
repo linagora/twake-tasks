@@ -1,0 +1,81 @@
+# Patroni of a node of the chaos stack. The node's name and addresses, the etcd hosts and the passwords come from the
+# environment (node.sh, compose.yaml: PATRONI_NAME, PATRONI_*_CONNECT_ADDRESS, PATRONI_ETCD3_HOSTS, PATRONI_*_PASSWORD).
+scope: ttasks
+namespace: /service/
+
+restapi:
+  listen: 0.0.0.0:8008
+
+etcd3:
+  protocol: http
+
+bootstrap:
+  # the cluster's settings, written to etcd by the first node (later changes: patronictl edit-config)
+  dcs:
+    # the leader key expires 15 s after its primary stopped renewing it (a paused or crashed node): then a replica of
+    # the quorum is promoted. A stopped node (docker stop) gives its key up at once.
+    ttl: 15
+    loop_wait: 5
+    retry_timeout: 5
+    # quorum commit (synchronous_standby_names = ANY 1 (the replicas)): a commit waits for one of the 2 replicas, so
+    # the promoted one holds every acknowledged transaction (losing the primary loses nothing), and losing one replica
+    # blocks nothing. Not strict: with both replicas gone, the primary goes on alone.
+    synchronous_mode: quorum
+    synchronous_node_count: 1
+    synchronous_mode_strict: false
+    # only a replica fully caught up is promoted
+    maximum_lag_on_failover: 0
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      remove_data_directory_on_rewind_failure: true
+      remove_data_directory_on_diverged_timelines: true
+      parameters:
+        max_connections: 200
+        shared_buffers: 128MB
+        effective_cache_size: 384MB
+        work_mem: 4MB
+        maintenance_work_mem: 32MB
+        wal_level: replica
+        wal_log_hints: "on"
+        hot_standby: "on"
+        hot_standby_feedback: "on"
+        max_wal_senders: 10
+        max_replication_slots: 10
+        wal_keep_size: 256MB
+        max_wal_size: 512MB
+        # a paused replica is seen gone in ~10 s, and leaves the quorum to the other
+        wal_sender_timeout: 10s
+        wal_receiver_timeout: 10s
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  # the roles and the database of the repository's postgres-init.sql (mounted from the checkout)
+  post_bootstrap: /post-bootstrap.sh
+
+postgresql:
+  listen: 0.0.0.0:5432
+  data_dir: /var/lib/postgresql/patroni
+  bin_dir: /usr/lib/postgresql/18/bin
+  pgpass: /tmp/pgpass
+  authentication:
+    superuser:
+      username: postgres
+    replication:
+      username: replicator
+    rewind:
+      username: postgres
+  pg_hba:
+    - local all all trust
+    - host all all 127.0.0.1/32 trust
+    - host replication replicator all scram-sha-256
+    - host all all all scram-sha-256
+  parameters:
+    unix_socket_directories: /var/run/postgresql
+    password_encryption: scram-sha-256
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false
