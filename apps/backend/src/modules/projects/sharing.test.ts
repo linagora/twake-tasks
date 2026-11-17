@@ -104,6 +104,23 @@ describe('sharing a board', () => {
     expect(response.statusCode).toBe(200)
   })
 
+  it('leaves an invite to another project pending while the guest opens a board they are on', async () => {
+    const owner = aUser()
+    const guest = aUser({ organizationId: owner.organizationId })
+    const ownBoardId = (
+      await api.as(guest).post('/boards', { name: 'Own', keyPrefix: 'OWN' })
+    ).json<{ id: string }>().id
+    const boardId = await aBoardOf(owner)
+    await invite(owner, boardId, guest.email, 'viewer')
+
+    const response = await api.as(guest).get(`/boards/${ownBoardId}`)
+
+    expect(response.statusCode).toBe(200)
+    expect(await invitesOn(owner, boardId)).toEqual([
+      { email: guest.email, role: 'viewer' }
+    ])
+  })
+
   it('answers invited for an unknown email too', async () => {
     const owner = aUser()
     const boardId = await aBoardOf(owner)

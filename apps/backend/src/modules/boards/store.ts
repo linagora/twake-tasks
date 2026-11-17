@@ -355,10 +355,9 @@ export function createBoardStore(db: Db) {
     },
 
     getBoard(identity: Identity, boardId: string) {
-      return inTenant(db, identity, async tx => {
-        await claimInvites(tx)
-        return loadBoard(tx, boardId, identity.userId)
-      })
+      return inTenant(db, identity, tx =>
+        loadBoard(tx, boardId, identity.userId)
+      )
     }
   }
 }
