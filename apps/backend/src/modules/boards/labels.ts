@@ -23,7 +23,10 @@ export async function labelsOnProjects(tx: Tx, projectIds: string[]) {
     .from(labels)
     .where(inArray(labels.projectId, projectIds))
     .orderBy(asc(labels.name))
-  const byProject = new Map<string, Omit<(typeof rows)[number], 'projectId'>[]>()
+  const byProject = new Map<
+    string,
+    Omit<(typeof rows)[number], 'projectId'>[]
+  >()
   for (const { projectId, ...label } of rows) {
     const onProject = byProject.get(projectId)
     if (onProject) onProject.push(label)

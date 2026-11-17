@@ -54,7 +54,8 @@ async function openBlockers(tx: Tx, ids: string[]) {
   return byTask
 }
 
-interface BoardOfTask {
+interface TaskOnBoard {
+  task: typeof tasks.$inferSelect
   board: typeof boards.$inferSelect
   members: Member[]
   labels: { id: string; name: string; color: string | null }[]
@@ -65,22 +66,17 @@ export function describeTasks(
   board: typeof boards.$inferSelect,
   rows: (typeof tasks.$inferSelect)[],
   members: Member[],
-  boardLabels: BoardOfTask['labels']
+  boardLabels: TaskOnBoard['labels']
 ) {
-  return describeTasksOf(tx, rows, () => ({
-    board,
-    members,
-    labels: boardLabels
-  }))
+  return describeTasksOf(
+    tx,
+    rows.map(task => ({ task, board, members, labels: boardLabels }))
+  )
 }
 
 // Tasks of many boards in as many statements as the tasks of one.
-export async function describeTasksOf(
-  tx: Tx,
-  rows: (typeof tasks.$inferSelect)[],
-  boardOf: (task: typeof tasks.$inferSelect) => BoardOfTask
-) {
-  const ids = rows.map(task => task.id)
+export async function describeTasksOf(tx: Tx, rows: TaskOnBoard[]) {
+  const ids = rows.map(({ task }) => task.id)
   if (ids.length === 0) return []
   const assignments = await tx
     .select({ taskId: taskAssignees.taskId, userId: taskAssignees.userId })
@@ -95,7 +91,7 @@ export async function describeTasksOf(
     .from(comments)
     .where(inArray(comments.taskId, ids))
     .groupBy(comments.taskId)
-  const templateIds = rows.flatMap(task => task.templateId ?? [])
+  const templateIds = rows.flatMap(({ task }) => task.templateId ?? [])
   const templates =
     templateIds.length === 0
       ? []
@@ -112,8 +108,7 @@ export async function describeTasksOf(
   const labeledWith = new Set(labeled.map(l => `${l.taskId}:${l.labelId}`))
   const commentCounts = new Map(commented.map(c => [c.taskId, c.count]))
   const blockers = await openBlockers(tx, ids)
-  return rows.map(task => {
-    const { board, members, labels } = boardOf(task)
+  return rows.map(({ task, board, members, labels }) => {
     const template =
       task.templateId === null ? undefined : templatesById.get(task.templateId)
     return {

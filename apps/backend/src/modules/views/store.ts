@@ -385,19 +385,14 @@ export async function tasksOf(
   const projectIds = [...new Set(rows.map(row => row.board.projectId))]
   const members = await membersOfProjects(tx, projectIds)
   const labels = await labelsOnProjects(tx, projectIds)
-  const boardsById = new Map(rows.map(row => [row.board.id, row.board]))
   const described = await describeTasksOf(
     tx,
-    rows.map(row => row.task),
-    task => {
-      const board = boardsById.get(task.boardId)
-      if (!board) throw new Error('a task without its board')
-      return {
-        board,
-        members: members.get(board.projectId) ?? [],
-        labels: labels.get(board.projectId) ?? []
-      }
-    }
+    rows.map(({ task, board }) => ({
+      task,
+      board,
+      members: members.get(board.projectId) ?? [],
+      labels: labels.get(board.projectId) ?? []
+    }))
   )
   return rows.map(({ board, category, parentTitle }, index) => ({
     ...described[index],
