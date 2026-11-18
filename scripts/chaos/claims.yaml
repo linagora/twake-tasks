@@ -6,6 +6,8 @@
 #   accidentRecovery   live: once the component is back, everything works again without restarting the backend
 #   requiredOnStartup  true: the backend may refuse to start without it; false: it starts, degraded as downImpact says
 #   failFast           true: while it is down, what downImpact names fails fast with a clear error (no request hanging)
+#   failoverSeconds    the failover window faultTolerance accepts when the node lost is the one in charge (a primary, the
+#                      node a client's connections hang on): the features are judged once it has passed
 #
 # The repository documents no resilience claim (docs/: architecture, dependencies, configuration, deployment, events,
 # operations), so these are written from its documentation and from the backend's code at this commit (apps/backend/src):
@@ -24,10 +26,14 @@ components:
   # faultTolerance: the backend takes one DATABASE_URL (docs/configuration.md) and keeps no state of its own about the
   # server: behind the address of the primary (the stack: Patroni, quorum commit ANY 1 of 2 replicas, HAProxy on
   # Patroni's /primary cutting the sessions of a former primary) its pool reconnects to the promoted replica, with no
-  # acknowledged transaction lost. A failover takes the 15 s of Patroni's leader key (a stopped primary: a few seconds),
-  # during which requests answer 503.
+  # acknowledged transaction lost.
+  # faultTolerance 1 means no data loss and no manual action. Losing a replica costs nothing; losing the primary is a
+  # failover of up to ~15 s (Patroni's leader key, HAProxy's /primary check), whose requests either wait (bounded by
+  # PGCONNECT_TIMEOUT) or answer 503 unavailable. The first chaos run measured 14-15 s for a stopped primary, 8 s for a
+  # paused one (detected by HAProxy, inter 2s fall 2).
   postgresql:
     faultTolerance: 1
+    failoverSeconds: 15
     downImpact: "No Service"
     failFast: true
     accidentRecovery: live
@@ -39,8 +45,11 @@ components:
   # accidentRecovery: @linagora/rabbitmq-client reconnects with a backoff and subscribes again; the outbox relay retries
   # on its next run (every 500 ms). faultTolerance: quorum queues (the client's default; the dead letter queue by the
   # broker's default_queue_type) replicated on the 3 nodes; the backend takes one RABBITMQ_URL, a load balancer in front.
+  # A hung node (not a crashed one) is found by the AMQP heartbeat: heartbeat=5 in RABBITMQ_URL, ~10 s; the client then
+  # reconnects through the load balancer and resubscribes, the backlog applied (nothing lost).
   rabbitMQ:
     faultTolerance: 1
+    failoverSeconds: 10
     downImpact: "No live board updates (an open board shows other people's changes once reloaded); the platform's events (spaces created or changed, their members, account and organization deletions, settings) are not applied and the activity events not published until RabbitMQ is back; the API keeps working"
     accidentRecovery: live
     requiredOnStartup: true

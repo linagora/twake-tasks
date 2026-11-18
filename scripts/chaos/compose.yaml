@@ -55,8 +55,13 @@ services:
       # pooled connections wait on the hung node as long as it hangs: no request answered after the failover).
       DATABASE_URL: postgres://twake_tasks:twake_tasks@postgres/twake_tasks
       DATABASE_MIGRATION_URL: postgres://twake_tasks_owner:twake_tasks_owner@postgres/twake_tasks
-      # the 3 nodes behind the load balancer (conf/haproxy/haproxy.cfg): the backend takes one URL
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      # postgres.js's connect timeout (its default: 30 s): read from the environment by every client of the backend (the
+      # pool, the readiness probe, the migrations); with no node to reach, a request fails in 3 s, a 503 (infra/http.ts)
+      PGCONNECT_TIMEOUT: "3"
+      # the 3 nodes behind the load balancer (conf/haproxy/haproxy.cfg): the backend takes one URL. heartbeat=5: amqplib
+      # reads it from the URL (@linagora/rabbitmq-client passes the URL as is); a hung node is detected in about 2
+      # heartbeats (~10 s) instead of the 2.5 min of the default, for every connection (consumer, publisher, outbox relay)
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672?heartbeat=5
       APP_URL: http://localhost:${CHAOS_APP_PORT:?}
       OIDC_ISSUER: https://oidc:8443
       OIDC_CLIENT_SECRET: e2e-backend-secret
