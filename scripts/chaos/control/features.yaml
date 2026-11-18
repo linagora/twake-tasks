@@ -1,0 +1,77 @@
+# The main features of Twake Tasks, each checked by a control script (lib.sh: the shared helpers). Each runs on its own,
+# with its own data (a unique token in its titles), on the accounts of the mock SSO: alice (admin of the "Product
+# launch" space), bob, carol, dave, erin (globex), frank (no organization). Most work in a person's Inbox (a Personal
+# board, never shared: it notifies no one); what they create is purged at the end.
+timeout_seconds: 60
+features:
+  sign_in:
+    script: sign_in.sh
+    description: a new sign-in through the SSO (authorization code + PKCE of the web app's client), then the app's first calls with its token (settings, boards); the seeded Product launch project is listed
+  open_board:
+    script: open_board.sh
+    description: a member opens a shared board (the Support space's project) with its sections, tasks, members, and its progress
+  manage_tasks:
+    script: manage_tasks.sh
+    description: create a task, edit its title / priority / due date, write its description, complete it; the board read again shows every change
+  comments:
+    script: comments.sh
+    description: write a Markdown comment on a task, react to it with an emoji, edit it; the comments read again show the edit and the reaction
+  search:
+    script: search.sh
+    description: a new task is found by the search (the search box and Twake Space's search) by a word of its title, then by its key
+  my_tasks:
+    script: my_tasks.sh
+    description: a task assigned to the user and due today shows in My tasks and in Today / Upcoming (the agenda)
+  saved_filters:
+    script: saved_filters.sh
+    description: save a filter (priority and text), pin it to the sidebar, open it; it lists the matching task, not the other
+  csv_import_export:
+    script: csv_import_export.sh
+    description: import CSV rows (a task and its sub-task) into a board, export the board; both are in the export, the sub-task under its parent
+  in_app_notifications:
+    script: in_app_notifications.sh
+    description: on a shared board bob assigns a task to alice and mentions her in a comment; alice's notifications list both, unread, and her unread count shows them
+  email_notifications:
+    script: email_notifications.sh
+    description: a reminder set a few seconds ahead fires (the job scheduler) and is mailed; the mail reaches the person's mailbox (Mailpit), its subject naming the task
+    timeout_seconds: 100
+    async: true
+  live_updates:
+    script: live_updates.sh
+    description: a board open in the app (its event stream) is pushed the new version when a task is created on it, without reloading
+    async: true
+  activity_events:
+    script: activity_events.sh
+    description: another app's consumer bound to the activity exchange receives the task.created event of a task just created
+    timeout_seconds: 70
+    async: true
+  space_provisioning:
+    script: space_provisioning.sh
+    description: a space created in Twake Space (twake.space.created on RabbitMQ) gets its managed project, its admin and member on it; the space is deleted at the end
+    timeout_seconds: 70
+    async: true
+  settings_sync:
+    script: settings_sync.sh
+    description: a settings update of Twake Workplace's common settings (user.settings.updated on RabbitMQ) is applied; the app's settings show the new name, language, timezone and theme
+    timeout_seconds: 70
+    async: true
+impacts:
+  # "No Service"
+  postgresql: all
+  # "No live board updates (...); the platform's events (spaces created or changed, their members, account and
+  # organization deletions, settings) are not applied and the activity events not published until RabbitMQ is back; the
+  # API keeps working"
+  #   live board updates -> live_updates; spaces created or changed, their members -> space_provisioning (a creation with
+  #   its members); settings -> settings_sync; activity events -> activity_events.
+  #   Not checked: account and organization deletions (domain.user.deleted, user.deleted, domain.organization.deleted):
+  #   a probe would delete a person or an organization of the stack each run; the same consumer, queue and handling
+  #   path as space_provisioning and settings_sync. "The API keeps working": every other feature.
+  rabbitMQ: [live_updates, space_provisioning, settings_sync, activity_events]
+  # "No email sent (notifications, digests, reminders, project invitations): each is retried, and sent once SMTP is back;
+  # in-app notifications keep working"
+  #   -> email_notifications (a reminder's email: the one notification email a probe can send at will, the others count
+  #   against the person's budget of 10 in 10 minutes). Not checked: the digests (sent once a person's budget is spent,
+  #   at the end of its 10 minute window) and the project invitations (an email to someone not yet a member: each run
+  #   would invite a new address); the same mailer and job scheduler as the reminder's email. in_app_notifications is
+  #   not impacted.
+  smtp: [email_notifications]
