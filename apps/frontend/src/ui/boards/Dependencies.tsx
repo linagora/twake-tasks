@@ -207,19 +207,21 @@ function LinkRow({
     <TaskLinkItem
       taskKey={linked.key}
       title={
-        to ? (
-          <Link
-            component={RouterLink}
-            to={to}
-            relative="path"
-            underline="hover"
-            color="inherit"
-          >
-            {linked.title}
-          </Link>
-        ) : (
-          linked.title
-        )
+        <Tooltip title={linked.title}>
+          {to ? (
+            <Link
+              component={RouterLink}
+              to={to}
+              relative="path"
+              underline="hover"
+              color="inherit"
+            >
+              {linked.title}
+            </Link>
+          ) : (
+            <span>{linked.title}</span>
+          )}
+        </Tooltip>
       }
       where={[here ? null : linked.boardName, linked.section]
         .filter(Boolean)

@@ -55,3 +55,21 @@ test('opens from My tasks a blocker that is not assigned to me', async ({
     page.getByRole('dialog', { name: `${prefix}-1 Book the venue` })
   ).toBeVisible()
 })
+
+test('keeps a long blocker title inside the task panel', async ({ page }) => {
+  const title =
+    'Book the venue for the whole team, with catering, parking and a room large enough for the workshops'
+  const { prefix } = await blockedTask(page, title)
+
+  const panel = page.getByRole('dialog', {
+    name: `${prefix}-2 Print the badges`
+  })
+  const overflow = await panel.evaluate(element =>
+    [element, ...element.querySelectorAll('*')].some(
+      each =>
+        ['auto', 'scroll'].includes(getComputedStyle(each).overflowX) &&
+        each.scrollWidth > each.clientWidth + 1
+    )
+  )
+  expect(overflow).toBe(false)
+})

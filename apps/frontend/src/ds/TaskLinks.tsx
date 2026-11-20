@@ -16,7 +16,14 @@ export function TaskLinks({
     <Box
       component="section"
       aria-label={label}
-      sx={{ width: '100%', display: 'grid', gap: 1, py: 0.5 }}
+      sx={{
+        width: '100%',
+        display: 'grid',
+        // A long title ends in an ellipsis rather than widen the panel.
+        gridTemplateColumns: 'minmax(0, 1fr)',
+        gap: 1,
+        py: 0.5
+      }}
     >
       {children}
     </Box>
