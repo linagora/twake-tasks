@@ -1112,7 +1112,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
     ),
     listLinks: vi.fn<BoardsApi['listLinks']>((boardId, taskId) =>
       Promise.resolve().then(() => {
-        findTask(boardId, taskId)
+        if (!hidden.has(taskId)) findTask(boardId, taskId)
         return {
           blockedBy: links
             .filter(link => link.blocked === taskId)

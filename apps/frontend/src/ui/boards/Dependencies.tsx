@@ -7,7 +7,7 @@ import {
   Tooltip,
   Typography
 } from '@linagora/twake-mui'
-import { useState, type ReactElement } from 'react'
+import { useContext, useState, type ReactElement } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 
 import { ApiError, type LinkedTask, type LinkKind } from '@/application/boards'
@@ -23,6 +23,7 @@ import {
   TaskLinkWarning
 } from '@/ds/TaskLinks'
 import type { Board, Task } from '@/domain/board'
+import { BoardStepsContext } from '@/ui/boards/Crumbs'
 import { useAddLink, useLinks, useRemoveLink } from '@/ui/queries/links'
 import { searchMinLength, useSearch } from '@/ui/queries/search'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -178,6 +179,7 @@ function LinkRow({
 }): ReactElement {
   const { t } = useI18n()
   const { projectId } = useParams()
+  const boardSteps = useContext(BoardStepsContext)
   const linked = link.task
   if (!linked) {
     return (
@@ -192,12 +194,15 @@ function LinkRow({
   }
   const here = linked.boardId === boardId
   const task = `?task=${encodeURIComponent(linked.key)}`
+  // Only the board opens any of its tasks: a list or a shelf opens the ones it shows.
+  const boardPath = here ? boardSteps?.[0]?.to : undefined
   // A project's frame opens only the boards of that project.
-  const to = here
-    ? task
-    : projectId === undefined
-      ? `/boards/${linked.boardId}${task}`
-      : null
+  const to =
+    boardPath !== undefined
+      ? `${boardPath}${task}`
+      : projectId === undefined
+        ? `/boards/${linked.boardId}${task}`
+        : null
   return (
     <TaskLinkItem
       taskKey={linked.key}
@@ -206,6 +211,7 @@ function LinkRow({
           <Link
             component={RouterLink}
             to={to}
+            relative="path"
             underline="hover"
             color="inherit"
           >

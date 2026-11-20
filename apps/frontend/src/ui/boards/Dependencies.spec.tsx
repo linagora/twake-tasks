@@ -102,6 +102,55 @@ describe('Dependencies', () => {
     ).toBeVisible()
   })
 
+  it.each(['/mine', '/search?q=press'])(
+    'opens from %s a blocker the list does not hold, on its board',
+    async path => {
+      const { board, venue, release, boardsApi } = eventBoard()
+      release.assignees = [
+        { userId: 'me', email: 'me@example.com', name: null }
+      ]
+      release.dueDate = null
+      await boardsApi.addLink(board.id, release.id, 'blockedBy', venue.id)
+      const { router } = renderRoute(path, { boardsApi })
+      const panel = await openPanel(board.id, 'Press release', 'FEA-2')
+
+      fireEvent.click(
+        within(
+          await panel.findByRole('list', { name: 'Blocked by' })
+        ).getByRole('link', { name: 'Book the venue' })
+      )
+
+      expect(
+        await screen.findByRole('dialog', { name: 'FEA-1 Book the venue' })
+      ).toBeVisible()
+      expect(router.state.location.pathname).toBe(`/boards/${board.id}`)
+    }
+  )
+
+  it('opens from the archived tasks a blocker still on the board', async () => {
+    const { board, venue, release, boardsApi } = eventBoard()
+    await boardsApi.addLink(board.id, release.id, 'blockedBy', venue.id)
+    await boardsApi.archiveTask(board.id, release.id)
+    const { router } = renderRoute(`/boards/${board.id}/archived?task=FEA-2`, {
+      boardsApi
+    })
+    const panel = within(
+      await screen.findByRole('dialog', { name: 'FEA-2 Press release' })
+    )
+
+    fireEvent.click(
+      within(await panel.findByRole('list', { name: 'Blocked by' })).getByRole(
+        'link',
+        { name: 'Book the venue' }
+      )
+    )
+
+    expect(
+      await screen.findByRole('dialog', { name: 'FEA-1 Book the venue' })
+    ).toBeVisible()
+    expect(router.state.location.pathname).toBe(`/boards/${board.id}`)
+  })
+
   it('refuses a cycle with the key that would block itself', async () => {
     const { board, venue, release, boardsApi } = eventBoard()
     const tour = aTask(board.sections[0] ?? null, {
