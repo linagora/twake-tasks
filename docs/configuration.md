@@ -151,6 +151,7 @@ Backend:
 
 Security headers. The image builds the Content Security Policy itself, adding the origins of `SSO_BASE_URL` and `SENTRY_DSN`. These add to it:
 
+- `TWAKE_SPACE_ORIGIN`: the TwakeSpace of this deployment, such as `https://space.example.com`: the page the embedded view talks to.
 - `CSP_FRAME_ANCESTORS`: the hosts allowed to frame the [embedded pages](modes.md#embedded-in-twakespace), such as TwakeSpace.
 - `CSP_IMG_SRC`: the hosts people's pictures come from, on Twake Workplace.
 - `CSP_CONNECT_SRC`, `CSP_FRAME_SRC`: any other source.

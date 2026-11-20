@@ -47,7 +47,7 @@ The app reports its badges and metadata to TwakeSpace, and keeps its navigation 
 
 To allow it:
 
-- Set `CSP_FRAME_ANCESTORS` on the frontend to the TwakeSpace origin. Only the embedded pages and the sign-in callback may be framed.
+- Set `TWAKE_SPACE_ORIGIN` on the frontend to the TwakeSpace origin, the page the embedded view talks to, and `CSP_FRAME_ANCESTORS` to let it frame them. Only the embedded pages and the sign-in callback may be framed.
 - The SSO must let the frontend frame it: the embed signs in silently in a hidden frame. When the SSO needs to show its portal, the embed opens it in a popup.
 
 ## Platform top bar
