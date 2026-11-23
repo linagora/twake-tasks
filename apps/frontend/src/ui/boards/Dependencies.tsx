@@ -195,6 +195,7 @@ function LinkRow({
   const here = linked.boardId === boardId
   const task = `?task=${encodeURIComponent(linked.key)}`
   // Only the board opens any of its tasks: a list or a shelf opens the ones it shows.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Rslint misses noUncheckedIndexedAccess after ?.[0]
   const boardPath = here ? boardSteps?.[0]?.to : undefined
   // A project's frame opens only the boards of that project.
   const to =

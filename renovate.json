@@ -32,10 +32,6 @@
       "matchPackageNames": ["@testcontainers/**", "testcontainers"]
     },
     {
-      "groupName": "eslint",
-      "matchPackageNames": ["eslint", "@eslint/**", "typescript-eslint"]
-    },
-    {
       "groupName": "GitHub Actions",
       "matchManagers": ["github-actions"]
     },

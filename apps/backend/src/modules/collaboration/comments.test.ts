@@ -221,6 +221,7 @@ describe('comment reactions', () => {
     const again = await api.as(alice).put(reaction('🎉'))
 
     expect(again.statusCode).toBe(204)
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Rslint misses noUncheckedIndexedAccess after ?.[0]
     expect((await reactionsOf(alice))?.[0]?.people).toHaveLength(1)
   })
 
@@ -235,6 +236,7 @@ describe('comment reactions', () => {
     const removed = await api.as(bob).delete(reaction('🎉'))
 
     expect(removed.statusCode).toBe(204)
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Rslint misses noUncheckedIndexedAccess after ?.[0]
     expect((await reactionsOf(alice))?.[0]?.people).toEqual([
       expect.objectContaining({ userId: alice.userId })
     ])

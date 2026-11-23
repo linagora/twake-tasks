@@ -187,7 +187,7 @@ export function SidePanel(props: Parameters<typeof Panel>[0]): ReactElement {
   // Opened from a link, a sub-task's panel mounts with its parent's and would
   // portal in first, under it. Waiting one commit puts it on top, focused.
   useLayoutEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the second render is the point
+    // eslint-disable-next-line react-compiler/set-state-in-effect -- the second render is the point
     setPlaced(true)
   }, [])
   return <InPanelContext value>{placed && <Panel {...props} />}</InPanelContext>

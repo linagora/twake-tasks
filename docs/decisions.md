@@ -115,3 +115,10 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: Crash-- (CTO), comment on [linagora/twake-contacts-frontend#688](https://github.com/linagora/twake-contacts-frontend/pull/688), 2026-11-24
 - Why: the workspaces of an app ship together as one product, so its decisions belong in one log.
 - Scope: the whole repository.
+
+## 2026-11-24, [Tech] Rslint lints and rs fmt formats, from the root rstack.config.mjs
+
+- Decision: every workspace lints with `rs lint` and formats with `rs fmt` (rstack), both reading the root `rstack.config.mjs` through `--config`; ESLint and Prettier are gone, and the rules ESLint ran stay on, the React Compiler, TanStack Query and Vitest ones through their ESLint plugins.
+- Decided by: agent, asked by Théo, to be confirmed by the maintainer.
+- Why: the frontend lint drops from 38 s to 5 s and the backend one from 12 s to 1 s, with the same rules.
+- Scope: every workspace; the frontend, @twake-tasks/backend, @twake-tasks/e2e and @twake-tasks/api-contract.

@@ -123,6 +123,7 @@ describe('error reporting', () => {
     expect(response.statusCode).toBe(500)
     expect(events).toHaveLength(1)
     const event = events[0]
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Rslint misses noUncheckedIndexedAccess after ?.[0]
     expect(event?.exception?.values?.[0]?.value).toBe('boom')
     expect(event?.request).toBeUndefined()
     expect(event?.user).toBeUndefined()

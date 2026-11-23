@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "check": "eslint . && prettier --check . && tsc"
+    "check": "rs lint -c ../../rstack.config.mjs && rs fmt --check -c ../../rstack.config.mjs && tsc"
   },
   "dependencies": {
     "zod": "^4.6.5"
