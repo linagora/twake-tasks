@@ -48,7 +48,7 @@ describe('task dates', () => {
     await edit({ dueZone: 'Europe/Paris' })
     const afterZone = await read()
 
-    expect(floating.statusCode).toBe(204)
+    expect(floating.statusCode).toBe(200)
     expect(afterFloating).toMatchObject({
       dueDate: '2026-11-02',
       dueTime: '09:30',

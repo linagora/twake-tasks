@@ -530,13 +530,13 @@ export interface BoardsApi {
   ) => Promise<void>
   /**
    * Clearing the due date clears its time and recurrence, and clearing the
-   * time its zone.
+   * time its zone. Answers the board's version the edit made.
    */
   editTask: (
     boardId: string,
     taskId: string,
     changes: TaskChanges
-  ) => Promise<void>
+  ) => Promise<{ version: number }>
   getDescription: (boardId: string, taskId: string) => Promise<Description>
   /** `version` is the one the edit started from; a newer one is refused. */
   setDescription: (

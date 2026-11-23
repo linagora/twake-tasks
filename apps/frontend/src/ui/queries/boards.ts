@@ -19,7 +19,8 @@ import {
   type KeyPrefixCheck,
   type NewBoard,
   type Project,
-  type Shelf
+  type Shelf,
+  type TaskChanges
 } from '@/application/boards'
 import {
   type Board,
@@ -32,6 +33,8 @@ import { localZone } from '@/ui/boards/dueLabel'
 import { keys } from '@/ui/queries/keys'
 
 export const POLL_MS = 60_000
+
+const taskEditKey = (boardId: string) => ['taskEdit', boardId] as const
 
 // Disabled rather than given `skipToken`: the query runs the function of the
 // observer that rendered last, so a `skipToken` there fails the next reload.
@@ -147,6 +150,18 @@ export function useBoard(boardId: string): UseQueryResult<Board> {
           })
         return
       }
+      // The version of this person's own edit may come before its answer,
+      // which brings that version without a read.
+      const editing = () =>
+        queryClient.isMutating({ mutationKey: taskEditKey(boardId) }) > 0
+      if (editing()) {
+        const unsubscribe = queryClient.getMutationCache().subscribe(() => {
+          if (editing()) return
+          unsubscribe()
+          onVersion(version)
+        })
+        return
+      }
       const shown = query?.state.data
       if (shown && version > shown.version) {
         void queryClient.invalidateQueries({ queryKey })
@@ -194,6 +209,71 @@ export function useBoardChange<T>(
     mutationFn: (input: T) => change(api, input),
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
+  })
+}
+
+// Only fields the server stores as sent: a date change moves others with it.
+type PlainChanges = Pick<TaskChanges, 'title' | 'priority'>
+
+// The board is read again only when a write made elsewhere came between its
+// last read and this one, which the answer's version tells.
+export function useTaskEdit(
+  boardId: string,
+  taskId: string
+): UseMutationResult<{ version: number }, Error, PlainChanges> {
+  const api = useBoardsApi()
+  const queryClient = useQueryClient()
+  const queryKey = keys.board(boardId)
+  // A rename shows in the blockers of the tasks it blocks too.
+  const applied = (board: Board, changes: PlainChanges): Board => {
+    const key = board.tasks.find(task => task.id === taskId)?.key
+    const { title } = changes
+    return Object.assign({}, board, {
+      tasks: board.tasks.map(task =>
+        task.id === taskId
+          ? { ...task, ...changes }
+          : title === undefined
+            ? task
+            : {
+                ...task,
+                blockers: task.blockers.map(blocker =>
+                  blocker?.key === key ? { ...blocker, title } : blocker
+                )
+              }
+      )
+    })
+  }
+  return useMutation({
+    mutationKey: taskEditKey(boardId),
+    mutationFn: changes => api.editTask(boardId, taskId, changes),
+    onMutate: async changes => {
+      await queryClient.cancelQueries({ queryKey, exact: true })
+      const shown = queryClient.getQueryData<Board>(queryKey)
+      if (shown) queryClient.setQueryData(queryKey, applied(shown, changes))
+      return { shown }
+    },
+    onSuccess: ({ version }, changes) => {
+      const board = queryClient.getQueryData<Board>(queryKey)
+      if (board && version === board.version + 1) {
+        queryClient.setQueryData(queryKey, {
+          ...applied(board, changes),
+          version
+        })
+      } else if (!board || version > board.version) {
+        void queryClient.invalidateQueries({ queryKey })
+      }
+    },
+    onError: (_error, _changes, context) => {
+      if (context?.shown) queryClient.setQueryData(queryKey, context.shown)
+      void queryClient.invalidateQueries({ queryKey })
+    },
+    // What hangs under the board, its history and links among them, reads
+    // again; the board itself only when `onSuccess` says so.
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey,
+        predicate: query => query.queryKey.length > queryKey.length
+      })
   })
 }
 

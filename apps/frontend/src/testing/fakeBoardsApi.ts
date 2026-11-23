@@ -1051,6 +1051,9 @@ export function fakeBoardsApi(boards: Board[] = []) {
     editTask: vi.fn<BoardsApi['editTask']>((boardId, taskId, changes) =>
       Promise.resolve().then(() => {
         Object.assign(findTask(boardId, taskId), changes)
+        const board = find(boardId)
+        board.version += 1
+        return { version: board.version }
       })
     ),
     getDescription: vi.fn<BoardsApi['getDescription']>((boardId, taskId) =>

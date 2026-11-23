@@ -570,7 +570,9 @@ export function httpBoardsApi(
         state
       } satisfies Body<'completion'>),
     editTask: (boardId, taskId, changes) =>
-      call(
+      parsed(
+        'edited task',
+        wire.editedTaskResponse,
         'PATCH',
         route`/boards/${boardId}/tasks/${taskId}`,
         changes satisfies Body<'taskChanges'>

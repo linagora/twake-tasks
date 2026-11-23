@@ -14,7 +14,7 @@ import { keys } from '@/ui/queries/keys'
 /** The task shows on its new day at once, and goes back if the save fails. */
 export function useReschedule(
   boardId: string
-): UseMutationResult<void, Error, { task: Task; day: string | null }> {
+): UseMutationResult<unknown, Error, { task: Task; day: string | null }> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   const { showAlert } = useAlert()
