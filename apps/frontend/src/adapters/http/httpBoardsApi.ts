@@ -30,6 +30,7 @@ async function errorCode(response: Response): Promise<string | null> {
 
 const RETRY_MS = 1000
 const MAX_RETRY_MS = 30_000
+const READ_DEADLINE_MS = 15_000
 
 // Ids come from the address bar. Encoding keeps "..%2F" from reaching another
 // API path; "." and ".." are refused because URLs resolve them even encoded.
@@ -86,16 +87,31 @@ export function httpBoardsApi(
     body?: object,
     keepalive = false
   ) {
+    // Only reads: a write that timed out may still have been applied.
+    const deadline = method === 'GET' ? new AbortController() : null
+    const timer =
+      deadline &&
+      setTimeout(() => {
+        deadline.abort()
+      }, READ_DEADLINE_MS)
     const response = await send(
       new Request(new URL(`/api${path}`, baseUrl), {
         method,
         keepalive,
+        ...(deadline && { signal: deadline.signal }),
         ...(body && {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(body)
         })
       })
     )
+      .catch((error: unknown) => {
+        throw deadline?.signal.aborted ? new ApiError(504, 'timeout') : error
+      })
+      // Once answered, an abort would only cut the body short as a 502.
+      .finally(() => {
+        if (timer) clearTimeout(timer)
+      })
     if (!response.ok) {
       throw new ApiError(response.status, await errorCode(response))
     }
