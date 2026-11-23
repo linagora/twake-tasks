@@ -8,6 +8,7 @@ import { useCallback } from 'react'
 import { type Agenda } from '@/application/boards'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localToday, localZone } from '@/ui/boards/dueLabel'
+import { LIST_STALE_MS } from '@/ui/queries/boards'
 import { keys, type AgendaView } from '@/ui/queries/keys'
 
 export type { AgendaView }
@@ -38,6 +39,7 @@ export function useAgenda(
       view === 'upcoming' && query?.queryKey[1] === 'upcoming'
         ? previous
         : undefined,
+    staleTime: LIST_STALE_MS,
     queryFn: async () => {
       if (typeof view === 'object') {
         return {

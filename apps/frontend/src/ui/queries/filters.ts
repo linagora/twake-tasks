@@ -8,13 +8,15 @@ import {
 
 import { type FilterFields, type SavedFilter } from '@/application/boards'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
+import { LIST_STALE_MS } from '@/ui/queries/boards'
 import { keys } from '@/ui/queries/keys'
 
 export function useFilters(): UseQueryResult<SavedFilter[]> {
   const api = useBoardsApi()
   return useQuery({
     queryKey: keys.filters(),
-    queryFn: () => api.listFilters()
+    queryFn: () => api.listFilters(),
+    staleTime: LIST_STALE_MS
   })
 }
 
