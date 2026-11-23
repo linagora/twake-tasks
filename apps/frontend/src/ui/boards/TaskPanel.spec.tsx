@@ -328,6 +328,38 @@ describe('TaskPanel', () => {
     expect(boardsApi.getBoard).toHaveBeenCalledTimes(reads)
   })
 
+  it('reads again only the history of a task given a new priority', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    fireEvent.click(panel.getByRole('tab', { name: 'History' }))
+    await waitFor(() => {
+      expect(boardsApi.listHistory).toHaveResolved()
+    })
+    await act(() => Promise.resolve())
+    const history = boardsApi.listHistory.mock.calls.length
+    const reads = [
+      boardsApi.getDescription,
+      boardsApi.listComments,
+      boardsApi.listLinks,
+      boardsApi.listReminders,
+      boardsApi.following
+    ].map(read => [read, read.mock.calls.length] as const)
+    fireEvent.mouseDown(panel.getByRole('combobox', { name: 'Priority' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Priority 2' }))
+    await waitFor(() => {
+      expect(boardsApi.editTask).toHaveResolved()
+    })
+    await waitFor(() => {
+      expect(boardsApi.listHistory).toHaveBeenCalledTimes(history + 1)
+    })
+
+    for (const [read, count] of reads) {
+      expect(read).toHaveBeenCalledTimes(count)
+    }
+  })
+
   it('reads the board again when it changed since it was read', async () => {
     const { board, boardsApi } = logoBoard()
     renderRoute(`/boards/${board.id}`, { boardsApi })
