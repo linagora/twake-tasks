@@ -416,18 +416,19 @@ describe('afterCommit', () => {
   })
 })
 
+const codeOf = (work: Promise<unknown>) =>
+  work.then(
+    () => 'done',
+    (error: unknown) =>
+      isTransient(error) ? 'transient' : `other: ${String(error)}`
+  )
+
 describe('the statement timeout of requests', () => {
   const bounded = createDb(inject('databaseUrl'), console, {
     statementTimeoutMs: 200
   })
   const sleep = (seconds: number) => (tx: Tx) =>
     tx.execute(statement`select pg_sleep(${seconds})`)
-  const codeOf = (work: Promise<unknown>) =>
-    work.then(
-      () => 'done',
-      (error: unknown) =>
-        isTransient(error) ? 'transient' : `other: ${String(error)}`
-    )
 
   afterAll(async () => {
     await bounded.sql.end()
@@ -471,12 +472,6 @@ describe('a request while the database does not answer', () => {
     return `postgres://tasks:tasks@127.0.0.1:${String(port)}/tasks`
   }
   const noWork = () => Promise.resolve()
-  const outcome = (work: Promise<unknown>) =>
-    work.then(
-      () => 'done',
-      (error: unknown) =>
-        isTransient(error) ? 'transient' : `other: ${String(error)}`
-    )
 
   afterAll(async () => {
     for (const socket of held) socket.destroy()
@@ -489,7 +484,7 @@ describe('a request while the database does not answer', () => {
     })
     try {
       const started = performance.now()
-      expect(await outcome(inTenant(unreachable.db, aUser(), noWork))).toBe(
+      expect(await codeOf(inTenant(unreachable.db, aUser(), noWork))).toBe(
         'transient'
       )
       expect(performance.now() - started).toBeLessThan(2000)
@@ -507,7 +502,7 @@ describe('a request while the database does not answer', () => {
       const started = performance.now()
       const outcomes = await Promise.all(
         Array.from({ length: 5 }, () =>
-          outcome(inTenant(unreachable.db, aUser(), noWork))
+          codeOf(inTenant(unreachable.db, aUser(), noWork))
         )
       )
       expect(outcomes).toEqual(Array(5).fill('transient'))
@@ -528,7 +523,7 @@ describe('a request while the database does not answer', () => {
         tx.execute(statement`select pg_sleep(0.6)`)
       )
       expect(
-        await outcome(
+        await codeOf(
           inTenant(saturated.db, aUser(), () => {
             ran = true
             return Promise.resolve()
