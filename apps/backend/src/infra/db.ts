@@ -126,9 +126,10 @@ interface RequestTimeouts {
 
 const requestTimeouts = new WeakMap<Db, RequestTimeouts>()
 
-// The statement timeout and the wait for a connection bound the work of
+// The statement timeout and the wait behind a busy pool bound the work of
 // `inTenant` alone, which serves requests: jobs, events and migrations may
-// legitimately run or wait longer.
+// legitimately run or wait longer. The connect timeout holds for every
+// connection of the pool.
 // No idle_in_transaction_session_timeout: postgres.js 3.4.9 rejects the
 // transaction of a session the server ends, but the next query of its body
 // writes to the closed socket and throws outside any promise, which ends the
@@ -243,7 +244,9 @@ export function inTenant<T>(
   let late = false
   const noConnection = () =>
     Object.assign(
-      new Error(`no database connection within ${String(connectTimeoutMs)} ms`),
+      new Error(
+        `no database transaction began within ${String(connectTimeoutMs)} ms`
+      ),
       { code: 'CONNECT_TIMEOUT' }
     )
   const waited = new Promise<never>((_, reject) => {
