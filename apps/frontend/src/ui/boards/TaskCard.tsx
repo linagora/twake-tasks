@@ -12,8 +12,8 @@ import {
 } from '@/ds/Columns'
 import { Icon } from '@/ds/Icon'
 import { SortableCard } from '@/ds/Sortable'
-import { isDone, type Task } from '@/domain/board'
-import { CardMenu, type CardContext } from '@/ui/boards/CardMenu'
+import { isDone } from '@/domain/board'
+import { BoardTasks, CardMenu, type CardContext } from '@/ui/boards/CardMenu'
 import { useKeySelect, usePickByClick } from '@/ui/boards/Selection'
 import { Subtasks } from '@/ui/boards/Subtasks'
 import {
@@ -24,17 +24,20 @@ import {
 } from '@/ui/boards/TaskFacts'
 import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useSubtasks } from '@/ui/queries/boards'
 import { useNewTaskHighlight } from '@/ui/shell/NewTaskHighlight'
 
+// Memoised: a board renders hundreds of cards, and a change of one task
+// renders only its own card.
 export const TaskCard = memo(function TaskCard({
-  subtasks,
   sortable = false,
   ...context
 }: CardContext & {
-  subtasks: Task[]
   sortable?: boolean
+  /** Unread: a new day renders the card again, so its due date turns overdue. */
+  today: string
 }): ReactElement {
-  const { task, tasks, boardId, sections, onMove } = context
+  const { task, boardId, sections, onMove } = context
   const { t } = useI18n()
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
@@ -48,6 +51,7 @@ export const TaskCard = memo(function TaskCard({
   const editable = onMove !== undefined
   const taskDone = isDone(task, sections)
   const [showSubtasks, setShowSubtasks] = useState(false)
+  const subtasks = useSubtasks(boardId, task.id)
   const done = subtasks.filter(each => each.completedAt !== null).length
   const blocked = task.blockers.length > 0 && !taskDone
   const facts =
@@ -117,12 +121,16 @@ export const TaskCard = memo(function TaskCard({
         </Meta>
       )}
       {showSubtasks && (
-        <Subtasks
-          parentId={task.id}
-          tasks={tasks}
-          boardId={boardId}
-          editable={editable}
-        />
+        <BoardTasks boardId={boardId}>
+          {tasks => (
+            <Subtasks
+              parentId={task.id}
+              tasks={tasks}
+              boardId={boardId}
+              editable={editable}
+            />
+          )}
+        </BoardTasks>
       )}
     </>
   )

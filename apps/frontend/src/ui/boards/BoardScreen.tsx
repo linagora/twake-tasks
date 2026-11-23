@@ -113,7 +113,7 @@ export function BoardScreen({
                 cover={!flush}
               />
               <BoardSelection board={shown}>
-                <BoardColumns board={shown} settled={!board.isFetching} />
+                <BoardColumns board={shown} />
               </BoardSelection>
             </Fragment>
           )}
