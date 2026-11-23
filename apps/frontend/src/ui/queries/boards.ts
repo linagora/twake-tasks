@@ -334,8 +334,12 @@ export function useSetLayout(
           }
       )
     },
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
+    // A person's own layout leaves the board's version as it is, so the board
+    // is read again only to undo a failed switch or to take a new default.
+    onSettled: (_result, error, { everyone }) =>
+      error || everyone
+        ? queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
+        : undefined
   })
 }
 
