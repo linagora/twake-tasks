@@ -5,7 +5,8 @@
     "crash": "Đã xảy ra lỗi",
     "crashHint": "Màn hình này gặp sự cố. Tải lại trang thường sẽ khắc phục được.",
     "reload": "Tải lại",
-    "tooManyRequests": "Quá nhiều yêu cầu. Vui lòng đợi một lát rồi thử lại."
+    "tooManyRequests": "Quá nhiều yêu cầu. Vui lòng đợi một lát rồi thử lại.",
+    "offline": "Bạn đang ngoại tuyến. Hãy giữ trang này mở: các thay đổi sẽ được gửi khi có kết nối trở lại."
   },
   "drag": {
     "card": "công việc có thể kéo",

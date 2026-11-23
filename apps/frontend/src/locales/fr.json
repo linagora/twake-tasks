@@ -5,7 +5,8 @@
     "crash": "Un problème est survenu",
     "crashHint": "Cet écran a rencontré un problème. Recharger la page suffit en général.",
     "reload": "Recharger",
-    "tooManyRequests": "Trop de requêtes. Patientez un instant, puis réessayez."
+    "tooManyRequests": "Trop de requêtes. Patientez un instant, puis réessayez.",
+    "offline": "Vous êtes hors ligne. Gardez cette page ouverte : vos modifications seront envoyées au retour de la connexion."
   },
   "drag": {
     "card": "tâche déplaçable",

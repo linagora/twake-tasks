@@ -5,7 +5,8 @@
     "crash": "Something went wrong",
     "crashHint": "This screen ran into a problem. Reloading usually fixes it.",
     "reload": "Reload",
-    "tooManyRequests": "Too many requests. Wait a moment, then try again."
+    "tooManyRequests": "Too many requests. Wait a moment, then try again.",
+    "offline": "You are offline. Keep this page open: your changes will be sent when the connection is back."
   },
   "drag": {
     "card": "draggable task",

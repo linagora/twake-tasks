@@ -5,7 +5,8 @@
     "crash": "Si è verificato un errore",
     "crashHint": "Questa schermata ha riscontrato un problema. Di solito basta ricaricare.",
     "reload": "Ricarica",
-    "tooManyRequests": "Troppe richieste. Attendi un momento, poi riprova."
+    "tooManyRequests": "Troppe richieste. Attendi un momento, poi riprova.",
+    "offline": "Sei offline. Tieni aperta questa pagina: le tue modifiche verranno inviate quando la connessione tornerà."
   },
   "drag": {
     "card": "attività trascinabile",
