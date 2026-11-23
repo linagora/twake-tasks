@@ -13,6 +13,7 @@ import { PickersProvider } from '@/ds/Pickers'
 import { accessibleTheme, highContrastTheme } from '@/ds/theme'
 import { I18nProvider } from '@/ui/i18n/I18nProvider'
 import type { SupportedLanguage } from '@/ui/i18n/languages'
+import { Offline } from '@/ui/shell/Offline'
 import { TooManyRequests } from '@/ui/shell/TooManyRequests'
 
 export interface AppProvidersProps {
@@ -64,6 +65,7 @@ export function AppProviders({
             <QueryClientProvider client={queryClient}>
               <AlertProvider>
                 <TooManyRequests />
+                <Offline />
                 {children}
               </AlertProvider>
             </QueryClientProvider>
