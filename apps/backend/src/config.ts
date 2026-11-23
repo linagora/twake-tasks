@@ -49,9 +49,16 @@ const limit = (fallback: number) =>
 const seconds = (fallback: number) =>
   z.coerce.number().int().min(1).default(fallback)
 
+// Without one, amqplib takes the broker's 60 s, and a hung node goes unnoticed
+// for minutes.
+const withHeartbeat = (url: string) =>
+  new URL(url).searchParams.has('heartbeat')
+    ? url
+    : `${url}${url.includes('?') ? '&' : '?'}heartbeat=10`
+
 const configSchema = z
   .object({
-    RABBITMQ_URL: z.url({ protocol: /^amqps?$/ }),
+    RABBITMQ_URL: z.url({ protocol: /^amqps?$/ }).transform(withHeartbeat),
     RABBITMQ_SPACE_EXCHANGE: z.string().min(1).default('space'),
     RABBITMQ_B2B_EXCHANGE: z.string().min(1).default('b2b'),
     RABBITMQ_AUTH_EXCHANGE: z.string().min(1).default('auth'),

@@ -50,6 +50,21 @@ describe('the RabbitMQ names', () => {
   })
 })
 
+describe('the RabbitMQ heartbeat', () => {
+  it('is 10 s unless the URL sets one', () => {
+    expect(loadConfig(required).RABBITMQ_URL).toBe(
+      'amqp://rabbitmq:5672?heartbeat=10'
+    )
+    expect(
+      loadConfig({
+        ...required,
+        RABBITMQ_URL:
+          'amqps://user:p%40ss@rabbitmq/vhost?heartbeat=5&frameMax=0'
+      }).RABBITMQ_URL
+    ).toBe('amqps://user:p%40ss@rabbitmq/vhost?heartbeat=5&frameMax=0')
+  })
+})
+
 describe('the secrets', () => {
   // docker-compose.yml passes an unset secret as an empty string.
   it('refuse an empty OIDC client secret', () => {

@@ -7,7 +7,7 @@ Read from the environment, and from `apps/backend/.env` in development. The back
 Required:
 
 - `DATABASE_URL`: a `postgres://` URL, with a role that is not a superuser.
-- `RABBITMQ_URL`: an `amqp://` or `amqps://` URL.
+- `RABBITMQ_URL`: an `amqp://` or `amqps://` URL. Its `heartbeat` query parameter (`10`) is the AMQP heartbeat in seconds; see [dependencies](dependencies.md#rabbitmq).
 - `APP_URL`: the public URL of the frontend, used in the links of the emails.
 - `OIDC_ISSUER`: the SSO's `https://` URL.
 - `OIDC_CLIENT_SECRET`: the secret of the backend's client.

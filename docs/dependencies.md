@@ -19,6 +19,8 @@ Required in every mode. The backend connects at start, then:
 
 See [events](events.md) for the exchanges, routing keys and queue.
 
+A crashed node closes its connections, and the backend reconnects at once. A hung node keeps them open, and the backend finds it dead after two to three missed heartbeats, about 20 to 30 s with the default `heartbeat=10` of `RABBITMQ_URL`. Events wait on the queue meanwhile, none is lost.
+
 ## AMQP clients
 
 The backend talks to RabbitMQ through two clients:
