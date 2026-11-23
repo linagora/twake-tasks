@@ -138,9 +138,11 @@ export function useListedBoard(boardId: string): BoardSummary | null {
 }
 
 // Reloads on a newer version: a change made elsewhere, or one missed while
-// the stream was reconnecting. Every view of the board watches it and reads
-// count against the person's budget, so a read already under way may bring
-// the version and is awaited before reading again.
+// the stream was reconnecting or closed. The stream opens with the current
+// version, so a view that mounts does not read the board itself. Every view
+// of the board watches it and reads count against the person's budget, so a
+// read already under way may bring the version and is awaited before reading
+// again.
 export function useBoard(boardId: string): UseQueryResult<Board> {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
@@ -189,7 +191,8 @@ export function useBoard(boardId: string): UseQueryResult<Board> {
   }, [api, boardId, queryClient])
   return useQuery({
     queryKey: keys.board(boardId),
-    queryFn: () => api.getBoard(boardId)
+    queryFn: () => api.getBoard(boardId),
+    staleTime: Infinity
   })
 }
 
