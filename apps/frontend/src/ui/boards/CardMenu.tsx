@@ -49,6 +49,7 @@ export interface CardContext {
   sections: Section[]
   onMove:
     ((taskId: string, sectionId: Section['id'] | null) => void) | undefined
+  onOpen: (key: string) => void
 }
 
 /** The options menu of a card, with the pickers and toasts it opens. */
@@ -60,6 +61,7 @@ export function CardMenu({
   labels,
   sections,
   onMove,
+  onOpen,
   select,
   menuAnchor,
   setMenuAnchor,
@@ -81,7 +83,7 @@ export function CardMenu({
   }
   const transferable = useTransferable(task, boardId)
   const link = useCopyLink(boardId, task.key, false)
-  const copy = useDuplicate(boardId, task)
+  const copy = useDuplicate(boardId, task, onOpen)
   const remove = useRemoveTask(boardId, task)
   const destinations = sections.filter(section => section.id !== task.sectionId)
   const choose = (action: () => void) => () => {

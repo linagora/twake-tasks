@@ -56,7 +56,11 @@ import {
   useUnsaved,
   useUnsavedFields
 } from '@/ui/boards/unsaved'
-import { useExpandedPanel, useTaskPanel } from '@/ui/boards/useTaskPanel'
+import {
+  useExpandedPanel,
+  useOpenTask,
+  useTaskPanel
+} from '@/ui/boards/useTaskPanel'
 import { useDrivePicker } from '@/ui/drive/useDrivePicker'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -280,7 +284,7 @@ function TaskMenu({
   const [moving, setMoving] = useState(false)
   const remove = useRemoveTask(boardId, task)
   const movable = useTransferable(task, boardId)
-  const copy = useDuplicate(boardId, task)
+  const copy = useDuplicate(boardId, task, useOpenTask())
   const choose = (action: () => void) => () => {
     setAnchor(null)
     action()

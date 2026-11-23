@@ -41,6 +41,7 @@ import { NewSectionButton, SectionMenu } from '@/ui/boards/SectionControls'
 import { TaskCard } from '@/ui/boards/TaskCard'
 import { TaskListRow } from '@/ui/boards/TaskListRow'
 import { useCompletedFold } from '@/ui/boards/useCompletedFold'
+import { useOpenTask } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 
 export function BoardColumns({ board }: { board: Board }): ReactElement {
@@ -86,6 +87,7 @@ export function BoardColumns({ board }: { board: Board }): ReactElement {
     },
     [moveTask]
   )
+  const openTask = useOpenTask()
   const card = (task: Task, sortable = false) => (
     <TaskCard
       key={task.id}
@@ -97,6 +99,7 @@ export function BoardColumns({ board }: { board: Board }): ReactElement {
       labels={board.labels}
       sections={board.sections}
       onMove={editable ? moveTo : undefined}
+      onOpen={openTask}
       today={localToday()}
     />
   )
@@ -131,6 +134,7 @@ export function BoardColumns({ board }: { board: Board }): ReactElement {
       sortable={sortable}
       task={task}
       sections={board.sections}
+      onOpen={openTask}
     />
   )
   const listSort = useListSort(board.id)
