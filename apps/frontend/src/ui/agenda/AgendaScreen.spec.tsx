@@ -1,10 +1,23 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { findEmptyState } from '@/testing/emptyState'
 import { renderRoute } from '@/testing/renderWithProviders'
 import { formatDay, localToday, localZone } from '@/ui/boards/dueLabel'
+
+// Each render of a row highlights its title once.
+const titleRenders = vi.hoisted(() => new Map<string, number>())
+vi.mock(import('@/ds/Highlight'), async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    Highlight: (props: Parameters<typeof actual.Highlight>[0]) => {
+      titleRenders.set(props.text, (titleRenders.get(props.text) ?? 0) + 1)
+      return actual.Highlight(props)
+    }
+  }
+})
 
 const day = (offset: number) => {
   const date = new Date(`${localToday()}T00:00:00Z`)
@@ -157,6 +170,25 @@ describe('AgendaScreen', () => {
     await waitFor(() => {
       expect(boardsApi.agenda).toHaveBeenCalledTimes(2)
     })
+  })
+
+  it('does not render the other rows again when a task opens and closes', async () => {
+    const { boardsApi } = boards()
+    renderRoute('/today', { boardsApi })
+
+    await screen.findByRole('button', { name: 'Logo' })
+    const before = titleRenders.get('Logo')
+    fireEvent.click(screen.getByRole('button', { name: 'Poster' }))
+    const panel = within(
+      await screen.findByRole('dialog', { name: /^DES-2 Poster/ })
+    )
+    await panel.findAllByRole('term')
+    fireEvent.click(panel.getByRole('button', { name: 'Close' }))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    expect(titleRenders.get('Logo')).toBe(before)
   })
 
   it('keeps Today as it is when the open task is clicked again', async () => {
