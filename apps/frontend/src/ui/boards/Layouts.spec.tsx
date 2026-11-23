@@ -42,6 +42,37 @@ describe('board layouts', () => {
     expect(boardsApi.setLayout).toHaveBeenCalledWith(board.id, 'list')
   })
 
+  it('does not read the board again once my layout is kept', async () => {
+    const board = designBoard()
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    await screen.findByRole('heading', { level: 1, name: 'Design' })
+    const reads = boardsApi.getBoard.mock.calls.length
+
+    fireEvent.click(layouts().getByRole('button', { name: 'List' }))
+    await screen.findByRole('list', { name: 'In progress' })
+    await act(() => new Promise(resolve => setTimeout(resolve, 20)))
+
+    expect(boardsApi.getBoard).toHaveBeenCalledTimes(reads)
+  })
+
+  it('reads the board again when my layout could not be kept', async () => {
+    const board = designBoard()
+    const boardsApi = fakeBoardsApi([board])
+    boardsApi.setLayout.mockRejectedValue(new Error('offline'))
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    await screen.findByRole('heading', { level: 1, name: 'Design' })
+
+    fireEvent.click(layouts().getByRole('button', { name: 'List' }))
+
+    await waitFor(() => {
+      expect(layouts().getByRole('button', { name: 'Kanban' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+      )
+    })
+  })
+
   it('lists each task on one row with its facts', async () => {
     const board = designBoard({ layout: 'list', defaultLayout: 'list' })
     const ann = { userId: 'ann', email: 'ann@example.com', name: 'Ann Lee' }
