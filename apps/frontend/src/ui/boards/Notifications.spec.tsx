@@ -26,6 +26,16 @@ function aBoardWithLogo() {
   return { board, logo, boardsApi: fakeBoardsApi([board]) }
 }
 
+// The button waits, disabled and without its tooltip, until the task's
+// following is known, and is a new element once it is.
+function findFollow(panel: HTMLElement): Promise<HTMLElement> {
+  return waitFor(() => {
+    const follow = within(panel).getByRole('button', { name: 'Follow' })
+    expect(follow).toBeEnabled()
+    return follow
+  })
+}
+
 describe('following a task', () => {
   it('follows and unfollows from the task panel', async () => {
     const { board, logo, boardsApi } = aBoardWithLogo()
@@ -35,7 +45,9 @@ describe('following a task', () => {
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     )
 
-    const follow = await panel.findByRole('button', { name: 'Follow' })
+    const follow = await findFollow(
+      screen.getByRole('dialog', { name: 'DES-1 Logo' })
+    )
     fireEvent.click(follow)
 
     const following = await panel.findByRole('button', {
@@ -62,7 +74,9 @@ describe('following a task', () => {
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     )
 
-    const follow = await panel.findByRole('button', { name: 'Follow' })
+    const follow = await findFollow(
+      screen.getByRole('dialog', { name: 'DES-1 Logo' })
+    )
     expect(follow).toHaveTextContent('')
     expect(follow).toHaveAttribute('aria-pressed', 'false')
     fireEvent.mouseOver(follow)
@@ -96,7 +110,9 @@ describe('following a task', () => {
       await screen.findByRole('dialog', { name: 'DES-1 Logo' })
     )
 
-    fireEvent.click(await panel.findByRole('button', { name: 'Follow' }))
+    fireEvent.click(
+      await findFollow(screen.getByRole('dialog', { name: 'DES-1 Logo' }))
+    )
     fireEvent.click(await panel.findByRole('button', { name: 'Following' }))
     await act(() => Promise.resolve())
     expect(boardsApi.setFollowing).toHaveBeenCalledTimes(1)

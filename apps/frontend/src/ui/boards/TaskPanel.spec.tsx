@@ -266,9 +266,10 @@ describe('TaskPanel', () => {
     renderRoute(`/boards/${board.id}`, { boardsApi })
 
     const panel = await openLogo()
-    fireEvent.keyDown(panel.getByRole('button', { name: 'Edit description' }), {
-      key: 'Escape'
-    })
+    fireEvent.keyDown(
+      await panel.findByRole('button', { name: 'Edit description' }),
+      { key: 'Escape' }
+    )
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'DES-1 Logo' })).toBeNull()
