@@ -13,8 +13,9 @@ import {
   styled,
   Typography
 } from '@linagora/twake-mui'
-import { useState, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useState, type ReactElement, type ReactNode } from 'react'
 
+import { COLLAPSED_HEIGHT } from '@/ds/BoardHero'
 import { CRUMB_HOST, CrumbHostContext, ScrollHostContext } from '@/ds/CrumbBar'
 import { Icon } from '@/ds/Icon'
 import {
@@ -54,6 +55,21 @@ const SKIP_LINK = {
   '&:focus': { position: 'fixed', top: 8, left: 8, zIndex: 2100 }
 } as const
 
+function useScrollbarWidth(host: HTMLElement | null): number {
+  const [width, setWidth] = useState(0)
+  useEffect(() => {
+    if (!host || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      setWidth(host.offsetWidth - host.clientWidth)
+    })
+    observer.observe(host)
+    return () => {
+      observer.disconnect()
+    }
+  }, [host])
+  return width
+}
+
 /** Below lg the sidebar is the `menu` drawer that `MenuButton` opens. */
 export function AppFrame({
   topBar,
@@ -74,6 +90,7 @@ export function AppFrame({
   const [crumbHost, setCrumbHost] = useState<HTMLElement | null>(null)
   const [scrollHost, setScrollHost] = useState<HTMLElement | null>(null)
   const narrow = useNarrowScreen()
+  const scrollbarWidth = useScrollbarWidth(scrollHost)
   return (
     <CrumbHostContext value={crumbHost}>
       <PanelHostContext value={panelHost}>
@@ -105,7 +122,27 @@ export function AppFrame({
               <Sidebar>{sidebar}</Sidebar>
             )}
             <FrameContent role={undefined} id="content" tabIndex={-1}>
-              <Box ref={setCrumbHost} sx={CRUMB_HOST} />
+              <Box
+                ref={setCrumbHost}
+                sx={[
+                  CRUMB_HOST,
+                  {
+                    // A board's header lies over the top of the page, which
+                    // keeps room for it: collapsing it moves no card.
+                    '&:has(> [data-own-height])': {
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: scrollbarWidth,
+                      zIndex: 1,
+                      bgcolor: 'background.paper'
+                    },
+                    '&:has(> [data-own-height]) + *': {
+                      scrollPaddingTop: COLLAPSED_HEIGHT
+                    }
+                  }
+                ]}
+              />
               {/* Its own stacking context: the raised checkboxes and
                   buttons of the rows stay under an open task. */}
               <Box
@@ -129,6 +166,7 @@ export function AppFrame({
                 sx={{
                   position: 'absolute',
                   inset: 0,
+                  zIndex: 1,
                   pointerEvents: 'none',
                   borderRadius: 'inherit',
                   overflow: 'hidden',
