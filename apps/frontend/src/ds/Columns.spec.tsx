@@ -22,6 +22,20 @@ describe('Column', () => {
     expect(getComputedStyle(heading).overflowWrap).toBe('anywhere')
     expect(getComputedStyle(card).overflowWrap).toBe('anywhere')
   })
+
+  it('lets the browser skip the rendering of a card off screen', async () => {
+    renderWithProviders(
+      <Card label="Ship it">
+        <CardTitle>Ship it</CardTitle>
+      </Card>
+    )
+
+    const style = getComputedStyle(
+      await screen.findByRole('article', { name: 'Ship it' })
+    )
+    expect(style.getPropertyValue('content-visibility')).toBe('auto')
+    expect(style.getPropertyValue('contain-intrinsic-size')).toBe('auto 96px')
+  })
 })
 
 describe('AvatarStack', () => {
