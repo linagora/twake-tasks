@@ -137,6 +137,51 @@ export function useListedBoard(boardId: string): BoardSummary | null {
   )
 }
 
+type OnVersion = (version: number) => void
+
+interface Stream {
+  listeners: Set<OnVersion>
+  latest: number | undefined
+  stop: () => void
+}
+
+// One stream per board however many of its views are mounted, since each
+// stream counts against the person's open streams. A view that joins gets
+// the last version, as a stream of its own would have sent it.
+const streams = new WeakMap<BoardsApi, Map<string, Stream>>()
+
+function watchShared(
+  api: BoardsApi,
+  boardId: string,
+  onVersion: OnVersion
+): () => void {
+  const byBoard = streams.get(api) ?? new Map<string, Stream>()
+  streams.set(api, byBoard)
+  const open = byBoard.get(boardId)
+  const stream: Stream = open ?? {
+    listeners: new Set(),
+    latest: undefined,
+    stop: () => undefined
+  }
+  stream.listeners.add(onVersion)
+  if (open) {
+    if (open.latest !== undefined) onVersion(open.latest)
+  } else {
+    byBoard.set(boardId, stream)
+    stream.stop = api.watchBoard(boardId, version => {
+      stream.latest = version
+      for (const listener of stream.listeners) listener(version)
+    })
+  }
+  return () => {
+    if (!stream.listeners.delete(onVersion) || stream.listeners.size > 0) {
+      return
+    }
+    stream.stop()
+    byBoard.delete(boardId)
+  }
+}
+
 // Reloads on a newer version: a change made elsewhere, or one missed while
 // the stream was reconnecting or closed. The stream opens with the current
 // version, so a view that mounts does not read the board itself. Every view
@@ -183,7 +228,7 @@ export function useBoard(boardId: string): UseQueryResult<Board> {
         void queryClient.invalidateQueries({ queryKey })
       }
     }
-    const unwatch = api.watchBoard(boardId, onVersion)
+    const unwatch = watchShared(api, boardId, onVersion)
     return () => {
       stopped = true
       unwatch()

@@ -1446,6 +1446,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
         listener(board.version)
       }
     },
+    openWatches: (boardId: string) => watchers.get(boardId)?.size ?? 0,
     shares,
     descriptions,
     notifications,
