@@ -407,7 +407,7 @@ describe('archive and trash', () => {
         ]
       })
       await as.post(`${task}/restore`, {})
-      expect((await as.patch(task, { title: 'Renamed' })).statusCode).toBe(204)
+      expect((await as.patch(task, { title: 'Renamed' })).statusCode).toBe(200)
     }
   )
 

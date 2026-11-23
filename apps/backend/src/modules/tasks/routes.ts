@@ -321,7 +321,6 @@ export function registerTasks(
       access: editor,
       params: taskParams,
       body: taskChanges,
-      status: 204,
       handler: ({ identity, params, body }) =>
         taskStore.editTask(identity, params.boardId, params.taskId, body)
     }),

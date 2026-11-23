@@ -186,6 +186,7 @@ describe('tasks', () => {
     const logo = await aTask(alice, board.id, todo.id, 'Logo')
     const edit = (body: object) =>
       api.as(alice).patch(`/boards/${board.id}/tasks/${logo}`, body)
+    const before = await versionOf(alice, board.id)
 
     const edited = await edit({
       title: 'New logo',
@@ -198,7 +199,8 @@ describe('tasks', () => {
     const invalid = await edit({ priority: 5 })
     const empty = await edit({})
 
-    expect(edited.statusCode).toBe(204)
+    expect(edited.statusCode).toBe(200)
+    expect(edited.json()).toEqual({ version: before + 1 })
     expect(afterEdit).toMatchObject({
       title: 'New logo',
       priority: 1,

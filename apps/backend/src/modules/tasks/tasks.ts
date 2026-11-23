@@ -327,14 +327,14 @@ export function createTaskStore(db: Db) {
     ) {
       return write(identity, async tx => {
         await checkRole(tx, identity, boardId, 'editor')
-        await bumpBoard(tx, boardId)
+        const { version } = await bumpBoard(tx, boardId)
         const task = await shownTaskOf(tx, boardId, taskId)
         await tx
           .update(tasks)
           .set(withDates(task, changes))
           .where(eq(tasks.id, taskId))
         await moveReminders(tx, taskId)
-        return null
+        return { version }
       })
     },
 

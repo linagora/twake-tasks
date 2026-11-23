@@ -30,7 +30,7 @@ import { Dates } from '@/ui/boards/Dates'
 import { Dependencies } from '@/ui/boards/Dependencies'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { PersonAvatar } from '@/ui/boards/PersonAvatar'
-import { useBoardChange } from '@/ui/queries/boards'
+import { useBoardChange, useTaskEdit } from '@/ui/queries/boards'
 import { useMoveTask } from '@/ui/queries/tasks'
 import { Reminders } from '@/ui/boards/Reminders'
 import { PriorityChip } from '@/ui/boards/TaskFacts'
@@ -220,9 +220,7 @@ export function Title({
   const [draft, setDraft] = useState(task.title)
   // Escape leaves the title as it was: the blur that follows saves nothing.
   const cancelled = useRef(false)
-  const rename = useBoardChange(boardId, (api, title: string) =>
-    api.editTask(boardId, task.id, { title })
-  )
+  const rename = useTaskEdit(boardId, task.id)
 
   if (!editable) {
     return (
@@ -258,7 +256,7 @@ export function Title({
           }
           const title = draft.trim()
           if (!title) setDraft(task.title)
-          else if (title !== task.title) rename.mutate(title)
+          else if (title !== task.title) rename.mutate({ title })
         }}
       />
       {rename.isError && (
@@ -377,9 +375,7 @@ function PriorityRow({
 }): ReactElement {
   const { t } = useI18n()
   const labelId = useId()
-  const edit = useBoardChange(boardId, (api, priority: Task['priority']) =>
-    api.editTask(boardId, task.id, { priority })
-  )
+  const edit = useTaskEdit(boardId, task.id)
   const name = (level: Task['priority']) =>
     level === null ? t('task.noPriority') : <PriorityChip priority={level} />
 
@@ -398,9 +394,10 @@ function PriorityRow({
             label: name(level)
           }))}
           onChange={value => {
-            edit.mutate(
-              PRIORITIES.find(level => String(level) === value) ?? null
-            )
+            edit.mutate({
+              priority:
+                PRIORITIES.find(level => String(level) === value) ?? null
+            })
           }}
         />
       ) : (

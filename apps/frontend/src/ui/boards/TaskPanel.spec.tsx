@@ -308,6 +308,41 @@ describe('TaskPanel', () => {
     })
   })
 
+  it('shows a new priority without reading the board again', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    const reads = boardsApi.getBoard.mock.calls.length
+    const priority = panel.getByRole('combobox', { name: 'Priority' })
+    fireEvent.mouseDown(priority)
+    fireEvent.click(await screen.findByRole('option', { name: 'Priority 2' }))
+    await waitFor(() => {
+      expect(boardsApi.editTask).toHaveResolved()
+    })
+    await act(() => Promise.resolve())
+
+    expect(
+      within(priority).getByRole('img', { name: 'Priority 2' })
+    ).toBeVisible()
+    expect(boardsApi.getBoard).toHaveBeenCalledTimes(reads)
+  })
+
+  it('reads the board again when it changed since it was read', async () => {
+    const { board, boardsApi } = logoBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+
+    const panel = await openLogo()
+    const reads = boardsApi.getBoard.mock.calls.length
+    board.version += 1
+    fireEvent.mouseDown(panel.getByRole('combobox', { name: 'Priority' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Priority 2' }))
+
+    await waitFor(() => {
+      expect(boardsApi.getBoard).toHaveBeenCalledTimes(reads + 1)
+    })
+  })
+
   it('shows the priority as on its card, with its flag and colour', async () => {
     const { board, logo, boardsApi } = logoBoard()
     logo.priority = 1

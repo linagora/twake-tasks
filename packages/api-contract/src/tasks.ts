@@ -215,6 +215,8 @@ export const descriptionVersionResponse = descriptionResponse.pick({
   version: true
 })
 
+export const editedTaskResponse = z.object({ version: z.number() })
+
 export const transferPreviewResponse = z.object({
   droppedAssignees: z.array(
     z.object({

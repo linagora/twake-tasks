@@ -9,6 +9,7 @@ import {
   createdTaskResponse,
   descriptionResponse,
   descriptionVersionResponse,
+  editedTaskResponse,
   exportResponse,
   filtersResponse,
   followingResponse,
@@ -212,7 +213,10 @@ describe('the API contract', () => {
       contracted(templatesResponse, await api.as(alice).get('/templates'))
         .templates
     ).toHaveLength(1)
-    await api.as(alice).patch(at, { dueDate: '2020-01-02', dueTime: '09:30' })
+    contracted(
+      editedTaskResponse,
+      await api.as(alice).patch(at, { dueDate: '2020-01-02', dueTime: '09:30' })
+    )
     expect(
       contracted(
         descriptionVersionResponse,

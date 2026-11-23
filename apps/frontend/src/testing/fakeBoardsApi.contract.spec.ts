@@ -178,6 +178,10 @@ describe('the fake boards API', () => {
           templateId: template.id
         })
       ],
+      editTask: [
+        wire.editedTaskResponse,
+        await fake.editTask(...at, { priority: 1 })
+      ],
       setDescription: [
         wire.descriptionVersionResponse,
         await fake.setDescription(...at, { markdown: 'Plan', version: 0 })
