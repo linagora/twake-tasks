@@ -26,10 +26,22 @@ import { useDuplicate } from '@/ui/boards/DuplicateTask'
 import { LabelsPicker } from '@/ui/boards/LabelsPicker'
 import { TransferDialog, useTransferable } from '@/ui/boards/TransferTask'
 import { useI18n } from '@/ui/i18n/useI18n'
+import { useCachedBoard } from '@/ui/queries/boards'
+
+// The whole board's tasks, read only by what opens from the card: a card that
+// took them would render again on any change of the board.
+export function BoardTasks({
+  boardId,
+  children
+}: {
+  boardId: string
+  children: (tasks: Task[]) => ReactElement
+}): ReactElement {
+  return children(useCachedBoard(boardId)?.tasks ?? [])
+}
 
 export interface CardContext {
   task: Task
-  tasks: Task[]
   boardId: string
   members: Person[]
   shareable: boolean
@@ -42,7 +54,6 @@ export interface CardContext {
 /** The options menu of a card, with the pickers and toasts it opens. */
 export function CardMenu({
   task,
-  tasks,
   boardId,
   members,
   shareable,
@@ -206,17 +217,21 @@ export function CardMenu({
         />
       )}
       {assigning && (
-        <AssignPicker
-          task={task}
-          boardId={boardId}
-          members={members}
-          tasks={tasks}
-          shareable={shareable}
-          anchor={assigning}
-          onClose={() => {
-            setAssigning(null)
-          }}
-        />
+        <BoardTasks boardId={boardId}>
+          {tasks => (
+            <AssignPicker
+              task={task}
+              boardId={boardId}
+              members={members}
+              tasks={tasks}
+              shareable={shareable}
+              anchor={assigning}
+              onClose={() => {
+                setAssigning(null)
+              }}
+            />
+          )}
+        </BoardTasks>
       )}
       {labeling && (
         <LabelsPicker

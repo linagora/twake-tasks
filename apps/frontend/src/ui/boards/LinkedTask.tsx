@@ -1,9 +1,11 @@
 import { useAlert } from '@linagora/twake-mui'
+import { useIsFetching } from '@tanstack/react-query'
 import { useEffect, useState, type ReactElement } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 
 import { type Board } from '@/domain/board'
 import { useHiddenTasks } from '@/ui/queries/boards'
+import { keys } from '@/ui/queries/keys'
 import { LinkedTaskPanel } from '@/ui/boards/TaskPanel'
 import { lineage } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -13,14 +15,16 @@ import { useI18n } from '@/ui/i18n/useI18n'
 // its key in the URL for a moment, and a restored one is not in the cache yet.
 export function LinkedTask({
   board,
-  editable,
-  settled
+  editable
 }: {
   board: Board
   editable: boolean
-  settled: boolean
 }): ReactElement {
   const { t } = useI18n()
+  // Read here, not by the board: each fetch's start and end would render the
+  // whole board.
+  const settled =
+    useIsFetching({ queryKey: keys.board(board.id), exact: true }) === 0
   const [params, setParams] = useSearchParams()
   const shown = params.get('task')
   const rootKey =

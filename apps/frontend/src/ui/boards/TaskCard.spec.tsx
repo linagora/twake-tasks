@@ -5,6 +5,19 @@ import type { Task } from '@/domain/board'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
 import { renderRoute } from '@/testing/renderWithProviders'
 
+// Each render of a card asks for its panel once, by the card's key.
+const panelReads = vi.hoisted(() => new Map<string, number>())
+vi.mock(import('./useTaskPanel'), async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    useTaskPanel: (...args: Parameters<typeof actual.useTaskPanel>) => {
+      panelReads.set(args[0], (panelReads.get(args[0]) ?? 0) + 1)
+      return actual.useTaskPanel(...args)
+    }
+  }
+})
+
 const person = (name: string) => ({
   userId: name,
   email: `${name}@example.com`,
@@ -24,6 +37,31 @@ async function cardOf(overrides: Partial<Task>, extra: Task[] = []) {
 }
 
 describe('TaskCard', () => {
+  it('renders only the card of the task that changed', async () => {
+    const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    const section = board.sections[0] ?? null
+    board.tasks = [
+      aTask(section, { key: 'DES-1', title: 'Logo' }),
+      aTask(section, { key: 'DES-2', title: 'Colors' })
+    ]
+    const boardsApi = fakeBoardsApi([board])
+    renderRoute(`/boards/${board.id}`, { boardsApi })
+    await screen.findByRole('article', { name: 'DES-1 Logo' })
+    await waitFor(() => {
+      expect(boardsApi.getBoard).toHaveBeenCalledTimes(1)
+    })
+    panelReads.clear()
+
+    boardsApi.changeElsewhere(board.id, changed => {
+      const colors = changed.tasks.find(task => task.key === 'DES-2')
+      if (colors) colors.priority = 1
+    })
+
+    const colors = within(screen.getByRole('article', { name: 'DES-2 Colors' }))
+    expect(await colors.findByLabelText('Priority 1')).toBeInTheDocument()
+    expect(panelReads.get('DES-1')).toBeUndefined()
+  })
+
   it('marks a past due date as overdue', async () => {
     const card = await cardOf({ dueDate: '2020-03-02' })
 

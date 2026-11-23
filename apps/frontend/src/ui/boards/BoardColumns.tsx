@@ -1,11 +1,5 @@
 import { Typography } from '@linagora/twake-mui'
-import {
-  Fragment,
-  useCallback,
-  useMemo,
-  useState,
-  type ReactElement
-} from 'react'
+import { Fragment, useCallback, useState, type ReactElement } from 'react'
 import { useNavigate } from 'react-router'
 
 import type { SectionMove, Shelf, TaskMove } from '@/application/boards'
@@ -23,7 +17,6 @@ import {
   isFolded,
   isManageable,
   isShareable,
-  subtasksByParent,
   type Board,
   type Section,
   type Task
@@ -37,6 +30,7 @@ import {
 import { BoardCalendar } from '@/ui/boards/BoardCalendar'
 import { BoardDrag, columnSortId } from '@/ui/boards/BoardDrag'
 import { NoMatch, useShownTasks } from '@/ui/boards/BoardFilter'
+import { localToday } from '@/ui/boards/dueLabel'
 import { ListLayout } from '@/ui/boards/Layouts'
 import { LinkedTask } from '@/ui/boards/LinkedTask'
 import { sortTasks, useListSort } from '@/ui/boards/listSort'
@@ -49,15 +43,7 @@ import { TaskListRow } from '@/ui/boards/TaskListRow'
 import { useCompletedFold } from '@/ui/boards/useCompletedFold'
 import { useI18n } from '@/ui/i18n/useI18n'
 
-const NO_TASKS: Task[] = []
-
-export function BoardColumns({
-  board,
-  settled
-}: {
-  board: Board
-  settled: boolean
-}): ReactElement {
+export function BoardColumns({ board }: { board: Board }): ReactElement {
   const { t, lang } = useI18n()
   const move = useMoveTask(board.id)
   const moveSection = useBoardChange(
@@ -92,9 +78,7 @@ export function BoardColumns({
   ]
 
   const byId = new Map(topLevel.map(task => [task.id, task]))
-  // Built once per board, so a re-render keeps each card's props as they were
-  // and the memoised cards skip it.
-  const subtasksOf = useMemo(() => subtasksByParent(board.tasks), [board.tasks])
+  // Cards are memoised, so the props they share must keep their identity.
   const { mutate: moveTask } = move
   const moveTo = useCallback(
     (taskId: string, sectionId: string | null) => {
@@ -107,14 +91,13 @@ export function BoardColumns({
       key={task.id}
       sortable={sortable}
       task={task}
-      tasks={board.tasks}
-      subtasks={subtasksOf.get(task.id) ?? NO_TASKS}
       boardId={board.id}
       members={board.members}
       shareable={shareable}
       labels={board.labels}
       sections={board.sections}
       onMove={editable ? moveTo : undefined}
+      today={localToday()}
     />
   )
   const columnKey = (column: (typeof columns)[number]) => column.id ?? 'none'
@@ -389,7 +372,7 @@ export function BoardColumns({
       {board.layout === 'calendar' && (
         <BoardCalendar board={board} tasks={shown.tasks} />
       )}
-      <LinkedTask board={board} editable={editable} settled={settled} />
+      <LinkedTask board={board} editable={editable} />
       {removal && (
         <RemovalNotice
           key={`${removal.shelf}:${removal.task.id}`}

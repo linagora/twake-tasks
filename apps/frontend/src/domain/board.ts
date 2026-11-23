@@ -314,15 +314,3 @@ export const isFolded = (
 ): boolean =>
   task.completedAt !== null &&
   !sections.some(each => each.id === task.sectionId)
-
-// Map.groupBy needs Safari 17.4, and the build ships no polyfill.
-export const subtasksByParent = (tasks: Task[]): Map<string, Task[]> => {
-  const groups = new Map<string, Task[]>()
-  for (const task of tasks) {
-    if (task.parentId === null) continue
-    const siblings = groups.get(task.parentId)
-    if (siblings) siblings.push(task)
-    else groups.set(task.parentId, [task])
-  }
-  return groups
-}

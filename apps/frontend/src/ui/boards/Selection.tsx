@@ -2,6 +2,8 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type MouseEvent
@@ -30,14 +32,19 @@ export const SelectionContext = createContext<Selection | null>(null)
 export function useBoardSelection(lanes: string[][]): Selection {
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set())
   const anchor = useRef<string | null>(null)
-  const ids = lanes.flat().filter(id => picked.has(id))
-  const clear = () => {
-    anchor.current = null
-    setPicked(new Set())
-  }
+  // Every card reads the selection, so it keeps its identity while the board's
+  // tasks change.
+  const shownLanes = useRef(lanes)
+  useLayoutEffect(() => {
+    shownLanes.current = lanes
+  })
+  const pickedKey = lanes
+    .flat()
+    .filter(id => picked.has(id))
+    .join(' ')
 
   // A menu or dialog open over the board takes its own Escape.
-  const picking = ids.length > 0
+  const picking = pickedKey !== ''
   useEffect(() => {
     if (!picking) return
     const onKey = (event: KeyboardEvent) => {
@@ -52,26 +59,33 @@ export function useBoardSelection(lanes: string[][]): Selection {
     }
   }, [picking])
 
-  return {
-    ids,
-    has: taskId => picked.has(taskId),
-    toggle: (taskId, range = false) => {
-      const lane = lanes.find(each => each.includes(taskId)) ?? []
-      const from = anchor.current === null ? -1 : lane.indexOf(anchor.current)
-      const to = lane.indexOf(taskId)
-      const next = new Set(picked)
-      if (range && from >= 0) {
-        const [start, end] = from < to ? [from, to] : [to, from]
-        for (const id of lane.slice(start, end + 1)) next.add(id)
-      } else if (!next.delete(taskId)) next.add(taskId)
-      anchor.current = taskId
-      setPicked(next)
-    },
-    keep: taskIds => {
-      setPicked(new Set(taskIds))
-    },
-    clear
-  }
+  return useMemo(
+    () => ({
+      ids: pickedKey === '' ? [] : pickedKey.split(' '),
+      has: taskId => picked.has(taskId),
+      toggle: (taskId, range = false) => {
+        const lane =
+          shownLanes.current.find(each => each.includes(taskId)) ?? []
+        const from = anchor.current === null ? -1 : lane.indexOf(anchor.current)
+        const to = lane.indexOf(taskId)
+        const next = new Set(picked)
+        if (range && from >= 0) {
+          const [start, end] = from < to ? [from, to] : [to, from]
+          for (const id of lane.slice(start, end + 1)) next.add(id)
+        } else if (!next.delete(taskId)) next.add(taskId)
+        anchor.current = taskId
+        setPicked(next)
+      },
+      keep: taskIds => {
+        setPicked(new Set(taskIds))
+      },
+      clear: () => {
+        anchor.current = null
+        setPicked(new Set())
+      }
+    }),
+    [picked, pickedKey]
+  )
 }
 
 /** The task's check box, where tasks can be picked. */

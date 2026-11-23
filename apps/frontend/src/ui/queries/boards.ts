@@ -6,7 +6,7 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import {
   ApiError,
@@ -21,17 +21,47 @@ import {
   type Project,
   type Shelf
 } from '@/application/boards'
-import { type Board, type BoardSummary, type Layout } from '@/domain/board'
+import {
+  type Board,
+  type BoardSummary,
+  type Layout,
+  type Task
+} from '@/domain/board'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { localZone } from '@/ui/boards/dueLabel'
 import { keys } from '@/ui/queries/keys'
 
 export const POLL_MS = 60_000
 
+// Disabled rather than given `skipToken`: the query runs the function of the
+// observer that rendered last, so a `skipToken` there fails the next reload.
+function useCachedBoardOf<T>(
+  boardId: string,
+  select: (board: Board) => T
+): T | undefined {
+  const api = useBoardsApi()
+  return useQuery({
+    queryKey: keys.board(boardId),
+    queryFn: () => api.getBoard(boardId),
+    enabled: false,
+    select
+  }).data
+}
+
+const whole = (board: Board) => board
+
 /** The board as last fetched, without fetching it. */
 export function useCachedBoard(boardId: string): Board | undefined {
-  return useQuery<Board>({ queryKey: keys.board(boardId), queryFn: skipToken })
-    .data
+  return useCachedBoardOf(boardId, whole)
+}
+
+/** The task's sub-tasks as last fetched: renders again only when they change. */
+export function useSubtasks(boardId: string, parentId: string): Task[] {
+  const select = useCallback(
+    (board: Board) => board.tasks.filter(task => task.parentId === parentId),
+    [parentId]
+  )
+  return useCachedBoardOf(boardId, select) ?? []
 }
 
 export function useHiddenTasks(
