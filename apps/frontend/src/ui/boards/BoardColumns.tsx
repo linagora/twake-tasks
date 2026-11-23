@@ -1,5 +1,11 @@
 import { Typography } from '@linagora/twake-mui'
-import { Fragment, useState, type ReactElement } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useMemo,
+  useState,
+  type ReactElement
+} from 'react'
 import { useNavigate } from 'react-router'
 
 import type { SectionMove, Shelf, TaskMove } from '@/application/boards'
@@ -17,6 +23,7 @@ import {
   isFolded,
   isManageable,
   isShareable,
+  subtasksByParent,
   type Board,
   type Section,
   type Task
@@ -41,6 +48,8 @@ import { TaskCard } from '@/ui/boards/TaskCard'
 import { TaskListRow } from '@/ui/boards/TaskListRow'
 import { useCompletedFold } from '@/ui/boards/useCompletedFold'
 import { useI18n } from '@/ui/i18n/useI18n'
+
+const NO_TASKS: Task[] = []
 
 export function BoardColumns({
   board,
@@ -83,27 +92,29 @@ export function BoardColumns({
   ]
 
   const byId = new Map(topLevel.map(task => [task.id, task]))
+  // Built once per board, so a re-render keeps each card's props as they were
+  // and the memoised cards skip it.
+  const subtasksOf = useMemo(() => subtasksByParent(board.tasks), [board.tasks])
+  const { mutate: moveTask } = move
+  const moveTo = useCallback(
+    (taskId: string, sectionId: string | null) => {
+      moveTask({ taskId, move: { sectionId } })
+    },
+    [moveTask]
+  )
   const card = (task: Task, sortable = false) => (
     <TaskCard
       key={task.id}
       sortable={sortable}
       task={task}
       tasks={board.tasks}
+      subtasks={subtasksOf.get(task.id) ?? NO_TASKS}
       boardId={board.id}
       members={board.members}
       shareable={shareable}
       labels={board.labels}
       sections={board.sections}
-      destinations={board.sections.filter(
-        section => section.id !== task.sectionId
-      )}
-      onMove={
-        editable
-          ? sectionId => {
-              move.mutate({ taskId: task.id, move: { sectionId } })
-            }
-          : undefined
-      }
+      onMove={editable ? moveTo : undefined}
     />
   )
   const columnKey = (column: (typeof columns)[number]) => column.id ?? 'none'

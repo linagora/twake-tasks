@@ -110,6 +110,37 @@ describe('TaskCard', () => {
     ).toEqual(['Select DES-1'])
   })
 
+  it('keeps no per-card subscription for a menu nobody opened', async () => {
+    let listening = 0
+    vi.stubGlobal('matchMedia', (media: string) => ({
+      media,
+      matches: false,
+      addEventListener: () => {
+        listening += 1
+      },
+      removeEventListener: () => {
+        listening -= 1
+      },
+      addListener: () => undefined,
+      removeListener: () => undefined
+    }))
+    const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    board.tasks = Array.from({ length: 30 }, (_, index) =>
+      aTask(board.sections[0] ?? null, {
+        key: `DES-${String(index + 1)}`,
+        title: `Task ${String(index + 1)}`
+      })
+    )
+    try {
+      renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+      await screen.findByRole('article', { name: 'DES-30 Task 30' })
+    } finally {
+      vi.unstubAllGlobals()
+    }
+
+    expect(listening).toBeLessThan(30)
+  })
+
   describe('menu', () => {
     function renderBoard() {
       const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
