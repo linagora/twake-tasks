@@ -1,5 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 
+import { ApiError } from '@/application/boards'
+
 const MAX_QUERY_RETRIES = 2
 
 function httpStatus(error: unknown): number | null {
@@ -15,6 +17,7 @@ export function shouldRetryQuery(
 ): boolean {
   const status = httpStatus(error)
   if (status !== null && status >= 400 && status < 500) return false
+  if (error instanceof ApiError && error.code === 'timeout') return false
   return failureCount < MAX_QUERY_RETRIES
 }
 

@@ -192,6 +192,57 @@ describe('httpBoardsApi', () => {
     )
   })
 
+  it('gives up on a read the backend never answers', async () => {
+    vi.useFakeTimers()
+    try {
+      const send = vi.fn<Send>(
+        request =>
+          new Promise((_, reject) => {
+            request.signal.addEventListener('abort', () => {
+              reject(request.signal.reason as Error)
+            })
+          })
+      )
+
+      const failure = httpBoardsApi(BASE, send)
+        .getBoard('b1')
+        .catch((error: unknown) => error)
+      await vi.advanceTimersByTimeAsync(15_000)
+
+      expect(await failure).toEqual(new ApiError(504, 'timeout'))
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('drops the deadline once the backend answers a read', async () => {
+    vi.useFakeTimers()
+    try {
+      const send = backend(200, BOARD)
+
+      await httpBoardsApi(BASE, send).getBoard('b1')
+
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('lets a slow write finish, since the backend may already have applied it', async () => {
+    vi.useFakeTimers()
+    try {
+      const send = vi.fn<Send>(() => new Promise(() => undefined))
+
+      void httpBoardsApi(BASE, send).importTasks('b1', [])
+      await vi.advanceTimersByTimeAsync(60_000)
+
+      const [request] = send.mock.calls[0] ?? []
+      expect(request?.signal.aborted).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('reads board versions from the event stream, across chunks', async () => {
     const encoder = new TextEncoder()
     const chunks = [
