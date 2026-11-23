@@ -284,12 +284,15 @@ export function useTaskEdit(
       if (context?.shown) queryClient.setQueryData(queryKey, context.shown)
       void queryClient.invalidateQueries({ queryKey })
     },
-    // What hangs under the board, its history and links among them, reads
-    // again; the board itself only when `onSuccess` says so.
+    // What hangs under the board reads again, the other tasks' links among
+    // them; the board itself only when `onSuccess` says so. Of the task's own
+    // reads only its history can change.
     onSettled: () =>
       queryClient.invalidateQueries({
         queryKey,
-        predicate: query => query.queryKey.length > queryKey.length
+        predicate: ({ queryKey: key }) =>
+          key.length > queryKey.length &&
+          (key[2] !== 'tasks' || key[3] !== taskId || key[4] === 'history')
       })
   })
 }
