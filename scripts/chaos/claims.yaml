@@ -29,7 +29,7 @@ components:
   # acknowledged transaction lost.
   # faultTolerance 1 means no data loss and no manual action. Losing a replica costs nothing; losing the primary is a
   # failover of up to ~15 s (Patroni's leader key, HAProxy's /primary check), whose requests either wait (bounded by
-  # PGCONNECT_TIMEOUT) or answer 503 unavailable. The first chaos run measured 14-15 s for a stopped primary, 8 s for a
+  # DATABASE_CONNECT_TIMEOUT_MS) or answer 503 unavailable. The first chaos run measured 14-15 s for a stopped primary, 8 s for a
   # paused one (detected by HAProxy, inter 2s fall 2).
   postgresql:
     faultTolerance: 1

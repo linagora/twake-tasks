@@ -23,6 +23,7 @@ describe('the RabbitMQ names', () => {
       RABBITMQ_LIVE_EXCHANGE: 'twake-tasks.live',
       DATABASE_POOL_MAX: 20,
       DATABASE_STATEMENT_TIMEOUT_MS: 5000,
+      DATABASE_CONNECT_TIMEOUT_MS: 3000,
       SEARCH_MIN_LENGTH: 2
     })
   })
@@ -203,6 +204,7 @@ describe('the server settings', () => {
     ['HTTP_TRUSTED_PROXY_HOPS', '-1'],
     ['REDIS_URL', 'http://redis:6379'],
     ['DATABASE_STATEMENT_TIMEOUT_MS', '-1'],
+    ['DATABASE_CONNECT_TIMEOUT_MS', '0'],
     ['SEARCH_MIN_LENGTH', '0'],
     ['RATE_LIMIT_COMMENTS_MAX', '-1'],
     ['RATE_LIMIT_COMMENTS_MAX', '1.5'],

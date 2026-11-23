@@ -75,6 +75,7 @@ Database:
 
 - `DATABASE_POOL_MAX` (`20`): how many connections each replica keeps at most for requests, events and jobs. Each replica also keeps one more connection, which answers `/health/ready`, so a busy pool never fails the probe.
 - `DATABASE_STATEMENT_TIMEOUT_MS` (`5000`): how long a statement of a request may run before Postgres cancels it. The request then gets 503. Jobs, RabbitMQ events and migrations have no such limit. `0` turns it off.
+- `DATABASE_CONNECT_TIMEOUT_MS` (`3000`): how long a connection to Postgres may take to open, and how long a request may wait for one, including behind a busy pool. The request then gets 503, so it answers fast while Postgres is down. Jobs and RabbitMQ events wait for their connection as long as it takes.
 - `MIGRATE_ON_START` (`true`): whether each replica migrates the database before it serves. Set it to `false` when the migrate command runs before the replicas (see [deployment](deployment.md#migrations)).
 - `DATABASE_MIGRATION_URL` (`DATABASE_URL`): the `postgres://` URL migrations run through, with the role that owns the tables (see [dependencies](dependencies.md#postgresql)). Each migration grants the role of `DATABASE_URL` the right to read and write every table, and nothing more. It must reach Postgres directly, not through a pooler in transaction mode, since the migration lock belongs to the session.
 
