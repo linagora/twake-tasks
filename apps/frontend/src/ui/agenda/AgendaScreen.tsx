@@ -8,7 +8,7 @@ import {
   Profile
 } from '@linagora/twake-icons'
 import { Button, Link, ToggleButton, Typography } from '@linagora/twake-mui'
-import { useState, type ReactElement, type ReactNode } from 'react'
+import { memo, useState, type ReactElement, type ReactNode } from 'react'
 import { useParams } from 'react-router'
 
 import {
@@ -33,7 +33,8 @@ import { ViewToggleGroup } from '@/ds/PageHeader'
 import { TaskGroup, TaskRow } from '@/ds/TaskList'
 import {
   AgendaTaskPanel,
-  useAgendaTaskPanel
+  useAgendaPanels,
+  type AgendaPanels
 } from '@/ui/agenda/AgendaTaskPanel'
 import { useFilterBoards } from '@/ui/agenda/filterBoards'
 import { FilterForm } from '@/ui/agenda/FiltersScreen'
@@ -82,12 +83,17 @@ export function Group({
   dated?: boolean
   highlight?: string
 }): ReactElement {
+  const contextOf = useContextOf()
+  const panels = useAgendaPanels(tasks)
   return (
     <TaskGroup label={label} count={tasks.length} tone={tone}>
       {tasks.map(task => (
         <AgendaRow
           key={task.id}
           task={task}
+          context={contextOf(task)}
+          open={panels.isOpen(task.key)}
+          onShow={panels.show}
           showDue={!dated}
           highlight={highlight}
         />
@@ -96,20 +102,24 @@ export function Group({
   )
 }
 
-function AgendaRow({
+const AgendaRow = memo(function AgendaRow({
   task,
+  context,
+  open,
+  onShow,
   showDue,
   highlight
 }: {
   task: AgendaTask | SearchResult
+  context: string
+  open: boolean
+  onShow: AgendaPanels['show']
   showDue: boolean
   highlight: string
 }): ReactElement {
   const { t } = useI18n()
-  const contextOf = useContextOf()
   const match = 'match' in task ? task.match : null
   const comment = match?.field === 'comment' ? match : null
-  const panel = useAgendaTaskPanel(task, comment?.commentId)
 
   return (
     <TaskRow
@@ -121,15 +131,15 @@ function AgendaRow({
             variant="body2"
             className="u-ta-left"
             onClick={() => {
-              panel.show()
+              onShow(task.key, comment?.commentId)
             }}
           >
             <Highlight text={task.title} query={highlight} />
           </Link>
-          {panel.open && <AgendaTaskPanel task={task} onClose={panel.close} />}
+          {open && <AgendaTaskPanel task={task} />}
         </>
       }
-      context={contextOf(task)}
+      context={context}
       excerpt={
         comment ? (
           <>
@@ -153,7 +163,7 @@ function AgendaRow({
       }
     />
   )
-}
+})
 
 const FILTER_LAYOUTS = ['list', 'board'] as const
 type FilterLayout = (typeof FILTER_LAYOUTS)[number]
@@ -307,6 +317,8 @@ function ByStatus({
   status?: keyof typeof COLUMNS
 }): ReactElement {
   const { t } = useI18n()
+  const contextOf = useContextOf()
+  const panels = useAgendaPanels(tasks)
   const columns = COLUMNS[status]
     .map(category => ({
       category,
@@ -322,7 +334,13 @@ function ByStatus({
           count={column.tasks.length}
         >
           {column.tasks.map(task => (
-            <FilterCard key={task.id} task={task} />
+            <FilterCard
+              key={task.id}
+              task={task}
+              context={contextOf(task)}
+              open={panels.isOpen(task.key)}
+              onShow={panels.show}
+            />
           ))}
           {column.tasks.length === 0 && (
             <EmptyColumn label={t('board.emptyColumn')} />
@@ -333,13 +351,21 @@ function ByStatus({
   )
 }
 
-function FilterCard({ task }: { task: AgendaTask }): ReactElement {
-  const contextOf = useContextOf()
-  const panel = useAgendaTaskPanel(task)
+const FilterCard = memo(function FilterCard({
+  task,
+  context,
+  open,
+  onShow
+}: {
+  task: AgendaTask
+  context: string
+  open: boolean
+  onShow: AgendaPanels['show']
+}): ReactElement {
   return (
     <Card label={`${task.key} ${task.title}`}>
       <Typography variant="caption" color="textSecondary">
-        {contextOf(task)}
+        {context}
       </Typography>
       <CardTitle>
         <Link
@@ -348,12 +374,12 @@ function FilterCard({ task }: { task: AgendaTask }): ReactElement {
           underline="none"
           className="u-ta-left"
           onClick={() => {
-            panel.show()
+            onShow(task.key)
           }}
         >
           {task.title}
         </Link>
-        {panel.open && <AgendaTaskPanel task={task} onClose={panel.close} />}
+        {open && <AgendaTaskPanel task={task} />}
       </CardTitle>
       {(task.priority !== null ||
         task.dueDate !== null ||
@@ -370,7 +396,7 @@ function FilterCard({ task }: { task: AgendaTask }): ReactElement {
       )}
     </Card>
   )
-}
+})
 
 const AGENDA_ICONS = {
   today: CalendarToday,

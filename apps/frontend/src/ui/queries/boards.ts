@@ -1,6 +1,7 @@
 import {
   skipToken,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
   type UseMutationResult,
@@ -56,6 +57,19 @@ const whole = (board: Board) => board
 /** The board as last fetched, without fetching it. */
 export function useCachedBoard(boardId: string): Board | undefined {
   return useCachedBoardOf(boardId, whole)
+}
+
+/** The tasks of these boards as last fetched, without fetching them. */
+export function useCachedTasks(boardIds: string[]): Task[] {
+  const api = useBoardsApi()
+  return useQueries({
+    queries: boardIds.map(boardId => ({
+      queryKey: keys.board(boardId),
+      queryFn: () => api.getBoard(boardId),
+      enabled: false
+    })),
+    combine: results => results.flatMap(result => result.data?.tasks ?? [])
+  })
 }
 
 /** The task's sub-tasks as last fetched: renders again only when they change. */

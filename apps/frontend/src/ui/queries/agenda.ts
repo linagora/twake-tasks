@@ -3,6 +3,7 @@ import {
   useQueryClient,
   type UseQueryResult
 } from '@tanstack/react-query'
+import { useCallback } from 'react'
 
 import { type Agenda } from '@/application/boards'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
@@ -17,10 +18,10 @@ export type UpcomingSpan = (typeof UPCOMING_SPANS)[number]
 // The lists span many boards, while a change only refreshes its own board.
 export function useRefreshLists(): () => void {
   const queryClient = useQueryClient()
-  return () => {
+  return useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: keys.agendas() })
     void queryClient.invalidateQueries({ queryKey: keys.searches() })
-  }
+  }, [queryClient])
 }
 
 export function useAgenda(
