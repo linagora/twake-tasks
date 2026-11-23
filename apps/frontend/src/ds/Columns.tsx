@@ -258,6 +258,9 @@ export function Card({
         bgcolor: 'background.paper',
         border: 1,
         borderColor: 'divider',
+        // A board can hold hundreds of cards: the ones off screen are not painted on every scroll or hover frame.
+        contentVisibility: 'auto',
+        containIntrinsicSize: 'auto 96px',
         transition: 'box-shadow 120ms, border-color 120ms',
         '&:hover': { boxShadow: 2, borderColor: 'transparent' },
         '&:focus-visible': {
