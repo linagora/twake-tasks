@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { ApiError } from '@/application/boards'
@@ -94,6 +94,41 @@ describe('a board open in two places', () => {
     expect(
       comment.getByRole('button', { name: '🎉 from Bob Durand' })
     ).toBeInTheDocument()
+  })
+
+  it('watches the board once with one of its tasks open', async () => {
+    const { board, boardsApi } = await openLogo()
+
+    expect(boardsApi.openWatches(board.id)).toBe(1)
+  })
+
+  it('stops watching the board once it leaves the screen', async () => {
+    const { board, boardsApi } = await openLogo()
+
+    cleanup()
+
+    expect(boardsApi.openWatches(board.id)).toBe(0)
+  })
+
+  it('still shows a change made elsewhere once the task closes', async () => {
+    const { board, boardsApi } = await openLogo()
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' })
+    )
+    await settle()
+
+    act(() => {
+      boardsApi.changeElsewhere(board.id, changed => {
+        changed.tasks.push(
+          aTask(changed.sections[0] ?? null, { key: 'DES-2', title: 'Font' })
+        )
+      })
+    })
+
+    expect(
+      await screen.findByRole('button', { name: 'Font' })
+    ).toBeInTheDocument()
+    expect(boardsApi.openWatches(board.id)).toBe(1)
   })
 
   it('reads the board and the open comments once per change', async () => {
