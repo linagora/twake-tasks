@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useLayoutEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
 import type { Task } from '@/domain/board'
@@ -31,19 +31,11 @@ export function useTaskPanel(
   const [params, setParams] = useSearchParams()
   const shown = params.get('task')
   const open = shown !== null && lineage(shown, tasks).includes(key)
+  const openTask = useOpenTask()
 
   const show = useCallback(() => {
-    setParams(
-      current => {
-        const next = new URLSearchParams(current)
-        next.set('task', key)
-        if (commentId) next.set('comment', commentId)
-        else next.delete('comment')
-        return next
-      },
-      { replace: true }
-    )
-  }, [key, commentId, setParams])
+    openTask(key, commentId)
+  }, [key, commentId, openTask])
 
   const close = useCallback(() => {
     const parentKey = lineage(key, tasks)[1]
@@ -63,6 +55,31 @@ export function useTaskPanel(
   }, [key, tasks, setParams])
 
   return { open, show, close }
+}
+
+/**
+ * Opens the panel of a task, and keeps its identity while the URL changes. A
+ * board hands it to its cards: a card that read the URL itself would render
+ * again, with all the others, each time a task opens or closes.
+ */
+export function useOpenTask(): (key: string, commentId?: string) => void {
+  const [, setParams] = useSearchParams()
+  const latest = useRef(setParams)
+  useLayoutEffect(() => {
+    latest.current = setParams
+  })
+  return useCallback((key: string, commentId?: string) => {
+    latest.current(
+      current => {
+        const next = new URLSearchParams(current)
+        next.set('task', key)
+        if (commentId) next.set('comment', commentId)
+        else next.delete('comment')
+        return next
+      },
+      { replace: true }
+    )
+  }, [])
 }
 
 /**

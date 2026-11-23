@@ -12,7 +12,6 @@ import {
   DueChip,
   PriorityChip
 } from '@/ui/boards/TaskFacts'
-import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useNewTaskHighlight } from '@/ui/shell/NewTaskHighlight'
 
@@ -37,15 +36,16 @@ function Row({
 export function TaskListRow({
   task,
   sections,
+  onOpen,
   sortable = false
 }: {
   task: Task
   sections: Section[]
+  onOpen: (key: string) => void
   /** Dragged to another place of the list, as a card on a board. */
   sortable?: boolean
 }): ReactElement {
   const { t } = useI18n()
-  const panel = useTaskPanel(task.key)
   const newTask = useNewTaskHighlight(task.key)
   const select = useKeySelect(task)
   const pickByClick = usePickByClick(task)
@@ -72,7 +72,7 @@ export function TaskListRow({
           onClick={event => {
             if (pickByClick(event)) return
             newTask.clear()
-            panel.show()
+            onOpen(task.key)
           }}
         >
           {task.title}

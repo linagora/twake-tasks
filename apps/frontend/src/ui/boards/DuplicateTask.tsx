@@ -1,6 +1,5 @@
 import { Alert } from '@linagora/twake-mui'
 import type { ReactElement } from 'react'
-import { useSearchParams } from 'react-router'
 
 import { Toast } from '@/ds/Toast'
 import type { Task } from '@/domain/board'
@@ -12,10 +11,10 @@ const MAX_TITLE = 500
 /** Copies the task, then opens the copy in the panel. */
 export function useDuplicate(
   boardId: string,
-  task: Task
+  task: Task,
+  openTask: (key: string) => void
 ): { duplicate: () => void; notice: ReactElement } {
   const { t } = useI18n()
-  const [, setParams] = useSearchParams()
   const copy = useDuplicateTask(boardId)
 
   return {
@@ -27,15 +26,7 @@ export function useDuplicate(
         },
         {
           onSuccess: ({ key }) => {
-            setParams(
-              current => {
-                const next = new URLSearchParams(current)
-                next.set('task', key)
-                next.delete('comment')
-                return next
-              },
-              { replace: true }
-            )
+            openTask(key)
           }
         }
       )

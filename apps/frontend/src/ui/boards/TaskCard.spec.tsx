@@ -1,19 +1,21 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { Task } from '@/domain/board'
 import { aBoard, aTask, fakeBoardsApi } from '@/testing/fakeBoardsApi'
-import { renderRoute } from '@/testing/renderWithProviders'
+import { renderRoute, renderWithProviders } from '@/testing/renderWithProviders'
+import { TaskCard } from '@/ui/boards/TaskCard'
 
-// Each render of a card asks for its panel once, by the card's key.
-const panelReads = vi.hoisted(() => new Map<string, number>())
-vi.mock(import('./useTaskPanel'), async importOriginal => {
+// Each render of a card asks once whether its task is the new one.
+const cardRenders = vi.hoisted(() => new Map<string, number>())
+vi.mock(import('@/ui/shell/NewTaskHighlight'), async importOriginal => {
   const actual = await importOriginal()
   return {
     ...actual,
-    useTaskPanel: (...args: Parameters<typeof actual.useTaskPanel>) => {
-      panelReads.set(args[0], (panelReads.get(args[0]) ?? 0) + 1)
-      return actual.useTaskPanel(...args)
+    useNewTaskHighlight: (key: string) => {
+      cardRenders.set(key, (cardRenders.get(key) ?? 0) + 1)
+      return actual.useNewTaskHighlight(key)
     }
   }
 })
@@ -50,7 +52,7 @@ describe('TaskCard', () => {
     await waitFor(() => {
       expect(boardsApi.getBoard).toHaveBeenCalledTimes(1)
     })
-    panelReads.clear()
+    cardRenders.clear()
 
     boardsApi.changeElsewhere(board.id, changed => {
       const colors = changed.tasks.find(task => task.key === 'DES-2')
@@ -59,7 +61,49 @@ describe('TaskCard', () => {
 
     const colors = within(screen.getByRole('article', { name: 'DES-2 Colors' }))
     expect(await colors.findByLabelText('Priority 1')).toBeInTheDocument()
-    expect(panelReads.get('DES-1')).toBeUndefined()
+    expect(cardRenders.get('DES-1')).toBeUndefined()
+  })
+
+  it('does not render again when a task opens or closes', async () => {
+    const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
+    const logo = aTask(board.sections[0] ?? null, {
+      key: 'DES-1',
+      title: 'Logo'
+    })
+    board.tasks = [logo]
+    const onOpen = vi.fn()
+    const router = createMemoryRouter([
+      {
+        path: '/',
+        element: (
+          <TaskCard
+            task={logo}
+            boardId={board.id}
+            members={[]}
+            shareable={false}
+            labels={[]}
+            sections={board.sections}
+            onMove={undefined}
+            onOpen={onOpen}
+            today="2026-01-01"
+          />
+        )
+      }
+    ])
+    renderWithProviders(<RouterProvider router={router} />, {
+      boardsApi: fakeBoardsApi([board])
+    })
+    const card = within(
+      await screen.findByRole('article', { name: 'DES-1 Logo' })
+    )
+    const before = cardRenders.get('DES-1')
+
+    await act(() => router.navigate('/?task=DES-2', { replace: true }))
+    await act(() => router.navigate('/', { replace: true }))
+
+    expect(cardRenders.get('DES-1')).toBe(before)
+    fireEvent.click(card.getByRole('button', { name: 'Logo' }))
+    expect(onOpen).toHaveBeenCalledWith('DES-1')
   })
 
   it('marks a past due date as overdue', async () => {

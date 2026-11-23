@@ -22,7 +22,6 @@ import {
   DueChip,
   PriorityChip
 } from '@/ui/boards/TaskFacts'
-import { useTaskPanel } from '@/ui/boards/useTaskPanel'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useSubtasks } from '@/ui/queries/boards'
 import { useNewTaskHighlight } from '@/ui/shell/NewTaskHighlight'
@@ -37,14 +36,13 @@ export const TaskCard = memo(function TaskCard({
   /** Unread: a new day renders the card again, so its due date turns overdue. */
   today: string
 }): ReactElement {
-  const { task, boardId, sections, onMove } = context
+  const { task, boardId, sections, onMove, onOpen } = context
   const { t } = useI18n()
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [assigning, setAssigning] = useState<HTMLElement | null>(null)
   // A board mounts every card: the menu and its hooks wait for a first use,
   // then stay for the toasts that outlive it.
   const [used, setUsed] = useState(false)
-  const panel = useTaskPanel(task.key)
   const newTask = useNewTaskHighlight(task.key)
   const select = useKeySelect(task)
   const pickByClick = usePickByClick(task)
@@ -79,7 +77,7 @@ export const TaskCard = memo(function TaskCard({
           onClick={event => {
             if (pickByClick(event)) return
             newTask.clear()
-            panel.show()
+            onOpen(task.key)
           }}
         >
           {task.title}
