@@ -3,6 +3,8 @@ import {
   type StartedRabbitMQContainer
 } from '@testcontainers/rabbitmq'
 import { connect, type Channel, type ChannelModel } from 'amqplib'
+import type { AddressInfo, Socket } from 'node:net'
+import { connect as netConnect, createServer } from 'node:net'
 import { pino } from 'pino'
 import {
   afterAll,
@@ -99,6 +101,51 @@ function publish(
 
 async function ready(queue: string): Promise<number> {
   return (await channel.checkQueue(queue)).messageCount
+}
+
+// As a load balancer in front of a node that hangs: the connections it holds
+// stay open and go silent, and a new one reaches a node that answers.
+async function hangingNode() {
+  const target = new URL(container.getAmqpUrl())
+  const open = new Set<Socket>()
+  const hung = new Set<Socket>()
+  const server = createServer(client => {
+    const upstream = netConnect(Number(target.port), target.hostname)
+    client.pipe(upstream).pipe(client)
+    for (const socket of [client, upstream]) {
+      open.add(socket)
+      socket.on('error', () => undefined)
+      socket.on('close', () => open.delete(socket))
+    }
+  })
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+  const { port } = server.address() as AddressInfo
+  const url = new URL(container.getAmqpUrl())
+  url.hostname = '127.0.0.1'
+  url.port = String(port)
+  return {
+    url: url.toString(),
+    hang() {
+      for (const socket of open) {
+        socket.unpipe()
+        socket.pause()
+        hung.add(socket)
+      }
+    },
+    // As the heartbeat would, so that the clients can close.
+    endHung() {
+      for (const socket of hung) socket.destroy()
+    },
+    close: () => new Promise(resolve => server.close(resolve))
+  }
+}
+
+async function nextMessage(queue: string) {
+  return vi.waitFor(async () => {
+    const got = await channel.get(queue, { noAck: true })
+    if (!got) throw new Error('nothing yet')
+    return got
+  }, 5000)
 }
 
 describe('startConsumer', () => {
@@ -517,6 +564,32 @@ describe('startPublisher', () => {
     }
   )
 
+  it('gives up on a hung node, then publishes on a new connection', async () => {
+    const node = await hangingNode()
+    const publisher = await startPublisher(
+      node.url,
+      ACTIVITY_EXCHANGE,
+      pino({ level: 'silent' }),
+      { timeoutMs: 500 }
+    )
+    await channel.assertExchange(ACTIVITY_EXCHANGE, 'topic', { durable: true })
+    const { queue } = await channel.assertQueue('', { exclusive: true })
+    await channel.bindQueue(queue, ACTIVITY_EXCHANGE, 'com.twake.tasks.#')
+
+    try {
+      node.hang()
+      await expect(publisher.publish(event)).rejects.toThrow()
+      await publisher.publish({ ...event, id: 'evt-2' })
+
+      const message = await nextMessage(queue)
+      expect(message.properties.messageId).toBe('evt-2')
+    } finally {
+      node.endHung()
+      await publisher.close()
+      await node.close()
+    }
+  })
+
   it('confirms an event no one listens to', async () => {
     const publisher = await startPublisher(
       container.getAmqpUrl(),
@@ -563,6 +636,48 @@ describe('live board changes', () => {
       }
     } finally {
       for (const replica of replicas) await replica.close()
+      await sql.end()
+    }
+  })
+
+  it('reach the other replicas again once the node of a publisher hangs', async () => {
+    const { sql, db } = createDb(inject('databaseUrl'))
+    const log = pino({ level: 'silent' })
+    const node = await hangingNode()
+    const publisher = await connectLive(node.url, log, { timeoutMs: 500 })
+    const listener = await connectLive(container.getAmqpUrl(), log)
+    const boardId = '0199d0a4-5c3e-7b1a-9f2d-3e4f5a6b7c8d'
+    const heard = vi.fn<(version: number) => void>()
+    const tell = (version: number) =>
+      db.transaction(tx => {
+        tellBoardChanged(tx, { id: boardId, version })
+        return Promise.resolve()
+      })
+
+    try {
+      const changes = createChanges()
+      changes.subscribe(boardId, version => {
+        heard(version)
+      })
+      await listenForBoardChanges(listener, 'live', changes, log)
+      const warn = vi.fn()
+      await listenForBoardChanges(publisher, 'live', createChanges(), { warn })
+
+      node.hang()
+      await tell(7)
+      await vi.waitFor(() => {
+        expect(warn).toHaveBeenCalled()
+      }, 5000)
+      await tell(8)
+
+      await vi.waitFor(() => {
+        expect(heard).toHaveBeenCalledWith(8)
+      }, 5000)
+    } finally {
+      node.endHung()
+      await publisher.close()
+      await listener.close()
+      await node.close()
       await sql.end()
     }
   })

@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import {
   DeadLetterError,
+  type ILogger,
   RabbitMQClient,
   type RabbitMQMessageProperties
 } from '@linagora/rabbitmq-client'
@@ -250,17 +251,84 @@ export async function requestSpaceSync(
   }
 }
 
+const PUBLISH_TIMEOUT_MS = 5000
+
+async function within<T>(ms: number, work: Promise<T>): Promise<T> {
+  let timer: NodeJS.Timeout | undefined
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`publish not confirmed within ${String(ms)} ms`))
+        }, ms)
+      })
+    ])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+// One attempt per call. The client waits on a confirm for as long as it
+// believes its connection alive, which a hung node makes last until the
+// heartbeat gives up. So a publish is bounded, and the one after a failure
+// goes out on a new connection; the old one is left to close on its own.
+async function boundedPublisher(
+  url: string,
+  logger: ILogger,
+  timeoutMs: number
+): Promise<Pick<RabbitMQClient, 'publish' | 'close'>> {
+  const open = () => {
+    const client = new RabbitMQClient({ url, logger, publishMaxAttempts: 1 })
+    const ready = client.init()
+    ready.catch(() => undefined)
+    return { client, ready }
+  }
+  let current = open()
+  await current.ready
+  return {
+    async publish(...args) {
+      const used = current
+      try {
+        await within(
+          timeoutMs,
+          used.ready.then(() => used.client.publish(...args))
+        )
+      } catch (error) {
+        if (current === used) {
+          current = open()
+          used.client.close().catch(() => undefined)
+        }
+        throw error
+      }
+    },
+    close: () => current.client.close()
+  }
+}
+
+// Publishing has a connection of its own, so a hung one is replaced without
+// dropping the replica's queue.
 export async function connectLive(
   url: string,
-  logger: Logger
-): Promise<RabbitMQClient> {
+  logger: Logger,
+  { timeoutMs = PUBLISH_TIMEOUT_MS } = {}
+): Promise<Pick<RabbitMQClient, 'publish' | 'subscribe' | 'close'>> {
   // The client logs every publish and delivery at info.
-  const client = new RabbitMQClient({
-    url,
-    logger: logger.child({ component: 'live' }, { level: 'warn' })
-  })
-  await client.init()
-  return client
+  const quiet = logger.child({ component: 'live' }, { level: 'warn' })
+  const listener = new RabbitMQClient({ url, logger: quiet })
+  await listener.init()
+  const publisher = await boundedPublisher(url, quiet, timeoutMs)
+  return {
+    subscribe: (...args) => listener.subscribe(...args),
+    publish: publisher.publish,
+    async close() {
+      try {
+        await publisher.close()
+      } finally {
+        await listener.close()
+      }
+    }
+  }
 }
 
 export interface Publisher {
@@ -268,16 +336,16 @@ export interface Publisher {
   close(): Promise<void>
 }
 
-// One attempt per call: the outbox relay retries on its next run, and a
-// backoff here would hold its transaction open. Not mandatory, since Tasks
-// runs with no subscriber on the activity exchange when it is standalone.
+// The outbox relay retries on its next run, and holds its transaction while
+// it waits. Not mandatory, since Tasks runs with no subscriber on the activity
+// exchange when it is standalone.
 export async function startPublisher(
   url: string,
   exchange: string,
-  logger: Logger
+  logger: Logger,
+  { timeoutMs = PUBLISH_TIMEOUT_MS } = {}
 ): Promise<Publisher> {
-  const client = new RabbitMQClient({ url, logger, publishMaxAttempts: 1 })
-  await client.init()
+  const client = await boundedPublisher(url, logger, timeoutMs)
   return {
     async publish(event) {
       await client.publish(
