@@ -36,6 +36,18 @@ async function openLogo() {
   }
 }
 
+async function openDesign() {
+  const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
+  board.tasks = [
+    aTask(board.sections[0] ?? null, { key: 'DES-1', title: 'Logo' })
+  ]
+  const boardsApi = fakeBoardsApi([board])
+  const { router } = renderRoute(`/boards/${board.id}`, { boardsApi })
+  await screen.findByRole('heading', { name: 'Design' })
+  await settle()
+  return { board, boardsApi, router }
+}
+
 describe('a board open in two places', () => {
   it('shows a change made elsewhere', async () => {
     const board = aBoard({ name: 'Design', keyPrefix: 'DES' })
@@ -140,6 +152,38 @@ describe('a board open in two places', () => {
     await send()
 
     expect(boardsApi.getBoard).toHaveBeenCalledTimes(boardReads + 2)
+  })
+
+  it('does not read the board again when a view of it mounts and its version has not moved', async () => {
+    const { board, boardsApi, router } = await openDesign()
+    const reads = boardsApi.getBoard.mock.calls.length
+
+    await act(() => router.navigate(`/boards/${board.id}?task=DES-1`))
+    await screen.findByRole('dialog', { name: 'DES-1 Logo' })
+    await act(() => router.navigate(`/boards/${board.id}/trash`))
+    await screen.findByRole('heading', { name: 'Trash' })
+    await act(() => router.navigate(`/boards/${board.id}`))
+    await screen.findByRole('heading', { name: 'Design' })
+    await settle()
+
+    expect(boardsApi.getBoard).toHaveBeenCalledTimes(reads)
+  })
+
+  it('reads the board again on its next view when it changed while nobody watched it', async () => {
+    const { board, boardsApi, router } = await openDesign()
+    await act(() => router.navigate('/boards'))
+    await settle()
+
+    boardsApi.changeElsewhere(board.id, changed => {
+      changed.tasks.push(
+        aTask(changed.sections[0] ?? null, { key: 'DES-2', title: 'Icon' })
+      )
+    })
+    await act(() => router.navigate(`/boards/${board.id}`))
+
+    expect(
+      await screen.findByRole('button', { name: 'Icon' })
+    ).toBeInTheDocument()
   })
 
   it.each([
