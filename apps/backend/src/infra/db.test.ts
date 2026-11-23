@@ -1,4 +1,5 @@
 import { readdirSync } from 'node:fs'
+import { createServer, type AddressInfo, type Socket } from 'node:net'
 import { fileURLToPath } from 'node:url'
 import { eq, sql as statement, type SQL } from 'drizzle-orm'
 import { afterAll, describe, expect, inject, it, vi } from 'vitest'
@@ -415,18 +416,19 @@ describe('afterCommit', () => {
   })
 })
 
+const codeOf = (work: Promise<unknown>) =>
+  work.then(
+    () => 'done',
+    (error: unknown) =>
+      isTransient(error) ? 'transient' : `other: ${String(error)}`
+  )
+
 describe('the statement timeout of requests', () => {
   const bounded = createDb(inject('databaseUrl'), console, {
     statementTimeoutMs: 200
   })
   const sleep = (seconds: number) => (tx: Tx) =>
     tx.execute(statement`select pg_sleep(${seconds})`)
-  const codeOf = (work: Promise<unknown>) =>
-    work.then(
-      () => 'done',
-      (error: unknown) =>
-        isTransient(error) ? 'transient' : `other: ${String(error)}`
-    )
 
   afterAll(async () => {
     await bounded.sql.end()
@@ -452,6 +454,88 @@ describe('the statement timeout of requests', () => {
 
   it('is off unless asked for', async () => {
     expect(await codeOf(inTenant(db, aUser(), sleep(0.5)))).toBe('done')
+  })
+})
+
+describe('a request while the database does not answer', () => {
+  // Accepts connections and never answers, like a load balancer with no
+  // server behind it, or a frozen server.
+  const silent = createServer(() => undefined)
+  const held: Socket[] = []
+  silent.on('connection', socket => held.push(socket))
+  const listening = new Promise<void>(resolve =>
+    silent.listen(0, '127.0.0.1', resolve)
+  )
+  const urlOfSilent = async () => {
+    await listening
+    const { port } = silent.address() as AddressInfo
+    return `postgres://tasks:tasks@127.0.0.1:${String(port)}/tasks`
+  }
+  const noWork = () => Promise.resolve()
+
+  afterAll(async () => {
+    for (const socket of held) socket.destroy()
+    await new Promise(resolve => silent.close(resolve))
+  })
+
+  it('fails as transient once the connect timeout passes', async () => {
+    const unreachable = createDb(await urlOfSilent(), console, {
+      connectTimeoutMs: 300
+    })
+    try {
+      const started = performance.now()
+      expect(await codeOf(inTenant(unreachable.db, aUser(), noWork))).toBe(
+        'transient'
+      )
+      expect(performance.now() - started).toBeLessThan(2000)
+    } finally {
+      await unreachable.sql.end({ timeout: 0 })
+    }
+  })
+
+  it('bounds the requests queued for a connection by the same timeout', async () => {
+    const unreachable = createDb(await urlOfSilent(), console, {
+      poolMax: 1,
+      connectTimeoutMs: 300
+    })
+    try {
+      const started = performance.now()
+      const outcomes = await Promise.all(
+        Array.from({ length: 5 }, () =>
+          codeOf(inTenant(unreachable.db, aUser(), noWork))
+        )
+      )
+      expect(outcomes).toEqual(Array(5).fill('transient'))
+      expect(performance.now() - started).toBeLessThan(1000)
+    } finally {
+      await unreachable.sql.end({ timeout: 0 })
+    }
+  })
+
+  it('does not run a request it gave up on once a connection frees', async () => {
+    const saturated = createDb(inject('databaseUrl'), console, {
+      poolMax: 1,
+      connectTimeoutMs: 300
+    })
+    let ran = false
+    try {
+      const holding = inTenant(saturated.db, aUser(), tx =>
+        tx.execute(statement`select pg_sleep(0.6)`)
+      )
+      expect(
+        await codeOf(
+          inTenant(saturated.db, aUser(), () => {
+            ran = true
+            return Promise.resolve()
+          })
+        )
+      ).toBe('transient')
+      await holding
+      await saturated.db.execute(statement`select 1`)
+      expect(ran).toBe(false)
+    } finally {
+      await saturated.sql.end()
+    }
   })
 })
 

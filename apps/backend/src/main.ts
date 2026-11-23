@@ -63,7 +63,8 @@ const metrics = config.METRICS_ENABLED ? createMetrics() : undefined
 
 const { sql, db } = createDb(config.DATABASE_URL, logger, {
   poolMax: config.DATABASE_POOL_MAX,
-  statementTimeoutMs: config.DATABASE_STATEMENT_TIMEOUT_MS
+  statementTimeoutMs: config.DATABASE_STATEMENT_TIMEOUT_MS,
+  connectTimeoutMs: config.DATABASE_CONNECT_TIMEOUT_MS
 })
 await assertRowLevelSecurity(sql, logger)
 if (config.MIGRATE_ON_START) {
@@ -73,7 +74,10 @@ if (config.MIGRATE_ON_START) {
   )
 }
 // Readiness must not wait behind the requests that fill the pool.
-const probe = postgres(config.DATABASE_URL, { max: 1 })
+const probe = postgres(config.DATABASE_URL, {
+  max: 1,
+  connect_timeout: config.DATABASE_CONNECT_TIMEOUT_MS / 1000
+})
 // Without MIGRATE_ON_START, a replica may start before its release migrated.
 let pending = await pendingMigrations(probe)
 if (pending.length > 0) {

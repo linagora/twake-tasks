@@ -67,7 +67,10 @@ export function ownRows(userId: AnyPgColumn, orReach?: SQL) {
 
 function connect(
   url: string,
-  options: Pick<postgres.Options<never>, 'max' | 'max_lifetime'> = {}
+  options: Pick<
+    postgres.Options<never>,
+    'max' | 'max_lifetime' | 'connect_timeout'
+  > = {}
 ) {
   const client = postgres(url, { onnotice: () => undefined, ...options })
   return { sql: client, db: drizzle({ client }) }
@@ -116,10 +119,17 @@ function runHooksOnCommit(
   }) as Transaction
 }
 
-const requestTimeouts = new WeakMap<Db, number>()
+interface RequestTimeouts {
+  statementTimeoutMs?: number
+  connectTimeoutMs?: number
+}
 
-// The statement timeout bounds the work of `inTenant` alone, which serves
-// requests: jobs, events and migrations may legitimately run longer.
+const requestTimeouts = new WeakMap<Db, RequestTimeouts>()
+
+// The statement timeout and the wait behind a busy pool bound the work of
+// `inTenant` alone, which serves requests: jobs, events and migrations may
+// legitimately run or wait longer. The connect timeout holds for every
+// connection of the pool.
 // No idle_in_transaction_session_timeout: postgres.js 3.4.9 rejects the
 // transaction of a session the server ends, but the next query of its body
 // writes to the closed socket and throws outside any promise, which ends the
@@ -127,16 +137,17 @@ const requestTimeouts = new WeakMap<Db, number>()
 export function createDb(
   url: string,
   log: HookLog = console,
-  options: { poolMax?: number; statementTimeoutMs?: number } = {}
+  options: RequestTimeouts & { poolMax?: number } = {}
 ) {
-  const { sql, db } = connect(
-    url,
-    options.poolMax === undefined ? {} : { max: options.poolMax }
-  )
+  const { poolMax, ...timeouts } = options
+  const { sql, db } = connect(url, {
+    ...(poolMax === undefined ? {} : { max: poolMax }),
+    ...(timeouts.connectTimeoutMs === undefined
+      ? {}
+      : { connect_timeout: timeouts.connectTimeoutMs / 1000 })
+  })
   runHooksOnCommit(db, log)
-  if (options.statementTimeoutMs !== undefined) {
-    requestTimeouts.set(db, options.statementTimeoutMs)
-  }
+  requestTimeouts.set(db, timeouts)
   return { sql, db }
 }
 
@@ -219,9 +230,39 @@ export function inTenant<T>(
   identity: TenantIdentity,
   work: (tx: Tx) => Promise<T>
 ): Promise<T> {
-  return db.transaction(async tx => {
-    await asTenant(tx, identity, requestTimeouts.get(db))
+  const { statementTimeoutMs, connectTimeoutMs } = requestTimeouts.get(db) ?? {}
+  if (connectTimeoutMs === undefined) {
+    return db.transaction(async tx => {
+      await asTenant(tx, identity, statementTimeoutMs)
+      return work(tx)
+    })
+  }
+  // postgres.js queues a query while every connection is busy or connecting,
+  // with no limit. A request that waited too long has been answered by the
+  // time its transaction begins, so that transaction does nothing.
+  let timer: NodeJS.Timeout | undefined
+  let late = false
+  const noConnection = () =>
+    Object.assign(
+      new Error(
+        `no database transaction began within ${String(connectTimeoutMs)} ms`
+      ),
+      { code: 'CONNECT_TIMEOUT' }
+    )
+  const waited = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      late = true
+      reject(noConnection())
+    }, connectTimeoutMs)
+  })
+  const done = db.transaction(async tx => {
+    clearTimeout(timer)
+    if (late) throw noConnection()
+    await asTenant(tx, identity, statementTimeoutMs)
     return work(tx)
+  })
+  return Promise.race([done, waited]).finally(() => {
+    clearTimeout(timer)
   })
 }
 
