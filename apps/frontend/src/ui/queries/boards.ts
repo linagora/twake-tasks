@@ -334,8 +334,12 @@ export function useSetLayout(
           }
       )
     },
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
+    // One's own layout is outside the board's version: once kept, the cache
+    // already holds what the server has.
+    onSettled: (_result, error, { everyone }) =>
+      error || everyone
+        ? queryClient.invalidateQueries({ queryKey: keys.board(boardId) })
+        : undefined
   })
 }
 
