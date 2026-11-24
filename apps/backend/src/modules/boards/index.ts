@@ -73,7 +73,6 @@ export { addDefaultSections } from './store.ts'
 export {
   completionFor,
   inSection,
-  positionBetween,
   sectionOf,
   shownTaskOf,
   taskOf,
