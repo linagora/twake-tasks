@@ -58,7 +58,7 @@ async function notified(user: TestUser, readAt: (Date | null)[]) {
           organizationId: user.organizationId,
           userId: user.userId,
           reason: `reason-${String(index)}`,
-          createdAt: daysAgo(400),
+          createdAt: new Date(daysAgo(400).getTime() + index * 1000),
           readAt: at
         }))
       )
@@ -147,6 +147,20 @@ describe('the retention job', () => {
       await notificationsLeft(member, [memberOld, memberRecent, memberUnread])
     ).toEqual([memberRecent, memberUnread].sort())
     expect(await notificationsLeft(b2c, [b2cOld])).toEqual([])
+  })
+
+  it('keeps the 50 newest read notifications of a person, and every unread one', async () => {
+    const member = aUser()
+    const ids = await notified(member, [
+      null,
+      ...Array.from({ length: 52 }, () => daysAgo(1))
+    ])
+
+    await run()
+
+    expect(await notificationsLeft(member, ids)).toEqual(
+      [ids[0], ...ids.slice(3)].sort()
+    )
   })
 
   it('forgets a revoked session 90 days after its logout', async () => {

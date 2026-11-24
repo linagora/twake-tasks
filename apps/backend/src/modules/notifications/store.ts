@@ -8,6 +8,7 @@ import {
   memberLooks,
   memberNames,
   notifications,
+  NOTIFICATIONS_LISTED,
   projectMembers,
   settingsOfMember,
   taskHistory,
@@ -158,8 +159,8 @@ export function createNotificationStore(db: Db) {
               openableBy(tx, identity.userId)
             )
           )
-          .orderBy(desc(notifications.createdAt))
-          .limit(50)
+          .orderBy(desc(notifications.createdAt), desc(notifications.id))
+          .limit(NOTIFICATIONS_LISTED)
         const quoted = rows.map(({ comment, commentText, ...row }) => ({
           ...row,
           quote: comment === null ? null : (commentText ?? plainText(comment))
