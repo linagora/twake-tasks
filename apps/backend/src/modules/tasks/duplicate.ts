@@ -8,13 +8,13 @@ import {
   completionFor,
   inSection,
   membersOf,
-  positionBetween,
   sectionOf,
   shown,
   shownTaskOf,
   taskAssignees,
   taskHistory,
   taskLabels,
+  taskPositionIn,
   tasks
 } from '../boards/index.ts'
 import { writeOrRefuse } from '../kernel/index.ts'
@@ -48,19 +48,17 @@ export function createDuplicateStore(db: Db) {
         const first = counted.last - copied.length + 1
         const numbers = new Map(copied.map((row, at) => [row.id, first + at]))
         const section = await sectionOf(tx, boardId, original.sectionId)
-        const siblings = await tx
-          .select({ id: tasks.id, position: tasks.position })
-          .from(tasks)
-          .where(
-            original.parentId === null
-              ? inSection(boardId, original.sectionId)
-              : and(
-                  eq(tasks.boardId, boardId),
-                  eq(tasks.parentId, original.parentId)
-                )
-          )
-          .orderBy(asc(tasks.position))
-        const position = positionBetween(siblings, original.id, undefined)
+        const position = await taskPositionIn(
+          tx,
+          original.parentId === null
+            ? inSection(boardId, original.sectionId)
+            : and(
+                eq(tasks.boardId, boardId),
+                eq(tasks.parentId, original.parentId)
+              ),
+          original.id,
+          undefined
+        )
         // Sub-tasks complete with their parent, as moving it to such a section
         // would do.
         const completion = completionFor(section?.category ?? null)

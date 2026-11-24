@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ne, notInArray, sql } from 'drizzle-orm'
+import { and, desc, eq, ne, notInArray, sql } from 'drizzle-orm'
 import { generateKeyBetween } from 'fractional-indexing'
 import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
@@ -11,7 +11,6 @@ import {
   inSection,
   membersOf,
   nextOccurrence,
-  positionBetween,
   recurrenceOf,
   roleOn,
   sectionOf,
@@ -19,6 +18,7 @@ import {
   shownTaskOf,
   taskAssignees,
   taskOf,
+  taskPositionIn,
   tasks,
   taskTemplates,
   todayIn,
@@ -298,20 +298,17 @@ export function createTaskStore(db: Db) {
         if (section?.category === 'completed' && (await recur(tx, task))) {
           return null
         }
-        const others = await tx
-          .select({
-            id: tasks.id,
-            position: tasks.position,
-            hidden: sql<boolean>`${tasks.archivedAt} is not null or ${tasks.deletedAt} is not null`
-          })
-          .from(tasks)
-          .where(and(inSection(boardId, input.sectionId), ne(tasks.id, taskId)))
-          .orderBy(asc(tasks.position))
+        const position = await taskPositionIn(
+          tx,
+          and(inSection(boardId, input.sectionId), ne(tasks.id, taskId)),
+          input.afterId,
+          input.beforeId
+        )
         await tx
           .update(tasks)
           .set({
             sectionId: input.sectionId,
-            position: positionBetween(others, input.afterId, input.beforeId),
+            position,
             ...completionFor(section?.category ?? null, task)
           })
           .where(eq(tasks.id, taskId))

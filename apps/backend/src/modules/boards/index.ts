@@ -76,6 +76,7 @@ export {
   positionBetween,
   sectionOf,
   shownTaskOf,
-  taskOf
+  taskOf,
+  taskPositionIn
 } from './taskRows.ts'
 export { bumpBoard, bumpBoards, bumpProjects } from './versions.ts'
