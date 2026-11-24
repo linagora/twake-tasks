@@ -88,6 +88,29 @@
       "workingDays": "Solo días laborables, de lunes a viernes",
       "endsOn": "Hasta",
       "endsOnHint": "Déjelo vacío para seguir sin fin.",
+      "dueKind": "Vencimiento",
+      "dueKinds": {
+        "none": "Sin vencimiento",
+        "days": "Unos días después",
+        "monthDay": "Un día del mes",
+        "quarterEnd": "Al final del trimestre"
+      },
+      "dueAfter": "Después de",
+      "dueUnits": {
+        "days": "día |||| días",
+        "monthDay": "mes |||| meses",
+        "quarterEnd": "trimestre |||| trimestres"
+      },
+      "dueTime": "Vence a las",
+      "previous": "Si la tarea anterior sigue abierta",
+      "previousKinds": {
+        "keep": "Mantenerla",
+        "overwrite": "Cancelarla"
+      },
+      "previousHints": {
+        "keep": "Cada nueva tarea se suma a las anteriores.",
+        "overwrite": "La anterior pasa a la sección cancelada del tablero, o se archiva si el tablero no tiene ninguna."
+      },
       "paused": "En pausa",
       "pausedByAuthor": "En pausa: su autor ya no puede añadir tareas al proyecto. Guarde para reanudarla en su nombre.",
       "pausedByBoard": "En pausa: su tablero se archivó o salió del proyecto. Elija un tablero y guarde para reanudarla.",
@@ -101,7 +124,19 @@
         "monthlyLast": "El último día de cada mes a las %{time} |||| El último día cada %{smart_count} meses a las %{time}",
         "yearly": "Cada año el %{date} a las %{time}",
         "workingBefore": "%{summary}, o el día laborable anterior",
-        "until": "%{summary}, hasta el %{date}"
+        "until": "%{summary}, hasta el %{date}",
+        "withDue": "%{summary}, %{due}",
+        "due": {
+          "sameDay": "vence el mismo día",
+          "days": "vence %{smart_count} día después |||| vence %{smart_count} días después",
+          "monthDay": "vence el día %{day} del mes",
+          "monthDayLater": "vence el día %{day}, %{smart_count} mes después |||| vence el día %{day}, %{smart_count} meses después",
+          "monthLast": "vence el último día del mes",
+          "monthLastLater": "vence el último día del mes, %{smart_count} mes después |||| vence el último día del mes, %{smart_count} meses después",
+          "quarterEnd": "vence al final del trimestre",
+          "quarterEndLater": "vence al final del trimestre, %{smart_count} trimestre después |||| vence al final del trimestre, %{smart_count} trimestres después",
+          "at": "%{due} a las %{time}"
+        }
       }
     }
   },

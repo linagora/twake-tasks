@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import type {
   BoardSummary,
+  DueRule,
   Schedule,
   ScheduleRule,
   ScheduleSettings
@@ -10,6 +11,7 @@ import { localZone } from '@/ui/boards/dueLabel'
 import { useBoards } from '@/ui/queries/boards'
 
 export const MAX_EVERY = { daily: 365, weekly: 52, monthly: 12 }
+export const MAX_AFTER = { days: 365, monthDay: 12, quarterEnd: 4 }
 // February 29 is kept: a yearly run on it lands on the 28th in other years.
 export const DAYS_IN = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
@@ -27,6 +29,12 @@ export interface ScheduleDraft {
   workingDays: boolean
   endsOn: string
   paused: boolean
+  dueKind: DueRule['kind'] | 'none'
+  dueAfter: string
+  dueDay: string
+  /** Empty for all day. */
+  dueTime: string
+  previous: ScheduleSettings['previous']
 }
 
 export interface ScheduleFieldsProps {
@@ -42,6 +50,7 @@ type Missing = 'board' | 'weekdays'
 
 function scheduleDraft(schedule: Schedule | null): ScheduleDraft {
   const rule = schedule?.rule
+  const due = schedule?.due
   return {
     on: schedule !== null,
     boardId: schedule?.boardId ?? '',
@@ -56,8 +65,30 @@ function scheduleDraft(schedule: Schedule | null): ScheduleDraft {
     endsOn: schedule?.endsOn ?? '',
     // The API reports one that paused by itself as paused too, yet saving it
     // resumes it.
-    paused: Boolean(schedule?.paused && schedule.pausedBy === null)
+    paused: Boolean(schedule?.paused && schedule.pausedBy === null),
+    dueKind: due?.kind ?? 'none',
+    dueAfter: String(due?.after ?? 0),
+    dueDay: String(due?.kind === 'monthDay' ? due.day : 1),
+    dueTime: due?.time ?? '',
+    previous: schedule?.previous ?? 'keep'
   }
+}
+
+function dueOf(draft: ScheduleDraft): DueRule | null {
+  if (draft.dueKind === 'none') return null
+  const after = Math.min(
+    Math.max(Math.trunc(Number(draft.dueAfter)) || 0, 0),
+    MAX_AFTER[draft.dueKind]
+  )
+  const time = draft.dueTime || null
+  return draft.dueKind === 'monthDay'
+    ? {
+        kind: 'monthDay',
+        after,
+        day: draft.dueDay === 'last' ? 'last' : Number(draft.dueDay),
+        time
+      }
+    : { kind: draft.dueKind, after, time }
 }
 
 function ruleOf(draft: ScheduleDraft): ScheduleRule | 'weekdays' {
@@ -111,7 +142,9 @@ function scheduleSettings(
     zone,
     workingDays: draft.workingDays,
     endsOn: draft.endsOn || null,
-    paused: draft.paused
+    paused: draft.paused,
+    due: dueOf(draft),
+    previous: draft.previous
   }
 }
 

@@ -24,6 +24,7 @@ const summaryIn = (
     zone: 'Europe/Paris',
     workingDays: false,
     endsOn: null,
+    due: null,
     ...schedule
   })
 }
@@ -59,6 +60,21 @@ describe('scheduleSummary', () => {
         endsOn: '2030-01-01'
       },
       shown: 'Chaque année le 25 décembre à 08:00, jusqu’au 1 janv. 2030'
+    },
+    {
+      schedule: {
+        rule: { kind: 'monthly', every: 1, day: 25 },
+        due: { kind: 'monthDay', after: 1, day: 5, time: null }
+      },
+      shown: 'Le 25 de chaque mois à 08:00, échéance le 5, 1 mois après'
+    },
+    {
+      schedule: { due: { kind: 'days', after: 0, time: '18:00' } },
+      shown: 'Tous les jours à 08:00, échéance le jour même à 18:00'
+    },
+    {
+      schedule: { due: { kind: 'quarterEnd', after: 0, time: null } },
+      shown: 'Tous les jours à 08:00, échéance en fin de trimestre'
     }
   ])('reads $shown', ({ schedule, shown }) => {
     followZone('Europe/Paris')

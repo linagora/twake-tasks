@@ -88,6 +88,29 @@
       "workingDays": "Nur Werktage, Montag bis Freitag",
       "endsOn": "Bis",
       "endsOnHint": "Leer lassen, um ohne Ende fortzufahren.",
+      "dueKind": "Fällig",
+      "dueKinds": {
+        "none": "Ohne Fälligkeit",
+        "days": "Einige Tage später",
+        "monthDay": "An einem Tag des Monats",
+        "quarterEnd": "Am Quartalsende"
+      },
+      "dueAfter": "Abstand",
+      "dueUnits": {
+        "days": "Tag |||| Tage",
+        "monthDay": "Monat |||| Monate",
+        "quarterEnd": "Quartal |||| Quartale"
+      },
+      "dueTime": "Fällig um",
+      "previous": "Wenn die vorige Aufgabe noch offen ist",
+      "previousKinds": {
+        "keep": "Behalten",
+        "overwrite": "Abbrechen"
+      },
+      "previousHints": {
+        "keep": "Jede neue Aufgabe kommt zu den vorigen hinzu.",
+        "overwrite": "Die vorige kommt in den abgebrochenen Abschnitt des Boards, oder wird archiviert, wenn das Board keinen hat."
+      },
       "paused": "Pausiert",
       "pausedByAuthor": "Pausiert: Die Person, die sie angelegt hat, kann dem Projekt keine Aufgaben mehr hinzufügen. Speichern Sie, um sie in Ihrem Namen fortzusetzen.",
       "pausedByBoard": "Pausiert: Ihr Board wurde archiviert oder hat das Projekt verlassen. Wählen Sie ein Board und speichern Sie, um sie fortzusetzen.",
@@ -101,7 +124,19 @@
         "monthlyLast": "Am letzten Tag jedes Monats um %{time} |||| Am letzten Tag alle %{smart_count} Monate um %{time}",
         "yearly": "Jedes Jahr am %{date} um %{time}",
         "workingBefore": "%{summary}, oder am Werktag davor",
-        "until": "%{summary}, bis %{date}"
+        "until": "%{summary}, bis %{date}",
+        "withDue": "%{summary}, %{due}",
+        "due": {
+          "sameDay": "fällig am selben Tag",
+          "days": "fällig %{smart_count} Tag später |||| fällig %{smart_count} Tage später",
+          "monthDay": "fällig am %{day}. des Monats",
+          "monthDayLater": "fällig am %{day}., %{smart_count} Monat später |||| fällig am %{day}., %{smart_count} Monate später",
+          "monthLast": "fällig am letzten Tag des Monats",
+          "monthLastLater": "fällig am letzten Tag des Monats, %{smart_count} Monat später |||| fällig am letzten Tag des Monats, %{smart_count} Monate später",
+          "quarterEnd": "fällig am Quartalsende",
+          "quarterEndLater": "fällig am Quartalsende, %{smart_count} Quartal später |||| fällig am Quartalsende, %{smart_count} Quartale später",
+          "at": "%{due} um %{time}"
+        }
       }
     }
   },

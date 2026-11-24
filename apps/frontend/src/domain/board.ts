@@ -117,7 +117,24 @@ export type ScheduleRule =
   | { kind: 'monthly'; every: number; day: number | 'last' }
   | { kind: 'yearly'; month: number; day: number }
 
-/** When a template makes its task by itself, on `boardId`. */
+/**
+ * Counted from the day of the run: `after` days, months or quarters later.
+ * Without a `time` (HH:mm, in the schedule's zone), the task is due all day.
+ */
+export type DueRule =
+  | { kind: 'days'; after: number; time: string | null }
+  | {
+      kind: 'monthDay'
+      after: number
+      day: number | 'last'
+      time: string | null
+    }
+  | { kind: 'quarterEnd'; after: number; time: string | null }
+
+/**
+ * When a template makes its task by itself, on `boardId`. With `previous`
+ * set to overwrite, a run cancels the open tasks of earlier runs.
+ */
 export interface ScheduleSettings {
   boardId: string
   rule: ScheduleRule
@@ -127,6 +144,8 @@ export interface ScheduleSettings {
   workingDays: boolean
   endsOn: string | null
   paused: boolean
+  due: DueRule | null
+  previous: 'keep' | 'overwrite'
 }
 
 /**
