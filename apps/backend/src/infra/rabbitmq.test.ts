@@ -653,6 +653,7 @@ describe('live board changes', () => {
         tellBoardChanged(tx, { id: boardId, version })
         return Promise.resolve()
       })
+    const published: Promise<void>[] = []
 
     try {
       const changes = createChanges()
@@ -661,7 +662,19 @@ describe('live board changes', () => {
       })
       await listenForBoardChanges(listener, 'live', changes, log)
       const warn = vi.fn()
-      await listenForBoardChanges(publisher, 'live', createChanges(), { warn })
+      await listenForBoardChanges(
+        {
+          subscribe: publisher.subscribe,
+          publish: (...args) => {
+            const confirmed = publisher.publish(...args)
+            published.push(confirmed)
+            return confirmed
+          }
+        },
+        'live',
+        createChanges(),
+        { warn }
+      )
 
       node.hang()
       await tell(7)
@@ -675,6 +688,10 @@ describe('live board changes', () => {
       }, 5000)
     } finally {
       node.endHung()
+      // The listener can hear 8 before its publish is confirmed. Closing the
+      // publisher then fails that publish, which opens a connection through
+      // the node that nothing closes, and the node never closes.
+      await Promise.allSettled(published)
       await publisher.close()
       await listener.close()
       await node.close()
