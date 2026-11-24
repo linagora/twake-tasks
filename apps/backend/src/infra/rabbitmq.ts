@@ -285,6 +285,7 @@ async function boundedPublisher(
     return { client, ready }
   }
   let current = open()
+  let closed = false
   await current.ready
   return {
     async publish(...args) {
@@ -292,17 +293,24 @@ async function boundedPublisher(
       try {
         await within(
           timeoutMs,
-          used.ready.then(() => used.client.publish(...args))
+          // The client reconnects on a publish once its close() has returned.
+          used.ready.then(() => {
+            if (closed) throw new Error('publisher closed')
+            return used.client.publish(...args)
+          })
         )
       } catch (error) {
-        if (current === used) {
+        if (!closed && current === used) {
           current = open()
           used.client.close().catch(() => undefined)
         }
         throw error
       }
     },
-    close: () => current.client.close()
+    close() {
+      closed = true
+      return current.client.close()
+    }
   }
 }
 

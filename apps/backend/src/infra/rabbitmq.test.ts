@@ -590,6 +590,27 @@ describe('startPublisher', () => {
     }
   }, 15_000)
 
+  it('leaves no connection open once closed, even with publishes', async () => {
+    const node = await hangingNode()
+    const publisher = await startPublisher(
+      node.url,
+      ACTIVITY_EXCHANGE,
+      pino({ level: 'silent' })
+    )
+
+    const failed = expect(publisher.publish(event)).rejects.toThrow()
+    await publisher.close()
+    await failed
+    await expect(publisher.publish(event)).rejects.toThrow()
+
+    await expect(
+      Promise.race([
+        node.close().then(() => 'closed'),
+        new Promise(resolve => setTimeout(resolve, 2000, 'still open'))
+      ])
+    ).resolves.toBe('closed')
+  })
+
   it('confirms an event no one listens to', async () => {
     const publisher = await startPublisher(
       container.getAmqpUrl(),
@@ -653,7 +674,6 @@ describe('live board changes', () => {
         tellBoardChanged(tx, { id: boardId, version })
         return Promise.resolve()
       })
-    const published: Promise<void>[] = []
 
     try {
       const changes = createChanges()
@@ -662,19 +682,7 @@ describe('live board changes', () => {
       })
       await listenForBoardChanges(listener, 'live', changes, log)
       const warn = vi.fn()
-      await listenForBoardChanges(
-        {
-          subscribe: publisher.subscribe,
-          publish: (...args) => {
-            const confirmed = publisher.publish(...args)
-            published.push(confirmed)
-            return confirmed
-          }
-        },
-        'live',
-        createChanges(),
-        { warn }
-      )
+      await listenForBoardChanges(publisher, 'live', createChanges(), { warn })
 
       node.hang()
       await tell(7)
@@ -688,10 +696,6 @@ describe('live board changes', () => {
       }, 5000)
     } finally {
       node.endHung()
-      // The listener can hear 8 before its publish is confirmed. Closing the
-      // publisher then fails that publish, which opens a connection through
-      // the node that nothing closes, and the node never closes.
-      await Promise.allSettled(published)
       await publisher.close()
       await listener.close()
       await node.close()
