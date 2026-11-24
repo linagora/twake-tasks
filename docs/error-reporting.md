@@ -13,6 +13,10 @@ The frontend reports errors to Sentry, and can offer a feedback button. Both are
 - They hold no user name or email. The feedback form has an optional email field, left empty.
 - URLs lose their query strings and the `Referer` header is dropped, since they can hold the sign-in code or what people searched for.
 
+## Source maps
+
+Each frontend release uploads its source maps to the Sentry project `twake-tasks`, so a stack trace names the file and the component. The image does not serve them. The upload needs the `SENTRY_AUTH_TOKEN` secret (a Sentry organization token) on the repository; without it the release goes out with no maps.
+
 Feedback needs Sentry 24.4.2 or later. See [ADR 011](https://github.com/linagora/twake-space-architecture/blob/e7f0311227c4e6c3222e81fe77b1e69e869156bf/ADR011.md).
 
 ## The backend

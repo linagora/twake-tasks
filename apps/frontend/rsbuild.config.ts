@@ -34,6 +34,7 @@ export default defineConfig({
     proxy: { '/api': process.env.API_UPSTREAM ?? 'http://localhost:8080' }
   },
   output: {
-    sourceMap: { js: false }
+    // For Sentry only: the image leaves them out.
+    sourceMap: { js: 'hidden-source-map' }
   }
 })
