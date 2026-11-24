@@ -22,7 +22,7 @@ import {
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse, type Result } from '../kernel/index.ts'
 import { userSettings } from '../settings/index.ts'
-import { describeTasks, shown } from './describe.ts'
+import { describedColumns, describeTasks, shown } from './describe.ts'
 import {
   accessibleBoards,
   checkRole,
@@ -504,7 +504,7 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     .where(eq(sections.boardId, boardId))
     .orderBy(asc(sections.position))
   const rows = await tx
-    .select()
+    .select(describedColumns)
     .from(tasks)
     .where(and(eq(tasks.boardId, boardId), shown))
     .orderBy(asc(tasks.position))

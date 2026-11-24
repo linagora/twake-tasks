@@ -21,6 +21,7 @@ import {
   accessibleBoards,
   boards,
   comments,
+  describedColumns,
   describeTasksOf,
   labelsOnProjects,
   looksOn,
@@ -360,7 +361,7 @@ export async function tasksOf(
   const parent = alias(tasks, 'parent')
   const query = tx
     .select({
-      task: tasks,
+      task: describedColumns,
       board: boards,
       category: sections.category,
       parentTitle: parent.title

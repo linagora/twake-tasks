@@ -64,7 +64,10 @@ export function nextOccurrence(
 }
 
 export function recurrenceOf(
-  task: typeof tasks.$inferSelect
+  task: Pick<
+    typeof tasks.$inferSelect,
+    'recurEvery' | 'recurUnit' | 'recurFromCompletion'
+  >
 ): Recurrence | null {
   return task.recurEvery && task.recurUnit
     ? {
