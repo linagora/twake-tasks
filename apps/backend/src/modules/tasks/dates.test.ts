@@ -1,4 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { taskChanges } from '@twake-tasks/api-contract'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { aUser, startApp, type TestUser } from '../../testing/app.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
@@ -97,6 +98,23 @@ describe('task dates', () => {
     expect(timeOnly.json()).toEqual({ error: 'invalid_dates' })
     expect(unknownZone.statusCode).toBe(400)
     expect(emptyDuration.statusCode).toBe(400)
+  })
+
+  it('checks a listed zone without building a formatter, and still takes an alias or UTC', () => {
+    const format = vi.spyOn(Intl, 'DateTimeFormat')
+    const zoneOk = (dueZone: string) =>
+      taskChanges.safeParse({ dueZone }).success
+
+    try {
+      expect(zoneOk('Europe/Paris')).toBe(true)
+      expect(format).not.toHaveBeenCalled()
+      expect(zoneOk('Asia/Calcutta')).toBe(true)
+      expect(zoneOk('UTC')).toBe(true)
+      expect(zoneOk('europe/paris')).toBe(true)
+      expect(zoneOk('Mars/Olympus')).toBe(false)
+    } finally {
+      format.mockRestore()
+    }
   })
 
   it('refuses a deadline before the due date, set together or one after the other', async () => {

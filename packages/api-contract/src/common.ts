@@ -2,7 +2,12 @@ import { z } from 'zod'
 
 export const instant = z.iso.datetime({ offset: true })
 
+// Canonical names only: an alias, `UTC` or another case still needs the
+// formatter. Fixed, so a client cannot grow it with endless case variants.
+const listedZones = new Set(Intl.supportedValuesOf('timeZone'))
+
 export function isTimeZone(zone: string): boolean {
+  if (listedZones.has(zone)) return true
   try {
     new Intl.DateTimeFormat('en', { timeZone: zone })
     return true
