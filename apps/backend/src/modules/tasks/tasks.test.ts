@@ -1,6 +1,9 @@
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { createDb } from '../../infra/db.ts'
+import { asTenant, createDb } from '../../infra/db.ts'
 import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
+import { inSection, taskPositionIn } from '../boards/index.ts'
 
 interface Board {
   id: string
@@ -178,6 +181,50 @@ describe('tasks', () => {
 
     expect(response.statusCode).toBe(409)
     expect(await versionOf(alice, board.id)).toBe(before)
+  })
+
+  it('reads at most three tasks to place one in a long section', async () => {
+    const alice = aUser()
+    const { board, done } = await aBoard(alice)
+    const ids: string[] = []
+    for (let n = 0; n < 40; n += 1) {
+      ids.push(await aTask(alice, board.id, done.id, `Old ${String(n)}`))
+    }
+    let rows = 0
+    const client = postgres(inject('databaseUrl'), {
+      onnotice: () => undefined,
+      transform: {
+        row: {
+          from: row => {
+            rows += 1
+            return row as object
+          }
+        }
+      }
+    })
+    const rowsToPlace = (afterId?: string, beforeId?: string) =>
+      drizzle({ client }).transaction(async tx => {
+        await asTenant(tx, alice)
+        rows = 0
+        await taskPositionIn(
+          tx,
+          inSection(board.id, done.id),
+          afterId,
+          beforeId
+        )
+        return rows
+      })
+
+    try {
+      expect([
+        await rowsToPlace(),
+        await rowsToPlace(ids[3]),
+        await rowsToPlace(undefined, ids[3]),
+        await rowsToPlace(ids[3], ids[4])
+      ]).toEqual([1, 2, 2, 3])
+    } finally {
+      await client.end()
+    }
   })
 
   it('edits the title, priority and due date, and clears them', async () => {

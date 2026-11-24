@@ -73,9 +73,9 @@ export { addDefaultSections } from './store.ts'
 export {
   completionFor,
   inSection,
-  positionBetween,
   sectionOf,
   shownTaskOf,
-  taskOf
+  taskOf,
+  taskPositionIn
 } from './taskRows.ts'
 export { bumpBoard, bumpBoards, bumpProjects } from './versions.ts'
