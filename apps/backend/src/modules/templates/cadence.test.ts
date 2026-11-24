@@ -60,6 +60,16 @@ describe('the next run of a schedule', () => {
     )
   })
 
+  it('runs every 365 working days, 73 weeks later', () => {
+    const yearly = {
+      rule: { kind: 'daily', every: 365 },
+      workingDays: true
+    } as const
+    expect(next(yearly, '2027-01-04T12:00:00Z')).toBe(
+      '2028-05-29T06:00:00.000Z'
+    )
+  })
+
   it('counts every N days from the day the rule was set', () => {
     expect(
       next({ rule: { kind: 'daily', every: 3 } }, '2027-01-05T12:00:00Z')
