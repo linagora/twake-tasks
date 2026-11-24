@@ -1,5 +1,8 @@
 export { archiveTree, PURGE_JOB, purgeTask } from './archive.ts'
+export { linksOf } from './dependencies.ts'
+export { historyEntries } from './history.ts'
 export { mentionedEmails, plainText, withNames } from './markdown.ts'
 export { deliverReminder, REMINDER_JOB } from './reminderJobs.ts'
+export { remindersOf } from './reminders.ts'
 export { registerTasks } from './routes.ts'
 export { insertTask, refuseIfShelved, visibleTask } from './tasks.ts'

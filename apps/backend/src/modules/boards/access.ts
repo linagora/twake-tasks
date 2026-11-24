@@ -207,12 +207,11 @@ export async function firstMembersOfProjects(
 
 type Looks = Pick<Member, 'name' | 'avatar'>
 
+export type LooksOf = (userId: string | null, nameThen?: string | null) => Looks
+
 // Someone not on the board keeps the name they had when they wrote, else
 // their email.
-export async function looksOn(
-  tx: Tx,
-  boardId: string
-): Promise<(userId: string | null, nameThen?: string | null) => Looks> {
+export async function looksOn(tx: Tx, boardId: string): Promise<LooksOf> {
   const rows = await tx
     .select({ userId: projectMembers.userId, ...memberLooks })
     .from(projectMembers)

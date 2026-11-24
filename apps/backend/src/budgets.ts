@@ -27,6 +27,7 @@ const ROUTES: Record<string, readonly UserBudget[]> = {
   'GET /filters/:filterId/tasks': ['heavyReads'],
   [`GET ${task}/history`]: ['heavyReads'],
   [`GET ${task}/comments`]: ['heavyReads'],
+  [`GET ${task}/details`]: ['heavyReads'],
   [`GET ${task}/comments/:commentId/edits`]: ['heavyReads'],
   'GET /boards/:boardId/archived': ['heavyReads'],
   'GET /boards/:boardId/trash': ['heavyReads']

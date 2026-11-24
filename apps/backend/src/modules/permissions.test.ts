@@ -513,6 +513,7 @@ const EXAMPLES: Record<string, Example> = {
   'DELETE /projects/:projectId/templates/:templateId': none,
   [`GET ${task}/history`]: none,
   [`GET ${task}/comments`]: none,
+  [`GET ${task}/details`]: none,
   [`POST ${task}/comments`]: () => ({ body: { body: 'Agreed' } }),
   // Only the author edits a comment: each caller edits one of their own.
   [`PATCH ${task}/comments/:commentId`]: async (fixture, me) => ({

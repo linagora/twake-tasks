@@ -62,6 +62,7 @@ Generated from the route tables by `apps/backend/src/modules/permissions.test.ts
 - `DELETE /api/boards/:boardId/tasks/:taskId/comments/:commentId/reactions/:emoji`
 - `PUT /api/boards/:boardId/tasks/:taskId/comments/:commentId/reactions/:emoji`
 - `GET /api/boards/:boardId/tasks/:taskId/description`
+- `GET /api/boards/:boardId/tasks/:taskId/details`
 - `DELETE /api/boards/:boardId/tasks/:taskId/follow`
 - `GET /api/boards/:boardId/tasks/:taskId/follow`
 - `PUT /api/boards/:boardId/tasks/:taskId/follow`

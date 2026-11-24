@@ -18,6 +18,7 @@ import { accessChecks } from '../boards/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import { under, type Refusal } from '../kernel/index.ts'
 import { createCommentStore } from './comments.ts'
+import { taskDetails } from './details.ts'
 import { createFollowerStore } from './followers.ts'
 
 type CollaborationRoute = DeclaredRoute<Identity, Refusal | 'invalid_request'>
@@ -68,6 +69,14 @@ export function registerCollaboration(
           )
       })
     ),
+    defineRoute({
+      method: 'GET',
+      url: '/boards/:boardId/tasks/:taskId/details',
+      access: viewer,
+      params: taskParams,
+      handler: ({ identity, params }) =>
+        taskDetails(deps.db, identity, params.boardId, params.taskId)
+    }),
     defineRoute({
       method: 'GET',
       url: '/boards/:boardId/tasks/:taskId/comments',
