@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest'
 import { createDb } from '../../infra/db.ts'
 import { aUser, joinBoard, startApp, type TestUser } from '../../testing/app.ts'
 
@@ -76,6 +76,20 @@ describe('labels', () => {
     const urgent = { id: label.id, name: 'Urgent', color: null }
     expect(loaded.labels).toEqual([urgent])
     expect(loaded.tasks[0]?.labels).toEqual([urgent])
+  })
+
+  it('refuses a name far over the maximum without folding it', async () => {
+    const alice = aUser()
+    const board = await aBoard(alice)
+    const hostile = '\u{1F3F4}' + '\u{E0067}'.repeat(200_000)
+    const normalize = vi.spyOn(String.prototype, 'normalize')
+
+    try {
+      expect((await board.addLabel(hostile)).statusCode).toBe(400)
+      expect(normalize.mock.contexts).not.toContain(hostile)
+    } finally {
+      normalize.mockRestore()
+    }
   })
 
   it('keeps the colour picked for a new label', async () => {
