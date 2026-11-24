@@ -15,7 +15,8 @@ import { bumpProjects } from './versions.ts'
 export type Role = 'viewer' | 'editor' | 'admin'
 
 // A board takes the person's role in its project. `standingOn` spells the
-// same join out for the per-request check: change both together.
+// same join out for the per-request check, and `loadBoard` for opening a
+// board: change all three together.
 export function accessibleBoards(tx: Tx, userId: string) {
   return tx
     .select({
