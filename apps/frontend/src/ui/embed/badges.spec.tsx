@@ -126,6 +126,7 @@ describe('the badges reported to TwakeSpace', () => {
     const { contentWindow } = frame
     if (contentWindow === null) throw new Error('The frame has no window')
     post = vi.spyOn(contentWindow, 'postMessage')
+    window.TWAKE_SPACE_ORIGIN = SPACE
   })
 
   afterEach(() => {
@@ -133,6 +134,7 @@ describe('the badges reported to TwakeSpace', () => {
     disconnectTwakeSpace()
     frame.remove()
     window.history.replaceState(null, '', '/')
+    delete window.TWAKE_SPACE_ORIGIN
   })
 
   it('reports the unread notifications of every project, not only the shown one', async () => {

@@ -163,6 +163,7 @@ describe('the metadata reported to TwakeSpace', () => {
     const { contentWindow } = frame
     if (contentWindow === null) throw new Error('The frame has no window')
     post = vi.spyOn(contentWindow, 'postMessage')
+    window.TWAKE_SPACE_ORIGIN = SPACE
   })
 
   afterEach(() => {
@@ -170,6 +171,7 @@ describe('the metadata reported to TwakeSpace', () => {
     disconnectTwakeSpace()
     frame.remove()
     window.history.replaceState(null, '', '/')
+    delete window.TWAKE_SPACE_ORIGIN
   })
 
   it('reports the badge and the tasks of every project, and the badges still', async () => {
