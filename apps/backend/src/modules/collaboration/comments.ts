@@ -7,7 +7,8 @@ import {
   comments,
   looksOn,
   roleOn,
-  taskOf
+  taskOf,
+  type LooksOf
 } from '../boards/index.ts'
 import {
   mentionedEmails,
@@ -54,66 +55,67 @@ async function commentOf(tx: Tx, taskId: string, commentId: string) {
   return comment
 }
 
+export async function commentsOf(tx: Tx, taskId: string, looksOf: LooksOf) {
+  const rows = (
+    await tx
+      .select()
+      .from(comments)
+      .where(eq(comments.taskId, taskId))
+      .orderBy(desc(comments.createdAt), desc(comments.id))
+      .limit(COMMENTS_LISTED)
+  ).reverse()
+  const reactions =
+    rows.length === 0
+      ? []
+      : await tx
+          .select()
+          .from(commentReactions)
+          .where(
+            inArray(
+              commentReactions.commentId,
+              rows.map(row => row.id)
+            )
+          )
+          .orderBy(
+            asc(commentReactions.createdAt),
+            asc(commentReactions.userId)
+          )
+  // Each emoji once per comment, in the order it was first given.
+  const byComment = new Map<string, Map<string, Reactor[]>>()
+  for (const reaction of reactions) {
+    const emojis =
+      byComment.get(reaction.commentId) ?? new Map<string, Reactor[]>()
+    byComment.set(reaction.commentId, emojis)
+    const people = emojis.get(reaction.emoji) ?? []
+    emojis.set(reaction.emoji, people)
+    people.push({ userId: reaction.userId, email: reaction.userEmail })
+  }
+  return rows.map(row => ({
+    id: row.id,
+    author: {
+      userId: row.authorId,
+      email: row.authorEmail,
+      ...looksOf(row.authorId, row.authorName)
+    },
+    body: row.body,
+    createdAt: row.createdAt,
+    editedAt: row.editedAt,
+    reactions: [...(byComment.get(row.id) ?? [])].map(([emoji, people]) => ({
+      emoji,
+      people: people.map(person => ({
+        ...person,
+        ...looksOf(person.userId)
+      }))
+    }))
+  }))
+}
+
 export function createCommentStore(db: Db, mentionsPerComment = 0) {
   return {
     listComments(identity: Identity, boardId: string, taskId: string) {
       return writeOrRefuse(db, identity, async tx => {
         await visibleTask(tx, identity, boardId, taskId)
-        const rows = (
-          await tx
-            .select()
-            .from(comments)
-            .where(eq(comments.taskId, taskId))
-            .orderBy(desc(comments.createdAt), desc(comments.id))
-            .limit(COMMENTS_LISTED)
-        ).reverse()
-        const looksOf = await looksOn(tx, boardId)
-        const reactions =
-          rows.length === 0
-            ? []
-            : await tx
-                .select()
-                .from(commentReactions)
-                .where(
-                  inArray(
-                    commentReactions.commentId,
-                    rows.map(row => row.id)
-                  )
-                )
-                .orderBy(
-                  asc(commentReactions.createdAt),
-                  asc(commentReactions.userId)
-                )
-        // Each emoji once per comment, in the order it was first given.
-        const byComment = new Map<string, Map<string, Reactor[]>>()
-        for (const reaction of reactions) {
-          const emojis =
-            byComment.get(reaction.commentId) ?? new Map<string, Reactor[]>()
-          byComment.set(reaction.commentId, emojis)
-          const people = emojis.get(reaction.emoji) ?? []
-          emojis.set(reaction.emoji, people)
-          people.push({ userId: reaction.userId, email: reaction.userEmail })
-        }
-        return rows.map(row => ({
-          id: row.id,
-          author: {
-            userId: row.authorId,
-            email: row.authorEmail,
-            ...looksOf(row.authorId, row.authorName)
-          },
-          body: row.body,
-          createdAt: row.createdAt,
-          editedAt: row.editedAt,
-          reactions: [...(byComment.get(row.id) ?? [])].map(
-            ([emoji, people]) => ({
-              emoji,
-              people: people.map(person => ({
-                ...person,
-                ...looksOf(person.userId)
-              }))
-            })
-          )
-        }))
+        return commentsOf(tx, taskId, await looksOn(tx, boardId))
       })
     },
 

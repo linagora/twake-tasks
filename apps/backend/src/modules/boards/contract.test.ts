@@ -33,6 +33,7 @@ import {
   settingsResponse,
   sharingResponse,
   suggestionsResponse,
+  taskDetailsResponse,
   tasksResponse,
   template,
   templatesResponse,
@@ -300,6 +301,10 @@ describe('the API contract', () => {
       contracted(historyResponse, await api.as(alice).get(`${at}/history`))
         .entries.length
     ).toBeGreaterThan(0)
+    expect(
+      contracted(taskDetailsResponse, await api.as(alice).get(`${at}/details`))
+        .reminders
+    ).toHaveLength(2)
 
     expect(
       contracted(notificationsResponse, await api.as(bob).get('/notifications'))

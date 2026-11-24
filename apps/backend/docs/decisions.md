@@ -59,3 +59,10 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: agent (issue [#761](https://github.com/linagora/twake-tasks/issues/761)), following the decisions posted on the issue, to be confirmed by Khaled Ferjani
 - Why: a task appears when it is time to start on it, which is not tied to its deadline by a fixed offset (a report made on the 25th is due on the 5th of the next month), and some work only matters in its latest occurrence (a daily pass on open pull requests).
 - Scope: `template_schedules.due` and `.previous`, the `template_schedule` job, the template dialog on Settings. A missed run still makes one task, due from the run it was planned for, not from when it ran.
+
+## 2026-11-24, [Architecture] The task panel opens with one details request
+
+- Decision: `GET /boards/:boardId/tasks/:taskId/details` answers the description, comments, history, links, reminders and following of a task with one access check; the web app reads it when the panel opens, and each part reads again on its own route after a write or a board change. A failed details read fails every part of the panel at once.
+- Decided by: [issue #837](https://github.com/linagora/twake-tasks/issues/837), agent (workflow wf_39bd7774-7d3), to be confirmed by Khaled Ferjani
+- Why: each request pays the revocation lookup and an access check, and the panel sent five of them on opening, six with the History tab.
+- Scope: backend task routes, the api-contract package, the frontend task panel queries.
