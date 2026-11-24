@@ -12,7 +12,7 @@ import {
   type ProjectUnread
 } from '@/application/boards'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
-import { POLL_MS } from '@/ui/queries/boards'
+import { LIST_STALE_MS, POLL_MS } from '@/ui/queries/boards'
 import { keys } from '@/ui/queries/keys'
 
 export function useNotifications(): UseQueryResult<Notification[]> {
@@ -113,6 +113,7 @@ export function useUnreadNotifications(): UseQueryResult<number> {
       (await api.listNotifications()).filter(
         notification => notification.readAt === null
       ).length,
+    staleTime: LIST_STALE_MS,
     refetchInterval: POLL_MS
   })
 }

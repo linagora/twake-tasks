@@ -34,6 +34,9 @@ import { localZone } from '@/ui/boards/dueLabel'
 import { keys } from '@/ui/queries/keys'
 
 export const POLL_MS = 60_000
+// Any write marks the boards and agendas stale at once (makeQueryClient), so
+// this only delays changes made by someone else.
+export const LIST_STALE_MS = 30_000
 
 const taskEditKey = (boardId: string) => ['taskEdit', boardId] as const
 
@@ -123,6 +126,7 @@ export function useBoards({
   return useQuery({
     queryKey: keys.boards(),
     queryFn: () => api.listBoards(localZone()),
+    staleTime: LIST_STALE_MS,
     refetchInterval: poll ? POLL_MS : false
   })
 }
