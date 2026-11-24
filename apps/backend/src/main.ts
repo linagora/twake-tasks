@@ -216,7 +216,8 @@ const stopScheduler = createScheduler({
     send,
     retention: {
       processedEventsDays: config.RETENTION_PROCESSED_EVENTS_DAYS,
-      readNotificationsDays: config.RETENTION_READ_NOTIFICATIONS_DAYS
+      readNotificationsDays: config.RETENTION_READ_NOTIFICATIONS_DAYS,
+      revokedSessionsDays: config.RETENTION_REVOKED_SESSIONS_DAYS
     },
     ldapRest: spaces
       ? ldapRestClient({

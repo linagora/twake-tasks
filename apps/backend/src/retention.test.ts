@@ -3,6 +3,8 @@ import { eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { outbox, processedEvents } from './events/schema.ts'
 import { createDb, inTenant } from './infra/db.ts'
+import { oidcRevokedSessions } from './modules/auth/schema.ts'
+import { postgresAuthStore } from './modules/auth/store.ts'
 import { notifications } from './modules/boards/index.ts'
 import { RETENTION_JOB, retention } from './retention.ts'
 import { plan, unschedule } from './scheduler/scheduler.ts'
@@ -29,7 +31,11 @@ const daysAgo = (days: number) => new Date(now.getTime() - days * DAY_MS)
 const run = () =>
   db.transaction(tx =>
     retention(
-      { processedEventsDays: 30, readNotificationsDays: 180 },
+      {
+        processedEventsDays: 30,
+        readNotificationsDays: 180,
+        revokedSessionsDays: 90
+      },
       () => now
     )({}, tx)
   )
@@ -141,6 +147,20 @@ describe('the retention job', () => {
       await notificationsLeft(member, [memberOld, memberRecent, memberUnread])
     ).toEqual([memberRecent, memberUnread].sort())
     expect(await notificationsLeft(b2c, [b2cOld])).toEqual([])
+  })
+
+  it('forgets a revoked session 90 days after its logout', async () => {
+    const [old, recent] = [randomUUID(), randomUUID()]
+    await db.insert(oidcRevokedSessions).values([
+      { sid: old, revokedAt: daysAgo(91) },
+      { sid: recent, revokedAt: daysAgo(89) }
+    ])
+
+    await run()
+
+    const store = postgresAuthStore(db)
+    await expect(store.isRevoked(old)).resolves.toBe(false)
+    await expect(store.isRevoked(recent)).resolves.toBe(true)
   })
 
   it('runs at once when first planned, then again a day later', async () => {
