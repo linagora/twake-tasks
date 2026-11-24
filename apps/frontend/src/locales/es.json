@@ -1006,7 +1006,12 @@
     "days": "%{smart_count} día |||| %{smart_count} días",
     "filterEmpty": "Ninguna tarea coincide con este filtro",
     "loadFailed": "No se pudieron cargar tus tareas.",
-    "mineEmpty": "No tienes nada asignado"
+    "mineEmpty": "No tienes nada asignado",
+    "complete": "Marcar como terminada",
+    "postpone": "Aplazar un día",
+    "toToday": "Pasar a hoy",
+    "noDoneSection": "%{board} no tiene una sección de terminadas donde mover la tarea.",
+    "quickFailed": "No se pudo cambiar la tarea."
   },
   "members": {
     "count": "%{smart_count} miembro |||| %{smart_count} miembros",

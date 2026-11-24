@@ -1006,7 +1006,12 @@
     "days": "%{smart_count} ngày",
     "filterEmpty": "Không có công việc nào khớp với bộ lọc này",
     "loadFailed": "Không thể tải công việc.",
-    "mineEmpty": "Chưa có việc nào giao cho bạn"
+    "mineEmpty": "Chưa có việc nào giao cho bạn",
+    "complete": "Đánh dấu đã xong",
+    "postpone": "Lùi một ngày",
+    "toToday": "Chuyển sang hôm nay",
+    "noDoneSection": "%{board} không có mục đã xong để chuyển công việc vào.",
+    "quickFailed": "Không thể thay đổi công việc."
   },
   "members": {
     "count": "%{smart_count} thành viên",
