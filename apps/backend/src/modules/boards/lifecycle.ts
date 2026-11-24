@@ -2,7 +2,9 @@ import {
   and,
   asc,
   eq,
+  gt,
   inArray,
+  isNotNull,
   lt,
   ne,
   notExists,
@@ -214,6 +216,8 @@ export async function forgetPerson(tx: Tx, userId: string): Promise<void> {
   await tx.delete(projectMembers).where(eq(projectMembers.userId, userId))
 }
 
+export const NOTIFICATIONS_LISTED = 50
+
 /** Reaches every tenant through the `app.pruning` flag the notification policies allow. */
 export async function forgetReadNotifications(
   tx: Tx,
@@ -221,6 +225,28 @@ export async function forgetReadNotifications(
 ): Promise<void> {
   await tx.execute(sql`select set_config('app.pruning', 'on', true)`)
   await tx.delete(notifications).where(lt(notifications.readAt, readBefore))
+  // The list shows a person's newest ones, so older read ones are never seen again.
+  const ranked = tx
+    .select({
+      id: notifications.id,
+      rank: sql<number>`row_number() over (partition by ${notifications.userId} order by ${notifications.createdAt} desc, ${notifications.id} desc)`.as(
+        'rank'
+      )
+    })
+    .from(notifications)
+    .where(isNotNull(notifications.readAt))
+    .as('ranked')
+  await tx
+    .delete(notifications)
+    .where(
+      inArray(
+        notifications.id,
+        tx
+          .select({ id: ranked.id })
+          .from(ranked)
+          .where(gt(ranked.rank, NOTIFICATIONS_LISTED))
+      )
+    )
   await tx.execute(sql`select set_config('app.pruning', '', true)`)
 }
 

@@ -45,3 +45,10 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: agent (issue [#849](https://github.com/linagora/twake-tasks/issues/849)), to be confirmed by Khaled Ferjani
 - Why: no code reads a sent event, yet keeping it a day held about half of the database growth per task created, and marking it sent wrote every event twice.
 - Scope: the outbox relay and the `retention` job. The `sent_at` column and its index are dropped in a later release, once no release still writing them can serve.
+
+## 2026-11-24, [Infra] A person keeps their 50 newest read notifications
+
+- Decision: the daily `retention` job also deletes a person's read notifications past their 50 newest read ones, the number the list shows. The 180 day limit (`RETENTION_READ_NOTIFICATIONS_DAYS`) stays. Unread notifications are kept.
+- Decided by: agent (issue [#847](https://github.com/linagora/twake-tasks/issues/847)), to be confirmed by Khaled Ferjani
+- Why: `GET /notifications` returns the newest 50 and nothing else reads old read ones, yet they stayed 180 days, several hundred rows per active person.
+- Scope: `notifications`, the `retention` job, `GET /notifications`. The ranking counts read ones on a project in the trash, which the list hides, so while it waits for its purge the list may show fewer than 50.

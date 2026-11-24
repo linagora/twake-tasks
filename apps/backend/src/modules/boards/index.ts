@@ -28,7 +28,8 @@ export {
   eraseOrganization,
   forgetPerson,
   forgetReadNotifications,
-  leaveTemplatesOutside
+  leaveTemplatesOutside,
+  NOTIFICATIONS_LISTED
 } from './lifecycle.ts'
 export {
   APP_NAME,
