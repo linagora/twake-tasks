@@ -1,6 +1,6 @@
 # Decisions
 
-Decisions taken on @twake-tasks/backend, oldest first. Append only: a decision that changes gets a new entry that replaces the old one and cites it. Entry format: the `twake-decisions` skill of [linagora/twake-guidelines](https://github.com/linagora/twake-guidelines/blob/main/skills/twake-decisions/SKILL.md).
+Decisions taken on twake-tasks, oldest first. Append only: a decision that changes gets a new entry that replaces the old one and cites it. Entry format: the `twake-decisions` skill of [linagora/twake-guidelines](https://github.com/linagora/twake-guidelines/blob/main/skills/twake-decisions/SKILL.md).
 
 Categories: UX, UI, Product, Architecture, Infra, Tech.
 
@@ -80,3 +80,38 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: agent (issue [#827](https://github.com/linagora/twake-tasks/issues/827)), to be confirmed by Khaled Ferjani
 - Why: each statement costs two round trips to the server, and opening a board sent fifteen of them one after the other, the most frequent request of the app.
 - Scope: `loadBoard`, `describeTasksOf`. Opening a board sends 8 socket writes instead of 30, BEGIN and COMMIT included.
+
+## 2026-11-24, [UX] My tasks offers quick actions on each task
+
+- Decision: each task of My tasks, on a board the person can edit, offers to mark it done, push its due date by a day, and, once late, move it to today. A task in a section is done by moving to its board's first completed section; a board without one says so.
+- Decided by: agent (issue [#856](https://github.com/linagora/twake-tasks/issues/856)), to be confirmed by Khaled Ferjani
+- Why: asked through user feedback, to close or reschedule a task without opening it.
+- Scope: My tasks only, not Today, Upcoming, filters or search. Moving a due date keeps its time and the gap to the deadline, as a drag on the calendar does.
+
+## 2026-11-24, [Infra] Hidden source maps go to Sentry, not to browsers
+
+- Decision: the build writes hidden source maps and Sentry debug ids. The release workflow uploads the maps to Sentry for the release, and the image leaves them out. The upload is skipped when the `SENTRY_AUTH_TOKEN` secret is absent.
+- Decided by: Khaled Ferjani (issue [#913](https://github.com/linagora/twake-tasks/issues/913))
+- Why: an event with minified frames only cannot be traced to a component.
+- Scope: frontend releases only; pushes to main and pull requests upload nothing.
+
+## 2026-11-24, [Tech] A label or section name is refused past 16 times its maximum before it is folded
+
+- Decision: `uniqueName(max)` refuses a raw name longer than `16 * max` UTF-16 units before any folding, and a printable ASCII name skips the folding. The maximum on the folded name is unchanged.
+- Decided by: agent (issue [#850](https://github.com/linagora/twake-tasks/issues/850)), to be confirmed by Khaled Ferjani
+- Why: the folding ran over the whole body, up to 1 MiB, so an 800 KB label name cost about 2 ms of the main thread before it was refused.
+- Scope: label and section names. A name padded past the bound with invisible characters or spaces is now refused instead of cleaned.
+
+## 2026-11-24, [Tech] A time zone is looked up in the fixed list of canonical names before a formatter is built
+
+- Decision: `isTimeZone` accepts a name of `Intl.supportedValuesOf('timeZone')`, a set built once, and builds an `Intl.DateTimeFormat` only for a name outside it. The accepted names are unchanged, and nothing is cached per request.
+- Decided by: agent (issue [#851](https://github.com/linagora/twake-tasks/issues/851)), to be confirmed by Khaled Ferjani
+- Why: building the formatter was about 70% of the CPU of parsing a task edit with a zone.
+- Scope: every body with a zone (task edits, reminders, templates, saved filters).
+
+## 2026-11-24, [Architecture] Decisions log at the root for an app
+
+- Decision: The app keeps one `docs/decisions.md` at the repo root for all its workspaces (`apps/backend`, `apps/frontend`, `packages/api-contract`, `e2e`); only a library monorepo, whose packages are published on their own, keeps one log per package.
+- Decided by: Crash-- (CTO), comment on [linagora/twake-contacts-frontend#688](https://github.com/linagora/twake-contacts-frontend/pull/688), 2026-11-24
+- Why: the workspaces of an app ship together as one product, so its decisions belong in one log.
+- Scope: the whole repository.
