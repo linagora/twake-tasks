@@ -3,6 +3,7 @@ import {
   asc,
   desc,
   eq,
+  inArray,
   isNotNull,
   isNull,
   lt,
@@ -37,6 +38,7 @@ import {
   boardFavorites,
   boardLayouts,
   boards,
+  projectInvites,
   projectMembers,
   projects,
   tasks
@@ -146,19 +148,7 @@ export function createBoardStore(db: Db) {
     listBoards(identity: Identity, zone: string | null = null) {
       const today = todayIn(zone)
       return inTenant(db, identity, async tx => {
-        await ensureInbox(tx, identity)
-        await claimInvites(tx)
-        if (identity.name !== null) {
-          await tx
-            .update(projectMembers)
-            .set({ name: identity.name })
-            .where(
-              and(
-                eq(projectMembers.userId, identity.userId),
-                sql`${projectMembers.name} is distinct from ${identity.name}`
-              )
-            )
-        }
+        await settleSignIn(tx, identity)
         const accessible = accessibleBoards(tx, identity.userId)
         const inviter = alias(projectMembers, 'inviter')
         const inviterSettings = alias(userSettings, 'inviter_settings')
@@ -182,47 +172,7 @@ export function createBoardStore(db: Db) {
               ) end`,
             archived: sql<boolean>`${boards.archivedAt} is not null`,
             boardTemplate: boards.boardTemplate,
-            favorite: sql<boolean>`${boardFavorites.userId} is not null`,
-            openTasks: tx.$count(
-              tasks,
-              and(
-                eq(tasks.boardId, boards.id),
-                isNull(tasks.parentId),
-                isNull(tasks.completedAt),
-                isNull(tasks.canceledAt),
-                shown
-              )
-            ),
-            doneTasks: tx.$count(
-              tasks,
-              and(
-                eq(tasks.boardId, boards.id),
-                isNull(tasks.parentId),
-                isNotNull(tasks.completedAt),
-                isNull(tasks.canceledAt),
-                shown
-              )
-            ),
-            totalTasks: tx.$count(
-              tasks,
-              and(
-                eq(tasks.boardId, boards.id),
-                isNull(tasks.parentId),
-                isNull(tasks.canceledAt),
-                shown
-              )
-            ),
-            lateTasks: tx.$count(
-              tasks,
-              and(
-                eq(tasks.boardId, boards.id),
-                isNull(tasks.parentId),
-                isNull(tasks.completedAt),
-                isNull(tasks.canceledAt),
-                lt(tasks.dueDate, today),
-                shown
-              )
-            )
+            favorite: sql<boolean>`${boardFavorites.userId} is not null`
           })
           .from(boards)
           .innerJoin(accessible, eq(accessible.boardId, boards.id))
@@ -250,11 +200,17 @@ export function createBoardStore(db: Db) {
             sql`${boardFavorites.userId} is null`,
             asc(boards.name)
           )
+        const counts = await taskCountsOf(
+          tx,
+          listed.map(board => board.id),
+          today
+        )
         const members = await firstMembersOfProjects(tx, [
           ...new Set(listed.map(board => board.project.id))
         ])
         return listed.map(board => ({
           ...board,
+          ...(counts.get(board.id) ?? NO_TASKS),
           ...(members.get(board.project.id) ?? { members: [], memberCount: 0 })
         }))
       })
@@ -424,6 +380,76 @@ export async function createProject(
     role: 'admin'
   })
   return project.id
+}
+
+const NO_TASKS = { openTasks: 0, doneTasks: 0, totalTasks: 0, lateTasks: 0 }
+
+async function taskCountsOf(tx: Tx, boardIds: string[], today: string) {
+  const byBoard = new Map<string, typeof NO_TASKS>()
+  if (boardIds.length === 0) return byBoard
+  const open = isNull(tasks.completedAt)
+  const rows = await tx
+    .select({
+      boardId: tasks.boardId,
+      openTasks: sql`count(*) filter (where ${open})`.mapWith(Number),
+      doneTasks:
+        sql`count(*) filter (where ${isNotNull(tasks.completedAt)})`.mapWith(
+          Number
+        ),
+      totalTasks: sql`count(*)`.mapWith(Number),
+      lateTasks:
+        sql`count(*) filter (where ${and(open, lt(tasks.dueDate, today))})`.mapWith(
+          Number
+        )
+    })
+    .from(tasks)
+    .where(
+      and(
+        inArray(tasks.boardId, boardIds),
+        isNull(tasks.parentId),
+        isNull(tasks.canceledAt),
+        shown
+      )
+    )
+    .groupBy(tasks.boardId)
+  for (const { boardId, ...counts } of rows) byBoard.set(boardId, counts)
+  return byBoard
+}
+
+// The boards list is polled, so one read finds which of the sign-in writes
+// are owed and the others are skipped.
+async function settleSignIn(tx: Tx, identity: Identity) {
+  const renamed =
+    identity.name === null
+      ? sql`false`
+      : sql`exists (select 1 from ${projectMembers}
+          where ${projectMembers.userId} = ${identity.userId}
+          and ${projectMembers.name} is distinct from ${identity.name})`
+  const [owed] = await tx.execute<{
+    inbox: boolean
+    invites: boolean
+    renamed: boolean
+  }>(sql`select
+    not exists (select 1 from ${projects}
+      where ${projects.personal} and ${projects.createdBy} = ${identity.userId}
+      and ${projects.organizationId} is not distinct from ${identity.organizationId}) as "inbox",
+    exists (select 1 from ${projectInvites}
+      where ${projectInvites.email} = lower(${identity.email})) as "invites",
+    ${renamed} as "renamed"`)
+  if (owed?.inbox) await ensureInbox(tx, identity)
+  if (owed?.invites) await claimInvites(tx)
+  // A claimed invite becomes a membership with no name.
+  if ((owed?.renamed || owed?.invites) && identity.name !== null) {
+    await tx
+      .update(projectMembers)
+      .set({ name: identity.name })
+      .where(
+        and(
+          eq(projectMembers.userId, identity.userId),
+          sql`${projectMembers.name} is distinct from ${identity.name}`
+        )
+      )
+  }
 }
 
 // The personal project holds the Inbox. The Inbox has no sections: its tasks
