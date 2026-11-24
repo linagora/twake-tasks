@@ -32,22 +32,29 @@ const text = (value: string): string =>
     .replace(/,/g, '\\,')
     .replace(/\r\n|\r|\n/g, '\\n')
 
-// RFC 5545 3.1: lines fold at 75 octets, without splitting a character.
+// RFC 5545 3.1: lines fold at 75 octets, without splitting a character. A
+// UTF-16 unit is at most 3 octets in UTF-8 (a lone surrogate becomes U+FFFD),
+// so a line of 25 units never folds.
 function fold(line: string): string {
+  if (line.length <= 25 || Buffer.byteLength(line) <= 75) return line
   const parts: string[] = []
-  let part = ''
+  let start = 0
   let octets = 0
-  for (const character of line) {
-    const size = Buffer.byteLength(character)
+  for (let i = 0; i < line.length; i++) {
+    const unit = line.charCodeAt(i)
+    const next = line.charCodeAt(i + 1)
+    const pair =
+      unit >= 0xd800 && unit <= 0xdbff && next >= 0xdc00 && next <= 0xdfff
+    const size = unit < 0x80 ? 1 : unit < 0x800 ? 2 : pair ? 4 : 3
     if (octets + size > (parts.length === 0 ? 75 : 74)) {
-      parts.push(part)
-      part = ''
+      parts.push(line.slice(start, i))
+      start = i
       octets = 0
     }
-    part += character
     octets += size
+    if (pair) i++
   }
-  parts.push(part)
+  parts.push(line.slice(start))
   return parts.join('\r\n ')
 }
 

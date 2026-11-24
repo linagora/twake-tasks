@@ -222,4 +222,45 @@ describe('calendarOf', () => {
       'DTSTART;VALUE=DATE:20261104\r\nDTEND;VALUE=DATE:20261105'
     )
   })
+
+  it('folds as late as a line allows, without splitting a character', () => {
+    const title = `${'😀'.repeat(20)}a\u{d800}${'日本'.repeat(20)}\u{dc00}é`
+    const calendar = calendarOf(
+      [
+        {
+          id: 'task',
+          key: 'CAL-1',
+          title,
+          boardId: 'board',
+          boardName: 'Design',
+          priority: null,
+          dueDate: '2026-11-04',
+          dueTime: null,
+          dueZone: null,
+          duration: null,
+          recurrence: null,
+          labels: []
+        }
+      ],
+      {
+        appUrl: 'https://tasks.example.com/',
+        name: 'Twake Project',
+        now: new Date('2026-11-04T10:00:00Z')
+      }
+    )
+
+    const summary = `SUMMARY:CAL-1 ${title}`
+    const expected: string[] = []
+    let line = ''
+    for (const character of summary) {
+      const limit = expected.length === 0 ? 75 : 74
+      if (Buffer.byteLength(line + character) > limit) {
+        expected.push(line)
+        line = ''
+      }
+      line += character
+    }
+    expected.push(line)
+    expect(calendar).toContain(`\r\n${expected.join('\r\n ')}\r\n`)
+  })
 })
