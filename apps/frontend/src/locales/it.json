@@ -1006,7 +1006,12 @@
     "days": "%{smart_count} giorno |||| %{smart_count} giorni",
     "filterEmpty": "Nessuna attività corrisponde a questo filtro",
     "loadFailed": "Impossibile caricare le tue attività.",
-    "mineEmpty": "Nulla assegnato a te"
+    "mineEmpty": "Nulla assegnato a te",
+    "complete": "Segna come completata",
+    "postpone": "Rimanda di un giorno",
+    "toToday": "Sposta a oggi",
+    "noDoneSection": "%{board} non ha una sezione di completate in cui spostare l'attività.",
+    "quickFailed": "Impossibile modificare l'attività."
   },
   "members": {
     "count": "%{smart_count} membro |||| %{smart_count} membri",

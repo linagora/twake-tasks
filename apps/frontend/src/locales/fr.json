@@ -1006,7 +1006,12 @@
     "days": "%{smart_count} jour |||| %{smart_count} jours",
     "filterEmpty": "Aucune tâche ne correspond à ce filtre",
     "loadFailed": "Vos tâches n'ont pas pu être chargées.",
-    "mineEmpty": "Rien ne vous est assigné"
+    "mineEmpty": "Rien ne vous est assigné",
+    "complete": "Marquer comme terminée",
+    "postpone": "Décaler d'un jour",
+    "toToday": "Remettre à aujourd'hui",
+    "noDoneSection": "%{board} n'a pas de section terminée où ranger la tâche.",
+    "quickFailed": "La tâche n'a pas pu être modifiée."
   },
   "members": {
     "count": "%{smart_count} membre |||| %{smart_count} membres",

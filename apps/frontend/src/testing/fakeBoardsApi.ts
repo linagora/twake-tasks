@@ -755,6 +755,10 @@ export function fakeBoardsApi(boards: Board[] = []) {
                   !task.canceledAt
               )
               .map(task => agendaTask(board, task))
+              .filter(
+                task =>
+                  task.category !== 'completed' && task.category !== 'canceled'
+              )
           )
           .sort((a, b) =>
             (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999')

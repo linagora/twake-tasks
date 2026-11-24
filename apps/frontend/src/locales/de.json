@@ -1006,7 +1006,12 @@
     "days": "%{smart_count} Tag |||| %{smart_count} Tage",
     "filterEmpty": "Keine Aufgabe entspricht diesem Filter",
     "loadFailed": "Ihre Aufgaben konnten nicht geladen werden.",
-    "mineEmpty": "Ihnen ist nichts zugewiesen"
+    "mineEmpty": "Ihnen ist nichts zugewiesen",
+    "complete": "Als erledigt markieren",
+    "postpone": "Um einen Tag verschieben",
+    "toToday": "Auf heute verschieben",
+    "noDoneSection": "%{board} hat keinen Erledigt-Abschnitt für die Aufgabe.",
+    "quickFailed": "Die Aufgabe konnte nicht geändert werden."
   },
   "members": {
     "count": "%{smart_count} Mitglied |||| %{smart_count} Mitglieder",

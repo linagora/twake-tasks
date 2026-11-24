@@ -1006,7 +1006,12 @@
     "days": "%{smart_count} day |||| %{smart_count} days",
     "filterEmpty": "No task matches this filter",
     "loadFailed": "Your tasks could not be loaded.",
-    "mineEmpty": "Nothing assigned to you"
+    "mineEmpty": "Nothing assigned to you",
+    "complete": "Mark as done",
+    "postpone": "Push by a day",
+    "toToday": "Move to today",
+    "noDoneSection": "%{board} has no Done section to move the task to.",
+    "quickFailed": "The task could not be changed."
   },
   "members": {
     "count": "%{smart_count} member |||| %{smart_count} members",

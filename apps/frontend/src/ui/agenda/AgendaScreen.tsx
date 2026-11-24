@@ -37,6 +37,7 @@ import {
   type AgendaPanels
 } from '@/ui/agenda/AgendaTaskPanel'
 import { useFilterBoards } from '@/ui/agenda/filterBoards'
+import { QuickActions } from '@/ui/agenda/QuickActions'
 import { FilterForm } from '@/ui/agenda/FiltersScreen'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useBoardName } from '@/ui/boards/BoardsScreen'
@@ -75,13 +76,15 @@ export function Group({
   tasks,
   tone,
   dated = false,
-  highlight = ''
+  highlight = '',
+  quick = false
 }: {
   label: string
   tasks: (AgendaTask | SearchResult)[]
   tone?: 'error'
   dated?: boolean
   highlight?: string
+  quick?: boolean
 }): ReactElement {
   const contextOf = useContextOf()
   const panels = useAgendaPanels(tasks)
@@ -96,6 +99,7 @@ export function Group({
           onShow={panels.show}
           showDue={!dated}
           highlight={highlight}
+          quick={quick}
         />
       ))}
     </TaskGroup>
@@ -108,7 +112,8 @@ const AgendaRow = memo(function AgendaRow({
   open,
   onShow,
   showDue,
-  highlight
+  highlight,
+  quick
 }: {
   task: AgendaTask | SearchResult
   context: string
@@ -116,6 +121,7 @@ const AgendaRow = memo(function AgendaRow({
   onShow: AgendaPanels['show']
   showDue: boolean
   highlight: string
+  quick: boolean
 }): ReactElement {
   const { t } = useI18n()
   const match = 'match' in task ? task.match : null
@@ -161,6 +167,7 @@ const AgendaRow = memo(function AgendaRow({
           {task.assignees.length > 0 && <Assignees people={task.assignees} />}
         </>
       }
+      trailing={quick && <QuickActions task={task} />}
     />
   )
 })
@@ -481,7 +488,11 @@ export function AgendaScreen(
           (body ? (
             body(tasks)
           ) : (
-            <ByDay today={agenda.data.today} tasks={tasks} />
+            <ByDay
+              today={agenda.data.today}
+              tasks={tasks}
+              quick={view === 'mine'}
+            />
           ))}
       </main>
     </OriginContext>
@@ -611,10 +622,12 @@ function ByCompletion({ tasks }: { tasks: AgendaTask[] }): ReactElement {
 
 function ByDay({
   today,
-  tasks
+  tasks,
+  quick
 }: {
   today: string
   tasks: AgendaTask[]
+  quick: boolean
 }): ReactElement {
   const { t, lang } = useI18n()
   // A done task is never late: a filter of any status lists it under its day.
@@ -629,7 +642,12 @@ function ByDay({
   return (
     <>
       {overdue.length > 0 && (
-        <Group label={t('agenda.overdue')} tasks={overdue} tone="error" />
+        <Group
+          label={t('agenda.overdue')}
+          tasks={overdue}
+          tone="error"
+          quick={quick}
+        />
       )}
       {days.map(day => (
         <Group
@@ -637,10 +655,11 @@ function ByDay({
           label={day === today ? t('agenda.today') : formatDay(day, lang)}
           tasks={onTime.filter(task => task.dueDate === day)}
           dated
+          quick={quick}
         />
       ))}
       {undated.length > 0 && (
-        <Group label={t('agenda.noDate')} tasks={undated} />
+        <Group label={t('agenda.noDate')} tasks={undated} quick={quick} />
       )}
     </>
   )

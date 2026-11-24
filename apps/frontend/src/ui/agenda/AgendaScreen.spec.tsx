@@ -389,6 +389,177 @@ describe('AgendaScreen', () => {
     expect(router.state.location.search).toBe('?new=task&assign=me')
   })
 
+  describe('quick actions of My tasks', () => {
+    const me = { userId: 'me', email: 'me@example.com', name: null }
+    const rowOf = async (name: string) =>
+      within(await screen.findByRole('listitem', { name }))
+
+    it('moves a late task to today, or a day after its due date', async () => {
+      const design = aBoard({ keyPrefix: 'DES' })
+      const [toDo] = design.sections
+      design.tasks = [
+        aTask(toDo ?? null, {
+          key: 'DES-1',
+          title: 'Poster',
+          dueDate: day(-2),
+          deadline: day(-1),
+          assignees: [me]
+        }),
+        aTask(null, {
+          key: 'DES-2',
+          title: 'Flyer',
+          dueDate: day(3),
+          assignees: [me]
+        })
+      ]
+      const boardsApi = fakeBoardsApi([design])
+      renderRoute('/mine', { boardsApi })
+
+      const flyer = await rowOf('DES-2 Flyer')
+      expect(
+        flyer.queryByRole('button', { name: 'Move to today' })
+      ).not.toBeInTheDocument()
+      fireEvent.click(flyer.getByRole('button', { name: 'Push by a day' }))
+      await waitFor(() => {
+        expect(boardsApi.editTask).toHaveBeenCalledWith(
+          design.id,
+          design.tasks[1]?.id,
+          { dueDate: day(4) }
+        )
+      })
+
+      const poster = await rowOf('DES-1 Poster')
+      fireEvent.click(poster.getByRole('button', { name: 'Move to today' }))
+      expect(
+        within(await screen.findByRole('region', { name: 'Today' })).getByText(
+          'Poster'
+        )
+      ).toBeVisible()
+      // The deadline keeps its gap to the due date.
+      expect(boardsApi.editTask).toHaveBeenLastCalledWith(
+        design.id,
+        design.tasks[0]?.id,
+        { dueDate: day(0), deadline: day(1) }
+      )
+    })
+
+    it('marks a task done, in its board’s Done section when it has sections', async () => {
+      const design = aBoard({ keyPrefix: 'DES' })
+      const [toDo, , done] = design.sections
+      const posterTask = aTask(toDo ?? null, {
+        key: 'DES-1',
+        title: 'Poster',
+        assignees: [me]
+      })
+      const flyerTask = aTask(null, {
+        key: 'DES-2',
+        title: 'Flyer',
+        assignees: [me]
+      })
+      design.tasks = [posterTask, flyerTask]
+      const boardsApi = fakeBoardsApi([design])
+      renderRoute('/mine', { boardsApi })
+
+      const poster = await rowOf('DES-1 Poster')
+      expect(
+        poster.queryByRole('button', { name: 'Push by a day' })
+      ).not.toBeInTheDocument()
+      fireEvent.click(poster.getByRole('button', { name: 'Mark as done' }))
+      await waitFor(() => {
+        expect(screen.queryByText('Poster')).not.toBeInTheDocument()
+      })
+      expect(boardsApi.moveTask).toHaveBeenCalledWith(
+        design.id,
+        posterTask.id,
+        { sectionId: done?.id }
+      )
+
+      fireEvent.click(
+        (await rowOf('DES-2 Flyer')).getByRole('button', {
+          name: 'Mark as done'
+        })
+      )
+      await waitFor(() => {
+        expect(screen.queryByText('Flyer')).not.toBeInTheDocument()
+      })
+      expect(boardsApi.completeTask).toHaveBeenCalledWith(
+        design.id,
+        flyerTask.id,
+        'completed'
+      )
+    })
+
+    it('says a task marked done is still blocked', async () => {
+      const design = aBoard({ keyPrefix: 'DES' })
+      design.tasks = [
+        aTask(null, {
+          key: 'DES-2',
+          title: 'Flyer',
+          assignees: [me],
+          blockers: [{ key: 'DES-1', title: 'Poster' }]
+        })
+      ]
+      renderRoute('/mine', { boardsApi: fakeBoardsApi([design]) })
+
+      fireEvent.click(
+        (await rowOf('DES-2 Flyer')).getByRole('button', {
+          name: 'Mark as done'
+        })
+      )
+      expect(
+        await screen.findByText('DES-2 is still blocked by DES-1.')
+      ).toBeVisible()
+    })
+
+    it('says when the board has no Done section to complete the task in', async () => {
+      const design = aBoard({ name: 'Design', keyPrefix: 'DES' })
+      design.sections = design.sections.filter(
+        section => section.category !== 'completed'
+      )
+      design.tasks = [
+        aTask(design.sections[0] ?? null, {
+          key: 'DES-1',
+          title: 'Poster',
+          assignees: [me]
+        })
+      ]
+      const boardsApi = fakeBoardsApi([design])
+      renderRoute('/mine', { boardsApi })
+
+      fireEvent.click(
+        (await rowOf('DES-1 Poster')).getByRole('button', {
+          name: 'Mark as done'
+        })
+      )
+      expect(
+        await screen.findByText(
+          'Design has no Done section to move the task to.'
+        )
+      ).toBeVisible()
+      expect(boardsApi.moveTask).not.toHaveBeenCalled()
+    })
+
+    it('offers none on a board I only view', async () => {
+      const design = aBoard({ keyPrefix: 'DES', role: 'viewer' })
+      design.tasks = [
+        aTask(null, { key: 'DES-1', title: 'Poster', assignees: [me] })
+      ]
+      const web = aBoard({ name: 'Web', keyPrefix: 'WEB' })
+      web.tasks = [
+        aTask(null, { key: 'WEB-1', title: 'Landing', assignees: [me] })
+      ]
+      renderRoute('/mine', { boardsApi: fakeBoardsApi([design, web]) })
+
+      expect(
+        await (
+          await rowOf('WEB-1 Landing')
+        ).findByRole('button', { name: 'Mark as done' })
+      ).toBeVisible()
+      const poster = await rowOf('DES-1 Poster')
+      expect(poster.queryByRole('button', { name: 'Mark as done' })).toBeNull()
+    })
+  })
+
   it('shows placeholders while the tasks load', async () => {
     const boardsApi = fakeBoardsApi()
     boardsApi.agenda.mockReturnValue(new Promise(() => undefined))
