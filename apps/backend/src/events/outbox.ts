@@ -19,6 +19,8 @@ export async function enqueue(tx: Tx, event: PublishedEvent) {
   await tx.insert(outbox).values({ event })
 }
 
+// The relay deletes what it publishes; only a replica on the previous release
+// still marks events sent.
 export async function forgetSentEvents(tx: Tx, sentBefore: Date) {
   await tx.delete(outbox).where(lt(outbox.sentAt, sentBefore))
 }
@@ -96,7 +98,7 @@ export function createRelay(deps: {
     return lock?.locked === true
   }
   // A failure stops the batch so later events wait for it; what was already
-  // published is marked sent, and the rest is retried on the next run.
+  // published is deleted, and the rest is retried on the next run.
   const relayOnce = () =>
     deps.db.transaction(async tx => {
       if (!(await locked(tx))) return 0
@@ -145,10 +147,7 @@ export function createRelay(deps: {
         sent.push(row.id)
       }
       if (sent.length > 0) {
-        await tx
-          .update(outbox)
-          .set({ sentAt: sql`now()` })
-          .where(inArray(outbox.id, sent))
+        await tx.delete(outbox).where(inArray(outbox.id, sent))
         metrics?.outboxPublished.inc(sent.length)
       }
       return sent.length
