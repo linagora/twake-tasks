@@ -27,17 +27,25 @@ const invisible = new RegExp(
   'gu'
 )
 
+const printable = /^[\x20-\x7e]*$/
+
 export const uniqueName = (max: number) =>
   z
     .string()
+    // Bounds the folding below by what a name may hold, not by the body size.
+    // A name padded far past it with invisible characters is refused.
+    .refine(name => name.length <= 16 * max, { abort: true })
     // Folded before the joiners are judged, since folding can turn a letter
     // into Latin (a mathematical A), and again to compose what removal joins.
-    .overwrite(name =>
-      name
-        .normalize('NFKC')
-        .replace(invisible, (_, kept: string | undefined) => kept ?? '')
-        .normalize('NFKC')
-    )
+    .overwrite(name => {
+      if (printable.test(name)) return name
+      const folded = name.normalize('NFKC')
+      const cleaned = folded.replace(
+        invisible,
+        (_, kept: string | undefined) => kept ?? ''
+      )
+      return cleaned === folded ? cleaned : cleaned.normalize('NFKC')
+    })
     .trim()
     .min(1)
     .max(max)
