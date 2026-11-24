@@ -1,4 +1,4 @@
-import type { ScheduleRule } from '@twake-tasks/api-contract'
+import type { DueRule, ScheduleRule } from '@twake-tasks/api-contract'
 
 export interface Cadence {
   rule: ScheduleRule
@@ -142,6 +142,23 @@ export function dayIn(zone: string, at: Date): string {
       .map(part => [part.type, part.value])
   ) as Record<'year' | 'month' | 'day', string>
   return `${parts.year}-${parts.month}-${parts.day}`
+}
+
+/** When the task of the run planned for `run` is due. */
+export function dueOf(rule: DueRule, run: Date, zone: string) {
+  const day = dayNumber(dayIn(zone, run))
+  const month = monthIndex(day)
+  const due =
+    rule.kind === 'days'
+      ? day + rule.after
+      : rule.kind === 'monthDay'
+        ? dayInMonth(month + rule.after, rule.day)
+        : dayInMonth(month - (month % 3) + 3 * rule.after + 2, 'last')
+  return {
+    dueDate: dayOf(due),
+    dueTime: rule.time,
+    dueZone: rule.time === null ? null : zone
+  }
 }
 
 // The longest gap between two runs: a yearly run, or every 365 working days.
