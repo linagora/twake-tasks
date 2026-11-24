@@ -19,8 +19,8 @@ const dayNumber = (day: string) => Date.parse(`${day}T00:00:00Z`) / DAY
 
 const dayOf = (n: number) => new Date(n * DAY).toISOString().slice(0, 10)
 
-/** 1 is Monday, 7 Sunday. */
-const weekdayOf = (n: number) => ((new Date(n * DAY).getUTCDay() + 6) % 7) + 1
+/** 1 is Monday, 7 Sunday. Day 0 is a Thursday. */
+const weekdayOf = (n: number) => ((((n + 3) % 7) + 7) % 7) + 1
 
 const isWorking = (n: number) => weekdayOf(n) <= 5
 
@@ -51,9 +51,8 @@ function workingOnOrBefore(n: number): number {
   return day
 }
 
-function runsOn(cadence: Cadence, n: number): boolean {
+function runsOn(cadence: Cadence, start: number, n: number): boolean {
   const { rule, workingDays } = cadence
-  const start = dayNumber(cadence.startsOn)
   if (n < start) return false
   switch (rule.kind) {
     case 'daily':
@@ -72,8 +71,9 @@ function runsOn(cadence: Cadence, n: number): boolean {
     case 'yearly': {
       const every = rule.kind === 'monthly' ? rule.every : 1
       const first = monthIndex(start)
+      const month = monthIndex(n)
       // Moved to the working day before, a run can fall in the month before.
-      return [monthIndex(n), monthIndex(n) + 1].some(index => {
+      return [month, month + 1].some(index => {
         if (index < first || (index - first) % every !== 0) return false
         if (rule.kind === 'yearly' && index % 12 !== rule.month - 1) {
           return false
@@ -148,16 +148,14 @@ const HORIZON = 800
 
 /** The first run after `after`, or null once the schedule has ended. */
 export function nextRun(cadence: Cadence, after: Date): Date | null {
-  const from = Math.max(
-    dayNumber(dayIn(cadence.zone, after)),
-    dayNumber(cadence.startsOn)
-  )
+  const start = dayNumber(cadence.startsOn)
+  const from = Math.max(dayNumber(dayIn(cadence.zone, after)), start)
   const last = Math.min(
     cadence.endsOn === null ? Infinity : dayNumber(cadence.endsOn),
     from + HORIZON
   )
   for (let n = from; n <= last; n++) {
-    if (!runsOn(cadence, n)) continue
+    if (!runsOn(cadence, start, n)) continue
     const at = instantIn(dayOf(n), cadence.time, cadence.zone)
     if (at > after) return at
   }
