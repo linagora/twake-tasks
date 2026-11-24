@@ -8,6 +8,13 @@ import type {
 import { z } from 'zod'
 import type { HttpServer } from './http.ts'
 
+declare module 'fastify' {
+  interface FastifyContextConfig {
+    // Set on a route whose access check refuses a revoked session.
+    sessionCheckedByAccess?: boolean
+  }
+}
+
 interface Schema<T> {
   safeParse(value: unknown): { success: true; data: T } | { success: false }
 }
@@ -36,6 +43,8 @@ export type BoardAccess = Extract<Access, { on: 'board' }>
 
 export type ProjectAccess = Extract<Access, { on: 'project' }>
 
+// Both checks must run in a tenant transaction of the identity: it replaces
+// the route's revocation lookup.
 export type CheckBoardAccess<I> = (
   identity: I,
   params: { boardId: string; userId?: string },
@@ -128,11 +137,14 @@ export function registerRoutes<I, E extends string>(
         ? deps.shareTransaction
         : undefined
     const status = route.status ?? 200
+    const config = checkAccess
+      ? { ...route.config, sessionCheckedByAccess: true }
+      : route.config
     app.route({
       method: route.method,
       url: route.url,
       ...(route.onRequest && { onRequest: route.onRequest }),
-      ...(route.config && { config: route.config }),
+      ...(config && { config }),
       ...(route.logSerializers && { logSerializers: route.logSerializers }),
       ...(route.bodyLimit && { bodyLimit: route.bodyLimit }),
       ...(route.response && {

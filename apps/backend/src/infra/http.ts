@@ -8,7 +8,7 @@ import Fastify, {
 import { randomUUID } from 'node:crypto'
 import { createRequire } from 'node:module'
 import { z } from 'zod'
-import { isTransient } from './db.ts'
+import { isTransient, SessionRevoked } from './db.ts'
 import type { Metrics } from './metrics.ts'
 import { runInRequest } from './requestId.ts'
 
@@ -70,6 +70,12 @@ export function createServer(deps: {
   // Fastify answers with the error's message, which for a failed query holds
   // its SQL and parameters.
   app.setErrorHandler<FastifyError>((error, request, reply) => {
+    if (error instanceof SessionRevoked) {
+      return reply
+        .code(401)
+        .header('www-authenticate', 'Bearer error="invalid_token"')
+        .send({ error: 'unauthorized' })
+    }
     const status =
       error.statusCode !== undefined && error.statusCode >= 400
         ? error.statusCode

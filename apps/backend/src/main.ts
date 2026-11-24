@@ -113,7 +113,6 @@ const server = await buildApp({
   db,
   boardChanges,
   ...(await connectIdentityProvider({
-    db,
     limits,
     oidc: {
       issuer: new URL(config.OIDC_ISSUER),

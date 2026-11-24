@@ -1,4 +1,3 @@
-import type { Db } from '../../infra/db.ts'
 import {
   createAuthenticator,
   type Authenticate,
@@ -9,7 +8,6 @@ import {
   type IdentityProvider,
   type OidcOptions
 } from './oidc.ts'
-import { postgresAuthStore } from './store.ts'
 
 export type { Authenticate } from './authenticator.ts'
 export { fullName } from './fullName.ts'
@@ -20,14 +18,12 @@ export { limitUsers, type BudgetsOf } from './userLimits.ts'
 export { forgetRevokedSessions, postgresAuthStore } from './store.ts'
 
 export async function connectIdentityProvider(deps: {
-  db: Db
   oidc: OidcOptions
   limits: AuthenticatorLimits
 }): Promise<{ provider: IdentityProvider; authenticate: Authenticate }> {
   const provider = await discoverIdentityProvider(deps.oidc)
-  const store = postgresAuthStore(deps.db)
   return {
     provider,
-    authenticate: createAuthenticator({ provider, store, limits: deps.limits })
+    authenticate: createAuthenticator({ provider, limits: deps.limits })
   }
 }

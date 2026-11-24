@@ -2,6 +2,7 @@ import { pino } from 'pino'
 import { describe, expect, it, vi } from 'vitest'
 import { createServer } from '../../infra/http.ts'
 import { registerRateLimit } from '../../infra/rateLimit.ts'
+import { defineRoute, registerRoutes } from '../../infra/route.ts'
 import {
   createAuthenticator,
   IdentityProviderBusy,
@@ -48,6 +49,23 @@ async function setUp(
     { preHandler: requireIdentity, config: { searchTokens: true } },
     () => ({ ok: true })
   )
+  registerRoutes(
+    app,
+    {
+      requireIdentity,
+      identify: request => request.identity,
+      refusalStatus: {},
+      checkBoardAccess: () => Promise.resolve(null)
+    },
+    [
+      defineRoute({
+        method: 'GET',
+        url: '/boards/:boardId',
+        access: { on: 'board', role: 'viewer' },
+        handler: () => Promise.resolve({ ok: true, value: {} })
+      })
+    ]
+  )
   return { app, store }
 }
 
@@ -56,8 +74,7 @@ function aRealAuthenticator() {
     Promise.resolve<Identity | null>(token === 'good' ? anIdentity() : null)
   )
   const authenticate = createAuthenticator({
-    provider: { identify, verifyLogoutToken: vi.fn() },
-    store: { isRevoked: () => Promise.resolve(false), revoke: vi.fn() }
+    provider: { identify, verifyLogoutToken: vi.fn() }
   })
   return { authenticate, identify }
 }
@@ -138,6 +155,33 @@ describe('requireIdentity', () => {
       organizationId
     })
   })
+
+  it('refuses a session revoked since its token was checked', async () => {
+    const { app, store } = await setUp()
+    store.isRevoked.mockResolvedValue(true)
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/whoami',
+      headers: { authorization: 'Bearer token' }
+    })
+
+    expect(response.statusCode).toBe(401)
+    expect(store.isRevoked).toHaveBeenCalledWith('session-1')
+  })
+
+  it('leaves the revocation to the transaction of an access check', async () => {
+    const { app, store } = await setUp()
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/boards/b1',
+      headers: { authorization: 'Bearer token' }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(store.isRevoked).not.toHaveBeenCalled()
+  })
 })
 
 describe('refused tokens from one address', () => {
@@ -180,8 +224,7 @@ describe('refused tokens from one address', () => {
             })
           }),
         verifyLogoutToken: vi.fn()
-      },
-      store: { isRevoked: () => Promise.resolve(false), revoke: vi.fn() }
+      }
     })
     const { app } = await setUp(authenticate)
     const checking = Array.from({ length: 5 }, (_, i) =>
