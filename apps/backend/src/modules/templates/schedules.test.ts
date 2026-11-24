@@ -29,6 +29,10 @@ interface Board {
     title: string
     sectionId: string | null
     priority: number | null
+    dueDate: string | null
+    dueTime: string | null
+    dueZone: string | null
+    canceledAt: string | null
     template: { id: string } | null
     labels: { id: string }[]
     assignees: { userId: string }[]
@@ -64,7 +68,9 @@ const daily = {
   zone: 'Europe/Paris',
   workingDays: false,
   endsOn: null,
-  paused: false
+  paused: false,
+  due: null,
+  previous: 'keep'
 }
 
 // The author, when not the board's owner, joins the board as an editor.
@@ -192,6 +198,68 @@ describe('template schedules', () => {
 
     expect(await scheduled.tasks()).toHaveLength(1)
     expect((await scheduled.reload())?.schedule?.nextRunAt).toBe(later(due, 6))
+  })
+
+  it('make the task due by their due rule, counted from the run planned', async () => {
+    const alice = aUser()
+    const scheduled = await aScheduledTemplate(alice, {
+      due: { kind: 'days', after: 2, time: '18:00' }
+    })
+    const due = scheduled.template.schedule?.nextRunAt
+
+    await scheduled.runAt(later(due, 1.5))
+
+    const day = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Paris'
+    }).format(new Date(later(due, 2)))
+    expect(await scheduled.tasks()).toMatchObject([
+      { dueDate: day, dueTime: '18:00', dueZone: 'Europe/Paris' }
+    ])
+    expect((await scheduled.reload())?.schedule).toMatchObject({
+      due: { kind: 'days', after: 2, time: '18:00' },
+      previous: 'keep'
+    })
+  })
+
+  it('keep the open task of the previous run, unless set to overwrite it', async () => {
+    const alice = aUser()
+    const bob = aUser()
+    const kept = await aScheduledTemplate(alice)
+    const overwritten = await aScheduledTemplate(bob, { previous: 'overwrite' })
+
+    for (const scheduled of [kept, overwritten]) {
+      const first = scheduled.template.schedule?.nextRunAt
+      await scheduled.runAt(first)
+      await scheduled.runAt(later(first, 1))
+    }
+
+    expect(await kept.tasks()).toHaveLength(2)
+    expect(await overwritten.tasks()).toHaveLength(1)
+    const archived = (
+      await api.as(bob).get(`/boards/${overwritten.board.id}/archived`)
+    ).json<{ tasks: unknown[] }>()
+    expect(archived.tasks).toHaveLength(1)
+  })
+
+  it('cancel the previous task in the canceled section when the board has one', async () => {
+    const alice = aUser()
+    const scheduled = await aScheduledTemplate(alice, { previous: 'overwrite' })
+    const canceled = (
+      await api.as(alice).post(`/boards/${scheduled.board.id}/sections`, {
+        name: 'Dropped',
+        category: 'canceled'
+      })
+    ).json<{ id: string }>()
+    const first = scheduled.template.schedule?.nextRunAt
+
+    await scheduled.runAt(first)
+    await scheduled.runAt(later(first, 1))
+
+    const tasks = await scheduled.tasks()
+    expect(tasks).toHaveLength(2)
+    const previous = tasks.find(task => task.sectionId === canceled.id)
+    expect(previous?.canceledAt).toBeTruthy()
+    expect(tasks.filter(task => task.canceledAt === null)).toHaveLength(1)
   })
 
   it('make one task however many replicas run at once', async () => {

@@ -1,4 +1,5 @@
-import { and, asc, eq, isNull } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
+import { generateKeyBetween } from 'fractional-indexing'
 import { z } from 'zod'
 import { asTenant, type Tx } from '../../infra/db.ts'
 import {
@@ -9,6 +10,8 @@ import {
 import { jobs } from '../../scheduler/schema.ts'
 import {
   boards,
+  bumpBoards,
+  inSection,
   roleIn,
   sections,
   taskAssignees,
@@ -19,8 +22,8 @@ import {
   taskTemplates,
   templateSchedules
 } from '../boards/index.ts'
-import { insertTask, plainText } from '../tasks/index.ts'
-import { nextRun, type Cadence } from './cadence.ts'
+import { archiveTree, insertTask, plainText } from '../tasks/index.ts'
+import { dueOf, nextRun, type Cadence } from './cadence.ts'
 
 export const TEMPLATE_SCHEDULE_JOB = 'template_schedule'
 
@@ -104,12 +107,78 @@ async function pausedBy(
   return board ? null : 'board'
 }
 
+// The open tasks of earlier runs move to their board's canceled section. A
+// task on a board without sections is canceled where it is, and one on a
+// board with no canceled section is archived. An archived board stays as it
+// was.
+async function closePrevious(tx: Tx, templateId: string) {
+  const open = await tx
+    .select({ id: tasks.id, boardId: tasks.boardId })
+    .from(tasks)
+    .innerJoin(boards, eq(boards.id, tasks.boardId))
+    .where(
+      and(
+        eq(tasks.templateId, templateId),
+        isNull(boards.archivedAt),
+        isNotNull(tasks.scheduledFor),
+        isNull(tasks.completedAt),
+        isNull(tasks.canceledAt),
+        isNull(tasks.archivedAt),
+        isNull(tasks.deletedAt)
+      )
+    )
+  if (open.length === 0) return
+  const boardIds = [...new Set(open.map(task => task.boardId))]
+  await bumpBoards(tx, inArray(boards.id, boardIds))
+  const onBoards = await tx
+    .select({
+      id: sections.id,
+      boardId: sections.boardId,
+      category: sections.category
+    })
+    .from(sections)
+    .where(inArray(sections.boardId, boardIds))
+    .orderBy(asc(sections.position))
+  for (const task of open) {
+    const own = onBoards.filter(section => section.boardId === task.boardId)
+    const canceled = own.find(section => section.category === 'canceled')
+    if (!canceled && own.length > 0) {
+      await archiveTree(tx, task.id)
+      continue
+    }
+    if (!canceled) {
+      await tx
+        .update(tasks)
+        .set({ canceledAt: new Date() })
+        .where(eq(tasks.id, task.id))
+      continue
+    }
+    const sectionId = canceled.id
+    const [last] = await tx
+      .select({ position: tasks.position })
+      .from(tasks)
+      .where(inSection(task.boardId, sectionId))
+      .orderBy(desc(tasks.position))
+      .limit(1)
+    await tx
+      .update(tasks)
+      .set({
+        sectionId,
+        position: generateKeyBetween(last?.position ?? null, null),
+        canceledAt: new Date()
+      })
+      .where(eq(tasks.id, task.id))
+  }
+}
+
 async function addOccurrence(
   tx: Tx,
   template: typeof taskTemplates.$inferSelect,
-  boardId: string,
+  plan: typeof templateSchedules.$inferSelect,
   scheduledFor: Date
 ) {
+  if (plan.previous === 'overwrite') await closePrevious(tx, template.id)
+  const { boardId } = plan
   const task = await insertTask(
     tx,
     template.createdBy,
@@ -123,7 +192,8 @@ async function addOccurrence(
       description: template.description,
       descriptionText: plainText(template.description),
       priority: template.priority,
-      scheduledFor
+      scheduledFor,
+      ...(plan.due && dueOf(plan.due, scheduledFor, plan.zone))
     }
   )
   const own = { taskId: task.id, organizationId: template.organizationId }
@@ -189,7 +259,7 @@ export function runSchedule(now: () => Date = () => new Date()): Handler {
       .where(
         and(eq(tasks.templateId, template.id), eq(tasks.scheduledFor, due))
       )
-    if (!made) await addOccurrence(tx, template, plan.boardId, due)
+    if (!made) await addOccurrence(tx, template, plan, due)
     const next = nextRun(cadenceOf(plan), at)
     await tx
       .update(templateSchedules)

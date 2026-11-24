@@ -193,7 +193,13 @@ export async function insertTask(
   ),
   details: Pick<
     typeof tasks.$inferInsert,
-    'description' | 'descriptionText' | 'priority' | 'scheduledFor'
+    | 'description'
+    | 'descriptionText'
+    | 'priority'
+    | 'scheduledFor'
+    | 'dueDate'
+    | 'dueTime'
+    | 'dueZone'
   > = {}
 ) {
   const board = await bumpBoard(tx, boardId, {

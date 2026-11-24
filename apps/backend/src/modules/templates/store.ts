@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from 'node:util'
-import type { ScheduleRule } from '@twake-tasks/api-contract'
+import type { DueRule, ScheduleRule } from '@twake-tasks/api-contract'
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import type { Db, Tx } from '../../infra/db.ts'
@@ -30,6 +30,8 @@ interface ScheduleFields {
   workingDays: boolean
   endsOn: string | null
   paused: boolean
+  due: DueRule | null
+  previous: 'keep' | 'overwrite'
 }
 
 export interface TemplateFields {
@@ -60,6 +62,8 @@ function scheduleOf(
     zone: row.zone,
     workingDays: row.workingDays,
     endsOn: row.endsOn,
+    due: row.due,
+    previous: row.previous,
     paused: row.paused || pausedBy !== null,
     pausedBy,
     nextRunAt: pausedBy === null ? (row.nextRunAt?.toISOString() ?? null) : null
@@ -277,6 +281,8 @@ async function saveSchedule(
     boardId: fields.boardId,
     ...cadence,
     paused: fields.paused,
+    due: fields.due,
+    previous: fields.previous,
     pausedBy: null,
     nextRunAt
   }
