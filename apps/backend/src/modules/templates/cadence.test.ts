@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { instantIn, nextRun, type Cadence } from './cadence.ts'
 
 const daily: Cadence = {
@@ -41,6 +41,18 @@ describe('the next run of a schedule', () => {
     expect(next({ time: '02:30' }, '2027-10-31T00:30:00Z')).toBe(
       '2027-11-01T01:30:00.000Z'
     )
+  })
+
+  it('reads the zone offset only twice away from a clock change', () => {
+    const format = vi.spyOn(Intl.DateTimeFormat.prototype, 'formatToParts')
+    try {
+      expect(
+        instantIn('2027-06-15', '09:00', 'Europe/Paris').toISOString()
+      ).toBe('2027-06-15T07:00:00.000Z')
+      expect(format).toHaveBeenCalledTimes(2)
+    } finally {
+      format.mockRestore()
+    }
   })
 
   it('skips the weekend on working days only', () => {

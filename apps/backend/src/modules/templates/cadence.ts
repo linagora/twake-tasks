@@ -130,6 +130,7 @@ export function instantIn(day: string, time: string, zone: string): Date {
   const wall = Date.parse(`${day}T${time}:00Z`)
   const before = wall - offsetAt(wall - DAY, zone)
   const after = wall - offsetAt(wall + DAY, zone)
+  if (before === after) return new Date(before)
   const shows = (at: number) => at + offsetAt(at, zone) === wall
   return new Date(shows(before) || !shows(after) ? before : after)
 }
