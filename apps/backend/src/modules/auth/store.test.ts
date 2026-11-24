@@ -13,7 +13,7 @@ afterAll(async () => {
 })
 
 describe('postgresAuthStore', () => {
-  it('keeps a session revoked for good', async () => {
+  it('keeps a session revoked', async () => {
     const session = randomUUID()
     await store.revoke(session)
     await store.revoke(session)

@@ -64,4 +64,4 @@ A test fails when a table is missing from this page, and the backend test suite 
 - `user_settings`: removed with the person, by email.
 - `notification_preferences`: removed with the person.
 - `calendar_feeds`: deleted by hand, or removed with the person or their organization. A new link replaces the row.
-- `oidc_revoked_sessions`: retention: until the session would have expired, pruned when the next session is revoked.
+- `oidc_revoked_sessions`: retention: 90 days after the logout (`RETENTION_REVOKED_SESSIONS_DAYS`), deleted by the daily `retention` job.

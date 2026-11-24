@@ -54,6 +54,7 @@ Retention, applied once a day by the `retention` job (see [data lifecycle](data-
 
 - `RETENTION_PROCESSED_EVENTS_DAYS` (`30`): how long the id of a consumed event is kept, so a redelivery of it is ignored. Keep it longer than any redelivery.
 - `RETENTION_READ_NOTIFICATIONS_DAYS` (`180`): how long a notification is kept once it is read.
+- `RETENTION_REVOKED_SESSIONS_DAYS` (`90`): how long a back-channel logout keeps its session refused. Keep it at least as long as the SSO's longest session or refresh token lifetime, or a token of that session is accepted again once its revocation is gone.
 
 RabbitMQ:
 

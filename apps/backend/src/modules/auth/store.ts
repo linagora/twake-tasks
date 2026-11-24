@@ -1,5 +1,5 @@
-import { eq, sql } from 'drizzle-orm'
-import type { Db } from '../../infra/db.ts'
+import { eq, lt, sql } from 'drizzle-orm'
+import type { Db, Tx } from '../../infra/db.ts'
 import { oidcRevokedSessions } from './schema.ts'
 
 export interface AuthStore {
@@ -7,8 +7,6 @@ export interface AuthStore {
   revoke: (sessionId: string) => Promise<void>
 }
 
-// A revocation is never forgotten: a token issued for the session, or
-// refreshed under it, can turn up at any time.
 export function postgresAuthStore(db: Db): AuthStore {
   // Every request looks its session up, so the query is built once.
   const revoked = db
@@ -30,4 +28,13 @@ export function postgresAuthStore(db: Db): AuthStore {
         .onConflictDoNothing()
     }
   }
+}
+
+export async function forgetRevokedSessions(
+  tx: Tx,
+  revokedBefore: Date
+): Promise<void> {
+  await tx
+    .delete(oidcRevokedSessions)
+    .where(lt(oidcRevokedSessions.revokedAt, revokedBefore))
 }

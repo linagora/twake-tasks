@@ -1,0 +1,1 @@
+CREATE INDEX "oidc_revoked_sessions_revoked_at_index" ON "oidc_revoked_sessions" ("revoked_at");

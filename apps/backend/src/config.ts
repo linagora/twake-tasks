@@ -95,6 +95,7 @@ const configSchema = z
       .int()
       .min(1)
       .default(180),
+    RETENTION_REVOKED_SESSIONS_DAYS: z.coerce.number().int().min(1).default(90),
     HTTP_HOST: z.string().min(1).default('0.0.0.0'),
     HTTP_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
     HTTP_TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).default(0),

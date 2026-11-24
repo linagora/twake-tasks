@@ -31,3 +31,10 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: agent (issue [#832](https://github.com/linagora/twake-tasks/issues/832)), to be confirmed by Khaled Ferjani
 - Why: an idle backend ran an outbox delete every 500 ms and a count per job kind every 5 s, a fixed database load whatever the traffic.
 - Scope: the outbox relay, the `retention` job, the scheduler's `jobs_due` and `jobs_oldest_due_seconds` gauges and its "jobs are late" warning. Sent events may now stay up to two days.
+
+## 2026-11-24, [Infra] A back-channel logout is kept for a set number of days
+
+- Decision: the daily `retention` job deletes a revoked session `RETENTION_REVOKED_SESSIONS_DAYS` (default 90) after its logout. This replaces keeping every revocation for good (#805).
+- Decided by: agent (issue [#848](https://github.com/linagora/twake-tasks/issues/848)), to be confirmed by Khaled Ferjani
+- Why: kept for good, the table grows with every logout for as long as the product runs, and every authenticated request looks into it.
+- Scope: `oidc_revoked_sessions`, the `retention` job.
