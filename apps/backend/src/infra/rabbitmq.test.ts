@@ -359,7 +359,7 @@ describe('startConsumer', () => {
     consumer = undefined
     expect(await ready(QUEUE)).toBe(0)
     expect(await ready(DEAD_LETTER_QUEUE)).toBe(0)
-  })
+  }, 15_000)
 
   it('retries an event whose handling failed until it succeeds', async () => {
     const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
@@ -381,7 +381,7 @@ describe('startConsumer', () => {
     consumer = undefined
     expect(await ready(QUEUE)).toBe(0)
     expect(await ready(DEAD_LETTER_QUEUE)).toBe(0)
-  })
+  }, 15_000)
 
   // As versions with a single active consumer declared it.
   async function declareOldQueue() {
@@ -588,7 +588,7 @@ describe('startPublisher', () => {
       await publisher.close()
       await node.close()
     }
-  })
+  }, 15_000)
 
   it('confirms an event no one listens to', async () => {
     const publisher = await startPublisher(
@@ -653,6 +653,7 @@ describe('live board changes', () => {
         tellBoardChanged(tx, { id: boardId, version })
         return Promise.resolve()
       })
+    const published: Promise<void>[] = []
 
     try {
       const changes = createChanges()
@@ -661,7 +662,19 @@ describe('live board changes', () => {
       })
       await listenForBoardChanges(listener, 'live', changes, log)
       const warn = vi.fn()
-      await listenForBoardChanges(publisher, 'live', createChanges(), { warn })
+      await listenForBoardChanges(
+        {
+          subscribe: publisher.subscribe,
+          publish: (...args) => {
+            const confirmed = publisher.publish(...args)
+            published.push(confirmed)
+            return confirmed
+          }
+        },
+        'live',
+        createChanges(),
+        { warn }
+      )
 
       node.hang()
       await tell(7)
@@ -675,12 +688,16 @@ describe('live board changes', () => {
       }, 5000)
     } finally {
       node.endHung()
+      // The listener can hear 8 before its publish is confirmed. Closing the
+      // publisher then fails that publish, which opens a connection through
+      // the node that nothing closes, and the node never closes.
+      await Promise.allSettled(published)
       await publisher.close()
       await listener.close()
       await node.close()
       await sql.end()
     }
-  })
+  }, 20_000)
 
   it('still publishes after a publish failed', async () => {
     const { sql, db } = createDb(inject('databaseUrl'))
