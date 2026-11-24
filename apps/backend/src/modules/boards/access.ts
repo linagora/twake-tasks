@@ -14,8 +14,8 @@ import { bumpProjects } from './versions.ts'
 
 export type Role = 'viewer' | 'editor' | 'admin'
 
-// Every permission check goes through this query: a board takes the person's
-// role in its project.
+// A board takes the person's role in its project. `standingOn` spells the
+// same join out for the per-request check: change both together.
 export function accessibleBoards(tx: Tx, userId: string) {
   return tx
     .select({
@@ -240,24 +240,21 @@ export async function roleOn(
 ): Promise<Role | null> {
   const checked = checkedRoles.get(tx)?.get(roleKey(userId, boardId))
   if (checked) return checked
-  const accessible = accessibleBoards(tx, userId)
-  const [row] = await tx
-    .select({ role: accessible.role })
-    .from(accessible)
-    .where(eq(accessible.boardId, boardId))
-  return row?.role ?? null
+  const standing = await standingOn(tx, userId, boardId)
+  return standing?.role ?? null
 }
 
 const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 }
 
+// `accessibleBoards` for one board, written as text: every request runs it,
+// and the query builder spends CPU building the same SQL each time.
 async function standingOn(tx: Tx, userId: string, boardId: string) {
-  const accessible = accessibleBoards(tx, userId)
-  const [row] = await tx
-    .select({ role: accessible.role, managed: projects.managed })
-    .from(accessible)
-    .innerJoin(boards, eq(boards.id, accessible.boardId))
-    .innerJoin(projects, eq(projects.id, boards.projectId))
-    .where(eq(accessible.boardId, boardId))
+  const [row] = await tx.execute<{ role: Role; managed: boolean }>(sql`
+    select m.role, p.managed
+    from boards b
+    join projects p on p.id = b.project_id and p.deleted_at is null
+    join project_members m on m.project_id = p.id and m.user_id = ${userId}
+    where b.id = ${boardId}`)
   return row
 }
 

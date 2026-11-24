@@ -10,3 +10,10 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: agent (issue [#825](https://github.com/linagora/twake-tasks/issues/825)), to be confirmed by Khaled Ferjani
 - Why: a task panel opens with six small reads, and each paid for two transactions and the same access join twice.
 - Scope: every board and project route; the revocation lookup per request is unchanged, since caching it is a product decision.
+
+## 2026-11-24, [Tech] The statements every request runs are built once
+
+- Decision: the board access check is written as SQL text, and the revoked session lookup is a Drizzle prepared statement. Other queries keep the query builder.
+- Decided by: agent (issue [#833](https://github.com/linagora/twake-tasks/issues/833)), to be confirmed by Khaled Ferjani
+- Why: in a profile, Drizzle building the same SQL took 18% of the main thread's busy time and 46% of its allocations.
+- Scope: `roleOn`, the board route access check, `isRevoked`.

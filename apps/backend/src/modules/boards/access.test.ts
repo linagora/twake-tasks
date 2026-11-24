@@ -45,6 +45,27 @@ describe('board access', () => {
     }
   })
 
+  it('checks access without building a query', async () => {
+    const { user, boardId } = await aTask()
+    const identity = anIdentity(user)
+
+    await shareTransaction(api.db, identity, async () => {
+      await inTenant(api.db, identity, async tx => {
+        const select = vi.spyOn(tx, 'select')
+
+        expect(await roleOn(tx, user.userId, boardId)).toBe('admin')
+        await expect(
+          checkBoardAccess(api.db)(
+            identity,
+            { boardId },
+            { on: 'board', role: 'admin', refusedOnManaged: true }
+          )
+        ).resolves.toBeNull()
+        expect(select).not.toHaveBeenCalled()
+      })
+    })
+  })
+
   it('reuses the role the route found for the stores in its transaction', async () => {
     const { user, boardId } = await aTask()
     const identity = anIdentity(user)

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { lt } from 'drizzle-orm'
-import { afterAll, describe, expect, inject, it } from 'vitest'
+import { afterAll, describe, expect, inject, it, vi } from 'vitest'
 import { createDb } from '../../infra/db.ts'
 import { oidcRevokedSessions } from './schema.ts'
 import { postgresAuthStore } from './store.ts'
@@ -36,5 +36,17 @@ describe('postgresAuthStore', () => {
 
   it('knows nothing of a session never revoked', async () => {
     await expect(store.isRevoked(randomUUID())).resolves.toBe(false)
+  })
+
+  it('looks a session up without building a query', async () => {
+    const select = vi.spyOn(db, 'select')
+
+    try {
+      await store.isRevoked(randomUUID())
+
+      expect(select).not.toHaveBeenCalled()
+    } finally {
+      select.mockRestore()
+    }
   })
 })
