@@ -9,7 +9,7 @@ import { createRelay, enqueue, measureOutbox } from './outbox.ts'
 import type { PublishedEvent } from './published.ts'
 import { outbox } from './schema.ts'
 
-const { sql, db } = createDb(inject('databaseUrl'))
+const { sql, db } = createDb(inject('relayDatabaseUrl'))
 const logger = pino({ level: 'silent' })
 
 afterAll(async () => {
@@ -37,7 +37,6 @@ function recorder() {
   return { sent, publish }
 }
 
-// Other tests write task events too, so the outbox can hold several batches.
 async function drain(relay: ReturnType<typeof createRelay>) {
   while ((await relay.relayOnce()) > 0);
 }
@@ -60,6 +59,30 @@ describe('outbox', () => {
       second.id
     ])
     expect(publish).toHaveBeenCalledWith(first)
+  })
+
+  it('forgets an event once published, and skips one a previous release marked sent', async () => {
+    const [published, markedSent] = [anEvent(), anEvent()]
+    const [row] = await db.transaction(async tx => {
+      await enqueue(tx, published)
+      return tx
+        .insert(outbox)
+        .values({ event: markedSent, sentAt: new Date() })
+        .returning({ id: outbox.id })
+    })
+    const { sent, publish } = recorder()
+
+    await drain(createRelay({ db, logger, publish }))
+
+    expect(sent).toContain(published.id)
+    expect(sent).not.toContain(markedSent.id)
+    const left = await db
+      .select({ id: outbox.id })
+      .from(outbox)
+      .where(
+        raw`${outbox.event} ->> 'id' in (${published.id}, ${markedSent.id})`
+      )
+    expect(left).toEqual([row])
   })
 
   it('drops the events of a rolled back change', async () => {

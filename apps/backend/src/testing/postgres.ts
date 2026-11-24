@@ -11,6 +11,7 @@ declare module 'vitest' {
   export interface ProvidedContext {
     databaseUrl: string
     ownerDatabaseUrl: string
+    relayDatabaseUrl: string
   }
 }
 
@@ -28,18 +29,22 @@ export async function setup(project: TestProject): Promise<void> {
   await admin.unsafe(`create role owner login password 'owner'`)
   await admin.unsafe(`create role app login password 'app'`)
   await admin.unsafe(`create database tasks owner owner`)
-  await admin.end()
 
-  const as = (role: string) => {
+  const as = (role: string, database = 'tasks') => {
     const url = new URL(started.getConnectionUri())
     url.username = role
     url.password = role
-    url.pathname = '/tasks'
+    url.pathname = `/${database}`
     return url.toString()
   }
   await migrateLocked(as('owner'), as('app'))
+  // The relay deletes every event it publishes, so its tests get an outbox
+  // no other test file writes to or reads back from.
+  await admin.unsafe(`create database relay owner owner template tasks`)
+  await admin.end()
   project.provide('databaseUrl', as('app'))
   project.provide('ownerDatabaseUrl', as('owner'))
+  project.provide('relayDatabaseUrl', as('app', 'relay'))
 }
 
 export async function teardown(): Promise<void> {
