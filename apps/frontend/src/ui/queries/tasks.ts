@@ -30,6 +30,7 @@ import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { useI18n } from '@/ui/i18n/useI18n'
 import { useBoards } from '@/ui/queries/boards'
 import { keys } from '@/ui/queries/keys'
+import { useTaskPart } from '@/ui/queries/taskDetails'
 
 export function useCreateTask(
   boardId: string
@@ -224,11 +225,7 @@ export function useDescription(
   boardId: string,
   taskId: string
 ): UseQueryResult<Description> {
-  const api = useBoardsApi()
-  return useQuery({
-    queryKey: keys.description(boardId, taskId),
-    queryFn: () => api.getDescription(boardId, taskId)
-  })
+  return useTaskPart(boardId, taskId, 'description')
 }
 
 export function useSetDescription(
@@ -251,22 +248,14 @@ export function useHistory(
   boardId: string,
   taskId: string
 ): UseQueryResult<HistoryEntry[]> {
-  const api = useBoardsApi()
-  return useQuery({
-    queryKey: keys.history(boardId, taskId),
-    queryFn: () => api.listHistory(boardId, taskId)
-  })
+  return useTaskPart(boardId, taskId, 'history')
 }
 
 export function useFollowing(
   boardId: string,
   taskId: string
 ): UseQueryResult<boolean> {
-  const api = useBoardsApi()
-  return useQuery({
-    queryKey: keys.following(boardId, taskId),
-    queryFn: () => api.following(boardId, taskId)
-  })
+  return useTaskPart(boardId, taskId, 'following')
 }
 
 export function useSetFollowing(

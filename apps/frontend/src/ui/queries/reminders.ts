@@ -1,6 +1,5 @@
 import {
   useMutation,
-  useQuery,
   useQueryClient,
   type UseMutationResult,
   type UseQueryResult
@@ -9,16 +8,13 @@ import {
 import { type NewReminder, type Reminder } from '@/application/boards'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { keys } from '@/ui/queries/keys'
+import { useTaskPart } from '@/ui/queries/taskDetails'
 
 export function useReminders(
   boardId: string,
   taskId: string
 ): UseQueryResult<Reminder[]> {
-  const api = useBoardsApi()
-  return useQuery({
-    queryKey: keys.reminders(boardId, taskId),
-    queryFn: () => api.listReminders(boardId, taskId)
-  })
+  return useTaskPart(boardId, taskId, 'reminders')
 }
 
 export function useAddReminder(

@@ -120,6 +120,10 @@ describe('the fake boards API', () => {
           wire.suggestionsResponse,
           { people: await fake.suggestPeople(board.id, 'bob') }
         ],
+        getTaskDetails: [
+          wire.taskDetailsResponse,
+          await fake.getTaskDetails(...at)
+        ],
         getDescription: [
           wire.descriptionResponse,
           await fake.getDescription(...at)

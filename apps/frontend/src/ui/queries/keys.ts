@@ -26,6 +26,10 @@ export const keys = {
   // the board must not fetch it again.
   backgroundImage: (boardId: string, imageId: string | null) =>
     ['backgroundImage', boardId, imageId] as const,
+  // Outside `boards()`: only a part that has no data yet reads it, so a
+  // change of the board must not fetch it again.
+  taskDetails: (boardId: string, taskId: string) =>
+    ['taskDetails', boardId, taskId] as const,
   description: (boardId: string, taskId: string) =>
     [...task(boardId, taskId), 'description'] as const,
   history: (boardId: string, taskId: string) =>

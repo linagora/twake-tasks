@@ -577,6 +577,13 @@ export function httpBoardsApi(
         route`/boards/${boardId}/tasks/${taskId}`,
         changes satisfies Body<'taskChanges'>
       ),
+    getTaskDetails: (boardId, taskId) =>
+      parsed(
+        'task details',
+        wire.taskDetailsResponse,
+        'GET',
+        route`/boards/${boardId}/tasks/${taskId}/details`
+      ),
     getDescription: (boardId, taskId) =>
       parsed(
         'description',

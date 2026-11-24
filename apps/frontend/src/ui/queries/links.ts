@@ -1,6 +1,5 @@
 import {
   useMutation,
-  useQuery,
   useQueryClient,
   type UseMutationResult,
   type UseQueryResult
@@ -9,16 +8,13 @@ import {
 import { type LinkKind, type Links } from '@/application/boards'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { keys } from '@/ui/queries/keys'
+import { useTaskPart } from '@/ui/queries/taskDetails'
 
 export function useLinks(
   boardId: string,
   taskId: string
 ): UseQueryResult<Links> {
-  const api = useBoardsApi()
-  return useQuery({
-    queryKey: keys.links(boardId, taskId),
-    queryFn: () => api.listLinks(boardId, taskId)
-  })
+  return useTaskPart(boardId, taskId, 'links')
 }
 
 // The other task may sit on another board, whose blocked state changes too.

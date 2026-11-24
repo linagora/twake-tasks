@@ -10,16 +10,13 @@ import { type Comment, type CommentEdit } from '@/application/boards'
 import { type Person } from '@/domain/board'
 import { useBoardsApi } from '@/ui/boards/BoardsApiProvider'
 import { keys } from '@/ui/queries/keys'
+import { useTaskPart } from '@/ui/queries/taskDetails'
 
 export function useComments(
   boardId: string,
   taskId: string
 ): UseQueryResult<Comment[]> {
-  const api = useBoardsApi()
-  return useQuery({
-    queryKey: keys.comments(boardId, taskId),
-    queryFn: () => api.listComments(boardId, taskId)
-  })
+  return useTaskPart(boardId, taskId, 'comments')
 }
 
 export function useAddComment(

@@ -197,6 +197,16 @@ export interface HistoryEntry {
   at: string
 }
 
+/** What the task panel reads when it opens, in one request. */
+export interface TaskDetails {
+  description: Description
+  comments: Comment[]
+  history: HistoryEntry[]
+  links: Links
+  reminders: Reminder[]
+  following: boolean
+}
+
 export const PROGRESS_DAYS = 56
 
 export interface DayCount {
@@ -537,6 +547,7 @@ export interface BoardsApi {
     taskId: string,
     changes: TaskChanges
   ) => Promise<{ version: number }>
+  getTaskDetails: (boardId: string, taskId: string) => Promise<TaskDetails>
   getDescription: (boardId: string, taskId: string) => Promise<Description>
   /** `version` is the one the edit started from; a newer one is refused. */
   setDescription: (

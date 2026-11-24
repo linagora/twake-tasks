@@ -336,7 +336,7 @@ describe('TaskPanel', () => {
     const panel = await openLogo()
     fireEvent.click(panel.getByRole('tab', { name: 'History' }))
     await waitFor(() => {
-      expect(boardsApi.listHistory).toHaveResolved()
+      expect(boardsApi.getTaskDetails).toHaveResolved()
     })
     await act(() => Promise.resolve())
     const history = boardsApi.listHistory.mock.calls.length

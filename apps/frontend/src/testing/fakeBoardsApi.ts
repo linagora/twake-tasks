@@ -237,6 +237,14 @@ export function fakeBoardsApi(boards: Board[] = []) {
     }
     return { taskId, task: null }
   }
+  const linksOf = (taskId: string) => ({
+    blockedBy: links
+      .filter(link => link.blocked === taskId)
+      .map(link => linkedTask(link.blocking)),
+    blocks: links
+      .filter(link => link.blocking === taskId)
+      .map(link => linkedTask(link.blocked))
+  })
   const refreshBlockers = (taskId: string) => {
     for (const board of store.values()) {
       const blocked = board.tasks.find(each => each.id === taskId)
@@ -1056,6 +1064,19 @@ export function fakeBoardsApi(boards: Board[] = []) {
         return { version: board.version }
       })
     ),
+    getTaskDetails: vi.fn<BoardsApi['getTaskDetails']>((boardId, taskId) =>
+      Promise.resolve().then(() => {
+        if (!hidden.has(taskId)) findTask(boardId, taskId)
+        return structuredClone({
+          description: descriptions.get(taskId) ?? { markdown: '', version: 0 },
+          comments: comments.get(taskId) ?? [],
+          history: history.get(taskId) ?? [],
+          links: linksOf(taskId),
+          reminders: reminders.get(taskId) ?? [],
+          following: followed.has(taskId)
+        })
+      })
+    ),
     getDescription: vi.fn<BoardsApi['getDescription']>((boardId, taskId) =>
       Promise.resolve().then(() => {
         findTask(boardId, taskId)
@@ -1116,14 +1137,7 @@ export function fakeBoardsApi(boards: Board[] = []) {
     listLinks: vi.fn<BoardsApi['listLinks']>((boardId, taskId) =>
       Promise.resolve().then(() => {
         if (!hidden.has(taskId)) findTask(boardId, taskId)
-        return {
-          blockedBy: links
-            .filter(link => link.blocked === taskId)
-            .map(link => linkedTask(link.blocking)),
-          blocks: links
-            .filter(link => link.blocking === taskId)
-            .map(link => linkedTask(link.blocked))
-        }
+        return linksOf(taskId)
       })
     ),
     addLink: vi.fn<BoardsApi['addLink']>((boardId, taskId, kind, otherId) =>
