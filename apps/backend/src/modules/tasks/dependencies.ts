@@ -50,7 +50,7 @@ async function check(tx: Tx, condition: SQL) {
 
 // A linked task on a board the person cannot open shows as such, without its
 // key or title. An archived or trashed one is left out until it is restored.
-async function linksOf(tx: Tx, userId: string, taskId: string) {
+export async function linksOf(tx: Tx, userId: string, taskId: string) {
   const accessible = accessibleBoards(tx, userId)
   const otherId = sql<string>`case when ${taskLinks.blockedTaskId} = ${taskId}
     then ${taskLinks.blockingTaskId} else ${taskLinks.blockedTaskId} end`

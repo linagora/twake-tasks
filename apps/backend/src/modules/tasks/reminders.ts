@@ -1,5 +1,5 @@
 import { and, asc, eq, sql } from 'drizzle-orm'
-import type { Db } from '../../infra/db.ts'
+import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { taskReminders, tasks } from '../boards/index.ts'
 import { Refused, writeOrRefuse } from '../kernel/index.ts'
@@ -14,28 +14,29 @@ const firesAt =
     taskReminders.at
   )
 
+export function remindersOf(tx: Tx, userId: string, taskId: string) {
+  return tx
+    .select({
+      id: taskReminders.id,
+      at: taskReminders.at,
+      beforeMinutes: taskReminders.beforeMinutes,
+      firesAt
+    })
+    .from(taskReminders)
+    .innerJoin(tasks, eq(tasks.id, taskReminders.taskId))
+    .where(
+      and(eq(taskReminders.taskId, taskId), eq(taskReminders.userId, userId))
+    )
+    .orderBy(asc(taskReminders.id))
+}
+
 // Reminders are personal: anyone who can open the board sets their own.
 export function createReminderStore(db: Db, pendingReminders = 0) {
   return {
     listReminders(identity: Identity, boardId: string, taskId: string) {
       return writeOrRefuse(db, identity, async tx => {
         await visibleTask(tx, identity, boardId, taskId)
-        return tx
-          .select({
-            id: taskReminders.id,
-            at: taskReminders.at,
-            beforeMinutes: taskReminders.beforeMinutes,
-            firesAt
-          })
-          .from(taskReminders)
-          .innerJoin(tasks, eq(tasks.id, taskReminders.taskId))
-          .where(
-            and(
-              eq(taskReminders.taskId, taskId),
-              eq(taskReminders.userId, identity.userId)
-            )
-          )
-          .orderBy(asc(taskReminders.id))
+        return remindersOf(tx, identity.userId, taskId)
       })
     },
 

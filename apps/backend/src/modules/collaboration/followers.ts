@@ -1,25 +1,26 @@
 import { and, eq } from 'drizzle-orm'
-import type { Db } from '../../infra/db.ts'
+import type { Db, Tx } from '../../infra/db.ts'
 import type { Identity } from '../auth/index.ts'
 import { writeOrRefuse } from '../kernel/index.ts'
 import { taskFollowers } from '../boards/index.ts'
 import { visibleTask } from '../tasks/index.ts'
+
+export async function follows(tx: Tx, userId: string, taskId: string) {
+  const [row] = await tx
+    .select({ taskId: taskFollowers.taskId })
+    .from(taskFollowers)
+    .where(
+      and(eq(taskFollowers.taskId, taskId), eq(taskFollowers.userId, userId))
+    )
+  return row !== undefined
+}
 
 export function createFollowerStore(db: Db) {
   return {
     following(identity: Identity, boardId: string, taskId: string) {
       return writeOrRefuse(db, identity, async tx => {
         await visibleTask(tx, identity, boardId, taskId)
-        const [row] = await tx
-          .select({ taskId: taskFollowers.taskId })
-          .from(taskFollowers)
-          .where(
-            and(
-              eq(taskFollowers.taskId, taskId),
-              eq(taskFollowers.userId, identity.userId)
-            )
-          )
-        return row !== undefined
+        return follows(tx, identity.userId, taskId)
       })
     },
 

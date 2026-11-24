@@ -12,6 +12,7 @@ export {
   roleIn,
   roleOn,
   settingsOfMember,
+  type LooksOf,
   type Role
 } from './access.ts'
 export { describeTasks, describeTasksOf, shown } from './describe.ts'
