@@ -26,6 +26,7 @@ import {
   migrateDb,
   migrateLocked,
   pendingMigrations,
+  shareTransaction,
   type Tx
 } from './db.ts'
 
@@ -413,6 +414,62 @@ describe('afterCommit', () => {
 
     expect(ran).toEqual(['next'])
     expect(log.error).toHaveBeenCalledOnce()
+  })
+})
+
+describe('shareTransaction', () => {
+  const transactionOf = (user: TestUser) =>
+    inTenant(db, user, async tx => {
+      const [row] = await tx.execute<{ id: string }>(
+        statement`select txid_current()::text as id`
+      )
+      return row?.id
+    })
+
+  it('runs every transaction of the identity in one', async () => {
+    const alice = aUser()
+    const bob = aUser()
+
+    const [first, second, other] = await shareTransaction(db, alice, () =>
+      Promise.all([
+        transactionOf(alice),
+        transactionOf(alice),
+        transactionOf(bob)
+      ])
+    )
+
+    expect(first).toBeDefined()
+    expect(second).toBe(first)
+    expect(other).not.toBe(first)
+  })
+
+  it('rolls back what ran before a failure, even a caught one', async () => {
+    const alice = aUser()
+
+    const answer = await shareTransaction(db, alice, async () => {
+      await aProjectOf(alice)
+      await inTenant(db, alice, () =>
+        Promise.reject(new Error('refused'))
+      ).catch(() => undefined)
+      return 'refused'
+    })
+
+    expect(answer).toBe('refused')
+    expect(await boardsSeenBy(alice)).toEqual([])
+  })
+
+  it('gives work still running once it returns a transaction of its own', async () => {
+    const alice = aUser()
+    let later: Promise<string | undefined> | undefined
+
+    const shared = await shareTransaction(db, alice, () => {
+      later = new Promise(resolve => setTimeout(resolve, 10)).then(() =>
+        transactionOf(alice)
+      )
+      return transactionOf(alice)
+    })
+
+    expect(await later).not.toBe(shared)
   })
 })
 

@@ -15,7 +15,8 @@ type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 
 // What a route needs from its caller. A board route checks it before its
 // handler runs and the stores check it again inside their transaction, so a
-// store that forgets its check is still covered.
+// store that forgets its check is still covered. A read runs both in one
+// transaction, so the stores' check reuses the route's.
 export type Access =
   | { on: 'public' }
   | { on: 'self' }
@@ -107,6 +108,8 @@ export function registerRoutes<I, E extends string>(
     checkBoardAccess?: CheckBoardAccess<I>
     // Required by a table with a project route.
     checkProjectAccess?: CheckProjectAccess<I>
+    // Runs the access check and the handler of a read in one transaction.
+    shareTransaction?: <T>(identity: I, work: () => Promise<T>) => Promise<T>
   },
   routes: readonly DeclaredRoute<I, E>[]
 ) {
@@ -115,6 +118,11 @@ export function registerRoutes<I, E extends string>(
     const checkAccess =
       boardAccessCheck(route, deps.checkBoardAccess) ??
       projectAccessCheck(route, deps.checkProjectAccess)
+    // A stream would hold its transaction open for as long as it lasts.
+    const share =
+      checkAccess && route.method === 'GET' && !route.config?.stream
+        ? deps.shareTransaction
+        : undefined
     app.route({
       method: route.method,
       url: route.url,
@@ -128,27 +136,31 @@ export function registerRoutes<I, E extends string>(
         if (!identity && !open) return reply.code(401).send()
         const params = parse(route.params, request.params)
         if (!params.success) return reply.code(404).send({ error: 'not_found' })
-        const refused = await checkAccess?.(identity as I, params.data)
-        if (refused) {
-          return reply
-            .code(ACCESS_REFUSAL_STATUS[refused])
-            .send({ error: refused })
+        const answer = async () => {
+          const refused = await checkAccess?.(identity as I, params.data)
+          if (refused) {
+            return { status: ACCESS_REFUSAL_STATUS[refused], error: refused }
+          }
+          const query = parse(route.query, request.query)
+          const body = parse(route.body, request.body)
+          if (!query.success || !body.success) {
+            return { status: 400, error: 'invalid_request' }
+          }
+          return route.handler({
+            // Null only on a public route, whose table has a null identity.
+            identity: identity as I,
+            params: params.data,
+            query: query.data,
+            body: body.data,
+            http: { request, reply }
+          })
         }
-        const query = parse(route.query, request.query)
-        const body = parse(route.body, request.body)
-        if (!query.success || !body.success) {
-          return reply.code(400).send({ error: 'invalid_request' })
-        }
-        const result = await route.handler({
-          // Null only on a public route, whose table has a null identity.
-          identity: identity as I,
-          params: params.data,
-          query: query.data,
-          body: body.data,
-          http: { request, reply }
-        })
+        const result = await (share ? share(identity as I, answer) : answer())
         // A stream has taken the reply over.
         if (reply.sent) return reply
+        if ('status' in result) {
+          return reply.code(result.status).send({ error: result.error })
+        }
         if (!result.ok) {
           const refused: number = deps.refusalStatus[result.error]
           return reply.code(refused).send({ error: result.error })

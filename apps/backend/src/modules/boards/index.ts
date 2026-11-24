@@ -1,4 +1,5 @@
 export {
+  accessChecks,
   accessibleBoards,
   checkBoardAccess,
   checkProjectAccess,

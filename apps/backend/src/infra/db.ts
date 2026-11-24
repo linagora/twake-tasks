@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { fileURLToPath } from 'node:url'
 import { sql, type SQL } from 'drizzle-orm'
 import {
@@ -225,11 +226,70 @@ export async function asOrganization(tx: Tx, organizationId: string | null) {
   )
 }
 
+interface Shared {
+  db: Db
+  identity: TenantIdentity
+  tx: Tx
+  open: boolean
+  failed: boolean
+}
+
+const sharedTransactions = new AsyncLocalStorage<Shared>()
+
+class RolledBack<T> extends Error {
+  readonly value: T
+
+  constructor(value: T) {
+    super('rolled back')
+    this.value = value
+  }
+}
+
+// Every `inTenant` of the identity within `work` runs in this one transaction,
+// so a read request pays for one BEGIN, set_config and COMMIT. A failure inside
+// it, even a caught one, rolls the whole transaction back. There is no
+// savepoint, so share only work that catches no database error.
+export async function shareTransaction<T>(
+  db: Db,
+  identity: TenantIdentity,
+  work: () => Promise<T>
+): Promise<T> {
+  try {
+    return await inTenant(db, identity, tx => {
+      const shared: Shared = { db, identity, tx, open: true, failed: false }
+      return sharedTransactions.run(shared, async () => {
+        let value: T
+        try {
+          value = await work()
+        } finally {
+          // Closed before COMMIT is sent: work it left running takes its own
+          // transactions.
+          shared.open = false
+        }
+        if (shared.failed) throw new RolledBack(value)
+        return value
+      })
+    })
+  } catch (error) {
+    if (error instanceof RolledBack) return error.value as T
+    throw error
+  }
+}
+
 export function inTenant<T>(
   db: Db,
   identity: TenantIdentity,
   work: (tx: Tx) => Promise<T>
 ): Promise<T> {
+  const shared = sharedTransactions.getStore()
+  if (shared?.open && shared.db === db && shared.identity === identity) {
+    return Promise.resolve(shared.tx)
+      .then(work)
+      .catch((error: unknown) => {
+        shared.failed = true
+        throw error
+      })
+  }
   const { statementTimeoutMs, connectTimeoutMs } = requestTimeouts.get(db) ?? {}
   if (connectTimeoutMs === undefined) {
     return db.transaction(async tx => {

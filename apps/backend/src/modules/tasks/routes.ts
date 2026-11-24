@@ -27,7 +27,7 @@ import {
   type DeclaredRoute
 } from '../../infra/route.ts'
 import type { Identity, RequireIdentity } from '../auth/index.ts'
-import { checkBoardAccess } from '../boards/index.ts'
+import { accessChecks } from '../boards/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import { under, type Refusal } from '../kernel/index.ts'
 import { createArchiveStore } from './archive.ts'
@@ -67,7 +67,7 @@ export function registerTasks(
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,
     refusalStatus: REFUSAL_STATUS,
-    checkBoardAccess: checkBoardAccess(deps.db)
+    ...accessChecks(deps.db)
   }
 
   const routes: TaskRoute[] = [
