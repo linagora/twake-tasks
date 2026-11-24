@@ -5,6 +5,7 @@ import type {
   HTTPMethods,
   onRequestHookHandler
 } from 'fastify'
+import { z } from 'zod'
 import type { HttpServer } from './http.ts'
 
 interface Schema<T> {
@@ -61,6 +62,9 @@ interface Route<I, P, Q, B, T, E extends string> {
   // In bytes, for a body larger than the server's default.
   bodyLimit?: number
   status?: number
+  // Compiled into a serializer, which writes only the properties it
+  // declares: faster than JSON.stringify on a large answer.
+  response?: z.ZodType
   onRequest?: onRequestHookHandler
   config?: FastifyContextConfig
   logSerializers?: Record<string, (value: never) => unknown>
@@ -123,6 +127,7 @@ export function registerRoutes<I, E extends string>(
       checkAccess && route.method === 'GET' && !route.config?.stream
         ? deps.shareTransaction
         : undefined
+    const status = route.status ?? 200
     app.route({
       method: route.method,
       url: route.url,
@@ -130,6 +135,9 @@ export function registerRoutes<I, E extends string>(
       ...(route.config && { config: route.config }),
       ...(route.logSerializers && { logSerializers: route.logSerializers }),
       ...(route.bodyLimit && { bodyLimit: route.bodyLimit }),
+      ...(route.response && {
+        schema: { response: { [status]: serializedAs(route.response) } }
+      }),
       ...(!open && { preHandler: deps.requireIdentity }),
       handler: async (request, reply) => {
         const identity = deps.identify(request)
@@ -165,7 +173,6 @@ export function registerRoutes<I, E extends string>(
           const refused: number = deps.refusalStatus[result.error]
           return reply.code(refused).send({ error: result.error })
         }
-        const status = route.status ?? 200
         return reply
           .code(status)
           .send(status === 204 ? undefined : result.value)
@@ -202,6 +209,26 @@ function projectAccessCheck<I>(
   }
   return (identity: I, params: unknown) =>
     check(identity, params as { projectId: string }, access)
+}
+
+// The serializer picks a union branch by validating the value, so a closed
+// object would refuse extra properties it drops anyway. OpenAPI's `nullable`
+// tests for null without that validation, but the serializer refuses it on a
+// union (no `type`), so there null becomes the first branch.
+function serializedAs(schema: z.ZodType) {
+  return z.toJSONSchema(schema, {
+    target: 'openapi-3.0',
+    io: 'output',
+    override: ({ jsonSchema }) => {
+      if (jsonSchema.additionalProperties === false) {
+        delete jsonSchema.additionalProperties
+      }
+      const branches = jsonSchema.anyOf ?? jsonSchema.oneOf
+      if (!jsonSchema.nullable || !branches) return
+      delete jsonSchema.nullable
+      branches.unshift({ type: 'null' })
+    }
+  })
 }
 
 function parse(schema: Schema<unknown> | undefined, value: unknown) {
