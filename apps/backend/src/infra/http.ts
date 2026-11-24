@@ -58,6 +58,7 @@ export function createServer(deps: {
     })
   })
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- without a promise, Fastify waits for done
   app.addHook('onRequest', async (request, reply) => {
     reply.header('x-request-id', request.id)
   })
@@ -112,6 +113,7 @@ export function createServer(deps: {
     })
     // A stream hijacks its reply, and a caller that leaves closes it without
     // the 'finish' that onResponse waits for.
+    // eslint-disable-next-line @typescript-eslint/require-await -- without a promise, Fastify waits for done
     app.addHook('onRequest', async (request, reply) => {
       if (!request.routeOptions.config.stream) return
       reply.raw.once('close', () => {
@@ -121,6 +123,7 @@ export function createServer(deps: {
         })
       })
     })
+    // eslint-disable-next-line @typescript-eslint/require-await -- without a promise, Fastify waits for done
     app.addHook('onResponse', async (request, reply) => {
       if (request.routeOptions.config.stream || isProbe(request.url)) return
       metrics.httpRequests.inc({ ...labels(request), status: reply.statusCode })

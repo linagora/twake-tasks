@@ -41,6 +41,7 @@ export function TaskBreadcrumb({
   }
 
   // Parents open on the board: a shelf lists none of a hidden task's parents.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Rslint misses noUncheckedIndexedAccess after ?.[0]
   const boardPath = boardSteps?.[0]?.to ?? '.'
   const parents = ancestors.map(parent => {
     const params = new URLSearchParams(search)

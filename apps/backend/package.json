@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint . && depcruise src --config .dependency-cruiser.js",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "lint": "rs lint -c ../../rstack.config.mjs && depcruise src --config .dependency-cruiser.js",
+    "format": "rs fmt -c ../../rstack.config.mjs",
+    "format:check": "rs fmt --check -c ../../rstack.config.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "contract": "npm run build --workspace @twake-tasks/api-contract",

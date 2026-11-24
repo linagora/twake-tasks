@@ -3,7 +3,10 @@
   "ignoreExportsUsedInFile": true,
   "workspaces": {
     ".": {
-      "entry": ["scripts/qa-environment/twakespace/server.ts"]
+      "entry": [
+        "rstack.config.mjs",
+        "scripts/qa-environment/twakespace/server.ts"
+      ]
     },
     "apps/backend": {
       "entry": ["src/migrate.ts"]
