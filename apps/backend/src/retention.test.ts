@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { processedEvents } from './events/schema.ts'
+import { outbox, processedEvents } from './events/schema.ts'
 import { createDb, inTenant } from './infra/db.ts'
 import { notifications } from './modules/boards/index.ts'
 import { RETENTION_JOB, retention } from './retention.ts'
@@ -98,6 +98,28 @@ describe('the retention job', () => {
       .from(processedEvents)
       .where(inArray(processedEvents.id, [old, recent]))
     expect(left.map(row => row.id)).toEqual([recent])
+  })
+
+  it('forgets events sent more than a day ago, and keeps those not sent', async () => {
+    const event = { id: randomUUID() }
+    const rows = await db
+      .insert(outbox)
+      .values([
+        { event, sentAt: daysAgo(2) },
+        { event, sentAt: new Date(Date.now() - DAY_MS / 2) },
+        { event, createdAt: daysAgo(2) }
+      ])
+      .returning({ id: outbox.id })
+    const ids = rows.map(row => row.id)
+
+    await run()
+
+    const left = await db
+      .select({ id: outbox.id })
+      .from(outbox)
+      .where(inArray(outbox.id, ids))
+    expect(left.map(row => row.id).sort()).toEqual(ids.slice(1).sort())
+    await db.delete(outbox).where(inArray(outbox.id, ids))
   })
 
   it('forgets notifications read more than 180 days ago, in every tenant', async () => {

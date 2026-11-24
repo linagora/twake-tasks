@@ -317,7 +317,7 @@ describe('scheduler', () => {
     await schedule(db, { kind, key: kind, payload: 'fails', runAt: past() })
     await db.update(jobs).set({ attempts: 9 }).where(eq(jobs.key, kind))
 
-    const stop = scheduler.start(10)
+    const stop = scheduler.start(10, 10)
     await vi.waitFor(async () => {
       expect(await metrics.registry.metrics()).toContain(
         `jobs_due{kind="${kind}"} 0`
@@ -363,7 +363,7 @@ describe('scheduler', () => {
     await schedule(db, { kind, payload: 1, runAt: past() })
     await schedule(db, { kind, payload: 2, runAt: past() })
 
-    const stop = scheduler.start(10)
+    const stop = scheduler.start(10, 10)
     await vi.waitFor(async () => {
       expect(await metrics.registry.metrics()).toContain(
         `jobs_due{kind="${kind}"} 2`
@@ -371,5 +371,29 @@ describe('scheduler', () => {
     })
     release(undefined)
     await stop()
+  })
+
+  it('measures what is due on its own, slower interval', async () => {
+    const kind = aKind()
+    const metrics = createMetrics()
+    const ran = vi.fn(() => Promise.resolve(undefined))
+    const scheduler = createScheduler({
+      db,
+      logger,
+      metrics,
+      handlers: { [kind]: ran }
+    })
+    await schedule(db, { kind, payload: 1, runAt: past() })
+
+    const stop = scheduler.start(10, 60_000)
+    await vi.waitFor(() => {
+      expect(ran).toHaveBeenCalled()
+    })
+    await new Promise(resolve => setTimeout(resolve, 50))
+    await stop()
+
+    expect(await metrics.registry.metrics()).not.toContain(
+      `jobs_due{kind="${kind}"}`
+    )
   })
 })
