@@ -116,8 +116,35 @@ export async function describeTasksOf(tx: Tx, rows: TaskOnBoard[]) {
     .from(tasks)
     .where(anyOf(tasks.id, ids))
   const byId = new Map(extras.map(row => [row.id, row]))
+  const pick = picker()
   // A task deleted since its row was read shows nothing more.
-  return rows.map(row => described(row, byId.get(row.task.id) ?? NO_EXTRAS))
+  return rows.map(row =>
+    described(row, byId.get(row.task.id) ?? NO_EXTRAS, pick)
+  )
+}
+
+type Picker = ReturnType<typeof picker>
+
+// Rows of a board, or of a project, share one members and one labels array,
+// so each is indexed once instead of scanned for every task.
+function picker() {
+  const positions = new WeakMap<object[], Map<string, number>>()
+  return <T extends object>(
+    list: T[],
+    key: (item: T) => string,
+    wanted: string[]
+  ): T[] => {
+    let index = positions.get(list)
+    if (!index) {
+      index = new Map(list.map((item, i) => [key(item), i]))
+      positions.set(list, index)
+    }
+    const found = index
+    return wanted
+      .flatMap(id => found.get(id) ?? [])
+      .sort((a, b) => a - b)
+      .map(i => list[i] as T)
+  }
 }
 
 const NO_EXTRAS: Extras = {
@@ -135,18 +162,18 @@ export function describeRead(
   members: Member[],
   boardLabels: TaskOnBoard['labels']
 ) {
+  const pick = picker()
   return rows.map(task =>
-    described({ task, board, members, labels: boardLabels }, task)
+    described({ task, board, members, labels: boardLabels }, task, pick)
   )
 }
 
 function described(
   { task, board, members, labels }: TaskOnBoard,
-  extra: Extras
+  extra: Extras,
+  pick: Picker
 ) {
   const template = extra.template
-  const assigneeIds = new Set(extra.assigneeIds)
-  const labelIds = new Set(extra.labelIds)
   return {
     id: task.id,
     key: `${board.keyPrefix}-${String(task.number)}`,
@@ -170,8 +197,8 @@ function described(
     completedAt: task.completedAt,
     canceledAt: task.canceledAt,
     // Someone who left the board stays assigned, but is not shown.
-    assignees: members.filter(member => assigneeIds.has(member.userId)),
-    labels: labels.filter(label => labelIds.has(label.id)),
+    assignees: pick(members, member => member.userId, extra.assigneeIds),
+    labels: pick(labels, label => label.id, extra.labelIds),
     commentCount: extra.commentCount,
     blockers: extra.blockers.map(blocker =>
       blocker.open
