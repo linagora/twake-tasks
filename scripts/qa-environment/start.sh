@@ -58,13 +58,15 @@ await client.close()
 JS
 )"
 
+# The project the backend made for a space: its row in `spaces` (the outbox no longer keeps the provisioned event once it is
+# published, #925). The table is behind row level security: the space_lookup policy lets this lookup read it.
 PROVISIONED_PROJECT="$(cat <<'JS'
 const { default: postgres } = await import('postgres')
 const sql = postgres(process.env.DATABASE_URL)
-const [row] = await sql`
-  select event -> 'data' -> 'resource' ->> 'id' as id from outbox
-  where event ->> 'type' = 'com.twake.tasks.space.provisioned.v1'
-    and event -> 'data' ->> 'space_id' = ${process.argv[1]}`
+const [row] = await sql.begin(async tx => {
+  await tx`select set_config('app.space_lookup', 'on', true)`
+  return tx`select project_id as id from spaces where id = ${process.argv[1]}`
+})
 await sql.end()
 process.stdout.write(row?.id ?? '')
 JS
