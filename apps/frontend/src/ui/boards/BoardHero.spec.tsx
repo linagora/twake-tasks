@@ -47,6 +47,7 @@ function scrollTo(top: number): void {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('the board hero', () => {
@@ -158,6 +159,33 @@ describe('the board hero', () => {
     expect(
       screen.getByRole('list', { name: 'The board at a glance' })
     ).toBeVisible()
+  })
+
+  it('keeps its room in the page while it collapses, for the cards not to move', async () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(
+      function (this: HTMLElement) {
+        if (this.dataset.testid !== 'board-hero') return 0
+        return this.dataset.collapsed === 'true' ? 44 : 150
+      }
+    )
+    const board = launchBoard()
+    renderRoute(`/boards/${board.id}`, { boardsApi: fakeBoardsApi([board]) })
+    await screen.findByRole('list', { name: 'The board at a glance' })
+    const room = screen.getByTestId('board-hero-room')
+    const host = document.getElementById('content')?.children[1]
+    expect(host).toContainElement(room)
+    expect(host).not.toContainElement(screen.getByTestId('board-hero'))
+    expect(room).toHaveStyle({ height: '150px' })
+
+    act(() => {
+      scrollTo(400)
+    })
+
+    expect(screen.getByTestId('board-hero')).toHaveAttribute(
+      'data-collapsed',
+      'true'
+    )
+    expect(room).toHaveStyle({ height: '150px' })
   })
 
   it('keeps the same buttons in every layout, Share first', async () => {
