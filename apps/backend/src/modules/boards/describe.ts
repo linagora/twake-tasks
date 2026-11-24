@@ -62,8 +62,34 @@ async function openBlockers(tx: Tx, ids: string[]) {
   return byTask
 }
 
+export const describedColumns = {
+  id: tasks.id,
+  sectionId: tasks.sectionId,
+  parentId: tasks.parentId,
+  number: tasks.number,
+  title: tasks.title,
+  priority: tasks.priority,
+  dueDate: tasks.dueDate,
+  dueTime: tasks.dueTime,
+  dueZone: tasks.dueZone,
+  deadline: tasks.deadline,
+  duration: tasks.duration,
+  durationUnit: tasks.durationUnit,
+  recurEvery: tasks.recurEvery,
+  recurUnit: tasks.recurUnit,
+  recurFromCompletion: tasks.recurFromCompletion,
+  templateId: tasks.templateId,
+  completedAt: tasks.completedAt,
+  canceledAt: tasks.canceledAt
+}
+
+type DescribedTask = Pick<
+  typeof tasks.$inferSelect,
+  keyof typeof describedColumns
+>
+
 interface TaskOnBoard {
-  task: typeof tasks.$inferSelect
+  task: DescribedTask
   board: typeof boards.$inferSelect
   members: Member[]
   labels: { id: string; name: string; color: string | null }[]
@@ -72,7 +98,7 @@ interface TaskOnBoard {
 export function describeTasks(
   tx: Tx,
   board: typeof boards.$inferSelect,
-  rows: (typeof tasks.$inferSelect)[],
+  rows: DescribedTask[],
   members: Member[],
   boardLabels: TaskOnBoard['labels']
 ) {

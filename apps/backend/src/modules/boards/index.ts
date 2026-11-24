@@ -14,7 +14,12 @@ export {
   settingsOfMember,
   type Role
 } from './access.ts'
-export { describeTasks, describeTasksOf, shown } from './describe.ts'
+export {
+  describedColumns,
+  describeTasks,
+  describeTasksOf,
+  shown
+} from './describe.ts'
 export { freeKeyPrefix } from './keyPrefixes.ts'
 export { labelsOn, labelsOnProjects } from './labels.ts'
 export {
