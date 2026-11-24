@@ -590,18 +590,18 @@ describe('startPublisher', () => {
     }
   }, 15_000)
 
-  it('leaves no connection open once closed during a publish', async () => {
+  it('leaves no connection open once closed, even with publishes', async () => {
     const node = await hangingNode()
     const publisher = await startPublisher(
       node.url,
       ACTIVITY_EXCHANGE,
-      pino({ level: 'silent' }),
-      { timeoutMs: 5000 }
+      pino({ level: 'silent' })
     )
 
     const failed = expect(publisher.publish(event)).rejects.toThrow()
     await publisher.close()
     await failed
+    await expect(publisher.publish(event)).rejects.toThrow()
 
     await expect(
       Promise.race([
