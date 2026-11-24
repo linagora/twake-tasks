@@ -170,6 +170,12 @@ export function registerAuth(
     ) {
       return unauthorized(reply, 'invalid_token')
     }
+    if (
+      !request.routeOptions.config.sessionCheckedByAccess &&
+      (await deps.store.isRevoked(identity.sessionId))
+    ) {
+      return unauthorized(reply, 'invalid_token')
+    }
     request.identity = identity
     return deps.limitUser?.(request, reply)
   }

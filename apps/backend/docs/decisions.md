@@ -66,3 +66,10 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: [issue #837](https://github.com/linagora/twake-tasks/issues/837), agent (workflow wf_39bd7774-7d3), to be confirmed by Khaled Ferjani
 - Why: each request pays the revocation lookup and an access check, and the panel sent five of them on opening, six with the History tab.
 - Scope: backend task routes, the api-contract package, the frontend task panel queries.
+
+## 2026-11-24, [Architecture] A request checks its session in its transaction
+
+- Decision: every tenant transaction of a request looks its session up in `oidc_revoked_sessions` within the statement that opens it, and refuses a revoked one with 401. A board or project route, whose access check opens such a transaction before its handler, runs no lookup of its own; any other authenticated route still runs it before its handler. A logout is still seen by every replica on its next request. This replaces the revocation part of the scope of "A read checks access and answers in one transaction".
+- Decided by: Khaled Ferjani (issue [#828](https://github.com/linagora/twake-tasks/issues/828)), who chose this over a per-replica cache of the lookup
+- Why: the lookup ran on its own pooled connection on every request, the statement Postgres ran most often under load, although the identity behind it is cached for 60 s.
+- Scope: `asTenant`, `requireIdentity`, the authenticator, which no longer reads revocations.

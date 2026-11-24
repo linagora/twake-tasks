@@ -201,20 +201,37 @@ interface TenantIdentity {
   organizationId: string | null
   userId: string
   email: string
+  // A request's SSO session, refused once a back-channel logout revoked it.
+  sessionId?: string
 }
 
+export class SessionRevoked extends Error {
+  constructor() {
+    super('the session is revoked')
+  }
+}
+
+// The revocation lookup is part of the statement every transaction sends
+// anyway, so a request checks its session without a round trip of its own.
+// The table is named as text: its schema imports this module.
 export async function asTenant(
   tx: Tx,
   identity: TenantIdentity,
   statementTimeoutMs = 0
 ) {
-  await tx.execute(
+  const revoked =
+    identity.sessionId === undefined
+      ? sql`false`
+      : sql`exists (select 1 from oidc_revoked_sessions where sid = ${identity.sessionId})`
+  const [row] = await tx.execute<{ revoked: boolean }>(
     sql`select set_config('app.org_id', ${identity.organizationId ?? ''}, true),
                set_config('app.user_id', ${identity.userId}, true),
                set_config('app.user_email', ${identity.email}, true),
                set_config('app.request_id', ${currentRequestId() ?? ''}, true),
-               set_config('statement_timeout', ${String(statementTimeoutMs)}, true)`
+               set_config('statement_timeout', ${String(statementTimeoutMs)}, true),
+               ${revoked} as revoked`
   )
+  if (row?.revoked) throw new SessionRevoked()
 }
 
 // For work on behalf of no one, such as applying a platform event.

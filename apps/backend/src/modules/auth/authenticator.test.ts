@@ -5,7 +5,6 @@ import {
   TooManyFailures
 } from './authenticator.ts'
 import type { Identity, IdentityProvider } from './oidc.ts'
-import type { AuthStore } from './store.ts'
 import { anIdentity } from './testing.ts'
 
 function setUp(
@@ -13,28 +12,18 @@ function setUp(
   limits?: Parameters<typeof createAuthenticator>[0]['limits']
 ) {
   let clock = Date.now()
-  const revoked = new Set<string>()
   const provider: IdentityProvider = {
     identify: vi.fn(() => Promise.resolve(identity)),
     verifyLogoutToken: vi.fn()
   }
-  const store = {
-    isRevoked: vi.fn<AuthStore['isRevoked']>(sessionId =>
-      Promise.resolve(revoked.has(sessionId))
-    ),
-    revoke: vi.fn()
-  } satisfies AuthStore
   const authenticate = createAuthenticator({
     provider,
-    store,
     now: () => clock,
     limits
   })
   return {
     authenticate,
     identify: provider.identify,
-    isRevoked: store.isRevoked,
-    revoked,
     advance: (ms: number) => {
       clock += ms
     }
@@ -284,14 +273,5 @@ describe('createAuthenticator', () => {
 
       await expect(authenticate('token', aGate(42))).resolves.not.toBeNull()
     })
-  })
-
-  it('refuses a cached token once its session is revoked', async () => {
-    const { authenticate, revoked } = setUp()
-
-    await expect(authenticate('token')).resolves.not.toBeNull()
-    revoked.add('session-1')
-
-    await expect(authenticate('token')).resolves.toBeNull()
   })
 })

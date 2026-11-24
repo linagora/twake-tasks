@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto'
 import type { Identity, IdentityProvider } from './oidc.ts'
-import type { AuthStore } from './store.ts'
 
 // Decides whether a caller may have a token checked by the SSO.
 export interface IdentityProviderGate {
@@ -51,7 +50,6 @@ export function sha256(value: string): string {
 
 export function createAuthenticator(deps: {
   provider: IdentityProvider
-  store: AuthStore
   now?: () => number
   limits?: AuthenticatorLimits | undefined
 }): Authenticate {
@@ -114,32 +112,23 @@ export function createAuthenticator(deps: {
     const key = sha256(accessToken)
     const at = now()
     const cached = cache.get(key)
-    let identity: Identity | null
-    if (cached && cached.until > at) {
-      identity = cached.identity
-    } else if ((refused.get(key) ?? 0) > at) {
-      return null
-    } else {
-      // Each caller is gated on its own address, even one joining a check
-      // already in flight.
-      const waitFor = await gate?.enter()
-      if (waitFor) throw new TooManyFailures(waitFor)
-      try {
-        let pending = inFlight.get(key)
-        if (!pending) {
-          pending = check(key, accessToken, gate).finally(() => {
-            inFlight.delete(key)
-          })
-          inFlight.set(key, pending)
-        }
-        identity = await pending
-      } finally {
-        gate?.leave()
+    if (cached && cached.until > at) return cached.identity
+    if ((refused.get(key) ?? 0) > at) return null
+    // Each caller is gated on its own address, even one joining a check
+    // already in flight.
+    const waitFor = await gate?.enter()
+    if (waitFor) throw new TooManyFailures(waitFor)
+    try {
+      let pending = inFlight.get(key)
+      if (!pending) {
+        pending = check(key, accessToken, gate).finally(() => {
+          inFlight.delete(key)
+        })
+        inFlight.set(key, pending)
       }
+      return await pending
+    } finally {
+      gate?.leave()
     }
-    if (!identity || (await deps.store.isRevoked(identity.sessionId))) {
-      return null
-    }
-    return identity
   }
 }
