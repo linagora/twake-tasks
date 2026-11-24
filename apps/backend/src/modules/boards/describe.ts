@@ -1,19 +1,9 @@
-import { and, asc, eq, isNull, sql } from 'drizzle-orm'
+import { and, isNull, sql } from 'drizzle-orm'
 import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import { currentUser, type Tx } from '../../infra/db.ts'
 import type { Member } from './access.ts'
 import { recurrenceOf } from './recurrence.ts'
-import {
-  boards,
-  comments,
-  projectMembers,
-  projects,
-  taskAssignees,
-  taskLabels,
-  taskLinks,
-  tasks,
-  taskTemplates
-} from './schema.ts'
+import { boards, tasks } from './schema.ts'
 
 export const shown = and(isNull(tasks.archivedAt), isNull(tasks.deletedAt))
 
@@ -22,44 +12,45 @@ export const shown = and(isNull(tasks.archivedAt), isNull(tasks.deletedAt))
 const anyOf = (column: AnyPgColumn, ids: string[]) =>
   sql`${column} = any(${sql.param(ids)}::uuid[])`
 
-// The open blockers of each task, null for one on a board the person cannot
-// open, which row level security alone does not hide in an organization.
-async function openBlockers(tx: Tx, ids: string[]) {
-  const rows = await tx
-    .select({
-      taskId: taskLinks.blockedTaskId,
-      open: sql<boolean>`${projects.deletedAt} is null and exists (
-        select 1 from ${projectMembers}
-        where ${projectMembers.projectId} = ${projects.id}
-          and ${projectMembers.userId} = ${currentUser}
-      )`,
-      keyPrefix: boards.keyPrefix,
-      number: tasks.number,
-      title: tasks.title
-    })
-    .from(taskLinks)
-    .innerJoin(tasks, eq(tasks.id, taskLinks.blockingTaskId))
-    .innerJoin(boards, eq(boards.id, tasks.boardId))
-    .innerJoin(projects, eq(projects.id, boards.projectId))
-    .where(
-      and(
-        anyOf(taskLinks.blockedTaskId, ids),
-        isNull(tasks.completedAt),
-        isNull(tasks.canceledAt),
-        shown
-      )
-    )
-    .orderBy(asc(taskLinks.createdAt))
-  const byTask = new Map<string, ({ key: string; title: string } | null)[]>()
-  for (const row of rows) {
-    const blocker = row.open
-      ? { key: `${row.keyPrefix}-${String(row.number)}`, title: row.title }
-      : null
-    const ofTask = byTask.get(row.taskId)
-    if (ofTask) ofTask.push(blocker)
-    else byTask.set(row.taskId, [blocker])
-  }
-  return byTask
+interface Blocker {
+  open: boolean
+  keyPrefix: string
+  number: number
+  title: string
+}
+
+// Read with the task so a list of tasks costs one statement. Drizzle leaves
+// the columns of a query on `tasks` alone unqualified, so the subqueries name
+// `tasks.id` themselves. A blocker on a board the person cannot open is not
+// `open`, which row level security alone does not hide in an organization.
+export const describedExtras = {
+  assigneeIds: sql<string[]>`coalesce((
+    select json_agg(a.user_id) from task_assignees a
+    where a.task_id = tasks.id), '[]')`,
+  labelIds: sql<string[]>`coalesce((
+    select json_agg(l.label_id) from task_labels l
+    where l.task_id = tasks.id), '[]')`,
+  commentCount: sql<number>`(
+    select count(*)::int from comments c where c.task_id = tasks.id)`,
+  template: sql<{ id: string; title: string; projectId: string } | null>`(
+    select json_build_object('id', t.id, 'title', t.title, 'projectId', t.project_id)
+    from task_templates t where t.id = tasks.template_id)`,
+  blockers: sql<Blocker[]>`coalesce((
+    select json_agg(json_build_object(
+      'open', p.deleted_at is null and exists (
+        select 1 from project_members m
+        where m.project_id = p.id and m.user_id = ${currentUser}),
+      'keyPrefix', b.key_prefix,
+      'number', blocking.number,
+      'title', blocking.title
+    ) order by link.created_at)
+    from task_links link
+    join tasks blocking on blocking.id = link.blocking_task_id
+    join boards b on b.id = blocking.board_id
+    join projects p on p.id = b.project_id
+    where link.blocked_task_id = tasks.id
+      and blocking.completed_at is null and blocking.canceled_at is null
+      and blocking.archived_at is null and blocking.deleted_at is null), '[]')`
 }
 
 export const describedColumns = {
@@ -88,6 +79,14 @@ type DescribedTask = Pick<
   keyof typeof describedColumns
 >
 
+interface Extras {
+  assigneeIds: string[]
+  labelIds: string[]
+  commentCount: number
+  template: { id: string; title: string; projectId: string } | null
+  blockers: Blocker[]
+}
+
 interface TaskOnBoard {
   task: DescribedTask
   board: typeof boards.$inferSelect
@@ -112,68 +111,75 @@ export function describeTasks(
 export async function describeTasksOf(tx: Tx, rows: TaskOnBoard[]) {
   const ids = rows.map(({ task }) => task.id)
   if (ids.length === 0) return []
-  const assignments = await tx
-    .select({ taskId: taskAssignees.taskId, userId: taskAssignees.userId })
-    .from(taskAssignees)
-    .where(anyOf(taskAssignees.taskId, ids))
-  const labeled = await tx
-    .select({ taskId: taskLabels.taskId, labelId: taskLabels.labelId })
-    .from(taskLabels)
-    .where(anyOf(taskLabels.taskId, ids))
-  const commented = await tx
-    .select({ taskId: comments.taskId, count: sql<number>`count(*)::int` })
-    .from(comments)
-    .where(anyOf(comments.taskId, ids))
-    .groupBy(comments.taskId)
-  const templateIds = rows.flatMap(({ task }) => task.templateId ?? [])
-  const templates =
-    templateIds.length === 0
-      ? []
-      : await tx
-          .select({
-            id: taskTemplates.id,
-            title: taskTemplates.title,
-            projectId: taskTemplates.projectId
-          })
-          .from(taskTemplates)
-          .where(anyOf(taskTemplates.id, templateIds))
-  const templatesById = new Map(templates.map(t => [t.id, t]))
-  const assigned = Map.groupBy(assignments, a => a.taskId)
-  const labeledWith = Map.groupBy(labeled, l => l.taskId)
-  const commentCounts = new Map(commented.map(c => [c.taskId, c.count]))
-  const blockers = await openBlockers(tx, ids)
-  return rows.map(({ task, board, members, labels }) => {
-    const template =
-      task.templateId === null ? undefined : templatesById.get(task.templateId)
-    const assigneeIds = new Set(assigned.get(task.id)?.map(a => a.userId))
-    const labelIds = new Set(labeledWith.get(task.id)?.map(l => l.labelId))
-    return {
-      id: task.id,
-      key: `${board.keyPrefix}-${String(task.number)}`,
-      sectionId: task.sectionId,
-      parentId: task.parentId,
-      title: task.title,
-      priority: task.priority,
-      dueDate: task.dueDate,
-      dueTime: task.dueTime?.slice(0, 5) ?? null,
-      dueZone: task.dueZone,
-      deadline: task.deadline,
-      duration:
-        task.duration && task.durationUnit
-          ? { amount: task.duration, unit: task.durationUnit }
-          : null,
-      recurrence: recurrenceOf(task),
-      template:
-        template?.projectId === board.projectId
-          ? { id: template.id, title: template.title }
-          : null,
-      completedAt: task.completedAt,
-      canceledAt: task.canceledAt,
-      // Someone who left the board stays assigned, but is not shown.
-      assignees: members.filter(member => assigneeIds.has(member.userId)),
-      labels: labels.filter(label => labelIds.has(label.id)),
-      commentCount: commentCounts.get(task.id) ?? 0,
-      blockers: blockers.get(task.id) ?? []
-    }
-  })
+  const extras = await tx
+    .select({ id: tasks.id, ...describedExtras })
+    .from(tasks)
+    .where(anyOf(tasks.id, ids))
+  const byId = new Map(extras.map(row => [row.id, row]))
+  // A task deleted since its row was read shows nothing more.
+  return rows.map(row => described(row, byId.get(row.task.id) ?? NO_EXTRAS))
+}
+
+const NO_EXTRAS: Extras = {
+  assigneeIds: [],
+  labelIds: [],
+  commentCount: 0,
+  template: null,
+  blockers: []
+}
+
+/** Tasks read with `describedExtras`, which need no further statement. */
+export function describeRead(
+  board: typeof boards.$inferSelect,
+  rows: (DescribedTask & Extras)[],
+  members: Member[],
+  boardLabels: TaskOnBoard['labels']
+) {
+  return rows.map(task =>
+    described({ task, board, members, labels: boardLabels }, task)
+  )
+}
+
+function described(
+  { task, board, members, labels }: TaskOnBoard,
+  extra: Extras
+) {
+  const template = extra.template
+  const assigneeIds = new Set(extra.assigneeIds)
+  const labelIds = new Set(extra.labelIds)
+  return {
+    id: task.id,
+    key: `${board.keyPrefix}-${String(task.number)}`,
+    sectionId: task.sectionId,
+    parentId: task.parentId,
+    title: task.title,
+    priority: task.priority,
+    dueDate: task.dueDate,
+    dueTime: task.dueTime?.slice(0, 5) ?? null,
+    dueZone: task.dueZone,
+    deadline: task.deadline,
+    duration:
+      task.duration && task.durationUnit
+        ? { amount: task.duration, unit: task.durationUnit }
+        : null,
+    recurrence: recurrenceOf(task),
+    template:
+      template?.projectId === board.projectId
+        ? { id: template.id, title: template.title }
+        : null,
+    completedAt: task.completedAt,
+    canceledAt: task.canceledAt,
+    // Someone who left the board stays assigned, but is not shown.
+    assignees: members.filter(member => assigneeIds.has(member.userId)),
+    labels: labels.filter(label => labelIds.has(label.id)),
+    commentCount: extra.commentCount,
+    blockers: extra.blockers.map(blocker =>
+      blocker.open
+        ? {
+            key: `${blocker.keyPrefix}-${String(blocker.number)}`,
+            title: blocker.title
+          }
+        : null
+    )
+  }
 }
