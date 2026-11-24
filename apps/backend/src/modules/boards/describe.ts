@@ -1,4 +1,5 @@
-import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, isNull, sql } from 'drizzle-orm'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import { currentUser, type Tx } from '../../infra/db.ts'
 import type { Member } from './access.ts'
 import { recurrenceOf } from './recurrence.ts'
@@ -15,6 +16,11 @@ import {
 } from './schema.ts'
 
 export const shown = and(isNull(tasks.archivedAt), isNull(tasks.deletedAt))
+
+// One parameter whatever the number of ids: Drizzle builds `in (...)` id by
+// id, which costs more than the query on a large board.
+const anyOf = (column: AnyPgColumn, ids: string[]) =>
+  sql`${column} = any(${sql.param(ids)}::uuid[])`
 
 // The open blockers of each task, null for one on a board the person cannot
 // open, which row level security alone does not hide in an organization.
@@ -37,7 +43,7 @@ async function openBlockers(tx: Tx, ids: string[]) {
     .innerJoin(projects, eq(projects.id, boards.projectId))
     .where(
       and(
-        inArray(taskLinks.blockedTaskId, ids),
+        anyOf(taskLinks.blockedTaskId, ids),
         isNull(tasks.completedAt),
         isNull(tasks.canceledAt),
         shown
@@ -83,15 +89,15 @@ export async function describeTasksOf(tx: Tx, rows: TaskOnBoard[]) {
   const assignments = await tx
     .select({ taskId: taskAssignees.taskId, userId: taskAssignees.userId })
     .from(taskAssignees)
-    .where(inArray(taskAssignees.taskId, ids))
+    .where(anyOf(taskAssignees.taskId, ids))
   const labeled = await tx
     .select({ taskId: taskLabels.taskId, labelId: taskLabels.labelId })
     .from(taskLabels)
-    .where(inArray(taskLabels.taskId, ids))
+    .where(anyOf(taskLabels.taskId, ids))
   const commented = await tx
     .select({ taskId: comments.taskId, count: sql<number>`count(*)::int` })
     .from(comments)
-    .where(inArray(comments.taskId, ids))
+    .where(anyOf(comments.taskId, ids))
     .groupBy(comments.taskId)
   const templateIds = rows.flatMap(({ task }) => task.templateId ?? [])
   const templates =
@@ -104,7 +110,7 @@ export async function describeTasksOf(tx: Tx, rows: TaskOnBoard[]) {
             projectId: taskTemplates.projectId
           })
           .from(taskTemplates)
-          .where(inArray(taskTemplates.id, templateIds))
+          .where(anyOf(taskTemplates.id, templateIds))
   const templatesById = new Map(templates.map(t => [t.id, t]))
   const assigned = Map.groupBy(assignments, a => a.taskId)
   const labeledWith = Map.groupBy(labeled, l => l.taskId)
