@@ -1,4 +1,4 @@
-import type { ScheduleSettings } from '@/domain/board'
+import type { DueRule, ScheduleSettings } from '@/domain/board'
 import { formatDay, localZone } from '@/ui/boards/dueLabel'
 import type { useI18n } from '@/ui/i18n/useI18n'
 
@@ -19,13 +19,50 @@ export const monthName = (month: number, lang: string): string =>
     Date.UTC(2024, month - 1, 1)
   )
 
+function dueSummary(t: Translate, due: DueRule): string {
+  const later = { smart_count: due.after }
+  let summary: string
+  switch (due.kind) {
+    case 'days':
+      summary =
+        due.after === 0
+          ? t('templates.schedule.summary.due.sameDay')
+          : t('templates.schedule.summary.due.days', later)
+      break
+    case 'monthDay': {
+      const last = due.day === 'last'
+      if (due.after === 0) {
+        summary = last
+          ? t('templates.schedule.summary.due.monthLast')
+          : t('templates.schedule.summary.due.monthDay', { day: due.day })
+      } else {
+        summary = last
+          ? t('templates.schedule.summary.due.monthLastLater', later)
+          : t('templates.schedule.summary.due.monthDayLater', {
+              ...later,
+              day: due.day
+            })
+      }
+      break
+    }
+    case 'quarterEnd':
+      summary =
+        due.after === 0
+          ? t('templates.schedule.summary.due.quarterEnd')
+          : t('templates.schedule.summary.due.quarterEndLater', later)
+  }
+  return due.time
+    ? t('templates.schedule.summary.due.at', { due: summary, time: due.time })
+    : summary
+}
+
 /** "Every working day at 08:00", with the zone when the reader is elsewhere. */
 export function scheduleSummary(
   t: Translate,
   lang: string,
   schedule: Pick<
     ScheduleSettings,
-    'rule' | 'time' | 'zone' | 'workingDays' | 'endsOn'
+    'rule' | 'time' | 'zone' | 'workingDays' | 'endsOn' | 'due'
   >
 ): string {
   const { rule, workingDays } = schedule
@@ -70,6 +107,12 @@ export function scheduleSummary(
   }
   if (workingDays && (rule.kind === 'monthly' || rule.kind === 'yearly')) {
     summary = t('templates.schedule.summary.workingBefore', { summary })
+  }
+  if (schedule.due) {
+    summary = t('templates.schedule.summary.withDue', {
+      summary,
+      due: dueSummary(t, schedule.due)
+    })
   }
   return schedule.endsOn
     ? t('templates.schedule.summary.until', {

@@ -1,4 +1,4 @@
-import type { ScheduleRule } from '@twake-tasks/api-contract'
+import type { DueRule, ScheduleRule } from '@twake-tasks/api-contract'
 import { sql, type SQL } from 'drizzle-orm'
 import {
   bigint,
@@ -502,6 +502,11 @@ export const taskTemplateLabels = pgTable.withRLS(
 
 export const schedulePause = pgEnum('schedule_pause', ['author', 'board'])
 
+export const schedulePrevious = pgEnum('schedule_previous', [
+  'keep',
+  'overwrite'
+])
+
 // When a template makes its task by itself. `next_run_at` is the run its job
 // waits for, null while paused or once ended.
 export const templateSchedules = pgTable.withRLS(
@@ -518,6 +523,8 @@ export const templateSchedules = pgTable.withRLS(
     time: time({ precision: 0 }).notNull(),
     zone: text().notNull(),
     workingDays: boolean('working_days').notNull(),
+    due: jsonb().$type<DueRule>(),
+    previous: schedulePrevious().notNull().default('keep'),
     // Where "every N" periods count from: the day the rule was last set.
     startsOn: date('starts_on', { mode: 'string' }).notNull(),
     endsOn: date('ends_on', { mode: 'string' }),

@@ -52,3 +52,10 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: agent (issue [#847](https://github.com/linagora/twake-tasks/issues/847)), to be confirmed by Khaled Ferjani
 - Why: `GET /notifications` returns the newest 50 and nothing else reads old read ones, yet they stayed 180 days, several hundred rows per active person.
 - Scope: `notifications`, the `retention` job, `GET /notifications`. The ranking counts read ones on a project in the trash, which the list hides, so while it waits for its purge the list may show fewer than 50.
+
+## 2026-11-24, [Product] A scheduled task's due date and its previous task
+
+- Decision: a template's schedule may set when its task is due, as one of a fixed set of kinds counted from the day the run was planned for, in the schedule's zone: N days later, day D (or the last day) of that month or of N months later, or the last day of that quarter or of N quarters later, each with an optional time. With "overwrite", a run cancels the open tasks of earlier runs: it moves each to its board's canceled section, cancels it in place on a board without sections, and archives it on a board with sections but no canceled one. "Keep" is the default.
+- Decided by: agent (issue [#761](https://github.com/linagora/twake-tasks/issues/761)), following the decisions posted on the issue, to be confirmed by Khaled Ferjani
+- Why: a task appears when it is time to start on it, which is not tied to its deadline by a fixed offset (a report made on the 25th is due on the 5th of the next month), and some work only matters in its latest occurrence (a daily pass on open pull requests).
+- Scope: `template_schedules.due` and `.previous`, the `template_schedule` job, the template dialog on Settings. A missed run still makes one task, due from the run it was planned for, not from when it ran.

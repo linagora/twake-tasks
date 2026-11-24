@@ -88,6 +88,29 @@
       "workingDays": "Jours ouvrés uniquement, du lundi au vendredi",
       "endsOn": "Jusqu’au",
       "endsOnHint": "Laissez vide pour continuer sans fin.",
+      "dueKind": "Échéance",
+      "dueKinds": {
+        "none": "Sans échéance",
+        "days": "Quelques jours après",
+        "monthDay": "Un jour du mois",
+        "quarterEnd": "En fin de trimestre"
+      },
+      "dueAfter": "Après",
+      "dueUnits": {
+        "days": "jour |||| jours",
+        "monthDay": "mois |||| mois",
+        "quarterEnd": "trimestre |||| trimestres"
+      },
+      "dueTime": "Échéance à",
+      "previous": "Si la tâche précédente est encore ouverte",
+      "previousKinds": {
+        "keep": "La garder",
+        "overwrite": "L’annuler"
+      },
+      "previousHints": {
+        "keep": "Chaque nouvelle tâche s’ajoute aux précédentes.",
+        "overwrite": "La précédente passe dans la section annulée du tableau, ou est archivée si le tableau n’en a pas."
+      },
       "paused": "En pause",
       "pausedByAuthor": "En pause : son auteur ne peut plus ajouter de tâches au projet. Enregistrez pour la reprendre en votre nom.",
       "pausedByBoard": "En pause : son tableau a été archivé ou a quitté le projet. Choisissez un tableau et enregistrez pour la reprendre.",
@@ -101,7 +124,19 @@
         "monthlyLast": "Le dernier jour de chaque mois à %{time} |||| Le dernier jour tous les %{smart_count} mois à %{time}",
         "yearly": "Chaque année le %{date} à %{time}",
         "workingBefore": "%{summary}, ou le jour ouvré d’avant",
-        "until": "%{summary}, jusqu’au %{date}"
+        "until": "%{summary}, jusqu’au %{date}",
+        "withDue": "%{summary}, %{due}",
+        "due": {
+          "sameDay": "échéance le jour même",
+          "days": "échéance %{smart_count} jour après |||| échéance %{smart_count} jours après",
+          "monthDay": "échéance le %{day} du mois",
+          "monthDayLater": "échéance le %{day}, %{smart_count} mois après |||| échéance le %{day}, %{smart_count} mois après",
+          "monthLast": "échéance le dernier jour du mois",
+          "monthLastLater": "échéance le dernier jour du mois, %{smart_count} mois après |||| échéance le dernier jour du mois, %{smart_count} mois après",
+          "quarterEnd": "échéance en fin de trimestre",
+          "quarterEndLater": "échéance en fin de trimestre, %{smart_count} trimestre après |||| échéance en fin de trimestre, %{smart_count} trimestres après",
+          "at": "%{due} à %{time}"
+        }
       }
     }
   },

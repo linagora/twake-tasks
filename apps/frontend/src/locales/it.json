@@ -88,6 +88,29 @@
       "workingDays": "Solo giorni lavorativi, dal lunedì al venerdì",
       "endsOn": "Fino al",
       "endsOnHint": "Lascia vuoto per continuare senza fine.",
+      "dueKind": "Scadenza",
+      "dueKinds": {
+        "none": "Nessuna scadenza",
+        "days": "Qualche giorno dopo",
+        "monthDay": "Un giorno del mese",
+        "quarterEnd": "A fine trimestre"
+      },
+      "dueAfter": "Dopo",
+      "dueUnits": {
+        "days": "giorno |||| giorni",
+        "monthDay": "mese |||| mesi",
+        "quarterEnd": "trimestre |||| trimestri"
+      },
+      "dueTime": "Scade alle",
+      "previous": "Se l’attività precedente è ancora aperta",
+      "previousKinds": {
+        "keep": "Tienila",
+        "overwrite": "Annullala"
+      },
+      "previousHints": {
+        "keep": "Ogni nuova attività si aggiunge alle precedenti.",
+        "overwrite": "La precedente passa nella sezione annullata della bacheca, o viene archiviata se la bacheca non ne ha."
+      },
       "paused": "In pausa",
       "pausedByAuthor": "In pausa: il suo autore non può più aggiungere attività al progetto. Salva per riprenderla a tuo nome.",
       "pausedByBoard": "In pausa: la sua bacheca è stata archiviata o ha lasciato il progetto. Scegli una bacheca e salva per riprenderla.",
@@ -101,7 +124,19 @@
         "monthlyLast": "L’ultimo giorno di ogni mese alle %{time} |||| L’ultimo giorno ogni %{smart_count} mesi alle %{time}",
         "yearly": "Ogni anno il %{date} alle %{time}",
         "workingBefore": "%{summary}, o il giorno lavorativo prima",
-        "until": "%{summary}, fino al %{date}"
+        "until": "%{summary}, fino al %{date}",
+        "withDue": "%{summary}, %{due}",
+        "due": {
+          "sameDay": "scade lo stesso giorno",
+          "days": "scade %{smart_count} giorno dopo |||| scade %{smart_count} giorni dopo",
+          "monthDay": "scade il giorno %{day} del mese",
+          "monthDayLater": "scade il giorno %{day}, %{smart_count} mese dopo |||| scade il giorno %{day}, %{smart_count} mesi dopo",
+          "monthLast": "scade l’ultimo giorno del mese",
+          "monthLastLater": "scade l’ultimo giorno del mese, %{smart_count} mese dopo |||| scade l’ultimo giorno del mese, %{smart_count} mesi dopo",
+          "quarterEnd": "scade a fine trimestre",
+          "quarterEndLater": "scade a fine trimestre, %{smart_count} trimestre dopo |||| scade a fine trimestre, %{smart_count} trimestri dopo",
+          "at": "%{due} alle %{time}"
+        }
       }
     }
   },

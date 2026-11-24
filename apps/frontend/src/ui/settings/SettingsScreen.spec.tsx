@@ -258,10 +258,54 @@ describe('SettingsScreen', () => {
           zone: expect.any(String) as string,
           workingDays: false,
           endsOn: null,
-          paused: false
+          paused: false,
+          due: null,
+          previous: 'keep'
         }
       })
     )
+  })
+
+  it('sets when a scheduled task is due and what happens to the previous one', async () => {
+    const { boardsApi } = aSetup()
+    renderRoute('/settings', { boardsApi })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'New template' }))
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'New template' })
+    )
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Task title' }), {
+      target: { value: 'Monthly report' }
+    })
+    fireEvent.click(dialog.getByLabelText('Create on a schedule'))
+    fireEvent.mouseDown(dialog.getByRole('combobox', { name: 'Due' }))
+    fireEvent.click(
+      await screen.findByRole('option', { name: 'On a day of the month' })
+    )
+    fireEvent.change(dialog.getByRole('spinbutton', { name: 'After' }), {
+      target: { value: '1' }
+    })
+    fireEvent.mouseDown(
+      dialog.getByRole('combobox', { name: 'Day of the month' })
+    )
+    fireEvent.click(await screen.findByRole('option', { name: '5' }))
+    fireEvent.mouseDown(
+      dialog.getByRole('combobox', {
+        name: 'If the previous task is still open'
+      })
+    )
+    fireEvent.click(await screen.findByRole('option', { name: 'Cancel it' }))
+    fireEvent.click(dialog.getByRole('button', { name: 'Create template' }))
+
+    expect(
+      await screen.findByText(
+        'Every week on Monday at 09:00, due on day 5, 1 month later'
+      )
+    ).toBeVisible()
+    expect(boardsApi.createTemplate.mock.lastCall?.[1].schedule).toMatchObject({
+      due: { kind: 'monthDay', after: 1, day: 5, time: null },
+      previous: 'overwrite'
+    })
   })
 
   it('keeps the schedule out of an edit that leaves it as it is', async () => {
@@ -276,7 +320,9 @@ describe('SettingsScreen', () => {
         zone: 'Europe/Paris',
         workingDays: false,
         endsOn: null,
-        paused: false
+        paused: false,
+        due: { kind: 'monthDay', after: 1, day: 5, time: '18:00' },
+        previous: 'overwrite'
       }
     })
     renderRoute('/settings', { boardsApi })
@@ -311,7 +357,9 @@ describe('SettingsScreen', () => {
         zone: 'Europe/Paris',
         workingDays: true,
         endsOn: null,
-        paused: false
+        paused: false,
+        due: null,
+        previous: 'keep'
       }
     })
     boardsApi.listTemplates.mockResolvedValue([

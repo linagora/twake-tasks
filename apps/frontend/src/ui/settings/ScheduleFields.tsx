@@ -19,11 +19,20 @@ import { useI18n } from '@/ui/i18n/useI18n'
 import { monthName, weekdayName } from '@/ui/settings/scheduleSummary'
 import {
   DAYS_IN,
+  MAX_AFTER,
   MAX_EVERY,
+  type ScheduleDraft,
   type ScheduleFieldsProps
 } from '@/ui/settings/useScheduleDraft'
 
 const KINDS: ScheduleRule['kind'][] = ['daily', 'weekly', 'monthly', 'yearly']
+const DUE_KINDS: ScheduleDraft['dueKind'][] = [
+  'none',
+  'days',
+  'monthDay',
+  'quarterEnd'
+]
+const PREVIOUS: ScheduleDraft['previous'][] = ['keep', 'overwrite']
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7]
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 const DAYS = Array.from({ length: 31 }, (_, index) => index + 1)
@@ -243,6 +252,112 @@ export function ScheduleFields({
               />
             }
           />
+          <FieldRow>
+            <TextField
+              select
+              label={t('templates.schedule.dueKind')}
+              value={draft.dueKind}
+              onChange={event => {
+                const dueKind = event.target.value as ScheduleDraft['dueKind']
+                set({
+                  dueKind,
+                  ...(dueKind !== 'none' && {
+                    dueAfter: String(
+                      Math.min(Number(draft.dueAfter) || 0, MAX_AFTER[dueKind])
+                    )
+                  })
+                })
+              }}
+              size="small"
+              slotProps={{
+                select: unitName(t('templates.schedule.dueKind'))
+              }}
+            >
+              {DUE_KINDS.map(kind => (
+                <MenuItem key={kind} value={kind}>
+                  {t(`templates.schedule.dueKinds.${kind}`)}
+                </MenuItem>
+              ))}
+            </TextField>
+            {draft.dueKind !== 'none' && (
+              <TextField
+                type="number"
+                label={t('templates.schedule.dueAfter')}
+                value={draft.dueAfter}
+                onChange={event => {
+                  set({ dueAfter: event.target.value })
+                }}
+                size="small"
+                slotProps={{
+                  htmlInput: { min: 0, max: MAX_AFTER[draft.dueKind] },
+                  input: {
+                    endAdornment: (
+                      <Typography variant="body2" color="textSecondary">
+                        {t(`templates.schedule.dueUnits.${draft.dueKind}`, {
+                          smart_count: Number(draft.dueAfter) || 0
+                        })}
+                      </Typography>
+                    )
+                  }
+                }}
+              />
+            )}
+          </FieldRow>
+          {draft.dueKind !== 'none' && (
+            <FieldRow>
+              {draft.dueKind === 'monthDay' && (
+                <TextField
+                  select
+                  label={t('templates.schedule.monthDay')}
+                  value={draft.dueDay}
+                  onChange={event => {
+                    set({ dueDay: event.target.value })
+                  }}
+                  size="small"
+                  slotProps={{
+                    select: unitName(t('templates.schedule.monthDay'))
+                  }}
+                >
+                  {DAYS.map(day => (
+                    <MenuItem key={day} value={String(day)}>
+                      {day}
+                    </MenuItem>
+                  ))}
+                  <MenuItem value="last">
+                    {t('templates.schedule.lastDay')}
+                  </MenuItem>
+                </TextField>
+              )}
+              <TimeField
+                label={t('templates.schedule.dueTime')}
+                value={draft.dueTime}
+                onChange={dueTime => {
+                  set({ dueTime })
+                }}
+                disabled={false}
+              />
+            </FieldRow>
+          )}
+          <TextField
+            select
+            label={t('templates.schedule.previous')}
+            value={draft.previous}
+            onChange={event => {
+              set({
+                previous: event.target.value as ScheduleDraft['previous']
+              })
+            }}
+            size="small"
+            fullWidth
+            helperText={t(`templates.schedule.previousHints.${draft.previous}`)}
+            slotProps={{ select: unitName(t('templates.schedule.previous')) }}
+          >
+            {PREVIOUS.map(previous => (
+              <MenuItem key={previous} value={previous}>
+                {t(`templates.schedule.previousKinds.${previous}`)}
+              </MenuItem>
+            ))}
+          </TextField>
           <Box>
             <DayField
               label={t('templates.schedule.endsOn')}

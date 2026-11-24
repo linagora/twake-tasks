@@ -88,6 +88,29 @@
       "workingDays": "Working days only, Monday to Friday",
       "endsOn": "Until",
       "endsOnHint": "Leave empty to keep going.",
+      "dueKind": "Due",
+      "dueKinds": {
+        "none": "No due date",
+        "days": "Some days later",
+        "monthDay": "On a day of the month",
+        "quarterEnd": "At the end of the quarter"
+      },
+      "dueAfter": "After",
+      "dueUnits": {
+        "days": "day |||| days",
+        "monthDay": "month |||| months",
+        "quarterEnd": "quarter |||| quarters"
+      },
+      "dueTime": "Due at",
+      "previous": "If the previous task is still open",
+      "previousKinds": {
+        "keep": "Keep it",
+        "overwrite": "Cancel it"
+      },
+      "previousHints": {
+        "keep": "Each new task adds to the ones before.",
+        "overwrite": "The previous one moves to the board’s canceled section, or is archived when the board has none."
+      },
       "paused": "Paused",
       "pausedByAuthor": "Paused: its author can no longer add tasks to the project. Save to resume it in your name.",
       "pausedByBoard": "Paused: its board was archived or left the project. Pick a board and save to resume it.",
@@ -101,7 +124,19 @@
         "monthlyLast": "On the last day of every month at %{time} |||| On the last day every %{smart_count} months at %{time}",
         "yearly": "Every year on %{date} at %{time}",
         "workingBefore": "%{summary}, or the working day before",
-        "until": "%{summary}, until %{date}"
+        "until": "%{summary}, until %{date}",
+        "withDue": "%{summary}, %{due}",
+        "due": {
+          "sameDay": "due the same day",
+          "days": "due %{smart_count} day later |||| due %{smart_count} days later",
+          "monthDay": "due on day %{day} of the month",
+          "monthDayLater": "due on day %{day}, %{smart_count} month later |||| due on day %{day}, %{smart_count} months later",
+          "monthLast": "due on the last day of the month",
+          "monthLastLater": "due on the last day of the month, %{smart_count} month later |||| due on the last day of the month, %{smart_count} months later",
+          "quarterEnd": "due at the end of the quarter",
+          "quarterEndLater": "due at the end of the quarter, %{smart_count} quarter later |||| due at the end of the quarter, %{smart_count} quarters later",
+          "at": "%{due} at %{time}"
+        }
       }
     }
   },

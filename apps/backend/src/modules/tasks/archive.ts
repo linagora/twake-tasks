@@ -58,6 +58,9 @@ async function hide(tx: Tx, taskId: string, stamp: Stamp) {
   await tx.execute(sql`select set_config('app.cascading', '', true)`)
 }
 
+export const archiveTree = (tx: Tx, taskId: string) =>
+  hide(tx, taskId, 'archivedAt')
+
 async function reveal(tx: Tx, task: typeof tasks.$inferSelect) {
   const stamp: Stamp = task.deletedAt ? 'deletedAt' : 'archivedAt'
   const column = sql.raw(columnOf[stamp])
@@ -104,7 +107,7 @@ export function createArchiveStore(db: Db) {
     archiveTask(identity: Identity, boardId: string, taskId: string) {
       return writeOrRefuse(db, identity, async tx => {
         await visibleTask(tx, identity, boardId, taskId)
-        await hide(tx, taskId, 'archivedAt')
+        await archiveTree(tx, taskId)
         return null
       })
     },

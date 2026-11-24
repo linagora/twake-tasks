@@ -193,7 +193,9 @@ describe('the API contract', () => {
           zone: 'Europe/Paris',
           workingDays: false,
           endsOn: null,
-          paused: false
+          paused: false,
+          due: { kind: 'monthDay', after: 1, day: 5, time: null },
+          previous: 'overwrite'
         }
       })
     )

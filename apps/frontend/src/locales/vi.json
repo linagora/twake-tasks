@@ -88,6 +88,29 @@
       "workingDays": "Chỉ ngày làm việc, từ thứ Hai đến thứ Sáu",
       "endsOn": "Đến ngày",
       "endsOnHint": "Để trống để tiếp tục mãi.",
+      "dueKind": "Hạn",
+      "dueKinds": {
+        "none": "Không có hạn",
+        "days": "Vài ngày sau",
+        "monthDay": "Vào một ngày trong tháng",
+        "quarterEnd": "Cuối quý"
+      },
+      "dueAfter": "Sau",
+      "dueUnits": {
+        "days": "ngày",
+        "monthDay": "tháng",
+        "quarterEnd": "quý"
+      },
+      "dueTime": "Hạn lúc",
+      "previous": "Nếu công việc trước vẫn còn mở",
+      "previousKinds": {
+        "keep": "Giữ lại",
+        "overwrite": "Hủy nó"
+      },
+      "previousHints": {
+        "keep": "Mỗi công việc mới được thêm cùng các công việc trước.",
+        "overwrite": "Công việc trước được chuyển vào mục đã hủy của bảng, hoặc được lưu trữ nếu bảng không có mục đó."
+      },
       "paused": "Tạm dừng",
       "pausedByAuthor": "Tạm dừng: người tạo không còn thêm được công việc vào dự án. Lưu để tiếp tục dưới tên bạn.",
       "pausedByBoard": "Tạm dừng: bảng của nó đã được lưu trữ hoặc rời khỏi dự án. Chọn một bảng rồi lưu để tiếp tục.",
@@ -101,7 +124,19 @@
         "monthlyLast": "Ngày cuối mỗi %{smart_count} tháng lúc %{time}",
         "yearly": "Hằng năm vào %{date} lúc %{time}",
         "workingBefore": "%{summary}, hoặc ngày làm việc trước đó",
-        "until": "%{summary}, đến %{date}"
+        "until": "%{summary}, đến %{date}",
+        "withDue": "%{summary}, %{due}",
+        "due": {
+          "sameDay": "hạn trong cùng ngày",
+          "days": "hạn sau %{smart_count} ngày",
+          "monthDay": "hạn vào ngày %{day} trong tháng",
+          "monthDayLater": "hạn vào ngày %{day}, sau %{smart_count} tháng",
+          "monthLast": "hạn vào ngày cuối tháng",
+          "monthLastLater": "hạn vào ngày cuối tháng, sau %{smart_count} tháng",
+          "quarterEnd": "hạn vào cuối quý",
+          "quarterEndLater": "hạn vào cuối quý, sau %{smart_count} quý",
+          "at": "%{due} lúc %{time}"
+        }
       }
     }
   },

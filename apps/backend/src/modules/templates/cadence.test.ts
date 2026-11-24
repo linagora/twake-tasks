@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { instantIn, nextRun, type Cadence } from './cadence.ts'
+import type { DueRule } from '@twake-tasks/api-contract'
+import { dueOf, instantIn, nextRun, type Cadence } from './cadence.ts'
 
 const daily: Cadence = {
   rule: { kind: 'daily', every: 1 },
@@ -141,5 +142,50 @@ describe('the next run of a schedule', () => {
       '2027-03-27T07:00:00.000Z'
     )
     expect(next({ endsOn: '2027-03-27' }, '2027-03-27T12:00:00Z')).toBeNull()
+  })
+})
+
+describe('the due date of a run', () => {
+  // 00:30 on January 1 in Paris is still December 31 in UTC.
+  const run = new Date('2026-12-31T23:30:00Z')
+  const due = (rule: DueRule) => dueOf(rule, run, 'Europe/Paris')
+
+  it('counts days from the day of the run, in its zone', () => {
+    expect(due({ kind: 'days', after: 0, time: '18:00' })).toEqual({
+      dueDate: '2027-01-01',
+      dueTime: '18:00',
+      dueZone: 'Europe/Paris'
+    })
+    expect(due({ kind: 'days', after: 10, time: null })).toEqual({
+      dueDate: '2027-01-11',
+      dueTime: null,
+      dueZone: null
+    })
+  })
+
+  it('falls on a day of the month N months later, or on its last day', () => {
+    const report = new Date('2027-01-25T07:00:00Z')
+    expect(
+      dueOf({ kind: 'monthDay', after: 1, day: 5, time: null }, report, 'UTC')
+        .dueDate
+    ).toBe('2027-02-05')
+    expect(
+      due({ kind: 'monthDay', after: 1, day: 31, time: null }).dueDate
+    ).toBe('2027-02-28')
+    expect(
+      due({ kind: 'monthDay', after: 0, day: 'last', time: null }).dueDate
+    ).toBe('2027-01-31')
+    expect(
+      due({ kind: 'monthDay', after: 4, day: 15, time: null }).dueDate
+    ).toBe('2027-05-15')
+  })
+
+  it('falls on the last day of the quarter N quarters later', () => {
+    expect(due({ kind: 'quarterEnd', after: 0, time: null }).dueDate).toBe(
+      '2027-03-31'
+    )
+    expect(due({ kind: 'quarterEnd', after: 4, time: null }).dueDate).toBe(
+      '2028-03-31'
+    )
   })
 })

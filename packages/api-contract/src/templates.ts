@@ -42,9 +42,38 @@ export type ScheduleRule = z.infer<typeof scheduleRule>
 const wallTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)
 
 /**
+ * When a run's task is due, counted from the day the run was planned for,
+ * in the schedule's zone: N days later, day D of that month or of N months
+ * later, or the last day of that quarter or of N quarters later. Without a
+ * `time`, the task is due all day.
+ */
+export const dueRule = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('days'),
+    after: z.int().min(0).max(365),
+    time: wallTime.nullable()
+  }),
+  z.strictObject({
+    kind: z.literal('monthDay'),
+    after: z.int().min(0).max(12),
+    day: z.union([z.int().min(1).max(31), z.literal('last')]),
+    time: wallTime.nullable()
+  }),
+  z.strictObject({
+    kind: z.literal('quarterEnd'),
+    after: z.int().min(0).max(4),
+    time: wallTime.nullable()
+  })
+])
+
+export type DueRule = z.infer<typeof dueRule>
+
+/**
  * `zone` is the browser's, used when the person's settings name none.
  * With `workingDays`, daily counts Monday to Friday only, weekly drops the
  * weekend, and monthly and yearly runs move to the working day before.
+ * With `previous` set to overwrite, a run cancels the open tasks of earlier
+ * runs.
  */
 export const scheduleFields = z.strictObject({
   boardId: z.uuid(),
@@ -53,7 +82,9 @@ export const scheduleFields = z.strictObject({
   zone: z.string().max(64).refine(isTimeZone),
   workingDays: z.boolean(),
   endsOn: z.iso.date().nullable(),
-  paused: z.boolean()
+  paused: z.boolean(),
+  due: dueRule.nullable().default(null),
+  previous: z.enum(['keep', 'overwrite']).default('keep')
 })
 
 // Left out, an edit keeps the schedule as it is.
