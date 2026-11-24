@@ -12,12 +12,15 @@ import {
 import { outbox } from './schema.ts'
 
 const BATCH = 100
-const KEEP_SENT = '1 day'
 // Any constant shared by every replica: only the holder relays, so events leave in order.
 const RELAY_LOCK = 0x7461736b
 
 export async function enqueue(tx: Tx, event: PublishedEvent) {
   await tx.insert(outbox).values({ event })
+}
+
+export async function forgetSentEvents(tx: Tx, sentBefore: Date) {
+  await tx.delete(outbox).where(lt(outbox.sentAt, sentBefore))
 }
 
 const backlog = async (db: Db) => {
@@ -148,9 +151,6 @@ export function createRelay(deps: {
           .where(inArray(outbox.id, sent))
         metrics?.outboxPublished.inc(sent.length)
       }
-      await tx
-        .delete(outbox)
-        .where(lt(outbox.sentAt, sql`now() - ${KEEP_SENT}::interval`))
       return sent.length
     })
 

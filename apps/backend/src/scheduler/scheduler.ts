@@ -214,7 +214,7 @@ export function createScheduler(deps: {
     async measure() {
       await Promise.all(kinds.map(measureLag))
     },
-    start(intervalMs: number) {
+    start(intervalMs: number, measureMs = 15_000) {
       const running = new Map<string, Promise<unknown>>()
       const measuring = new Map<string, Promise<void>>()
       const fail = (kind: string) => (error: unknown) => {
@@ -222,15 +222,6 @@ export function createScheduler(deps: {
       }
       const timer = setInterval(() => {
         for (const kind of kinds) {
-          // Not chained to the drain, so a stuck drain still shows its backlog.
-          if (!measuring.has(kind)) {
-            measuring.set(
-              kind,
-              measureLag(kind)
-                .catch(fail(kind))
-                .finally(() => measuring.delete(kind))
-            )
-          }
           if (running.has(kind)) continue
           running.set(
             kind,
@@ -240,8 +231,21 @@ export function createScheduler(deps: {
           )
         }
       }, intervalMs)
+      // Not chained to the drain, so a stuck drain still shows its backlog.
+      const measureTimer = setInterval(() => {
+        for (const kind of kinds) {
+          if (measuring.has(kind)) continue
+          measuring.set(
+            kind,
+            measureLag(kind)
+              .catch(fail(kind))
+              .finally(() => measuring.delete(kind))
+          )
+        }
+      }, measureMs)
       return async () => {
         clearInterval(timer)
+        clearInterval(measureTimer)
         await Promise.all([...running.values(), ...measuring.values()])
       }
     }

@@ -54,7 +54,7 @@ A test fails when a table is missing from this page, and the backend test suite 
 ## Jobs and events
 
 - `jobs`: deleted once done, or after the 10th failed attempt. A job about a task cascades with it through `task_id`, a reminder job goes with its reminder, and the jobs of an organization go with it. A job about a person (reminder, notification email, digest) names them in `user_id` and is removed with them.
-- `outbox`: retention: one day after the event is sent.
+- `outbox`: retention: at least one day after the event is sent, deleted by the daily `retention` job, so an event stays up to two days.
 - `processed_events`: retention: 30 days (`RETENTION_PROCESSED_EVENTS_DAYS`), far longer than any redelivery, deleted by the daily `retention` job.
 - `parked_events`: deleted once the event is handled, or once it is sent to the dead letter queue after waiting 30 minutes for its space.
 - `last_changes`: kept, so a late event cannot bring back a deleted organization, space or person.

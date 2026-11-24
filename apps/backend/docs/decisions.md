@@ -24,3 +24,10 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: agent (issue [#864](https://github.com/linagora/twake-tasks/issues/864)), to be confirmed by Khaled Ferjani
 - Why: in a profile under load, `JSON.stringify` of answers took 7.9% of the main thread, most of it on the whole board.
 - Scope: `GET /boards/:boardId`, `/boards`, `/search`, `/my-tasks`, `/agenda`, `/notifications`.
+
+## 2026-11-24, [Infra] Idle background work stays off the database
+
+- Decision: the daily `retention` job deletes sent outbox events, not the relay on every run; the scheduler measures due jobs every 15 s instead of on each 5 s tick.
+- Decided by: agent (issue [#832](https://github.com/linagora/twake-tasks/issues/832)), to be confirmed by Khaled Ferjani
+- Why: an idle backend ran an outbox delete every 500 ms and a count per job kind every 5 s, a fixed database load whatever the traffic.
+- Scope: the outbox relay, the `retention` job, the scheduler's `jobs_due` and `jobs_oldest_due_seconds` gauges and its "jobs are late" warning. Sent events may now stay up to two days.

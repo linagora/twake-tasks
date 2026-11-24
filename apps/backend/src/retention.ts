@@ -1,4 +1,5 @@
 import { forgetProcessedEvents } from './events/dedupe.ts'
+import { forgetSentEvents } from './events/outbox.ts'
 import { forgetReadNotifications } from './modules/boards/index.ts'
 import { schedule, type Handler } from './scheduler/scheduler.ts'
 
@@ -19,6 +20,7 @@ export function retention(
     const at = now().getTime()
     const daysAgo = (days: number) => new Date(at - days * DAY_MS)
     await forgetProcessedEvents(tx, daysAgo(keep.processedEventsDays))
+    await forgetSentEvents(tx, daysAgo(1))
     await forgetReadNotifications(tx, daysAgo(keep.readNotificationsDays))
     await schedule(tx, {
       kind: RETENTION_JOB,
