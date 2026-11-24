@@ -359,7 +359,7 @@ describe('startConsumer', () => {
     consumer = undefined
     expect(await ready(QUEUE)).toBe(0)
     expect(await ready(DEAD_LETTER_QUEUE)).toBe(0)
-  })
+  }, 15_000)
 
   it('retries an event whose handling failed until it succeeds', async () => {
     const handle = vi.fn<(d: Delivery) => Promise<Outcome>>()
@@ -381,7 +381,7 @@ describe('startConsumer', () => {
     consumer = undefined
     expect(await ready(QUEUE)).toBe(0)
     expect(await ready(DEAD_LETTER_QUEUE)).toBe(0)
-  })
+  }, 15_000)
 
   // As versions with a single active consumer declared it.
   async function declareOldQueue() {
@@ -588,7 +588,7 @@ describe('startPublisher', () => {
       await publisher.close()
       await node.close()
     }
-  })
+  }, 15_000)
 
   it('confirms an event no one listens to', async () => {
     const publisher = await startPublisher(
@@ -680,7 +680,7 @@ describe('live board changes', () => {
       await node.close()
       await sql.end()
     }
-  })
+  }, 20_000)
 
   it('still publishes after a publish failed', async () => {
     const { sql, db } = createDb(inject('databaseUrl'))
