@@ -31,7 +31,7 @@ import {
 import type { Identity, RequireIdentity } from '../auth/index.ts'
 import { REFUSAL_STATUS } from '../../refusalStatus.ts'
 import type { Refusal } from '../kernel/index.ts'
-import { checkBoardAccess } from './access.ts'
+import { accessChecks } from './access.ts'
 import {
   BACKGROUND_TYPES,
   createBackgroundStore,
@@ -121,7 +121,7 @@ export function registerBoards(
     requireIdentity: deps.requireIdentity,
     identify: (request: FastifyRequest) => request.identity,
     refusalStatus: REFUSAL_STATUS,
-    checkBoardAccess: checkBoardAccess(deps.db)
+    ...accessChecks(deps.db)
   }
 
   const routes: BoardRoute[] = [

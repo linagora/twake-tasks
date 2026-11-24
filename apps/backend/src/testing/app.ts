@@ -247,6 +247,7 @@ export async function startApp(
   }
 
   return {
+    db,
     as,
     tokenOf,
     inject: app.inject.bind(app),

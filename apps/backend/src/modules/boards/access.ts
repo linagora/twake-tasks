@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray, isNull, lte, sql } from 'drizzle-orm'
-import { inTenant, type Db, type Tx } from '../../infra/db.ts'
+import { inTenant, shareTransaction, type Db, type Tx } from '../../infra/db.ts'
 import type {
   BoardAccess,
   CheckBoardAccess,
@@ -226,11 +226,20 @@ export async function looksOn(
     looks.get(userId) ?? { name: nameThen, avatar: null }
 }
 
+// The role the route's check found, for the stores' check in the same
+// transaction. Only a read shares its transaction with the check, and nothing
+// after the check's own invite claim changes a role in it.
+const checkedRoles = new WeakMap<Tx, Map<string, Role>>()
+
+const roleKey = (userId: string, boardId: string) => `${userId} ${boardId}`
+
 export async function roleOn(
   tx: Tx,
   userId: string,
   boardId: string
 ): Promise<Role | null> {
+  const checked = checkedRoles.get(tx)?.get(roleKey(userId, boardId))
+  if (checked) return checked
   const accessible = accessibleBoards(tx, userId)
   const [row] = await tx
     .select({ role: accessible.role })
@@ -265,6 +274,11 @@ async function boardRefusal(
     standing = await standingOn(tx, userId, params.boardId)
   }
   if (!standing) return 'not_found'
+  const roles = checkedRoles.get(tx) ?? new Map<string, Role>()
+  checkedRoles.set(
+    tx,
+    roles.set(roleKey(userId, params.boardId), standing.role)
+  )
   const onSelf = access.orSelf && params.userId === userId
   if (!onSelf && RANK[standing.role] < RANK[access.role]) return 'forbidden'
   if (access.refusedOnManaged && standing.managed) return 'forbidden'
@@ -290,6 +304,13 @@ export const checkProjectAccess =
       if (!role) return 'not_found'
       return RANK[role] < RANK[access.role] ? 'forbidden' : null
     })
+
+export const accessChecks = (db: Db) => ({
+  checkBoardAccess: checkBoardAccess(db),
+  checkProjectAccess: checkProjectAccess(db),
+  shareTransaction: <T>(identity: Identity, work: () => Promise<T>) =>
+    shareTransaction(db, identity, work)
+})
 
 export const liveBoards: LiveBoards = {
   version: async (tx, boardId) => {
