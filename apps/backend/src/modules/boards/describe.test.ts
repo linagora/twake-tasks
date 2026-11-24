@@ -1,11 +1,12 @@
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, TransactionRollbackError } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { asTenant } from '../../infra/db.ts'
 import { aUser, startApp } from '../../testing/app.ts'
+import type { Member } from './access.ts'
 import { describeTasks } from './describe.ts'
-import { boards, tasks } from './schema.ts'
+import { boards, taskAssignees, tasks } from './schema.ts'
 
 let api: Awaited<ReturnType<typeof startApp>>
 const client = postgres(inject('databaseUrl'), { onnotice: () => undefined })
@@ -24,7 +25,11 @@ afterAll(async () => {
   await client.end()
 })
 
-async function aBoardWith(titles: string[]) {
+async function aBoardWith(
+  titles: string[],
+  members: Member[] = [],
+  assigned: string[] = []
+) {
   const owner = aUser()
   const as = api.as(owner)
   const boardId = (
@@ -44,21 +49,38 @@ async function aBoardWith(titles: string[]) {
     kind: 'blockedBy',
     taskId: second
   })
-  return db.transaction(async tx => {
-    await asTenant(tx, owner)
-    const [board] = (await tx
-      .select()
-      .from(boards)
-      .where(eq(boards.id, boardId))) as [typeof boards.$inferSelect]
-    const rows = await tx
-      .select()
-      .from(tasks)
-      .where(eq(tasks.boardId, boardId))
-      .orderBy(asc(tasks.number))
-    statements = []
-    const described = await describeTasks(tx, board, rows, [], [])
-    return { described, statements: [...statements] }
-  })
+  let described: Awaited<ReturnType<typeof describeTasks>> = []
+  let sent: string[] = []
+  await db
+    .transaction(async tx => {
+      await asTenant(tx, owner)
+      const [board] = (await tx
+        .select()
+        .from(boards)
+        .where(eq(boards.id, boardId))) as [typeof boards.$inferSelect]
+      const rows = await tx
+        .select()
+        .from(tasks)
+        .where(eq(tasks.boardId, boardId))
+        .orderBy(asc(tasks.number))
+      for (const userId of assigned) {
+        await tx.insert(taskAssignees).values({
+          taskId: first,
+          organizationId: board.organizationId,
+          userId
+        })
+      }
+      statements = []
+      described = await describeTasks(tx, board, rows, members, [])
+      sent = [...statements]
+      // The assignees are not members of the project, which the invariants
+      // checked after the suite refuse.
+      tx.rollback()
+    })
+    .catch((error: unknown) => {
+      if (!(error instanceof TransactionRollbackError)) throw error
+    })
+  return { described, statements: sent }
 }
 
 describe('describing tasks', () => {
@@ -83,5 +105,50 @@ describe('describing tasks', () => {
       { key: 'DSC-3', commentCount: 0, blockers: [] },
       { key: 'DSC-4', commentCount: 0, blockers: [] }
     ])
+  })
+
+  it('reads the members of the board once, not once per task', async () => {
+    const membersRead = async (titles: string[]) => {
+      let reads = 0
+      const members = new Proxy(
+        Array.from({ length: 10 }, (_, i) => ({
+          userId: crypto.randomUUID(),
+          email: `member${String(i)}@example.com`,
+          name: null,
+          avatar: null
+        })),
+        {
+          get(target, property, receiver) {
+            if (typeof property === 'string' && /^\d+$/.test(property)) reads++
+            return Reflect.get(target, property, receiver) as unknown
+          }
+        }
+      )
+      await aBoardWith(titles, members)
+      return reads
+    }
+
+    expect(await membersRead(['One', 'Two', 'Three', 'Four'])).toBe(
+      await membersRead(['One', 'Two'])
+    )
+  })
+
+  it('shows the assignees still members, in the order of the members', async () => {
+    const members = ['ada', 'bob', 'cy'].map(name => ({
+      userId: crypto.randomUUID(),
+      email: `${name}@example.com`,
+      name,
+      avatar: null
+    }))
+    const [ada, , cy] = members as [Member, Member, Member]
+
+    const { described } = await aBoardWith(['One', 'Two'], members, [
+      cy.userId,
+      crypto.randomUUID(),
+      ada.userId
+    ])
+
+    expect(described[0]?.assignees).toEqual([ada, cy])
+    expect(described[1]?.assignees).toEqual([])
   })
 })
