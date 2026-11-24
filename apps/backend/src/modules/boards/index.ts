@@ -2,7 +2,6 @@ export {
   accessChecks,
   accessibleBoards,
   checkBoardAccess,
-  checkProjectAccess,
   checkRole,
   liveBoards,
   looksOn,
