@@ -63,6 +63,8 @@ expect '/.env.js carries the search minimum' "$(body "$BASE/.env.js")" '*var SEA
 expect '/.env.js is never cached' "$(header /.env.js Cache-Control)" 'no-store'
 script="$(body "$BASE/" | grep -o 'src="/static/js/index[^"]*"' | head -1 | cut -d'"' -f2)"
 expect 'hashed assets are cached for a year' "$(header "$script" Cache-Control)" '*immutable'
+expect 'no source map in the image' "$(docker exec "$NAME" find /usr/share/nginx/html -name '*.map')" ''
+expect 'the bundle names no source map' "$(docker exec "$NAME" grep -rl sourceMappingURL /usr/share/nginx/html || true)" ''
 csp="$(header / Content-Security-Policy)"
 expect 'CSP sent' "$csp" "default-src 'self'; script-src 'self';*"
 expect 'CSP: SSO and Sentry origins in connect-src, without the DSN key' "$csp" "*connect-src 'self' https://sso.example.com https://errors.example.com;*"

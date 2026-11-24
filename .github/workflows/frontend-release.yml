@@ -42,6 +42,9 @@ jobs:
       project: frontend
       push: true
       version: ${{ needs.verify.outputs.version }}
+      sentry-project: twake-tasks
+    secrets:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
   manifest:
     needs: [verify, check]

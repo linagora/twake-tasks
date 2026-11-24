@@ -22,6 +22,15 @@ on:
         required: false
         type: boolean
         default: false
+      sentry-project:
+        description: Sentry project that gets the source maps of the release; the Dockerfile needs a sourcemaps stage
+        required: false
+        type: string
+        default: ''
+    secrets:
+      SENTRY_AUTH_TOKEN:
+        description: Sentry organization token; without it the source maps are not uploaded
+        required: false
 
 jobs:
   image:
@@ -99,3 +108,21 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ inputs.project }}
+
+      - name: Upload source maps to Sentry
+        if: inputs.push && inputs.version != '' && inputs.sentry-project != ''
+        # The image is already pushed: a Sentry outage must not hold back the release.
+        continue-on-error: true
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_PROJECT: ${{ inputs.sentry-project }}
+          RELEASE: ${{ inputs.version }}
+        # The builder still holds the layers of the image it pushed, so the maps
+        # are those of the bundle it serves.
+        run: |
+          if [[ -z "$SENTRY_AUTH_TOKEN" ]]; then
+            echo "::warning::No SENTRY_AUTH_TOKEN secret: source maps not uploaded"
+            exit 0
+          fi
+          docker buildx build --file "$DOCKERFILE" --target sourcemaps --output type=local,dest=sourcemaps .
+          npx --yes @sentry/cli@2.58.6 sourcemaps upload --release "$RELEASE" sourcemaps
