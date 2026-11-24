@@ -9,13 +9,14 @@ import type { Identity } from '../auth/index.ts'
 import { Refused } from '../kernel/index.ts'
 import type { LiveBoards } from '../live/index.ts'
 import { userSettings } from '../settings/index.ts'
-import { boards, projectInvites, projectMembers, projects } from './schema.ts'
+import { boards, projectMembers, projects } from './schema.ts'
 import { bumpProjects } from './versions.ts'
 
 export type Role = 'viewer' | 'editor' | 'admin'
 
 // A board takes the person's role in its project. `standingOn` spells the
-// same join out for the per-request check: change both together.
+// same join out for the per-request check, and `loadBoard` for opening a
+// board: change all three together.
 export function accessibleBoards(tx: Tx, userId: string) {
   return tx
     .select({
@@ -138,16 +139,6 @@ export async function membersOfProjects(
     else byProject.set(projectId, [member])
   }
   return byProject
-}
-
-// The emails invited to the project, not members until they sign in.
-export async function invitedTo(tx: Tx, projectId: string): Promise<string[]> {
-  const rows = await tx
-    .select({ email: projectInvites.email })
-    .from(projectInvites)
-    .where(eq(projectInvites.projectId, projectId))
-    .orderBy(asc(projectInvites.email))
-  return rows.map(row => row.email)
 }
 
 // As many as a board card draws.

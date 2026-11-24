@@ -73,3 +73,10 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: Khaled Ferjani (issue [#828](https://github.com/linagora/twake-tasks/issues/828)), who chose this over a per-replica cache of the lookup
 - Why: the lookup ran on its own pooled connection on every request, the statement Postgres ran most often under load, although the identity behind it is cached for 60 s.
 - Scope: `asTenant`, `requireIdentity`, the authenticator, which no longer reads revocations.
+
+## 2026-11-24, [Tech] A board opens in two statements
+
+- Decision: `getBoard` reads the board, the person's role, its sections, members, invites, labels and the person's layout in one statement, and its tasks with their assignees, labels, comment counts, template and blockers in a second one, through correlated subqueries aggregated with `json_agg`. The other task lists describe their tasks in one statement too. The postgres.js and Drizzle protocol settings stay as they are, prepared statements stay off.
+- Decided by: agent (issue [#827](https://github.com/linagora/twake-tasks/issues/827)), to be confirmed by Khaled Ferjani
+- Why: each statement costs two round trips to the server, and opening a board sent fifteen of them one after the other, the most frequent request of the app.
+- Scope: `loadBoard`, `describeTasksOf`. Opening a board sends 8 socket writes instead of 30, BEGIN and COMMIT included.

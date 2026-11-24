@@ -22,21 +22,26 @@ import {
 import type { Identity } from '../auth/index.ts'
 import { Refused, writeOrRefuse, type Result } from '../kernel/index.ts'
 import { userSettings } from '../settings/index.ts'
-import { describedColumns, describeTasks, shown } from './describe.ts'
+import {
+  describedColumns,
+  describedExtras,
+  describeRead,
+  shown
+} from './describe.ts'
 import {
   accessibleBoards,
   checkRole,
   claimInvites,
-  invitedTo,
   firstMembersOfProjects,
-  membersOf,
+  memberLooks,
   roleIn,
-  roleOn
+  roleOn,
+  settingsOfMember,
+  type Member
 } from './access.ts'
 import {
   sections,
   boardFavorites,
-  boardLayouts,
   boards,
   projectInvites,
   projectMembers,
@@ -46,7 +51,6 @@ import {
 import { copyBoard, type CopyOptions } from './copy.ts'
 import { bumpBoard, bumpBoards } from './versions.ts'
 import { freeKeyPrefix, INBOX_KEY_PREFIX } from './keyPrefixes.ts'
-import { labelsOn } from './labels.ts'
 import { languageOf, type Language } from './mailLayout.ts'
 import { todayIn } from './recurrence.ts'
 
@@ -484,41 +488,61 @@ async function ensureInbox(tx: Tx, identity: Identity) {
   })
 }
 
+const me = alias(projectMembers, 'me')
+
+type SectionCategory = (typeof sections.$inferSelect)['category']
+type Layout = (typeof boards.$inferSelect)['layout']
+
+// Two statements, the board then its tasks: each statement is a round trip,
+// and a board is opened more than any other page. The role is the one
+// `standingOn` reads.
 async function loadBoard(tx: Tx, boardId: string, userId: string) {
-  const role = await roleOn(tx, userId, boardId)
-  if (!role) return null
   const [found] = await tx
-    .select({ board: boards, project: projectSummary })
+    .select({
+      board: boards,
+      project: projectSummary,
+      role: me.role,
+      sections: sql<{ id: string; name: string; category: SectionCategory }[]>`
+        coalesce((select json_agg(json_build_object(
+          'id', s.id, 'name', s.name, 'category', s.category
+        ) order by s.position) from sections s
+        where s.board_id = ${boards.id}), '[]')`,
+      members: sql<Member[]>`coalesce((select json_agg(json_build_object(
+          'userId', ${projectMembers.userId},
+          'email', ${projectMembers.email},
+          'name', ${memberLooks.name},
+          'avatar', ${memberLooks.avatar}
+        ) order by ${projectMembers.email})
+        from ${projectMembers} left join ${userSettings} on ${settingsOfMember}
+        where ${projectMembers.projectId} = ${boards.projectId}), '[]')`,
+      invited: sql<string[]>`case when ${me.role} = 'admin' then coalesce((
+          select json_agg(i.email order by i.email) from project_invites i
+          where i.project_id = ${boards.projectId}), '[]')
+        else '[]' end`,
+      labels: sql<{ id: string; name: string; color: string | null }[]>`
+        coalesce((select json_agg(json_build_object(
+          'id', l.id, 'name', l.name, 'color', l.color
+        ) order by l.name) from labels l
+        where l.project_id = ${boards.projectId}), '[]')`,
+      picked: sql<Layout | null>`(select bl.layout from board_layouts bl
+        where bl.board_id = ${boards.id} and bl.user_id = ${userId})`
+    })
     .from(boards)
-    .innerJoin(projects, eq(projects.id, boards.projectId))
+    .innerJoin(
+      projects,
+      and(eq(projects.id, boards.projectId), isNull(projects.deletedAt))
+    )
+    .innerJoin(me, and(eq(me.projectId, projects.id), eq(me.userId, userId)))
     .where(eq(boards.id, boardId))
   if (!found) return null
-  const { board, project } = found
-  const sectionRows = await tx
-    .select({
-      id: sections.id,
-      name: sections.name,
-      category: sections.category
-    })
-    .from(sections)
-    .where(eq(sections.boardId, boardId))
-    .orderBy(asc(sections.position))
+  const { board, project, role, members, invited, picked } = found
   const rows = await tx
-    .select(describedColumns)
+    .select({ ...describedColumns, ...describedExtras })
     .from(tasks)
     .where(and(eq(tasks.boardId, boardId), shown))
     .orderBy(asc(tasks.position))
-  const members = await membersOf(tx, board)
-  const invited = role === 'admin' ? await invitedTo(tx, board.projectId) : []
-  const boardLabels = await labelsOn(tx, board)
-  const [picked] = await tx
-    .select({ layout: boardLayouts.layout })
-    .from(boardLayouts)
-    .where(
-      and(eq(boardLayouts.boardId, boardId), eq(boardLayouts.userId, userId))
-    )
   return {
-    layout: picked?.layout ?? board.layout,
+    layout: picked ?? board.layout,
     defaultLayout: board.layout,
     id: board.id,
     name: board.name,
@@ -534,8 +558,8 @@ async function loadBoard(tx: Tx, boardId: string, userId: string) {
     role,
     members,
     invited,
-    labels: boardLabels,
-    sections: sectionRows,
-    tasks: await describeTasks(tx, board, rows, members, boardLabels)
+    labels: found.labels,
+    sections: found.sections,
+    tasks: describeRead(board, rows, members, found.labels)
   }
 }
