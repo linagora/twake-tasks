@@ -164,6 +164,70 @@ describe('a declared route', () => {
     expect(response.statusCode).toBe(401)
   })
 
+  it('writes only what its response schema declares', async () => {
+    const app = createServer({
+      logger: pino({ level: 'silent' }),
+      isReady: () => Promise.resolve(true)
+    })
+    const match = z.union([
+      z.object({ field: z.literal('title') }),
+      z.object({ field: z.literal('comment'), commentId: z.string() })
+    ])
+    registerRoutes(
+      app,
+      { requireIdentity: signedIn, identify: () => alice, refusalStatus },
+      [
+        defineRoute({
+          method: 'GET',
+          url: '/described',
+          access: { on: 'self' },
+          response: z.object({
+            things: z.array(
+              z.object({
+                name: z.string(),
+                doneAt: z.iso.datetime({ offset: true }).nullable(),
+                match: match.nullable()
+              })
+            )
+          }),
+          handler: () =>
+            Promise.resolve({
+              ok: true,
+              value: {
+                things: [
+                  {
+                    name: 'lamp',
+                    doneAt: new Date('2026-11-24T10:00:00Z'),
+                    match: {
+                      field: 'comment',
+                      commentId: 'c1',
+                      secret: 'kept out'
+                    },
+                    secret: 'kept out'
+                  },
+                  { name: 'desk', doneAt: null, match: null }
+                ]
+              }
+            })
+        })
+      ]
+    )
+
+    const response = await app.inject('/described')
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({
+      things: [
+        {
+          name: 'lamp',
+          doneAt: '2026-11-24T10:00:00.000Z',
+          match: { field: 'comment', commentId: 'c1' }
+        },
+        { name: 'desk', doneAt: null, match: null }
+      ]
+    })
+  })
+
   it('answers a public route without checking the identity', async () => {
     const response = await serverWith(
       async (_request, reply) => reply.code(401).send(),

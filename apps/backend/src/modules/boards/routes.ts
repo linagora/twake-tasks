@@ -3,7 +3,9 @@ import {
   backgroundImageParams,
   boardParams,
   boardRename,
+  boardResponse,
   boardsQuery,
+  boardsResponse,
   keyPrefixParams,
   labelChanges,
   labeling,
@@ -146,6 +148,7 @@ export function registerBoards(
       url: '/boards',
       access: self,
       query: boardsQuery,
+      response: boardsResponse,
       handler: async ({ identity, query }) => ({
         ok: true,
         value: { boards: await store.listBoards(identity, query.zone ?? null) }
@@ -156,6 +159,7 @@ export function registerBoards(
       url: '/boards/:boardId',
       access: viewer,
       params: boardParams,
+      response: boardResponse,
       handler: async ({ identity, params }) => {
         const board = await store.getBoard(identity, params.boardId)
         return board

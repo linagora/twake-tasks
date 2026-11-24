@@ -1,6 +1,7 @@
 import {
   notificationParams,
-  notificationsRead
+  notificationsRead,
+  notificationsResponse
 } from '@twake-tasks/api-contract'
 import type { FastifyRequest } from 'fastify'
 import type { Db } from '../../infra/db.ts'
@@ -60,6 +61,7 @@ export function registerNotifications(
       method: 'GET',
       url: '/notifications',
       access: self,
+      response: notificationsResponse,
       handler: ({ identity }) =>
         under('notifications', store.notificationsOf(identity))
     })

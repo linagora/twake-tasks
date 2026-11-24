@@ -1,11 +1,14 @@
 import {
   agendaQuery,
+  agendaResponse,
   calendarFeedChanges,
   calendarFeedParams,
   filterChanges,
   filterParams,
   newFilter,
   searchQuery,
+  searchResponse,
+  tasksResponse,
   zoneQuery
 } from '@twake-tasks/api-contract'
 import type { FastifyRequest } from 'fastify'
@@ -174,6 +177,7 @@ export function registerViews(
       method: 'GET',
       url: '/my-tasks',
       access: self,
+      response: tasksResponse,
       handler: async ({ identity }) => ({
         ok: true,
         value: { tasks: await store.assignedTasks(identity) }
@@ -184,6 +188,7 @@ export function registerViews(
       url: '/agenda',
       access: self,
       query: agendaQuery,
+      response: agendaResponse,
       handler: async ({ identity, query }) => ({
         ok: true,
         value: await store.agenda(identity, query.zone, query.days)
@@ -196,6 +201,7 @@ export function registerViews(
       onRequest: allowOrigins(app, '/search', deps.searchAllowedOrigins),
       config: { searchTokens: true },
       query: searchQuery,
+      response: searchResponse,
       handler: async ({ identity, query }) => ({
         ok: true,
         value: {

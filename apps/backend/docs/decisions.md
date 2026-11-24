@@ -17,3 +17,10 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: agent (issue [#833](https://github.com/linagora/twake-tasks/issues/833)), to be confirmed by Khaled Ferjani
 - Why: in a profile, Drizzle building the same SQL took 18% of the main thread's busy time and 46% of its allocations.
 - Scope: `roleOn`, the board route access check, `isRevoked`.
+
+## 2026-11-24, [Tech] Large answers are serialized from their contract schema
+
+- Decision: a route may declare its answer's contract schema; Fastify then compiles it into a serializer, which writes only the properties the contract declares. The large reads declare one; other routes keep `JSON.stringify`.
+- Decided by: agent (issue [#864](https://github.com/linagora/twake-tasks/issues/864)), to be confirmed by Khaled Ferjani
+- Why: in a profile under load, `JSON.stringify` of answers took 7.9% of the main thread, most of it on the whole board.
+- Scope: `GET /boards/:boardId`, `/boards`, `/search`, `/my-tasks`, `/agenda`, `/notifications`.
