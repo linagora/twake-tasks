@@ -14,6 +14,10 @@
   },
   "standalone": true,
   "client_url_flag": "project.embedded-app-url",
+  "service_url_flag": "project.embedded-app-url",
+  "intents": [
+    { "action": "CREATE", "type": ["io.cozy.tasks"], "href": "/intents" }
+  ],
   "permissions": {
     "banners": {
       "description": "Required by the cozy-bar to display platform messages",

@@ -23,6 +23,10 @@ npm run dev -w @twake-tasks/frontend
 
 Run `npm run check` before you push. It's what CI runs. The details are in [development](docs/development.md).
 
+## Cozy-stack intents
+
+Another app of the Workplace creates a task with the intent `CREATE io.cozy.tasks`, served by the frontend on `/intents`. Its data, its result and what the platform has to set are in [modes](docs/modes.md#cozy-stack-intents).
+
 ## Documentation
 
 The [documentation index](docs/README.md) groups the pages by reader:

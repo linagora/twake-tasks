@@ -21,6 +21,7 @@ docker run -d --name "$NAME" \
   -e SEARCH_MIN_LENGTH='3' \
   -e NGINX_WORKER_CONNECTIONS='2048' \
   -e CSP_FRAME_ANCESTORS='https://workplace.example.com' \
+  -e CSP_INTENT_FRAME_ANCESTORS='https://chat.example.com' \
   -e CSP_IMG_SRC='https://avatars.example.com' \
   -e API_UPSTREAM='http://127.0.0.1:9' \
   "$IMAGE" >/dev/null
@@ -40,7 +41,7 @@ body() { curl -fsS "$@" 2>&1 || true; }
 header() {
   local path=$1 name=$2
   curl -fsS -o /dev/null -D - "$BASE$path" | tr -d '\r' |
-    awk -v name="${name,,}" 'tolower($0) ~ "^" name ": " { sub(/^[^:]*: /, ""); print }'
+    awk -v name="$name" 'tolower($0) ~ "^" tolower(name) ": " { sub(/^[^:]*: /, ""); print }'
 }
 
 for _ in $(seq 1 30); do
@@ -79,6 +80,20 @@ expect 'the embedded view serves index.html' "$(body "$BASE/embed/projects/p1")"
 expect 'the overlay of TwakeSpace is a file, not the app' "$(body "$BASE/embed/overlay.html")" '*<body></body>*'
 expect 'CSP: the overlay may be framed by the host' \
   "$(header /embed/overlay.html Content-Security-Policy)" "*frame-ancestors 'self' https://workplace.example.com"
+# The cozy-stack intents: framed by the app that asks for them, which the page
+# checks against the intent. The silent sign-in comes back to a frame inside it.
+for page in '/intents?intent=abc' /intents/callback; do
+  expect "$page serves index.html" "$(body "$BASE$page")" '*<div id="root"*'
+  expect "CSP: $page may be framed by Tasks and the apps in CSP_INTENT_FRAME_ANCESTORS" \
+    "$(header "$page" Content-Security-Policy)" "*frame-ancestors 'self' https://chat.example.com"
+  expect "$page is revalidated" "$(header "$page" Cache-Control)" 'no-cache'
+done
+expect 'CSP: a page that only starts like /intents refuses to be framed' \
+  "$(header /intentsx Content-Security-Policy)" "*frame-ancestors 'none'"
+expect 'CSP: any app may frame the intents page by default' \
+  "$(docker run --rm --read-only --tmpfs /tmp --user 101 --entrypoint sh "$IMAGE" -c \
+    '/docker-entrypoint.d/40-twake-tasks-runtime.sh && nginx && sleep 1 && wget -q -S -O /dev/null http://127.0.0.1:8080/intents 2>&1' |
+    tr -d '\r' || true)" "*frame-ancestors [*]*"
 expect 'CSP on the SPA fallback too' "$(header /tasks/42 Content-Security-Policy)" "$csp"
 expect 'CSP on assets too' "$(header "$script" Content-Security-Policy)" "$csp"
 expect 'X-Content-Type-Options' "$(header / X-Content-Type-Options)" 'nosniff'

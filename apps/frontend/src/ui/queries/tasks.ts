@@ -288,13 +288,18 @@ export function useSetFollowing(
 export function useNewTask(): UseMutationResult<
   { boardId: string; key: string },
   Error,
-  { boardId: string; draft: NewTaskDraft; started?: StartedTask | undefined }
+  {
+    boardId: string
+    draft: NewTaskDraft
+    started?: StartedTask | undefined
+    onStarted?: (task: StartedTask) => void
+  }
 > {
   const api = useBoardsApi()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ boardId, draft, started }) =>
-      createTask(api, boardId, draft, started),
+    mutationFn: ({ boardId, draft, started, onStarted }) =>
+      createTask(api, boardId, draft, started, onStarted),
     // The template is gone, or out of reach: the picker drops it once reloaded.
     onError: error =>
       error instanceof ApiError && error.code === 'invalid_template'

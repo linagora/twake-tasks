@@ -585,6 +585,11 @@
     "blockedTip": "Заблокирована: %{tasks}",
     "stillBlocked": "%{key} всё ещё заблокирована: %{blockers}."
   },
+  "intent": {
+    "loading": "Загрузка…",
+    "failed": "Здесь нельзя создать задачу",
+    "failedHint": "Закройте это окно и создайте задачу в Twake Project."
+  },
   "newTask": {
     "useTemplate": "Шаблон",
     "noTemplates": "Для этой доски нет шаблонов",

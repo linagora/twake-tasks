@@ -50,6 +50,6 @@ A frontend can run against an older or a newer backend. Both read their request 
 
 Twake Project shows in the Twake Workplace home and bar as a standalone app (`"standalone": true` in the manifest). The registry archive ships no code: [manifest/manifest.webapp](../manifest/manifest.webapp) and its icon are the whole archive.
 
-The home and the bar open the URL held by the `project.embedded-app-url` flag instead of a subdomain, so set that flag to the frontend's URL on each context.
+The manifest also declares the [intent](modes.md#cozy-stack-intents) other apps create tasks with. The home and the bar open the URL held by the `project.embedded-app-url` flag instead of a subdomain, so set that flag to the frontend's URL on each context.
 
 Every frontend release publishes the archive on the dev channel of the registry as `<version>-dev.<commit>`, through [publish-manifest.yml](https://github.com/linagora/twake-workflows/blob/fffcd66cb995c51022cb1f985f934752b3bb0c5b/.github/workflows/publish-manifest.yml). The version comes from the tag; the manifest carries none.

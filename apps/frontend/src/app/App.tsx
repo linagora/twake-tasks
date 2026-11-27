@@ -1,9 +1,10 @@
-import { useState, type ReactElement } from 'react'
+import { lazy, Suspense, useState, type ReactElement } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 
 import type { BoardsApi } from '@/application/boards'
 import { noReporting, type Reporting } from '@/application/reporting'
 import type { SessionService } from '@/application/session'
+import { isIntentsPath } from '@/application/taskIntent'
 import type { SpaceOverlay } from '@linagora/twake-mui'
 import { AppProviders } from '@/app/AppProviders'
 import { makeQueryClient } from '@/app/queryClient'
@@ -18,6 +19,11 @@ import { ReportingProvider } from '@/ui/reporting/ReportingProvider'
 import { SessionGate } from '@/ui/session/SessionGate'
 import { FollowSettings } from '@/ui/settings/FollowSettings'
 import { UnsubscribeScreen } from '@/ui/settings/UnsubscribeScreen'
+
+// Loaded only where another app frames the page
+const IntentsApp = lazy(() =>
+  import('@/app/IntentsApp').then(module => ({ default: module.IntentsApp }))
+)
 
 export interface AppProps {
   session: SessionService
@@ -46,6 +52,25 @@ export function App({
           search={window.location.search}
           unsubscribe={boardsApi.unsubscribe}
         />
+      </AppProviders>
+    )
+  }
+
+  // The form of an intent alone, in the frame of the app that asks for it
+  if (isIntentsPath(window.location.pathname)) {
+    return (
+      <AppProviders lang={lang} queryClient={queryClient}>
+        <ReportingProvider reporting={reporting}>
+          <SessionGate session={session} staysOnEnd>
+            <BoardsApiProvider api={boardsApi}>
+              <FollowSettings>
+                <Suspense fallback={null}>
+                  <IntentsApp onSessionEnded={session.onEndedElsewhere} />
+                </Suspense>
+              </FollowSettings>
+            </BoardsApiProvider>
+          </SessionGate>
+        </ReportingProvider>
       </AppProviders>
     )
   }

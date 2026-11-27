@@ -37,6 +37,7 @@ import {
   type NewTaskDraft,
   type StartedTask
 } from '@/application/newTask'
+import type { SavedTask } from '@/application/taskIntent'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { LabelChip, PersonChip } from '@/ds/Columns'
 import { DiscardDialog } from '@/ds/DiscardDialog'
@@ -68,7 +69,7 @@ import { ReminderControls } from '@/ui/boards/Reminders'
 import { useNewTask, useNewTaskBoard } from '@/ui/queries/tasks'
 import { useTemplates } from '@/ui/queries/templates'
 import { PriorityChip } from '@/ui/boards/TaskFacts'
-import { MAX_DESCRIPTION } from '@/ui/boards/TaskPanel'
+import { MAX_DESCRIPTION, MAX_TITLE } from '@/ui/boards/TaskPanel'
 import { useRichTextLabels } from '@/ui/boards/useRichTextLabels'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
@@ -92,10 +93,7 @@ const toggled = (ids: string[], id: string): string[] =>
 
 const CREATE_ANOTHER = 'twake-tasks.createAnother'
 
-export interface CreatedTask {
-  boardId: string
-  key: string
-  title: string
+export interface CreatedTask extends SavedTask {
   board: string
   /** Its preset date or assignee was changed, so it may not be on the page. */
   elsewhere: boolean
@@ -199,17 +197,29 @@ function useCreateAnother(): [boolean, (another: boolean) => void] {
 /**
  * Opened from a board, the task goes in that board unless another is picked,
  * else in the Inbox. Opened from a project, only its boards are offered.
+ * Given a `request`, it serves another app: see its fields.
  */
 export function NewTaskDialog({
   inBoardId,
   inProjectId,
   preset,
+  request,
   onClose,
   onCreated
 }: {
   inBoardId?: string | undefined
   inProjectId?: string | undefined
   preset: NewTaskPreset
+  /**
+   * Asked for by another app (the intents page): the form starts with these
+   * texts, fills its frame, makes one task and links to no other page.
+   */
+  request?: {
+    title: string
+    description: string
+    /** The task was saved without all its details. */
+    onUnfinished: (task: SavedTask) => void
+  }
   onClose: () => void
   /** `staysOpen` for another task, else the dialog is to be closed. */
   onCreated: (task: CreatedTask, staysOpen: boolean) => void
@@ -222,12 +232,12 @@ export function NewTaskDialog({
   const sectionLabelId = useId()
   const priorityLabelId = useId()
   const richTextLabels = useRichTextLabels()
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(request?.title ?? '')
   const [untitled, setUntitled] = useState(false)
-  const [description, setDescription] = useState('')
+  const [description, setDescription] = useState(request?.description ?? '')
   // Remounts the description editor, which only reads its initial text.
   const [cleared, setCleared] = useState(0)
-  const [details, setDetails] = useState(false)
+  const [details, setDetails] = useState(Boolean(request?.description))
   const [facts, setFacts] = useState(EMPTY)
   const [dates, setDates] = useState<DueDraft>({
     ...NO_DUE,
@@ -237,7 +247,8 @@ export function NewTaskDialog({
   const [reminderError, setReminderError] = useState<string | null>(null)
   // Who "me" is among the members is known once the board is loaded.
   const [assignMe, setAssignMe] = useState(preset.assignToMe ?? false)
-  const [another, setAnother] = useCreateAnother()
+  const [remembered, setAnother] = useCreateAnother()
+  const another = !request && remembered
   const [last, setLast] = useState<CreatedTask | null>(null)
   const [asking, setAsking] = useState(false)
   const boardSelect = useRef<{ focus: () => void }>(null)
@@ -391,6 +402,7 @@ export function NewTaskDialog({
       return
     }
     if (!chosen || description.length > MAX_DESCRIPTION) return
+    let id = started?.id ?? ''
     create.mutate(
       {
         boardId: chosen.id,
@@ -403,12 +415,16 @@ export function NewTaskDialog({
           ...(section && { sectionId: section.id }),
           ...(template && { templateId: template.id })
         },
-        started
+        started,
+        onStarted: task => {
+          id = task.id
+        }
       },
       {
         onSuccess: task => {
           const created = {
             ...task,
+            id,
             title: title.trim(),
             board: boardName(chosen),
             elsewhere:
@@ -431,7 +447,14 @@ export function NewTaskDialog({
         // Create disables itself while the request runs, which drops the
         // focus to the page.
         onError: error => {
-          if (error instanceof UnfinishedTask) setStarted(error.task)
+          if (error instanceof UnfinishedTask) {
+            setStarted(error.task)
+            request?.onUnfinished({
+              ...error.task,
+              boardId: chosen.id,
+              title: title.trim()
+            })
+          }
           titleRef.current?.focus()
         }
       }
@@ -468,7 +491,13 @@ export function NewTaskDialog({
     last && t('newTask.createdIn', { title: last.title, board: last.board })
 
   return (
-    <Dialog open onClose={close} aria-labelledby={titleId} size="medium">
+    <Dialog
+      open
+      onClose={close}
+      aria-labelledby={titleId}
+      size="medium"
+      fullScreen={request !== undefined}
+    >
       <form
         noValidate
         onSubmit={event => {
@@ -498,7 +527,7 @@ export function NewTaskDialog({
               inputRef={titleInputRef}
               slotProps={{
                 htmlInput: {
-                  maxLength: 500,
+                  maxLength: MAX_TITLE,
                   'aria-label': t('newTask.taskTitle'),
                   title: t('newTask.taskTitle'),
                   'aria-required': true
@@ -564,7 +593,7 @@ export function NewTaskDialog({
                   <TemplatePicker
                     templates={usable}
                     projectName={projectName(board.project)}
-                    manageable={inProjectId === undefined}
+                    manageable={!request && inProjectId === undefined}
                     onPick={applyTemplate}
                   />
                 )}
@@ -805,18 +834,20 @@ export function NewTaskDialog({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <FormControlLabel
-            label={t('newTask.createAnother')}
-            control={
-              <Checkbox
-                size="small"
-                checked={another}
-                onChange={event => {
-                  setAnother(event.target.checked)
-                }}
-              />
-            }
-          />
+          {!request && (
+            <FormControlLabel
+              label={t('newTask.createAnother')}
+              control={
+                <Checkbox
+                  size="small"
+                  checked={another}
+                  onChange={event => {
+                    setAnother(event.target.checked)
+                  }}
+                />
+              }
+            />
+          )}
           <Button
             type="submit"
             disabled={

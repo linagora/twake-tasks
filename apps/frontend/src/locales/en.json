@@ -585,6 +585,11 @@
     "blockedTip": "Blocked by %{tasks}",
     "stillBlocked": "%{key} is still blocked by %{blockers}."
   },
+  "intent": {
+    "loading": "Loading…",
+    "failed": "The task can't be created here",
+    "failedHint": "Close this window and create the task in Twake Project."
+  },
   "newTask": {
     "useTemplate": "Template",
     "noTemplates": "No templates for this board",

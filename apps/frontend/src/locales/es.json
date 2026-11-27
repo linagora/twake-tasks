@@ -585,6 +585,11 @@
     "blockedTip": "Bloqueada por %{tasks}",
     "stillBlocked": "%{key} sigue bloqueada por %{blockers}."
   },
+  "intent": {
+    "loading": "Cargando…",
+    "failed": "No se puede crear la tarea aquí",
+    "failedHint": "Cierra esta ventana y crea la tarea en Twake Project."
+  },
   "newTask": {
     "useTemplate": "Plantilla",
     "noTemplates": "No hay plantillas para este tablero",

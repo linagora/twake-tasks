@@ -20,7 +20,7 @@ Start with [features](features.md) for what the app does, and [architecture](arc
 
 ## Integrators
 
-- [Modes](modes.md): standalone, space mode, embedding in TwakeSpace, the platform top bar, and search from TwakeSpace.
+- [Modes](modes.md): standalone, space mode, embedding in TwakeSpace, the platform top bar, cozy-stack intents, and search from TwakeSpace.
 - [Events](events.md): what the backend consumes from RabbitMQ and what it publishes.
 
 ## Design decisions

@@ -585,6 +585,11 @@
     "blockedTip": "Blockiert durch %{tasks}",
     "stillBlocked": "%{key} ist noch blockiert durch %{blockers}."
   },
+  "intent": {
+    "loading": "Wird geladen…",
+    "failed": "Die Aufgabe kann hier nicht erstellt werden",
+    "failedHint": "Schließen Sie dieses Fenster und erstellen Sie die Aufgabe in Twake Project."
+  },
   "newTask": {
     "useTemplate": "Vorlage",
     "noTemplates": "Keine Vorlagen für dieses Board",

@@ -70,12 +70,14 @@ export class UnfinishedTask extends Error {
  * The task lands in the section picked, else in the default one, if the
  * board has sections. Given the task an earlier call left unfinished, it
  * sets that task's details to the draft instead of creating another one.
+ * `onStarted` hears of the task as soon as it exists, for its id.
  */
 export async function createTask(
   api: BoardsApi,
   boardId: string,
   draft: NewTaskDraft,
-  started?: StartedTask
+  started?: StartedTask,
+  onStarted?: (task: StartedTask) => void
 ): Promise<{ boardId: string; key: string }> {
   const task =
     started ??
@@ -87,6 +89,7 @@ export async function createTask(
         null,
       ...(draft.templateId && { templateId: draft.templateId })
     }))
+  onStarted?.(task)
   try {
     await addDetails(api, boardId, task.id, draft, started !== undefined)
   } catch (error) {

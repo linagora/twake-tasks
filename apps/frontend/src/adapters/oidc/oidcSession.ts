@@ -54,6 +54,16 @@ export function readSsoConfig(
   }
 }
 
+/**
+ * The SSO settings of the intents page: the same client, coming back on
+ * `/intents/callback`, which the apps that frame the page may frame too.
+ * Used by: `index.tsx`.
+ */
+export const intentSsoConfig = (config: AuthConfig): AuthConfig => ({
+  ...config,
+  redirectUri: new URL('/intents/callback', config.redirectUri).href
+})
+
 export function oidcSession(config: AuthConfig): SessionService {
   configureAuth(config)
   const redirectPath = new URL(config.redirectUri, window.location.href)

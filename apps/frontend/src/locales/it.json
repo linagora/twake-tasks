@@ -585,6 +585,11 @@
     "blockedTip": "Bloccata da %{tasks}",
     "stillBlocked": "%{key} è ancora bloccata da %{blockers}."
   },
+  "intent": {
+    "loading": "Caricamento…",
+    "failed": "Impossibile creare l’attività qui",
+    "failedHint": "Chiudi questa finestra e crea l’attività in Twake Project."
+  },
   "newTask": {
     "useTemplate": "Modello",
     "noTemplates": "Nessun modello per questa bacheca",
