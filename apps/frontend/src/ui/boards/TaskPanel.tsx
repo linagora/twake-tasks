@@ -65,6 +65,7 @@ import { useDrivePicker } from '@/ui/drive/useDrivePicker'
 import { focusOnMount } from '@/ui/focusOnMount'
 import { useI18n } from '@/ui/i18n/useI18n'
 
+export const MAX_TITLE = 500
 export const MAX_DESCRIPTION = 50_000
 
 export function TaskPanel({
@@ -551,7 +552,7 @@ function AddSubtask({
         fullWidth
         margin="dense"
         inputRef={focusOnMount}
-        slotProps={{ htmlInput: { maxLength: 500 } }}
+        slotProps={{ htmlInput: { maxLength: MAX_TITLE } }}
       />
       {create.isError && (
         <Typography role="alert" variant="caption">

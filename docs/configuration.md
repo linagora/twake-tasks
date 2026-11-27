@@ -154,6 +154,7 @@ Backend:
 Security headers. The image builds the Content Security Policy itself, adding the origins of `SSO_BASE_URL` and `SENTRY_DSN`. These add to it:
 
 - `CSP_FRAME_ANCESTORS`: the hosts allowed to frame the [embedded pages](modes.md#embedded-in-twakespace), such as TwakeSpace.
+- `CSP_INTENT_FRAME_ANCESTORS`: the hosts allowed to frame the [intents page](modes.md#cozy-stack-intents), `/intents`, such as Twake Chat. Unset, any host may (`*`), and the page refuses those the intent does not allow. Set, only these and the frontend itself.
 - `CSP_IMG_SRC`: the hosts people's pictures come from, on Twake Workplace.
 - `CSP_CONNECT_SRC`, `CSP_FRAME_SRC`: any other source.
 - `PERMISSIONS_POLICY`: replaces the default policy, which turns off the accelerometer, geolocation, gyroscope, magnetometer, payment and USB.
@@ -165,6 +166,8 @@ Search:
 - `SEARCH_MIN_LENGTH` (`2`): the fewest characters the search screen searches for. Give it the backend's `SEARCH_MIN_LENGTH`.
 
 Error reporting: `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_FEEDBACK_ENABLED`. See [error reporting](error-reporting.md).
+
+Cozy-stack intents: no setting turns the [intents page](modes.md#cozy-stack-intents) on. It calls the stack of each workplace, so it needs `workplaceFqdn` in `SSO_SCOPE` and the workplace origins in `CSP_CONNECT_SRC`.
 
 Twake Drive:
 

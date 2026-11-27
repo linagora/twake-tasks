@@ -64,6 +64,10 @@ frame_src="'self'"
 [ -n "${SSO_BASE_URL:-}" ] && frame_src="$frame_src $(origin "$SSO_BASE_URL")"
 [ -n "${CSP_FRAME_SRC:-}" ] && frame_src="$frame_src $CSP_FRAME_SRC"
 frame_ancestors="'self'${CSP_FRAME_ANCESTORS:+ $CSP_FRAME_ANCESTORS}"
+# Any app of the Workplace may frame the intents page, which checks who does
+# against the intent: CSP_INTENT_FRAME_ANCESTORS narrows it to a list.
+intent_ancestors='*'
+[ -n "${CSP_INTENT_FRAME_ANCESTORS:-}" ] && intent_ancestors="'self' $CSP_INTENT_FRAME_ANCESTORS"
 # People's pictures come from Twake Workplace, on its own hosts.
 img_src="'self' data: blob:${CSP_IMG_SRC:+ $CSP_IMG_SRC}"
 permissions_policy=${PERMISSIONS_POLICY:-"accelerometer=(), geolocation=(), gyroscope=(), magnetometer=(), payment=(), usb=()"}
@@ -71,6 +75,7 @@ check_sources CSP_CONNECT_SRC "$connect_src"
 check_sources CSP_FRAME_SRC "$frame_src"
 check_sources CSP_FRAME_ANCESTORS "$frame_ancestors"
 check_sources CSP_IMG_SRC "$img_src"
+check_sources CSP_INTENT_FRAME_ANCESTORS "$intent_ancestors"
 one_line PERMISSIONS_POLICY "$permissions_policy"
 case "$permissions_policy" in
   *[\"\\\$\;]*) fail "PERMISSIONS_POLICY must not contain double quotes, backslashes, dollar signs nor semicolons" ;;
@@ -83,7 +88,7 @@ csp="$csp; connect-src $connect_src; frame-src $frame_src"
 csp="$csp; object-src 'none'; base-uri 'self'; form-action 'self'"
 
 # Only the embedded view, and the sign-in callback it comes back to, may be
-# framed by the hosts in CSP_FRAME_ANCESTORS.
+# framed by the hosts in CSP_FRAME_ANCESTORS; the intents pages by those above.
 headers() {
   cat <<EOF
 add_header Content-Security-Policy "$csp; frame-ancestors $1" always;
@@ -94,6 +99,7 @@ EOF
 }
 headers "'none'" >"$OUT/security-headers.conf"
 headers "$frame_ancestors" >"$OUT/embed-headers.conf"
+headers "$intent_ancestors" >"$OUT/intent-headers.conf"
 
 # Without an upstream, /api answers 404 rather than the SPA fallback. The upstream is a
 # variable so nginx resolves it per request: the backend may start after the frontend.

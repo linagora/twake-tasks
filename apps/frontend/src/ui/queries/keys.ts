@@ -53,6 +53,7 @@ export const keys = {
   sectionNames: () => ['sectionNames'] as const,
   people: () => ['people'] as const,
   projects: () => ['projects'] as const,
+  intent: (intentId: string) => ['intent', intentId] as const,
   notifications: () => ['notifications'] as const,
   unreadNotifications: () => ['unreadNotifications'] as const,
   unreadByProject: () => ['unreadByProject'] as const,

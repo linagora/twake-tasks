@@ -1,6 +1,7 @@
 import type { Sdk } from '@linagora/twake-sdk'
-import { Intents, type StartedCozyIntent } from 'cozy-interapp'
+import type { StartedCozyIntent } from 'cozy-interapp'
 
+import { intentsOf, signedIn } from '@/adapters/cozy/intents'
 import type { DriveLink, DrivePicker } from '@/application/drivePicker'
 
 interface PickedEntry {
@@ -11,30 +12,6 @@ interface PickedEntry {
 export const isDrivePickerEnabled = (
   win: Pick<Window, 'DRIVE_PICKER_ENABLED'>
 ): boolean => win.DRIVE_PICKER_ENABLED === 'true'
-
-// The client exchanges the id token as soon as it is made: wait for that
-// exchange, and try again only once it failed.
-async function signedIn(sdk: Sdk, idToken: string): Promise<void> {
-  if (sdk.status === 'waiting') {
-    await new Promise<void>(resolve => {
-      const stop = sdk.onStatusChange(() => {
-        stop()
-        resolve()
-      })
-    })
-  }
-  if (sdk.status !== 'ready') await sdk.login(idToken)
-}
-
-const intentsOf = (sdk: Sdk): Intents =>
-  new Intents({
-    fetch: (method, path, body) =>
-      sdk.fetchJSON(`/${path.replace(/^\/+/, '')}`, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: body === undefined ? null : JSON.stringify(body)
-      })
-  })
 
 /** The PICK io.cozy.files intent of Twake Drive, asking for sharing links. */
 export function twakeDrivePicker(sdk: Sdk, idToken: string): DrivePicker {

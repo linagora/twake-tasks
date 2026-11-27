@@ -12,17 +12,22 @@ export const fakeUser = (idToken: string | null = null): User => ({
 export function fakeSession(
   start: () => Promise<User | null> = () => Promise.resolve(fakeUser())
 ): SessionService & { endElsewhere: () => void } {
-  let onEnded: (() => void) | null = null
+  // Every listener, as in twake-oidc: a second one never hides the first
+  const listeners = new Set<() => void>()
   return {
     start: vi.fn(start),
     signIn: vi.fn(() => Promise.resolve<User | null>(null)),
     signOut: vi.fn(() => Promise.resolve()),
     onEndedElsewhere: callback => {
-      onEnded = callback
+      listeners.add(callback)
       return () => {
-        onEnded = null
+        listeners.delete(callback)
       }
     },
-    endElsewhere: () => onEnded?.()
+    endElsewhere: () => {
+      listeners.forEach(listener => {
+        listener()
+      })
+    }
   }
 }

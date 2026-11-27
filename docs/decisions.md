@@ -122,3 +122,17 @@ Categories: UX, UI, Product, Architecture, Infra, Tech.
 - Decided by: agent, asked by Théo, to be confirmed by the maintainer.
 - Why: the frontend lint drops from 38 s to 5 s and the backend one from 12 s to 1 s, with the same rules.
 - Scope: every workspace; the frontend, @twake-tasks/backend, @twake-tasks/e2e and @twake-tasks/api-contract.
+
+## 2026-11-27, [Product] Other apps create a task with the intent CREATE io.cozy.tasks
+
+- Decision: the frontend serves the cozy-stack intent `CREATE io.cozy.tasks` on `/intents`: the data `{ title?, description? }` fills the new task form, and the client gets `{ id, key, title, url }` once the task is saved, or `null`. A text over the API's limit is cut to it. A task saved without all its details, then closed, is given to the client, never `null`. Closing a filled form still asks to confirm.
+- Decided by: agent (ToM-Private#13, manual task creation from Twake Chat), to be confirmed by Khaled Ferjani
+- Why: the person creates the task where the request was written, with the whole form; a `null` for a task that exists would make a duplicate.
+- Scope: the manifest, the frontend's `/intents` page; no backend change. The doctype name is to be confirmed.
+
+## 2026-11-27, [Infra] Any app may frame the intents page unless a list narrows it
+
+- Decision: `/intents` and `/intents/callback` answer `frame-ancestors *` by default, and `'self'` plus the hosts of `CSP_INTENT_FRAME_ANCESTORS` when it is set. The page itself refuses a frame the intent does not allow. It signs in with `prompt=none` in a hidden frame and never redirects to the SSO.
+- Decided by: agent (ToM-Private#13), following Twake Calendar's intents page, to be confirmed by Khaled Ferjani
+- Why: the apps that may ask differ by workplace, and cozy-stack states them in each intent.
+- Scope: the frontend's nginx headers and sign-in.

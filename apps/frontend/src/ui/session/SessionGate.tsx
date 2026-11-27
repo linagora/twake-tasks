@@ -74,11 +74,17 @@ const signedInWith = (user: User): GateState => {
 
 export interface SessionGateProps {
   session: SessionService
+  /**
+   * A session that ends elsewhere does not send the person to sign in again:
+   * the children deal with it. For a frame that answers another app.
+   */
+  staysOnEnd?: boolean
   children: ReactNode
 }
 
 export function SessionGate({
   session,
+  staysOnEnd = false,
   children
 }: SessionGateProps): ReactElement {
   const { t } = useI18n()
@@ -138,9 +144,9 @@ export function SessionGate({
   }, [signedIn])
 
   useEffect(() => {
-    if (!signedIn) return
+    if (!signedIn || staysOnEnd) return
     return session.onEndedElsewhere(() => void session.signIn())
-  }, [session, signedIn])
+  }, [session, signedIn, staysOnEnd])
 
   const signIn = () => {
     session.signIn().then(

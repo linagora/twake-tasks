@@ -1,5 +1,7 @@
-// The part of cozy-interapp, which has no types, the Drive picker uses.
+// The part of cozy-interapp, which has no types, the app uses.
 declare module 'cozy-interapp' {
+  import type { IntentService } from '@/application/taskIntent'
+
   export type CozyIntent = Promise<unknown> & {
     start: (
       element: HTMLElement,
@@ -23,5 +25,11 @@ declare module 'cozy-interapp' {
       data?: Record<string, unknown>,
       permissions?: string[]
     ): CozyIntent
+    /** Reads the intent, then waits for the data of the client. */
+    createService(
+      intentId: string,
+      serviceWindow: Window,
+      options: { requireFrameAncestors: boolean }
+    ): Promise<IntentService>
   }
 }

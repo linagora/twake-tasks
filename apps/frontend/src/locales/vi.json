@@ -585,6 +585,11 @@
     "blockedTip": "Bị chặn bởi %{tasks}",
     "stillBlocked": "%{key} vẫn bị chặn bởi %{blockers}."
   },
+  "intent": {
+    "loading": "Đang tải…",
+    "failed": "Không thể tạo công việc tại đây",
+    "failedHint": "Hãy đóng cửa sổ này và tạo công việc trong Twake Project."
+  },
   "newTask": {
     "useTemplate": "Mẫu",
     "noTemplates": "Chưa có mẫu cho bảng này",

@@ -585,6 +585,11 @@
     "blockedTip": "Bloquée par %{tasks}",
     "stillBlocked": "%{key} est encore bloquée par %{blockers}."
   },
+  "intent": {
+    "loading": "Chargement…",
+    "failed": "Impossible de créer la tâche ici",
+    "failedHint": "Fermez cette fenêtre et créez la tâche dans Twake Project."
+  },
   "newTask": {
     "useTemplate": "Modèle",
     "noTemplates": "Aucun modèle pour ce tableau",

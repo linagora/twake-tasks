@@ -11,6 +11,7 @@ import {
 import { httpBoardsApi } from '@/adapters/http/httpBoardsApi'
 import { embedSession, isEmbedded } from '@/adapters/oidc/embedSession'
 import {
+  intentSsoConfig,
   oidcSession,
   readSsoConfig,
   sendSignedIn
@@ -21,6 +22,7 @@ import {
   startSentry
 } from '@/adapters/sentry/sentryReporting'
 import { App } from '@/app/App'
+import { isIntentsPath } from '@/application/taskIntent'
 import { connectTwakeSpace } from '@/ui/embed/twakeSpace'
 
 const container = document.getElementById('root')
@@ -31,8 +33,15 @@ const config = readSsoConfig(window, apiUrl)
 
 if (!relayCallback()) {
   const reporting = startSentry(readSentryConfig(window), __APP_VERSION__)
-  const space = connectTwakeSpace()
-  const embed = isEmbedded() ? embedSession(config) : null
+  // Framed by another app of the Workplace, for one of its intents
+  const intents = isIntentsPath(window.location.pathname)
+  const space = intents ? null : connectTwakeSpace()
+  // A framed page never leaves for the SSO, neither on a 401
+  const embed = intents
+    ? embedSession(intentSsoConfig(config))
+    : isEmbedded()
+      ? embedSession(config)
+      : null
   const session = embed ?? oidcSession(config)
   const boardsApi = httpBoardsApi(
     apiUrl,
@@ -41,9 +50,10 @@ if (!relayCallback()) {
   )
   // Framed by TwakeSpace, the dialogs and the side panel go onto its page:
   // the region they cover is sent to TwakeSpace, which shows that part only
-  const overlay = embed
-    ? connectSpaceOverlay(region => space?.reportOverlayRegion(region))
-    : null
+  const overlay =
+    embed && !intents
+      ? connectSpaceOverlay(region => space?.reportOverlayRegion(region))
+      : null
 
   createRoot(container, {
     onUncaughtError: (error, { componentStack }) => {
