@@ -630,6 +630,71 @@ describe('the intent CREATE io.cozy.tasks', () => {
     expect(rigid, 'wrappers that let the dialog scroll as a whole').toEqual([])
   })
 
+  // jsdom lays nothing out and never scrolls, so this accepts either proof a
+  // browser would act on: the alert is outside the box the fields scroll in,
+  // after it (with the action bar), or it, or a part of the content around it,
+  // is asked into view (scrollIntoView, or the focus). It cannot tell that the
+  // message is on screen: only a real browser can (390x844).
+  it('shows why the save failed where the user looks, a long description scrolled', async () => {
+    const asked: Element[] = []
+    const real = Object.getOwnPropertyDescriptor(
+      Element.prototype,
+      'scrollIntoView'
+    )
+    Element.prototype.scrollIntoView = function (this: Element) {
+      asked.push(this)
+    }
+    try {
+      const { boardsApi, dialog, title, create } = await openForm({
+        data: { title: TITLE, description: 'A long line\n\n'.repeat(200) }
+      })
+      boardsApi.createTask.mockRejectedValueOnce(new Error('offline'))
+
+      fireEvent.click(create())
+
+      const alert = await dialog.findByRole('alert')
+      expect(alert).toHaveTextContent('The task could not be created.')
+      expect(alert).toBeVisible()
+      let scroller = title().parentElement
+      while (
+        scroller &&
+        !['auto', 'scroll'].includes(getComputedStyle(scroller).overflowY)
+      ) {
+        scroller = scroller.parentElement
+      }
+      if (!scroller) throw new Error('The fields scroll in no box')
+      const box = scroller
+      await waitFor(() => {
+        const withTheActions =
+          !box.contains(alert) &&
+          Boolean(
+            box.compareDocumentPosition(alert) &
+            Node.DOCUMENT_POSITION_FOLLOWING
+          )
+        const broughtIntoView =
+          document.activeElement === alert ||
+          asked.some(
+            element =>
+              element === alert ||
+              alert.contains(element) ||
+              (element !== box &&
+                box.contains(element) &&
+                element.contains(alert))
+          )
+        expect(
+          withTheActions || broughtIntoView,
+          'the error is with the actions, or scrolled into view'
+        ).toBe(true)
+      })
+    } finally {
+      if (real) {
+        Object.defineProperty(Element.prototype, 'scrollIntoView', real)
+      } else {
+        Reflect.deleteProperty(Element.prototype, 'scrollIntoView')
+      }
+    }
+  })
+
   it('offers the templates, without a link to manage them', async () => {
     const opened = openIntent()
     await opened.boardsApi.createTemplate(opened.inbox.project.id, {

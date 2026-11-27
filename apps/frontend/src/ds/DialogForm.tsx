@@ -1,4 +1,4 @@
-import { Box } from '@linagora/twake-mui'
+import { Box, DialogContent } from '@linagora/twake-mui'
 import type { ReactElement, ReactNode, SubmitEvent } from 'react'
 
 /**
@@ -26,4 +26,17 @@ export function DialogForm({
       {children}
     </Box>
   )
+}
+
+/**
+ * A message that stays in view between the content of a dialog and its actions:
+ * a second content that never grows nor scrolls away, so it keeps the side
+ * padding of the first. Used by: `NewTaskDialog`.
+ */
+export function DialogNotice({
+  children
+}: {
+  children: ReactNode
+}): ReactElement {
+  return <DialogContent sx={{ flex: 'none', py: 1 }}>{children}</DialogContent>
 }

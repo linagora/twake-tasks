@@ -40,7 +40,7 @@ import {
 import type { SavedTask } from '@/application/taskIntent'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { LabelChip, PersonChip } from '@/ds/Columns'
-import { DialogForm } from '@/ds/DialogForm'
+import { DialogForm, DialogNotice } from '@/ds/DialogForm'
 import { DiscardDialog } from '@/ds/DiscardDialog'
 import { Icon } from '@/ds/Icon'
 import { EditorActions, EditorPopover } from '@/ds/Pickers'
@@ -213,7 +213,8 @@ export function NewTaskDialog({
   preset: NewTaskPreset
   /**
    * Asked for by another app (the intents page): the form starts with these
-   * texts, fills its frame, makes one task and links to no other page.
+   * texts, fills its frame, makes one task and links to no other page. A save
+   * error shows above the actions, as the fields may be scrolled far.
    */
   request?: {
     title: string
@@ -490,6 +491,11 @@ export function NewTaskDialog({
     ].join(' · ')
   const lastSaid =
     last && t('newTask.createdIn', { title: last.title, board: last.board })
+  const failure = create.isError && (
+    <Typography role="alert" variant="body2" color="error">
+      {t(started ? 'newTask.unfinished' : 'newTask.failed')}
+    </Typography>
+  )
 
   return (
     <Dialog
@@ -827,13 +833,10 @@ export function NewTaskDialog({
                 {t('newTask.nowhere')}
               </Typography>
             )}
-            {create.isError && (
-              <Typography role="alert" variant="body2" color="error">
-                {t(started ? 'newTask.unfinished' : 'newTask.failed')}
-              </Typography>
-            )}
+            {!request && failure}
           </Stack>
         </DialogContent>
+        {request && failure && <DialogNotice>{failure}</DialogNotice>}
         <DialogActions>
           {!request && (
             <FormControlLabel
