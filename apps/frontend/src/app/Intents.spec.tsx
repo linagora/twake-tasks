@@ -578,6 +578,58 @@ describe('the intent CREATE io.cozy.tasks', () => {
     expect(title().closest('.MuiDialog-paperFullScreen')).not.toBe(null)
   })
 
+  // jsdom lays nothing out, so this reads the styles that make a browser keep
+  // Create in the frame: either its bar sticks to the bottom, or the fields
+  // scroll in a box that every wrapper up to the dialog lets shrink. It cannot
+  // tell that the button is on screen: only a real browser can (390x844).
+  it('keeps Create in the frame while a long description scrolls', async () => {
+    const { title, create } = await openForm({
+      data: { title: TITLE, description: 'A long line\n\n'.repeat(200) }
+    })
+    const paper = title().closest('.MuiDialog-paper')
+    if (!paper) throw new Error('The form is in no dialog')
+    const chain = (from: Element) => {
+      const found: Element[] = []
+      for (
+        let element: Element | null = from;
+        element && element !== paper;
+        element = element.parentElement
+      ) {
+        found.push(element)
+      }
+      return found
+    }
+
+    const sticks = chain(create()).some(element => {
+      const style = getComputedStyle(element)
+      return style.position === 'sticky' && parseFloat(style.bottom) === 0
+    })
+    if (sticks) return
+
+    const scroller = chain(title()).find(element =>
+      ['auto', 'scroll'].includes(getComputedStyle(element).overflowY)
+    )
+    expect(scroller, 'the fields scroll in a box of their own').toBeDefined()
+    if (!scroller) return
+    expect(scroller).not.toContainElement(create())
+    // A wrapper that grows with its content makes the whole dialog scroll,
+    // Create with it
+    const rigid = chain(scroller)
+      .slice(1)
+      .filter(element => {
+        const style = getComputedStyle(element)
+        if (style.display === 'contents') return false
+        const column =
+          style.display === 'flex' && style.flexDirection === 'column'
+        const shrinks =
+          parseFloat(style.minHeight) === 0 ||
+          !['', 'visible'].includes(style.overflowY)
+        return !column || !shrinks
+      })
+      .map(element => element.tagName.toLowerCase())
+    expect(rigid, 'wrappers that let the dialog scroll as a whole').toEqual([])
+  })
+
   it('offers the templates, without a link to manage them', async () => {
     const opened = openIntent()
     await opened.boardsApi.createTemplate(opened.inbox.project.id, {

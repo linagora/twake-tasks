@@ -40,6 +40,7 @@ import {
 import type { SavedTask } from '@/application/taskIntent'
 import { ClosableTitle } from '@/ds/ClosableTitle'
 import { LabelChip, PersonChip } from '@/ds/Columns'
+import { DialogForm } from '@/ds/DialogForm'
 import { DiscardDialog } from '@/ds/DiscardDialog'
 import { Icon } from '@/ds/Icon'
 import { EditorActions, EditorPopover } from '@/ds/Pickers'
@@ -498,8 +499,8 @@ export function NewTaskDialog({
       size="medium"
       fullScreen={request !== undefined}
     >
-      <form
-        noValidate
+      <DialogForm
+        fullScreen={request !== undefined}
         onSubmit={event => {
           event.preventDefault()
           handleSubmit()
@@ -861,7 +862,7 @@ export function NewTaskDialog({
             {t(started ? 'newTask.save' : 'newTask.create')}
           </Button>
         </DialogActions>
-      </form>
+      </DialogForm>
       {asking && (
         <DiscardDialog
           labels={{
